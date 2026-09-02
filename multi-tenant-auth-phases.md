@@ -5,15 +5,30 @@
 
 ## Locked-in decisions (don't relitigate these mid-build)
 
-- Single `users` table, `user_type` column (`platform` | `branch` | `driver` | `customer`)
+- Single `users` table, `user_type` column (`platform` | `branch` | `driver` | `customer`) — backed by a `UserType` PHP enum (Phase 1)
 - 4 separate auth guards (`platform`, `branch`, `driver`, `customer`), all on the same `users` provider
 - One shared `/login` page (React/Inertia); backend looks up the account by email, reads its `user_type`, authenticates on the matching guard, redirects to that portal's dashboard
-- Spatie `teams` enabled, `team_foreign_key` = `branch_id`; branch users get their `branch_id` as permission-team scope; platform stays team-less (`branch_id` null)
+- Spatie `teams` enabled, `team_foreign_key` = `branch_id`; branch users get their `branch_id` as permission-team scope; **platform uses a reserved team id `0`** (not `null` — see "Team scoping model" below)
 - Super-admin bypass (both platform and branch scope) = role-name check `'super-admin'` via `Gate::before`, team-aware
 - Driver and customer: no roles/permissions, just guard + ownership checks
-- Scope for this build: auth, forgot/reset password, redirect-by-type, route protection, 4 basic protected dashboard shells. No business logic yet.
+- Roles and permissions are backed by `RoleEnum` and `PermissionEnum` PHP enums (Phase 2) rather than raw strings, so IDEs and static analysis catch typos
+- Scope for the auth phases (1–7): auth, forgot/reset password, redirect-by-type, route protection, 4 basic protected dashboard shells with real frontend permission infrastructure. Phase 8 adds admin CRUD UI for roles/permissions/branch staff. Phase 9 (deferred) ports unrelated shared UI infra.
 
 Run every phase in order — each one assumes the previous is done and tested. Don't let the agent skip the test step to "save time"; the whole point of this system is airtight isolation between portals, and that's exactly the kind of thing that silently breaks without tests.
+
+## Team scoping model — reserved id `0`, not `null`
+
+Phases 1 and 2 (below) were originally implemented with `branch_id = null` for platform-scope roles. That was reworked after auditing a reference multi-tenant project (`blake_lms_tenant`) that uses the same `spatie/laravel-permission` teams feature at a deeper nesting level (platform → school → branch). Its `PlatformTeamResolver` reserves team id `0` for the platform scope instead of `null`, for a concrete reason:
+
+**PostgreSQL does not treat `NULL = NULL` as equal in a unique constraint.** A unique index on `(branch_id, name, guard_name)` with `branch_id` nullable will silently allow two `('platform-admin', NULL, 'platform')` rows to exist — a duplicate-role bug with no database-level guard against it. Using the concrete value `0` avoids this and lets Spatie's original composite-primary-key migration schema stay untouched (no patched pivot tables), which is safer against future package upgrades.
+
+**Practical effect on Phases 1–2 (if you already ran them with `null`):**
+
+- Revert the pivot-table migration patch back to Spatie's stock schema (composite primary key `(branch_id, permission_id/role_id, model_id, model_type)`, `branch_id` NOT NULL when teams are enabled)
+- Add `app/Support/PlatformTeamResolver.php` (extends `Spatie\Permission\DefaultTeamResolver`), defaulting `getPermissionsTeamId()` to `0` when unset, and set `'team_resolver' => \App\Support\PlatformTeamResolver::class` in `config/permission.php`
+- Platform users get `branch_id = 0` conceptually for role/permission scoping — but the **`users.branch_id` column itself stays `null` for platform users** (a platform user does not belong to a branch record; `0` is purely the Spatie team-scoping sentinel, resolved automatically by `PlatformTeamResolver` whenever `setPermissionsTeamId()` hasn't been called for the request, e.g. on platform/driver/customer routes)
+- Seeders assign platform roles while the resolver's default (`0`) is active, instead of explicitly calling `setPermissionsTeamId(null)`
+- `branches.id` is a PostgreSQL `bigserial` starting at 1, so `0` never collides with a real branch
 
 ## Preamble — prepend this to every master prompt below (Plan Mode + MCP tooling)
 
@@ -73,99 +88,154 @@ If a tool isn't connected, say so rather than guessing what it would have shown 
 
 ## Phase 1 — Foundation: packages, config, schema, models
 
-**Goal:** database and model layer ready. No auth flow yet.
+**Goal:** database and model layer ready, using the reserved-team-id-`0` scoping model and a `UserType` enum. No auth flow yet.
 
 ### Master prompt for Cursor
 
 ```
-You are working in a fresh Laravel 13 project (React + Inertia starter kit already installed,
-PostgreSQL already connected). Do the following, in order:
+You are working in a Laravel 13 project (React + Inertia starter kit already installed,
+PostgreSQL already connected). This project previously ran a version of Phase 1 that used
+`branch_id = null` for platform-scope Spatie roles; this rework switches to a reserved team id
+`0` instead (see "Team scoping model" at the top of this document for why). Do the following,
+in order:
 
-1. Install spatie/laravel-permission via composer and publish its config + migration.
+1. Install spatie/laravel-permission via composer and publish its config + migration, if not
+   already installed. If the pivot-table migration was previously patched to make `branch_id`
+   nullable with a surrogate primary key, REVERT it to Spatie's stock schema (composite primary
+   key across team key + pivot key + model id + model type, `branch_id` NOT NULL when teams are
+   enabled).
 2. In config/permission.php, set 'teams' => true and 'team_foreign_key' => 'branch_id'.
-3. Create a migration to add to the existing users table:
-   - user_type: string, not nullable, no default (values will be 'platform','branch','driver','customer')
-   - branch_id: foreignId, nullable, constrained references branches, nullOnDelete
+3. Create app/Support/PlatformTeamResolver.php extending
+   Spatie\Permission\DefaultTeamResolver, overriding getPermissionsTeamId() to return the
+   parent's value if set, otherwise 0 (the reserved platform team id). Register it in
+   config/permission.php as 'team_resolver' => \App\Support\PlatformTeamResolver::class.
+4. Create app/Enums/UserType.php as a string-backed PHP enum with cases PLATFORM ('platform'),
+   BRANCH ('branch'), DRIVER ('driver'), CUSTOMER ('customer'). Add a guard(): string method
+   returning the matching guard name (identical to the value for this project, since guard names
+   and user types share the same 4 strings) and a label(): string method for human-readable
+   display.
+5. Create a migration to add to the existing users table:
+   - user_type: string, not nullable, no default (values come from UserType enum: 'platform',
+     'branch','driver','customer')
+   - branch_id: foreignId, nullable, constrained references branches, nullOnDelete (this column
+     is null for platform/driver/customer users; it holds the actual owning branch only for
+     branch-type users — it is NOT the same as the Spatie team-scoping sentinel `0`, which is
+     resolved separately by PlatformTeamResolver and never stored on the user row)
    - is_active: boolean, default true
    Do NOT drop or rename existing columns from the starter kit's users table.
-4. Create a `branches` table migration: id, name (string), slug (string, unique), address (text, nullable),
+6. Create a `branches` table migration: id, name (string), slug (string, unique), address (text, nullable),
    latitude (decimal 10,7 nullable), longitude (decimal 10,7 nullable), is_active (boolean default true), timestamps.
-5. Register 4 additional guards in config/auth.php — platform, branch, driver, customer — all
+   Create the branches table BEFORE the users-table alteration migration above, since the
+   foreign key depends on it.
+7. Register 4 additional guards in config/auth.php — platform, branch, driver, customer — all
    driver=session, provider=users. Keep the default 'web' guard untouched. Add matching entries
    under 'passwords' for each of the 4 guards (provider=users, table=password_reset_tokens).
-6. Create app/Models/Branch.php with $fillable for the columns above, and a users() hasMany relation.
-7. Update app/Models/User.php:
+8. Create app/Models/Branch.php with $fillable for the columns above, and a users() hasMany relation.
+9. Update app/Models/User.php:
    - use Spatie\Permission\Traits\HasRoles
-   - add branch_id and user_type and is_active to $fillable
+   - add branch_id and user_type and is_active to the fillable set (use whatever fillable
+     mechanism this project's User model already uses — check before assuming a $fillable
+     property vs a PHP attribute)
+   - cast user_type to the UserType enum
    - add a branch() belongsTo(Branch::class) relation
-   - add boolean helper methods isPlatform(), isBranch(), isDriver(), isCustomer() that check user_type
-   - add a scope or accessor `guardName()` that returns the guard string matching user_type
-     (this will be used everywhere else in the app to avoid hardcoding guard names)
-8. Run `php artisan migrate` against the connected PostgreSQL database and confirm it succeeds
-   with no errors. Show me the output.
+   - add boolean helper methods isPlatform(), isBranch(), isDriver(), isCustomer() that check
+     the user_type enum (delegate to $this->user_type === UserType::X)
+   - add a guardName(): string method that returns $this->user_type->guard() — this will be
+     used everywhere else in the app to avoid hardcoding guard names
+10. Run `php artisan migrate` against the connected PostgreSQL database and confirm it succeeds
+    with no errors. Show me the output.
 
 Validation before you consider this phase done:
 - `php artisan migrate:status` shows all migrations ran
 - `php artisan tinker` → `App\Models\User::first()` does not error (table structure is valid even if empty)
+- `php artisan tinker` → `app(App\Support\PlatformTeamResolver::class)` resolves without a bound
+  team id and, when queried via `app(Spatie\Permission\PermissionRegistrar::class)->getPermissionsTeamId()`
+  with nothing explicitly set, returns `0`
 - config/auth.php has exactly 5 session guards: web, platform, branch, driver, customer, all on the users provider
 - Do not write any controllers, routes, or React pages in this phase — foundation only.
 ```
 
-**You confirm before moving on:** migrations ran clean, `branches` table exists, `users` table has the 3 new columns, `config/auth.php` has all 5 guards.
+**You confirm before moving on:** migrations ran clean, `branches` table exists, `users` table has the 3 new columns, `config/auth.php` has all 5 guards, `PlatformTeamResolver` defaults to team id `0`.
 
 ---
 
 ## Phase 2 — Roles, permissions, and seed data
 
-**Goal:** default roles/permissions exist, plus at least one test user per portal type to log in with.
+**Goal:** default roles/permissions exist (backed by enums), plus at least one test user per portal type to log in with.
 
 ### Master prompt for Cursor
 
 ```
 Building on Phase 1 (spatie/laravel-permission installed, teams enabled with team_foreign_key
-'branch_id', users table has user_type/branch_id/is_active).
+'branch_id', PlatformTeamResolver reserving team id 0 for platform scope, users table has
+user_type/branch_id/is_active, UserType enum exists).
 
-1. Create database/seeders/RolesAndPermissionsSeeder.php that:
-   - Defines a starter permission set as string constants or an array, covering at minimum:
-     'view-dashboard', 'manage-users', 'manage-roles', 'manage-branches' (platform scope)
-     'view-branch-dashboard', 'manage-branch-products', 'manage-branch-orders', 'manage-branch-staff' (branch scope)
-   - Creates all permissions via Spatie's Permission::firstOrCreate (guard_name aware — platform
-     permissions use guard 'platform', branch permissions use guard 'branch').
-   - Creates roles 'super-admin', 'admin', 'manager', 'staff' on guard 'platform' (team-less,
-     i.e. do NOT set a team id for these — they must be created while
-     app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId(null)).
-   - Creates roles 'super-admin', 'admin', 'manager', 'staff' on guard 'branch' PER SEEDED BRANCH
-     (teams-scoped — set the team id to that branch's id before creating/assigning).
+This rework replaces raw role/permission strings with PHP enums and replaces explicit
+`setPermissionsTeamId(null)` calls with relying on PlatformTeamResolver's default of `0`.
+
+1. Create app/Enums/PermissionEnum.php as a string-backed PHP enum covering at minimum:
+   VIEW_DASHBOARD ('view-dashboard'), MANAGE_USERS ('manage-users'), MANAGE_ROLES
+   ('manage-roles'), MANAGE_BRANCHES ('manage-branches') for platform scope; VIEW_BRANCH_DASHBOARD
+   ('view-branch-dashboard'), MANAGE_BRANCH_PRODUCTS ('manage-branch-products'),
+   MANAGE_BRANCH_ORDERS ('manage-branch-orders'), MANAGE_BRANCH_STAFF ('manage-branch-staff')
+   for branch scope. Add guard(): string (returns 'platform' for the first 4 cases, 'branch' for
+   the last 4), group(): string (a short grouping label for future admin UI), and a static
+   forGuard(string $guard): array helper returning all cases for that guard.
+
+2. Create app/Enums/RoleEnum.php as a string-backed PHP enum with cases SUPER_ADMIN
+   ('super-admin'), ADMIN ('admin'), MANAGER ('manager'), STAFF ('staff'). These role NAMES are
+   shared across both the platform and branch guards (same string, different guard_name /
+   team scope) — the enum itself does not encode scope, only the canonical name.
+
+3. Create database/seeders/RolesAndPermissionsSeeder.php that:
+   - Creates all 8 permissions via Spatie's Permission::firstOrCreate using
+     PermissionEnum::cases(), keyed by name + guard() (guard_name aware — platform
+     permissions use guard 'platform', branch permissions use guard 'branch')
+   - Creates the 4 RoleEnum roles on guard 'platform', relying on PlatformTeamResolver's default
+     team id (0) — do NOT call setPermissionsTeamId() for this; simply do not set a team id and
+     let the resolver supply 0.
+   - Exposes a public seedBranchRolesForBranch(Branch $branch) method that creates the 4
+     RoleEnum roles on guard 'branch' scoped explicitly to that branch's id via
+     setPermissionsTeamId($branch->id), then resets the team context back to unset (so the
+     resolver's default of 0 takes over again) when done.
    - Gives 'super-admin' roles (both guards) no permissions at all — they bypass via Gate::before,
      defined in Phase 5, not via permission assignment.
-   - Gives 'admin' most permissions, 'manager' a mid-tier subset, 'staff' minimal — use your judgment,
-     this is just seed data to develop against, not final business rules.
+   - Gives 'admin' most permissions, 'manager' a mid-tier subset, 'staff' minimal — use your
+     judgment, this is just seed data to develop against, not final business rules.
 
-2. Create database/seeders/BranchSeeder.php that creates 2 sample branches (e.g. "Downtown",
-   "Uptown") with realistic slugs.
+4. Create database/seeders/BranchSeeder.php that creates 2 sample branches (e.g. "Downtown",
+   "Uptown") with realistic slugs, and after creating each branch calls
+   RolesAndPermissionsSeeder::seedBranchRolesForBranch() for it (branch roles cannot exist before
+   the branch row does, so this ordering is required even though RolesAndPermissionsSeeder runs
+   first for platform roles).
 
-3. Create database/seeders/UserSeeder.php that creates exactly one test user per type, all
+5. Create database/seeders/UserSeeder.php that creates exactly one test user per type, all
    with password 'password' (hashed), all is_active = true:
-   - platform@test.com — user_type=platform, branch_id=null, assign role 'super-admin' on guard 'platform'
+   - platform@test.com — user_type=platform, branch_id=null, assign role RoleEnum::SUPER_ADMIN
+     on guard 'platform' while the team context is unset (resolver supplies 0)
    - branch@test.com — user_type=branch, branch_id = first seeded branch's id, assign role
-     'super-admin' on guard 'branch' scoped to that branch's team id
+     RoleEnum::SUPER_ADMIN on guard 'branch' scoped to that branch's team id
    - driver@test.com — user_type=driver, branch_id=null, no role needed
    - customer@test.com — user_type=customer, branch_id=null, no role needed
 
-4. Wire all three seeders into DatabaseSeeder::run() in the correct order (permissions/roles →
-   branches → users, since users depends on branches existing).
+6. Wire all three seeders into DatabaseSeeder::run() in the correct order (permissions/platform
+   roles → branches (+ branch roles) → users, since users depends on branches existing).
 
-5. Run `php artisan migrate:fresh --seed` and show me the output. Then confirm via tinker that
-   `App\Models\User::where('email','platform@test.com')->first()->hasRole('super-admin')` returns true
-   (remember to reset the permissions team id to null in tinker before this check, e.g.
-   app(\Spatie\Permission\PermissionRegistrar::class)->setPermissionsTeamId(null)).
+7. Run `php artisan migrate:fresh --seed` and show me the output. Then confirm via tinker that
+   `App\Models\User::where('email','platform@test.com')->first()->hasRole(RoleEnum::SUPER_ADMIN->value)`
+   returns true with NO explicit team id set (i.e. do not call setPermissionsTeamId at all before
+   this check — the resolver's default of 0 must be what makes it pass).
 
 Validation:
 - migrate:fresh --seed runs with zero errors
 - 4 users exist, one per user_type
 - 2 branches exist
-- platform@test.com has role super-admin on guard platform with team id null
+- platform@test.com has role super-admin on guard platform, resolved via the default team id (0),
+  with no explicit setPermissionsTeamId(null) call anywhere in the codebase
 - branch@test.com has role super-admin on guard branch scoped to their branch's team id
+- A unique index on (branch_id, name, guard_name) in the roles table would reject a duplicate
+  platform-scope role name — confirm this is enforceable (i.e. the migration was reverted to
+  Spatie's stock schema per the Team scoping model section, not the earlier nullable-pivot patch)
 ```
 
 ---
@@ -300,9 +370,11 @@ reach another portal's routes, and a branch user can never reach another branch'
 
 3. Set up app/Providers/AuthServiceProvider.php (or bootstrap/app.php's authorization section in
    L13) with a Gate::before() closure implementing the super-admin bypass:
-   - If Auth::user()->hasRole('super-admin') is true for the CURRENTLY ACTIVE guard (both platform
-     and branch use the role name 'super-admin', so check hasRole with the appropriate guard_name
-     matching Auth::user()->guardName()), return true unconditionally (full bypass, gate-pass style).
+   - If Auth::user()->hasRole(RoleEnum::SUPER_ADMIN->value) is true for the CURRENTLY ACTIVE guard
+     (both platform and branch use the same role name, so hasRole() checks against whichever
+     team id is active — 0 by default via PlatformTeamResolver on platform routes, or the branch's
+     id after ResolveBranchContext runs on branch routes), return true unconditionally (full
+     bypass, gate-pass style).
    - Otherwise return null (fall through to normal permission checks).
    - This must run AFTER team id is set for branch requests (order matters — Gate::before fires
      per-check at authorization time, not at middleware time, so as long as ResolveBranchContext
@@ -330,49 +402,103 @@ Validation (be thorough here, this is the security-critical phase):
 - An unauthenticated request to any of the 4 dashboard routes redirects to /login
 - Confirm Spatie's team id is correctly set during a branch request (e.g. temporarily dd() it in
   the middleware during manual testing, then remove the dd())
+- platform@test.com's super-admin role passes a Gate::allows() check with NO explicit team id set
+  (relying on PlatformTeamResolver's default of 0), proving the reserved-id model works end to end
 ```
 
 ---
 
-## Phase 6 — Basic protected dashboard UI (4 portals)
+## Phase 6 — Dashboards + frontend permission/tenancy infrastructure
 
-**Goal:** something to actually look at and click "logout" on.
+**Goal:** something to actually look at, with real permission-aware navigation and a reusable frontend pattern for every future page — not just a static "Welcome" screen.
+
+This phase was expanded after reviewing a reference multi-tenant project (`blake_lms_tenant`) that
+solved the same problem: a `usePermission()` hook reading flat `roles[]`/`permissions[]` arrays
+shared via Inertia, a data-driven navigation component that hides links the user can't use, and
+one layout composition pattern reused by every portal.
 
 ### Master prompt for Cursor
 
 ```
 Building on Phase 5 (routes and middleware exist and are verified working).
 
-1. Create one Inertia layout per portal, matching the starter kit's existing layout conventions:
+1. Backend — Inertia shared props: update app/Http/Middleware/HandleInertiaRequests.php (or the
+   equivalent Laravel 13 file in this starter kit) to share, on every request where a user is
+   authenticated on any guard:
+   - auth.user: the user's own attributes PLUS a flat roles: string[] (from getRoleNames(), for
+     the CURRENTLY active guard/team) and permissions: string[] (from
+     getAllPermissions()->pluck('name')) and is_super_admin: bool
+     (hasRole(RoleEnum::SUPER_ADMIN->value)).
+   - portal: one of 'platform' | 'branch' | 'driver' | 'customer', derived from user_type, so the
+     frontend layout resolver can pick the right chrome without re-deriving it from the URL.
+   - branch: null outside the branch portal; otherwise { id, name, slug } for the current branch
+     (from app('currentBranch') bound in Phase 5's ResolveBranchContext).
+   Be precise about WHEN roles/permissions are read — they must reflect whichever Spatie team id
+   is active for this request (0 for platform/driver/customer routes via PlatformTeamResolver,
+   the branch's id for branch routes via ResolveBranchContext already having run).
+
+2. Frontend — permission hook: create resources/js/hooks/use-permissions.tsx exporting
+   usePermission() that reads auth.user.roles / auth.user.permissions / auth.user.is_super_admin
+   from Inertia's usePage().props and exposes can(permission), canAny(permissions[]),
+   canAll(permissions[]), hasRole(role), hasAnyRole(roles[]) — super-admin bypasses all can*
+   checks. Create resources/js/types/permissions.ts with a PermissionKey union type generated
+   from (or manually mirroring) the PermissionEnum cases from Phase 2, so permission strings used
+   in the frontend are typo-checked at compile time.
+
+3. Frontend — tenancy hook: create resources/js/hooks/use-branch.ts exporting useBranch() that
+   reads the branch shared prop and throws a clear error if called outside the branch portal
+   (fails loudly during development rather than silently rendering wrong data). Type it in
+   resources/js/types/tenant.ts as a BranchContext interface { id, name, slug }.
+
+4. Frontend — layouts: create one Inertia layout per portal, matching the starter kit's existing
+   layout conventions:
    resources/js/Layouts/PlatformLayout.tsx
    resources/js/Layouts/BranchLayout.tsx
    resources/js/Layouts/DriverLayout.tsx
    resources/js/Layouts/CustomerLayout.tsx
-   Each should render: a simple top bar with the portal name, the logged-in user's name/email,
-   and a logout button (POST to /logout, use Inertia's router.post). Keep styling minimal/basic —
-   reuse whatever CSS/UI kit the starter kit already ships with (Tailwind, shadcn, etc.) rather
-   than introducing a new one.
+   Each composes the same shell: a sidebar (built in step 5) + a content area with a top bar
+   showing the portal name, the logged-in user's name/email, and a logout button (POST to
+   /logout, use Inertia's router.post). Keep styling minimal/basic — reuse whatever CSS/UI kit
+   the starter kit already ships with (Tailwind, shadcn, etc.) rather than introducing a new one.
 
-2. Create matching controllers:
+5. Frontend — data-driven navigation: create resources/js/components/navigation/ with:
+   - types.ts: a NavNode interface { title, href, icon?, permissions?: PermissionKey[], items?:
+     NavNode[] } — permissions is an ANY-match gate (user needs at least one to see the item).
+   - nav-utils.ts: filterNavNodes(nodes, canAny) that recursively drops nodes the user can't see
+     and drops now-empty parent groups.
+   - sidebar-nav.tsx: renders the filtered tree, calling usePermission().canAny() internally.
+   Build 4 small nav arrays (one per portal, e.g. resources/js/components/platform/nav.ts) — for
+   now each just needs a "Dashboard" entry gated by the matching view-dashboard /
+   view-branch-dashboard permission; driver/customer have no permission gates (they have no
+   roles per the locked decisions) so their nav items omit the permissions key entirely.
+
+6. Backend controllers + routes: create matching controllers:
    app/Http/Controllers/Platform/DashboardController.php → renders resources/js/Pages/Platform/Dashboard.tsx
    app/Http/Controllers/Branch/DashboardController.php → renders resources/js/Pages/Branch/Dashboard.tsx,
      passing the current branch (from app('currentBranch')) as a prop
    app/Http/Controllers/Driver/DashboardController.php → renders resources/js/Pages/Driver/Dashboard.tsx
    app/Http/Controllers/Customer/DashboardController.php → renders resources/js/Pages/Customer/Dashboard.tsx
-   Each Dashboard.tsx page wraps itself in its matching Layout and shows a simple "Welcome, {name}"
-   message plus (for platform/branch) the user's current role name(s).
-
-3. Wire these controllers into the route groups defined in Phase 5 (replace the placeholder
+   Each Dashboard.tsx page wraps itself in its matching Layout (using the sidebar-nav from step 5)
+   and shows a simple "Welcome, {name}" message plus (for platform/branch) the user's current
+   role name(s) via usePermission().hasRole() or the shared roles[] array directly.
+   Wire these controllers into the route groups defined in Phase 5 (replace the placeholder
    GET /dashboard closures with these controller actions).
 
-4. For the branch dashboard specifically, also display the branch name/slug so it's visually
-   obvious which branch context you're in — useful for manually testing isolation later.
+7. For the branch dashboard specifically, also display the branch name/slug (via useBranch())
+   so it's visually obvious which branch context you're in — useful for manually testing
+   isolation later.
 
 Validation:
 - All 4 test users can log in via /login and land on a dashboard that renders without errors,
   shows their name, and (platform/branch) shows their super-admin role
+- The sidebar nav renders the Dashboard link for platform/branch users and hides nothing
+  incorrectly (there's only one nav item right now, but confirm the permission check actually
+  runs — temporarily seed a 'staff' user without view-dashboard to confirm the link disappears,
+  then remove that test user if it's not part of the real seed data)
 - Logout button works and returns to /login
 - Directly hitting another portal's dashboard URL while logged in still redirects/403s as per Phase 5
+- useBranch() throws if you (temporarily, for testing) call it from a non-branch page — confirms
+  the "fail loudly" behavior works
 ```
 
 ---
@@ -411,10 +537,15 @@ be exhaustive:
 - branch@test.com gets 403 attempting to visit a second seeded branch's dashboard URL
 - An unauthenticated client gets redirected to /login from all 4 dashboard routes
 - platform@test.com's super-admin role passes a Gate::allows() check for an arbitrary/undefined
-  permission string (proving the Gate::before bypass works) while a non-super-admin platform
-  role (seed one via the RolesAndPermissionsSeeder if not already present, e.g. 'staff') does NOT
-  pass the same check
+  permission string with NO explicit team id set (proving the PlatformTeamResolver default-to-0
+  bypass works) while a non-super-admin platform role (seed one via the
+  RolesAndPermissionsSeeder if not already present, e.g. RoleEnum::STAFF) does NOT pass the same
+  check
 - Same super-admin-bypass assertion for branch@test.com scoped correctly to their team/branch
+- A unique-constraint regression test: attempting to create a second platform-scope role with
+  the same name (relying on the resolver's default team id of 0, not an explicit null) throws a
+  database unique-constraint violation — this locks in the Phase 1 rework's fix for the
+  NULL-uniqueness gap
 
 Create tests/Feature/Auth/LogoutTest.php covering:
 - Logging out only ends the session on the currently active guard — log in as platform in one
@@ -428,14 +559,128 @@ underlying code (middleware, controller, seeder) rather than loosening the test'
 
 ---
 
+## Phase 8 — Role/Permission/Branch-staff management UI
+
+**Goal:** platform admins can manage platform roles, permissions, and the branch directory through
+real CRUD screens instead of tinker/seeders; branch admins can manage their own branch's staff
+within the permissions they've been granted. This is new ground for this project — the original
+7-phase plan only ever seeded roles/permissions, it never gave anyone a UI to manage them.
+
+This phase mirrors a working pattern from the `blake_lms_tenant` reference project's
+`platform/roles`, `platform/permissions`, and `platform/people` pages and their backend
+controllers, adapted down to this project's simpler platform/branch (no school layer) model.
+
+### Master prompt for Cursor
+
+```
+Building on Phases 1–7 (auth, isolation, and the frontend permission infrastructure from Phase 6
+are all in place and tested).
+
+1. Backend — Platform\RoleController (app/Http/Controllers/Platform/RoleController.php):
+   - index: paginated list of platform-guard roles (team id via PlatformTeamResolver's default,
+     0), with search by name and a permission-count column
+   - create/store: create a new platform-guard role (name unique per team+guard), assign
+     permissions from PermissionEnum::forGuard('platform')
+   - show: role detail with its permission list and assigned users
+   - edit/update: rename (blocked for 'super-admin') and re-sync permissions
+   - destroy: delete (blocked for 'super-admin' and for any role with assigned users — return a
+     clear validation error, don't silently orphan assignments)
+   Protect all actions with Spatie `permission:` route middleware using PermissionEnum::MANAGE_ROLES.
+
+2. Backend — Platform\PermissionController (app/Http/Controllers/Platform/PermissionController.php):
+   - index only (read-only catalog) — permissions are enum-defined and seeded, not created via UI.
+     List all platform-guard permissions grouped by PermissionEnum::group(), with a role-count
+     per permission.
+   Protect with PermissionEnum::MANAGE_ROLES or a dedicated view-permissions permission if you
+   prefer finer granularity — use your judgment, document the choice in the PR/commit.
+
+3. Backend — Platform\BranchStaffController (app/Http/Controllers/Platform/BranchStaffController.php)
+   for platform admins, and Branch\StaffController (app/Http/Controllers/Branch/StaffController.php)
+   for branch admins managing their OWN branch only:
+   - Platform\BranchStaffController: index/show across ALL branches (platform admin oversight),
+     filterable by branch
+   - Branch\StaffController: index/create/store/edit/update/destroy scoped to
+     app('currentBranch') only (from Phase 5's ResolveBranchContext) — a branch admin can never
+     see or modify another branch's staff, enforced at the query level, not just the UI
+   - Both use the branch guard's roles (RoleEnum) when assigning staff roles, scoped to the
+     correct branch team id
+   - Deleting/deactivating the last super-admin of a branch should be blocked with a clear error
+
+4. Frontend — resources/js/Pages/Platform/Roles/{Index,Create,Edit,Show}.tsx and
+   resources/js/Pages/Platform/Permissions/Index.tsx and
+   resources/js/Pages/Platform/BranchStaff/{Index,Show}.tsx and
+   resources/js/Pages/Branch/Staff/{Index,Create,Edit}.tsx:
+   - Reuse the PlatformLayout/BranchLayout and sidebar nav from Phase 6; add new nav items gated
+     by PermissionEnum::MANAGE_ROLES / MANAGE_USERS / MANAGE_BRANCHES / MANAGE_BRANCH_STAFF as
+     appropriate per portal
+   - Role create/edit form: a shared PermissionSelector component (checkbox list grouped by
+     PermissionEnum::group()) — build this as a small reusable component since both role forms
+     need it
+   - Use the starter kit's existing table/pagination/form components (check the shadcn
+     registry for this project before hand-rolling a data table)
+
+5. Form Requests: StoreRoleRequest/UpdateRoleRequest (name uniqueness per guard+team, reserved
+   'super-admin' name blocked from creation/rename, permissions must belong to the same guard as
+   the role), StoreBranchStaffRequest/UpdateBranchStaffRequest (email uniqueness, branch_id
+   forced to the current branch context server-side — never trust a client-submitted branch_id).
+
+Validation:
+- Platform admin can create a new platform role, assign a subset of permissions, and a test user
+  assigned that role sees exactly the nav items/permissions granted (spot check with can())
+- Platform admin cannot rename or delete 'super-admin'
+- Branch admin at Downtown cannot see or edit Uptown's staff via any route (try the API route
+  directly with Downtown's session, not just checking the UI hides the link)
+- Deleting the last super-admin of a branch is blocked with a clear validation error
+- All new routes are covered by the existing `ensure.guard`/`resolve.branch` middleware from
+  Phase 5 — no new bypass of the isolation boundary was introduced
+- Write feature tests for the above (extend tests/Feature/ from Phase 7 rather than starting a
+  separate untested surface) and paste the full test run output
+```
+
+---
+
+## Phase 9 — Shared infrastructure (deferred)
+
+**Goal:** port genuinely reusable, non-auth-specific UI/dev infrastructure from the `blake_lms_tenant`
+reference project, once the full auth system (Phases 1–8) is complete and tested. This phase is
+intentionally lower priority — do not start it until Phase 8's validation checklist is fully green.
+
+**Why deferred:** none of the items below affect the auth/isolation boundary. Building them early
+risks scope creep and distracts from getting the security-critical phases (3–5, 7–8) airtight
+first.
+
+**Scope for this phase (fleshed out in detail when its turn comes):**
+
+- **Error boundary** — a React error boundary component with a dev-mode overlay (stack trace,
+  component stack, error history in sessionStorage) and a friendly production fallback
+  (reload/back/home actions), wrapping the app root similar to `blake_lms_tenant`'s
+  `resources/js/components/error-boundary/` module.
+- **Icon picker system** — a Lucide icon picker (`resources/js/components/icons/`,
+  `resources/js/lib/icon-catalog.ts`, `icons.tsx`, `lucide-icon-cache.ts`) for any future admin UI
+  that needs to let users pick an icon (e.g. branch/category icons) — generated catalog + lazy
+  dynamic-import caching, not bundling all ~1,700 icons up front.
+- **File upload component** — a reusable drag-drop file upload component with per-file progress,
+  existing-file previews, size/type/count validation, and an avatar variant, for future features
+  that need attachments (e.g. branch photos, product images, delivery proof-of-photo for drivers).
+- **Laravel Telescope** — install for local/staging debugging (query log, request log, exceptions),
+  gated behind a `viewTelescope` gate allow-list so it's not exposed in production without explicit
+  opt-in, mirroring `blake_lms_tenant`'s `TelescopeServiceProvider` customization.
+
+A detailed master prompt with file lists and validation checklist for this phase will be written
+when Phase 8 is done and it's time to actually start it — write it fresh against the codebase's
+state at that time rather than guessing now.
+
+---
+
 ## After this: what's deliberately out of scope for now
 
-Once Phase 7 is green, you have a working, tested, isolated 4-portal auth system. Explicitly *not* covered yet (future work, don't let an agent scope-creep into these):
+Once Phase 9 is green, you have a working, tested, isolated 4-portal auth system with real admin
+management UI and shared infra. Explicitly *not* covered yet (future work, don't let an agent
+scope-creep into these):
 
-- Permission-driven sidebar show/hide (needs actual nav components + `can()` checks wired into them)
 - Branch product/stock/order CRUD
 - Order placement, geo-nearest-branch calculation, delivery charge calculation
 - Driver notification-on-order and accept/claim flow
 - Real-time location tracking (would need broadcasting — Reverb/Pusher — not installed yet)
 
-Worth doing a short review pass after Phase 7 before moving into any of those, just to make sure nothing in the isolation layer needs hardening once real business data is on the line.
+Worth doing a short review pass after Phase 9 before moving into any of those, just to make sure nothing in the isolation layer needs hardening once real business data is on the line.
