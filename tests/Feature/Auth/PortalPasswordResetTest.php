@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Authoritative multi-guard password reset feature tests (Phases 4–7).
+ * Starter-kit smoke coverage remains in PasswordResetTest.php.
+ */
+
 use App\Models\User;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;

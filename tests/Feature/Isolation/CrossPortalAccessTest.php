@@ -12,9 +12,7 @@ beforeEach(function () {
 });
 
 test('guests are redirected to login from all portal dashboards', function (string $url) {
-    $response = $this->get($url);
-
-    $response->assertRedirect(route('login'));
+    $this->get($url)->assertRedirect(route('login'));
 })->with([
     'platform' => ['/platform/dashboard'],
     'branch' => ['/branch/downtown/dashboard'],
@@ -22,93 +20,75 @@ test('guests are redirected to login from all portal dashboards', function (stri
     'customer' => ['/dashboard'],
 ]);
 
-test('platform user can access platform dashboard only', function () {
-    $user = User::query()->where('email', 'platform@test.com')->firstOrFail();
+test('authenticated users can access their own portal dashboard', function (
+    string $email,
+    string $guard,
+    string $dashboardUrl,
+) {
+    $user = User::query()->where('email', $email)->firstOrFail();
 
-    $this->actingAs($user, 'platform')
-        ->get('/platform/dashboard')
+    $this->actingAs($user, $guard)
+        ->get($dashboardUrl)
         ->assertOk();
+})->with([
+    'platform' => ['platform@test.com', 'platform', '/platform/dashboard'],
+    'branch' => ['branch@test.com', 'branch', '/branch/downtown/dashboard'],
+    'driver' => ['driver@test.com', 'driver', '/driver/dashboard'],
+    'customer' => ['customer@test.com', 'customer', '/dashboard'],
+]);
 
-    $this->actingAs($user, 'platform')
-        ->get('/branch/downtown/dashboard')
-        ->assertRedirect(route('login'));
+test('authenticated users cannot access other portal dashboards', function (
+    string $email,
+    string $guard,
+    string $foreignDashboardUrl,
+    int $expectedStatus,
+) {
+    $user = User::query()->where('email', $email)->firstOrFail();
 
-    $this->actingAs($user, 'platform')
-        ->get('/branch/uptown/dashboard')
-        ->assertRedirect(route('login'));
+    $response = $this->actingAs($user, $guard)->get($foreignDashboardUrl);
 
-    $this->actingAs($user, 'platform')
-        ->get('/driver/dashboard')
-        ->assertRedirect(route('login'));
+    if ($expectedStatus === 302) {
+        $response->assertRedirect(route('login'));
+    } else {
+        $response->assertStatus($expectedStatus);
+    }
+})->with([
+    'platform to branch downtown' => ['platform@test.com', 'platform', '/branch/downtown/dashboard', 302],
+    'platform to driver' => ['platform@test.com', 'platform', '/driver/dashboard', 302],
+    'platform to customer' => ['platform@test.com', 'platform', '/dashboard', 302],
+    'branch to platform' => ['branch@test.com', 'branch', '/platform/dashboard', 302],
+    'branch to driver' => ['branch@test.com', 'branch', '/driver/dashboard', 302],
+    'branch to customer' => ['branch@test.com', 'branch', '/dashboard', 302],
+    'driver to platform' => ['driver@test.com', 'driver', '/platform/dashboard', 302],
+    'driver to branch downtown' => ['driver@test.com', 'driver', '/branch/downtown/dashboard', 302],
+    'driver to customer' => ['driver@test.com', 'driver', '/dashboard', 302],
+    'customer to platform' => ['customer@test.com', 'customer', '/platform/dashboard', 302],
+    'customer to branch downtown' => ['customer@test.com', 'customer', '/branch/downtown/dashboard', 302],
+    'customer to driver' => ['customer@test.com', 'customer', '/driver/dashboard', 302],
+]);
 
-    $this->actingAs($user, 'platform')
-        ->get('/dashboard')
-        ->assertRedirect(route('login'));
-});
-
-test('branch user can access their branch dashboard only', function () {
+test('branch user receives forbidden when visiting another branch dashboard', function () {
     $user = User::query()->where('email', 'branch@test.com')->firstOrFail();
-
-    $this->actingAs($user, 'branch')
-        ->get('/branch/downtown/dashboard')
-        ->assertOk();
 
     $this->actingAs($user, 'branch')
         ->get('/branch/uptown/dashboard')
         ->assertForbidden();
-
-    $this->actingAs($user, 'branch')
-        ->get('/platform/dashboard')
-        ->assertRedirect(route('login'));
-
-    $this->actingAs($user, 'branch')
-        ->get('/driver/dashboard')
-        ->assertRedirect(route('login'));
-
-    $this->actingAs($user, 'branch')
-        ->get('/dashboard')
-        ->assertRedirect(route('login'));
 });
 
-test('driver user can access driver dashboard only', function () {
-    $user = User::query()->where('email', 'driver@test.com')->firstOrFail();
+test('non branch users are redirected to login from alternate branch slugs', function (
+    string $email,
+    string $guard,
+) {
+    $user = User::query()->where('email', $email)->firstOrFail();
 
-    $this->actingAs($user, 'driver')
-        ->get('/driver/dashboard')
-        ->assertOk();
-
-    $this->actingAs($user, 'driver')
-        ->get('/platform/dashboard')
+    $this->actingAs($user, $guard)
+        ->get('/branch/uptown/dashboard')
         ->assertRedirect(route('login'));
-
-    $this->actingAs($user, 'driver')
-        ->get('/branch/downtown/dashboard')
-        ->assertRedirect(route('login'));
-
-    $this->actingAs($user, 'driver')
-        ->get('/dashboard')
-        ->assertRedirect(route('login'));
-});
-
-test('customer user can access customer dashboard only', function () {
-    $user = User::query()->where('email', 'customer@test.com')->firstOrFail();
-
-    $this->actingAs($user, 'customer')
-        ->get('/dashboard')
-        ->assertOk();
-
-    $this->actingAs($user, 'customer')
-        ->get('/platform/dashboard')
-        ->assertRedirect(route('login'));
-
-    $this->actingAs($user, 'customer')
-        ->get('/branch/downtown/dashboard')
-        ->assertRedirect(route('login'));
-
-    $this->actingAs($user, 'customer')
-        ->get('/driver/dashboard')
-        ->assertRedirect(route('login'));
-});
+})->with([
+    'platform' => ['platform@test.com', 'platform'],
+    'driver' => ['driver@test.com', 'driver'],
+    'customer' => ['customer@test.com', 'customer'],
+]);
 
 test('inactive portal user is logged out and redirected to login', function () {
     $user = User::query()->where('email', 'platform@test.com')->firstOrFail();

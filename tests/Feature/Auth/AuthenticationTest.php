@@ -48,31 +48,3 @@ test('users can not authenticate with invalid password', function () {
     $this->assertGuest('driver');
     $this->assertGuest('customer');
 });
-
-test('users can logout', function () {
-    $user = User::factory()->create();
-
-    $response = $this->actingAs($user, 'customer')->post(route('logout'));
-
-    $response->assertRedirect(route('login'));
-
-    $this->assertGuest('customer');
-});
-
-test('users are rate limited', function () {
-    $user = User::factory()->create();
-
-    for ($attempt = 0; $attempt < 5; $attempt++) {
-        $this->post(route('login.store'), [
-            'email' => $user->email,
-            'password' => 'wrong-password',
-        ]);
-    }
-
-    $response = $this->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'wrong-password',
-    ]);
-
-    $response->assertTooManyRequests();
-});

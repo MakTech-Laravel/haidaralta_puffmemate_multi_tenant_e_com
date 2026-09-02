@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\User;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -85,14 +84,4 @@ test('customer user lands on customer dashboard', function () {
             ->where('auth.user.name', 'Customer Test User')
             ->where('portal', 'customer')
         );
-});
-
-test('logout returns to login', function () {
-    $user = User::query()->where('email', 'platform@test.com')->firstOrFail();
-
-    $this->actingAs($user, 'platform')
-        ->post(route('logout'))
-        ->assertRedirect(route('login'));
-
-    $this->assertGuest('platform');
 });

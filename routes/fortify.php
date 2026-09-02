@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -13,7 +14,6 @@ use Laravel\Fortify\Http\Controllers\EmailVerificationPromptController;
 use Laravel\Fortify\Http\Controllers\PasswordController;
 use Laravel\Fortify\Http\Controllers\ProfileInformationController;
 use Laravel\Fortify\Http\Controllers\RecoveryCodeController;
-use Laravel\Fortify\Http\Controllers\RegisteredUserController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\TwoFactorQrCodeController;
@@ -67,13 +67,11 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
     // Registration...
     if (Features::enabled(Features::registration())) {
         if ($enableViews) {
-            Route::get(RoutePath::for('register', '/register'), [RegisteredUserController::class, 'create'])
-                ->middleware(['guest:'.config('fortify.guard')])
+            Route::get(RoutePath::for('register', '/register'), [RegisterController::class, 'create'])
                 ->name('register');
         }
 
-        Route::post(RoutePath::for('register', '/register'), [RegisteredUserController::class, 'store'])
-            ->middleware(['guest:'.config('fortify.guard')])
+        Route::post(RoutePath::for('register', '/register'), [RegisterController::class, 'store'])
             ->name('register.store');
     }
 
