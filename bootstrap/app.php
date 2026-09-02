@@ -29,6 +29,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'ensure.guard' => EnsurePortalGuard::class,
             'resolve.branch' => ResolveBranchContext::class,
         ]);
+
+        $middleware->priority([
+            EnsurePortalGuard::class,
+            ResolveBranchContext::class,
+            HandleInertiaRequests::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
