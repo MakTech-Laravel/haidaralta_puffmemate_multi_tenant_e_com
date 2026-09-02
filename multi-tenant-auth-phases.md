@@ -269,7 +269,7 @@ convenient.
        platform → /platform/dashboard
        branch   → /branch/{branch-slug}/dashboard   (look up the user's branch relation for the slug)
        driver   → /driver/dashboard
-       customer → /customer/dashboard
+       customer → /dashboard
    - POST /logout → log out of the CURRENT guard only (determine which guard is active by
      checking each of the 4 guards for an authenticated user), invalidate session, regenerate
      CSRF token, redirect to /login.
@@ -288,7 +288,7 @@ but sanity-check now):
   just confirm the redirect target)
 - Logging in as branch@test.com lands on /branch/{their-slug}/dashboard
 - Logging in as driver@test.com lands on /driver/dashboard
-- Logging in as customer@test.com lands on /customer/dashboard
+- Logging in as customer@test.com lands on /dashboard
 - Wrong password shows a generic error, not "wrong password" specifically
 - Submitting a non-existent email shows the SAME generic error (no user enumeration)
 - 6th rapid login attempt within a minute is rate-limited

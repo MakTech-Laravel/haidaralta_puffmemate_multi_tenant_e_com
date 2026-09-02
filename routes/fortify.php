@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Http\Controllers\ConfirmablePasswordController;
@@ -8,9 +10,7 @@ use Laravel\Fortify\Http\Controllers\ConfirmedPasswordStatusController;
 use Laravel\Fortify\Http\Controllers\ConfirmedTwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\EmailVerificationNotificationController;
 use Laravel\Fortify\Http\Controllers\EmailVerificationPromptController;
-use Laravel\Fortify\Http\Controllers\NewPasswordController;
 use Laravel\Fortify\Http\Controllers\PasswordController;
-use Laravel\Fortify\Http\Controllers\PasswordResetLinkController;
 use Laravel\Fortify\Http\Controllers\ProfileInformationController;
 use Laravel\Fortify\Http\Controllers\RecoveryCodeController;
 use Laravel\Fortify\Http\Controllers\RegisteredUserController;
@@ -49,21 +49,18 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
     // Password Reset...
     if (Features::enabled(Features::resetPasswords())) {
         if ($enableViews) {
-            Route::get(RoutePath::for('password.request', '/forgot-password'), [PasswordResetLinkController::class, 'create'])
-                ->middleware(['guest:'.config('fortify.guard')])
+            Route::get(RoutePath::for('password.request', '/forgot-password'), [ForgotPasswordController::class, 'create'])
                 ->name('password.request');
 
-            Route::get(RoutePath::for('password.reset', '/reset-password/{token}'), [NewPasswordController::class, 'create'])
-                ->middleware(['guest:'.config('fortify.guard')])
+            Route::get(RoutePath::for('password.reset', '/reset-password/{token}'), [ResetPasswordController::class, 'create'])
                 ->name('password.reset');
         }
 
-        Route::post(RoutePath::for('password.email', '/forgot-password'), [PasswordResetLinkController::class, 'store'])
-            ->middleware(['guest:'.config('fortify.guard')])
+        Route::post(RoutePath::for('password.email', '/forgot-password'), [ForgotPasswordController::class, 'store'])
+            ->middleware(['throttle:password-reset'])
             ->name('password.email');
 
-        Route::post(RoutePath::for('password.update', '/reset-password'), [NewPasswordController::class, 'store'])
-            ->middleware(['guest:'.config('fortify.guard')])
+        Route::post(RoutePath::for('password.update', '/reset-password'), [ResetPasswordController::class, 'store'])
             ->name('password.update');
     }
 
