@@ -27,6 +27,11 @@ class Branch extends Model
         return $this->hasMany(User::class);
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     /**
      * @return array<string, string>
      */
