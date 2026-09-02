@@ -111,7 +111,15 @@ resources/js/
 │   ├── branch/nav.ts
 │   ├── driver/nav.ts
 │   ├── customer/nav.ts
-│   └── permission-selector.tsx   # Phase 8, shared by role create/edit forms
+│   ├── permission-selector.tsx   # Phase 8, shared by role create/edit forms
+│   ├── file-upload.tsx           # Full uploader + lightbox
+│   ├── file-upload-avatar.tsx    # Avatar wrapper
+│   ├── error-boundary/           # react-error-boundary (dev overlay + prod)
+│   ├── icons/                    # Full Lucide picker (dialog/sheet/collapsible)
+│   └── navigation/               # Nested SidebarNav, badges, flyouts
+├── lib/
+│   ├── icon-catalog.ts           # Phase 9 (generated)
+│   └── lucide-icon-cache.ts      # Phase 9 lazy Lucide loader
 ├── hooks/
 │   ├── use-permissions.tsx   # can/canAny/canAll/hasRole/hasAnyRole
 │   └── use-branch.ts         # branch context, throws outside the branch portal
@@ -125,22 +133,14 @@ docs/                      # you are here
 ├── middleware-and-tenancy.md
 ├── layouts-and-dashboards.md
 ├── permission-checks-in-ui.md
+├── shared-infrastructure.md      # Phase 9
 └── project-structure.md
 
 multi-tenant-auth-phases.md   # phase-by-phase build plan + master prompts (project root)
 ```
 
-## Deferred (Phase 9, not part of the auth system)
+## Shared components (Phase 9)
 
-```
-app/Http/Middleware/          # + any Telescope gate config
-config/telescope.php
-resources/js/components/error-boundary/
-resources/js/components/icons/
-resources/js/lib/icon-catalog.ts, icons.tsx, lucide-icon-cache.ts
-resources/js/components/file-upload.tsx
-```
-
-These are ported as generic, non-auth-specific UI/dev infrastructure once Phase 8 is complete —
-see Phase 9 in [`multi-tenant-auth-phases.md`](../multi-tenant-auth-phases.md) for scope and
-rationale.
+See [shared-infrastructure.md](shared-infrastructure.md) for error boundary, icon picker,
+file upload, and Telescope setup. These are generic UI/dev tools — they do not alter the
+auth or isolation boundary.

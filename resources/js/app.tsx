@@ -1,7 +1,12 @@
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
+import { AlertTriangle, CheckCircle, Info, XCircle } from 'lucide-react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { ErrorBoundaryFallback } from '@/components/error-boundary/error-boundary-fallback';
+import { pushError } from '@/components/error-boundary/error-store';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
+import { useDevErrorFallback } from '@/hooks/useDevErrorFallback';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import BranchLayout from '@/layouts/branch/branch-layout';
@@ -38,8 +43,32 @@ void createInertiaApp({
     withApp(app) {
         return (
             <TooltipProvider delayDuration={0}>
-                {app}
-                <Toaster />
+                <ErrorBoundary
+                    FallbackComponent={ErrorBoundaryFallback}
+                    onReset={() => router.reload()}
+                    onError={(error, info) => {
+                        pushError(error, info.componentStack ?? null);
+
+                        if (useDevErrorFallback()) {
+                            console.error(error, info.componentStack);
+                        }
+                    }}
+                >
+                    {app}
+                </ErrorBoundary>
+                <Toaster
+                    position="bottom-right"
+                    richColors
+                    closeButton
+                    expand={true}
+                    duration={3000}
+                    icons={{
+                        success: <CheckCircle className="h-4 w-4" />,
+                        error: <XCircle className="h-4 w-4" />,
+                        warning: <AlertTriangle className="h-4 w-4" />,
+                        info: <Info className="h-4 w-4" />,
+                    }}
+                />
             </TooltipProvider>
         );
     },

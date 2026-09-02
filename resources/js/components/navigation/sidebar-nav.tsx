@@ -1,48 +1,63 @@
-import { Link } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
-import { filterNavNodes } from '@/components/navigation/nav-utils';
-import type { NavNode } from '@/components/navigation/types';
+import { useMemo } from 'react';
 import {
     SidebarGroup,
     SidebarGroupLabel,
     SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { usePermission } from '@/hooks/use-permissions';
+import { cn } from '@/lib/utils';
+import { NavNodeItem } from './nav-node';
+import { filterNavNodes } from './nav-utils';
+import type { NavNode, NavNodeClassNames } from './types';
 
-type SidebarNavProps = {
-    nodes: NavNode[];
-    groupLabel: string;
-};
+interface SidebarNavProps {
+    items: NavNode[];
+    /** Optional group heading (hidden automatically in icon mode). */
+    label?: string;
+    /** Class for the wrapping `SidebarGroup`. */
+    className?: string;
+    /**
+     * Default per-slot classes applied to every item. Individual items can
+     * still override these via their own `classNames`.
+     */
+    classNames?: NavNodeClassNames;
+}
 
-export function SidebarNav({ nodes, groupLabel }: SidebarNavProps) {
+/**
+ * Permission-aware, infinitely-nestable navigation for the shadcn Sidebar.
+ * Renders nothing if the user can see none of the supplied items.
+ */
+export function SidebarNav({
+    items,
+    label,
+    className,
+    classNames,
+}: SidebarNavProps) {
     const { canAny } = usePermission();
-    const { isCurrentUrl } = useCurrentUrl();
-    const visibleNodes = filterNavNodes(nodes, canAny);
+    const { currentUrl } = useCurrentUrl();
 
-    if (visibleNodes.length === 0) {
+    const visible = useMemo(
+        () => filterNavNodes(items, canAny),
+        [items, canAny],
+    );
+
+    if (visible.length === 0) {
         return null;
     }
 
     return (
-        <SidebarGroup className="px-2 py-0">
-            <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>
+        <SidebarGroup className={cn('px-2 py-0', className)}>
+            {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
             <SidebarMenu>
-                {visibleNodes.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                            asChild
-                            isActive={isCurrentUrl(item.href)}
-                            tooltip={{ children: item.title }}
-                        >
-                            <Link href={item.href} prefetch>
-                                {item.icon && <item.icon />}
-                                <span>{item.title}</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
+                {visible.map((node) => (
+                    <NavNodeItem
+                        key={node.title}
+                        node={node}
+                        depth={0}
+                        currentPath={currentUrl}
+                        defaults={classNames}
+                    />
                 ))}
             </SidebarMenu>
         </SidebarGroup>

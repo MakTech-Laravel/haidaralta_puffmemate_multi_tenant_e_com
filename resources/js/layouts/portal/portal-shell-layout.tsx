@@ -48,7 +48,7 @@ export function PortalShellLayout({
                 </SidebarHeader>
 
                 <SidebarContent>
-                    <SidebarNav nodes={nodes} groupLabel={groupLabel} />
+                    <SidebarNav items={nodes} label={groupLabel} />
                 </SidebarContent>
 
                 <SidebarFooter>
