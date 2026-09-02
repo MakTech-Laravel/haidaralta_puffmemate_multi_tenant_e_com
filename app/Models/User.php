@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserType;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -22,7 +23,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string $password
- * @property string $user_type
+ * @property UserType $user_type
  * @property int|null $branch_id
  * @property bool $is_active
  * @property string|null $two_factor_secret
@@ -50,33 +51,27 @@ class User extends Authenticatable implements PasskeyUser
 
     public function isPlatform(): bool
     {
-        return $this->user_type === 'platform';
+        return $this->user_type === UserType::PLATFORM;
     }
 
     public function isBranch(): bool
     {
-        return $this->user_type === 'branch';
+        return $this->user_type === UserType::BRANCH;
     }
 
     public function isDriver(): bool
     {
-        return $this->user_type === 'driver';
+        return $this->user_type === UserType::DRIVER;
     }
 
     public function isCustomer(): bool
     {
-        return $this->user_type === 'customer';
+        return $this->user_type === UserType::CUSTOMER;
     }
 
     public function guardName(): string
     {
-        return match ($this->user_type) {
-            'platform' => 'platform',
-            'branch' => 'branch',
-            'driver' => 'driver',
-            'customer' => 'customer',
-            default => throw new \InvalidArgumentException("Unknown user type: {$this->user_type}"),
-        };
+        return $this->user_type->guard();
     }
 
     protected function getDefaultGuardName(): string
@@ -92,6 +87,7 @@ class User extends Authenticatable implements PasskeyUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'user_type' => UserType::class,
             'is_active' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
         ];

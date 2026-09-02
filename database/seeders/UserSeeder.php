@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Enums\RoleEnum;
+use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -21,7 +23,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Platform Super Admin',
                 'password' => 'password',
-                'user_type' => 'platform',
+                'user_type' => UserType::PLATFORM,
                 'branch_id' => null,
                 'is_active' => true,
                 'email_verified_at' => now(),
@@ -29,14 +31,14 @@ class UserSeeder extends Seeder
         );
 
         app(PermissionRegistrar::class)->setPermissionsTeamId(null);
-        $platformUser->assignRole('super-admin');
+        $platformUser->assignRole(RoleEnum::SUPER_ADMIN->value);
 
         $branchUser = User::query()->updateOrCreate(
             ['email' => 'branch@test.com'],
             [
                 'name' => 'Branch Super Admin',
                 'password' => 'password',
-                'user_type' => 'branch',
+                'user_type' => UserType::BRANCH,
                 'branch_id' => $downtownBranch->id,
                 'is_active' => true,
                 'email_verified_at' => now(),
@@ -44,14 +46,14 @@ class UserSeeder extends Seeder
         );
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($downtownBranch->id);
-        $branchUser->assignRole('super-admin');
+        $branchUser->assignRole(RoleEnum::SUPER_ADMIN->value);
 
         User::query()->updateOrCreate(
             ['email' => 'driver@test.com'],
             [
                 'name' => 'Driver Test User',
                 'password' => 'password',
-                'user_type' => 'driver',
+                'user_type' => UserType::DRIVER,
                 'branch_id' => null,
                 'is_active' => true,
                 'email_verified_at' => now(),
@@ -63,7 +65,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Customer Test User',
                 'password' => 'password',
-                'user_type' => 'customer',
+                'user_type' => UserType::CUSTOMER,
                 'branch_id' => null,
                 'is_active' => true,
                 'email_verified_at' => now(),

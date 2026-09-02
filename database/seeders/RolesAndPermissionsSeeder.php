@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Enums\PermissionEnum;
+use App\Enums\RoleEnum;
 use App\Models\Branch;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
@@ -15,46 +17,20 @@ class RolesAndPermissionsSeeder extends Seeder
     public const BRANCH_GUARD = 'branch';
 
     /**
-     * @var list<string>
-     */
-    public const PLATFORM_PERMISSIONS = [
-        'view-dashboard',
-        'manage-users',
-        'manage-roles',
-        'manage-branches',
-    ];
-
-    /**
-     * @var list<string>
-     */
-    public const BRANCH_PERMISSIONS = [
-        'view-branch-dashboard',
-        'manage-branch-products',
-        'manage-branch-orders',
-        'manage-branch-staff',
-    ];
-
-    /**
-     * @var list<string>
-     */
-    private const ROLES = [
-        'super-admin',
-        'admin',
-        'manager',
-        'staff',
-    ];
-
-    /**
      * Seed permissions and platform-scoped roles.
      */
     public function run(): void
     {
         $this->resetTeamContext();
 
-        $platformPermissions = $this->createPermissions(self::PLATFORM_PERMISSIONS, self::PLATFORM_GUARD);
-        $this->createPermissions(self::BRANCH_PERMISSIONS, self::BRANCH_GUARD);
+        $platformPermissions = $this->createPermissions(PermissionEnum::forGuard(self::PLATFORM_GUARD));
+        $this->createPermissions(PermissionEnum::forGuard(self::BRANCH_GUARD));
 
-        $this->createGuardRoles(self::PLATFORM_GUARD, $platformPermissions, 'manage-roles');
+        $this->createGuardRoles(
+            self::PLATFORM_GUARD,
+            $platformPermissions,
+            PermissionEnum::MANAGE_ROLES->value,
+        );
 
         $this->resetTeamContext();
     }
@@ -66,27 +42,31 @@ class RolesAndPermissionsSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
 
-        $branchPermissions = collect(self::BRANCH_PERMISSIONS)
-            ->map(fn (string $name) => Permission::findByName($name, self::BRANCH_GUARD))
+        $branchPermissions = collect(PermissionEnum::forGuard(self::BRANCH_GUARD))
+            ->map(fn (PermissionEnum $permission) => Permission::findByName($permission->value, self::BRANCH_GUARD))
             ->all();
 
-        $this->createGuardRoles(self::BRANCH_GUARD, $branchPermissions, 'manage-branch-staff');
+        $this->createGuardRoles(
+            self::BRANCH_GUARD,
+            $branchPermissions,
+            PermissionEnum::MANAGE_BRANCH_STAFF->value,
+        );
 
         $this->resetTeamContext();
     }
 
     /**
-     * @param  list<string>  $permissionNames
+     * @param  array<int, PermissionEnum>  $permissionCases
      * @return list<Permission>
      */
-    private function createPermissions(array $permissionNames, string $guardName): array
+    private function createPermissions(array $permissionCases): array
     {
         $permissions = [];
 
-        foreach ($permissionNames as $name) {
+        foreach ($permissionCases as $permissionCase) {
             $permissions[] = Permission::firstOrCreate([
-                'name' => $name,
-                'guard_name' => $guardName,
+                'name' => $permissionCase->value,
+                'guard_name' => $permissionCase->guard(),
             ]);
         }
 
@@ -103,7 +83,9 @@ class RolesAndPermissionsSeeder extends Seeder
     ): void {
         $teamForeignKey = config('permission.column_names.team_foreign_key');
 
-        foreach (self::ROLES as $roleName) {
+        foreach (RoleEnum::cases() as $roleCase) {
+            $roleName = $roleCase->value;
+
             $roleAttributes = [
                 'name' => $roleName,
                 'guard_name' => $guardName,
@@ -115,21 +97,20 @@ class RolesAndPermissionsSeeder extends Seeder
 
             $role = Role::firstOrCreate($roleAttributes);
 
-            $rolePermissions = match ($roleName) {
-                'super-admin' => [],
-                'admin' => $permissions,
-                'manager' => collect($permissions)
+            $rolePermissions = match ($roleCase) {
+                RoleEnum::SUPER_ADMIN => [],
+                RoleEnum::ADMIN => $permissions,
+                RoleEnum::MANAGER => collect($permissions)
                     ->reject(fn (Permission $permission) => $permission->name === $managementPermission)
                     ->values()
                     ->all(),
-                'staff' => collect($permissions)
+                RoleEnum::STAFF => collect($permissions)
                     ->filter(fn (Permission $permission) => in_array($permission->name, [
-                        'view-dashboard',
-                        'view-branch-dashboard',
+                        PermissionEnum::VIEW_DASHBOARD->value,
+                        PermissionEnum::VIEW_BRANCH_DASHBOARD->value,
                     ], true))
                     ->values()
                     ->all(),
-                default => [],
             };
 
             $role->syncPermissions($rolePermissions);
