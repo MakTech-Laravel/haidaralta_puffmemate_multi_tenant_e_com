@@ -87,8 +87,8 @@ export function createEcho(): AppEcho | null {
         enabledTransports: config.enabledTransports,
         disableStats: true,
         authEndpoint: config.authEndpoint,
-        // Avoid "Pusher client not found" when window.Pusher is unset (SSR/HMR).
-        client: Pusher,
+        // Constructor (not instance). `client` must be a live Pusher instance.
+        Pusher,
         auth: {
             headers: (() => {
                 const headers: Record<string, string> = {
