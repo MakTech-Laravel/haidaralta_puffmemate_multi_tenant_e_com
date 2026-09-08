@@ -16,7 +16,7 @@ beforeEach(function () {
 });
 
 test('platform super admin bypasses gate checks without explicit team context', function () {
-    $platformUser = User::query()->where('email', 'platform@test.com')->firstOrFail();
+    $platformUser = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
 
     expect(app(PermissionRegistrar::class)->getPermissionsTeamId())->toBe(0)
         ->and($platformUser->hasRole(RoleEnum::SUPER_ADMIN->value))->toBeTrue()
@@ -37,7 +37,7 @@ test('platform staff role does not bypass gate checks', function () {
 });
 
 test('branch super admin bypasses gate checks only within their branch team context', function () {
-    $branchUser = User::query()->where('email', 'branch@test.com')->firstOrFail();
+    $branchUser = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
     $branchId = $branchUser->branch_id;
 
     app(PermissionRegistrar::class)->setPermissionsTeamId($branchId);

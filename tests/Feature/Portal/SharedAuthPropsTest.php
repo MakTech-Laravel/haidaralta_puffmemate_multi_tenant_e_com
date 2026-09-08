@@ -14,7 +14,7 @@ beforeEach(function () {
 });
 
 test('platform dashboard shares platform scoped auth props', function () {
-    $user = User::query()->where('email', 'platform@test.com')->firstOrFail();
+    $user = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
 
     $this->actingAs($user, 'platform')
         ->get('/platform/dashboard')
@@ -29,7 +29,7 @@ test('platform dashboard shares platform scoped auth props', function () {
 });
 
 test('branch dashboard shares branch scoped auth props', function () {
-    $user = User::query()->where('email', 'branch@test.com')->firstOrFail();
+    $user = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
 
     $this->actingAs($user, 'branch')
         ->get('/branch/downtown/dashboard')

@@ -16,9 +16,13 @@ beforeEach(function () {
 });
 
 test('platform admin can view branch staff across branches and filter by branch', function () {
-    $admin = User::query()->where('email', 'platform@test.com')->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
     $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
+
+    $seededBranchStaffCount = User::query()
+        ->where('user_type', UserType::BRANCH)
+        ->count();
 
     $uptownStaff = User::factory()->create([
         'name' => 'Uptown Staff',
@@ -37,16 +41,23 @@ test('platform admin can view branch staff across branches and filter by branch'
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branch-staff/index')
-            ->has('staff.data', 2)
+            ->has('staff.data', $seededBranchStaffCount + 1)
         );
+
+    $downtownStaffCount = User::query()
+        ->where('user_type', UserType::BRANCH)
+        ->where('branch_id', $downtown->id)
+        ->count();
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-staff.index', ['branch_id' => $downtown->id]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branch-staff/index')
-            ->has('staff.data', 1)
-            ->where('staff.data.0.email', 'branch@test.com')
+            ->has('staff.data', $downtownStaffCount)
+            ->where('staff.data', fn ($staff) => collect($staff)->contains(
+                fn ($row) => $row['email'] === UserSeeder::BRANCH_1_SUPER_ADMIN,
+            ))
         );
 
     $this->actingAs($admin, 'platform')

@@ -31,10 +31,10 @@ test('password reset link can be requested for each portal user type', function 
     $response->assertRedirect()->assertSessionHas('status', __('passwords.sent'));
     Notification::assertSentTo($user, ResetPassword::class);
 })->with([
-    'platform' => ['platform@test.com'],
-    'branch' => ['branch@test.com'],
-    'driver' => ['driver@test.com'],
-    'customer' => ['customer@test.com'],
+    'platform' => ['superadmin@dev.com'],
+    'branch' => ['branch1.superadmin@dev.com'],
+    'driver' => ['driver@dev.com'],
+    'customer' => ['user@dev.com'],
 ]);
 
 test('portal users can reset password and log in with the new password', function (string $email, string $guard, string $dashboardPath) {
@@ -71,10 +71,10 @@ test('portal users can reset password and log in with the new password', functio
         return true;
     });
 })->with([
-    'platform' => ['platform@test.com', 'platform', '/platform/dashboard'],
-    'branch' => ['branch@test.com', 'branch', '/branch/downtown/dashboard'],
-    'driver' => ['driver@test.com', 'driver', '/driver/dashboard'],
-    'customer' => ['customer@test.com', 'customer', '/dashboard'],
+    'platform' => ['superadmin@dev.com', 'platform', '/platform/dashboard'],
+    'branch' => ['branch1.superadmin@dev.com', 'branch', '/branch/downtown/dashboard'],
+    'driver' => ['driver@dev.com', 'driver', '/driver/dashboard'],
+    'customer' => ['user@dev.com', 'customer', '/dashboard'],
 ]);
 
 test('unknown email still receives generic success without sending a notification', function () {
@@ -89,16 +89,16 @@ test('unknown email still receives generic success without sending a notificatio
 test('inactive users receive generic success without sending a notification', function () {
     Notification::fake();
 
-    User::query()->where('email', 'platform@test.com')->update(['is_active' => false]);
+    User::query()->where('email', 'superadmin@dev.com')->update(['is_active' => false]);
 
-    $response = $this->post(route('password.email'), ['email' => 'platform@test.com']);
+    $response = $this->post(route('password.email'), ['email' => 'superadmin@dev.com']);
 
     $response->assertRedirect()->assertSessionHas('status', __('passwords.sent'));
     Notification::assertNothingSent();
 });
 
 test('password cannot be reset with an invalid token', function () {
-    $user = User::query()->where('email', 'platform@test.com')->firstOrFail();
+    $user = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
 
     $response = $this->post(route('password.update'), [
         'token' => 'invalid-token',
@@ -112,10 +112,10 @@ test('password cannot be reset with an invalid token', function () {
 
 test('fourth forgot password request within ten minutes is rate limited', function () {
     for ($attempt = 0; $attempt < 3; $attempt++) {
-        $this->post(route('password.email'), ['email' => 'platform@test.com']);
+        $this->post(route('password.email'), ['email' => 'superadmin@dev.com']);
     }
 
-    $response = $this->post(route('password.email'), ['email' => 'platform@test.com']);
+    $response = $this->post(route('password.email'), ['email' => 'superadmin@dev.com']);
 
     $response->assertTooManyRequests();
 });
@@ -123,7 +123,7 @@ test('fourth forgot password request within ten minutes is rate limited', functi
 test('reset password notification uses the shared reset url with email query', function () {
     Notification::fake();
 
-    $user = User::query()->where('email', 'driver@test.com')->firstOrFail();
+    $user = User::query()->where('email', 'driver@dev.com')->firstOrFail();
 
     $this->post(route('password.email'), ['email' => $user->email]);
 

@@ -16,7 +16,7 @@ beforeEach(function () {
 });
 
 test('branch admin can create and update staff in their own branch', function () {
-    $admin = User::query()->where('email', 'branch@test.com')->firstOrFail();
+    $admin = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
     $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
 
     $this->actingAs($admin, 'branch')
@@ -55,7 +55,7 @@ test('branch admin can create and update staff in their own branch', function ()
 });
 
 test('branch admin cannot manage staff from another branch by url', function () {
-    $admin = User::query()->where('email', 'branch@test.com')->firstOrFail();
+    $admin = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
     $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
     $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
 
@@ -89,7 +89,7 @@ test('branch admin cannot manage staff from another branch by url', function () 
 });
 
 test('deleting the last branch super admin is blocked', function () {
-    $admin = User::query()->where('email', 'branch@test.com')->firstOrFail();
+    $admin = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
     $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
 
     $this->actingAs($admin, 'branch')
@@ -100,7 +100,7 @@ test('deleting the last branch super admin is blocked', function () {
 });
 
 test('deactivating the last branch super admin is blocked', function () {
-    $admin = User::query()->where('email', 'branch@test.com')->firstOrFail();
+    $admin = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
     $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
 
     $this->actingAs($admin, 'branch')

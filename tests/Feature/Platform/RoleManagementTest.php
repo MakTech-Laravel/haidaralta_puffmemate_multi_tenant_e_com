@@ -21,7 +21,7 @@ beforeEach(function () {
 });
 
 test('platform super admin can create a role with permissions', function () {
-    $admin = User::query()->where('email', 'platform@test.com')->firstOrFail();
+    $admin = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.roles.store'), [
@@ -45,7 +45,7 @@ test('platform super admin can create a role with permissions', function () {
 });
 
 test('assigned custom role permissions are reflected in gate checks', function () {
-    $admin = User::query()->where('email', 'platform@test.com')->firstOrFail();
+    $admin = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.roles.store'), [
@@ -67,7 +67,7 @@ test('assigned custom role permissions are reflected in gate checks', function (
 });
 
 test('platform super admin cannot rename or delete the super admin role', function () {
-    $admin = User::query()->where('email', 'platform@test.com')->firstOrFail();
+    $admin = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
     $role = Role::query()
         ->where('name', RoleEnum::SUPER_ADMIN->value)
         ->where('guard_name', 'platform')
@@ -89,7 +89,7 @@ test('platform super admin cannot rename or delete the super admin role', functi
 });
 
 test('platform role with assigned users cannot be deleted', function () {
-    $admin = User::query()->where('email', 'platform@test.com')->firstOrFail();
+    $admin = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.roles.store'), [

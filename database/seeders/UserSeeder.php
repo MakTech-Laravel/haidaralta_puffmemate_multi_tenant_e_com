@@ -11,67 +11,156 @@ use Spatie\Permission\PermissionRegistrar;
 
 class UserSeeder extends Seeder
 {
+    public const PLATFORM_SUPER_ADMIN = 'superadmin@dev.com';
+
+    public const PLATFORM_ADMIN = 'admin@dev.com';
+
+    public const PLATFORM_MANAGER = 'manage@dev.com';
+
+    public const BRANCH_1_SUPER_ADMIN = 'branch1.superadmin@dev.com';
+
+    public const BRANCH_1_ADMIN = 'branch1.admin@dev.com';
+
+    public const BRANCH_2_SUPER_ADMIN = 'branch2.superadmin@dev.com';
+
+    public const BRANCH_2_ADMIN = 'branch2.admin@dev.com';
+
+    public const DRIVER = 'driver@dev.com';
+
+    public const CUSTOMER = 'user@dev.com';
+
     /**
-     * Seed one test user per portal type.
+     * Seed portal login accounts. Password for each user is their email.
      */
     public function run(): void
     {
-        $downtownBranch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+        $this->forgetLegacyAccounts();
 
-        $platformUser = User::query()->updateOrCreate(
-            ['email' => 'platform@test.com'],
+        $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+        $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
+
+        $this->seedPlatformUsers();
+        $this->seedBranchUsers($downtown, [
             [
+                'email' => self::BRANCH_1_SUPER_ADMIN,
+                'name' => 'Branch 1 Super Admin',
+                'role' => RoleEnum::SUPER_ADMIN,
+            ],
+            [
+                'email' => self::BRANCH_1_ADMIN,
+                'name' => 'Branch 1 Admin',
+                'role' => RoleEnum::ADMIN,
+            ],
+        ]);
+        $this->seedBranchUsers($uptown, [
+            [
+                'email' => self::BRANCH_2_SUPER_ADMIN,
+                'name' => 'Branch 2 Super Admin',
+                'role' => RoleEnum::SUPER_ADMIN,
+            ],
+            [
+                'email' => self::BRANCH_2_ADMIN,
+                'name' => 'Branch 2 Admin',
+                'role' => RoleEnum::ADMIN,
+            ],
+        ]);
+
+        $this->seedPortalUser(
+            email: self::DRIVER,
+            name: 'Driver',
+            userType: UserType::DRIVER,
+        );
+
+        $this->seedPortalUser(
+            email: self::CUSTOMER,
+            name: 'Customer',
+            userType: UserType::CUSTOMER,
+        );
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+    }
+
+    private function seedPlatformUsers(): void
+    {
+        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+        foreach ([
+            [
+                'email' => self::PLATFORM_SUPER_ADMIN,
                 'name' => 'Platform Super Admin',
-                'password' => 'password',
-                'user_type' => UserType::PLATFORM,
-                'branch_id' => null,
-                'is_active' => true,
-                'email_verified_at' => now(),
+                'role' => RoleEnum::SUPER_ADMIN,
             ],
-        );
-
-        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
-        $platformUser->assignRole(RoleEnum::SUPER_ADMIN->value);
-
-        $branchUser = User::query()->updateOrCreate(
-            ['email' => 'branch@test.com'],
             [
-                'name' => 'Branch Super Admin',
-                'password' => 'password',
-                'user_type' => UserType::BRANCH,
-                'branch_id' => $downtownBranch->id,
-                'is_active' => true,
-                'email_verified_at' => now(),
+                'email' => self::PLATFORM_ADMIN,
+                'name' => 'Platform Admin',
+                'role' => RoleEnum::ADMIN,
             ],
-        );
-
-        app(PermissionRegistrar::class)->setPermissionsTeamId($downtownBranch->id);
-        $branchUser->assignRole(RoleEnum::SUPER_ADMIN->value);
-
-        User::query()->updateOrCreate(
-            ['email' => 'driver@test.com'],
             [
-                'name' => 'Driver Test User',
-                'password' => 'password',
-                'user_type' => UserType::DRIVER,
-                'branch_id' => null,
-                'is_active' => true,
-                'email_verified_at' => now(),
+                'email' => self::PLATFORM_MANAGER,
+                'name' => 'Platform Manager',
+                'role' => RoleEnum::MANAGER,
             ],
-        );
+        ] as $account) {
+            $user = $this->seedPortalUser(
+                email: $account['email'],
+                name: $account['name'],
+                userType: UserType::PLATFORM,
+            );
 
-        User::query()->updateOrCreate(
-            ['email' => 'customer@test.com'],
+            $user->syncRoles([$account['role']->value]);
+        }
+    }
+
+    /**
+     * @param  list<array{email: string, name: string, role: RoleEnum}>  $accounts
+     */
+    private function seedBranchUsers(Branch $branch, array $accounts): void
+    {
+        app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
+
+        foreach ($accounts as $account) {
+            $user = $this->seedPortalUser(
+                email: $account['email'],
+                name: $account['name'],
+                userType: UserType::BRANCH,
+                branchId: $branch->id,
+            );
+
+            $user->syncRoles([$account['role']->value]);
+        }
+    }
+
+    private function seedPortalUser(
+        string $email,
+        string $name,
+        UserType $userType,
+        ?int $branchId = null,
+    ): User {
+        return User::query()->updateOrCreate(
+            ['email' => $email],
             [
-                'name' => 'Customer Test User',
-                'password' => 'password',
-                'user_type' => UserType::CUSTOMER,
-                'branch_id' => null,
+                'name' => $name,
+                'password' => $email,
+                'user_type' => $userType,
+                'branch_id' => $branchId,
                 'is_active' => true,
                 'email_verified_at' => now(),
             ],
         );
+    }
 
-        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+    /**
+     * Drop Phase-early @test.com accounts so reseed does not leave duplicates.
+     */
+    private function forgetLegacyAccounts(): void
+    {
+        User::query()
+            ->whereIn('email', [
+                'platform@test.com',
+                'branch@test.com',
+                'driver@test.com',
+                'customer@test.com',
+            ])
+            ->delete();
     }
 }
