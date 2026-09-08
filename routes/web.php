@@ -10,6 +10,7 @@ use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
+use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
 use App\Http\Controllers\Platform\StaffController as PlatformStaffController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,11 @@ Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function () {
     Route::get('dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
+
+    Route::get('realtime', [PlatformRealtimeController::class, 'index'])->name('platform.realtime.index');
+    Route::get('realtime/ping', [PlatformRealtimeController::class, 'ping'])->name('platform.realtime.ping');
+    Route::get('realtime/health', [PlatformRealtimeController::class, 'health'])->name('platform.realtime.health');
+    Route::post('realtime/test-notification', [PlatformRealtimeController::class, 'testNotification'])->name('platform.realtime.test-notification');
 
     Route::middleware(['permission:manage-roles'])->group(function () {
         Route::get('roles/export', [PlatformRoleController::class, 'export'])->name('platform.roles.export');

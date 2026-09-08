@@ -1,10 +1,11 @@
 import {
     Building2,
-    LayoutGrid,
-    Shield,
-    Users,
     KeyRound,
+    LayoutGrid,
+    Radio,
+    Shield,
     UserCog,
+    Users,
 } from 'lucide-react';
 import type { NavNode } from '@/components/navigation/types';
 
@@ -20,6 +21,12 @@ export const platformNav: NavNode[] = [
         href: '/platform/branches',
         icon: Building2,
         permissions: ['view-branches'],
+    },
+    {
+        title: 'Realtime Console',
+        href: '/platform/realtime',
+        icon: Radio,
+        permissions: ['view-dashboard'],
     },
     {
         title: 'Roles',
