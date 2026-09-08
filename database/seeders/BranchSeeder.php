@@ -16,6 +16,7 @@ class BranchSeeder extends Seeder
             [
                 'slug' => 'downtown',
                 'name' => 'Downtown',
+                'icon' => null,
                 'address' => '123 Main Street, Downtown',
                 'latitude' => 40.7128000,
                 'longitude' => -74.0060000,
@@ -24,6 +25,7 @@ class BranchSeeder extends Seeder
             [
                 'slug' => 'uptown',
                 'name' => 'Uptown',
+                'icon' => null,
                 'address' => '456 North Avenue, Uptown',
                 'latitude' => 40.7831000,
                 'longitude' => -73.9712000,

@@ -750,7 +750,7 @@ function FileCard({
                         onRemove();
                     }}
                     className={cn(
-                        'absolute top-1.5 right-1.5 z-10 h-6 w-6',
+                        'absolute top-1.5 right-1.5 z-30 h-6 w-6',
                         compact
                             ? 'top-0.5 right-0.5 h-7 w-7 opacity-100 shadow-md'
                             : 'opacity-0 shadow-md transition-opacity group-hover:opacity-100',
@@ -1243,7 +1243,6 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                onClick={() => !disabled && inputRef.current?.click()}
                 onKeyDown={(e) => {
                     if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
                         e.preventDefault();
@@ -1253,7 +1252,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                 className={cn(
                     isAvatar
                         ? [
-                              'relative flex shrink-0 items-center justify-center',
+                              'relative flex shrink-0 cursor-pointer items-center justify-center overflow-hidden',
                               'transition-all duration-200 select-none',
                               isDragging
                                   ? 'scale-[1.03] border-primary bg-primary/10'
@@ -1263,7 +1262,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                               error && 'border-destructive',
                           ]
                         : [
-                              'flex flex-col items-center justify-center gap-2 px-6 py-10 text-center',
+                              'relative flex cursor-pointer flex-col items-center justify-center gap-2 px-6 py-10 text-center',
                               'rounded-xl border-2 border-dashed transition-all duration-200 select-none',
                               'hover:border-primary hover:bg-primary/5',
                               isDragging
@@ -1281,6 +1280,11 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                         : undefined
                 }
             >
+                {/*
+                  Native file input covers the zone. Programmatic input.click()
+                  from a parent onClick is unreliable (dialog can open then
+                  immediately cancel); an opacity-0 overlay is the reliable path.
+                */}
                 <input
                     ref={inputRef}
                     type="file"
@@ -1289,11 +1293,12 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     disabled={disabled}
                     required={required && totalFiles === 0}
                     onChange={handleChange}
-                    className="sr-only"
-                    tabIndex={-1}
+                    className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                    aria-label="Choose files"
                 />
                 <div
                     className={cn(
+                        'pointer-events-none',
                         isAvatar
                             ? 'flex flex-col items-center gap-1'
                             : 'flex flex-col items-center gap-1.5',
@@ -1343,8 +1348,8 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     accept={accept}
                     disabled={disabled}
                     onChange={handleChange}
-                    className="sr-only"
-                    tabIndex={-1}
+                    className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
+                    aria-label="Change photo"
                 />
             ) : null;
 
@@ -1396,13 +1401,19 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     )}
                 >
                     {LightboxEl}
-                    {HiddenFileInputEl}
                     <div
                         className={cn(
                             isAvatar ? 'flex items-center gap-4' : undefined,
                         )}
                     >
-                        <div className={cn(isAvatar && 'relative shrink-0')}>
+                        <div
+                            className={cn(isAvatar && 'relative shrink-0')}
+                            style={
+                                isAvatar
+                                    ? { width: avatarSize, height: avatarSize }
+                                    : undefined
+                            }
+                        >
                             <FileCard
                                 name={displayName}
                                 size={f.size}
@@ -1412,7 +1423,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 compact={isAvatar}
                                 fixedSize={isAvatar ? avatarSize : undefined}
                                 onRemove={
-                                    onRemoveExisting && !isUploading
+                                    !isAvatar && onRemoveExisting && !isUploading
                                         ? () => onRemoveExisting(f.id)
                                         : undefined
                                 }
@@ -1423,17 +1434,20 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 }
                                 classNames={mergedClassNames}
                             />
-                            {isAvatar && !isUploading ? (
-                                <button
+                            {isAvatar && !isUploading ? HiddenFileInputEl : null}
+                            {isAvatar &&
+                            onRemoveExisting &&
+                            !isUploading ? (
+                                <Button
                                     type="button"
-                                    aria-label="Change photo"
-                                    onClick={() => inputRef.current?.click()}
-                                    className="absolute inset-0 rounded-full bg-black/0 opacity-0 transition hover:bg-black/45 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                                    variant="destructive"
+                                    size="icon"
+                                    onClick={() => onRemoveExisting(f.id)}
+                                    className="absolute top-0.5 right-0.5 z-30 h-7 w-7 shadow-md"
+                                    aria-label={`Remove ${displayName}`}
                                 >
-                                    <span className="sr-only">
-                                        Change photo
-                                    </span>
-                                </button>
+                                    <X className="h-3 w-3" />
+                                </Button>
                             ) : null}
                         </div>
                         {isAvatar ? (
@@ -1476,13 +1490,19 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     )}
                 >
                     {LightboxEl}
-                    {HiddenFileInputEl}
                     <div
                         className={cn(
                             isAvatar ? 'flex items-center gap-4' : undefined,
                         )}
                     >
-                        <div className={cn(isAvatar && 'relative shrink-0')}>
+                        <div
+                            className={cn(isAvatar && 'relative shrink-0')}
+                            style={
+                                isAvatar
+                                    ? { width: avatarSize, height: avatarSize }
+                                    : undefined
+                            }
+                        >
                             <FileCard
                                 name={p.file.name}
                                 size={p.file.size}
@@ -1492,7 +1512,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 compact={isAvatar}
                                 fixedSize={isAvatar ? avatarSize : undefined}
                                 onRemove={
-                                    !isUploading
+                                    !isAvatar && !isUploading
                                         ? () => handleRemoveNew(0)
                                         : undefined
                                 }
@@ -1506,17 +1526,18 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 loading={resolveCardLoading()}
                                 classNames={mergedClassNames}
                             />
+                            {isAvatar && !isUploading ? HiddenFileInputEl : null}
                             {isAvatar && !isUploading ? (
-                                <button
+                                <Button
                                     type="button"
-                                    aria-label="Change photo"
-                                    onClick={() => inputRef.current?.click()}
-                                    className="absolute inset-0 rounded-full bg-black/0 opacity-0 transition hover:bg-black/45 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                                    variant="destructive"
+                                    size="icon"
+                                    onClick={() => handleRemoveNew(0)}
+                                    className="absolute top-0.5 right-0.5 z-30 h-7 w-7 shadow-md"
+                                    aria-label={`Remove ${p.file.name}`}
                                 >
-                                    <span className="sr-only">
-                                        Change photo
-                                    </span>
-                                </button>
+                                    <X className="h-3 w-3" />
+                                </Button>
                             ) : null}
                         </div>
                         {isAvatar ? (

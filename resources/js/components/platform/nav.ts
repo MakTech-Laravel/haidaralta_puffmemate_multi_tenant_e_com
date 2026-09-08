@@ -1,4 +1,5 @@
 import {
+    Building2,
     KeyRound,
     LayoutGrid,
     Radio,
@@ -14,6 +15,12 @@ export const platformNav: NavNode[] = [
         href: '/platform/dashboard',
         icon: LayoutGrid,
         permissions: ['view-dashboard'],
+    },
+    {
+        title: 'Branches',
+        href: '/platform/branches',
+        icon: Building2,
+        permissions: ['view-branches'],
     },
     {
         title: 'Realtime Console',
