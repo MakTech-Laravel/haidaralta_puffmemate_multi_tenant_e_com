@@ -1,0 +1,180 @@
+# Coolify Production Deployment
+
+## Architecture
+
+Deploy this repository as one Coolify **Application** using the root `Dockerfile` build pack. The resulting replaceable container listens on port `80` and runs Nginx, PHP-FPM, Laravel queue workers, and the Laravel scheduler under Supervisor.
+
+PostgreSQL, Redis, and Meilisearch are separate Coolify resources. Laravel Reverb is a separate Git repository, Dockerfile, Coolify Application, domain, and deployment lifecycle. This image does not contain or start any of those servers and does not expose ports `5432`, `6379`, `7700`, `8080`, or `9000`.
+
+## Coolify Application Settings
+
+| Setting | Value |
+| --- | --- |
+| Build pack | Dockerfile |
+| Dockerfile | `Dockerfile` |
+| Internal port | `80` |
+| Health path | `/up` |
+| Expected health status | `200` |
+| Health interval | `30s` |
+| Health timeout | `5s` |
+| Health retries | `3` |
+| Stop Grace Period | `120s` initially |
+
+`/up` is Laravel's built-in health route. It proves Nginx, PHP-FPM, and Laravel bootstrap without making transient dependency failures trigger restart cascades. Monitor PostgreSQL, Redis, Meilisearch, and Reverb separately for readiness and dependency diagnostics.
+
+The 120-second stop grace exceeds the default queue worker timeout (`60s`) and Supervisor worker wait (`90s`). Increase all three coherently if production jobs legitimately need a longer timeout. Coolify's grace period must remain longer than Supervisor's queue `stopwaitsecs`.
+
+## Runtime Environment
+
+Set secrets in Coolify and never commit or build them into the image. Generate `APP_KEY` once with `php artisan key:generate --show`, store it in Coolify, and preserve it across deploys, restarts, and rollbacks.
+
+Required application values:
+
+```dotenv
+APP_NAME=Puffonmate
+APP_ENV=production
+APP_DEBUG=false
+APP_KEY=base64:...
+APP_URL=https://app.example.com
+LOG_CHANNEL=stack
+LOG_STACK=stderr
+LOG_LEVEL=info
+```
+
+Use the internal Coolify PostgreSQL hostname, not `127.0.0.1` or an auto-generated container ID:
+
+```dotenv
+DB_CONNECTION=pgsql
+DB_HOST=postgres-resource-hostname
+DB_PORT=5432
+DB_DATABASE=puffonmate
+DB_USERNAME=puffonmate
+DB_PASSWORD=...
+DB_SSLMODE=prefer
+```
+
+Use the internal Coolify Redis hostname. Separate logical databases prevent normal cache eviction from targeting queue data, but they are not a security boundary:
+
+```dotenv
+REDIS_CLIENT=phpredis
+REDIS_HOST=redis-resource-hostname
+REDIS_PASSWORD=...
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_CACHE_DB=1
+CACHE_STORE=redis
+CACHE_PREFIX=puffonmate_cache_
+SESSION_DRIVER=redis
+SESSION_CONNECTION=cache
+QUEUE_CONNECTION=redis
+```
+
+Queue process settings:
+
+```dotenv
+QUEUE_NAMES=default
+QUEUE_SLEEP=3
+QUEUE_TRIES=3
+QUEUE_TIMEOUT=60
+QUEUE_MAX_TIME=3600
+QUEUE_MEMORY=128
+QUEUE_PROCESSES=2
+REDIS_QUEUE_CONNECTION=default
+REDIS_QUEUE=default
+REDIS_QUEUE_RETRY_AFTER=90
+REDIS_QUEUE_BLOCK_FOR=5
+```
+
+`REDIS_QUEUE_RETRY_AFTER` must remain safely greater than `QUEUE_TIMEOUT`. Begin with two workers. Tune worker count from measured queue latency, backlog, job duration/RSS, CPU, RAM, and PostgreSQL connection capacity rather than setting it from request traffic alone.
+
+Mail credentials and any service credentials used by the application must also be runtime Coolify variables. PHP-FPM uses `clear_env = no`, so the same process environment is visible to HTTP PHP and Artisan CLI processes.
+
+## Build-Time Public Variables
+
+Vite compiles `VITE_*` values into public browser bundles during the Docker build. Changing them in Coolify after the image has built does not modify the bundle; rebuild the image after changing one. Never place secrets in a `VITE_*` variable.
+
+This repository currently reads only:
+
+```dotenv
+VITE_APP_NAME=Puffonmate
+VITE_ERROR_BOUNDARY_DEBUG=false
+```
+
+The repository does not currently install or configure Reverb/Echo. When external Reverb integration is added, the build must receive the public values below, with the host set to the separate Reverb application's domain:
+
+```dotenv
+VITE_REVERB_APP_KEY=public-app-key
+VITE_REVERB_HOST=ws.example.com
+VITE_REVERB_PORT=443
+VITE_REVERB_SCHEME=https
+```
+
+Server-side `REVERB_*` values belong in runtime variables and must point event publishing to the separate Reverb service. Do not add a Reverb Supervisor program or local Nginx `/app` and `/apps` proxy here.
+
+## External Services
+
+PostgreSQL is a separate Coolify database. The image includes both `pdo_pgsql` and `pdo_mysql`, keeping it compatible with external PostgreSQL and MySQL/MariaDB services without installing either database server. pgvector, if introduced, must be enabled in PostgreSQL rather than installed in PHP. There are currently no vector columns or pgvector dependencies.
+
+Redis is a separate Coolify Redis resource. The image includes phpredis. It supports queues, cache, sessions, distributed locks, and rate limiting. Never flush the shared Redis instance during deployment.
+
+Meilisearch must use the official Meilisearch image as a separate private resource. This repository currently has no Scout or Meilisearch package/configuration. When search is implemented, configure `SCOUT_DRIVER`, internal `MEILISEARCH_HOST`, and server-only `MEILISEARCH_KEY`; never expose the master key through Vite.
+
+Reverb remains a separate repository and Coolify Application, normally exposed as `wss://ws.example.com`. This application's future broadcast configuration will publish to that external service and authorize private/presence channels. Port `8080` is not used by this container.
+
+Supervisor retains fully commented Horizon and Reverb reference programs. They are disabled and do not alter the running process set. Do not enable Horizon until the package is explicitly installed and configured; if it consumes the same queues, disable the standard `laravel-queue-worker` program to prevent duplicate consumers. Do not enable the Reverb template under the current separate-application architecture.
+
+## Database Migrations
+
+Container startup never runs migrations. Run central migrations once as an explicit release operation from one application container:
+
+```sh
+php artisan migrate --force --isolated
+```
+
+Laravel 13 supports `--isolated`; all deployment instances must share the configured Redis cache so its migration lock is effective. Check migration SQL and take a recoverable database backup before destructive changes. Use expand/contract releases: add backward-compatible structures, deploy compatible code, backfill, then remove old structures in a later release.
+
+The current tenancy model uses one shared database and nullable `branch_id` columns, with Spatie Permission teams scoped by branch. There are no schema-per-tenant, database-per-tenant, or tenant migration paths, so only the central migration command exists today.
+
+## Scheduler and Replicas
+
+Supervisor runs `php artisan schedule:work --no-interaction`. No scheduled tasks are currently defined, so there are no tasks requiring `onOneServer()` or `withoutOverlapping()` today.
+
+Scaling application replicas from 1 to 2 to 4 multiplies Nginx, PHP-FPM, queue workers, and scheduler processes together. Before adding a global scheduled task, use `onOneServer()` with shared Redis locking. Add `withoutOverlapping()` only when overlapping runs would be unsafe. A task intentionally designed per instance should state that constraint in code and operations documentation.
+
+Each replica can open up to eight concurrent PHP-FPM database connections, plus two queue-worker connections and occasional scheduler/CLI connections. The initial practical ceiling is approximately 11 connections per replica before application-specific persistent or nested connections. Recalculate against PostgreSQL `max_connections` before scaling. PgBouncer is a future option only if measured connection pressure warrants it.
+
+Calculate `pm.max_children` from container RAM: subtract measured Nginx, Supervisor, queue-worker, scheduler, and operating-system baseline memory; reserve a safety margin; divide the remainder by measured average PHP-FPM worker RSS. The initial value is eight and must be load-tested before increasing.
+
+## Tenancy and Storage
+
+Current tenant isolation is request middleware plus `branch_id` query scoping and Spatie's branch team context. There are no application queue jobs, tenant caches, search indexes, tenant broadcasts, or tenant-owned file flows yet. Before adding them:
+
+- Serialize an authoritative tenant identifier into jobs, restore it before handling, and clear tenant state after every job.
+- Prefix tenant cache keys and invalidate only that tenant's keys.
+- Enforce tenant search filters server-side or use isolated indexes/tokens.
+- Authorize private/presence channels against the authenticated tenant.
+- Prefix object keys by tenant and never trust a client-supplied tenant ID.
+
+The configured local/public disks use container storage and are ephemeral unless Coolify mounts persistent storage. The current app has no user-upload workflow and no installed S3 adapter. Before production uploads, either configure a deliberate persistent Coolify volume for `storage/app` or approve and install an object-storage adapter for S3/R2/MinIO. Do not rely on the image layer for permanent files.
+
+Redis sessions support multiple replicas without sticky sessions. Use secure cookies in production (`SESSION_SECURE_COOKIE=true`, `SESSION_HTTP_ONLY=true`, `SESSION_SAME_SITE=lax`) and set `SESSION_DOMAIN` only when cross-subdomain login is intentionally required.
+
+## Deploy and Roll Back
+
+1. Provision private PostgreSQL and Redis resources, plus Meilisearch and Reverb only when those application features exist.
+2. Configure runtime secrets and public build variables in Coolify.
+3. Build the root Dockerfile and review image-build logs.
+4. Run `php artisan migrate --force --isolated` as the explicit release command.
+5. Deploy the image, confirm all four Supervisor programs are running, and verify `/up` returns `200`.
+6. Smoke-test authentication and each portal using the production domain.
+
+For rollback, retain the previous immutable image and deploy it without changing `APP_KEY`. Application rollback does not reverse migrations automatically. Roll back code only when the database remains backward-compatible; otherwise use a reviewed forward-fix or a separately tested migration rollback. Restore user files from the configured persistent store, not from a replaced container.
+
+## Production Checklist
+
+- Restrict PostgreSQL, Redis, Meilisearch, and PHP-FPM to private networking.
+- Route public HTTP only through Coolify/Traefik to container port `80`.
+- Confirm Coolify proxy addresses fall within the private ranges trusted in `bootstrap/app.php` and `docker/nginx.conf`; narrow those ranges when stable addresses are known.
+- Set `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE_COOKIE=true`, and a production `APP_URL`.
+- Confirm no `.env`, credentials, `node_modules`, Git metadata, or build toolchain exists in the final image.
+- Monitor HTTP latency/errors, queue depth/latency/failures, worker RSS, database connections, Redis memory, and scheduler failures.
