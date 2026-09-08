@@ -8,6 +8,11 @@ enum PermissionEnum: string
     case MANAGE_USERS = 'manage-users';
     case MANAGE_ROLES = 'manage-roles';
     case MANAGE_BRANCHES = 'manage-branches';
+    case MANAGE_REPORTS = 'manage-reports';
+    case VIEW_BRANCHES = 'view-branches';
+    case CREATE_BRANCHES = 'create-branches';
+    case EDIT_BRANCHES = 'edit-branches';
+    case DELETE_BRANCHES = 'delete-branches';
 
     case VIEW_BRANCH_DASHBOARD = 'view-branch-dashboard';
     case MANAGE_BRANCH_PRODUCTS = 'manage-branch-products';
@@ -24,6 +29,11 @@ enum PermissionEnum: string
             self::VIEW_DASHBOARD,
             self::MANAGE_USERS,
             self::MANAGE_ROLES,
+            self::MANAGE_REPORTS,
+            self::VIEW_BRANCHES,
+            self::CREATE_BRANCHES,
+            self::EDIT_BRANCHES,
+            self::DELETE_BRANCHES,
             self::MANAGE_BRANCHES => 'platform',
 
             self::VIEW_BRANCH_DASHBOARD,
@@ -48,9 +58,16 @@ enum PermissionEnum: string
 
             self::MANAGE_ROLES,
             self::MANAGE_BRANCH_ROLES => 'Roles',
-            self::MANAGE_BRANCHES => 'Branches',
+
+            self::MANAGE_BRANCHES,
+            self::VIEW_BRANCHES,
+            self::CREATE_BRANCHES,
+            self::EDIT_BRANCHES,
+            self::DELETE_BRANCHES => 'Branches',
+
             self::MANAGE_BRANCH_PRODUCTS => 'Products',
             self::MANAGE_BRANCH_ORDERS => 'Orders',
+            self::MANAGE_REPORTS => 'Reports',
         };
     }
 
@@ -64,6 +81,11 @@ enum PermissionEnum: string
             self::MANAGE_USERS => 'Manage users',
             self::MANAGE_ROLES => 'Manage roles',
             self::MANAGE_BRANCHES => 'Manage branches',
+            self::MANAGE_REPORTS => 'Manage reports',
+            self::VIEW_BRANCHES => 'View branches',
+            self::CREATE_BRANCHES => 'Create branches',
+            self::EDIT_BRANCHES => 'Edit branches',
+            self::DELETE_BRANCHES => 'Delete branches',
             self::VIEW_BRANCH_DASHBOARD => 'View branch dashboard',
             self::MANAGE_BRANCH_PRODUCTS => 'Manage branch products',
             self::MANAGE_BRANCH_ORDERS => 'Manage branch orders',

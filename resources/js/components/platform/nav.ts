@@ -1,4 +1,11 @@
-import { LayoutGrid, Shield, Users, KeyRound, UserCog } from 'lucide-react';
+import {
+    Building2,
+    LayoutGrid,
+    Shield,
+    Users,
+    KeyRound,
+    UserCog,
+} from 'lucide-react';
 import type { NavNode } from '@/components/navigation/types';
 
 export const platformNav: NavNode[] = [
@@ -7,6 +14,12 @@ export const platformNav: NavNode[] = [
         href: '/platform/dashboard',
         icon: LayoutGrid,
         permissions: ['view-dashboard'],
+    },
+    {
+        title: 'Branches',
+        href: '/platform/branches',
+        icon: Building2,
+        permissions: ['view-branches'],
     },
     {
         title: 'Roles',

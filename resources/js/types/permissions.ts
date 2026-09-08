@@ -3,8 +3,13 @@ export type PermissionKey =
     | 'manage-users'
     | 'manage-roles'
     | 'manage-branches'
+    | 'manage-reports'
     | 'view-branch-dashboard'
     | 'manage-branch-products'
     | 'manage-branch-orders'
     | 'manage-branch-staff'
-    | 'manage-branch-roles';
+    | 'manage-branch-roles'
+    | 'view-branches'
+    | 'create-branches'
+    | 'edit-branches'
+    | 'delete-branches';
