@@ -170,7 +170,8 @@ export default function RealtimeIndex() {
             } catch {
                 // ignore
             }
-            echo.leave(channelName);
+            // Do not echo.leave(private user channel) — the global toast
+            // subscriber in usePrivateRealtimeToast shares this channel.
         };
     }, [user?.id, addLog, echoGeneration]);
 
