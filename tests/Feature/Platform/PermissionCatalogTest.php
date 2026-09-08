@@ -16,7 +16,7 @@ beforeEach(function () {
 });
 
 test('platform super admin can view the permission catalog', function () {
-    $admin = User::query()->where('email', 'platform@test.com')->firstOrFail();
+    $admin = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.permissions.index'))

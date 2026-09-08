@@ -13,8 +13,8 @@ beforeEach(function () {
 
 test('platform user is redirected to platform dashboard after login', function () {
     $response = $this->post(route('login.store'), [
-        'email' => 'platform@test.com',
-        'password' => 'password',
+        'email' => UserSeeder::PLATFORM_SUPER_ADMIN,
+        'password' => UserSeeder::PLATFORM_SUPER_ADMIN,
     ]);
 
     $response->assertRedirect('/platform/dashboard');
@@ -23,8 +23,8 @@ test('platform user is redirected to platform dashboard after login', function (
 
 test('branch user is redirected to their branch dashboard after login', function () {
     $response = $this->post(route('login.store'), [
-        'email' => 'branch@test.com',
-        'password' => 'password',
+        'email' => UserSeeder::BRANCH_1_SUPER_ADMIN,
+        'password' => UserSeeder::BRANCH_1_SUPER_ADMIN,
     ]);
 
     $response->assertRedirect('/branch/downtown/dashboard');
@@ -33,8 +33,8 @@ test('branch user is redirected to their branch dashboard after login', function
 
 test('driver user is redirected to driver dashboard after login', function () {
     $response = $this->post(route('login.store'), [
-        'email' => 'driver@test.com',
-        'password' => 'password',
+        'email' => UserSeeder::DRIVER,
+        'password' => UserSeeder::DRIVER,
     ]);
 
     $response->assertRedirect('/driver/dashboard');
@@ -43,8 +43,8 @@ test('driver user is redirected to driver dashboard after login', function () {
 
 test('customer user is redirected to customer dashboard after login', function () {
     $response = $this->post(route('login.store'), [
-        'email' => 'customer@test.com',
-        'password' => 'password',
+        'email' => UserSeeder::CUSTOMER,
+        'password' => UserSeeder::CUSTOMER,
     ]);
 
     $response->assertRedirect('/dashboard');
@@ -53,7 +53,7 @@ test('customer user is redirected to customer dashboard after login', function (
 
 test('wrong password returns generic auth failed message', function () {
     $response = $this->post(route('login.store'), [
-        'email' => 'platform@test.com',
+        'email' => UserSeeder::PLATFORM_SUPER_ADMIN,
         'password' => 'wrong-password',
     ]);
 
@@ -75,11 +75,11 @@ test('unknown email returns the same generic auth failed message', function () {
 });
 
 test('inactive users cannot log in', function () {
-    User::query()->where('email', 'platform@test.com')->update(['is_active' => false]);
+    User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->update(['is_active' => false]);
 
     $response = $this->post(route('login.store'), [
-        'email' => 'platform@test.com',
-        'password' => 'password',
+        'email' => UserSeeder::PLATFORM_SUPER_ADMIN,
+        'password' => UserSeeder::PLATFORM_SUPER_ADMIN,
     ]);
 
     $response->assertSessionHasErrors('email', __('auth.failed'));
@@ -87,7 +87,7 @@ test('inactive users cannot log in', function () {
 });
 
 test('authenticated portal users visiting login are redirected to their dashboard', function () {
-    $user = User::query()->where('email', 'platform@test.com')->firstOrFail();
+    $user = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $response = $this->actingAs($user, 'platform')->get(route('login'));
 
@@ -97,13 +97,13 @@ test('authenticated portal users visiting login are redirected to their dashboar
 test('sixth failed login attempt within a minute is rate limited', function () {
     for ($attempt = 0; $attempt < 5; $attempt++) {
         $this->post(route('login.store'), [
-            'email' => 'platform@test.com',
+            'email' => UserSeeder::PLATFORM_SUPER_ADMIN,
             'password' => 'wrong-password',
         ]);
     }
 
     $response = $this->post(route('login.store'), [
-        'email' => 'platform@test.com',
+        'email' => UserSeeder::PLATFORM_SUPER_ADMIN,
         'password' => 'wrong-password',
     ]);
 

@@ -35,7 +35,7 @@ function runResolveBranchContext(string $slug, User $user): Response
 }
 
 test('unknown branch slug returns not found', function () {
-    $user = User::query()->where('email', 'branch@test.com')->firstOrFail();
+    $user = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
 
     expect(fn () => runResolveBranchContext('missing-branch', $user))
         ->toThrow(NotFoundHttpException::class);
@@ -44,21 +44,21 @@ test('unknown branch slug returns not found', function () {
 test('inactive branch slug returns not found', function () {
     Branch::query()->where('slug', 'uptown')->update(['is_active' => false]);
 
-    $user = User::query()->where('email', 'branch@test.com')->firstOrFail();
+    $user = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
 
     expect(fn () => runResolveBranchContext('uptown', $user))
         ->toThrow(NotFoundHttpException::class);
 });
 
 test('wrong branch for authenticated user returns forbidden', function () {
-    $user = User::query()->where('email', 'branch@test.com')->firstOrFail();
+    $user = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
 
     expect(fn () => runResolveBranchContext('uptown', $user))
         ->toThrow(HttpException::class, 'You do not have access to this branch.');
 });
 
 test('correct branch sets team id and binds current branch', function () {
-    $user = User::query()->where('email', 'branch@test.com')->firstOrFail();
+    $user = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
     $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
 
     $response = runResolveBranchContext('downtown', $user);

@@ -31,10 +31,10 @@ test('authenticated users can access their own portal dashboard', function (
         ->get($dashboardUrl)
         ->assertOk();
 })->with([
-    'platform' => ['platform@test.com', 'platform', '/platform/dashboard'],
-    'branch' => ['branch@test.com', 'branch', '/branch/downtown/dashboard'],
-    'driver' => ['driver@test.com', 'driver', '/driver/dashboard'],
-    'customer' => ['customer@test.com', 'customer', '/dashboard'],
+    'platform' => ['superadmin@dev.com', 'platform', '/platform/dashboard'],
+    'branch' => ['branch1.superadmin@dev.com', 'branch', '/branch/downtown/dashboard'],
+    'driver' => ['driver@dev.com', 'driver', '/driver/dashboard'],
+    'customer' => ['user@dev.com', 'customer', '/dashboard'],
 ]);
 
 test('authenticated users cannot access other portal dashboards', function (
@@ -53,22 +53,22 @@ test('authenticated users cannot access other portal dashboards', function (
         $response->assertStatus($expectedStatus);
     }
 })->with([
-    'platform to branch downtown' => ['platform@test.com', 'platform', '/branch/downtown/dashboard', 302],
-    'platform to driver' => ['platform@test.com', 'platform', '/driver/dashboard', 302],
-    'platform to customer' => ['platform@test.com', 'platform', '/dashboard', 302],
-    'branch to platform' => ['branch@test.com', 'branch', '/platform/dashboard', 302],
-    'branch to driver' => ['branch@test.com', 'branch', '/driver/dashboard', 302],
-    'branch to customer' => ['branch@test.com', 'branch', '/dashboard', 302],
-    'driver to platform' => ['driver@test.com', 'driver', '/platform/dashboard', 302],
-    'driver to branch downtown' => ['driver@test.com', 'driver', '/branch/downtown/dashboard', 302],
-    'driver to customer' => ['driver@test.com', 'driver', '/dashboard', 302],
-    'customer to platform' => ['customer@test.com', 'customer', '/platform/dashboard', 302],
-    'customer to branch downtown' => ['customer@test.com', 'customer', '/branch/downtown/dashboard', 302],
-    'customer to driver' => ['customer@test.com', 'customer', '/driver/dashboard', 302],
+    'platform to branch downtown' => ['superadmin@dev.com', 'platform', '/branch/downtown/dashboard', 302],
+    'platform to driver' => ['superadmin@dev.com', 'platform', '/driver/dashboard', 302],
+    'platform to customer' => ['superadmin@dev.com', 'platform', '/dashboard', 302],
+    'branch to platform' => ['branch1.superadmin@dev.com', 'branch', '/platform/dashboard', 302],
+    'branch to driver' => ['branch1.superadmin@dev.com', 'branch', '/driver/dashboard', 302],
+    'branch to customer' => ['branch1.superadmin@dev.com', 'branch', '/dashboard', 302],
+    'driver to platform' => ['driver@dev.com', 'driver', '/platform/dashboard', 302],
+    'driver to branch downtown' => ['driver@dev.com', 'driver', '/branch/downtown/dashboard', 302],
+    'driver to customer' => ['driver@dev.com', 'driver', '/dashboard', 302],
+    'customer to platform' => ['user@dev.com', 'customer', '/platform/dashboard', 302],
+    'customer to branch downtown' => ['user@dev.com', 'customer', '/branch/downtown/dashboard', 302],
+    'customer to driver' => ['user@dev.com', 'customer', '/driver/dashboard', 302],
 ]);
 
 test('branch user receives forbidden when visiting another branch dashboard', function () {
-    $user = User::query()->where('email', 'branch@test.com')->firstOrFail();
+    $user = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
 
     $this->actingAs($user, 'branch')
         ->get('/branch/uptown/dashboard')
@@ -85,13 +85,13 @@ test('non branch users are redirected to login from alternate branch slugs', fun
         ->get('/branch/uptown/dashboard')
         ->assertRedirect(route('login'));
 })->with([
-    'platform' => ['platform@test.com', 'platform'],
-    'driver' => ['driver@test.com', 'driver'],
-    'customer' => ['customer@test.com', 'customer'],
+    'platform' => ['superadmin@dev.com', 'platform'],
+    'driver' => ['driver@dev.com', 'driver'],
+    'customer' => ['user@dev.com', 'customer'],
 ]);
 
 test('inactive portal user is logged out and redirected to login', function () {
-    $user = User::query()->where('email', 'platform@test.com')->firstOrFail();
+    $user = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
     $user->update(['is_active' => false]);
 
     $response = $this->actingAs($user, 'platform')->get('/platform/dashboard');

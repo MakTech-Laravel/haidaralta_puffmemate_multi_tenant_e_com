@@ -30,14 +30,14 @@ test('platform super admin role is scoped to team id zero', function () {
 });
 
 test('platform user has super admin role without explicit team context', function () {
-    $platformUser = User::query()->where('email', 'platform@test.com')->first();
+    $platformUser = User::query()->where('email', 'superadmin@dev.com')->first();
 
     expect($platformUser)->not->toBeNull()
         ->and($platformUser->hasRole(RoleEnum::SUPER_ADMIN->value))->toBeTrue();
 });
 
 test('branch user has super admin role when branch team context is set', function () {
-    $branchUser = User::query()->where('email', 'branch@test.com')->first();
+    $branchUser = User::query()->where('email', 'branch1.superadmin@dev.com')->first();
     $branchId = $branchUser->branch_id;
 
     app(PermissionRegistrar::class)->setPermissionsTeamId($branchId);

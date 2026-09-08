@@ -1,7 +1,8 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import RoleController from '@/actions/App/Http/Controllers/Platform/RoleController';
+import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +18,8 @@ type Role = {
     id: number;
     name: string;
     is_super_admin: boolean;
-    permissions: string[];
+    permissions_count: number;
+    total_permissions: number;
     users: {
         id: number;
         name: string;
@@ -25,7 +27,27 @@ type Role = {
     }[];
 };
 
-export default function PlatformRolesShow({ role }: { role: Role }) {
+type CoverageGroup = {
+    group: string;
+    total: number;
+    granted_count: number;
+    permissions: {
+        value: string;
+        label: string;
+        granted: boolean;
+    }[];
+};
+
+export default function PlatformRolesShow({
+    role,
+    permissionGroups,
+}: {
+    role: Role;
+    permissionGroups: CoverageGroup[];
+}) {
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [processing, setProcessing] = useState(false);
+
     return (
         <>
             <Head title={role.name} />
@@ -34,7 +56,7 @@ export default function PlatformRolesShow({ role }: { role: Role }) {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title={role.name}
-                        description="Role permissions and assigned users"
+                        description={`${role.permissions_count} of ${role.total_permissions} permissions · ${role.users.length} assigned users`}
                     />
                     <div className="flex gap-2">
                         <Button variant="secondary" asChild>
@@ -45,28 +67,51 @@ export default function PlatformRolesShow({ role }: { role: Role }) {
                                 Edit
                             </Link>
                         </Button>
+                        {!role.is_super_admin && role.users.length === 0 && (
+                            <Button
+                                variant="destructive"
+                                onClick={() => setConfirmOpen(true)}
+                            >
+                                Delete
+                            </Button>
+                        )}
                     </div>
                 </div>
 
-                <section className="space-y-3">
-                    <h2 className="text-sm font-medium">Permissions</h2>
+                <section className="space-y-4">
+                    <h2 className="text-sm font-medium">Permission coverage</h2>
                     {role.is_super_admin ? (
                         <p className="text-muted-foreground text-sm">
-                            Super-admin bypasses all permission checks via Gate.
+                            Super-admin bypasses all permission checks via Gate
+                            and is treated as fully covered.
                         </p>
-                    ) : role.permissions.length === 0 ? (
-                        <p className="text-muted-foreground text-sm">
-                            No permissions assigned.
-                        </p>
-                    ) : (
-                        <div className="flex flex-wrap gap-2">
-                            {role.permissions.map((permission) => (
-                                <Badge key={permission} variant="secondary">
-                                    {permission}
-                                </Badge>
-                            ))}
+                    ) : null}
+                    {permissionGroups.map((group) => (
+                        <div key={group.group} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-medium">
+                                    {group.group}
+                                </h3>
+                                <span className="text-muted-foreground text-xs">
+                                    {group.granted_count}/{group.total}
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {group.permissions.map((permission) => (
+                                    <Badge
+                                        key={permission.value}
+                                        variant={
+                                            permission.granted
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                    >
+                                        {permission.label}
+                                    </Badge>
+                                ))}
+                            </div>
                         </div>
-                    )}
+                    ))}
                 </section>
 
                 <section className="space-y-3">
@@ -98,27 +143,21 @@ export default function PlatformRolesShow({ role }: { role: Role }) {
                         </Table>
                     </div>
                 </section>
-
-                {!role.is_super_admin && role.users.length === 0 && (
-                    <Form
-                        {...RoleController.destroy.form(role.id)}
-                        options={{ preserveScroll: true }}
-                    >
-                        {({ processing, errors }) => (
-                            <div className="space-y-2">
-                                <Button
-                                    type="submit"
-                                    variant="destructive"
-                                    disabled={processing}
-                                >
-                                    Delete role
-                                </Button>
-                                <InputError message={errors.role} />
-                            </div>
-                        )}
-                    </Form>
-                )}
             </div>
+
+            <ConfirmDeleteDialog
+                open={confirmOpen}
+                onOpenChange={setConfirmOpen}
+                description={`Delete the “${role.name}” role permanently?`}
+                processing={processing}
+                onConfirm={() => {
+                    setProcessing(true);
+                    router.delete(RoleController.destroy.url(role.id), {
+                        preserveScroll: true,
+                        onFinish: () => setProcessing(false),
+                    });
+                }}
+            />
         </>
     );
 }

@@ -13,6 +13,7 @@ enum PermissionEnum: string
     case MANAGE_BRANCH_PRODUCTS = 'manage-branch-products';
     case MANAGE_BRANCH_ORDERS = 'manage-branch-orders';
     case MANAGE_BRANCH_STAFF = 'manage-branch-staff';
+    case MANAGE_BRANCH_ROLES = 'manage-branch-roles';
 
     /**
      * The auth guard this permission belongs to.
@@ -28,7 +29,8 @@ enum PermissionEnum: string
             self::VIEW_BRANCH_DASHBOARD,
             self::MANAGE_BRANCH_PRODUCTS,
             self::MANAGE_BRANCH_ORDERS,
-            self::MANAGE_BRANCH_STAFF => 'branch',
+            self::MANAGE_BRANCH_STAFF,
+            self::MANAGE_BRANCH_ROLES => 'branch',
         };
     }
 
@@ -44,7 +46,8 @@ enum PermissionEnum: string
             self::MANAGE_USERS,
             self::MANAGE_BRANCH_STAFF => 'Users',
 
-            self::MANAGE_ROLES => 'Roles',
+            self::MANAGE_ROLES,
+            self::MANAGE_BRANCH_ROLES => 'Roles',
             self::MANAGE_BRANCHES => 'Branches',
             self::MANAGE_BRANCH_PRODUCTS => 'Products',
             self::MANAGE_BRANCH_ORDERS => 'Orders',
@@ -65,6 +68,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_PRODUCTS => 'Manage branch products',
             self::MANAGE_BRANCH_ORDERS => 'Manage branch orders',
             self::MANAGE_BRANCH_STAFF => 'Manage branch staff',
+            self::MANAGE_BRANCH_ROLES => 'Manage branch roles',
         };
     }
 

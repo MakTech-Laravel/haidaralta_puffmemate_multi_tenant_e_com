@@ -6,4 +6,5 @@ export type PermissionKey =
     | 'view-branch-dashboard'
     | 'manage-branch-products'
     | 'manage-branch-orders'
-    | 'manage-branch-staff';
+    | 'manage-branch-staff'
+    | 'manage-branch-roles';

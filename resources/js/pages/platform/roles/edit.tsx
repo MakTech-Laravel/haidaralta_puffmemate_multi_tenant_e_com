@@ -1,15 +1,8 @@
-import { Form, Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head } from '@inertiajs/react';
 import RoleController from '@/actions/App/Http/Controllers/Platform/RoleController';
+import { RoleForm } from '@/components/admin/role-form';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
-import {
-    PermissionSelector,
-    type PermissionGroup,
-} from '@/components/permission-selector';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import type { PermissionGroup } from '@/components/permission-selector';
 
 type Role = {
     id: number;
@@ -25,8 +18,6 @@ export default function PlatformRolesEdit({
     role: Role;
     permissionGroups: PermissionGroup[];
 }) {
-    const [selected, setSelected] = useState<string[]>(role.permissions);
-
     return (
         <>
             <Head title={`Edit ${role.name}`} />
@@ -41,62 +32,17 @@ export default function PlatformRolesEdit({
                     }
                 />
 
-                <Form
-                    {...RoleController.update.form(role.id)}
-                    className="space-y-6"
-                    options={{ preserveScroll: true }}
-                >
-                    {({ processing, errors }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    name="name"
-                                    defaultValue={role.name}
-                                    required
-                                    disabled={role.is_super_admin}
-                                    readOnly={role.is_super_admin}
-                                />
-                                {role.is_super_admin && (
-                                    <input
-                                        type="hidden"
-                                        name="name"
-                                        value={role.name}
-                                    />
-                                )}
-                                <InputError message={errors.name} />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Permissions</Label>
-                                <PermissionSelector
-                                    groups={permissionGroups}
-                                    selected={selected}
-                                    onChange={setSelected}
-                                    disabled={role.is_super_admin}
-                                />
-                                <InputError message={errors.permissions} />
-                            </div>
-
-                            <div className="flex gap-2">
-                                <Button
-                                    type="submit"
-                                    disabled={processing || role.is_super_admin}
-                                >
-                                    Save changes
-                                </Button>
-                                <Button variant="secondary" asChild>
-                                    <Link
-                                        href={RoleController.show.url(role.id)}
-                                    >
-                                        Cancel
-                                    </Link>
-                                </Button>
-                            </div>
-                        </>
-                    )}
-                </Form>
+                <RoleForm
+                    action={RoleController.update.form(role.id)}
+                    groups={permissionGroups}
+                    isEdit
+                    locked={role.is_super_admin}
+                    defaults={{
+                        name: role.name,
+                        permissions: role.permissions,
+                    }}
+                    cancelHref={RoleController.show.url(role.id)}
+                />
             </div>
         </>
     );

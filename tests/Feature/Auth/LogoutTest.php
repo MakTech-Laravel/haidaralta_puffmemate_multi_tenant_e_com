@@ -26,8 +26,8 @@ test('logging out ends the active guard session and blocks dashboard access', fu
 
     $this->get($dashboardUrl)->assertRedirect(route('login'));
 })->with([
-    'platform' => ['platform@test.com', 'platform', '/platform/dashboard'],
-    'branch' => ['branch@test.com', 'branch', '/branch/downtown/dashboard'],
-    'driver' => ['driver@test.com', 'driver', '/driver/dashboard'],
-    'customer' => ['customer@test.com', 'customer', '/dashboard'],
+    'platform' => ['superadmin@dev.com', 'platform', '/platform/dashboard'],
+    'branch' => ['branch1.superadmin@dev.com', 'branch', '/branch/downtown/dashboard'],
+    'driver' => ['driver@dev.com', 'driver', '/driver/dashboard'],
+    'customer' => ['user@dev.com', 'customer', '/dashboard'],
 ]);
