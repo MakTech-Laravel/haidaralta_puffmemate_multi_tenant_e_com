@@ -30,17 +30,17 @@ class StaffController extends Controller
 
         $search = $request->string('search')->trim()->toString();
 
-        $staff = User::query()
-            ->where('user_type', UserType::PLATFORM)
-            ->when(
-                $search !== '',
-                fn ($query) => $query->where(function ($builder) use ($search): void {
-                    $builder->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                }),
-            )
-            ->orderBy('name')
-            ->paginate(15)
+        $staff = (
+            $search !== ''
+                ? User::search($search)
+                    ->where('user_type', UserType::PLATFORM->value)
+                    ->orderBy('name')
+                    ->paginate(15)
+                : User::query()
+                    ->where('user_type', UserType::PLATFORM)
+                    ->orderBy('name')
+                    ->paginate(15)
+        )
             ->withQueryString()
             ->through(function (User $user): array {
                 return [

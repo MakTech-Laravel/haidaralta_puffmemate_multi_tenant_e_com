@@ -37,6 +37,8 @@ abstract class TestCase extends BaseTestCase
             'QUEUE_CONNECTION' => 'sync',
             'MAIL_MAILER' => 'array',
             'TELESCOPE_ENABLED' => 'false',
+            'SCOUT_DRIVER' => 'collection',
+            'SCOUT_QUEUE' => 'false',
         ] as $key => $value) {
             putenv("{$key}={$value}");
             $_ENV[$key] = $value;

@@ -69,10 +69,10 @@ SESSION_CONNECTION=cache
 QUEUE_CONNECTION=redis
 ```
 
-Queue process settings:
+Queue process settings (include the Scout indexing queue):
 
 ```dotenv
-QUEUE_NAMES=default
+QUEUE_NAMES=default,scout
 QUEUE_SLEEP=3
 QUEUE_TRIES=3
 QUEUE_TIMEOUT=60
@@ -83,6 +83,28 @@ REDIS_QUEUE_CONNECTION=default
 REDIS_QUEUE=default
 REDIS_QUEUE_RETRY_AFTER=90
 REDIS_QUEUE_BLOCK_FOR=5
+```
+
+Prefer discrete Redis host/user/password/port with `REDIS_DB=0` and `REDIS_CACHE_DB=1`. Do **not** set a single `REDIS_URL=.../0` for both the `default` and `cache` connections — both read `REDIS_URL`, so `/0` would force cache onto DB 0 and collide with queues. Leave `REDIS_URL` empty when using discrete vars.
+
+Scout + Meilisearch (server-only; never `VITE_*`):
+
+```dotenv
+SCOUT_DRIVER=meilisearch
+SCOUT_PREFIX=puffonmate_
+SCOUT_QUEUE=true
+SCOUT_QUEUE_CONNECTION=redis
+SCOUT_QUEUE_NAME=scout
+MEILISEARCH_HOST=https://meilisearch.puffmemate.maktechlaravel.cloud
+MEILISEARCH_KEY=...
+```
+
+After first deploy (or index-settings change), run once from an app container:
+
+```sh
+php artisan scout:sync-index-settings
+php artisan scout:import "App\Models\User"
+php artisan scout:import "App\Models\Branch"
 ```
 
 `REDIS_QUEUE_RETRY_AFTER` must remain safely greater than `QUEUE_TIMEOUT`. Begin with two workers. Tune worker count from measured queue latency, backlog, job duration/RSS, CPU, RAM, and PostgreSQL connection capacity rather than setting it from request traffic alone.
@@ -158,7 +180,7 @@ PostgreSQL is a separate Coolify database. The image includes both `pdo_pgsql` a
 
 Redis is a separate Coolify Redis resource. The image includes phpredis. It supports queues, cache, sessions, distributed locks, and rate limiting. Never flush the shared Redis instance during deployment.
 
-Meilisearch must use the official Meilisearch image as a separate private resource. This repository currently has no Scout or Meilisearch package/configuration. When search is implemented, configure `SCOUT_DRIVER`, internal `MEILISEARCH_HOST`, and server-only `MEILISEARCH_KEY`; never expose the master key through Vite.
+Meilisearch is a separate Coolify resource (official Meilisearch image). The app uses Laravel Scout (`SCOUT_DRIVER=meilisearch`) with `meilisearch/meilisearch-php`. Configure `MEILISEARCH_HOST` (prefer the private Coolify hostname from the app network when available; public HTTPS is acceptable if the key is server-only) and `MEILISEARCH_KEY`. Never expose the key through Vite. Scout indexing jobs use the Redis `scout` queue (`QUEUE_NAMES=default,scout`). Searchable models today: `User`, `Branch`.
 
 Reverb is a separate Coolify Application at `wss://ws.puffmemate.maktechlaravel.cloud` (see above). Port `8080` is not used by this application container.
 

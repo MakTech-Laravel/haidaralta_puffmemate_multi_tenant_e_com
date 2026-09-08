@@ -29,17 +29,20 @@ class BranchController extends Controller
     {
         $search = $request->string('search')->trim()->toString();
 
-        $branches = Branch::query()
-            ->withCount('users')
-            ->when(
-                $search !== '',
-                fn ($query) => $query->where(function ($builder) use ($search): void {
-                    $builder->where('name', 'like', "%{$search}%")
-                        ->orWhere('slug', 'like', "%{$search}%");
-                }),
-            )
-            ->orderBy('name')
-            ->paginate(15)
+        $branches = $search !== ''
+            ? Branch::search($search)
+                ->orderBy('name')
+                ->paginate(15)
+            : Branch::query()
+                ->withCount('users')
+                ->orderBy('name')
+                ->paginate(15);
+
+        if ($search !== '') {
+            $branches->getCollection()->loadCount('users');
+        }
+
+        $branches = $branches
             ->withQueryString()
             ->through(fn (Branch $branch): array => $this->mapBranchRow($branch));
 

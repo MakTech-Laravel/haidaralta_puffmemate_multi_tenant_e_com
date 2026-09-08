@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Scout\Searchable;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -39,7 +40,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, Notifiable, PasskeyAuthenticatable, Searchable, TwoFactorAuthenticatable;
 
     /**
      * @return BelongsTo<Branch, $this>
@@ -47,6 +48,22 @@ class User extends Authenticatable implements PasskeyUser
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => (int) $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'user_type' => $this->user_type->value,
+            'branch_id' => $this->branch_id !== null ? (int) $this->branch_id : null,
+            'is_active' => (bool) $this->is_active,
+            'created_at' => $this->created_at?->getTimestamp() ?? 0,
+        ];
     }
 
     public function isPlatform(): bool
