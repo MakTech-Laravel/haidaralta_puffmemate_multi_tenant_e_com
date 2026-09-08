@@ -18,8 +18,10 @@ import SettingsLayout from '@/layouts/settings/layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
-getEcho();
-logEchoConfig();
+if (typeof window !== 'undefined') {
+    getEcho();
+    logEchoConfig();
+}
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),

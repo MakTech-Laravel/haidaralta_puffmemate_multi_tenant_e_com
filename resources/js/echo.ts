@@ -55,16 +55,27 @@ export function getReverbClientConfig(): ReverbClientConfig {
     };
 }
 
+function isBrowser(): boolean {
+    return typeof window !== 'undefined';
+}
+
 /**
  * Build a new Echo instance for the standalone Reverb server.
  * Uses Fortify session cookies + CSRF for private channel auth.
+ * Browser-only — never instantiate during Inertia/Vite SSR.
  */
 export function createEcho(): AppEcho | null {
+    if (!isBrowser()) {
+        return null;
+    }
+
     const config = getReverbClientConfig();
 
     if (!config.enabled) {
         return null;
     }
+
+    window.Pusher = Pusher;
 
     return new Echo({
         broadcaster: 'reverb',
@@ -76,6 +87,8 @@ export function createEcho(): AppEcho | null {
         enabledTransports: config.enabledTransports,
         disableStats: true,
         authEndpoint: config.authEndpoint,
+        // Avoid "Pusher client not found" when window.Pusher is unset (SSR/HMR).
+        client: Pusher,
         auth: {
             headers: (() => {
                 const headers: Record<string, string> = {
