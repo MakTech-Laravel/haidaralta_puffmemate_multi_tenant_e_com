@@ -93,23 +93,64 @@ Mail credentials and any service credentials used by the application must also b
 
 Vite compiles `VITE_*` values into public browser bundles during the Docker build. Changing them in Coolify after the image has built does not modify the bundle; rebuild the image after changing one. Never place secrets in a `VITE_*` variable.
 
-This repository currently reads only:
+Required build args (Dockerfile already accepts them):
 
 ```dotenv
 VITE_APP_NAME=Puffonmate
 VITE_ERROR_BOUNDARY_DEBUG=false
-```
-
-The repository does not currently install or configure Reverb/Echo. When external Reverb integration is added, the build must receive the public values below, with the host set to the separate Reverb application's domain:
-
-```dotenv
-VITE_REVERB_APP_KEY=public-app-key
-VITE_REVERB_HOST=ws.example.com
+VITE_REVERB_APP_KEY=<same as REVERB_APP_KEY>
+VITE_REVERB_HOST=ws.puffmemate.maktechlaravel.cloud
 VITE_REVERB_PORT=443
 VITE_REVERB_SCHEME=https
 ```
 
-Server-side `REVERB_*` values belong in runtime variables and must point event publishing to the separate Reverb service. Do not add a Reverb Supervisor program or local Nginx `/app` and `/apps` proxy here.
+## Reverb integration (live)
+
+| Role | URL |
+|------|-----|
+| App | https://puffmemate.maktechlaravel.cloud |
+| Reverb | https://ws.puffmemate.maktechlaravel.cloud |
+
+**App Coolify runtime** (publisher — do not install `laravel/reverb` here):
+
+```dotenv
+BROADCAST_CONNECTION=reverb
+REVERB_APP_ID=<shared>
+REVERB_APP_KEY=<shared>
+REVERB_APP_SECRET=<shared>
+REVERB_HOST=ws.puffmemate.maktechlaravel.cloud
+REVERB_PORT=443
+REVERB_SCHEME=https
+APP_URL=https://puffmemate.maktechlaravel.cloud
+FRONTEND_URL=https://puffmemate.maktechlaravel.cloud
+CORS_ALLOWED_ORIGINS=https://puffmemate.maktechlaravel.cloud
+```
+
+**Reverb Coolify app** (separate repo/image from `jjvan_reverb_server`, use `.env.puffmemate.example`):
+
+```dotenv
+APP_URL=https://ws.puffmemate.maktechlaravel.cloud
+REVERB_APP_ID=<shared>
+REVERB_APP_KEY=<shared>
+REVERB_APP_SECRET=<shared>
+REVERB_SERVER_HOST=0.0.0.0
+REVERB_SERVER_PORT=8080
+REVERB_HOST=ws.puffmemate.maktechlaravel.cloud
+REVERB_PORT=443
+REVERB_SCHEME=https
+REVERB_ALLOWED_ORIGINS=puffmemate.maktechlaravel.cloud,localhost,127.0.0.1,*.maktechlaravel.cloud
+```
+
+**Origin format rules:**
+
+- HTTP CORS (`config/cors.php`): full URLs (`https://puffmemate.maktechlaravel.cloud`)
+- Reverb `REVERB_ALLOWED_ORIGINS`: bare hostnames only (`puffmemate.maktechlaravel.cloud`)
+
+**Echo transports:** ship `enabledTransports: ['ws', 'wss']` with `forceTLS: true`. Enabling only `wss` breaks pusher-js under TLS.
+
+Do not add a Reverb Supervisor program or local Nginx `/app` and `/apps` proxy in this app image. Traefik on the Reverb Coolify app must proxy WebSocket Upgrade to container port **8080**.
+
+Verify after deploy: `https://puffmemate.maktechlaravel.cloud/platform/realtime` → Connected, public ping, private test. If status is Failed after Reverb was down, use Reconnect or hard-refresh.
 
 ## External Services
 
@@ -119,7 +160,7 @@ Redis is a separate Coolify Redis resource. The image includes phpredis. It supp
 
 Meilisearch must use the official Meilisearch image as a separate private resource. This repository currently has no Scout or Meilisearch package/configuration. When search is implemented, configure `SCOUT_DRIVER`, internal `MEILISEARCH_HOST`, and server-only `MEILISEARCH_KEY`; never expose the master key through Vite.
 
-Reverb remains a separate repository and Coolify Application, normally exposed as `wss://ws.example.com`. This application's future broadcast configuration will publish to that external service and authorize private/presence channels. Port `8080` is not used by this container.
+Reverb is a separate Coolify Application at `wss://ws.puffmemate.maktechlaravel.cloud` (see above). Port `8080` is not used by this application container.
 
 Supervisor retains fully commented Horizon and Reverb reference programs. They are disabled and do not alter the running process set. Do not enable Horizon until the package is explicitly installed and configured; if it consumes the same queues, disable the standard `laravel-queue-worker` program to prevent duplicate consumers. Do not enable the Reverb template under the current separate-application architecture.
 

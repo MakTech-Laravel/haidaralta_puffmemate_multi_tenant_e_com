@@ -1,4 +1,11 @@
-import { LayoutGrid, Shield, Users, KeyRound, UserCog } from 'lucide-react';
+import {
+    KeyRound,
+    LayoutGrid,
+    Radio,
+    Shield,
+    UserCog,
+    Users,
+} from 'lucide-react';
 import type { NavNode } from '@/components/navigation/types';
 
 export const platformNav: NavNode[] = [
@@ -6,6 +13,12 @@ export const platformNav: NavNode[] = [
         title: 'Dashboard',
         href: '/platform/dashboard',
         icon: LayoutGrid,
+        permissions: ['view-dashboard'],
+    },
+    {
+        title: 'Realtime Console',
+        href: '/platform/realtime',
+        icon: Radio,
         permissions: ['view-dashboard'],
     },
     {

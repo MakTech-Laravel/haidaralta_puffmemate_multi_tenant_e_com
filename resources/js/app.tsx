@@ -5,6 +5,7 @@ import { ErrorBoundaryFallback } from '@/components/error-boundary/error-boundar
 import { pushError } from '@/components/error-boundary/error-store';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { getEcho, logEchoConfig } from '@/echo';
 import { initializeTheme } from '@/hooks/use-appearance';
 import { useDevErrorFallback } from '@/hooks/useDevErrorFallback';
 import AppLayout from '@/layouts/app-layout';
@@ -16,6 +17,9 @@ import PlatformLayout from '@/layouts/platform/platform-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+getEcho();
+logEchoConfig();
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
