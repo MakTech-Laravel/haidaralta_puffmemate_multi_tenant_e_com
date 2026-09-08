@@ -6,4 +6,5 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | docker/** | .ai/rules/docker.md |
 | Dockerfile | .ai/rules/dockerfile.md |
+| app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |
 | database/seeders/** | .ai/rules/seeders.md |

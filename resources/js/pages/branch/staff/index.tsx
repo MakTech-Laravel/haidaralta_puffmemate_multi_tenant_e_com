@@ -1,5 +1,7 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
+import { useState } from 'react';
 import StaffController from '@/actions/App/Http/Controllers/Branch/StaffController';
+import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import Heading from '@/components/heading';
 import { SimplePagination } from '@/components/simple-pagination';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +45,19 @@ export default function BranchStaffIndex({
     staff: PaginatedStaff;
     branch: Branch;
 }) {
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [processing, setProcessing] = useState(false);
+
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Dashboard',
+                href: `/branch/${branch.slug}/dashboard`,
+            },
+            { title: 'Staff', href: `/branch/${branch.slug}/staff` },
+        ],
+    });
+
     return (
         <>
             <Head title="Staff" />
@@ -98,7 +113,25 @@ export default function BranchStaffIndex({
                                             : 'Inactive'}
                                     </TableCell>
                                     <TableCell className="space-x-2 text-right">
-                                        <Button variant="ghost" size="sm" asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            asChild
+                                        >
+                                            <Link
+                                                href={StaffController.show.url({
+                                                    branch: branch.slug,
+                                                    user: member.id,
+                                                })}
+                                            >
+                                                View
+                                            </Link>
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            asChild
+                                        >
                                             <Link
                                                 href={StaffController.edit.url({
                                                     branch: branch.slug,
@@ -108,26 +141,17 @@ export default function BranchStaffIndex({
                                                 Edit
                                             </Link>
                                         </Button>
-                                        <Form
-                                            {...StaffController.destroy.form({
-                                                branch: branch.slug,
-                                                user: member.id,
-                                            })}
-                                            options={{ preserveScroll: true }}
-                                            className="inline"
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-destructive"
+                                            onClick={() =>
+                                                setDeletingId(member.id)
+                                            }
                                         >
-                                            {({ processing }) => (
-                                                <Button
-                                                    type="submit"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    disabled={processing}
-                                                    className="text-destructive"
-                                                >
-                                                    Delete
-                                                </Button>
-                                            )}
-                                        </Form>
+                                            Delete
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -137,13 +161,37 @@ export default function BranchStaffIndex({
 
                 <SimplePagination links={staff.links} />
             </div>
+
+            <ConfirmDeleteDialog
+                open={deletingId !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeletingId(null);
+                    }
+                }}
+                description="This will permanently delete the staff account."
+                processing={processing}
+                onConfirm={() => {
+                    if (deletingId === null) {
+                        return;
+                    }
+
+                    setProcessing(true);
+                    router.delete(
+                        StaffController.destroy.url({
+                            branch: branch.slug,
+                            user: deletingId,
+                        }),
+                        {
+                            preserveScroll: true,
+                            onFinish: () => {
+                                setProcessing(false);
+                                setDeletingId(null);
+                            },
+                        },
+                    );
+                }}
+            />
         </>
     );
 }
-
-BranchStaffIndex.layout = {
-    breadcrumbs: [
-        { title: 'Dashboard', href: '/branch/downtown/dashboard' },
-        { title: 'Staff', href: '#' },
-    ],
-};

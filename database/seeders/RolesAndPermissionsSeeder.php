@@ -29,7 +29,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $this->createGuardRoles(
             self::PLATFORM_GUARD,
             $platformPermissions,
-            PermissionEnum::MANAGE_ROLES->value,
+            [PermissionEnum::MANAGE_ROLES->value],
         );
 
         $this->resetTeamContext();
@@ -49,7 +49,10 @@ class RolesAndPermissionsSeeder extends Seeder
         $this->createGuardRoles(
             self::BRANCH_GUARD,
             $branchPermissions,
-            PermissionEnum::MANAGE_BRANCH_STAFF->value,
+            [
+                PermissionEnum::MANAGE_BRANCH_STAFF->value,
+                PermissionEnum::MANAGE_BRANCH_ROLES->value,
+            ],
         );
 
         $this->resetTeamContext();
@@ -75,11 +78,12 @@ class RolesAndPermissionsSeeder extends Seeder
 
     /**
      * @param  list<Permission>  $permissions
+     * @param  list<string>  $managementPermissions
      */
     private function createGuardRoles(
         string $guardName,
         array $permissions,
-        string $managementPermission,
+        array $managementPermissions,
     ): void {
         $teamForeignKey = config('permission.column_names.team_foreign_key');
 
@@ -101,7 +105,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 RoleEnum::SUPER_ADMIN => [],
                 RoleEnum::ADMIN => $permissions,
                 RoleEnum::MANAGER => collect($permissions)
-                    ->reject(fn (Permission $permission) => $permission->name === $managementPermission)
+                    ->reject(fn (Permission $permission) => in_array($permission->name, $managementPermissions, true))
                     ->values()
                     ->all(),
                 RoleEnum::STAFF => collect($permissions)

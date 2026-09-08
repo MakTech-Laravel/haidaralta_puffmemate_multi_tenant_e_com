@@ -16,7 +16,7 @@ beforeEach(function () {
 });
 
 test('branch admin can create and update staff in their own branch', function () {
-    $admin = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
 
     $this->actingAs($admin, 'branch')
@@ -25,10 +25,17 @@ test('branch admin can create and update staff in their own branch', function ()
             'email' => 'downtown-clerk@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',
-            'role' => RoleEnum::STAFF->value,
+            'roles' => [RoleEnum::STAFF->value],
             'is_active' => true,
         ])
-        ->assertRedirect(route('branch.staff.index', $downtown));
+        ->assertRedirect(route('branch.staff.show', [
+            $downtown,
+            User::query()->where('email', 'downtown-clerk@test.com')->firstOrFail(),
+        ]))
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Staff member created.',
+        ]);
 
     $clerk = User::query()->where('email', 'downtown-clerk@test.com')->firstOrFail();
 
@@ -42,10 +49,10 @@ test('branch admin can create and update staff in their own branch', function ()
         ->put(route('branch.staff.update', [$downtown, $clerk]), [
             'name' => 'Downtown Manager',
             'email' => 'downtown-clerk@test.com',
-            'role' => RoleEnum::MANAGER->value,
+            'roles' => [RoleEnum::MANAGER->value],
             'is_active' => true,
         ])
-        ->assertRedirect(route('branch.staff.index', $downtown));
+        ->assertRedirect(route('branch.staff.show', [$downtown, $clerk]));
 
     $clerk->refresh();
     app(PermissionRegistrar::class)->setPermissionsTeamId($downtown->id);
@@ -55,7 +62,7 @@ test('branch admin can create and update staff in their own branch', function ()
 });
 
 test('branch admin cannot manage staff from another branch by url', function () {
-    $admin = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
     $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
 
@@ -82,35 +89,55 @@ test('branch admin cannot manage staff from another branch by url', function () 
         ->put(route('branch.staff.update', [$downtown, $uptownStaff]), [
             'name' => 'Hacked',
             'email' => 'uptown-only@test.com',
-            'role' => RoleEnum::ADMIN->value,
+            'roles' => [RoleEnum::ADMIN->value],
             'is_active' => true,
         ])
         ->assertNotFound();
 });
 
 test('deleting the last branch super admin is blocked', function () {
-    $admin = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
 
     $this->actingAs($admin, 'branch')
         ->delete(route('branch.staff.destroy', [$downtown, $admin]))
-        ->assertSessionHasErrors('role');
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', [
+            'type' => 'error',
+            'message' => 'Cannot remove or deactivate the last super-admin for this branch.',
+        ]);
 
     expect(User::query()->whereKey($admin->id)->exists())->toBeTrue();
 });
 
 test('deactivating the last branch super admin is blocked', function () {
-    $admin = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
 
     $this->actingAs($admin, 'branch')
         ->put(route('branch.staff.update', [$downtown, $admin]), [
             'name' => $admin->name,
             'email' => $admin->email,
-            'role' => RoleEnum::SUPER_ADMIN->value,
+            'roles' => [RoleEnum::SUPER_ADMIN->value],
             'is_active' => false,
         ])
-        ->assertSessionHasErrors('role');
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', [
+            'type' => 'error',
+            'message' => 'Cannot remove or deactivate the last super-admin for this branch.',
+        ]);
 
     expect($admin->fresh()->is_active)->toBeTrue();
+});
+
+test('branch staff show page includes effective permissions', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.staff.show', [$downtown, $admin]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/staff/show')
+            ->has('staffMember.effective_permissions'));
 });

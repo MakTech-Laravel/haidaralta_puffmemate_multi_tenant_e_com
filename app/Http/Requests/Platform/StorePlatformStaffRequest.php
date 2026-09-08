@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Http\Requests\Platform;
+
+use App\Enums\RoleEnum;
+use App\Support\PlatformTeamResolver;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Validator;
+use Spatie\Permission\PermissionRegistrar;
+
+class StorePlatformStaffRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        $teamKey = config('permission.column_names.team_foreign_key');
+
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+            'password' => ['required', 'confirmed', Password::defaults()],
+            'roles' => ['required', 'array', 'min:1'],
+            'roles.*' => [
+                'string',
+                Rule::exists('roles', 'name')
+                    ->where('guard_name', 'platform')
+                    ->where($teamKey, PlatformTeamResolver::PLATFORM_TEAM_ID),
+            ],
+            'is_active' => ['sometimes', 'boolean'],
+        ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $roles = $this->input('roles', []);
+
+            if (! in_array(RoleEnum::SUPER_ADMIN->value, $roles, true)) {
+                return;
+            }
+
+            app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
+
+            if (! $this->user('platform')?->hasRole(RoleEnum::SUPER_ADMIN->value)) {
+                $validator->errors()->add('roles', 'Only a super-admin can assign the super-admin role.');
+            }
+        });
+    }
+}

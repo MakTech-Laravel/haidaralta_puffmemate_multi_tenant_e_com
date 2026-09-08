@@ -1,10 +1,19 @@
-import { Form, Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Download } from 'lucide-react';
 import { useState } from 'react';
 import RoleController from '@/actions/App/Http/Controllers/Platform/RoleController';
+import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import Heading from '@/components/heading';
 import { SimplePagination } from '@/components/simple-pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -31,14 +40,43 @@ type PaginatedRoles = {
     }[];
 };
 
+type RoleFilters = {
+    search: string;
+    kind: string;
+    users: string;
+    permissions: string;
+};
+
 export default function PlatformRolesIndex({
     roles,
     filters,
 }: {
     roles: PaginatedRoles;
-    filters: { search: string };
+    filters: RoleFilters;
 }) {
     const [search, setSearch] = useState(filters.search);
+    const [kind, setKind] = useState(filters.kind || 'any');
+    const [users, setUsers] = useState(filters.users || 'any');
+    const [permissions, setPermissions] = useState(filters.permissions || 'any');
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [processing, setProcessing] = useState(false);
+
+    const queryPayload = () => ({
+        search: search || undefined,
+        kind: kind === 'any' ? undefined : kind,
+        users: users === 'any' ? undefined : users,
+        permissions: permissions === 'any' ? undefined : permissions,
+    });
+
+    const applyFilters = (event?: React.FormEvent) => {
+        event?.preventDefault();
+        router.get(RoleController.index.url({ query: queryPayload() }), {}, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const exportUrl = RoleController.export.url({ query: queryPayload() });
 
     return (
         <>
@@ -50,33 +88,63 @@ export default function PlatformRolesIndex({
                         title="Roles"
                         description="Manage platform roles and their permissions"
                     />
-                    <Button asChild>
-                        <Link href={RoleController.create.url()}>
-                            Create role
-                        </Link>
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="outline" asChild>
+                            <a href={exportUrl}>
+                                <Download className="h-4 w-4" />
+                                Export CSV
+                            </a>
+                        </Button>
+                        <Button asChild>
+                            <Link href={RoleController.create.url()}>
+                                Create role
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <form
-                    className="flex max-w-md gap-2"
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        router.get(
-                            RoleController.index.url({
-                                query: { search },
-                            }),
-                            {},
-                            { preserveState: true },
-                        );
-                    }}
+                    className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"
+                    onSubmit={applyFilters}
                 >
                     <Input
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
                         placeholder="Search roles"
                     />
+                    <Select value={kind} onValueChange={setKind}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Role type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="any">Any type</SelectItem>
+                            <SelectItem value="system">System</SelectItem>
+                            <SelectItem value="custom">Custom</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={users} onValueChange={setUsers}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Users" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="any">Any users</SelectItem>
+                            <SelectItem value="with">With users</SelectItem>
+                            <SelectItem value="without">Without users</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={permissions} onValueChange={setPermissions}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Permissions" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="any">Any permissions</SelectItem>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="some">Some</SelectItem>
+                            <SelectItem value="many">Many</SelectItem>
+                        </SelectContent>
+                    </Select>
                     <Button type="submit" variant="secondary">
-                        Search
+                        Apply filters
                     </Button>
                 </form>
 
@@ -93,67 +161,100 @@ export default function PlatformRolesIndex({
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {roles.data.map((role) => (
-                                <TableRow key={role.id}>
-                                    <TableCell className="font-medium">
-                                        {role.name}
-                                    </TableCell>
-                                    <TableCell>
-                                        {role.permissions_count}
-                                    </TableCell>
-                                    <TableCell>{role.users_count}</TableCell>
-                                    <TableCell className="space-x-2 text-right">
-                                        <Button variant="ghost" size="sm" asChild>
-                                            <Link
-                                                href={RoleController.show.url(
-                                                    role.id,
-                                                )}
-                                            >
-                                                View
-                                            </Link>
-                                        </Button>
-                                        <Button variant="ghost" size="sm" asChild>
-                                            <Link
-                                                href={RoleController.edit.url(
-                                                    role.id,
-                                                )}
-                                            >
-                                                Edit
-                                            </Link>
-                                        </Button>
-                                        {!role.is_super_admin &&
-                                            role.users_count === 0 && (
-                                                <Form
-                                                    {...RoleController.destroy.form(
-                                                        role.id,
-                                                    )}
-                                                    options={{
-                                                        preserveScroll: true,
-                                                    }}
-                                                    className="inline"
-                                                >
-                                                    {({ processing }) => (
-                                                        <Button
-                                                            type="submit"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            disabled={processing}
-                                                            className="text-destructive"
-                                                        >
-                                                            Delete
-                                                        </Button>
-                                                    )}
-                                                </Form>
-                                            )}
+                            {roles.data.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={4}
+                                        className="text-muted-foreground py-10 text-center"
+                                    >
+                                        No roles match the current filters.
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            ) : (
+                                roles.data.map((role) => (
+                                    <TableRow key={role.id}>
+                                        <TableCell className="font-medium">
+                                            {role.name}
+                                        </TableCell>
+                                        <TableCell>
+                                            {role.permissions_count}
+                                        </TableCell>
+                                        <TableCell>{role.users_count}</TableCell>
+                                        <TableCell className="space-x-2 text-right">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={RoleController.show.url(
+                                                        role.id,
+                                                    )}
+                                                >
+                                                    View
+                                                </Link>
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={RoleController.edit.url(
+                                                        role.id,
+                                                    )}
+                                                >
+                                                    Edit
+                                                </Link>
+                                            </Button>
+                                            {!role.is_super_admin && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-destructive"
+                                                    onClick={() =>
+                                                        setDeletingId(role.id)
+                                                    }
+                                                >
+                                                    Delete
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
                 </div>
 
                 <SimplePagination links={roles.links} />
             </div>
+
+            <ConfirmDeleteDialog
+                open={deletingId !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeletingId(null);
+                    }
+                }}
+                description="This will permanently delete the role. Roles with assigned users cannot be deleted."
+                processing={processing}
+                onConfirm={() => {
+                    if (deletingId === null) {
+                        return;
+                    }
+
+                    setProcessing(true);
+                    router.delete(RoleController.destroy.url(deletingId), {
+                        preserveScroll: true,
+                        onFinish: () => {
+                            setProcessing(false);
+                            setDeletingId(null);
+                        },
+                    });
+                }}
+            />
         </>
     );
 }

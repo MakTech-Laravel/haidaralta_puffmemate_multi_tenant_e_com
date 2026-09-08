@@ -21,7 +21,7 @@ beforeEach(function () {
 });
 
 test('platform super admin can create a role with permissions', function () {
-    $admin = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.roles.store'), [
@@ -31,7 +31,11 @@ test('platform super admin can create a role with permissions', function () {
                 PermissionEnum::MANAGE_ROLES->value,
             ],
         ])
-        ->assertRedirect();
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Role created.',
+        ]);
 
     $role = Role::query()
         ->where('name', 'auditor')
@@ -45,7 +49,7 @@ test('platform super admin can create a role with permissions', function () {
 });
 
 test('assigned custom role permissions are reflected in gate checks', function () {
-    $admin = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.roles.store'), [
@@ -67,7 +71,7 @@ test('assigned custom role permissions are reflected in gate checks', function (
 });
 
 test('platform super admin cannot rename or delete the super admin role', function () {
-    $admin = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $role = Role::query()
         ->where('name', RoleEnum::SUPER_ADMIN->value)
         ->where('guard_name', 'platform')
@@ -83,13 +87,17 @@ test('platform super admin cannot rename or delete the super admin role', functi
 
     $this->actingAs($admin, 'platform')
         ->delete(route('platform.roles.destroy', $role))
-        ->assertSessionHasErrors('role');
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', [
+            'type' => 'error',
+            'message' => 'The super-admin role cannot be deleted.',
+        ]);
 
     expect(Role::query()->whereKey($role->id)->exists())->toBeTrue();
 });
 
 test('platform role with assigned users cannot be deleted', function () {
-    $admin = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.roles.store'), [
@@ -113,7 +121,11 @@ test('platform role with assigned users cannot be deleted', function () {
 
     $this->actingAs($admin, 'platform')
         ->delete(route('platform.roles.destroy', $role))
-        ->assertSessionHasErrors('role');
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', [
+            'type' => 'error',
+            'message' => 'This role still has assigned users and cannot be deleted.',
+        ]);
 
     expect(Role::query()->whereKey($role->id)->exists())->toBeTrue();
 });
@@ -130,4 +142,39 @@ test('platform staff without manage roles cannot access role routes', function (
     $this->actingAs($user, 'platform')
         ->get(route('platform.roles.index'))
         ->assertForbidden();
+});
+
+test('platform roles index supports filters and show includes coverage', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.roles.store'), [
+            'name' => 'ops-custom',
+            'permissions' => [PermissionEnum::VIEW_DASHBOARD->value],
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.roles.index', [
+            'search' => 'ops',
+            'kind' => 'custom',
+            'users' => 'without',
+            'permissions' => 'some',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/roles/index')
+            ->where('filters.search', 'ops')
+            ->where('filters.kind', 'custom')
+            ->has('roles.data'));
+
+    $role = Role::query()->where('name', 'ops-custom')->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.roles.show', $role))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/roles/show')
+            ->has('permissionGroups')
+            ->has('role.users'));
 });
