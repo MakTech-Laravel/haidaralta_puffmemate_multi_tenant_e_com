@@ -9,6 +9,7 @@ enum PermissionEnum: string
     case MANAGE_ROLES = 'manage-roles';
     case MANAGE_BRANCHES = 'manage-branches';
     case MANAGE_REPORTS = 'manage-reports';
+    case MANAGE_DATABASE_BACKUPS = 'manage-database-backups';
     case VIEW_BRANCHES = 'view-branches';
     case CREATE_BRANCHES = 'create-branches';
     case EDIT_BRANCHES = 'edit-branches';
@@ -30,6 +31,7 @@ enum PermissionEnum: string
             self::MANAGE_USERS,
             self::MANAGE_ROLES,
             self::MANAGE_REPORTS,
+            self::MANAGE_DATABASE_BACKUPS,
             self::VIEW_BRANCHES,
             self::CREATE_BRANCHES,
             self::EDIT_BRANCHES,
@@ -68,6 +70,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_PRODUCTS => 'Products',
             self::MANAGE_BRANCH_ORDERS => 'Orders',
             self::MANAGE_REPORTS => 'Reports',
+            self::MANAGE_DATABASE_BACKUPS => 'Database',
         };
     }
 
@@ -82,6 +85,7 @@ enum PermissionEnum: string
             self::MANAGE_ROLES => 'Manage roles',
             self::MANAGE_BRANCHES => 'Manage branches',
             self::MANAGE_REPORTS => 'Manage reports',
+            self::MANAGE_DATABASE_BACKUPS => 'Manage database backups',
             self::VIEW_BRANCHES => 'View branches',
             self::CREATE_BRANCHES => 'Create branches',
             self::EDIT_BRANCHES => 'Edit branches',

@@ -4,6 +4,7 @@ use App\Http\Controllers\Platform\ActivityLogController as PlatformActivityLogCo
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
+use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
@@ -59,5 +60,20 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::middleware(['permission:manage-reports'])->group(function () {
         Route::get('activity-logs', [PlatformActivityLogController::class, 'index'])->name('platform.activity-logs.index');
         Route::get('activity-logs/{activity}', [PlatformActivityLogController::class, 'show'])->name('platform.activity-logs.show');
+    });
+
+    Route::middleware(['permission:manage-database-backups'])->group(function () {
+        Route::get('database-backups', [PlatformDatabaseBackupController::class, 'index'])->name('platform.database-backups.index');
+        Route::post('database-backups/export', [PlatformDatabaseBackupController::class, 'export'])
+            ->middleware('throttle:5,1')
+            ->name('platform.database-backups.export');
+        Route::post('database-backups/import', [PlatformDatabaseBackupController::class, 'import'])
+            ->middleware('throttle:5,1')
+            ->name('platform.database-backups.import');
+        Route::get('database-backups/{databaseBackupHistory}/download', [PlatformDatabaseBackupController::class, 'download'])
+            ->name('platform.database-backups.download');
+        Route::post('database-backups/{databaseBackupHistory}/restore', [PlatformDatabaseBackupController::class, 'restore'])
+            ->middleware('throttle:5,1')
+            ->name('platform.database-backups.restore');
     });
 });
