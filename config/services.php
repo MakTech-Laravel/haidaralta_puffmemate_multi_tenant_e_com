@@ -48,6 +48,8 @@ return [
         'app_id' => env('VITE_FIREBASE_APP_ID'),
         'measurement_id' => env('VITE_FIREBASE_MEASUREMENT_ID'),
         'vapid_key' => env('VITE_FIREBASE_VAPID_KEY'),
+        // When true, SW calls showNotification for every background message (can duplicate Chrome's auto toast for notification payloads).
+        'sw_show_notification' => (bool) env('FCM_SW_SHOW_NOTIFICATION', false),
     ],
 
 ];

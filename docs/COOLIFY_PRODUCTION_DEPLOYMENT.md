@@ -126,6 +126,22 @@ VITE_REVERB_APP_KEY=<same as REVERB_APP_KEY>
 VITE_REVERB_HOST=ws.puffmemate.maktechlaravel.cloud
 VITE_REVERB_PORT=443
 VITE_REVERB_SCHEME=https
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
+VITE_FIREBASE_VAPID_KEY=
+```
+
+Firebase Admin credentials and SW toast behavior are **runtime** Coolify variables (not build args). Mount or ship `FIREBASE_CREDENTIALS` JSON at the path you set; defaults avoid duplicate OS toasts:
+
+```dotenv
+FIREBASE_CREDENTIALS=storage/app/firebase-credentials.json
+FIREBASE_PROJECT_ID=
+FCM_SW_SHOW_NOTIFICATION=false
 ```
 
 ## Reverb integration (live)

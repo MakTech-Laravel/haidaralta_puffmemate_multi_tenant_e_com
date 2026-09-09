@@ -25,6 +25,7 @@ class FirebaseMessagingServiceWorkerController extends Controller
         }
 
         $json = json_encode($config, JSON_THROW_ON_ERROR);
+        $showNotification = config('services.firebase.sw_show_notification') ? 'true' : 'false';
 
         $script = <<<JS
 /* global importScripts, firebase */
@@ -34,8 +35,13 @@ importScripts('https://www.gstatic.com/firebasejs/12.18.0/firebase-messaging-com
 firebase.initializeApp({$json});
 
 const messaging = firebase.messaging();
+const SHOW_NOTIFICATION = {$showNotification};
 
 messaging.onBackgroundMessage((payload) => {
+  if (!SHOW_NOTIFICATION) {
+    return;
+  }
+
   const title = payload.notification?.title || payload.data?.title || 'Notification';
   const options = {
     body: payload.notification?.body || payload.data?.body || '',
