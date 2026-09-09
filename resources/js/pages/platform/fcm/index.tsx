@@ -42,7 +42,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
     );
     const [userIdsMulti, setUserIdsMulti] = useState('');
     const [title, setTitle] = useState('FCM test');
-    const [body, setBody] = useState('Hello from Puffonmate');
+    const [body, setBody] = useState('Hello from PuffMeMate');
     const [sendMode, setSendMode] = useState<SendMode>('token');
     const [recipientMode, setRecipientMode] =
         useState<RecipientMode>('single');
@@ -102,6 +102,13 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             addLog('error', `Token generation failed: ${msg}`);
+
+            if (msg.includes('token-subscribe-failed')) {
+                addLog(
+                    'warn',
+                    'Check Google Cloud API key: allow localhost referrers + FCM Registration API + Firebase Installations API. Use only http://localhost:8000 (not 127.0.0.1). Clear site data, then retry.',
+                );
+            }
         } finally {
             setBusy(false);
         }
