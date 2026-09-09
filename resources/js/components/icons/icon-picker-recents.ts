@@ -1,4 +1,4 @@
-const STORAGE_PREFIX = 'puffonmate.lucide-icon-picker.recents';
+const STORAGE_PREFIX = 'puffmemate.lucide-icon-picker.recents';
 const MAX_RECENTS = 12;
 
 function storageKey(scope: string): string {

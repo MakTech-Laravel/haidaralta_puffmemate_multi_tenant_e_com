@@ -32,7 +32,7 @@ return [
     |
     */
 
-    'prefix' => env('SCOUT_PREFIX', 'puffonmate_'),
+    'prefix' => env('SCOUT_PREFIX', 'puffmemate_'),
 
     /*
     |--------------------------------------------------------------------------

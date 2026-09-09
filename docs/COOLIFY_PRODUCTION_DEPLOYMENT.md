@@ -31,7 +31,7 @@ Set secrets in Coolify and never commit or build them into the image. Generate `
 Required application values:
 
 ```dotenv
-APP_NAME=Puffonmate
+APP_NAME=PuffMeMate
 APP_ENV=production
 APP_DEBUG=false
 APP_KEY=base64:...
@@ -47,8 +47,8 @@ Use the internal Coolify PostgreSQL hostname, not `127.0.0.1` or an auto-generat
 DB_CONNECTION=pgsql
 DB_HOST=postgres-resource-hostname
 DB_PORT=5432
-DB_DATABASE=puffonmate
-DB_USERNAME=puffonmate
+DB_DATABASE=puffmemate
+DB_USERNAME=puffmemate
 DB_PASSWORD=...
 DB_SSLMODE=prefer
 ```
@@ -63,7 +63,7 @@ REDIS_PORT=6379
 REDIS_DB=0
 REDIS_CACHE_DB=1
 CACHE_STORE=redis
-CACHE_PREFIX=puffonmate_cache_
+CACHE_PREFIX=puffmemate_cache_
 SESSION_DRIVER=redis
 SESSION_CONNECTION=cache
 QUEUE_CONNECTION=redis
@@ -93,7 +93,7 @@ Scout + Meilisearch (server-only; never `VITE_*`):
 
 ```dotenv
 SCOUT_DRIVER=meilisearch
-SCOUT_PREFIX=puffonmate_
+SCOUT_PREFIX=puffmemate_
 SCOUT_QUEUE=true
 SCOUT_QUEUE_CONNECTION=redis
 SCOUT_QUEUE_NAME=scout
@@ -120,7 +120,7 @@ Vite compiles `VITE_*` values into public browser bundles during the Docker buil
 Required build args (Dockerfile already accepts them):
 
 ```dotenv
-VITE_APP_NAME=Puffonmate
+VITE_APP_NAME=PuffMeMate
 VITE_ERROR_BOUNDARY_DEBUG=false
 VITE_REVERB_APP_KEY=<same as REVERB_APP_KEY>
 VITE_REVERB_HOST=ws.puffmemate.maktechlaravel.cloud
