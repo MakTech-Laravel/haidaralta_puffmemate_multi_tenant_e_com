@@ -7,7 +7,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
 | resources/css/app.css | .ai/rules/css.md |
-| docker/** | .ai/rules/docker.md |
+| docker/**, docker/nginx.conf | .ai/rules/docker.md |
 | Dockerfile | .ai/rules/dockerfile.md |
 | app/Services/Fcm/** | .ai/rules/fcm.md |
 | package.json | .ai/rules/general.md |

@@ -256,6 +256,7 @@ For rollback, retain the previous immutable image and deploy it without changing
 - Restrict PostgreSQL, Redis, Meilisearch, and PHP-FPM to private networking.
 - Route public HTTP only through Coolify/Traefik to container port `80`.
 - Confirm Coolify proxy addresses fall within the private ranges trusted in `bootstrap/app.php` and `docker/nginx.conf`; narrow those ranges when stable addresses are known.
+- Full-document Inertia pages (typed `/login`, or 302 from a protected route) must not 502. `docker/nginx.conf` raises FastCGI buffers so Vite `Link: modulepreload` headers fit. Inertia client visits skip Blade/`@vite` and would still work even with the old buffers. After deploy, hard-refresh `https://puffmemate.maktechlaravel.cloud/login` (not the homepage Log in link) to confirm.
 - Set `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE_COOKIE=true`, and a production `APP_URL`.
 - Confirm no `.env`, credentials, `node_modules`, Git metadata, or build toolchain exists in the final image.
 - Monitor HTTP latency/errors, queue depth/latency/failures, worker RSS, database connections, Redis memory, and scheduler failures.
