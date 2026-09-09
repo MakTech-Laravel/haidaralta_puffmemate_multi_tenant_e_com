@@ -31,7 +31,7 @@ Set secrets in Coolify and never commit or build them into the image. Generate `
 Required application values:
 
 ```dotenv
-APP_NAME=Puffonmate
+APP_NAME=PuffMeMate
 APP_ENV=production
 APP_DEBUG=false
 APP_KEY=base64:...
@@ -47,8 +47,8 @@ Use the internal Coolify PostgreSQL hostname, not `127.0.0.1` or an auto-generat
 DB_CONNECTION=pgsql
 DB_HOST=postgres-resource-hostname
 DB_PORT=5432
-DB_DATABASE=puffonmate
-DB_USERNAME=puffonmate
+DB_DATABASE=puffmemate
+DB_USERNAME=puffmemate
 DB_PASSWORD=...
 DB_SSLMODE=prefer
 ```
@@ -63,7 +63,7 @@ REDIS_PORT=6379
 REDIS_DB=0
 REDIS_CACHE_DB=1
 CACHE_STORE=redis
-CACHE_PREFIX=puffonmate_cache_
+CACHE_PREFIX=puffmemate_cache_
 SESSION_DRIVER=redis
 SESSION_CONNECTION=cache
 QUEUE_CONNECTION=redis
@@ -93,7 +93,7 @@ Scout + Meilisearch (server-only; never `VITE_*`):
 
 ```dotenv
 SCOUT_DRIVER=meilisearch
-SCOUT_PREFIX=puffonmate_
+SCOUT_PREFIX=puffmemate_
 SCOUT_QUEUE=true
 SCOUT_QUEUE_CONNECTION=redis
 SCOUT_QUEUE_NAME=scout
@@ -120,7 +120,7 @@ Vite compiles `VITE_*` values into public browser bundles during the Docker buil
 Required build args (Dockerfile already accepts them):
 
 ```dotenv
-VITE_APP_NAME=Puffonmate
+VITE_APP_NAME=PuffMeMate
 VITE_ERROR_BOUNDARY_DEBUG=false
 VITE_REVERB_APP_KEY=<same as REVERB_APP_KEY>
 VITE_REVERB_HOST=ws.puffmemate.maktechlaravel.cloud
@@ -256,6 +256,7 @@ For rollback, retain the previous immutable image and deploy it without changing
 - Restrict PostgreSQL, Redis, Meilisearch, and PHP-FPM to private networking.
 - Route public HTTP only through Coolify/Traefik to container port `80`.
 - Confirm Coolify proxy addresses fall within the private ranges trusted in `bootstrap/app.php` and `docker/nginx.conf`; narrow those ranges when stable addresses are known.
+- Full-document Inertia pages (typed `/login`, or 302 from a protected route) must not 502. `docker/nginx.conf` raises FastCGI buffers so Vite `Link: modulepreload` headers fit. Inertia client visits skip Blade/`@vite` and would still work even with the old buffers. After deploy, hard-refresh `https://puffmemate.maktechlaravel.cloud/login` (not the homepage Log in link) to confirm.
 - Set `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE_COOKIE=true`, and a production `APP_URL`.
 - Confirm no `.env`, credentials, `node_modules`, Git metadata, or build toolchain exists in the final image.
 - Monitor HTTP latency/errors, queue depth/latency/failures, worker RSS, database connections, Redis memory, and scheduler failures.
