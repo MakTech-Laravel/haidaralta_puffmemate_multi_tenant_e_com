@@ -16,7 +16,8 @@ class HandleAppearance
      */
     public function handle(Request $request, Closure $next): Response
     {
-        View::share('appearance', $request->cookie('appearance') ?? 'system');
+        // Light theme only — ignore dark/system cookies from older sessions.
+        View::share('appearance', 'light');
 
         return $next($request);
     }

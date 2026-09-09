@@ -7,14 +7,11 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
-import { useAppearance } from '@/hooks/use-appearance';
 
 const Toaster = ({ ...props }: ToasterProps) => {
-    const { appearance } = useAppearance();
-
     return (
         <Sonner
-            theme={appearance === 'system' ? undefined : appearance}
+            theme="light"
             className="toaster group z-[9999]"
             icons={{
                 success: <CircleCheckIcon className="size-4" />,

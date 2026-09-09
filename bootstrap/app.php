@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAnyPortalGuard;
 use App\Http\Middleware\EnsurePortalGuard;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -38,12 +39,14 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'ensure.guard' => EnsurePortalGuard::class,
+            'ensure.any.portal' => EnsureAnyPortalGuard::class,
             'resolve.branch' => ResolveBranchContext::class,
             'permission' => PermissionMiddleware::class,
             'role' => RoleMiddleware::class,
         ]);
 
         $middleware->priority([
+            EnsureAnyPortalGuard::class,
             EnsurePortalGuard::class,
             ResolveBranchContext::class,
             HandleInertiaRequests::class,

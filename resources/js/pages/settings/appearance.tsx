@@ -14,7 +14,7 @@ export default function Appearance() {
                 <Heading
                     variant="small"
                     title="Appearance settings"
-                    description="Update the appearance settings for your account"
+                    description="This app is locked to a light red, black, and white theme"
                 />
                 <AppearanceTabs />
             </div>

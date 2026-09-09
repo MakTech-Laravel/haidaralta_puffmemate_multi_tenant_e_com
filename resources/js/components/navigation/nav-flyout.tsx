@@ -99,7 +99,7 @@ function FlyoutNode({ node, currentPath, defaults }: NavFlyoutProps) {
                 <DropdownMenuSubTrigger
                     className={cn(
                         isNodeActive(node, currentPath) &&
-                            'text-primary data-[state=open]:text-primary',
+                            'bg-accent text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
                         slot('row', defaults, node),
                     )}
                 >
