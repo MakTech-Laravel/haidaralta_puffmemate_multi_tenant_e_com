@@ -31,8 +31,10 @@ RUN composer install \
     --no-scripts \
     --prefer-dist
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable \
+    && corepack install \
+    && pnpm install --frozen-lockfile
 
 COPY . .
 
@@ -51,7 +53,7 @@ ENV VITE_APP_NAME=${VITE_APP_NAME} \
     VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME}
 
 RUN composer dump-autoload --classmap-authoritative --no-dev --no-interaction \
-    && npm run build
+    && pnpm run build
 
 FROM php:8.4-fpm-bookworm AS production
 

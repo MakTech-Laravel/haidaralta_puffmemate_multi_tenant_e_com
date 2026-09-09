@@ -1,7 +1,8 @@
 # Realtime / Echo client
 
 - Private channel: `App.Models.User.{id}`; private test event: `.realtime.test` (leading dot = broadcastAs).
-- Sonner toasts for that event come from `usePrivateRealtimeToast` (mounted in `sonner.tsx`). Do not reconfigure Reverb for toast UX.
+- Sonner toasts for that event: `showRealtimeTestToast` / `usePrivateRealtimeToast` via `AppToaster` in `app.tsx` — never wire hooks into `components/ui/sonner.tsx` (keep the shadcn UI wrapper clean).
 - Page cleanup must only `stopListening` on the private user channel — never `echo.leave()` it — so the global toast subscription stays alive.
 - Echo is browser-only: `createEcho` / top-level `getEcho()` in `app.tsx` must not run during Inertia/Vite SSR (Pusher is not available in Node).
-- `usePrivateRealtimeToast` must use `router.page` / router events, not `usePage` — Toaster lives in `withApp` outside the page context.
+- Inertia v3 has no `router.page`. Seed `authUserId` from `withApp`'s `page` into `AppToaster`, and sync via `navigate`/`success` `detail.page` (not `usePage`).
+- Do not `pnpm dlx shadcn add sonner` without adapting afterward: registry sonner uses `next-themes`; this app uses `useAppearance`. After add, swap `useTheme()` → `useAppearance()` and remove `next-themes` if it was installed. Keep toast hooks in `AppToaster`, not in `ui/sonner.tsx`.

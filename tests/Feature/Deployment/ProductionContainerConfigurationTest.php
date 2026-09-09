@@ -67,10 +67,15 @@ test('the final image excludes frontend and development tooling', function () {
 
     expect($dockerfile)
         ->toContain('COPY --from=node:24-bookworm-slim')
+        ->toContain('COPY package.json pnpm-lock.yaml ./')
+        ->toContain('pnpm install --frozen-lockfile')
+        ->toContain('pnpm run build')
         ->toContain('composer install')
         ->toContain('pcntl pdo_mysql pdo_pgsql zip')
         ->toContain('--no-dev')
         ->not->toContain('key:generate')
+        ->not->toContain('npm ci')
+        ->not->toMatch('/(?:^|&&|RUN)\s+npm\s+/m')
         ->and($productionStage)
         ->not->toContain('node_modules')
         ->not->toContain('apt-get install -y --no-install-recommends $PHPIZE_DEPS');

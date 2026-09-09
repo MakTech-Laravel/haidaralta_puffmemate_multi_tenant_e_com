@@ -2,6 +2,7 @@ import { Head, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getEcho, getEchoGeneration, getReverbClientConfig } from '@/echo';
 import { useEchoConnection } from '@/hooks/use-echo-connection';
+import { showRealtimeTestToast } from '@/hooks/use-private-realtime-toast';
 import {
     CONNECTION_STATUS_LABELS,
     type RealtimeTestPayload,
@@ -160,6 +161,7 @@ export default function RealtimeIndex() {
                 'success',
                 `Private test received: ${data.message ?? 'ok'}`,
             );
+            showRealtimeTestToast(data);
         };
 
         channel.listen('.realtime.test', onPrivateTest);
@@ -347,6 +349,20 @@ export default function RealtimeIndex() {
                             className="rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500 disabled:opacity-40"
                         >
                             Trigger private test
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                showRealtimeTestToast({
+                                    message: `Local Sonner test at ${new Date().toISOString()}`,
+                                    triggered_at: new Date().toISOString(),
+                                    user_id: user?.id,
+                                });
+                                addLog('info', 'Local Sonner toast requested');
+                            }}
+                            className="rounded border border-amber-600 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/40"
+                        >
+                            Test toast UI
                         </button>
                         <button
                             type="button"

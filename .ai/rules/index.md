@@ -7,6 +7,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | config/scout.php | .ai/rules/config.md |
 | docker/** | .ai/rules/docker.md |
 | Dockerfile | .ai/rules/dockerfile.md |
+| package.json | .ai/rules/general.md |
 | app/Models/{User,Branch}.php | .ai/rules/models.md |
 | app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |
 | database/seeders/** | .ai/rules/seeders.md |

@@ -1,9 +1,8 @@
 import { createInertiaApp, router } from '@inertiajs/react';
-import { AlertTriangle, CheckCircle, Info, XCircle } from 'lucide-react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { AppToaster } from '@/components/app-toaster';
 import { ErrorBoundaryFallback } from '@/components/error-boundary/error-boundary-fallback';
 import { pushError } from '@/components/error-boundary/error-store';
-import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { getEcho, logEchoConfig } from '@/echo';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -15,6 +14,7 @@ import CustomerLayout from '@/layouts/customer/customer-layout';
 import DriverLayout from '@/layouts/driver/driver-layout';
 import PlatformLayout from '@/layouts/platform/platform-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import type { Auth } from '@/types/auth';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -46,7 +46,9 @@ void createInertiaApp({
         }
     },
     strictMode: true,
-    withApp(app) {
+    withApp(app, { page }) {
+        const authUserId = (page.props as { auth?: Auth }).auth?.user?.id;
+
         return (
             <TooltipProvider delayDuration={0}>
                 <ErrorBoundary
@@ -62,19 +64,7 @@ void createInertiaApp({
                 >
                     {app}
                 </ErrorBoundary>
-                <Toaster
-                    position="bottom-right"
-                    richColors
-                    closeButton
-                    expand={true}
-                    duration={3000}
-                    icons={{
-                        success: <CheckCircle className="h-4 w-4" />,
-                        error: <XCircle className="h-4 w-4" />,
-                        warning: <AlertTriangle className="h-4 w-4" />,
-                        info: <Info className="h-4 w-4" />,
-                    }}
-                />
+                <AppToaster authUserId={authUserId} />
             </TooltipProvider>
         );
     },
