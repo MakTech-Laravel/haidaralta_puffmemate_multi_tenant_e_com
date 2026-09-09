@@ -10,4 +10,4 @@ paths:
 Settings routes must use `ensure.any.portal` (not plain `auth` / default `web`). Portal users authenticate on platform|branch|driver|customer only; plain `auth` redirects platform admins away from /settings/*. Mirror EnsurePortalGuard: detect via PortalAuth::activeGuard(), Auth::shouldUse, reject inactive users.
 
 ## Portal routes live in dedicated files
-web.php only requires portal route files plus fortify.php and settings.php. Put public routes in public.php, platform in platfrom.php (filename spelling is intentional), branch/driver/customer in their matching files. Do not move fortify, settings, console, or channels into portal files.
+web.php only requires portal route files plus fortify.php, settings.php, and fcm.php. Put public routes in public.php, platform in platfrom.php (filename spelling is intentional), branch/driver/customer in their matching files. Shared FCM register/unregister live in fcm.php behind ensure.any.portal. Do not move fortify, settings, console, or channels into portal files.

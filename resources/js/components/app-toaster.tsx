@@ -1,6 +1,7 @@
 import { Toaster } from '@/components/ui/sonner';
 import { useFlashToast } from '@/hooks/use-flash-toast';
 import { usePrivateRealtimeToast } from '@/hooks/use-private-realtime-toast';
+import { useRegisterFcmToken } from '@/hooks/use-register-fcm-token';
 
 type AppToasterProps = {
     authUserId?: number;
@@ -12,6 +13,7 @@ type AppToasterProps = {
 export function AppToaster({ authUserId }: AppToasterProps) {
     useFlashToast();
     usePrivateRealtimeToast(authUserId);
+    useRegisterFcmToken(authUserId);
 
     return (
         <Toaster

@@ -7,3 +7,4 @@ require __DIR__.'/driver.php';
 require __DIR__.'/customer.php';
 require __DIR__.'/fortify.php';
 require __DIR__.'/settings.php';
+require __DIR__.'/fcm.php';

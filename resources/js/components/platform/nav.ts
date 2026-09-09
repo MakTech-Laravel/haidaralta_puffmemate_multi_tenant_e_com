@@ -1,5 +1,6 @@
 import {
     Building2,
+    BellRing,
     KeyRound,
     LayoutGrid,
     Radio,
@@ -26,6 +27,12 @@ export const platformNav: NavNode[] = [
         title: 'Realtime Console',
         href: '/platform/realtime',
         icon: Radio,
+        permissions: ['view-dashboard'],
+    },
+    {
+        title: 'FCM Console',
+        href: '/platform/fcm',
+        icon: BellRing,
         permissions: ['view-dashboard'],
     },
     {

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
+use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
@@ -16,6 +17,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::get('realtime/ping', [PlatformRealtimeController::class, 'ping'])->name('platform.realtime.ping');
     Route::get('realtime/health', [PlatformRealtimeController::class, 'health'])->name('platform.realtime.health');
     Route::post('realtime/test-notification', [PlatformRealtimeController::class, 'testNotification'])->name('platform.realtime.test-notification');
+
+    Route::get('fcm', [PlatformFcmController::class, 'index'])->name('platform.fcm.index');
+    Route::post('fcm/test', [PlatformFcmController::class, 'test'])->middleware('throttle:10,1')->name('platform.fcm.test');
 
     Route::middleware(['permission:manage-roles'])->group(function () {
         Route::get('roles/export', [PlatformRoleController::class, 'export'])->name('platform.roles.export');
