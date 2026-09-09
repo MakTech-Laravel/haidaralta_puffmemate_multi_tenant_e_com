@@ -4,6 +4,7 @@ export type PermissionKey =
     | 'manage-roles'
     | 'manage-branches'
     | 'manage-reports'
+    | 'manage-database-backups'
     | 'view-branch-dashboard'
     | 'manage-branch-products'
     | 'manage-branch-orders'

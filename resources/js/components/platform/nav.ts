@@ -1,9 +1,11 @@
 import {
     Building2,
     BellRing,
+    Database,
     KeyRound,
     LayoutGrid,
     Radio,
+    ScrollText,
     Shield,
     UserCog,
     Users,
@@ -22,6 +24,18 @@ export const platformNav: NavNode[] = [
         href: '/platform/branches',
         icon: Building2,
         permissions: ['view-branches'],
+    },
+    {
+        title: 'Activity log',
+        href: '/platform/activity-logs',
+        icon: ScrollText,
+        permissions: ['manage-reports'],
+    },
+    {
+        title: 'Database backups',
+        href: '/platform/database-backups',
+        icon: Database,
+        permissions: ['manage-database-backups'],
     },
     {
         title: 'Realtime Console',
