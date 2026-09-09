@@ -32,7 +32,7 @@ RUN composer install \
     --prefer-dist
 
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable \
+RUN corepack enable pnpm \
     && corepack install \
     && pnpm install --frozen-lockfile
 
