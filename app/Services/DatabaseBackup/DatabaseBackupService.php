@@ -7,8 +7,10 @@ use App\Enums\DatabaseBackupType;
 use App\Models\DatabaseBackupHistory;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -42,6 +44,8 @@ class DatabaseBackupService
      */
     public function paginateHistory(int $perPage = 20): LengthAwarePaginator
     {
+        $this->ensureExcludedTablesExist((string) config('database.default'));
+
         return DatabaseBackupHistory::query()
             ->with(['triggeredBy:id,name,email'])
             ->latest('id')
@@ -81,6 +85,7 @@ class DatabaseBackupService
     public function export(?User $user): DatabaseBackupHistory
     {
         $connection = (string) config('database.default');
+        $this->ensureExcludedTablesExist($connection);
         $filename = 'export-'.now()->format('Y-m-d-His').'-'.Str::lower(Str::random(8)).'.sql';
         $relativePath = self::DIRECTORY.'/'.$filename;
 
@@ -107,6 +112,8 @@ class DatabaseBackupService
                 'message' => 'Export completed',
             ]);
         } catch (Throwable $exception) {
+            $this->ensureExcludedTablesExist($connection);
+
             $history->update([
                 'status' => DatabaseBackupStatus::Failed,
                 'message' => $exception->getMessage(),
@@ -121,6 +128,7 @@ class DatabaseBackupService
     public function importUpload(UploadedFile $file, ?User $user): DatabaseBackupHistory
     {
         $connection = (string) config('database.default');
+        $this->ensureExcludedTablesExist($connection);
         $filename = 'import-'.now()->format('Y-m-d-His').'-'.Str::lower(Str::random(8)).'.sql';
         $relativePath = self::DIRECTORY.'/'.$filename;
 
@@ -148,6 +156,8 @@ class DatabaseBackupService
                 'message' => 'Import completed',
             ]);
         } catch (Throwable $exception) {
+            $this->ensureExcludedTablesExist($connection);
+
             $history->update([
                 'status' => DatabaseBackupStatus::Failed,
                 'message' => $exception->getMessage(),
@@ -170,6 +180,7 @@ class DatabaseBackupService
         }
 
         $connection = (string) config('database.default');
+        $this->ensureExcludedTablesExist($connection);
         $filename = 'restore-'.now()->format('Y-m-d-His').'-'.Str::lower(Str::random(8)).'.sql';
         $relativePath = self::DIRECTORY.'/'.$filename;
 
@@ -198,6 +209,8 @@ class DatabaseBackupService
                 'message' => 'Restore completed from #'.$source->id,
             ]);
         } catch (Throwable $exception) {
+            $this->ensureExcludedTablesExist($connection);
+
             $history->update([
                 'status' => DatabaseBackupStatus::Failed,
                 'message' => $exception->getMessage(),
@@ -495,11 +508,27 @@ class DatabaseBackupService
 
     private function restorePostgreSql(string $connection, string $absolutePath): void
     {
+        $rawSql = file_get_contents($absolutePath);
+        $preview = is_string($rawSql) ? $this->sanitizeSqlDump($rawSql) : '';
+        $isFullDump = $this->isFullPostgresDump($preview);
+        $historyRows = $isFullDump ? $this->snapshotBackupHistoryRows($connection) : [];
+
         try {
-            $this->restorePostgreSqlWithPsql($connection, $absolutePath);
-        } catch (Throwable $exception) {
-            report($exception);
-            $this->restoreSqlViaDatabase($connection, $absolutePath);
+            if ($isFullDump) {
+                $this->resetPublicSchema($connection);
+            }
+
+            try {
+                $this->restorePostgreSqlWithPsql($connection, $absolutePath);
+            } catch (Throwable $exception) {
+                report($exception);
+                $this->restoreSqlViaDatabase($connection, $absolutePath, schemaAlreadyReset: $isFullDump);
+            }
+        } finally {
+            if ($isFullDump) {
+                $this->ensureExcludedTablesExist($connection);
+                $this->restoreBackupHistoryRows($connection, $historyRows);
+            }
         }
     }
 
@@ -539,7 +568,7 @@ class DatabaseBackupService
         }
     }
 
-    private function restoreSqlViaDatabase(string $connection, string $absolutePath): void
+    private function restoreSqlViaDatabase(string $connection, string $absolutePath, bool $schemaAlreadyReset = false): void
     {
         $sql = file_get_contents($absolutePath);
 
@@ -547,15 +576,226 @@ class DatabaseBackupService
             throw new RuntimeException('SQL file is empty or unreadable.');
         }
 
-        $sql = (string) preg_replace('/^\s*BEGIN\s*;\s*/mi', '', $sql);
-        $sql = (string) preg_replace('/^\s*COMMIT\s*;\s*/mi', '', $sql);
-        $sql = trim($sql);
+        $sql = $this->sanitizeSqlDump($sql);
 
         if ($sql === '') {
             return;
         }
 
+        if (preg_match('/^\s*COPY\s+.+\s+FROM\s+stdin\s*;/mi', $sql) === 1) {
+            throw new RuntimeException(
+                'This dump uses COPY FROM stdin and requires the psql client. Ensure PostgreSQL bin is installed and reachable.'
+            );
+        }
+
+        $driver = (string) config("database.connections.{$connection}.driver");
+
+        if ($driver === 'pgsql' && $this->isFullPostgresDump($sql) && ! $schemaAlreadyReset) {
+            $this->resetPublicSchema($connection);
+        }
+
         DB::connection($connection)->unprepared($sql);
+    }
+
+    /**
+     * Remove client-only / wrapper directives so PDO can execute the dump.
+     */
+    private function sanitizeSqlDump(string $sql): string
+    {
+        // PG 17+/18 pg_dump meta-commands (psql-only).
+        $sql = (string) preg_replace('/^\s*\\\\(?:un)?restrict\b.*$/mi', '', $sql);
+
+        // Other common psql meta-commands that are not SQL.
+        $sql = (string) preg_replace('/^\s*\\\\(?!N\b).*$/mi', '', $sql);
+
+        $sql = (string) preg_replace('/^\s*BEGIN\s*;\s*/mi', '', $sql);
+        $sql = (string) preg_replace('/^\s*COMMIT\s*;\s*/mi', '', $sql);
+
+        return trim($sql);
+    }
+
+    private function isFullPostgresDump(string $sql): bool
+    {
+        if (str_contains($sql, 'Native PostgreSQL dump')) {
+            return false;
+        }
+
+        return str_contains($sql, 'PostgreSQL database dump')
+            || str_contains($sql, 'CREATE TABLE public.');
+    }
+
+    private function resetPublicSchema(string $connection): void
+    {
+        $username = (string) (config("database.connections.{$connection}.username") ?: 'postgres');
+
+        DB::connection($connection)->unprepared('DROP SCHEMA IF EXISTS __backup_preserve CASCADE');
+
+        DB::connection($connection)->unprepared(<<<SQL
+            DROP SCHEMA IF EXISTS public CASCADE;
+            CREATE SCHEMA public;
+            GRANT ALL ON SCHEMA public TO PUBLIC;
+            GRANT ALL ON SCHEMA public TO "{$username}";
+            SQL);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function snapshotBackupHistoryRows(string $connection): array
+    {
+        if (! Schema::connection($connection)->hasTable('database_backup_histories')) {
+            return [];
+        }
+
+        return DB::connection($connection)
+            ->table('database_backup_histories')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (object $row): array => (array) $row)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     */
+    private function restoreBackupHistoryRows(string $connection, array $rows): void
+    {
+        if ($rows === [] || ! Schema::connection($connection)->hasTable('database_backup_histories')) {
+            return;
+        }
+
+        $db = DB::connection($connection);
+
+        $db->table('database_backup_histories')->delete();
+
+        foreach (array_chunk($rows, 100) as $chunk) {
+            $db->table('database_backup_histories')->insert($chunk);
+        }
+
+        if ((string) config("database.connections.{$connection}.driver") === 'pgsql') {
+            $maxId = (int) $db->table('database_backup_histories')->max('id');
+            $db->unprepared(
+                'SELECT setval(pg_get_serial_sequence(\'database_backup_histories\', \'id\'), '.max($maxId, 1).', '.($maxId > 0 ? 'true' : 'false').')'
+            );
+        }
+    }
+
+    /**
+     * Recreate excluded infra tables wiped by a full schema restore.
+     */
+    public function ensureExcludedTablesExist(?string $connection = null): void
+    {
+        $connection ??= (string) config('database.default');
+        $schema = Schema::connection($connection);
+        $usersExist = $schema->hasTable('users');
+
+        if (! $schema->hasTable('database_backup_histories')) {
+            $schema->create('database_backup_histories', function (Blueprint $table) use ($usersExist): void {
+                $table->id();
+                $table->string('type');
+                $table->string('status');
+                $table->string('disk')->default('local');
+                $table->string('path')->nullable();
+                $table->string('filename')->nullable();
+                $table->unsignedBigInteger('size_bytes')->nullable();
+
+                if ($usersExist) {
+                    $table->foreignId('triggered_by')->nullable()->constrained('users')->nullOnDelete();
+                } else {
+                    $table->unsignedBigInteger('triggered_by')->nullable();
+                }
+
+                $table->unsignedBigInteger('source_history_id')->nullable();
+                $table->string('connection')->nullable();
+                $table->text('message')->nullable();
+                $table->timestamps();
+
+                $table->index(['type', 'status']);
+                $table->index('created_at');
+            });
+
+            if ($schema->hasTable('database_backup_histories')) {
+                try {
+                    $schema->table('database_backup_histories', function (Blueprint $table): void {
+                        $table->foreign('source_history_id')
+                            ->references('id')
+                            ->on('database_backup_histories')
+                            ->nullOnDelete();
+                    });
+                } catch (Throwable) {
+                    // Self-FK may already exist depending on driver quirks.
+                }
+            }
+        }
+
+        if (! $schema->hasTable('cache')) {
+            $schema->create('cache', function (Blueprint $table): void {
+                $table->string('key')->primary();
+                $table->mediumText('value');
+                $table->bigInteger('expiration')->index();
+            });
+        }
+
+        if (! $schema->hasTable('cache_locks')) {
+            $schema->create('cache_locks', function (Blueprint $table): void {
+                $table->string('key')->primary();
+                $table->string('owner');
+                $table->bigInteger('expiration')->index();
+            });
+        }
+
+        if (! $schema->hasTable('jobs')) {
+            $schema->create('jobs', function (Blueprint $table): void {
+                $table->id();
+                $table->string('queue')->index();
+                $table->longText('payload');
+                $table->unsignedSmallInteger('attempts');
+                $table->unsignedInteger('reserved_at')->nullable();
+                $table->unsignedInteger('available_at');
+                $table->unsignedInteger('created_at');
+            });
+        }
+
+        if (! $schema->hasTable('job_batches')) {
+            $schema->create('job_batches', function (Blueprint $table): void {
+                $table->string('id')->primary();
+                $table->string('name');
+                $table->integer('total_jobs');
+                $table->integer('pending_jobs');
+                $table->integer('failed_jobs');
+                $table->longText('failed_job_ids');
+                $table->mediumText('options')->nullable();
+                $table->integer('cancelled_at')->nullable();
+                $table->integer('created_at');
+                $table->integer('finished_at')->nullable();
+            });
+        }
+
+        if (! $schema->hasTable('failed_jobs')) {
+            $schema->create('failed_jobs', function (Blueprint $table): void {
+                $table->id();
+                $table->string('uuid')->unique();
+                $table->string('connection');
+                $table->string('queue');
+                $table->longText('payload');
+                $table->longText('exception');
+                $table->timestamp('failed_at')->useCurrent();
+
+                $table->index(['connection', 'queue', 'failed_at']);
+            });
+        }
+
+        if (! $schema->hasTable('sessions')) {
+            $schema->create('sessions', function (Blueprint $table): void {
+                $table->string('id')->primary();
+                $table->foreignId('user_id')->nullable()->index();
+                $table->string('ip_address', 45)->nullable();
+                $table->text('user_agent')->nullable();
+                $table->longText('payload');
+                $table->integer('last_activity')->index();
+            });
+        }
     }
 
     private function restoreMySql(string $connection, string $absolutePath): void

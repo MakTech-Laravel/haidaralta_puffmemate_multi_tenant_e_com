@@ -87,6 +87,37 @@ test('platform super admin can import sql upload with confirmation', function ()
         ->and($history->status)->toBe(DatabaseBackupStatus::Completed);
 });
 
+test('import strips postgres restrict meta commands before restore', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $sql = UploadedFile::fake()->createWithContent(
+        'restore.sql',
+        implode("\n", [
+            '-- PostgreSQL database dump',
+            '\restrict 622a52b6d8c542e6f8e258c35dfedab3',
+            'SELECT 1;',
+            '\unrestrict 622a52b6d8c542e6f8e258c35dfedab3',
+            '',
+        ]),
+    );
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.database-backups.import'), [
+            'file' => $sql,
+            'confirmed' => '1',
+        ])
+        ->assertRedirect(route('platform.database-backups.index'))
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Database import completed (#1).',
+        ]);
+
+    $history = DatabaseBackupHistory::query()->latest('id')->first();
+
+    expect($history)->not->toBeNull()
+        ->and($history->status)->toBe(DatabaseBackupStatus::Completed);
+});
+
 test('import requires confirmation', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
