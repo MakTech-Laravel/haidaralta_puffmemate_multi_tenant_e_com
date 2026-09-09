@@ -13,3 +13,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |
 | database/seeders/** | .ai/rules/seeders.md |
+| resources/js/{layouts,components,pages}/storefront/** | .ai/rules/storefront.md |

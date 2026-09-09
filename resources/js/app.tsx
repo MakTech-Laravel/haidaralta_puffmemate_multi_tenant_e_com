@@ -14,6 +14,7 @@ import CustomerLayout from '@/layouts/customer/customer-layout';
 import DriverLayout from '@/layouts/driver/driver-layout';
 import PlatformLayout from '@/layouts/platform/platform-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import StorefrontLayout from '@/layouts/storefront/storefront-layout';
 import type { Auth } from '@/types/auth';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -27,8 +28,8 @@ void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
-            case name === 'welcome':
-                return null;
+            case name.startsWith('storefront/'):
+                return StorefrontLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
