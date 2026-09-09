@@ -87,6 +87,8 @@ REDIS_QUEUE_BLOCK_FOR=5
 
 Prefer discrete Redis host/user/password/port with `REDIS_DB=0` and `REDIS_CACHE_DB=1`. Do **not** set a single `REDIS_URL=.../0` for both the `default` and `cache` connections — both read `REDIS_URL`, so `/0` would force cache onto DB 0 and collide with queues. Leave `REDIS_URL` empty when using discrete vars.
 
+Local Windows development against the public Redis hostname often sees ~1s RTT per Redis command. Do **not** point local `SESSION_DRIVER` / `CACHE_STORE` at that remote Redis — login and every page load will hang or show connection errors. Use `SESSION_DRIVER=database` and `CACHE_STORE=database` locally; keep `QUEUE_CONNECTION=redis` for Scout workers if needed. Production Coolify (same network as Redis) should keep session/cache on Redis as shown above.
+
 Scout + Meilisearch (server-only; never `VITE_*`):
 
 ```dotenv

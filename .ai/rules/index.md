@@ -7,7 +7,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | config/scout.php | .ai/rules/config.md |
 | docker/** | .ai/rules/docker.md |
 | Dockerfile | .ai/rules/dockerfile.md |
+| app/Models/{User,Branch}.php | .ai/rules/models.md |
 | app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |
 | database/seeders/** | .ai/rules/seeders.md |
-| resources/js/{echo.ts,hooks/use-private-realtime-toast.ts,pages/platform/realtime/**,realtime/**} | .ai/rules/realtime-echo.md |
-| app/Models/{User,Branch}.php, docs/COOLIFY_PRODUCTION_DEPLOYMENT.md | .ai/rules/redis-scout-meilisearch.md |

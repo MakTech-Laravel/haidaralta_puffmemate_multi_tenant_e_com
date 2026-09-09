@@ -44,6 +44,12 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
                 return false;
             }
 
+            // Local: allow without login so Telescope can debug auth failures.
+            // Staging: platform super-admins only.
+            if ($this->app->environment('local')) {
+                return true;
+            }
+
             return TelescopeAccess::allows($this->resolveTelescopeUser($request));
         });
     }

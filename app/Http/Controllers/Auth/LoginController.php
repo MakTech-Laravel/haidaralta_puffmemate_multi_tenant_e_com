@@ -8,6 +8,7 @@ use App\Support\PortalAuth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Laravel\Fortify\Features;
@@ -41,11 +42,19 @@ class LoginController extends Controller
         $request->session()->regenerate();
 
         $activeGuard = PortalAuth::activeGuard();
-        $user = Auth::guard($activeGuard)->user();
 
-        if ($user !== null) {
-            $user->loadMissing('branch');
+        if ($activeGuard === null) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => [__('auth.failed')],
+            ]);
         }
+
+        $user = Auth::guard($activeGuard)->user();
+        $user->loadMissing('branch');
 
         return redirect()->intended(
             PortalAuth::dashboardPath($user),

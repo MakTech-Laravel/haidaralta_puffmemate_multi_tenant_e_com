@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserType;
+use App\Support\SearchableTimestamp;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -62,7 +63,7 @@ class User extends Authenticatable implements PasskeyUser
             'user_type' => $this->user_type->value,
             'branch_id' => $this->branch_id !== null ? (int) $this->branch_id : null,
             'is_active' => (bool) $this->is_active,
-            'created_at' => $this->created_at?->getTimestamp() ?? 0,
+            'created_at' => SearchableTimestamp::from($this->created_at),
         ];
     }
 
