@@ -23,6 +23,8 @@ COPY --from=node:24-bookworm-slim /usr/local/ /usr/local/
 
 WORKDIR /var/www
 
+ENV CI=true
+
 COPY composer.json composer.lock ./
 RUN composer install \
     --no-dev \
@@ -31,7 +33,7 @@ RUN composer install \
     --no-scripts \
     --prefer-dist
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN corepack enable pnpm \
     && corepack install \
     && pnpm install --frozen-lockfile

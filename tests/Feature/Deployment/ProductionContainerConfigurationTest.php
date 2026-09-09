@@ -67,7 +67,8 @@ test('the final image excludes frontend and development tooling', function () {
 
     expect($dockerfile)
         ->toContain('COPY --from=node:24-bookworm-slim')
-        ->toContain('COPY package.json pnpm-lock.yaml ./')
+        ->toContain('ENV CI=true')
+        ->toContain('COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./')
         ->toContain('corepack enable pnpm')
         ->toContain('pnpm install --frozen-lockfile')
         ->toContain('pnpm run build')
