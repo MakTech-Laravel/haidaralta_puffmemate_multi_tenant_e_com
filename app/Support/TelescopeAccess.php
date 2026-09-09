@@ -9,8 +9,10 @@ use Spatie\Permission\PermissionRegistrar;
 /**
  * Authorization helper for Laravel Telescope.
  *
- * Telescope itself is only registered in local/staging (see bootstrap/providers.php).
- * This helper encodes the allow-list used by TelescopeServiceProvider.
+ * Telescope itself is only registered in local/staging when TELESCOPE_ENABLED=true
+ * (see bootstrap/providers.php — both Laravel\Telescope\TelescopeServiceProvider and
+ * App\Providers\TelescopeServiceProvider must be registered; the package is dont-discover).
+ * Local HTTP access is open; staging uses this allow-list (platform super-admins).
  */
 final class TelescopeAccess
 {

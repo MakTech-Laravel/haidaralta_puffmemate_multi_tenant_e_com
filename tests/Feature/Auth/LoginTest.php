@@ -21,6 +21,17 @@ test('platform user is redirected to platform dashboard after login', function (
     $this->assertAuthenticated('platform');
 });
 
+test('login accepts html checkbox remember value', function () {
+    $response = $this->post(route('login.store'), [
+        'email' => UserSeeder::PLATFORM_ADMIN,
+        'password' => UserSeeder::PLATFORM_ADMIN,
+        'remember' => 'on',
+    ]);
+
+    $response->assertRedirect('/platform/dashboard');
+    $this->assertAuthenticated('platform');
+});
+
 test('branch user is redirected to their branch dashboard after login', function () {
     $response = $this->post(route('login.store'), [
         'email' => UserSeeder::BRANCH_1_SUPER_ADMIN,

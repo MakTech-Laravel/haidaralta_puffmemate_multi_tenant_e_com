@@ -201,7 +201,6 @@ test('platform admin can open realtime console page', function () {
     $admin = createRealtimePlatformAdmin();
 
     $this->actingAs($admin, 'platform')
-        ->withoutVite()
         ->get('/platform/realtime')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page->component('platform/realtime/index'));

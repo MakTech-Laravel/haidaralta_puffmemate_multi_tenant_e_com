@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\SearchableTimestamp;
 use Database\Factories\BranchFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -45,7 +46,7 @@ class Branch extends Model
             'slug' => $this->slug,
             'address' => $this->address,
             'is_active' => (bool) $this->is_active,
-            'created_at' => $this->created_at?->getTimestamp() ?? 0,
+            'created_at' => SearchableTimestamp::from($this->created_at),
         ];
     }
 

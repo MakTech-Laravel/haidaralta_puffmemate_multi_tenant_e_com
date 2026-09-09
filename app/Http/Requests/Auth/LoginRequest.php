@@ -22,6 +22,18 @@ class LoginRequest extends FormRequest
     }
 
     /**
+     * Normalize HTML checkbox values (e.g. "on") before boolean validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('remember')) {
+            $this->merge([
+                'remember' => $this->boolean('remember'),
+            ]);
+        }
+    }
+
+    /**
      * @return array<string, list<string>>
      */
     public function rules(): array

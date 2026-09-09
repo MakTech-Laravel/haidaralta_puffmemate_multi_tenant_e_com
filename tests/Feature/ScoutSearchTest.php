@@ -35,6 +35,27 @@ test('user searchable array casts filter fields to engine-safe types', function 
         ->and($payload['created_at'])->toBeInt();
 });
 
+test('user searchable array survives remember-token saves with timestamps disabled', function () {
+    $user = User::factory()->create([
+        'user_type' => UserType::PLATFORM,
+        'branch_id' => null,
+    ]);
+
+    $user->timestamps = false;
+
+    expect($user->toSearchableArray()['created_at'])->toBeInt()->toBeGreaterThan(0);
+});
+
+test('login with remember me does not error while syncing scout', function () {
+    $this->post(route('login.store'), [
+        'email' => UserSeeder::PLATFORM_ADMIN,
+        'password' => UserSeeder::PLATFORM_ADMIN,
+        'remember' => true,
+    ])->assertRedirect('/platform/dashboard');
+
+    $this->assertAuthenticated('platform');
+});
+
 test('branch searchable array includes slug and address', function () {
     $branch = Branch::factory()->create([
         'name' => 'Harbor',
