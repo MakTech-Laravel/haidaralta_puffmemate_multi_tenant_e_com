@@ -4,6 +4,7 @@ import {
     KeyRound,
     LayoutGrid,
     Radio,
+    ScrollText,
     Shield,
     UserCog,
     Users,
@@ -22,6 +23,12 @@ export const platformNav: NavNode[] = [
         href: '/platform/branches',
         icon: Building2,
         permissions: ['view-branches'],
+    },
+    {
+        title: 'Activity log',
+        href: '/platform/activity-logs',
+        icon: ScrollText,
+        permissions: ['manage-reports'],
     },
     {
         title: 'Realtime Console',

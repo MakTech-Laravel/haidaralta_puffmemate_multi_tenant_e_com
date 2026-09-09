@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Platform\ActivityLogController as PlatformActivityLogController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
@@ -53,5 +54,10 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
 
     Route::middleware(['permission:delete-branches'])->group(function () {
         Route::delete('branches/{branch}', [PlatformBranchController::class, 'destroy'])->name('platform.branches.destroy');
+    });
+
+    Route::middleware(['permission:manage-reports'])->group(function () {
+        Route::get('activity-logs', [PlatformActivityLogController::class, 'index'])->name('platform.activity-logs.index');
+        Route::get('activity-logs/{activity}', [PlatformActivityLogController::class, 'show'])->name('platform.activity-logs.show');
     });
 });
