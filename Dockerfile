@@ -86,6 +86,7 @@ RUN apt-get update \
         libpng16-16 \
         libpq5 \
         libzip4 \
+        nano \
         nginx \
         supervisor \
     && rm -rf /var/lib/apt/lists/* \

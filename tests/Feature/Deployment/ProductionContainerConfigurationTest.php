@@ -79,6 +79,7 @@ test('the final image excludes frontend and development tooling', function () {
         ->not->toContain('npm ci')
         ->not->toMatch('/(?:^|&&|RUN)\s+npm\s+/m')
         ->and($productionStage)
+        ->toContain('nano')
         ->not->toContain('node_modules')
         ->not->toContain('apt-get install -y --no-install-recommends $PHPIZE_DEPS');
 });
