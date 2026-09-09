@@ -79,6 +79,7 @@ FROM php:8.4-fpm-bookworm AS production
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        curl \
         libfreetype6 \
         libicu72 \
         libjpeg62-turbo \
@@ -86,6 +87,7 @@ RUN apt-get update \
         libpng16-16 \
         libpq5 \
         libzip4 \
+        nano \
         nginx \
         supervisor \
     && rm -rf /var/lib/apt/lists/* \
@@ -118,6 +120,9 @@ ENV QUEUE_CONNECTION=redis \
     FCM_SW_SHOW_NOTIFICATION=false
 
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD ["curl", "--fail", "--silent", "--show-error", "--max-time", "5", "--output", "/dev/null", "http://127.0.0.1/up"]
 
 ENTRYPOINT ["/usr/local/bin/application-entrypoint"]
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
