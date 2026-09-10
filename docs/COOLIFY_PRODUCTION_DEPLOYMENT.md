@@ -53,7 +53,7 @@ DB_PASSWORD=...
 DB_SSLMODE=prefer
 ```
 
-Platform Spatie backups shell out to `pg_dump` / `psql` **inside the PUFFMEMATE app container**, then connect to the separate Postgres resource via `DB_HOST`. Set `POSTGRES_BINARY_PATH=/usr/bin` so Spatie’s db-dumper finds the binaries. The production Dockerfile installs `postgresql-client` for that; do not put dump/restore tools only on the database container. After changing the Dockerfile, rebuild and redeploy the app image.
+Platform Spatie backups shell out to `pg_dump` / `psql` **inside the PUFFMEMATE app container**, then connect to the separate Postgres resource via `DB_HOST`. Set `POSTGRES_BINARY_PATH=/usr/bin` so Spatie’s db-dumper finds the binaries. The production Dockerfile installs **`postgresql-client-18` from PGDG** (Coolify Postgres is 18.x; Debian’s stock client is 15.x and fails with a version mismatch). Do not put dump/restore tools only on the database container. After changing the Dockerfile, rebuild and redeploy the app image.
 
 Backup zips live on the `backups` disk at `storage/app/private/spatie-backups`. Mount a Coolify persistent volume for at least `storage/app/private` (or the backups path) — otherwise redeploys wipe zip inventory. Optional: `BACKUP_ARCHIVE_PASSWORD`, `BACKUP_MAIL_TO` (leave empty to disable backup mail notifications).
 

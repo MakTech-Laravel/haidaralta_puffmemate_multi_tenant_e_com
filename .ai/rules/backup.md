@@ -14,3 +14,6 @@ Clean old backups = Spatie `backup:clean` using env retention. Operator-facing p
 
 ## Env backup retention keys
 Retention via BACKUP_KEEP_ALL_DAYS; ladder env keys default 0 for hard age delete; BACKUP_MAX_STORAGE_MB empty = unlimited.
+
+## History message size
+Failed Spatie runs can produce multi-KB console/stack text. Always store and broadcast via BackupHistoryMessage::summarize (≤500 chars) so Reverb/Pusher does not hit “Payload too large”.
