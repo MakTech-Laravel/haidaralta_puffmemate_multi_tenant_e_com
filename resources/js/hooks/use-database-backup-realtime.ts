@@ -13,9 +13,16 @@ function reloadBackupProps(): void {
     });
 }
 
+function hardReloadPage(): void {
+    window.location.assign(window.location.href);
+}
+
 /**
  * Live-refresh platform backup archives + operator history via Reverb.
  * Leaves the channel on unmount (page-scoped; unlike the user toast channel).
+ *
+ * Restore jobs DROP SCHEMA public mid-run — never Inertia-reload while a restore
+ * is pending/running, and hard-reload the browser when restore finishes.
  */
 export function useDatabaseBackupRealtime(): void {
     const [echoGeneration, setEchoGeneration] = useState(() =>
@@ -41,7 +48,20 @@ export function useDatabaseBackupRealtime(): void {
 
         const channel = echo.private(CHANNEL);
 
-        const onUpdated = (_payload: DatabaseBackupHistoryUpdatedPayload) => {
+        const onUpdated = (payload: DatabaseBackupHistoryUpdatedPayload) => {
+            if (payload.type === 'restore') {
+                if (
+                    payload.status === 'completed' ||
+                    payload.status === 'failed'
+                ) {
+                    hardReloadPage();
+
+                    return;
+                }
+
+                return;
+            }
+
             reloadBackupProps();
         };
 

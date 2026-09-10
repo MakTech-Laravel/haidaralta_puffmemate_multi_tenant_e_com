@@ -101,6 +101,17 @@ export default function PlatformDatabaseBackupsIndex({
 
     useDatabaseBackupRealtime();
 
+    const hasActiveRestore = useMemo(
+        () =>
+            histories.data.some(
+                (history) =>
+                    history.type === 'restore' &&
+                    (history.status === 'pending' ||
+                        history.status === 'running'),
+            ),
+        [histories.data],
+    );
+
     const hasActiveHistory = useMemo(
         () =>
             histories.data.some(
@@ -120,12 +131,19 @@ export default function PlatformDatabaseBackupsIndex({
     );
 
     useEffect(() => {
+        // Restore drops the public schema; Inertia polls would 500 mid-wipe.
+        if (hasActiveRestore) {
+            stopPoll();
+
+            return;
+        }
+
         if (hasActiveHistory) {
             startPoll();
         } else {
             stopPoll();
         }
-    }, [hasActiveHistory, startPoll, stopPoll]);
+    }, [hasActiveRestore, hasActiveHistory, startPoll, stopPoll]);
 
     const deleteFilename = deletePath ? deletePath.split('/').pop() : null;
 
@@ -189,6 +207,14 @@ export default function PlatformDatabaseBackupsIndex({
                         : ''}
                     . Use the trash icon to remove a zip inside the keep window.
                 </p>
+
+                {hasActiveRestore ? (
+                    <p className="bg-muted text-foreground rounded-md px-3 py-2 text-sm">
+                        Database restore in progress. Keep this tab open — the
+                        page will hard-reload when restore finishes. Do not
+                        refresh until then (the schema is briefly unavailable).
+                    </p>
+                ) : null}
 
                 <div className="space-y-3">
                     <h2 className="text-foreground text-sm font-semibold">
