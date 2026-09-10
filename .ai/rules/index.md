@@ -21,3 +21,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |
 | database/seeders/** | .ai/rules/seeders.md |
 | resources/js/{layouts,components,pages}/storefront/** | .ai/rules/storefront.md |
+| app/Support/OpsDashboardAccess.php, config/cache.php | .ai/rules/support.md |

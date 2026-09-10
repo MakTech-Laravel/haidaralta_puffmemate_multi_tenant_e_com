@@ -7,7 +7,7 @@ paths:
 
 ## Keep main production processes together
 
-The main Coolify application image runs Nginx, PHP-FPM, Laravel queue workers, and the scheduler under Supervisor. Reverb, PostgreSQL, Redis server, and Meilisearch remain separate resources and must never be started or proxied locally by this image.
+The main Coolify application image runs Nginx, PHP-FPM, Laravel Horizon, `pulse:check`, and the scheduler under Supervisor. Reverb, PostgreSQL, Redis server, and Meilisearch remain separate resources and must never be started or proxied locally by this image.
 
 ## FCM_SW_SHOW_NOTIFICATION runtime
 

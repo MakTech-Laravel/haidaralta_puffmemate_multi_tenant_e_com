@@ -33,6 +33,8 @@ class RolesAndPermissionsSeeder extends Seeder
                 PermissionEnum::MANAGE_ROLES->value,
                 PermissionEnum::MANAGE_BRANCH_USERS->value,
                 PermissionEnum::MANAGE_DATABASE_BACKUPS->value,
+                PermissionEnum::VIEW_HORIZON->value,
+                PermissionEnum::VIEW_PULSE->value,
             ],
         );
 
