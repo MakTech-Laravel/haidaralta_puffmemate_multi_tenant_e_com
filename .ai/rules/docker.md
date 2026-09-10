@@ -8,7 +8,7 @@ paths:
 
 ## Keep external services outside main container
 
-Supervisor manages exactly Nginx, PHP-FPM, queue workers, and scheduler. Reverb has a separate repository/application; PostgreSQL, Redis, and Meilisearch are external Coolify resources. Startup must not generate APP_KEY, rewrite .env, migrate, seed, or flush shared cache.
+Supervisor manages Nginx, PHP-FPM, Laravel Horizon, `pulse:check`, and the scheduler. Do not run `queue:work` alongside Horizon on the same Redis queues. On deploy, run `php artisan horizon:terminate` and `php artisan pulse:restart` so workers reload cleanly. Reverb has a separate repository/application; PostgreSQL, Redis, and Meilisearch are external Coolify resources. Startup must not generate APP_KEY, rewrite .env, migrate, seed, or flush shared cache.
 
 ## Nginx FastCGI buffers for Vite
 

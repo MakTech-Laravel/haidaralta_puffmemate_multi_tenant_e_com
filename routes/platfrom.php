@@ -7,6 +7,7 @@ use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffCo
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
+use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
@@ -15,6 +16,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function () {
     Route::get('dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
+
+    Route::middleware(['permission:view-horizon|view-pulse'])->group(function () {
+        Route::get('observability', [PlatformObservabilityController::class, 'index'])
+            ->name('platform.observability.index');
+    });
 
     Route::get('realtime', [PlatformRealtimeController::class, 'index'])->name('platform.realtime.index');
     Route::get('realtime/ping', [PlatformRealtimeController::class, 'ping'])->name('platform.realtime.ping');
