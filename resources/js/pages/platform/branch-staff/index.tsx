@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -171,7 +172,7 @@ export default function PlatformBranchStaffIndex({
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
+                                            <div className="flex justify-end gap-1">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -181,8 +182,12 @@ export default function PlatformBranchStaffIndex({
                                                         href={BranchStaffController.show.url(
                                                             member.id,
                                                         )}
+                                                        aria-label={`View ${member.name}`}
                                                     >
-                                                        View
+                                                        <Eye className="size-4" />
+                                                        <span className="sr-only">
+                                                            View
+                                                        </span>
                                                     </Link>
                                                 </Button>
                                                 <Button
@@ -194,20 +199,27 @@ export default function PlatformBranchStaffIndex({
                                                         href={BranchStaffController.edit.url(
                                                             member.id,
                                                         )}
+                                                        aria-label={`Edit ${member.name}`}
                                                     >
-                                                        Edit
+                                                        <Pencil className="size-4" />
+                                                        <span className="sr-only">
+                                                            Edit
+                                                        </span>
                                                     </Link>
                                                 </Button>
                                                 <Button
                                                     type="button"
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="text-destructive"
+                                                    aria-label={`Delete ${member.name}`}
                                                     onClick={() =>
                                                         setDeletingId(member.id)
                                                     }
                                                 >
-                                                    Delete
+                                                    <Trash2 className="text-destructive size-4" />
+                                                    <span className="sr-only">
+                                                        Delete
+                                                    </span>
                                                 </Button>
                                             </div>
                                         </TableCell>

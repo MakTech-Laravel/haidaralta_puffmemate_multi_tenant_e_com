@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -157,7 +158,7 @@ export default function PlatformBranchesIndex({
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
+                                            <div className="flex justify-end gap-1">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -167,8 +168,12 @@ export default function PlatformBranchesIndex({
                                                         href={BranchController.show.url(
                                                             branch.slug,
                                                         )}
+                                                        aria-label={`View ${branch.name}`}
                                                     >
-                                                        View
+                                                        <Eye className="size-4" />
+                                                        <span className="sr-only">
+                                                            View
+                                                        </span>
                                                     </Link>
                                                 </Button>
                                                 {can('edit-branches') ? (
@@ -181,8 +186,12 @@ export default function PlatformBranchesIndex({
                                                             href={BranchController.edit.url(
                                                                 branch.slug,
                                                             )}
+                                                            aria-label={`Edit ${branch.name}`}
                                                         >
-                                                            Edit
+                                                            <Pencil className="size-4" />
+                                                            <span className="sr-only">
+                                                                Edit
+                                                            </span>
                                                         </Link>
                                                     </Button>
                                                 ) : null}
@@ -191,14 +200,17 @@ export default function PlatformBranchesIndex({
                                                         type="button"
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="text-destructive"
+                                                        aria-label={`Delete ${branch.name}`}
                                                         onClick={() =>
                                                             setDeletingSlug(
                                                                 branch.slug,
                                                             )
                                                         }
                                                     >
-                                                        Delete
+                                                        <Trash2 className="text-destructive size-4" />
+                                                        <span className="sr-only">
+                                                            Delete
+                                                        </span>
                                                     </Button>
                                                 ) : null}
                                             </div>
