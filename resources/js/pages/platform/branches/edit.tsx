@@ -7,12 +7,17 @@ type Branch = {
     id: number;
     name: string;
     slug: string;
-    icon: string | null;
-    icon_url: string | null;
+    code: string;
+    logo: string | null;
+    logo_url: string | null;
+    phone: string | null;
+    email: string | null;
     address: string | null;
     latitude: string | number | null;
     longitude: string | number | null;
-    is_active: boolean;
+    opening_time: string | null;
+    closing_time: string | null;
+    status: boolean;
 };
 
 export default function PlatformBranchesEdit({ branch }: { branch: Branch }) {
@@ -20,7 +25,7 @@ export default function PlatformBranchesEdit({ branch }: { branch: Branch }) {
         <>
             <Head title={`Edit ${branch.name}`} />
 
-            <div className="mx-auto max-w-2xl space-y-6 p-2">
+            <div className="mx-auto flex max-w-2xl flex-col gap-6 p-2">
                 <Heading
                     title={`Edit ${branch.name}`}
                     description="Update branch details"
@@ -32,12 +37,17 @@ export default function PlatformBranchesEdit({ branch }: { branch: Branch }) {
                     defaults={{
                         name: branch.name,
                         slug: branch.slug,
-                        icon: branch.icon,
-                        icon_url: branch.icon_url,
+                        code: branch.code,
+                        logo: branch.logo,
+                        logo_url: branch.logo_url,
+                        phone: branch.phone,
+                        email: branch.email,
                         address: branch.address,
                         latitude: branch.latitude,
                         longitude: branch.longitude,
-                        is_active: branch.is_active,
+                        opening_time: branch.opening_time,
+                        closing_time: branch.closing_time,
+                        status: branch.status,
                     }}
                     cancelHref={BranchController.show.url(branch.slug)}
                 />

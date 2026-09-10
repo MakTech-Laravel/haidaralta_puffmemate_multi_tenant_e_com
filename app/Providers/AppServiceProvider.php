@@ -41,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
         LogActivityAction::beforeLogging(function (ActivityContract $activity): void {
             $properties = collect($activity->properties?->toArray() ?? []);
 
-            foreach (audit_context_properties() as $key => $value) {
+            foreach (\audit_context_properties() as $key => $value) {
                 if (! $properties->has($key)) {
                     $properties->put($key, $value);
                 }

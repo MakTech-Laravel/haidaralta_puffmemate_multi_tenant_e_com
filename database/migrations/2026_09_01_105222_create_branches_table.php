@@ -15,11 +15,16 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->string('icon')->nullable();
+            $table->string('code')->unique();
+            $table->string('logo')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('email')->nullable();
             $table->text('address')->nullable();
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->time('opening_time')->nullable();
+            $table->time('closing_time')->nullable();
+            $table->boolean('status')->default(true);
             $table->timestamps();
         });
     }

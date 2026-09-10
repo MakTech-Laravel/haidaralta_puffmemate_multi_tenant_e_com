@@ -30,12 +30,22 @@ class UpdateBranchRequest extends FormRequest
                 'alpha_dash',
                 Rule::unique('branches', 'slug')->ignore($branch->id),
             ],
-            'icon' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'remove_icon' => ['sometimes', 'boolean'],
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('branches', 'code')->ignore($branch->id),
+            ],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_logo' => ['sometimes', 'boolean'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'is_active' => ['sometimes', 'boolean'],
+            'opening_time' => ['nullable', 'date_format:H:i'],
+            'closing_time' => ['nullable', 'date_format:H:i'],
+            'status' => ['sometimes', 'boolean'],
         ];
     }
 }

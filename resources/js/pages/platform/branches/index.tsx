@@ -4,6 +4,8 @@ import BranchController from '@/actions/App/Http/Controllers/Platform/BranchCont
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import Heading from '@/components/heading';
 import { SimplePagination } from '@/components/simple-pagination';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -20,9 +22,10 @@ type BranchRow = {
     id: number;
     name: string;
     slug: string;
-    icon: string | null;
-    icon_url: string | null;
-    is_active: boolean;
+    code: string;
+    logo: string | null;
+    logo_url: string | null;
+    status: boolean;
     users_count: number;
 };
 
@@ -51,7 +54,7 @@ export default function PlatformBranchesIndex({
         <>
             <Head title="Branches" />
 
-            <div className="space-y-6 p-2">
+            <div className="flex flex-col gap-6 p-2">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Branches"
@@ -89,13 +92,14 @@ export default function PlatformBranchesIndex({
                     </Button>
                 </form>
 
-                <div className="rounded-xl border">
+                <div className="overflow-hidden rounded-xl border">
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
+                                <TableHead>Code</TableHead>
                                 <TableHead>Slug</TableHead>
-                                <TableHead>Image</TableHead>
+                                <TableHead>Logo</TableHead>
                                 <TableHead>Staff</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">
@@ -107,7 +111,7 @@ export default function PlatformBranchesIndex({
                             {branches.data.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={6}
+                                        colSpan={7}
                                         className="text-muted-foreground py-10 text-center"
                                     >
                                         No branches found.
@@ -119,70 +123,85 @@ export default function PlatformBranchesIndex({
                                         <TableCell className="font-medium">
                                             {branch.name}
                                         </TableCell>
+                                        <TableCell>{branch.code}</TableCell>
                                         <TableCell>{branch.slug}</TableCell>
                                         <TableCell>
-                                            {branch.icon_url ? (
-                                                <img
-                                                    src={branch.icon_url}
-                                                    alt=""
-                                                    className="size-8 rounded-md object-cover"
-                                                />
-                                            ) : (
-                                                '—'
-                                            )}
+                                            <Avatar className="size-8 rounded-md">
+                                                {branch.logo_url ? (
+                                                    <AvatarImage
+                                                        src={branch.logo_url}
+                                                        alt=""
+                                                    />
+                                                ) : null}
+                                                <AvatarFallback className="rounded-md text-xs">
+                                                    {branch.name
+                                                        .slice(0, 2)
+                                                        .toUpperCase()}
+                                                </AvatarFallback>
+                                            </Avatar>
                                         </TableCell>
                                         <TableCell>
                                             {branch.users_count}
                                         </TableCell>
                                         <TableCell>
-                                            {branch.is_active
-                                                ? 'Active'
-                                                : 'Inactive'}
-                                        </TableCell>
-                                        <TableCell className="space-x-2 text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                asChild
+                                            <Badge
+                                                variant={
+                                                    branch.status
+                                                        ? 'default'
+                                                        : 'secondary'
+                                                }
                                             >
-                                                <Link
-                                                    href={BranchController.show.url(
-                                                        branch.slug,
-                                                    )}
-                                                >
-                                                    View
-                                                </Link>
-                                            </Button>
-                                            {can('edit-branches') ? (
+                                                {branch.status
+                                                    ? 'Active'
+                                                    : 'Inactive'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
                                                     asChild
                                                 >
                                                     <Link
-                                                        href={BranchController.edit.url(
+                                                        href={BranchController.show.url(
                                                             branch.slug,
                                                         )}
                                                     >
-                                                        Edit
+                                                        View
                                                     </Link>
                                                 </Button>
-                                            ) : null}
-                                            {can('delete-branches') ? (
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-destructive"
-                                                    onClick={() =>
-                                                        setDeletingSlug(
-                                                            branch.slug,
-                                                        )
-                                                    }
-                                                >
-                                                    Delete
-                                                </Button>
-                                            ) : null}
+                                                {can('edit-branches') ? (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        asChild
+                                                    >
+                                                        <Link
+                                                            href={BranchController.edit.url(
+                                                                branch.slug,
+                                                            )}
+                                                        >
+                                                            Edit
+                                                        </Link>
+                                                    </Button>
+                                                ) : null}
+                                                {can('delete-branches') ? (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-destructive"
+                                                        onClick={() =>
+                                                            setDeletingSlug(
+                                                                branch.slug,
+                                                            )
+                                                        }
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                ) : null}
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))

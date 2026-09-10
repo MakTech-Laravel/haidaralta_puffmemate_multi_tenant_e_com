@@ -23,11 +23,16 @@ class BranchFactory extends Factory
         return [
             'name' => $name,
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
-            'icon' => null,
+            'code' => strtoupper(fake()->unique()->bothify('BR-###??')),
+            'logo' => null,
+            'phone' => fake()->optional()->phoneNumber(),
+            'email' => fake()->optional()->companyEmail(),
             'address' => fake()->optional()->address(),
             'latitude' => fake()->optional()->latitude(),
             'longitude' => fake()->optional()->longitude(),
-            'is_active' => true,
+            'opening_time' => '09:00',
+            'closing_time' => '21:00',
+            'status' => true,
         ];
     }
 }
