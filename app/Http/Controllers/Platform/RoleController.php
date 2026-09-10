@@ -7,6 +7,7 @@ use App\Enums\RoleEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreRoleRequest;
 use App\Http\Requests\Platform\UpdateRoleRequest;
+use App\Models\Role;
 use App\Support\PlatformTeamResolver;
 use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,7 +16,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 

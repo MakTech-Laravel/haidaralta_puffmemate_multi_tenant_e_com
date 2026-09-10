@@ -1,5 +1,8 @@
 <?php
 
+use App\Enums\RoleEnum;
+use App\Enums\UserType;
+use App\Events\DatabaseBackupHistoryUpdated;
 use App\Events\RealtimePrivateTestEvent;
 use App\Events\ReverbPingEvent;
 use App\Models\User;
@@ -42,6 +45,20 @@ function useReverbBroadcasterForAuth(): void
         'App.Models.User.{id}',
         function (User $user, int $id): bool {
             return (int) $user->id === $id;
+        },
+        ['guards' => [...PortalAuth::PORTAL_GUARDS, 'web']],
+    );
+
+    Broadcast::channel(
+        DatabaseBackupHistoryUpdated::CHANNEL,
+        function (User $user): bool {
+            if (! $user->isPlatform()) {
+                return false;
+            }
+
+            app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
+
+            return $user->can('manage-database-backups');
         },
         ['guards' => [...PortalAuth::PORTAL_GUARDS, 'web']],
     );
@@ -195,6 +212,41 @@ test('platform admin can dispatch private test event', function () {
         ->assertJsonPath('data.event', 'realtime.test');
 
     Event::assertDispatched(RealtimePrivateTestEvent::class);
+});
+
+test('platform admin can authorize database backups private channel', function () {
+    useReverbBroadcasterForAuth();
+
+    $admin = createRealtimePlatformAdmin();
+
+    $this->actingAs($admin, 'platform')
+        ->postJson('/broadcasting/auth', [
+            'channel_name' => 'private-platform.database-backups',
+            'socket_id' => '1234.5678',
+        ])
+        ->assertSuccessful();
+});
+
+test('platform staff without backup permission cannot authorize backups channel', function () {
+    useReverbBroadcasterForAuth();
+
+    test()->seed(RolesAndPermissionsSeeder::class);
+    test()->seed(BranchSeeder::class);
+
+    $user = User::factory()->create([
+        'user_type' => UserType::PLATFORM,
+        'email_verified_at' => now(),
+    ]);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
+    $user->assignRole(RoleEnum::STAFF->value);
+
+    $this->actingAs($user, 'platform')
+        ->postJson('/broadcasting/auth', [
+            'channel_name' => 'private-platform.database-backups',
+            'socket_id' => '1234.5678',
+        ])
+        ->assertForbidden();
 });
 
 test('platform admin can open realtime console page', function () {

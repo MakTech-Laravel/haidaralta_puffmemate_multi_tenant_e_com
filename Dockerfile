@@ -89,6 +89,7 @@ RUN apt-get update \
         libzip4 \
         nano \
         nginx \
+        postgresql-client \
         supervisor \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /etc/nginx/sites-enabled/default
@@ -113,7 +114,7 @@ ENV QUEUE_CONNECTION=redis \
     QUEUE_NAMES=default \
     QUEUE_SLEEP=3 \
     QUEUE_TRIES=3 \
-    QUEUE_TIMEOUT=60 \
+    QUEUE_TIMEOUT=600 \
     QUEUE_MAX_TIME=3600 \
     QUEUE_MEMORY=128 \
     QUEUE_PROCESSES=2 \

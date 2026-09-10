@@ -57,22 +57,25 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::delete('branches/{branch}', [PlatformBranchController::class, 'destroy'])->name('platform.branches.destroy');
     });
 
-    Route::middleware(['permission:manage-reports'])->group(function () {
+    Route::middleware(['permission:view-activity-logs'])->group(function () {
         Route::get('activity-logs', [PlatformActivityLogController::class, 'index'])->name('platform.activity-logs.index');
         Route::get('activity-logs/{activity}', [PlatformActivityLogController::class, 'show'])->name('platform.activity-logs.show');
     });
 
     Route::middleware(['permission:manage-database-backups'])->group(function () {
         Route::get('database-backups', [PlatformDatabaseBackupController::class, 'index'])->name('platform.database-backups.index');
-        Route::post('database-backups/export', [PlatformDatabaseBackupController::class, 'export'])
+        Route::post('database-backups/run', [PlatformDatabaseBackupController::class, 'run'])
             ->middleware('throttle:5,1')
-            ->name('platform.database-backups.export');
-        Route::post('database-backups/import', [PlatformDatabaseBackupController::class, 'import'])
+            ->name('platform.database-backups.run');
+        Route::post('database-backups/clean', [PlatformDatabaseBackupController::class, 'clean'])
             ->middleware('throttle:5,1')
-            ->name('platform.database-backups.import');
-        Route::get('database-backups/{databaseBackupHistory}/download', [PlatformDatabaseBackupController::class, 'download'])
+            ->name('platform.database-backups.clean');
+        Route::get('database-backups/download', [PlatformDatabaseBackupController::class, 'download'])
             ->name('platform.database-backups.download');
-        Route::post('database-backups/{databaseBackupHistory}/restore', [PlatformDatabaseBackupController::class, 'restore'])
+        Route::post('database-backups/delete', [PlatformDatabaseBackupController::class, 'destroy'])
+            ->middleware('throttle:20,1')
+            ->name('platform.database-backups.destroy');
+        Route::post('database-backups/restore', [PlatformDatabaseBackupController::class, 'restore'])
             ->middleware('throttle:5,1')
             ->name('platform.database-backups.restore');
     });

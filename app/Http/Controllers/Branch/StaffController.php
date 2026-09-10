@@ -9,13 +9,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\StoreBranchStaffRequest;
 use App\Http\Requests\Branch\UpdateBranchStaffRequest;
 use App\Models\Branch;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\SuperAdmin;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class StaffController extends Controller

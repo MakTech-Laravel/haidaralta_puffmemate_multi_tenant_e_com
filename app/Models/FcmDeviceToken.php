@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\AuditsChanges;
 use Database\Factories\FcmDeviceTokenFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * @property int $id
@@ -25,7 +27,18 @@ use Illuminate\Support\Carbon;
 class FcmDeviceToken extends Model
 {
     /** @use HasFactory<FcmDeviceTokenFactory> */
-    use HasFactory;
+    use AuditsChanges, HasFactory;
+
+    /**
+     * Never log the FCM token itself — only non-secret metadata.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['user_id', 'device_name', 'platform', 'last_used_at'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
 
     /**
      * @return BelongsTo<User, $this>

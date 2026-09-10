@@ -8,6 +8,7 @@ use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StorePlatformStaffRequest;
 use App\Http\Requests\Platform\UpdatePlatformStaffRequest;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\PlatformTeamResolver;
 use App\Support\SuperAdmin;
@@ -16,7 +17,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class StaffController extends Controller

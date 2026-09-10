@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DatabaseBackupStatus;
 use App\Enums\DatabaseBackupType;
+use App\Models\Concerns\AuditsChanges;
 use Database\Factories\DatabaseBackupHistoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class DatabaseBackupHistory extends Model
 {
     /** @use HasFactory<DatabaseBackupHistoryFactory> */
-    use HasFactory;
+    use AuditsChanges, HasFactory;
 
     /**
      * @var list<string>

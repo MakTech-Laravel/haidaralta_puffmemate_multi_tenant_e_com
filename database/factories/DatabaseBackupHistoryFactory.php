@@ -20,13 +20,13 @@ class DatabaseBackupHistoryFactory extends Factory
      */
     public function definition(): array
     {
-        $filename = 'backup-'.fake()->unique()->numerify('########').'.sql';
+        $filename = 'backup-'.fake()->unique()->numerify('########').'.zip';
 
         return [
-            'type' => DatabaseBackupType::Export,
+            'type' => DatabaseBackupType::Run,
             'status' => DatabaseBackupStatus::Completed,
-            'disk' => 'local',
-            'path' => 'database-backups/'.$filename,
+            'disk' => 'backups',
+            'path' => 'app/'.$filename,
             'filename' => $filename,
             'size_bytes' => fake()->numberBetween(1_000, 500_000),
             'triggered_by' => User::factory(),
@@ -40,14 +40,14 @@ class DatabaseBackupHistoryFactory extends Factory
     {
         return $this->state(fn (): array => [
             'status' => DatabaseBackupStatus::Failed,
-            'message' => 'Dump failed',
+            'message' => 'Backup failed',
         ]);
     }
 
-    public function import(): static
+    public function restore(): static
     {
         return $this->state(fn (): array => [
-            'type' => DatabaseBackupType::Import,
+            'type' => DatabaseBackupType::Restore,
         ]);
     }
 }

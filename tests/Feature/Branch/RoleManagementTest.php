@@ -4,11 +4,11 @@ use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Models\Branch;
+use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {

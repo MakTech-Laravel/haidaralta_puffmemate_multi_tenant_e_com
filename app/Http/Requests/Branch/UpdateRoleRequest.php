@@ -5,9 +5,9 @@ namespace App\Http\Requests\Branch;
 use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
 use App\Models\Branch;
+use App\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Spatie\Permission\Models\Role;
 
 class UpdateRoleRequest extends FormRequest
 {

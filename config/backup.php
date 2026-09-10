@@ -26,8 +26,7 @@ return [
                  * The list of directories and files that will be included in the backup.
                  */
                 'include' => [
-                    base_path(),
-                    // storage_path(),  // Include if you use zero downtime deployments and don't follow symlinks
+                    storage_path('app'),
                 ],
 
                 /*
@@ -36,9 +35,10 @@ return [
                  * Directories used by the backup process will automatically be excluded.
                  */
                 'exclude' => [
-                    base_path('vendor'),
-                    base_path('node_modules'),
-                    storage_path('framework'),
+                    storage_path('app/backup-temp'),
+                    storage_path('app/private/spatie-backups'),
+                    storage_path('app/private/firebase-credentials.json'),
+                    storage_path('app/firebase-credentials.json'),
                 ],
 
                 /*
@@ -164,7 +164,7 @@ return [
              * The disk names on which the backups will be stored.
              */
             'disks' => [
-                'local',
+                'backups',
             ],
 
             /*
@@ -192,7 +192,7 @@ return [
          *
          * When set to 'default', we'll use AES-256 if available on your system.
          */
-        'encryption' => 'default',
+        'encryption' => env('BACKUP_ARCHIVE_PASSWORD') ? 'default' : 'none',
 
         /*
          * After creating the zip, verify it can be opened and contains files.
@@ -221,12 +221,12 @@ return [
      */
     'notifications' => [
         'notifications' => [
-            BackupHasFailedNotification::class => ['mail'],
-            UnhealthyBackupWasFoundNotification::class => ['mail'],
-            CleanupHasFailedNotification::class => ['mail'],
-            BackupWasSuccessfulNotification::class => ['mail'],
-            HealthyBackupWasFoundNotification::class => ['mail'],
-            CleanupWasSuccessfulNotification::class => ['mail'],
+            BackupHasFailedNotification::class => env('BACKUP_MAIL_TO') ? ['mail'] : [],
+            UnhealthyBackupWasFoundNotification::class => env('BACKUP_MAIL_TO') ? ['mail'] : [],
+            CleanupHasFailedNotification::class => env('BACKUP_MAIL_TO') ? ['mail'] : [],
+            BackupWasSuccessfulNotification::class => env('BACKUP_MAIL_TO') ? ['mail'] : [],
+            HealthyBackupWasFoundNotification::class => env('BACKUP_MAIL_TO') ? ['mail'] : [],
+            CleanupWasSuccessfulNotification::class => env('BACKUP_MAIL_TO') ? ['mail'] : [],
         ],
 
         /*
@@ -236,7 +236,7 @@ return [
         'notifiable' => Notifiable::class,
 
         'mail' => [
-            'to' => 'your@example.com',
+            'to' => env('BACKUP_MAIL_TO') ?: 'noreply@example.com',
 
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
@@ -297,7 +297,7 @@ return [
     'monitor_backups' => [
         [
             'name' => env('APP_NAME', 'laravel-backup'),
-            'disks' => ['local'],
+            'disks' => ['backups'],
             'health_checks' => [
                 MaximumAgeInDays::class => 1,
                 MaximumStorageInMegabytes::class => 5000,

@@ -4,10 +4,10 @@ namespace App\Http\Requests\Platform;
 
 use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
+use App\Models\Role;
 use App\Support\PlatformTeamResolver;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Spatie\Permission\Models\Role;
 
 class UpdateRoleRequest extends FormRequest
 {

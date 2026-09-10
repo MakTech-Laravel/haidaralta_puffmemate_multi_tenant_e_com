@@ -2,13 +2,17 @@
 
 namespace App\Providers;
 
+use App\Listeners\AuthActivitySubscriber;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Fortify;
+use Spatie\Activitylog\Actions\LogActivityAction;
+use Spatie\Activitylog\Contracts\Activity as ActivityContract;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +31,24 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configurePasswordResetUrls();
+        $this->configureActivityLogContext();
+
+        Event::subscribe(AuthActivitySubscriber::class);
+    }
+
+    protected function configureActivityLogContext(): void
+    {
+        LogActivityAction::beforeLogging(function (ActivityContract $activity): void {
+            $properties = collect($activity->properties?->toArray() ?? []);
+
+            foreach (audit_context_properties() as $key => $value) {
+                if (! $properties->has($key)) {
+                    $properties->put($key, $value);
+                }
+            }
+
+            $activity->properties = $properties;
+        });
     }
 
     protected function configurePasswordResetUrls(): void

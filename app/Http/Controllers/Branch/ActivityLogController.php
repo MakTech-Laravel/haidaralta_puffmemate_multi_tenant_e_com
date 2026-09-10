@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Http\Controllers\Branch;
+
+use App\Http\Controllers\Controller;
+use App\Models\Branch;
+use App\Services\ActivityLog\ActivityLogService;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+
+class ActivityLogController extends Controller
+{
+    public function __construct(private ActivityLogService $activityLogs) {}
+
+    public function index(Request $request): Response
+    {
+        $branch = $this->currentBranch();
+        $search = $request->string('search')->trim()->toString();
+        $event = $request->string('event')->trim()->toString();
+
+        return Inertia::render('branch/activity-logs/index', [
+            'branch' => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'slug' => $branch->slug,
+            ],
+            'activities' => $this->activityLogs->paginateForBranch(
+                (int) $branch->id,
+                $search,
+                $event,
+            ),
+            'filters' => [
+                'search' => $search,
+                'event' => $event,
+            ],
+        ]);
+    }
+
+    public function show(string $branch, int $activity): Response
+    {
+        $current = $this->currentBranch();
+        $model = $this->activityLogs->findForBranch((int) $current->id, $activity);
+
+        if ($model === null) {
+            throw new NotFoundHttpException;
+        }
+
+        return Inertia::render('branch/activity-logs/show', [
+            'branch' => [
+                'id' => $current->id,
+                'name' => $current->name,
+                'slug' => $current->slug,
+            ],
+            'activity' => $this->activityLogs->toDetail($model),
+        ]);
+    }
+
+    private function currentBranch(): Branch
+    {
+        /** @var Branch $branch */
+        $branch = app('currentBranch');
+
+        return $branch;
+    }
+}

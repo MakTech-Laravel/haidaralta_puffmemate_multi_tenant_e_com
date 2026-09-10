@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Branch;
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Models\Permission;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
