@@ -72,6 +72,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.database-backups.clean');
         Route::get('database-backups/download', [PlatformDatabaseBackupController::class, 'download'])
             ->name('platform.database-backups.download');
+        Route::post('database-backups/delete', [PlatformDatabaseBackupController::class, 'destroy'])
+            ->middleware('throttle:20,1')
+            ->name('platform.database-backups.destroy');
         Route::post('database-backups/restore', [PlatformDatabaseBackupController::class, 'restore'])
             ->middleware('throttle:5,1')
             ->name('platform.database-backups.restore');

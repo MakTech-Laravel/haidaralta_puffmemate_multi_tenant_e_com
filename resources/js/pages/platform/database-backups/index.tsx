@@ -53,28 +53,51 @@ type PaginatedHistories = {
     }[];
 };
 
+type CleanupPolicy = {
+    keep_all_days: number;
+    keep_daily_days: number;
+    max_storage_mb: number | null;
+};
+
 function formatWhen(value: string | null): string {
     if (!value) {
         return '—';
     }
 
-    return new Date(value).toLocaleString();
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    });
 }
 
 export default function PlatformDatabaseBackupsIndex({
     backups,
     histories,
     connection,
+    cleanup_policy,
 }: {
     backups: BackupZip[];
     histories: PaginatedHistories;
     connection: string;
+    cleanup_policy: CleanupPolicy;
 }) {
     const [running, setRunning] = useState(false);
     const [cleaning, setCleaning] = useState(false);
     const [restorePath, setRestorePath] = useState<string | null>(null);
+    const [deletePath, setDeletePath] = useState<string | null>(null);
     const [confirmedRestore, setConfirmedRestore] = useState(false);
     const [restoreProcessing, setRestoreProcessing] = useState(false);
+    const [deleteProcessing, setDeleteProcessing] = useState(false);
 
     useDatabaseBackupRealtime();
 
@@ -87,7 +110,6 @@ export default function PlatformDatabaseBackupsIndex({
         [histories.data],
     );
 
-    // Safety net while a job is in flight (covers Reverb blips); Echo reloads instantly.
     const { start: startPoll, stop: stopPoll } = usePoll(
         3000,
         {
@@ -105,6 +127,8 @@ export default function PlatformDatabaseBackupsIndex({
         }
     }, [hasActiveHistory, startPoll, stopPoll]);
 
+    const deleteFilename = deletePath ? deletePath.split('/').pop() : null;
+
     return (
         <>
             <Head title="Database backups" />
@@ -119,6 +143,7 @@ export default function PlatformDatabaseBackupsIndex({
                         <Button
                             variant="secondary"
                             disabled={cleaning}
+                            title={`Spatie retention: keep all zips for ${cleanup_policy.keep_all_days} days, then thin older ones. Does not delete today’s backups.`}
                             onClick={() => {
                                 setCleaning(true);
                                 router.post(
@@ -153,6 +178,18 @@ export default function PlatformDatabaseBackupsIndex({
                     </div>
                 </div>
 
+                <p className="text-muted-foreground text-sm">
+                    <span className="text-foreground font-medium">
+                        Clean old backups
+                    </span>{' '}
+                    runs Spatie retention only: keep every zip for{' '}
+                    {cleanup_policy.keep_all_days} days
+                    {cleanup_policy.max_storage_mb
+                        ? `, then trim oldest if storage exceeds ${cleanup_policy.max_storage_mb} MB`
+                        : ''}
+                    . Recent files stay until you delete them individually.
+                </p>
+
                 <div className="space-y-3">
                     <h2 className="text-foreground text-sm font-semibold">
                         Backup archives
@@ -162,8 +199,10 @@ export default function PlatformDatabaseBackupsIndex({
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>File</TableHead>
+                                    <TableHead className="min-w-[11rem]">
+                                        Created
+                                    </TableHead>
                                     <TableHead>Size</TableHead>
-                                    <TableHead>Date</TableHead>
                                     <TableHead className="text-right">
                                         Actions
                                     </TableHead>
@@ -183,16 +222,21 @@ export default function PlatformDatabaseBackupsIndex({
                                 ) : (
                                     backups.map((backup) => (
                                         <TableRow key={backup.path}>
-                                            <TableCell className="font-medium">
-                                                {backup.filename}
+                                            <TableCell>
+                                                <div className="font-medium">
+                                                    {backup.filename}
+                                                </div>
+                                                <div className="text-muted-foreground mt-0.5 text-xs md:hidden">
+                                                    {formatWhen(backup.date)}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground hidden whitespace-nowrap md:table-cell">
+                                                {formatWhen(backup.date)}
                                             </TableCell>
                                             <TableCell>
                                                 {formatBytes(backup.size_bytes)}
                                             </TableCell>
-                                            <TableCell className="text-muted-foreground whitespace-nowrap">
-                                                {formatWhen(backup.date)}
-                                            </TableCell>
-                                            <TableCell className="space-x-2 text-right">
+                                            <TableCell className="space-x-1 text-right">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -228,6 +272,20 @@ export default function PlatformDatabaseBackupsIndex({
                                                     <RotateCcw className="size-4" />
                                                     <span className="sr-only">
                                                         Restore DB
+                                                    </span>
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        setDeletePath(
+                                                            backup.path,
+                                                        )
+                                                    }
+                                                >
+                                                    <Trash2 className="text-destructive size-4" />
+                                                    <span className="sr-only">
+                                                        Delete zip
                                                     </span>
                                                 </Button>
                                             </TableCell>
@@ -363,6 +421,43 @@ export default function PlatformDatabaseBackupsIndex({
                                 setRestoreProcessing(false);
                                 setRestorePath(null);
                                 setConfirmedRestore(false);
+                            },
+                        },
+                    );
+                }}
+            />
+
+            <ConfirmDeleteDialog
+                open={deletePath !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeletePath(null);
+                    }
+                }}
+                title="Delete this backup zip?"
+                description={
+                    <p>
+                        Permanently removes{' '}
+                        <span className="font-medium">{deleteFilename}</span>{' '}
+                        from storage. This cannot be undone.
+                    </p>
+                }
+                confirmLabel="Delete zip"
+                processing={deleteProcessing}
+                onConfirm={() => {
+                    if (!deletePath) {
+                        return;
+                    }
+
+                    setDeleteProcessing(true);
+                    router.post(
+                        DatabaseBackupController.destroy.url(),
+                        { path: deletePath },
+                        {
+                            preserveScroll: true,
+                            onFinish: () => {
+                                setDeleteProcessing(false);
+                                setDeletePath(null);
                             },
                         },
                     );

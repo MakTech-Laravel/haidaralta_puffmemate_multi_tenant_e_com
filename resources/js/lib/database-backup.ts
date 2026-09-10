@@ -23,6 +23,7 @@ export function backupTypeBadgeVariant(type: string): BadgeVariant {
         case 'restore':
             return 'secondary';
         case 'cleanup':
+        case 'delete':
             return 'outline';
         case 'run':
         default:

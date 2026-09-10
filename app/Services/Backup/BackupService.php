@@ -83,11 +83,7 @@ class BackupService
 
     public function download(string $path): StreamedResponse
     {
-        $path = ltrim($path, '/');
-
-        if ($path === '' || str_contains($path, '..') || ! Storage::disk(self::DISK)->exists($path)) {
-            throw new RuntimeException('Backup zip is not available.');
-        }
+        $path = $this->assertBackupZipPath($path);
 
         return Storage::disk(self::DISK)->download(
             $path,
@@ -98,13 +94,57 @@ class BackupService
         );
     }
 
+    /**
+     * Delete one backup zip immediately and record operator history.
+     */
+    public function delete(string $path, User $user): DatabaseBackupHistory
+    {
+        $path = $this->assertBackupZipPath($path);
+        $filename = basename($path);
+        $sizeBytes = Storage::disk(self::DISK)->size($path);
+
+        if (! Storage::disk(self::DISK)->delete($path)) {
+            throw new RuntimeException('Unable to delete backup zip.');
+        }
+
+        $history = DatabaseBackupHistory::query()->create([
+            'type' => DatabaseBackupType::Delete,
+            'status' => DatabaseBackupStatus::Completed,
+            'disk' => self::DISK,
+            'path' => $path,
+            'filename' => $filename,
+            'size_bytes' => $sizeBytes,
+            'triggered_by' => $user->id,
+            'connection' => (string) config('database.default'),
+            'message' => 'Deleted '.$filename,
+        ]);
+
+        DatabaseBackupHistoryUpdated::dispatch($history);
+
+        return $history;
+    }
+
+    /**
+     * Retention summary for the platform UI (Spatie default strategy).
+     *
+     * @return array{keep_all_days: int, keep_daily_days: int, max_storage_mb: int|null}
+     */
+    public function cleanupPolicy(): array
+    {
+        $strategy = config('backup.cleanup.default_strategy', []);
+
+        return [
+            'keep_all_days' => (int) ($strategy['keep_all_backups_for_days'] ?? 7),
+            'keep_daily_days' => (int) ($strategy['keep_daily_backups_for_days'] ?? 16),
+            'max_storage_mb' => isset($strategy['delete_oldest_backups_when_using_more_megabytes_than'])
+                ? (int) $strategy['delete_oldest_backups_when_using_more_megabytes_than']
+                : null,
+        ];
+    }
+
     public function restoreDatabase(string $zipPath, User $user): DatabaseBackupHistory
     {
-        $zipPath = ltrim($zipPath, '/');
-
-        if ($zipPath === '' || str_contains($zipPath, '..') || ! Storage::disk(self::DISK)->exists($zipPath)) {
-            throw new RuntimeException('Backup zip is not available.');
-        }
+        $zipPath = $this->assertBackupZipPath($zipPath);
 
         $history = DatabaseBackupHistory::query()->create([
             'type' => DatabaseBackupType::Restore,
@@ -152,5 +192,16 @@ class BackupService
                     : null,
                 'created_at' => $history->created_at?->toIso8601String(),
             ]);
+    }
+
+    private function assertBackupZipPath(string $path): string
+    {
+        $path = ltrim($path, '/');
+
+        if ($path === '' || str_contains($path, '..') || ! Storage::disk(self::DISK)->exists($path)) {
+            throw new RuntimeException('Backup zip is not available.');
+        }
+
+        return $path;
     }
 }

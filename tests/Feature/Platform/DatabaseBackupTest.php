@@ -33,6 +33,34 @@ beforeEach(function () {
     $this->seed(UserSeeder::class);
 });
 
+test('platform super admin can delete a backup zip', function () {
+    Event::fake([DatabaseBackupHistoryUpdated::class]);
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $backupName = (string) config('backup.backup.name');
+    $path = $backupName.'/delete-me.zip';
+    Storage::disk('backups')->put($path, 'zip-bytes');
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.database-backups.destroy'), ['path' => $path])
+        ->assertRedirect(route('platform.database-backups.index'))
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Deleted delete-me.zip.',
+        ]);
+
+    expect(Storage::disk('backups')->exists($path))->toBeFalse();
+
+    $history = DatabaseBackupHistory::query()->latest('id')->first();
+
+    expect($history)->not->toBeNull()
+        ->and($history->type)->toBe(DatabaseBackupType::Delete)
+        ->and($history->status)->toBe(DatabaseBackupStatus::Completed)
+        ->and($history->filename)->toBe('delete-me.zip');
+
+    Event::assertDispatched(DatabaseBackupHistoryUpdated::class);
+});
+
 test('platform super admin can queue a backup run', function () {
     Queue::fake();
     Event::fake([DatabaseBackupHistoryUpdated::class]);
@@ -107,6 +135,7 @@ test('platform super admin can list and download zip from backups disk', functio
             ->has('backups', 1)
             ->where('backups.0.path', $path)
             ->where('backups.0.filename', 'demo-backup.zip')
+            ->has('cleanup_policy.keep_all_days')
         );
 
     $this->actingAs($admin, 'platform')

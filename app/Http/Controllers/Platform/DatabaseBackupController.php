@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Platform\DeleteDatabaseBackupRequest;
 use App\Http\Requests\Platform\RestoreDatabaseBackupRequest;
 use App\Services\Backup\BackupService;
 use App\Support\Toast;
@@ -26,6 +27,7 @@ class DatabaseBackupController extends Controller
             'backups' => $this->backups->list(),
             'histories' => $this->backups->paginateHistory(),
             'connection' => (string) config('database.default'),
+            'cleanup_policy' => $this->backups->cleanupPolicy(),
         ]);
     }
 
@@ -46,13 +48,16 @@ class DatabaseBackupController extends Controller
     }
 
     /**
-     * Queue Spatie cleanup of old backups.
+     * Queue Spatie retention cleanup of old backups (does not delete recent zips).
      */
     public function clean(Request $request): RedirectResponse
     {
         try {
             $history = $this->backups->clean($request->user());
-            Toast::success('Backup cleanup queued (#'.$history->id.').');
+            $days = $this->backups->cleanupPolicy()['keep_all_days'];
+            Toast::success(
+                'Backup cleanup queued (#'.$history->id.'). Keeps all zips from the last '.$days.' days.',
+            );
         } catch (Throwable $exception) {
             report($exception);
             Toast::error('Failed to queue cleanup: '.$exception->getMessage());
@@ -76,6 +81,25 @@ class DatabaseBackupController extends Controller
 
             return redirect()->route('platform.database-backups.index');
         }
+    }
+
+    /**
+     * Delete one backup zip from the backups disk.
+     */
+    public function destroy(DeleteDatabaseBackupRequest $request): RedirectResponse
+    {
+        try {
+            $history = $this->backups->delete(
+                (string) $request->validated('path'),
+                $request->user(),
+            );
+            Toast::success('Deleted '.$history->filename.'.');
+        } catch (Throwable $exception) {
+            report($exception);
+            Toast::error($exception->getMessage());
+        }
+
+        return redirect()->route('platform.database-backups.index');
     }
 
     /**
