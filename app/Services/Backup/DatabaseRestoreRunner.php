@@ -183,8 +183,18 @@ class DatabaseRestoreRunner
     private function restorePostgreSql(string $connection, string $absolutePath): void
     {
         $rawSql = file_get_contents($absolutePath);
-        $preview = is_string($rawSql) ? $this->sanitizeSqlDump($rawSql) : '';
+
+        if ($rawSql === false || trim($rawSql) === '') {
+            throw new RuntimeException('SQL file is empty or unreadable.');
+        }
+
+        $preview = $this->sanitizeSqlDump($rawSql);
         $isFullDump = $this->isFullPostgresDump($preview);
+
+        if ($isFullDump) {
+            $this->assertPostgresDumpContainsCoreTables($rawSql);
+        }
+
         $preservedSnapshots = $isFullDump ? $this->snapshotPreservedTableRows($connection) : [];
 
         try {
@@ -207,6 +217,8 @@ class DatabaseRestoreRunner
                 $this->restorePreservedTableRows($connection, $preservedSnapshots);
             }
         }
+
+        $this->assertRestoredSchemaHasCoreTables($connection);
     }
 
     private function restorePostgreSqlWithPsql(string $connection, string $absolutePath): void
@@ -262,7 +274,11 @@ class DatabaseRestoreRunner
         $sql = $this->sanitizeSqlDump($sql);
 
         if ($sql === '') {
-            return;
+            throw new RuntimeException(
+                $schemaAlreadyReset
+                    ? 'SQL dump was empty after sanitization; public schema was already reset and was not reloaded.'
+                    : 'SQL dump was empty after sanitization.'
+            );
         }
 
         if (preg_match('/^\s*COPY\s+.+\s+FROM\s+stdin\s*;/mi', $sql) === 1) {
@@ -301,6 +317,34 @@ class DatabaseRestoreRunner
 
         return str_contains($sql, 'PostgreSQL database dump')
             || str_contains($sql, 'CREATE TABLE public.');
+    }
+
+    private function assertPostgresDumpContainsCoreTables(string $sql): void
+    {
+        if (! $this->sqlDefinesTable($sql, 'users')) {
+            throw new RuntimeException(
+                'Backup SQL does not create the users table; refusing to wipe the database. Open the zip and confirm db-dumps/*.sql is a full Spatie/pg_dump file.'
+            );
+        }
+    }
+
+    private function assertRestoredSchemaHasCoreTables(string $connection): void
+    {
+        if (! Schema::connection($connection)->hasTable('users')) {
+            throw new RuntimeException(
+                'Restore finished without a users table. The database schema may be incomplete — do not treat this backup as valid.'
+            );
+        }
+    }
+
+    private function sqlDefinesTable(string $sql, string $table): bool
+    {
+        $quoted = preg_quote($table, '/');
+
+        return preg_match(
+            '/CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+(?:ONLY\s+)?(?:public\.)?(?:"'.$quoted.'"|'.$quoted.')\s*\(/i',
+            $sql,
+        ) === 1;
     }
 
     private function resetPublicSchema(string $connection): void

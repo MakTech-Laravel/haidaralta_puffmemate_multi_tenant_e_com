@@ -12,6 +12,7 @@ use App\Models\DatabaseBackupHistory;
 use App\Models\Permission;
 use App\Models\User;
 use App\Services\Backup\BackupService;
+use App\Services\Backup\BackupZipSqlLocator;
 use App\Services\Backup\DatabaseRestoreRunner;
 use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
@@ -22,6 +23,8 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use ReflectionMethod;
+use RuntimeException;
 use Spatie\Permission\PermissionRegistrar;
 use ZipArchive;
 
@@ -328,7 +331,10 @@ test('restore job applies sql from zip and resyncs manage-database-backups permi
         'message' => 'Restore queued',
     ]);
 
-    (new RestoreDatabaseFromBackupJob($history->id, $path))->handle(app(DatabaseRestoreRunner::class));
+    (new RestoreDatabaseFromBackupJob($history->id, $path))->handle(
+        app(DatabaseRestoreRunner::class),
+        app(BackupZipSqlLocator::class),
+    );
 
     expect($history->fresh()->status)->toBe(DatabaseBackupStatus::Completed)
         ->and(
@@ -337,6 +343,23 @@ test('restore job applies sql from zip and resyncs manage-database-backups permi
                 ->where('guard_name', RolesAndPermissionsSeeder::PLATFORM_GUARD)
                 ->exists()
         )->toBeTrue();
+});
+
+test('postgres restore refuses full wipe when dump lacks users table', function () {
+    $sqlPath = storage_path('framework/testing/'.uniqid('bad-dump-', true).'.sql');
+    @mkdir(dirname($sqlPath), 0777, true);
+    file_put_contents(
+        $sqlPath,
+        "-- PostgreSQL database dump\nCREATE TABLE public.sessions (id text);\n",
+    );
+
+    $runner = app(DatabaseRestoreRunner::class);
+    $method = new ReflectionMethod(DatabaseRestoreRunner::class, 'restorePostgreSql');
+
+    expect(fn () => $method->invoke($runner, 'pgsql', $sqlPath))
+        ->toThrow(RuntimeException::class, 'does not create the users table');
+
+    @unlink($sqlPath);
 });
 
 test('unauthorized users cannot access backup routes', function () {

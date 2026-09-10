@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\DatabaseBackupStatus;
 use App\Models\DatabaseBackupHistory;
+use App\Services\Backup\BackupZipSqlLocator;
 use App\Services\Backup\BroadcastsBackupHistory;
 use App\Services\Backup\DatabaseRestoreRunner;
 use FilesystemIterator;
@@ -28,7 +29,7 @@ class RestoreDatabaseFromBackupJob implements ShouldQueue
         public string $zipPath,
     ) {}
 
-    public function handle(DatabaseRestoreRunner $runner): void
+    public function handle(DatabaseRestoreRunner $runner, BackupZipSqlLocator $sqlLocator): void
     {
         $history = DatabaseBackupHistory::query()->findOrFail($this->historyId);
         $tempDir = storage_path('app/backup-temp/restore-'.Str::uuid());
@@ -71,11 +72,7 @@ class RestoreDatabaseFromBackupJob implements ShouldQueue
 
             $zip->close();
 
-            $sqlPath = $this->findFirstSqlFile($extractDir);
-
-            if ($sqlPath === null) {
-                throw new RuntimeException('No SQL file found inside backup zip.');
-            }
+            $sqlPath = $sqlLocator->find($extractDir);
 
             $connection = (string) config('database.default');
             $runner->restoreFromSqlFile($connection, $sqlPath);
@@ -96,25 +93,6 @@ class RestoreDatabaseFromBackupJob implements ShouldQueue
         } finally {
             $this->deleteDirectory($tempDir);
         }
-    }
-
-    private function findFirstSqlFile(string $directory): ?string
-    {
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
-        );
-
-        foreach ($iterator as $file) {
-            if (! $file->isFile()) {
-                continue;
-            }
-
-            if (strtolower($file->getExtension()) === 'sql') {
-                return $file->getPathname();
-            }
-        }
-
-        return null;
     }
 
     private function deleteDirectory(string $directory): void
