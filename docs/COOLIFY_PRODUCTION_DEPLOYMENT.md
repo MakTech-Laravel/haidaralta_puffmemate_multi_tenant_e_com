@@ -118,13 +118,15 @@ MEILISEARCH_HOST=https://meilisearch.puffmemate.maktechlaravel.cloud
 MEILISEARCH_KEY=...
 ```
 
-After first deploy (or index-settings change), run once from an app container:
+After first deploy, after changing `SCOUT_PREFIX`, or after changing Meilisearch index-settings, run once from an app container (Horizon must be processing the `scout` queue, or temporarily set `SCOUT_QUEUE=false` for the import):
 
 ```sh
 php artisan scout:sync-index-settings
 php artisan scout:import "App\Models\User"
 php artisan scout:import "App\Models\Branch"
 ```
+
+`scout:sync-index-settings` is required before platform staff search works — Meilisearch rejects `where('user_type', …)` until `user_type` is filterable on `puffmemate_users`. Missing indexes (e.g. `puffmemate_branches not found`) mean import was never run for the new prefix.
 
 `REDIS_QUEUE_RETRY_AFTER` must remain safely greater than `QUEUE_TIMEOUT`. Begin with two workers. Tune worker count from measured queue latency, backlog, job duration/RSS, CPU, RAM, and PostgreSQL connection capacity rather than setting it from request traffic alone.
 

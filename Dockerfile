@@ -99,6 +99,7 @@ RUN apt-get update \
         nano \
         nginx \
         postgresql-client-18 \
+        procps \
         supervisor \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /etc/nginx/sites-enabled/default

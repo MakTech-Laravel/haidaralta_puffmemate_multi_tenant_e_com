@@ -145,7 +145,10 @@ return [
                 ...Pulse::defaultVendorCacheKeys(),
                 '/^puffmemate_cache_/',
                 '/^spatie\.permission\./',
-            ],            'groups' => [
+                // Livewire probes this key every request; misses are normal and skew hit rate.
+                '/^livewire-checksum-failures:/',
+            ],
+            'groups' => [
                 '/^job-exceptions:.*/' => 'job-exceptions:*',
                 // '/:\d+/' => ':*',
             ],
