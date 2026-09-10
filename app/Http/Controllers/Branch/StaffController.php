@@ -2,49 +2,30 @@
 
 namespace App\Http\Controllers\Branch;
 
-use App\Enums\PermissionEnum;
-use App\Enums\RoleEnum;
-use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\StoreBranchStaffRequest;
 use App\Http\Requests\Branch\UpdateBranchStaffRequest;
 use App\Models\Branch;
-use App\Models\Role;
 use App\Models\User;
-use App\Support\SuperAdmin;
+use App\Services\Branch\BranchStaffService;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Permission\PermissionRegistrar;
 
 class StaffController extends Controller
 {
+    public function __construct(private BranchStaffService $branchStaffService) {}
+
     /**
      * Display staff for the current branch only.
      */
     public function index(): Response
     {
         $branch = $this->currentBranch();
-        $this->useBranchTeam($branch);
-
-        $staff = User::query()
-            ->where('user_type', UserType::BRANCH)
-            ->where('branch_id', $branch->id)
-            ->orderBy('name')
-            ->paginate(15)
-            ->through(function (User $user): array {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'is_active' => $user->is_active,
-                    'roles' => $user->getRoleNames()->values()->all(),
-                ];
-            });
 
         return Inertia::render('branch/staff/index', [
-            'staff' => $staff,
+            'staff' => $this->branchStaffService->paginateForBranch($branch, includeBranch: false),
             'branch' => $branch->only(['id', 'name', 'slug']),
         ]);
     }
@@ -58,7 +39,7 @@ class StaffController extends Controller
 
         return Inertia::render('branch/staff/create', [
             'branch' => $branch->only(['id', 'name', 'slug']),
-            'roles' => $this->branchRoleOptions(),
+            'roles' => $this->branchStaffService->roleOptionsForBranch($branch),
         ]);
     }
 
@@ -68,19 +49,14 @@ class StaffController extends Controller
     public function store(StoreBranchStaffRequest $request): RedirectResponse
     {
         $branch = $this->currentBranch();
-        $this->useBranchTeam($branch);
 
-        $user = User::query()->create([
+        $user = $this->branchStaffService->create($branch, [
             'name' => $request->validated('name'),
             'email' => $request->validated('email'),
             'password' => $request->validated('password'),
-            'user_type' => UserType::BRANCH,
-            'branch_id' => $branch->id,
+            'roles' => $request->validated('roles', []),
             'is_active' => $request->boolean('is_active', true),
-            'email_verified_at' => now(),
         ]);
-
-        $user->syncRoles($request->validated('roles', []));
 
         Toast::success('Staff member created.');
 
@@ -93,11 +69,8 @@ class StaffController extends Controller
     public function show(string $branch, User $user): Response
     {
         $branch = $this->currentBranch();
-        $user = $this->resolveBranchStaff($user, $branch);
-        $this->useBranchTeam($branch);
-
-        $isSuperAdmin = $user->hasRole(RoleEnum::SUPER_ADMIN->value);
-        $permissionNames = $user->getAllPermissions()->pluck('name');
+        $user = $this->branchStaffService->resolveForBranch($user, $branch);
+        $detail = $this->branchStaffService->mapStaffMemberDetail($user, $branch);
 
         return Inertia::render('branch/staff/show', [
             'branch' => $branch->only(['id', 'name', 'slug']),
@@ -106,11 +79,9 @@ class StaffController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'is_active' => $user->is_active,
-                'roles' => $user->getRoleNames()->values()->all(),
-                'is_super_admin' => $isSuperAdmin,
-                'effective_permissions' => $isSuperAdmin
-                    ? collect(PermissionEnum::forGuard('branch'))->map->value->values()->all()
-                    : $permissionNames->values()->all(),
+                'roles' => $detail['roles'],
+                'is_super_admin' => $detail['is_super_admin'],
+                'effective_permissions' => $detail['effective_permissions'],
             ],
         ]);
     }
@@ -121,19 +92,18 @@ class StaffController extends Controller
     public function edit(string $branch, User $user): Response
     {
         $branch = $this->currentBranch();
-        $user = $this->resolveBranchStaff($user, $branch);
-        $this->useBranchTeam($branch);
+        $user = $this->branchStaffService->resolveForBranch($user, $branch);
 
         return Inertia::render('branch/staff/edit', [
             'branch' => $branch->only(['id', 'name', 'slug']),
-            'roles' => $this->branchRoleOptions(),
-            'lockedSuperAdmin' => SuperAdmin::isLastInTeam($user, $branch->id),
+            'roles' => $this->branchStaffService->roleOptionsForBranch($branch),
+            'lockedSuperAdmin' => $this->branchStaffService->isLastSuperAdminInBranch($user, $branch),
             'staffMember' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'is_active' => $user->is_active,
-                'roles' => $user->getRoleNames()->values()->all(),
+                'roles' => $this->branchStaffService->roleNames($user, $branch),
             ],
         ]);
     }
@@ -144,30 +114,23 @@ class StaffController extends Controller
     public function update(UpdateBranchStaffRequest $request, string $branch, User $user): RedirectResponse
     {
         $branch = $this->currentBranch();
-        $user = $this->resolveBranchStaff($user, $branch);
-        $this->useBranchTeam($branch);
-
+        $user = $this->branchStaffService->resolveForBranch($user, $branch);
         $roles = $request->validated('roles', []);
         $isActive = $request->boolean('is_active');
 
-        if ($redirect = $this->guardLastSuperAdmin($user, $branch, $roles, $isActive, destroying: false)) {
-            return $redirect;
+        if ($this->branchStaffService->wouldViolateLastSuperAdmin($user, $branch, $roles, $isActive, destroying: false)) {
+            Toast::error('Cannot remove or deactivate the last super-admin for this branch.');
+
+            return redirect()->back();
         }
 
-        $payload = [
+        $this->branchStaffService->update($user, $branch, [
             'name' => $request->validated('name'),
             'email' => $request->validated('email'),
+            'password' => $request->validated('password'),
+            'roles' => $roles,
             'is_active' => $isActive,
-            'user_type' => UserType::BRANCH,
-            'branch_id' => $branch->id,
-        ];
-
-        if (filled($request->validated('password'))) {
-            $payload['password'] = $request->validated('password');
-        }
-
-        $user->update($payload);
-        $user->syncRoles($roles);
+        ]);
 
         Toast::success('Staff member updated.');
 
@@ -180,20 +143,21 @@ class StaffController extends Controller
     public function destroy(string $branch, User $user): RedirectResponse
     {
         $branch = $this->currentBranch();
-        $user = $this->resolveBranchStaff($user, $branch);
-        $this->useBranchTeam($branch);
+        $user = $this->branchStaffService->resolveForBranch($user, $branch);
 
-        if ($redirect = $this->guardLastSuperAdmin(
+        if ($this->branchStaffService->wouldViolateLastSuperAdmin(
             $user,
             $branch,
-            $user->getRoleNames()->all(),
+            $this->branchStaffService->roleNames($user, $branch),
             false,
             destroying: true,
         )) {
-            return $redirect;
+            Toast::error('Cannot remove or deactivate the last super-admin for this branch.');
+
+            return redirect()->back();
         }
 
-        $user->delete();
+        $this->branchStaffService->delete($user, $branch);
 
         Toast::success('Staff member deleted.');
 
@@ -206,74 +170,5 @@ class StaffController extends Controller
         $branch = app('currentBranch');
 
         return $branch;
-    }
-
-    private function useBranchTeam(Branch $branch): void
-    {
-        app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
-    }
-
-    private function resolveBranchStaff(User $user, Branch $branch): User
-    {
-        if ($user->user_type !== UserType::BRANCH || $user->branch_id !== $branch->id) {
-            abort(404);
-        }
-
-        return $user;
-    }
-
-    /**
-     * @return list<array{value: string, label: string}>
-     */
-    private function branchRoleOptions(): array
-    {
-        $branch = $this->currentBranch();
-        $this->useBranchTeam($branch);
-        $teamKey = config('permission.column_names.team_foreign_key');
-
-        return Role::query()
-            ->where('guard_name', 'branch')
-            ->where($teamKey, $branch->id)
-            ->orderBy('name')
-            ->get(['name'])
-            ->map(fn (Role $role): array => [
-                'value' => $role->name,
-                'label' => str($role->name)->replace('-', ' ')->title()->toString(),
-            ])
-            ->values()
-            ->all();
-    }
-
-    /**
-     * @param  list<string>  $roles
-     */
-    private function guardLastSuperAdmin(
-        User $user,
-        Branch $branch,
-        array $roles,
-        bool $isActive,
-        bool $destroying,
-    ): ?RedirectResponse {
-        $this->useBranchTeam($branch);
-
-        if (! $user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return null;
-        }
-
-        $losingSuperAdmin = $destroying
-            || ! $isActive
-            || ! in_array(RoleEnum::SUPER_ADMIN->value, $roles, true);
-
-        if (! $losingSuperAdmin) {
-            return null;
-        }
-
-        if (SuperAdmin::isLastInTeam($user, $branch->id)) {
-            Toast::error('Cannot remove or deactivate the last super-admin for this branch.');
-
-            return redirect()->back();
-        }
-
-        return null;
     }
 }

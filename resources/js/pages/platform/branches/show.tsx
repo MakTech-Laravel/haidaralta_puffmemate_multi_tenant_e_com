@@ -1,7 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { useState, type ReactNode } from 'react';
+import { Head, Link } from '@inertiajs/react';
+import type { ReactNode } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
-import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -61,8 +61,6 @@ function DetailItem({
 
 export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
     const { can } = usePermission();
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [processing, setProcessing] = useState(false);
 
     return (
         <>
@@ -96,31 +94,26 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                             </Badge>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        <Button variant="secondary" asChild>
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="default" asChild>
                             <Link href={BranchController.index.url()}>
                                 Back
                             </Link>
                         </Button>
-                        {can('edit-branches') ? (
-                            <Button asChild>
+                        {can('manage-branch-users') ? (
+                            <Button variant="default" asChild>
                                 <Link
-                                    href={BranchController.edit.url(
+                                    href={BranchScopedStaffController.index.url(
                                         branch.slug,
                                     )}
                                 >
-                                    Edit
+                                    Staff management
                                 </Link>
                             </Button>
                         ) : null}
-                        {can('delete-branches') ? (
-                            <Button
-                                variant="destructive"
-                                onClick={() => setConfirmOpen(true)}
-                            >
-                                Delete
-                            </Button>
-                        ) : null}
+                        <Button type="button" variant="default" disabled>
+                            Product management
+                        </Button>
                     </div>
                 </div>
 
@@ -253,20 +246,6 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                     </CardContent>
                 </Card>
             </div>
-
-            <ConfirmDeleteDialog
-                open={confirmOpen}
-                onOpenChange={setConfirmOpen}
-                description={`Delete “${branch.name}” permanently? Branches with staff cannot be deleted.`}
-                processing={processing}
-                onConfirm={() => {
-                    setProcessing(true);
-                    router.delete(BranchController.destroy.url(branch.slug), {
-                        preserveScroll: true,
-                        onFinish: () => setProcessing(false),
-                    });
-                }}
-            />
         </>
     );
 }

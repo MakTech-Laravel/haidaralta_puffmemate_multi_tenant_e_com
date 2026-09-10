@@ -55,7 +55,9 @@ test('branch admin can create and update staff in their own branch', function ()
         ->assertRedirect(route('branch.staff.show', [$downtown, $clerk]));
 
     $clerk->refresh();
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
     app(PermissionRegistrar::class)->setPermissionsTeamId($downtown->id);
+    $clerk->unsetRelation('roles');
 
     expect($clerk->name)->toBe('Downtown Manager')
         ->and($clerk->hasRole(RoleEnum::MANAGER->value))->toBeTrue();
