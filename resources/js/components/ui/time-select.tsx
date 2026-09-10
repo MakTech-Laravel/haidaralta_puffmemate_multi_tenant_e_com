@@ -74,7 +74,7 @@ export function TimeSelect({
                 <Clock className="text-muted-foreground" />
                 <SelectValue placeholder={placeholder} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" className="max-h-72">
                 <SelectGroup>
                     <SelectItem value={EMPTY_VALUE}>
                         {placeholder}
