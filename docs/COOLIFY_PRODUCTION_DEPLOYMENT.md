@@ -121,12 +121,12 @@ MEILISEARCH_KEY=...
 After first deploy, after changing `SCOUT_PREFIX`, or after changing Meilisearch index-settings, run once from an app container (Horizon must be processing the `scout` queue, or temporarily set `SCOUT_QUEUE=false` for the import):
 
 ```sh
-php artisan scout:sync-index-settings
-php artisan scout:import "App\Models\User"
-php artisan scout:import "App\Models\Branch"
+php artisan scout:import-all
 ```
 
-`scout:sync-index-settings` is required before platform staff search works — Meilisearch rejects `where('user_type', …)` until `user_type` is filterable on `puffmemate_users`. Missing indexes (e.g. `puffmemate_branches not found`) mean import was never run for the new prefix.
+This discovers every `Searchable` model under `app/Models`, syncs Meilisearch index settings when the engine supports it, then runs `scout:import` for each (today: `User`, `Branch`). Use `--fresh` to flush indexes first, or `--skip-sync-settings` if you only want reindexing.
+
+`scout:sync-index-settings` (included by default) is required before platform staff search works — Meilisearch rejects `where('user_type', …)` until `user_type` is filterable on `puffmemate_users`. Missing indexes (e.g. `puffmemate_branches not found`) mean import was never run for the new prefix.
 
 `REDIS_QUEUE_RETRY_AFTER` must remain safely greater than `QUEUE_TIMEOUT`. Begin with two workers. Tune worker count from measured queue latency, backlog, job duration/RSS, CPU, RAM, and PostgreSQL connection capacity rather than setting it from request traffic alone.
 
