@@ -89,6 +89,7 @@ RUN apt-get update \
         libzip4 \
         nano \
         nginx \
+        postgresql-client \
         supervisor \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /etc/nginx/sites-enabled/default

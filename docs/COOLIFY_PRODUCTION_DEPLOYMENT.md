@@ -53,6 +53,8 @@ DB_PASSWORD=...
 DB_SSLMODE=prefer
 ```
 
+Platform database export/import shells out to `pg_dump` / `psql` **inside the PUFFMEMATE app container**, then connects to the separate Postgres resource via `DB_HOST`. The production Dockerfile installs `postgresql-client` for that; do not put dump/restore tools only on the database container. After changing the Dockerfile, rebuild and redeploy the app image.
+
 Use the internal Coolify Redis hostname. Separate logical databases prevent normal cache eviction from targeting queue data, but they are not a security boundary:
 
 ```dotenv
