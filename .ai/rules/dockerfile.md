@@ -13,5 +13,5 @@ The main Coolify application image runs Nginx, PHP-FPM, Laravel queue workers, a
 
 FCM_SW_SHOW_NOTIFICATION is runtime (production ENV default false / Coolify override). Do not add it as a Vite build ARG; VITE_FIREBASE_* stay build-time only.
 
-## postgresql-client for DB backups
-Production image must include postgresql-client (pg_dump/psql) for DatabaseBackupService. Postgres remains a separate Coolify resource; only client tools belong in the app image alongside libpq5.
+## postgresql-client for Spatie backups
+Production image must include postgresql-client (pg_dump/psql) for Spatie laravel-backup and DB restore-from-zip. Postgres remains a separate Coolify resource; only client tools belong in the app image alongside libpq5. Keep QUEUE_TIMEOUT ≥ 600 and queue worker stopwaitsecs above that so RunBackupJob / RestoreDatabaseFromBackupJob can finish.
