@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\DatabaseBackupStatus;
 use App\Models\DatabaseBackupHistory;
+use App\Services\Backup\BroadcastsBackupHistory;
 use App\Services\Backup\DatabaseRestoreRunner;
 use FilesystemIterator;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,7 +19,7 @@ use ZipArchive;
 
 class RestoreDatabaseFromBackupJob implements ShouldQueue
 {
-    use Queueable;
+    use BroadcastsBackupHistory, Queueable;
 
     public int $timeout = 600;
 
@@ -32,10 +33,7 @@ class RestoreDatabaseFromBackupJob implements ShouldQueue
         $history = DatabaseBackupHistory::query()->findOrFail($this->historyId);
         $tempDir = storage_path('app/backup-temp/restore-'.Str::uuid());
 
-        $history->update([
-            'status' => DatabaseBackupStatus::Running,
-            'message' => 'Restore running',
-        ]);
+        $this->markHistory($history, DatabaseBackupStatus::Running, 'Restore running');
 
         try {
             if (! is_dir($tempDir) && ! mkdir($tempDir, 0755, true) && ! is_dir($tempDir)) {
@@ -82,17 +80,15 @@ class RestoreDatabaseFromBackupJob implements ShouldQueue
             $connection = (string) config('database.default');
             $runner->restoreFromSqlFile($connection, $sqlPath);
 
-            $history->update([
-                'status' => DatabaseBackupStatus::Completed,
-                'message' => 'Restore completed from '.basename($this->zipPath),
-            ]);
+            $this->markHistory(
+                $history,
+                DatabaseBackupStatus::Completed,
+                'Restore completed from '.basename($this->zipPath),
+            );
         } catch (Throwable $exception) {
             report($exception);
 
-            $history->update([
-                'status' => DatabaseBackupStatus::Failed,
-                'message' => $exception->getMessage(),
-            ]);
+            $this->markHistory($history, DatabaseBackupStatus::Failed, $exception->getMessage());
 
             $runner->ensureExcludedTablesExist((string) config('database.default'));
 

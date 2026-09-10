@@ -4,6 +4,7 @@ namespace App\Services\Backup;
 
 use App\Enums\DatabaseBackupStatus;
 use App\Enums\DatabaseBackupType;
+use App\Events\DatabaseBackupHistoryUpdated;
 use App\Jobs\CleanBackupJob;
 use App\Jobs\RestoreDatabaseFromBackupJob;
 use App\Jobs\RunBackupJob;
@@ -58,6 +59,7 @@ class BackupService
         ]);
 
         RunBackupJob::dispatch($history->id);
+        DatabaseBackupHistoryUpdated::dispatch($history);
 
         return $history;
     }
@@ -74,6 +76,7 @@ class BackupService
         ]);
 
         CleanBackupJob::dispatch($history->id);
+        DatabaseBackupHistoryUpdated::dispatch($history);
 
         return $history;
     }
@@ -116,6 +119,7 @@ class BackupService
         ]);
 
         RestoreDatabaseFromBackupJob::dispatch($history->id, $zipPath);
+        DatabaseBackupHistoryUpdated::dispatch($history);
 
         return $history;
     }

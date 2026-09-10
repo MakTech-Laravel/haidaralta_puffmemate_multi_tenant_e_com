@@ -22,3 +22,11 @@ export type RealtimeTestPayload = {
     triggered_at?: string;
     user_id?: number;
 };
+
+export type DatabaseBackupHistoryUpdatedPayload = {
+    id: number;
+    type: string;
+    status: string;
+    filename?: string | null;
+    message?: string | null;
+};

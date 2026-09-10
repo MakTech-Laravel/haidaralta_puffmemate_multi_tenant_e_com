@@ -4,6 +4,7 @@ use App\Enums\DatabaseBackupStatus;
 use App\Enums\DatabaseBackupType;
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
+use App\Events\DatabaseBackupHistoryUpdated;
 use App\Jobs\CleanBackupJob;
 use App\Jobs\RestoreDatabaseFromBackupJob;
 use App\Jobs\RunBackupJob;
@@ -16,6 +17,9 @@ use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\PermissionRegistrar;
@@ -31,6 +35,7 @@ beforeEach(function () {
 
 test('platform super admin can queue a backup run', function () {
     Queue::fake();
+    Event::fake([DatabaseBackupHistoryUpdated::class]);
 
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
@@ -49,6 +54,42 @@ test('platform super admin can queue a backup run', function () {
         ->and($history->status)->toBe(DatabaseBackupStatus::Pending);
 
     Queue::assertPushed(RunBackupJob::class, fn (RunBackupJob $job): bool => $job->historyId === $history->id);
+    Event::assertDispatched(DatabaseBackupHistoryUpdated::class);
+});
+
+test('database backup history updated event uses platform backups channel', function () {
+    $history = DatabaseBackupHistory::factory()->create([
+        'status' => DatabaseBackupStatus::Running,
+        'message' => 'Backup running',
+    ]);
+
+    $event = new DatabaseBackupHistoryUpdated($history);
+
+    expect($event->broadcastAs())->toBe('database-backup.history-updated')
+        ->and($event->broadcastOn())->toHaveCount(1)
+        ->and($event->broadcastOn()[0])->toBeInstanceOf(PrivateChannel::class)
+        ->and($event->broadcastOn()[0]->name)->toBe('private-platform.database-backups')
+        ->and($event->broadcastWith()['status'])->toBe('running');
+});
+
+test('run backup job broadcasts running and completed history updates', function () {
+    Event::fake([DatabaseBackupHistoryUpdated::class]);
+
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('backup:run')
+        ->andReturn(0);
+
+    $history = DatabaseBackupHistory::factory()->create([
+        'status' => DatabaseBackupStatus::Pending,
+        'message' => 'Backup queued',
+    ]);
+
+    (new RunBackupJob($history->id))->handle();
+
+    expect($history->fresh()->status)->toBe(DatabaseBackupStatus::Completed);
+
+    Event::assertDispatchedTimes(DatabaseBackupHistoryUpdated::class, 2);
 });
 
 test('platform super admin can list and download zip from backups disk', function () {
@@ -98,6 +139,7 @@ test('restore requires confirmation', function () {
 
 test('platform super admin can queue restore from zip', function () {
     Queue::fake();
+    Event::fake([DatabaseBackupHistoryUpdated::class]);
 
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $backupName = (string) config('backup.backup.name');
@@ -122,6 +164,7 @@ test('platform super admin can queue restore from zip', function () {
         ->and($history->status)->toBe(DatabaseBackupStatus::Pending);
 
     Queue::assertPushed(RestoreDatabaseFromBackupJob::class);
+    Event::assertDispatched(DatabaseBackupHistoryUpdated::class);
 });
 
 test('restore job applies sql from zip and resyncs manage-database-backups permission', function () {

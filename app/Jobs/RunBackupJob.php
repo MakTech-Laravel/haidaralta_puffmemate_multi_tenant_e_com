@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\DatabaseBackupStatus;
 use App\Models\DatabaseBackupHistory;
+use App\Services\Backup\BroadcastsBackupHistory;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Artisan;
@@ -11,7 +12,7 @@ use Throwable;
 
 class RunBackupJob implements ShouldQueue
 {
-    use Queueable;
+    use BroadcastsBackupHistory, Queueable;
 
     public int $timeout = 600;
 
@@ -21,10 +22,7 @@ class RunBackupJob implements ShouldQueue
     {
         $history = DatabaseBackupHistory::query()->findOrFail($this->historyId);
 
-        $history->update([
-            'status' => DatabaseBackupStatus::Running,
-            'message' => 'Backup running',
-        ]);
+        $this->markHistory($history, DatabaseBackupStatus::Running, 'Backup running');
 
         try {
             $exitCode = Artisan::call('backup:run');
@@ -33,17 +31,11 @@ class RunBackupJob implements ShouldQueue
                 throw new \RuntimeException(trim(Artisan::output()) ?: 'backup:run failed');
             }
 
-            $history->update([
-                'status' => DatabaseBackupStatus::Completed,
-                'message' => 'Backup completed',
-            ]);
+            $this->markHistory($history, DatabaseBackupStatus::Completed, 'Backup completed');
         } catch (Throwable $exception) {
             report($exception);
 
-            $history->update([
-                'status' => DatabaseBackupStatus::Failed,
-                'message' => $exception->getMessage(),
-            ]);
+            $this->markHistory($history, DatabaseBackupStatus::Failed, $exception->getMessage());
 
             throw $exception;
         }

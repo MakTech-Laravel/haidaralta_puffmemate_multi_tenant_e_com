@@ -1,6 +1,6 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePoll } from '@inertiajs/react';
 import { Download, RotateCcw, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DatabaseBackupController from '@/actions/App/Http/Controllers/Platform/DatabaseBackupController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import Heading from '@/components/heading';
@@ -17,6 +17,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useDatabaseBackupRealtime } from '@/hooks/use-database-backup-realtime';
 import {
     backupStatusBadgeVariant,
     backupTypeBadgeVariant,
@@ -74,6 +75,35 @@ export default function PlatformDatabaseBackupsIndex({
     const [restorePath, setRestorePath] = useState<string | null>(null);
     const [confirmedRestore, setConfirmedRestore] = useState(false);
     const [restoreProcessing, setRestoreProcessing] = useState(false);
+
+    useDatabaseBackupRealtime();
+
+    const hasActiveHistory = useMemo(
+        () =>
+            histories.data.some(
+                (history) =>
+                    history.status === 'pending' || history.status === 'running',
+            ),
+        [histories.data],
+    );
+
+    // Safety net while a job is in flight (covers Reverb blips); Echo reloads instantly.
+    const { start: startPoll, stop: stopPoll } = usePoll(
+        3000,
+        {
+            only: ['backups', 'histories'],
+            preserveScroll: true,
+        },
+        { autoStart: false },
+    );
+
+    useEffect(() => {
+        if (hasActiveHistory) {
+            startPoll();
+        } else {
+            stopPoll();
+        }
+    }, [hasActiveHistory, startPoll, stopPoll]);
 
     return (
         <>
