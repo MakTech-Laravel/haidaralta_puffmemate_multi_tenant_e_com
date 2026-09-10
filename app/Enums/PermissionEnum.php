@@ -12,6 +12,8 @@ enum PermissionEnum: string
     case MANAGE_REPORTS = 'manage-reports';
     case VIEW_ACTIVITY_LOGS = 'view-activity-logs';
     case MANAGE_DATABASE_BACKUPS = 'manage-database-backups';
+    case VIEW_HORIZON = 'view-horizon';
+    case VIEW_PULSE = 'view-pulse';
     case VIEW_BRANCHES = 'view-branches';
     case CREATE_BRANCHES = 'create-branches';
     case EDIT_BRANCHES = 'edit-branches';
@@ -37,6 +39,8 @@ enum PermissionEnum: string
             self::MANAGE_REPORTS,
             self::VIEW_ACTIVITY_LOGS,
             self::MANAGE_DATABASE_BACKUPS,
+            self::VIEW_HORIZON,
+            self::VIEW_PULSE,
             self::VIEW_BRANCHES,
             self::CREATE_BRANCHES,
             self::EDIT_BRANCHES,
@@ -80,6 +84,8 @@ enum PermissionEnum: string
             self::VIEW_ACTIVITY_LOGS,
             self::VIEW_BRANCH_ACTIVITY_LOGS => 'Activity',
             self::MANAGE_DATABASE_BACKUPS => 'Database',
+            self::VIEW_HORIZON,
+            self::VIEW_PULSE => 'Observability',
         };
     }
 
@@ -97,6 +103,8 @@ enum PermissionEnum: string
             self::MANAGE_REPORTS => 'Manage reports',
             self::VIEW_ACTIVITY_LOGS => 'View activity logs',
             self::MANAGE_DATABASE_BACKUPS => 'Manage database backups',
+            self::VIEW_HORIZON => 'View Horizon',
+            self::VIEW_PULSE => 'View Pulse',
             self::VIEW_BRANCHES => 'View branches',
             self::CREATE_BRANCHES => 'Create branches',
             self::EDIT_BRANCHES => 'Edit branches',

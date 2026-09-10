@@ -3,6 +3,7 @@
 use App\Providers\AppServiceProvider;
 use App\Providers\AuthServiceProvider;
 use App\Providers\FortifyServiceProvider;
+use App\Providers\HorizonServiceProvider;
 use Laravel\Telescope\TelescopeApplicationServiceProvider;
 use Laravel\Telescope\TelescopeServiceProvider;
 
@@ -10,6 +11,7 @@ $providers = [
     AppServiceProvider::class,
     AuthServiceProvider::class,
     FortifyServiceProvider::class,
+    HorizonServiceProvider::class,
 ];
 
 /**

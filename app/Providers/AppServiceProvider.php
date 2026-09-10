@@ -3,14 +3,18 @@
 namespace App\Providers;
 
 use App\Listeners\AuthActivitySubscriber;
+use App\Models\User;
+use App\Support\OpsDashboardAccess;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Contracts\Auth\Access\Gate as GateContract;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Fortify;
+use Laravel\Pulse\Facades\Pulse;
 use Spatie\Activitylog\Actions\LogActivityAction;
 use Spatie\Activitylog\Contracts\Activity as ActivityContract;
 
@@ -32,8 +36,30 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configurePasswordResetUrls();
         $this->configureActivityLogContext();
+        $this->configureOpsDashboards();
 
         Event::subscribe(AuthActivitySubscriber::class);
+    }
+
+    protected function configureOpsDashboards(): void
+    {
+        // Pulse registers a local-only viewPulse gate via callAfterResolving.
+        // Re-define after boot so platform OpsDashboardAccess always wins.
+        $this->app->booted(function (): void {
+            $this->callAfterResolving(GateContract::class, function (GateContract $gate): void {
+                $gate->define('viewPulse', function (?User $user = null): bool {
+                    return OpsDashboardAccess::allowsPulse(
+                        $user ?? OpsDashboardAccess::resolvePortalUser(),
+                    );
+                });
+            });
+        });
+
+        Pulse::user(fn ($user) => [
+            'name' => $user->name,
+            'extra' => $user->email,
+            'avatar' => null,
+        ]);
     }
 
     protected function configureActivityLogContext(): void
