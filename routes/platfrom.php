@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Platform\ActivityLogController as PlatformActivityLogController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
+use App\Http\Controllers\Platform\BranchScopedStaffController as PlatformBranchScopedStaffController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
@@ -40,6 +41,10 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::resource('branch-staff', PlatformBranchStaffController::class)
             ->parameters(['branch-staff' => 'user'])
             ->names('platform.branch-staff');
+
+        Route::resource('branches.staff', PlatformBranchScopedStaffController::class)
+            ->parameters(['staff' => 'user'])
+            ->names('platform.branches.staff');
     });
 
     Route::middleware(['permission:create-branches'])->group(function () {

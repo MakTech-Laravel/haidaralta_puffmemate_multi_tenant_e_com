@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
+import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -96,11 +97,25 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                             </Badge>
                         </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button variant="secondary" asChild>
                             <Link href={BranchController.index.url()}>
                                 Back
                             </Link>
+                        </Button>
+                        {can('manage-branch-users') ? (
+                            <Button variant="outline" asChild>
+                                <Link
+                                    href={BranchScopedStaffController.index.url(
+                                        branch.slug,
+                                    )}
+                                >
+                                    Staff management
+                                </Link>
+                            </Button>
+                        ) : null}
+                        <Button type="button" variant="outline" disabled>
+                            Product management
                         </Button>
                         {can('edit-branches') ? (
                             <Button asChild>
