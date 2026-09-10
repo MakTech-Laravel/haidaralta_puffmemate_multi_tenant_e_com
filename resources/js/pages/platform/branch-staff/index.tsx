@@ -1,5 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
+import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import Heading from '@/components/heading';
 import { SimplePagination } from '@/components/simple-pagination';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -47,15 +50,25 @@ export default function PlatformBranchStaffIndex({
     branches: { id: number; name: string; slug: string }[];
     filters: { branch_id: number | null };
 }) {
+    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [processing, setProcessing] = useState(false);
+
     return (
         <>
             <Head title="Branch staff" />
 
-            <div className="space-y-6 p-2">
-                <Heading
-                    title="Branch staff"
-                    description="Platform oversight of staff across all branches"
-                />
+            <div className="flex flex-col gap-6 p-2">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <Heading
+                        title="Branch staff"
+                        description="Manage staff across all branches from the platform"
+                    />
+                    <Button asChild>
+                        <Link href={BranchStaffController.create.url()}>
+                            Add staff
+                        </Link>
+                    </Button>
+                </div>
 
                 <div className="max-w-xs">
                     <Select
@@ -81,20 +94,24 @@ export default function PlatformBranchStaffIndex({
                             <SelectValue placeholder="Filter by branch" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All branches</SelectItem>
-                            {branches.map((branch) => (
-                                <SelectItem
-                                    key={branch.id}
-                                    value={String(branch.id)}
-                                >
-                                    {branch.name}
+                            <SelectGroup>
+                                <SelectItem value="all">
+                                    All branches
                                 </SelectItem>
-                            ))}
+                                {branches.map((branch) => (
+                                    <SelectItem
+                                        key={branch.id}
+                                        value={String(branch.id)}
+                                    >
+                                        {branch.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
                         </SelectContent>
                     </Select>
                 </div>
 
-                <div className="rounded-xl border">
+                <div className="overflow-hidden rounded-xl border">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -109,55 +126,128 @@ export default function PlatformBranchStaffIndex({
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {staff.data.map((member) => (
-                                <TableRow key={member.id}>
-                                    <TableCell className="font-medium">
-                                        {member.name}
-                                    </TableCell>
-                                    <TableCell>{member.email}</TableCell>
-                                    <TableCell>
-                                        {member.branch?.name ?? '—'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-wrap gap-1">
-                                            {member.roles.map((role) => (
-                                                <Badge
-                                                    key={role}
-                                                    variant="secondary"
-                                                >
-                                                    {role}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        {member.is_active
-                                            ? 'Active'
-                                            : 'Inactive'}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <Link
-                                                href={BranchStaffController.show.url(
-                                                    member.id,
-                                                )}
-                                            >
-                                                View
-                                            </Link>
-                                        </Button>
+                            {staff.data.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={6}
+                                        className="text-muted-foreground py-10 text-center"
+                                    >
+                                        No branch staff found.
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            ) : (
+                                staff.data.map((member) => (
+                                    <TableRow key={member.id}>
+                                        <TableCell className="font-medium">
+                                            {member.name}
+                                        </TableCell>
+                                        <TableCell>{member.email}</TableCell>
+                                        <TableCell>
+                                            {member.branch?.name ?? '—'}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-wrap gap-1">
+                                                {member.roles.map((role) => (
+                                                    <Badge
+                                                        key={role}
+                                                        variant="secondary"
+                                                    >
+                                                        {role}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge
+                                                variant={
+                                                    member.is_active
+                                                        ? 'default'
+                                                        : 'secondary'
+                                                }
+                                            >
+                                                {member.is_active
+                                                    ? 'Active'
+                                                    : 'Inactive'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    asChild
+                                                >
+                                                    <Link
+                                                        href={BranchStaffController.show.url(
+                                                            member.id,
+                                                        )}
+                                                    >
+                                                        View
+                                                    </Link>
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    asChild
+                                                >
+                                                    <Link
+                                                        href={BranchStaffController.edit.url(
+                                                            member.id,
+                                                        )}
+                                                    >
+                                                        Edit
+                                                    </Link>
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-destructive"
+                                                    onClick={() =>
+                                                        setDeletingId(member.id)
+                                                    }
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
                 </div>
 
                 <SimplePagination links={staff.links} />
             </div>
+
+            <ConfirmDeleteDialog
+                open={deletingId !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeletingId(null);
+                    }
+                }}
+                description="This will permanently delete the branch staff member."
+                processing={processing}
+                onConfirm={() => {
+                    if (deletingId === null) {
+                        return;
+                    }
+
+                    setProcessing(true);
+                    router.delete(
+                        BranchStaffController.destroy.url(deletingId),
+                        {
+                            preserveScroll: true,
+                            onFinish: () => {
+                                setProcessing(false);
+                                setDeletingId(null);
+                            },
+                        },
+                    );
+                }}
+            />
         </>
     );
 }

@@ -102,6 +102,7 @@ enum PermissionEnum: string
     // platform guard
     case VIEW_DASHBOARD = 'view-dashboard';
     case MANAGE_USERS = 'manage-users';
+    case MANAGE_BRANCH_USERS = 'manage-branch-users';
     case MANAGE_ROLES = 'manage-roles';
     case MANAGE_BRANCHES = 'manage-branches';
 

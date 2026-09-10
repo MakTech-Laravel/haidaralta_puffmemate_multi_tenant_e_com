@@ -187,6 +187,7 @@ export function BranchForm({
                                     setData('name', event.target.value)
                                 }
                                 required
+                                placeholder="e.g. Downtown Store"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -201,6 +202,7 @@ export function BranchForm({
                                     setData('slug', event.target.value);
                                 }}
                                 required
+                                placeholder="e.g. downtown-store"
                             />
                             <InputError message={errors.slug} />
                         </div>
@@ -216,6 +218,7 @@ export function BranchForm({
                                     setData('code', event.target.value)
                                 }
                                 required
+                                placeholder="e.g. DTN"
                             />
                             <InputError message={errors.code} />
                         </div>
@@ -228,6 +231,7 @@ export function BranchForm({
                                 onChange={(event) =>
                                     setData('phone', event.target.value)
                                 }
+                                placeholder="e.g. +880 1700-000000"
                             />
                             <InputError message={errors.phone} />
                         </div>
@@ -243,6 +247,7 @@ export function BranchForm({
                                 onChange={(event) =>
                                     setData('email', event.target.value)
                                 }
+                                placeholder="branch@example.com"
                             />
                             <InputError message={errors.email} />
                         </div>
@@ -255,6 +260,7 @@ export function BranchForm({
                                 onChange={(event) =>
                                     setData('address', event.target.value)
                                 }
+                                placeholder="Street, city, area"
                             />
                             <InputError message={errors.address} />
                         </div>
@@ -273,6 +279,7 @@ export function BranchForm({
                                 onChange={(event) =>
                                     setData('latitude', event.target.value)
                                 }
+                                placeholder="e.g. 23.8103"
                             />
                             <InputError message={errors.latitude} />
                         </div>
@@ -287,6 +294,7 @@ export function BranchForm({
                                 onChange={(event) =>
                                     setData('longitude', event.target.value)
                                 }
+                                placeholder="e.g. 90.4125"
                             />
                             <InputError message={errors.longitude} />
                         </div>

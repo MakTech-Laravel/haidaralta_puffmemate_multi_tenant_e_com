@@ -40,8 +40,12 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::resource('staff', PlatformStaffController::class)
             ->parameters(['staff' => 'user'])
             ->names('platform.staff');
-        Route::get('branch-staff', [PlatformBranchStaffController::class, 'index'])->name('platform.branch-staff.index');
-        Route::get('branch-staff/{user}', [PlatformBranchStaffController::class, 'show'])->name('platform.branch-staff.show');
+    });
+
+    Route::middleware(['permission:manage-branch-users'])->group(function () {
+        Route::resource('branch-staff', PlatformBranchStaffController::class)
+            ->parameters(['branch-staff' => 'user'])
+            ->names('platform.branch-staff');
     });
 
     Route::middleware(['permission:create-branches'])->group(function () {
