@@ -1,10 +1,20 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import Heading from '@/components/heading';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { usePermission } from '@/hooks/use-permissions';
 
 type SuperAdmin = {
@@ -34,6 +44,21 @@ type Branch = {
     super_admins: SuperAdmin[];
 };
 
+function DetailItem({
+    label,
+    value,
+}: {
+    label: string;
+    value: ReactNode;
+}) {
+    return (
+        <div className="flex flex-col gap-1">
+            <dt className="text-muted-foreground text-sm">{label}</dt>
+            <dd className="text-sm font-medium">{value}</dd>
+        </div>
+    );
+}
+
 export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
     const { can } = usePermission();
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -43,12 +68,34 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
         <>
             <Head title={branch.name} />
 
-            <div className="space-y-6 p-2">
+            <div className="flex flex-col gap-6 p-2">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <Heading
-                        title={branch.name}
-                        description={`/${branch.slug} · ${branch.code}`}
-                    />
+                    <div className="flex items-start gap-4">
+                        <Avatar className="size-14 rounded-xl">
+                            {branch.logo_url ? (
+                                <AvatarImage
+                                    src={branch.logo_url}
+                                    alt={branch.name}
+                                />
+                            ) : null}
+                            <AvatarFallback className="rounded-xl text-base">
+                                {branch.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col gap-2">
+                            <Heading
+                                title={branch.name}
+                                description={`/${branch.slug} · ${branch.code}`}
+                            />
+                            <Badge
+                                variant={
+                                    branch.status ? 'default' : 'secondary'
+                                }
+                            >
+                                {branch.status ? 'Active' : 'Inactive'}
+                            </Badge>
+                        </div>
+                    </div>
                     <div className="flex gap-2">
                         <Button variant="secondary" asChild>
                             <Link href={BranchController.index.url()}>
@@ -77,69 +124,83 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                     </div>
                 </div>
 
-                <section className="space-y-2">
-                    <h2 className="text-sm font-medium">Details</h2>
-                    <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                        <div>
-                            <dt className="text-muted-foreground">Logo</dt>
-                            <dd className="mt-1">
-                                {branch.logo_url ? (
-                                    <img
-                                        src={branch.logo_url}
-                                        alt={branch.name}
-                                        className="size-16 rounded-lg object-cover"
-                                    />
-                                ) : (
-                                    '—'
-                                )}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt className="text-muted-foreground">Status</dt>
-                            <dd>{branch.status ? 'Active' : 'Inactive'}</dd>
-                        </div>
-                        <div>
-                            <dt className="text-muted-foreground">Code</dt>
-                            <dd>{branch.code}</dd>
-                        </div>
-                        <div>
-                            <dt className="text-muted-foreground">Staff</dt>
-                            <dd>{branch.users_count}</dd>
-                        </div>
-                        <div>
-                            <dt className="text-muted-foreground">Phone</dt>
-                            <dd>{branch.phone ?? '—'}</dd>
-                        </div>
-                        <div>
-                            <dt className="text-muted-foreground">Email</dt>
-                            <dd>{branch.email ?? '—'}</dd>
-                        </div>
-                        <div>
-                            <dt className="text-muted-foreground">Address</dt>
-                            <dd>{branch.address ?? '—'}</dd>
-                        </div>
-                        <div>
-                            <dt className="text-muted-foreground">Hours</dt>
-                            <dd>
-                                {branch.opening_time || branch.closing_time
-                                    ? `${branch.opening_time ?? '—'} – ${branch.closing_time ?? '—'}`
-                                    : '—'}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt className="text-muted-foreground">Latitude</dt>
-                            <dd>{branch.latitude ?? '—'}</dd>
-                        </div>
-                        <div>
-                            <dt className="text-muted-foreground">Longitude</dt>
-                            <dd>{branch.longitude ?? '—'}</dd>
-                        </div>
-                    </dl>
-                </section>
+                {branch.needs_super_admin ? (
+                    <Alert>
+                        <AlertTitle>Super-admin missing</AlertTitle>
+                        <AlertDescription className="flex flex-col gap-3">
+                            <p>
+                                This branch has no super-admin yet. Add one to
+                                finish setup.
+                            </p>
+                            {can('create-branches') ? (
+                                <Button size="sm" className="w-fit" asChild>
+                                    <Link
+                                        href={BranchController.createSuperAdmin.url(
+                                            branch.slug,
+                                        )}
+                                    >
+                                        Add super-admin
+                                    </Link>
+                                </Button>
+                            ) : null}
+                        </AlertDescription>
+                    </Alert>
+                ) : null}
 
-                <section className="space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h2 className="text-sm font-medium">Super-admins</h2>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Details</CardTitle>
+                        <CardDescription>
+                            Contact, hours, and location for this branch
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <dl className="grid gap-5 sm:grid-cols-2">
+                            <DetailItem label="Code" value={branch.code} />
+                            <DetailItem
+                                label="Staff"
+                                value={branch.users_count}
+                            />
+                            <DetailItem
+                                label="Phone"
+                                value={branch.phone ?? '—'}
+                            />
+                            <DetailItem
+                                label="Email"
+                                value={branch.email ?? '—'}
+                            />
+                            <DetailItem
+                                label="Address"
+                                value={branch.address ?? '—'}
+                            />
+                            <DetailItem
+                                label="Hours"
+                                value={
+                                    branch.opening_time || branch.closing_time
+                                        ? `${branch.opening_time ?? '—'} – ${branch.closing_time ?? '—'}`
+                                        : '—'
+                                }
+                            />
+                            <DetailItem
+                                label="Latitude"
+                                value={branch.latitude ?? '—'}
+                            />
+                            <DetailItem
+                                label="Longitude"
+                                value={branch.longitude ?? '—'}
+                            />
+                        </dl>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-col gap-1.5">
+                            <CardTitle>Super-admins</CardTitle>
+                            <CardDescription>
+                                Portal admins for this branch
+                            </CardDescription>
+                        </div>
                         {branch.needs_super_admin && can('create-branches') ? (
                             <Button size="sm" asChild>
                                 <Link
@@ -151,22 +212,46 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                                 </Link>
                             </Button>
                         ) : null}
-                    </div>
-                    {branch.super_admins.length === 0 ? (
-                        <p className="text-muted-foreground text-sm">
-                            No super-admins found for this branch.
-                        </p>
-                    ) : (
-                        <div className="flex flex-wrap gap-2">
-                            {branch.super_admins.map((admin) => (
-                                <Badge key={admin.id} variant="secondary">
-                                    {admin.name} ({admin.email})
-                                    {!admin.is_active ? ' · inactive' : ''}
-                                </Badge>
-                            ))}
-                        </div>
-                    )}
-                </section>
+                    </CardHeader>
+                    <CardContent>
+                        {branch.super_admins.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">
+                                No super-admins found for this branch.
+                            </p>
+                        ) : (
+                            <div className="flex flex-col gap-3">
+                                {branch.super_admins.map((admin, index) => (
+                                    <div key={admin.id}>
+                                        {index > 0 ? (
+                                            <Separator className="mb-3" />
+                                        ) : null}
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <div className="flex flex-col gap-0.5">
+                                                <p className="text-sm font-medium">
+                                                    {admin.name}
+                                                </p>
+                                                <p className="text-muted-foreground text-sm">
+                                                    {admin.email}
+                                                </p>
+                                            </div>
+                                            <Badge
+                                                variant={
+                                                    admin.is_active
+                                                        ? 'default'
+                                                        : 'secondary'
+                                                }
+                                            >
+                                                {admin.is_active
+                                                    ? 'Active'
+                                                    : 'Inactive'}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
 
             <ConfirmDeleteDialog

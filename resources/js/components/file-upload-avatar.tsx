@@ -34,7 +34,7 @@ export function FileUploadAvatar({
                   {
                       id: 'avatar',
                       path: 'avatar',
-                      name: 'Current avatar',
+                      name: 'Current logo',
                       url: existingUrl,
                       mime_type: 'image/*',
                   },

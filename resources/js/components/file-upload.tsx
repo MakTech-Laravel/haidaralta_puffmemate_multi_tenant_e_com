@@ -1454,10 +1454,11 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                         </div>
                         {isAvatar ? (
                             <AvatarUploadCaption
-                                title="Profile photo"
-                                fileName={displayName}
-                                fileSize={f.size}
-                                description="Click the photo to replace, or remove it."
+                                title={placeholder}
+                                description={
+                                    hint ??
+                                    'Click the photo to replace, or remove it.'
+                                }
                             />
                         ) : null}
                     </div>
@@ -1546,10 +1547,11 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                         </div>
                         {isAvatar ? (
                             <AvatarUploadCaption
-                                title="Profile photo"
-                                fileName={p.file.name}
-                                fileSize={p.file.size}
-                                description="Click the photo to replace, or remove it."
+                                title={placeholder}
+                                description={
+                                    hint ??
+                                    'Click the photo to replace, or remove it.'
+                                }
                             />
                         ) : null}
                     </div>

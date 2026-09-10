@@ -4,9 +4,19 @@ import { useEffect, useState } from 'react';
 import { FileUploadAvatar } from '@/components/file-upload-avatar';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
+import { TimeSelect } from '@/components/ui/time-select';
 
 type FormAction = {
     action: string;
@@ -121,204 +131,223 @@ export function BranchForm({
     };
 
     return (
-        <form onSubmit={submit} className="space-y-6">
-            <div className="grid gap-2">
-                <Label>Branch logo</Label>
-                <FileUploadAvatar
-                    value={data.logo}
-                    onChange={(file) => {
-                        const next = Array.isArray(file)
-                            ? (file[0] ?? null)
-                            : file;
-                        setData((current) => ({
-                            ...current,
-                            logo: next,
-                            remove_logo: next ? false : current.remove_logo,
-                        }));
-                    }}
-                    existingUrl={
-                        data.logo || data.remove_logo ? null : existingLogoUrl
-                    }
-                    onClearExisting={() => {
-                        setExistingLogoUrl(null);
-                        setData((current) => ({
-                            ...current,
-                            logo: null,
-                            remove_logo: true,
-                        }));
-                    }}
-                    accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
-                    maxSize={2}
-                    error={errors.logo}
-                    hint="PNG, JPG, or WebP up to 2MB"
-                    placeholder="Click to upload branch logo"
-                />
-                <InputError message={errors.logo} />
-            </div>
+        <form onSubmit={submit}>
+            <Card>
+                <CardHeader>
+                    <CardTitle>
+                        {isEdit ? 'Branch details' : 'Branch information'}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-2">
+                        <Label>Branch logo</Label>
+                        <FileUploadAvatar
+                            value={data.logo}
+                            onChange={(file) => {
+                                const next = Array.isArray(file)
+                                    ? (file[0] ?? null)
+                                    : file;
+                                setData((current) => ({
+                                    ...current,
+                                    logo: next,
+                                    remove_logo: next
+                                        ? false
+                                        : current.remove_logo,
+                                }));
+                            }}
+                            existingUrl={
+                                data.logo || data.remove_logo
+                                    ? null
+                                    : existingLogoUrl
+                            }
+                            onClearExisting={() => {
+                                setExistingLogoUrl(null);
+                                setData((current) => ({
+                                    ...current,
+                                    logo: null,
+                                    remove_logo: true,
+                                }));
+                            }}
+                            accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                            maxSize={2}
+                            error={errors.logo}
+                            hint="PNG, JPG, or WebP up to 2MB"
+                            placeholder="Branch logo"
+                        />
+                        <InputError message={errors.logo} />
+                    </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-                <div className="grid gap-2">
-                    <Label htmlFor="name">Branch name</Label>
-                    <Input
-                        id="name"
-                        value={data.name}
-                        onChange={(event) =>
-                            setData('name', event.target.value)
-                        }
-                        required
-                    />
-                    <InputError message={errors.name} />
-                </div>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="name">Branch name</Label>
+                            <Input
+                                id="name"
+                                value={data.name}
+                                onChange={(event) =>
+                                    setData('name', event.target.value)
+                                }
+                                required
+                            />
+                            <InputError message={errors.name} />
+                        </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="slug">Slug</Label>
-                    <Input
-                        id="slug"
-                        value={data.slug}
-                        onChange={(event) => {
-                            setSlugTouched(true);
-                            setData('slug', event.target.value);
-                        }}
-                        required
-                    />
-                    <InputError message={errors.slug} />
-                </div>
-            </div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="slug">Slug</Label>
+                            <Input
+                                id="slug"
+                                value={data.slug}
+                                onChange={(event) => {
+                                    setSlugTouched(true);
+                                    setData('slug', event.target.value);
+                                }}
+                                required
+                            />
+                            <InputError message={errors.slug} />
+                        </div>
+                    </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-                <div className="grid gap-2">
-                    <Label htmlFor="code">Code</Label>
-                    <Input
-                        id="code"
-                        value={data.code}
-                        onChange={(event) =>
-                            setData('code', event.target.value)
-                        }
-                        required
-                    />
-                    <InputError message={errors.code} />
-                </div>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="code">Code</Label>
+                            <Input
+                                id="code"
+                                value={data.code}
+                                onChange={(event) =>
+                                    setData('code', event.target.value)
+                                }
+                                required
+                            />
+                            <InputError message={errors.code} />
+                        </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                        id="phone"
-                        value={data.phone}
-                        onChange={(event) =>
-                            setData('phone', event.target.value)
-                        }
-                    />
-                    <InputError message={errors.phone} />
-                </div>
-            </div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="phone">Phone</Label>
+                            <Input
+                                id="phone"
+                                value={data.phone}
+                                onChange={(event) =>
+                                    setData('phone', event.target.value)
+                                }
+                            />
+                            <InputError message={errors.phone} />
+                        </div>
+                    </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-                <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                        id="email"
-                        type="email"
-                        value={data.email}
-                        onChange={(event) =>
-                            setData('email', event.target.value)
-                        }
-                    />
-                    <InputError message={errors.email} />
-                </div>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                value={data.email}
+                                onChange={(event) =>
+                                    setData('email', event.target.value)
+                                }
+                            />
+                            <InputError message={errors.email} />
+                        </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="address">Address</Label>
-                    <Input
-                        id="address"
-                        value={data.address}
-                        onChange={(event) =>
-                            setData('address', event.target.value)
-                        }
-                    />
-                    <InputError message={errors.address} />
-                </div>
-            </div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="address">Address</Label>
+                            <Input
+                                id="address"
+                                value={data.address}
+                                onChange={(event) =>
+                                    setData('address', event.target.value)
+                                }
+                            />
+                            <InputError message={errors.address} />
+                        </div>
+                    </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-                <div className="grid gap-2">
-                    <Label htmlFor="latitude">Latitude</Label>
-                    <Input
-                        id="latitude"
-                        type="number"
-                        step="any"
-                        value={data.latitude}
-                        onChange={(event) =>
-                            setData('latitude', event.target.value)
-                        }
-                    />
-                    <InputError message={errors.latitude} />
-                </div>
+                    <Separator />
 
-                <div className="grid gap-2">
-                    <Label htmlFor="longitude">Longitude</Label>
-                    <Input
-                        id="longitude"
-                        type="number"
-                        step="any"
-                        value={data.longitude}
-                        onChange={(event) =>
-                            setData('longitude', event.target.value)
-                        }
-                    />
-                    <InputError message={errors.longitude} />
-                </div>
-            </div>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="latitude">Latitude</Label>
+                            <Input
+                                id="latitude"
+                                type="number"
+                                step="any"
+                                value={data.latitude}
+                                onChange={(event) =>
+                                    setData('latitude', event.target.value)
+                                }
+                            />
+                            <InputError message={errors.latitude} />
+                        </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-                <div className="grid gap-2">
-                    <Label htmlFor="opening_time">Opening time</Label>
-                    <Input
-                        id="opening_time"
-                        type="time"
-                        value={data.opening_time}
-                        onChange={(event) =>
-                            setData('opening_time', event.target.value)
-                        }
-                    />
-                    <InputError message={errors.opening_time} />
-                </div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="longitude">Longitude</Label>
+                            <Input
+                                id="longitude"
+                                type="number"
+                                step="any"
+                                value={data.longitude}
+                                onChange={(event) =>
+                                    setData('longitude', event.target.value)
+                                }
+                            />
+                            <InputError message={errors.longitude} />
+                        </div>
+                    </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="closing_time">Closing time</Label>
-                    <Input
-                        id="closing_time"
-                        type="time"
-                        value={data.closing_time}
-                        onChange={(event) =>
-                            setData('closing_time', event.target.value)
-                        }
-                    />
-                    <InputError message={errors.closing_time} />
-                </div>
-            </div>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="opening_time">Opening time</Label>
+                            <TimeSelect
+                                id="opening_time"
+                                value={data.opening_time}
+                                onChange={(value) =>
+                                    setData('opening_time', value)
+                                }
+                                placeholder="Select opening time"
+                                aria-invalid={Boolean(errors.opening_time)}
+                            />
+                            <InputError message={errors.opening_time} />
+                        </div>
 
-            <div className="flex items-center gap-2">
-                <Checkbox
-                    id="status"
-                    checked={data.status}
-                    onCheckedChange={(value) =>
-                        setData('status', value === true)
-                    }
-                />
-                <Label htmlFor="status" className="font-normal">
-                    Active
-                </Label>
-                <InputError message={errors.status} />
-            </div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="closing_time">Closing time</Label>
+                            <TimeSelect
+                                id="closing_time"
+                                value={data.closing_time}
+                                onChange={(value) =>
+                                    setData('closing_time', value)
+                                }
+                                placeholder="Select closing time"
+                                aria-invalid={Boolean(errors.closing_time)}
+                            />
+                            <InputError message={errors.closing_time} />
+                        </div>
+                    </div>
 
-            <div className="flex items-center gap-3 border-t pt-5">
-                <Button type="submit" disabled={processing}>
-                    {submitLabel ?? (isEdit ? 'Save changes' : 'Next')}
-                </Button>
-                <Button variant="secondary" asChild>
-                    <Link href={cancelHref}>Cancel</Link>
-                </Button>
-            </div>
+                    <Separator />
+
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            id="status"
+                            checked={data.status}
+                            onCheckedChange={(value) =>
+                                setData('status', value === true)
+                            }
+                        />
+                        <Label htmlFor="status" className="font-normal">
+                            Active
+                        </Label>
+                        <InputError message={errors.status} />
+                    </div>
+                </CardContent>
+                <CardFooter className="flex items-center gap-3 border-t pt-6">
+                    <Button type="submit" disabled={processing}>
+                        {processing ? <Spinner /> : null}
+                        {submitLabel ?? (isEdit ? 'Save changes' : 'Next')}
+                    </Button>
+                    <Button variant="secondary" asChild>
+                        <Link href={cancelHref}>Cancel</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
         </form>
     );
 }
