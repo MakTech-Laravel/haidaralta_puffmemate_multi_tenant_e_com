@@ -42,7 +42,7 @@ test('unknown branch slug returns not found', function () {
 });
 
 test('inactive branch slug returns not found', function () {
-    Branch::query()->where('slug', 'uptown')->update(['is_active' => false]);
+    Branch::query()->where('slug', 'uptown')->update(['status' => false]);
 
     $user = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
 

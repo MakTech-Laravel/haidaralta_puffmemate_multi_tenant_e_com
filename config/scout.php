@@ -164,12 +164,14 @@ return [
             Branch::class => [
                 'filterableAttributes' => [
                     'id',
-                    'is_active',
+                    'status',
                     'slug',
+                    'code',
                 ],
                 'sortableAttributes' => [
                     'name',
                     'slug',
+                    'code',
                     'created_at',
                 ],
             ],

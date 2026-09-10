@@ -18,13 +18,19 @@ type Branch = {
     id: number;
     name: string;
     slug: string;
-    icon: string | null;
-    icon_url: string | null;
-    is_active: boolean;
+    code: string;
+    logo: string | null;
+    logo_url: string | null;
+    status: boolean;
     users_count: number;
+    phone: string | null;
+    email: string | null;
     address: string | null;
     latitude: string | number | null;
     longitude: string | number | null;
+    opening_time: string | null;
+    closing_time: string | null;
+    needs_super_admin: boolean;
     super_admins: SuperAdmin[];
 };
 
@@ -41,7 +47,7 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title={branch.name}
-                        description={`/${branch.slug}`}
+                        description={`/${branch.slug} · ${branch.code}`}
                     />
                     <div className="flex gap-2">
                         <Button variant="secondary" asChild>
@@ -75,11 +81,11 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                     <h2 className="text-sm font-medium">Details</h2>
                     <dl className="grid gap-2 text-sm sm:grid-cols-2">
                         <div>
-                            <dt className="text-muted-foreground">Image</dt>
+                            <dt className="text-muted-foreground">Logo</dt>
                             <dd className="mt-1">
-                                {branch.icon_url ? (
+                                {branch.logo_url ? (
                                     <img
-                                        src={branch.icon_url}
+                                        src={branch.logo_url}
                                         alt={branch.name}
                                         className="size-16 rounded-lg object-cover"
                                     />
@@ -90,15 +96,35 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                         </div>
                         <div>
                             <dt className="text-muted-foreground">Status</dt>
-                            <dd>{branch.is_active ? 'Active' : 'Inactive'}</dd>
+                            <dd>{branch.status ? 'Active' : 'Inactive'}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-muted-foreground">Code</dt>
+                            <dd>{branch.code}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-muted-foreground">Staff</dt>
+                            <dd>{branch.users_count}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-muted-foreground">Phone</dt>
+                            <dd>{branch.phone ?? '—'}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-muted-foreground">Email</dt>
+                            <dd>{branch.email ?? '—'}</dd>
                         </div>
                         <div>
                             <dt className="text-muted-foreground">Address</dt>
                             <dd>{branch.address ?? '—'}</dd>
                         </div>
                         <div>
-                            <dt className="text-muted-foreground">Staff</dt>
-                            <dd>{branch.users_count}</dd>
+                            <dt className="text-muted-foreground">Hours</dt>
+                            <dd>
+                                {branch.opening_time || branch.closing_time
+                                    ? `${branch.opening_time ?? '—'} – ${branch.closing_time ?? '—'}`
+                                    : '—'}
+                            </dd>
                         </div>
                         <div>
                             <dt className="text-muted-foreground">Latitude</dt>
@@ -112,7 +138,20 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                 </section>
 
                 <section className="space-y-2">
-                    <h2 className="text-sm font-medium">Super-admins</h2>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h2 className="text-sm font-medium">Super-admins</h2>
+                        {branch.needs_super_admin && can('create-branches') ? (
+                            <Button size="sm" asChild>
+                                <Link
+                                    href={BranchController.createSuperAdmin.url(
+                                        branch.slug,
+                                    )}
+                                >
+                                    Add super-admin
+                                </Link>
+                            </Button>
+                        ) : null}
+                    </div>
                     {branch.super_admins.length === 0 ? (
                         <p className="text-muted-foreground text-sm">
                             No super-admins found for this branch.

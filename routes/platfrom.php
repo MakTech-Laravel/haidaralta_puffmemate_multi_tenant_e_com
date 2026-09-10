@@ -41,6 +41,10 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::middleware(['permission:create-branches'])->group(function () {
         Route::get('branches/create', [PlatformBranchController::class, 'create'])->name('platform.branches.create');
         Route::post('branches', [PlatformBranchController::class, 'store'])->name('platform.branches.store');
+        Route::get('branches/{branch}/super-admin/create', [PlatformBranchController::class, 'createSuperAdmin'])
+            ->name('platform.branches.super-admin.create');
+        Route::post('branches/{branch}/super-admin', [PlatformBranchController::class, 'storeSuperAdmin'])
+            ->name('platform.branches.super-admin.store');
     });
 
     Route::middleware(['permission:view-branches'])->group(function () {

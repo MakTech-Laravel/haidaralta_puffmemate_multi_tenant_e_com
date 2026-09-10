@@ -11,12 +11,13 @@ export default function PlatformBranchesCreate() {
             <div className="mx-auto max-w-2xl space-y-6 p-2">
                 <Heading
                     title="Add branch"
-                    description="Create a branch and its required super-admin"
+                    description="Step 1 of 2 — enter branch details, then create a super-admin"
                 />
 
                 <BranchForm
                     action={BranchController.store.form()}
                     cancelHref={BranchController.index.url()}
+                    submitLabel="Next"
                 />
             </div>
         </>

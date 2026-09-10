@@ -27,7 +27,7 @@ class ResolveBranchContext
 
         $branch = Branch::query()
             ->where('slug', $slug)
-            ->where('is_active', true)
+            ->where('status', true)
             ->first();
 
         if ($branch === null) {

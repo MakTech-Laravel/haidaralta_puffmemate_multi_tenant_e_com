@@ -20,34 +20,57 @@ beforeEach(function () {
     $this->seed(UserSeeder::class);
 });
 
-test('platform super admin can create a branch with required super admin', function () {
+test('platform super admin can create a branch then add super admin in step two', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $icon = UploadedFile::fake()->image('midtown.png', 120, 120);
+    $logo = UploadedFile::fake()->image('midtown.png', 120, 120);
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.store'), [
             'name' => 'Midtown',
             'slug' => 'midtown',
-            'icon' => $icon,
+            'code' => 'MID-001',
+            'logo' => $logo,
+            'phone' => '+1-555-0100',
+            'email' => 'midtown@test.com',
             'address' => '789 Center St',
-            'is_active' => true,
-            'super_admin_name' => 'Midtown Super Admin',
-            'super_admin_email' => 'midtown.superadmin@test.com',
-            'super_admin_password' => 'password',
-            'super_admin_password_confirmation' => 'password',
+            'opening_time' => '09:00',
+            'closing_time' => '21:00',
+            'status' => true,
         ])
-        ->assertRedirect(route('platform.branches.show', 'midtown'))
+        ->assertRedirect(route('platform.branches.super-admin.create', 'midtown'))
         ->assertInertiaFlash('toast', [
             'type' => 'success',
-            'message' => 'Branch created.',
+            'message' => 'Branch created. Add a super-admin to finish setup.',
         ]);
 
     $branch = Branch::query()->where('slug', 'midtown')->firstOrFail();
 
     expect($branch->name)->toBe('Midtown')
-        ->and($branch->icon)->not->toBeNull();
+        ->and($branch->code)->toBe('MID-001')
+        ->and($branch->status)->toBeTrue()
+        ->and($branch->logo)->not->toBeNull();
 
-    Storage::disk('public')->assertExists($branch->icon);
+    Storage::disk('public')->assertExists($branch->logo);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.super-admin.create', 'midtown'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/create-super-admin')
+            ->where('branch.slug', 'midtown'));
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.super-admin.store', 'midtown'), [
+            'name' => 'Midtown Super Admin',
+            'email' => 'midtown.superadmin@test.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])
+        ->assertRedirect(route('platform.branches.show', 'midtown'))
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Branch super-admin created.',
+        ]);
 
     $superAdmin = User::query()->where('email', 'midtown.superadmin@test.com')->firstOrFail();
 
@@ -59,20 +82,34 @@ test('platform super admin can create a branch with required super admin', funct
     app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.branches.index'))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('platform/branches/index')
-            ->has('branches.data'));
-
-    $this->actingAs($admin, 'platform')
         ->get(route('platform.branches.show', 'midtown'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branches/show')
             ->where('branch.slug', 'midtown')
+            ->where('branch.needs_super_admin', false)
             ->has('branch.super_admins', 1)
             ->where('branch.super_admins.0.email', 'midtown.superadmin@test.com'));
+});
+
+test('cannot create a second branch super admin', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.super-admin.store', $downtown), [
+            'name' => 'Another Super',
+            'email' => 'another.super@test.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])
+        ->assertRedirect(route('platform.branches.show', $downtown))
+        ->assertInertiaFlash('toast', [
+            'type' => 'warning',
+            'message' => 'This branch already has a super-admin.',
+        ]);
+
+    expect(User::query()->where('email', 'another.super@test.com')->exists())->toBeFalse();
 });
 
 test('platform staff without create branches cannot create a branch', function () {
@@ -88,10 +125,7 @@ test('platform staff without create branches cannot create a branch', function (
         ->post(route('platform.branches.store'), [
             'name' => 'Blocked',
             'slug' => 'blocked',
-            'super_admin_name' => 'Nope',
-            'super_admin_email' => 'nope@test.com',
-            'super_admin_password' => 'password',
-            'super_admin_password_confirmation' => 'password',
+            'code' => 'BLK-001',
         ])
         ->assertForbidden();
 });
@@ -116,17 +150,22 @@ test('platform admin can update a branch', function () {
     $branch = Branch::factory()->create([
         'name' => 'Old Name',
         'slug' => 'old-name',
-        'icon' => null,
+        'code' => 'OLD-001',
+        'logo' => null,
     ]);
 
-    $icon = UploadedFile::fake()->image('new-name.png', 120, 120);
+    $logo = UploadedFile::fake()->image('new-name.png', 120, 120);
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.branches.update', $branch), [
             'name' => 'New Name',
             'slug' => 'new-name',
-            'icon' => $icon,
-            'is_active' => true,
+            'code' => 'NEW-001',
+            'logo' => $logo,
+            'phone' => '+1-555-9999',
+            'opening_time' => '08:00',
+            'closing_time' => '20:00',
+            'status' => true,
         ])
         ->assertRedirect(route('platform.branches.show', 'new-name'));
 
@@ -134,7 +173,8 @@ test('platform admin can update a branch', function () {
 
     expect($branch->name)->toBe('New Name')
         ->and($branch->slug)->toBe('new-name')
-        ->and($branch->icon)->not->toBeNull();
+        ->and($branch->code)->toBe('NEW-001')
+        ->and($branch->logo)->not->toBeNull();
 
-    Storage::disk('public')->assertExists($branch->icon);
+    Storage::disk('public')->assertExists($branch->logo);
 });

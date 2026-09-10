@@ -2,26 +2,23 @@
 
 namespace App\Http\Controllers\Platform;
 
-use App\Enums\RoleEnum;
-use App\Enums\UserType;
+use App\Exceptions\BranchAlreadyHasSuperAdminException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreBranchRequest;
+use App\Http\Requests\Platform\StoreBranchSuperAdminRequest;
 use App\Http\Requests\Platform\UpdateBranchRequest;
 use App\Models\Branch;
-use App\Models\User;
+use App\Services\Branch\BranchService;
 use App\Support\Toast;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Permission\PermissionRegistrar;
 
 class BranchController extends Controller
 {
+    public function __construct(private BranchService $branches) {}
+
     /**
      * Display a listing of branches.
      */
@@ -63,43 +60,60 @@ class BranchController extends Controller
     }
 
     /**
-     * Store a newly created branch and its required super-admin.
+     * Store a newly created branch, then continue to super-admin setup.
      */
     public function store(StoreBranchRequest $request): RedirectResponse
     {
-        $branch = DB::transaction(function () use ($request): Branch {
-            $branch = Branch::query()->create([
-                'name' => $request->validated('name'),
-                'slug' => $request->validated('slug'),
-                'icon' => $this->storeIcon($request->file('icon')),
-                'address' => $request->validated('address'),
-                'latitude' => $request->validated('latitude'),
-                'longitude' => $request->validated('longitude'),
-                'is_active' => $request->boolean('is_active', true),
-            ]);
+        $validated = $request->validated();
 
-            app(RolesAndPermissionsSeeder::class)->seedBranchRolesForBranch($branch);
+        $branch = $this->branches->create(
+            [
+                ...$validated,
+                'status' => $request->boolean('status', true),
+            ],
+            $request->file('logo'),
+        );
 
-            app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
+        Toast::success('Branch created. Add a super-admin to finish setup.');
 
-            $superAdmin = User::query()->create([
-                'name' => $request->validated('super_admin_name'),
-                'email' => $request->validated('super_admin_email'),
-                'password' => $request->validated('super_admin_password'),
-                'user_type' => UserType::BRANCH,
-                'branch_id' => $branch->id,
-                'is_active' => true,
-                'email_verified_at' => now(),
-            ]);
+        return redirect()->route('platform.branches.super-admin.create', $branch);
+    }
 
-            $superAdmin->assignRole(RoleEnum::SUPER_ADMIN->value);
+    /**
+     * Show the form for creating the branch super-admin.
+     */
+    public function createSuperAdmin(Branch $branch): Response|RedirectResponse
+    {
+        if ($this->branches->hasSuperAdmin($branch)) {
+            Toast::warning('This branch already has a super-admin.');
 
-            app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+            return redirect()->route('platform.branches.show', $branch);
+        }
 
-            return $branch;
-        });
+        return Inertia::render('platform/branches/create-super-admin', [
+            'branch' => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'slug' => $branch->slug,
+                'code' => $branch->code,
+            ],
+        ]);
+    }
 
-        Toast::success('Branch created.');
+    /**
+     * Store the branch super-admin.
+     */
+    public function storeSuperAdmin(StoreBranchSuperAdminRequest $request, Branch $branch): RedirectResponse
+    {
+        try {
+            $this->branches->createSuperAdmin($branch, $request->validated());
+        } catch (BranchAlreadyHasSuperAdminException $exception) {
+            Toast::warning($exception->getMessage());
+
+            return redirect()->route('platform.branches.show', $branch);
+        }
+
+        Toast::success('Branch super-admin created.');
 
         return redirect()->route('platform.branches.show', $branch);
     }
@@ -111,32 +125,13 @@ class BranchController extends Controller
     {
         $branch->loadCount('users');
 
-        app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
-
-        $superAdmins = User::query()
-            ->where('user_type', UserType::BRANCH)
-            ->where('branch_id', $branch->id)
-            ->role(RoleEnum::SUPER_ADMIN->value, 'branch')
-            ->orderBy('name')
-            ->get(['id', 'name', 'email', 'is_active'])
-            ->map(fn (User $user): array => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'is_active' => $user->is_active,
-            ])
-            ->values()
-            ->all();
-
-        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+        $superAdmins = $this->branches->listSuperAdmins($branch);
 
         return Inertia::render('platform/branches/show', [
             'branch' => [
-                ...$this->mapBranchRow($branch),
-                'address' => $branch->address,
-                'latitude' => $branch->latitude,
-                'longitude' => $branch->longitude,
+                ...$this->mapBranchDetail($branch),
                 'super_admins' => $superAdmins,
+                'needs_super_admin' => $superAdmins === [],
             ],
         ]);
     }
@@ -147,17 +142,7 @@ class BranchController extends Controller
     public function edit(Branch $branch): Response
     {
         return Inertia::render('platform/branches/edit', [
-            'branch' => [
-                'id' => $branch->id,
-                'name' => $branch->name,
-                'slug' => $branch->slug,
-                'icon' => $branch->icon,
-                'icon_url' => $this->iconUrl($branch->icon),
-                'address' => $branch->address,
-                'latitude' => $branch->latitude,
-                'longitude' => $branch->longitude,
-                'is_active' => $branch->is_active,
-            ],
+            'branch' => $this->mapBranchDetail($branch),
         ]);
     }
 
@@ -166,25 +151,17 @@ class BranchController extends Controller
      */
     public function update(UpdateBranchRequest $request, Branch $branch): RedirectResponse
     {
-        $iconPath = $branch->icon;
+        $validated = $request->validated();
 
-        if ($request->boolean('remove_icon')) {
-            $this->deleteIcon($iconPath);
-            $iconPath = null;
-        } elseif ($request->hasFile('icon')) {
-            $this->deleteIcon($iconPath);
-            $iconPath = $this->storeIcon($request->file('icon'));
-        }
-
-        $branch->update([
-            'name' => $request->validated('name'),
-            'slug' => $request->validated('slug'),
-            'icon' => $iconPath,
-            'address' => $request->validated('address'),
-            'latitude' => $request->validated('latitude'),
-            'longitude' => $request->validated('longitude'),
-            'is_active' => $request->boolean('is_active', true),
-        ]);
+        $this->branches->update(
+            $branch,
+            [
+                ...$validated,
+                'status' => $request->boolean('status', true),
+            ],
+            $request->file('logo'),
+            $request->boolean('remove_logo'),
+        );
 
         Toast::success('Branch updated.');
 
@@ -202,8 +179,7 @@ class BranchController extends Controller
             return redirect()->back();
         }
 
-        $this->deleteIcon($branch->icon);
-        $branch->delete();
+        $this->branches->delete($branch);
 
         Toast::success('Branch deleted.');
 
@@ -211,15 +187,7 @@ class BranchController extends Controller
     }
 
     /**
-     * @return array{
-     *     id: int,
-     *     name: string,
-     *     slug: string,
-     *     icon: string|null,
-     *     icon_url: string|null,
-     *     is_active: bool,
-     *     users_count: int
-     * }
+     * @return array<string, mixed>
      */
     private function mapBranchRow(Branch $branch): array
     {
@@ -227,42 +195,28 @@ class BranchController extends Controller
             'id' => $branch->id,
             'name' => $branch->name,
             'slug' => $branch->slug,
-            'icon' => $branch->icon,
-            'icon_url' => $this->iconUrl($branch->icon),
-            'is_active' => $branch->is_active,
+            'code' => $branch->code,
+            'logo' => $branch->logo,
+            'logo_url' => $this->branches->logoUrl($branch->logo),
+            'status' => $branch->status,
             'users_count' => (int) ($branch->users_count ?? $branch->users()->count()),
         ];
     }
 
-    private function storeIcon(?UploadedFile $file): ?string
+    /**
+     * @return array<string, mixed>
+     */
+    private function mapBranchDetail(Branch $branch): array
     {
-        if ($file === null) {
-            return null;
-        }
-
-        return $file->store('branches', 'public');
-    }
-
-    private function deleteIcon(?string $path): void
-    {
-        if ($path === null || $path === '') {
-            return;
-        }
-
-        // Ignore legacy Lucide icon name strings that are not stored files.
-        if (! str_contains($path, '/')) {
-            return;
-        }
-
-        Storage::disk('public')->delete($path);
-    }
-
-    private function iconUrl(?string $path): ?string
-    {
-        if ($path === null || $path === '' || ! str_contains($path, '/')) {
-            return null;
-        }
-
-        return Storage::disk('public')->url($path);
+        return [
+            ...$this->mapBranchRow($branch),
+            'phone' => $branch->phone,
+            'email' => $branch->email,
+            'address' => $branch->address,
+            'latitude' => $branch->latitude,
+            'longitude' => $branch->longitude,
+            'opening_time' => $branch->opening_time?->format('H:i'),
+            'closing_time' => $branch->closing_time?->format('H:i'),
+        ];
     }
 }

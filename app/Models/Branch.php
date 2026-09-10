@@ -21,11 +21,16 @@ class Branch extends Model
     protected $fillable = [
         'name',
         'slug',
-        'icon',
+        'code',
+        'logo',
+        'phone',
+        'email',
         'address',
         'latitude',
         'longitude',
-        'is_active',
+        'opening_time',
+        'closing_time',
+        'status',
     ];
 
     /**
@@ -45,8 +50,9 @@ class Branch extends Model
             'id' => (int) $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            'code' => $this->code,
             'address' => $this->address,
-            'is_active' => (bool) $this->is_active,
+            'status' => (bool) $this->status,
             'created_at' => SearchableTimestamp::from($this->created_at),
         ];
     }
@@ -64,7 +70,9 @@ class Branch extends Model
         return [
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
-            'is_active' => 'boolean',
+            'opening_time' => 'datetime:H:i',
+            'closing_time' => 'datetime:H:i',
+            'status' => 'boolean',
         ];
     }
 }

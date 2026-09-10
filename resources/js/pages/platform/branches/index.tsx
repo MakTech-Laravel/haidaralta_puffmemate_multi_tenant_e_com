@@ -20,9 +20,10 @@ type BranchRow = {
     id: number;
     name: string;
     slug: string;
-    icon: string | null;
-    icon_url: string | null;
-    is_active: boolean;
+    code: string;
+    logo: string | null;
+    logo_url: string | null;
+    status: boolean;
     users_count: number;
 };
 
@@ -94,8 +95,9 @@ export default function PlatformBranchesIndex({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
+                                <TableHead>Code</TableHead>
                                 <TableHead>Slug</TableHead>
-                                <TableHead>Image</TableHead>
+                                <TableHead>Logo</TableHead>
                                 <TableHead>Staff</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">
@@ -107,7 +109,7 @@ export default function PlatformBranchesIndex({
                             {branches.data.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={6}
+                                        colSpan={7}
                                         className="text-muted-foreground py-10 text-center"
                                     >
                                         No branches found.
@@ -119,11 +121,12 @@ export default function PlatformBranchesIndex({
                                         <TableCell className="font-medium">
                                             {branch.name}
                                         </TableCell>
+                                        <TableCell>{branch.code}</TableCell>
                                         <TableCell>{branch.slug}</TableCell>
                                         <TableCell>
-                                            {branch.icon_url ? (
+                                            {branch.logo_url ? (
                                                 <img
-                                                    src={branch.icon_url}
+                                                    src={branch.logo_url}
                                                     alt=""
                                                     className="size-8 rounded-md object-cover"
                                                 />
@@ -135,7 +138,7 @@ export default function PlatformBranchesIndex({
                                             {branch.users_count}
                                         </TableCell>
                                         <TableCell>
-                                            {branch.is_active
+                                            {branch.status
                                                 ? 'Active'
                                                 : 'Inactive'}
                                         </TableCell>
