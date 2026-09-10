@@ -56,7 +56,7 @@ class DatabaseBackupController extends Controller
             $history = $this->backups->clean($request->user());
             $days = $this->backups->cleanupPolicy()['keep_all_days'];
             Toast::success(
-                'Backup cleanup queued (#'.$history->id.'). Keeps all zips from the last '.$days.' days.',
+                'Backup cleanup queued (#'.$history->id.'). Deletes zips older than '.$days.' days (newest kept).',
             );
         } catch (Throwable $exception) {
             report($exception);

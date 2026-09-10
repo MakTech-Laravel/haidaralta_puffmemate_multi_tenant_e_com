@@ -127,6 +127,12 @@ test('platform super admin can list and download zip from backups disk', functio
     $path = $backupName.'/demo-backup.zip';
     Storage::disk('backups')->put($path, 'zip-bytes');
 
+    config([
+        'backup.cleanup.default_strategy.keep_all_backups_for_days' => 14,
+        'backup.cleanup.default_strategy.keep_daily_backups_for_days' => 0,
+        'backup.cleanup.default_strategy.delete_oldest_backups_when_using_more_megabytes_than' => 2500,
+    ]);
+
     $this->actingAs($admin, 'platform')
         ->get(route('platform.database-backups.index'))
         ->assertOk()
@@ -135,12 +141,38 @@ test('platform super admin can list and download zip from backups disk', functio
             ->has('backups', 1)
             ->where('backups.0.path', $path)
             ->where('backups.0.filename', 'demo-backup.zip')
-            ->has('cleanup_policy.keep_all_days')
+            ->where('cleanup_policy.keep_all_days', 14)
+            ->where('cleanup_policy.keep_daily_days', 0)
+            ->where('cleanup_policy.max_storage_mb', 2500)
         );
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.database-backups.download', ['path' => $path]))
         ->assertOk();
+});
+
+test('backup cleanup strategy reads keep-all days and zero ladder from config', function () {
+    config([
+        'backup.cleanup.default_strategy.keep_all_backups_for_days' => 3,
+        'backup.cleanup.default_strategy.keep_daily_backups_for_days' => 0,
+        'backup.cleanup.default_strategy.keep_weekly_backups_for_weeks' => 0,
+        'backup.cleanup.default_strategy.keep_monthly_backups_for_months' => 0,
+        'backup.cleanup.default_strategy.keep_yearly_backups_for_years' => 0,
+        'backup.cleanup.default_strategy.delete_oldest_backups_when_using_more_megabytes_than' => null,
+    ]);
+
+    expect(config('backup.cleanup.default_strategy.keep_all_backups_for_days'))->toBe(3)
+        ->and(config('backup.cleanup.default_strategy.keep_daily_backups_for_days'))->toBe(0)
+        ->and(config('backup.cleanup.default_strategy.keep_weekly_backups_for_weeks'))->toBe(0)
+        ->and(config('backup.cleanup.default_strategy.keep_monthly_backups_for_months'))->toBe(0)
+        ->and(config('backup.cleanup.default_strategy.keep_yearly_backups_for_years'))->toBe(0)
+        ->and(config('backup.cleanup.default_strategy.delete_oldest_backups_when_using_more_megabytes_than'))->toBeNull();
+
+    $policy = app(BackupService::class)->cleanupPolicy();
+
+    expect($policy['keep_all_days'])->toBe(3)
+        ->and($policy['keep_daily_days'])->toBe(0)
+        ->and($policy['max_storage_mb'])->toBeNull();
 });
 
 test('platform super admin can queue cleanup', function () {
