@@ -54,7 +54,7 @@ class DatabaseBackupService
             ->latest('id')
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn (DatabaseBackupHistory $history): array => $this->toListRow($history));
+            ->through(fn(DatabaseBackupHistory $history): array => $this->toListRow($history));
     }
 
     /**
@@ -89,8 +89,8 @@ class DatabaseBackupService
     {
         $connection = (string) config('database.default');
         $this->ensureExcludedTablesExist($connection);
-        $filename = 'export-'.now()->format('Y-m-d-His').'-'.Str::lower(Str::random(8)).'.sql';
-        $relativePath = self::DIRECTORY.'/'.$filename;
+        $filename = 'export-' . now()->format('Y-m-d-His') . '-' . Str::lower(Str::random(8)) . '.sql';
+        $relativePath = self::DIRECTORY . '/' . $filename;
 
         $history = DatabaseBackupHistory::query()->create([
             'type' => DatabaseBackupType::Export,
@@ -132,8 +132,8 @@ class DatabaseBackupService
     {
         $connection = (string) config('database.default');
         $this->ensureExcludedTablesExist($connection);
-        $filename = 'import-'.now()->format('Y-m-d-His').'-'.Str::lower(Str::random(8)).'.sql';
-        $relativePath = self::DIRECTORY.'/'.$filename;
+        $filename = 'import-' . now()->format('Y-m-d-His') . '-' . Str::lower(Str::random(8)) . '.sql';
+        $relativePath = self::DIRECTORY . '/' . $filename;
 
         $history = DatabaseBackupHistory::query()->create([
             'type' => DatabaseBackupType::Import,
@@ -184,8 +184,8 @@ class DatabaseBackupService
 
         $connection = (string) config('database.default');
         $this->ensureExcludedTablesExist($connection);
-        $filename = 'restore-'.now()->format('Y-m-d-His').'-'.Str::lower(Str::random(8)).'.sql';
-        $relativePath = self::DIRECTORY.'/'.$filename;
+        $filename = 'restore-' . now()->format('Y-m-d-His') . '-' . Str::lower(Str::random(8)) . '.sql';
+        $relativePath = self::DIRECTORY . '/' . $filename;
 
         $history = DatabaseBackupHistory::query()->create([
             'type' => DatabaseBackupType::Import,
@@ -209,7 +209,7 @@ class DatabaseBackupService
             $history->update([
                 'status' => DatabaseBackupStatus::Completed,
                 'size_bytes' => Storage::disk(self::DISK)->size($relativePath),
-                'message' => 'Restore completed from #'.$source->id,
+                'message' => 'Restore completed from #' . $source->id,
             ]);
         } catch (Throwable $exception) {
             $this->ensureExcludedTablesExist($connection);
@@ -277,7 +277,7 @@ class DatabaseBackupService
             if (Schema::hasTable('branches')) {
                 Branch::query()
                     ->orderBy('id')
-                    ->each(fn (Branch $branch) => $seeder->seedBranchRolesForBranch($branch));
+                    ->each(fn(Branch $branch) => $seeder->seedBranchRolesForBranch($branch));
             }
 
             app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -301,7 +301,7 @@ class DatabaseBackupService
         $config = config("database.connections.{$connection}");
         $binaryDir = $this->resolvePostgresBinaryPath();
         $pgDump = $binaryDir !== null
-            ? rtrim($binaryDir, '/\\').DIRECTORY_SEPARATOR.'pg_dump'
+            ? rtrim($binaryDir, '/\\') . DIRECTORY_SEPARATOR . 'pg_dump'
             : 'pg_dump';
 
         if (PHP_OS_FAMILY === 'Windows' && ! str_ends_with(strtolower($pgDump), '.exe')) {
@@ -309,7 +309,7 @@ class DatabaseBackupService
         }
 
         if (! is_file($pgDump) && $pgDump !== 'pg_dump') {
-            throw new RuntimeException('pg_dump binary was not found at '.$pgDump);
+            throw new RuntimeException('pg_dump binary was not found at ' . $pgDump);
         }
 
         // Ensure the target file exists so realpath() can normalize Windows paths.
@@ -318,19 +318,19 @@ class DatabaseBackupService
 
         $command = [
             $pgDump,
-            '--host='.(string) ($config['host'] ?? '127.0.0.1'),
-            '--port='.(string) ($config['port'] ?? '5432'),
-            '--username='.(string) ($config['username'] ?? ''),
-            '--dbname='.(string) ($config['database'] ?? ''),
+            '--host=' . (string) ($config['host'] ?? '127.0.0.1'),
+            '--port=' . (string) ($config['port'] ?? '5432'),
+            '--username=' . (string) ($config['username'] ?? ''),
+            '--dbname=' . (string) ($config['database'] ?? ''),
             '--inserts',
-            '--restrict-key='.bin2hex(random_bytes(16)),
-            '--file='.$normalizedPath,
+            '--restrict-key=' . bin2hex(random_bytes(16)),
+            '--file=' . $normalizedPath,
             '--no-owner',
             '--no-acl',
         ];
 
         foreach (self::EXCLUDED_TABLES as $table) {
-            $command[] = '--exclude-table='.$table;
+            $command[] = '--exclude-table=' . $table;
         }
 
         $process = new Process(
@@ -344,10 +344,10 @@ class DatabaseBackupService
         $process->run();
 
         if (! $process->isSuccessful()) {
-            $details = trim($process->getErrorOutput()."\n".$process->getOutput());
+            $details = trim($process->getErrorOutput() . "\n" . $process->getOutput());
 
             throw new RuntimeException(
-                'pg_dump failed (exit '.$process->getExitCode().'): '.($details !== '' ? $details : 'no output')
+                'pg_dump failed (exit ' . $process->getExitCode() . '): ' . ($details !== '' ? $details : 'no output')
             );
         }
 
@@ -372,7 +372,7 @@ class DatabaseBackupService
             ORDER BY tablename
             SQL))
             ->pluck('tablename')
-            ->reject(fn (mixed $name): bool => in_array((string) $name, self::EXCLUDED_TABLES, true))
+            ->reject(fn(mixed $name): bool => in_array((string) $name, self::EXCLUDED_TABLES, true))
             ->values()
             ->all();
 
@@ -387,8 +387,8 @@ class DatabaseBackupService
             fwrite($handle, "BEGIN;\nSET session_replication_role = replica;\n");
 
             foreach ($tables as $table) {
-                $quotedTable = '"'.str_replace('"', '""', (string) $table).'"';
-                fwrite($handle, 'TRUNCATE TABLE '.$quotedTable." RESTART IDENTITY CASCADE;\n");
+                $quotedTable = '"' . str_replace('"', '""', (string) $table) . '"';
+                fwrite($handle, 'TRUNCATE TABLE ' . $quotedTable . " RESTART IDENTITY CASCADE;\n");
 
                 $orderColumn = $this->postgresPrimaryOrderColumn($connection, (string) $table);
                 $query = $db->table($table);
@@ -406,7 +406,7 @@ class DatabaseBackupService
                     }
 
                     $columns = collect(array_keys($attributes))
-                        ->map(fn (string|int $column): string => '"'.str_replace('"', '""', (string) $column).'"')
+                        ->map(fn(string|int $column): string => '"' . str_replace('"', '""', (string) $column) . '"')
                         ->implode(', ');
 
                     $values = collect($attributes)->map(function (mixed $value) use ($pdo): string {
@@ -429,7 +429,7 @@ class DatabaseBackupService
                         return $pdo->quote((string) $value);
                     })->implode(', ');
 
-                    fwrite($handle, 'INSERT INTO '.$quotedTable.' ('.$columns.') VALUES ('.$values.");\n");
+                    fwrite($handle, 'INSERT INTO ' . $quotedTable . ' (' . $columns . ') VALUES (' . $values . ");\n");
                 }
             }
 
@@ -481,7 +481,7 @@ class DatabaseBackupService
         $db = DB::connection($connection);
         $tables = collect($db->select("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name"))
             ->pluck('name')
-            ->reject(fn (mixed $name): bool => in_array((string) $name, self::EXCLUDED_TABLES, true))
+            ->reject(fn(mixed $name): bool => in_array((string) $name, self::EXCLUDED_TABLES, true))
             ->values()
             ->all();
 
@@ -498,8 +498,8 @@ class DatabaseBackupService
                 $create = $db->selectOne('SELECT sql FROM sqlite_master WHERE type = ? AND name = ?', ['table', $table]);
 
                 if ($create?->sql) {
-                    fwrite($handle, 'DROP TABLE IF EXISTS "'.$table.'";'."\n");
-                    fwrite($handle, $create->sql.";\n");
+                    fwrite($handle, 'DROP TABLE IF EXISTS "' . $table . '";' . "\n");
+                    fwrite($handle, $create->sql . ";\n");
                 }
 
                 $rows = $db->table($table)->get();
@@ -520,7 +520,7 @@ class DatabaseBackupService
 
                     $columns = collect((array) $row)
                         ->keys()
-                        ->map(fn (string|int $column): string => '"'.$column.'"')
+                        ->map(fn(string|int $column): string => '"' . $column . '"')
                         ->implode(', ');
 
                     fwrite($handle, "INSERT INTO \"{$table}\" ({$columns}) VALUES ({$values});\n");
@@ -532,6 +532,32 @@ class DatabaseBackupService
             fclose($handle);
         }
     }
+
+    // private function restorePostgreSql(string $connection, string $absolutePath): void
+    // {
+    //     $rawSql = file_get_contents($absolutePath);
+    //     $preview = is_string($rawSql) ? $this->sanitizeSqlDump($rawSql) : '';
+    //     $isFullDump = $this->isFullPostgresDump($preview);
+    //     $historyRows = $isFullDump ? $this->snapshotBackupHistoryRows($connection) : [];
+
+    //     try {
+    //         if ($isFullDump) {
+    //             $this->resetPublicSchema($connection);
+    //         }
+
+    //         try {
+    //             $this->restorePostgreSqlWithPsql($connection, $absolutePath);
+    //         } catch (Throwable $exception) {
+    //             report($exception);
+    //             $this->restoreSqlViaDatabase($connection, $absolutePath, schemaAlreadyReset: $isFullDump);
+    //         }
+    //     } finally {
+    //         if ($isFullDump) {
+    //             $this->ensureExcludedTablesExist($connection);
+    //             $this->restoreBackupHistoryRows($connection, $historyRows);
+    //         }
+    //     }
+    // }
 
     private function restorePostgreSql(string $connection, string $absolutePath): void
     {
@@ -553,6 +579,9 @@ class DatabaseBackupService
             }
         } finally {
             if ($isFullDump) {
+                DB::purge($connection);
+                DB::reconnect($connection);
+
                 $this->ensureExcludedTablesExist($connection);
                 $this->restoreBackupHistoryRows($connection, $historyRows);
             }
@@ -564,7 +593,7 @@ class DatabaseBackupService
         $config = config("database.connections.{$connection}");
         $binaryDir = $this->resolvePostgresBinaryPath();
         $psql = $binaryDir !== null
-            ? rtrim($binaryDir, '/\\').DIRECTORY_SEPARATOR.'psql'
+            ? rtrim($binaryDir, '/\\') . DIRECTORY_SEPARATOR . 'psql'
             : 'psql';
 
         if (PHP_OS_FAMILY === 'Windows' && ! str_ends_with(strtolower($psql), '.exe')) {
@@ -575,12 +604,18 @@ class DatabaseBackupService
 
         $process = new Process([
             $psql,
-            '-h', (string) ($config['host'] ?? '127.0.0.1'),
-            '-p', (string) ($config['port'] ?? '5432'),
-            '-U', (string) ($config['username'] ?? ''),
-            '-d', (string) ($config['database'] ?? ''),
-            '-v', 'ON_ERROR_STOP=1',
-            '-f', $normalizedPath,
+            '-h',
+            (string) ($config['host'] ?? '127.0.0.1'),
+            '-p',
+            (string) ($config['port'] ?? '5432'),
+            '-U',
+            (string) ($config['username'] ?? ''),
+            '-d',
+            (string) ($config['database'] ?? ''),
+            '-v',
+            'ON_ERROR_STOP=1',
+            '-f',
+            $normalizedPath,
         ], base_path(), $this->processEnvironment([
             'PGPASSWORD' => (string) ($config['password'] ?? ''),
         ]));
@@ -678,7 +713,7 @@ class DatabaseBackupService
             ->table('database_backup_histories')
             ->orderBy('id')
             ->get()
-            ->map(fn (object $row): array => (array) $row)
+            ->map(fn(object $row): array => (array) $row)
             ->values()
             ->all();
     }
@@ -703,7 +738,7 @@ class DatabaseBackupService
         if ((string) config("database.connections.{$connection}.driver") === 'pgsql') {
             $maxId = (int) $db->table('database_backup_histories')->max('id');
             $db->unprepared(
-                'SELECT setval(pg_get_serial_sequence(\'database_backup_histories\', \'id\'), '.max($maxId, 1).', '.($maxId > 0 ? 'true' : 'false').')'
+                'SELECT setval(pg_get_serial_sequence(\'database_backup_histories\', \'id\'), ' . max($maxId, 1) . ', ' . ($maxId > 0 ? 'true' : 'false') . ')'
             );
         }
     }
@@ -836,10 +871,10 @@ class DatabaseBackupService
 
         $process = new Process([
             'mysql',
-            '--host='.(string) ($config['host'] ?? '127.0.0.1'),
-            '--port='.(string) ($config['port'] ?? '3306'),
-            '--user='.(string) ($config['username'] ?? ''),
-            '--password='.(string) ($config['password'] ?? ''),
+            '--host=' . (string) ($config['host'] ?? '127.0.0.1'),
+            '--port=' . (string) ($config['port'] ?? '3306'),
+            '--user=' . (string) ($config['username'] ?? ''),
+            '--password=' . (string) ($config['password'] ?? ''),
             (string) ($config['database'] ?? ''),
         ]);
 
@@ -871,21 +906,23 @@ class DatabaseBackupService
             }
         }
 
-        foreach ([
-            'PATH',
-            'Path',
-            'SystemRoot',
-            'SYSTEMROOT',
-            'WINDIR',
-            'TEMP',
-            'TMP',
-            'USERPROFILE',
-            'HOMEDRIVE',
-            'HOMEPATH',
-            'PATHEXT',
-            'ComSpec',
-            'COMSPEC',
-        ] as $key) {
+        foreach (
+            [
+                'PATH',
+                'Path',
+                'SystemRoot',
+                'SYSTEMROOT',
+                'WINDIR',
+                'TEMP',
+                'TMP',
+                'USERPROFILE',
+                'HOMEDRIVE',
+                'HOMEPATH',
+                'PATHEXT',
+                'ComSpec',
+                'COMSPEC',
+            ] as $key
+        ) {
             $value = getenv($key);
 
             if (is_string($value) && $value !== '') {
@@ -932,7 +969,7 @@ class DatabaseBackupService
         ];
 
         foreach ($candidates as $candidate) {
-            if (is_file($candidate.'/pg_dump.exe') || is_file($candidate.'/pg_dump')) {
+            if (is_file($candidate . '/pg_dump.exe') || is_file($candidate . '/pg_dump')) {
                 return $candidate;
             }
         }
