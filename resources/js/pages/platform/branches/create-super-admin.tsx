@@ -89,6 +89,7 @@ export default function PlatformBranchesCreateSuperAdmin({
                                             setData('name', event.target.value)
                                         }
                                         required
+                                        placeholder="Full name"
                                     />
                                     <InputError message={errors.name} />
                                 </div>
@@ -103,6 +104,7 @@ export default function PlatformBranchesCreateSuperAdmin({
                                             setData('email', event.target.value)
                                         }
                                         required
+                                        placeholder="admin@example.com"
                                     />
                                     <InputError message={errors.email} />
                                 </div>
@@ -122,6 +124,7 @@ export default function PlatformBranchesCreateSuperAdmin({
                                         }
                                         required
                                         autoComplete="new-password"
+                                        placeholder="Enter password"
                                     />
                                     <InputError message={errors.password} />
                                 </div>
@@ -141,6 +144,7 @@ export default function PlatformBranchesCreateSuperAdmin({
                                         }
                                         required
                                         autoComplete="new-password"
+                                        placeholder="Confirm password"
                                     />
                                 </div>
                             </div>
