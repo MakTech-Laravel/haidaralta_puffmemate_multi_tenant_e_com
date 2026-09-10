@@ -1,7 +1,7 @@
 ---
 paths:
   - 'app/Services/Backup/**'
-  - 'config/backup.php'
+  - config/backup.php
 ---
 
 # Backup

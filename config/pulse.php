@@ -145,8 +145,7 @@ return [
                 ...Pulse::defaultVendorCacheKeys(),
                 '/^puffmemate_cache_/',
                 '/^spatie\.permission\./',
-            ],
-            'groups' => [
+            ],            'groups' => [
                 '/^job-exceptions:.*/' => 'job-exceptions:*',
                 // '/:\d+/' => ':*',
             ],

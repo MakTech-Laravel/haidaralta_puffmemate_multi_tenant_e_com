@@ -225,6 +225,14 @@ Platform observability: `/platform/observability` (Inertia hub), `/horizon`, and
 
 ```dotenv
 QUEUE_CONNECTION=redis
+QUEUE_NAMES=default,scout
+REDIS_QUEUE_CONNECTION=default
+REDIS_QUEUE=default
+REDIS_QUEUE_RETRY_AFTER=660
+REDIS_QUEUE_BLOCK_FOR=5
+# Leave REDIS_URL empty — use discrete REDIS_HOST / REDIS_DB / REDIS_CACHE_DB
+# so cache stays on DB 1 and queues on DB 0.
+REDIS_URL=
 HORIZON_PREFIX=puffmemate_horizon:
 HORIZON_PATH=horizon
 HORIZON_MAIL_TO=

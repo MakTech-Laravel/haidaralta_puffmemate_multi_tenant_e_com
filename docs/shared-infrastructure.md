@@ -86,3 +86,4 @@ Set `TELESCOPE_ENABLED=true` in your local `.env` (see `.env.example`). If it is
 | Authorization | Platform only — `view-horizon` / `view-pulse`, or platform `super-admin` bypass (`App\Support\OpsDashboardAccess`) |
 | Testing | `phpunit.xml` keeps `PULSE_ENABLED=false`; feature coverage in `OpsDashboardAccessTest` |
 | Local Windows | Keep `QUEUE_CONNECTION=database`; Horizon needs Redis + pcntl (Linux image / Coolify) |
+| Cache | Laravel 13 `cache.serializable_classes` must allow-list `Collection`, `stdClass`, and `CarbonImmutable` or Pulse Livewire polls fatal with incomplete objects |
