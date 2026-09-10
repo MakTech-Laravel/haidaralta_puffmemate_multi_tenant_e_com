@@ -30,15 +30,8 @@ class FcmDeviceToken extends Model
     use AuditsChanges, HasFactory;
 
     /**
-     * Never log the FCM token itself.
-     *
-     * @var list<string>
+     * Never log the FCM token itself — only non-secret metadata.
      */
-    protected array $auditExcept = [
-        'token',
-        'user_agent',
-    ];
-
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
