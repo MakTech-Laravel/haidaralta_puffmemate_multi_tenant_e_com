@@ -331,41 +331,43 @@ return [
         'default_strategy' => [
             /*
              * The number of days for which backups must be kept.
+             * BACKUP_KEEP_ALL_DAYS — hard age window when ladder values are 0.
              */
-            'keep_all_backups_for_days' => 7,
+            'keep_all_backups_for_days' => (int) env('BACKUP_KEEP_ALL_DAYS', 7),
 
             /*
              * After the "keep_all_backups_for_days" period is over, the most recent backup
              * of that day will be kept. Older backups within the same day will be removed.
-             * If you create backups only once a day, no backups will be removed yet.
+             * Default 0 = delete everything older than keep_all (no lifetime daily ladder).
              */
-            'keep_daily_backups_for_days' => 16,
+            'keep_daily_backups_for_days' => (int) env('BACKUP_KEEP_DAILY_DAYS', 0),
 
             /*
              * After the "keep_daily_backups_for_days" period is over, the most recent backup
              * of that week will be kept. Older backups within the same week will be removed.
-             * If you create backups only once a week, no backups will be removed yet.
              */
-            'keep_weekly_backups_for_weeks' => 8,
+            'keep_weekly_backups_for_weeks' => (int) env('BACKUP_KEEP_WEEKLY_WEEKS', 0),
 
             /*
              * After the "keep_weekly_backups_for_weeks" period is over, the most recent backup
              * of that month will be kept. Older backups within the same month will be removed.
              */
-            'keep_monthly_backups_for_months' => 4,
+            'keep_monthly_backups_for_months' => (int) env('BACKUP_KEEP_MONTHLY_MONTHS', 0),
 
             /*
              * After the "keep_monthly_backups_for_months" period is over, the most recent backup
              * of that year will be kept. Older backups within the same year will be removed.
              */
-            'keep_yearly_backups_for_years' => 2,
+            'keep_yearly_backups_for_years' => (int) env('BACKUP_KEEP_YEARLY_YEARS', 0),
 
             /*
              * After cleaning up the backups remove the oldest backup until
              * this amount of megabytes has been reached.
-             * Set null for unlimited size.
+             * Set BACKUP_MAX_STORAGE_MB empty for unlimited size.
              */
-            'delete_oldest_backups_when_using_more_megabytes_than' => 5000,
+            'delete_oldest_backups_when_using_more_megabytes_than' => env('BACKUP_MAX_STORAGE_MB') === null
+                ? 5000
+                : (env('BACKUP_MAX_STORAGE_MB') === '' ? null : (int) env('BACKUP_MAX_STORAGE_MB')),
         ],
 
         /*

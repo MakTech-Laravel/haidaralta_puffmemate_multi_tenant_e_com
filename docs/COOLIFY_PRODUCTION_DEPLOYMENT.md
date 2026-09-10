@@ -57,6 +57,19 @@ Platform Spatie backups shell out to `pg_dump` / `psql` **inside the PUFFMEMATE 
 
 Backup zips live on the `backups` disk at `storage/app/private/spatie-backups`. Mount a Coolify persistent volume for at least `storage/app/private` (or the backups path) — otherwise redeploys wipe zip inventory. Optional: `BACKUP_ARCHIVE_PASSWORD`, `BACKUP_MAIL_TO` (leave empty to disable backup mail notifications).
 
+Retention (`backup:clean` daily at 03:00 and platform **Clean old backups**):
+
+```dotenv
+BACKUP_KEEP_ALL_DAYS=7
+BACKUP_KEEP_DAILY_DAYS=0
+BACKUP_KEEP_WEEKLY_WEEKS=0
+BACKUP_KEEP_MONTHLY_MONTHS=0
+BACKUP_KEEP_YEARLY_YEARS=0
+BACKUP_MAX_STORAGE_MB=5000
+```
+
+With ladder values at `0`, cleanup hard-deletes zips older than `BACKUP_KEEP_ALL_DAYS` (newest zip is never removed by Spatie). Empty `BACKUP_MAX_STORAGE_MB` means no size cap. After changing these on Coolify, clear config cache / redeploy so workers pick them up.
+
 Use the internal Coolify Redis hostname. Separate logical databases prevent normal cache eviction from targeting queue data, but they are not a security boundary:
 
 ```dotenv

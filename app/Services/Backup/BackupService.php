@@ -135,8 +135,9 @@ class BackupService
 
         return [
             'keep_all_days' => (int) ($strategy['keep_all_backups_for_days'] ?? 7),
-            'keep_daily_days' => (int) ($strategy['keep_daily_backups_for_days'] ?? 16),
-            'max_storage_mb' => isset($strategy['delete_oldest_backups_when_using_more_megabytes_than'])
+            'keep_daily_days' => (int) ($strategy['keep_daily_backups_for_days'] ?? 0),
+            'max_storage_mb' => array_key_exists('delete_oldest_backups_when_using_more_megabytes_than', $strategy)
+                && $strategy['delete_oldest_backups_when_using_more_megabytes_than'] !== null
                 ? (int) $strategy['delete_oldest_backups_when_using_more_megabytes_than']
                 : null,
         ];

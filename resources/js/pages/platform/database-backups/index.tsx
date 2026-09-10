@@ -143,7 +143,7 @@ export default function PlatformDatabaseBackupsIndex({
                         <Button
                             variant="secondary"
                             disabled={cleaning}
-                            title={`Spatie retention: keep all zips for ${cleanup_policy.keep_all_days} days, then thin older ones. Does not delete today’s backups.`}
+                            title={`Deletes backup zips older than ${cleanup_policy.keep_all_days} days (BACKUP_KEEP_ALL_DAYS). Newest zip is never removed.`}
                             onClick={() => {
                                 setCleaning(true);
                                 router.post(
@@ -182,12 +182,12 @@ export default function PlatformDatabaseBackupsIndex({
                     <span className="text-foreground font-medium">
                         Clean old backups
                     </span>{' '}
-                    runs Spatie retention only: keep every zip for{' '}
-                    {cleanup_policy.keep_all_days} days
+                    deletes zips older than {cleanup_policy.keep_all_days} days
+                    (BACKUP_KEEP_ALL_DAYS)
                     {cleanup_policy.max_storage_mb
-                        ? `, then trim oldest if storage exceeds ${cleanup_policy.max_storage_mb} MB`
+                        ? `, then trims oldest if storage exceeds ${cleanup_policy.max_storage_mb} MB`
                         : ''}
-                    . Recent files stay until you delete them individually.
+                    . Use the trash icon to remove a zip inside the keep window.
                 </p>
 
                 <div className="space-y-3">
