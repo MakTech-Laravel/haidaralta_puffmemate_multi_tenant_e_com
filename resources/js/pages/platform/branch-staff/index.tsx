@@ -136,7 +136,11 @@ export default function PlatformBranchStaffIndex({
                                             : 'Inactive'}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            asChild
+                                        >
                                             <Link
                                                 href={BranchStaffController.show.url(
                                                     member.id,

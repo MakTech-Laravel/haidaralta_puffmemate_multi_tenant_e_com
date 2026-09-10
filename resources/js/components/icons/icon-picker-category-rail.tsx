@@ -103,7 +103,7 @@ export function IconPickerCategoryRail({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-background to-transparent"
+                        className="from-background pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r to-transparent"
                     />
                 ) : null}
                 {canScrollRight ? (
@@ -112,7 +112,7 @@ export function IconPickerCategoryRail({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-background to-transparent"
+                        className="from-background pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l to-transparent"
                     />
                 ) : null}
             </AnimatePresence>
@@ -132,7 +132,7 @@ export function IconPickerCategoryRail({
                             variant="outline"
                             disabled={disabled}
                             aria-label="Scroll categories left"
-                            className="size-7 rounded-full bg-background/95 shadow-sm backdrop-blur-sm"
+                            className="bg-background/95 size-7 rounded-full shadow-sm backdrop-blur-sm"
                             onClick={() => scrollByAmount(-180)}
                         >
                             <ChevronLeft className="size-3.5" />
@@ -153,7 +153,7 @@ export function IconPickerCategoryRail({
                             variant="outline"
                             disabled={disabled}
                             aria-label="Scroll categories right"
-                            className="size-7 rounded-full bg-background/95 shadow-sm backdrop-blur-sm"
+                            className="bg-background/95 size-7 rounded-full shadow-sm backdrop-blur-sm"
                             onClick={() => scrollByAmount(180)}
                         >
                             <ChevronRight className="size-3.5" />

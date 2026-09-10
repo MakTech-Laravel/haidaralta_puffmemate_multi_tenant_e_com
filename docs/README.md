@@ -10,12 +10,12 @@ these guides as each phase actually lands in code, so they stay accurate rather 
 Four portals share one Laravel app, separated by dedicated auth guards and (for branch staff) a
 Spatie permission team:
 
-| Portal | URL prefix | Guard | Who | Access model |
-|---|---|---|---|---|
-| **Platform** | `/platform/*` | `platform` | platform owner/staff | roles in the reserved platform team (`0`) |
-| **Branch** | `/branch/{branch}/*` | `branch` | branch staff | roles team-scoped to their branch |
-| **Driver** | `/driver/*` | `driver` | delivery drivers | no roles — guard + ownership checks only |
-| **Customer** | `/customer/*` | `customer` | shoppers | no roles — guard + ownership checks only |
+| Portal       | URL prefix           | Guard      | Who                  | Access model                              |
+| ------------ | -------------------- | ---------- | -------------------- | ----------------------------------------- |
+| **Platform** | `/platform/*`        | `platform` | platform owner/staff | roles in the reserved platform team (`0`) |
+| **Branch**   | `/branch/{branch}/*` | `branch`   | branch staff         | roles team-scoped to their branch         |
+| **Driver**   | `/driver/*`          | `driver`   | delivery drivers     | no roles — guard + ownership checks only  |
+| **Customer** | `/customer/*`        | `customer` | shoppers             | no roles — guard + ownership checks only  |
 
 Authorization is [`spatie/laravel-permission`](https://spatie.be/docs/laravel-permission) with
 **Teams** (the "team" is a branch), and a single team-aware `Gate::before` super-admin bypass.

@@ -70,7 +70,8 @@ async function main() {
     const options = keys.map((key) => {
         const label = LABEL_OVERRIDES[key] ?? titleCaseKey(key);
         const categories = categoriesForIcon(key, label);
-        const searchText = `${key} ${label} ${categories.join(' ')}`.toLowerCase();
+        const searchText =
+            `${key} ${label} ${categories.join(' ')}`.toLowerCase();
 
         for (const category of categories) {
             categorySet.add(category);
@@ -98,7 +99,9 @@ async function main() {
     console.log(
         `Wrote ${options.length} icons (${categories.length} categories) to ${path.relative(root, outFile)}`,
     );
-    console.log(`Wrote ${keys.length} keys to ${path.relative(root, keysFile)}`);
+    console.log(
+        `Wrote ${keys.length} keys to ${path.relative(root, keysFile)}`,
+    );
 }
 
 main().catch((error) => {

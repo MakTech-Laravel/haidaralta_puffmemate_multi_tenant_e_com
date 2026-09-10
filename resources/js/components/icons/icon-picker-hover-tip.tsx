@@ -35,13 +35,13 @@ export function IconPickerHoverTip({
                         damping: 32,
                         mass: 0.6,
                     }}
-                    className="pointer-events-none fixed z-[200] max-w-[14rem] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-lg border border-border bg-popover px-2.5 py-1.5 text-popover-foreground shadow-md"
+                    className="border-border bg-popover text-popover-foreground pointer-events-none fixed z-[200] max-w-[14rem] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-lg border px-2.5 py-1.5 shadow-md"
                     style={{ left: x, top: y }}
                 >
-                    <p className="text-xs font-medium text-foreground">
+                    <p className="text-foreground text-xs font-medium">
                         {label}
                     </p>
-                    <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+                    <p className="text-muted-foreground mt-0.5 font-mono text-[10px]">
                         {iconKey}
                     </p>
                 </motion.div>

@@ -157,10 +157,7 @@ export default function RealtimeIndex() {
                     ...prev,
                 ].slice(0, 50),
             );
-            addLog(
-                'success',
-                `Private test received: ${data.message ?? 'ok'}`,
-            );
+            addLog('success', `Private test received: ${data.message ?? 'ok'}`);
             showRealtimeTestToast(data);
         };
 
@@ -279,26 +276,26 @@ export default function RealtimeIndex() {
             <Head title="Realtime Console" />
 
             <div className="mx-auto max-w-5xl space-y-4 p-6 font-mono text-sm">
-                <header className="rounded-lg border border-border bg-card p-4">
-                    <h1 className="text-lg font-bold text-foreground">
+                <header className="border-border bg-card rounded-lg border p-4">
+                    <h1 className="text-foreground text-lg font-bold">
                         Reverb WebSocket Console
                     </h1>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 text-xs">
                         End-to-end test: Puffmemate ⇄
                         ws.puffmemate.maktechlaravel.cloud ⇄ browser Echo
                     </p>
                 </header>
 
-                <section className="space-y-3 rounded-lg border border-border bg-card p-4">
+                <section className="border-border bg-card space-y-3 rounded-lg border p-4">
                     <div className="flex items-center gap-3">
                         <span
                             className={`h-3 w-3 rounded-full ${STATUS_DOT[status] ?? 'bg-gray-400'}`}
                         />
-                        <span className="font-semibold text-foreground">
+                        <span className="text-foreground font-semibold">
                             {CONNECTION_STATUS_LABELS[status]}
                         </span>
                         {socketId ? (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-muted-foreground text-xs">
                                 socket_id:{' '}
                                 <span className="text-green-600">
                                     {socketId}
@@ -314,7 +311,7 @@ export default function RealtimeIndex() {
                     {(status === 'failed' ||
                         status === 'unavailable' ||
                         status === 'disconnected') && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                             Pusher stops retrying after{' '}
                             <span className="font-semibold">Failed</span>. If
                             the Reverb container just came back, click Reconnect
@@ -330,7 +327,7 @@ export default function RealtimeIndex() {
                                 reconnect();
                             }}
                             disabled={!enabled}
-                            className="rounded border border-primary px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/5 disabled:opacity-40"
+                            className="border-primary text-primary hover:bg-primary/5 rounded border px-3 py-1.5 text-xs font-medium disabled:opacity-40"
                         >
                             Reconnect
                         </button>
@@ -338,7 +335,7 @@ export default function RealtimeIndex() {
                             type="button"
                             onClick={firePublicPing}
                             disabled={busy || !connected}
-                            className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
+                            className="bg-primary text-primary-foreground rounded px-3 py-1.5 text-xs font-medium hover:opacity-90 disabled:opacity-40"
                         >
                             Trigger public ping
                         </button>
@@ -367,7 +364,7 @@ export default function RealtimeIndex() {
                         <button
                             type="button"
                             onClick={checkConfig}
-                            className="rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                            className="border-border hover:bg-muted rounded border px-3 py-1.5 text-xs font-medium"
                         >
                             Check backend config
                         </button>
@@ -378,13 +375,13 @@ export default function RealtimeIndex() {
                                 setLogs([]);
                                 setApiResponse(null);
                             }}
-                            className="rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                            className="border-border hover:bg-muted rounded border px-3 py-1.5 text-xs font-medium"
                         >
                             Clear
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-x-4 gap-y-1 border-t border-border pt-2 text-xs text-muted-foreground sm:grid-cols-2">
+                    <div className="border-border text-muted-foreground grid grid-cols-1 gap-x-4 gap-y-1 border-t pt-2 text-xs sm:grid-cols-2">
                         <div>
                             WS Host:{' '}
                             <span className="text-foreground">
@@ -433,28 +430,28 @@ export default function RealtimeIndex() {
                 </section>
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <section className="rounded-lg border border-border bg-card p-3">
-                        <h2 className="mb-2 font-semibold text-foreground">
+                    <section className="border-border bg-card rounded-lg border p-3">
+                        <h2 className="text-foreground mb-2 font-semibold">
                             Received events ({events.length})
                         </h2>
-                        <div className="h-64 space-y-2 overflow-y-auto rounded bg-muted/40 p-2">
+                        <div className="bg-muted/40 h-64 space-y-2 overflow-y-auto rounded p-2">
                             {events.length === 0 ? (
-                                <p className="mt-8 text-center text-muted-foreground">
+                                <p className="text-muted-foreground mt-8 text-center">
                                     No events yet.
                                 </p>
                             ) : (
                                 events.map((ev) => (
                                     <div
                                         key={ev.id}
-                                        className="rounded border border-border bg-card p-2 text-xs"
+                                        className="border-border bg-card rounded border p-2 text-xs"
                                     >
-                                        <div className="mb-1 flex justify-between text-muted-foreground">
+                                        <div className="text-muted-foreground mb-1 flex justify-between">
                                             <span className="text-green-600">
                                                 {ev.channel} → {ev.event}
                                             </span>
                                             <span>{ev.ts}</span>
                                         </div>
-                                        <pre className="whitespace-pre-wrap break-all text-foreground">
+                                        <pre className="text-foreground break-all whitespace-pre-wrap">
                                             {JSON.stringify(ev.data, null, 2)}
                                         </pre>
                                     </div>
@@ -463,13 +460,13 @@ export default function RealtimeIndex() {
                         </div>
                     </section>
 
-                    <section className="rounded-lg border border-border bg-card p-3">
-                        <h2 className="mb-2 font-semibold text-foreground">
+                    <section className="border-border bg-card rounded-lg border p-3">
+                        <h2 className="text-foreground mb-2 font-semibold">
                             Debug log ({logs.length})
                         </h2>
-                        <div className="h-64 space-y-0.5 overflow-y-auto rounded bg-muted/40 p-2">
+                        <div className="bg-muted/40 h-64 space-y-0.5 overflow-y-auto rounded p-2">
                             {logs.length === 0 ? (
-                                <p className="mt-8 text-center text-muted-foreground">
+                                <p className="text-muted-foreground mt-8 text-center">
                                     No log entries.
                                 </p>
                             ) : (
@@ -478,7 +475,7 @@ export default function RealtimeIndex() {
                                         key={l.id}
                                         className="flex gap-2 text-xs leading-5"
                                     >
-                                        <span className="shrink-0 text-muted-foreground">
+                                        <span className="text-muted-foreground shrink-0">
                                             {l.ts}
                                         </span>
                                         <span
@@ -494,7 +491,7 @@ export default function RealtimeIndex() {
                                         >
                                             [{l.level.toUpperCase()}]
                                         </span>
-                                        <span className="break-all text-foreground">
+                                        <span className="text-foreground break-all">
                                             {l.message}
                                         </span>
                                     </div>
@@ -505,12 +502,12 @@ export default function RealtimeIndex() {
                 </div>
 
                 {apiResponse ? (
-                    <section className="rounded-lg border border-border bg-card p-3">
-                        <h2 className="mb-2 font-semibold text-foreground">
+                    <section className="border-border bg-card rounded-lg border p-3">
+                        <h2 className="text-foreground mb-2 font-semibold">
                             Last API response
                         </h2>
                         <pre
-                            className={`whitespace-pre-wrap break-all rounded bg-muted/40 p-2 text-xs ${
+                            className={`bg-muted/40 rounded p-2 text-xs break-all whitespace-pre-wrap ${
                                 apiResponse.startsWith('ERROR')
                                     ? 'text-red-500'
                                     : 'text-green-600'

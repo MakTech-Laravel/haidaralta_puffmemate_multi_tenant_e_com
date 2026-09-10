@@ -16,23 +16,23 @@ export function ErrorProductionFallback() {
     const handleHome = () => (window.location.href = '/');
 
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center bg-background p-6 md:p-10">
+        <div className="bg-background flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
             <div className="w-full max-w-md space-y-6">
                 {/* Status indicator */}
                 <div className="flex flex-col items-center gap-1 text-center">
-                    <p className="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
+                    <p className="text-muted-foreground font-mono text-xs font-medium tracking-[0.2em] uppercase">
                         Error 500
                     </p>
                 </div>
 
                 <Card className="overflow-hidden">
                     {/* Decorative top bar */}
-                    <div className="h-1 w-full bg-gradient-to-r from-destructive/60 via-destructive to-destructive/60" />
+                    <div className="from-destructive/60 via-destructive to-destructive/60 h-1 w-full bg-gradient-to-r" />
 
                     <CardHeader className="pb-4 text-center">
-                        <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/10">
+                        <div className="border-destructive/20 bg-destructive/10 mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border">
                             <AlertCircle
-                                className="size-7 text-destructive"
+                                className="text-destructive size-7"
                                 aria-hidden
                             />
                         </div>
@@ -54,7 +54,7 @@ export function ErrorProductionFallback() {
                             <AlertTitle className="text-sm font-semibold">
                                 We&apos;re sorry for the inconvenience
                             </AlertTitle>
-                            <AlertDescription className="mt-1 text-xs leading-relaxed text-destructive/80">
+                            <AlertDescription className="text-destructive/80 mt-1 text-xs leading-relaxed">
                                 Please reload the page to continue. If the
                                 problem persists, try clearing your browser
                                 cache or contact support.
@@ -95,11 +95,11 @@ export function ErrorProductionFallback() {
                     </CardFooter>
                 </Card>
 
-                <p className="text-center text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-center text-xs">
                     Need help?{' '}
                     <a
                         href="mailto:support@example.com"
-                        className="underline underline-offset-4 hover:text-foreground"
+                        className="hover:text-foreground underline underline-offset-4"
                     >
                         Contact support
                     </a>
