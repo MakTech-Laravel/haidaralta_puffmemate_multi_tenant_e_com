@@ -15,21 +15,7 @@ use Spatie\Permission\PermissionRegistrar;
 
 class BranchService
 {
-    /**
-     * @param  array{
-     *     name: string,
-     *     slug: string,
-     *     code: string,
-     *     phone?: string|null,
-     *     email?: string|null,
-     *     address?: string|null,
-     *     latitude?: float|string|null,
-     *     longitude?: float|string|null,
-     *     opening_time?: string|null,
-     *     closing_time?: string|null,
-     *     status?: bool
-     * }  $data
-     */
+
     public function create(array $data, ?UploadedFile $logo = null): Branch
     {
         return DB::transaction(function () use ($data, $logo): Branch {
@@ -54,21 +40,7 @@ class BranchService
         });
     }
 
-    /**
-     * @param  array{
-     *     name: string,
-     *     slug: string,
-     *     code: string,
-     *     phone?: string|null,
-     *     email?: string|null,
-     *     address?: string|null,
-     *     latitude?: float|string|null,
-     *     longitude?: float|string|null,
-     *     opening_time?: string|null,
-     *     closing_time?: string|null,
-     *     status?: bool
-     * }  $data
-     */
+
     public function update(Branch $branch, array $data, ?UploadedFile $logo = null, bool $removeLogo = false): Branch
     {
         $logoPath = $branch->logo;
