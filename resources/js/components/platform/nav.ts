@@ -1,7 +1,9 @@
 import {
+    Activity,
     Building2,
     BellRing,
     Database,
+    Gauge,
     KeyRound,
     LayoutGrid,
     Radio,
@@ -36,6 +38,33 @@ export const platformNav: NavNode[] = [
         href: '/platform/database-backups',
         icon: Database,
         permissions: ['manage-database-backups'],
+    },
+    {
+        title: 'Observability',
+        href: '/platform/observability',
+        icon: Gauge,
+        permissions: ['view-horizon', 'view-pulse'],
+        items: [
+            {
+                title: 'Hub',
+                href: '/platform/observability',
+                permissions: ['view-horizon', 'view-pulse'],
+            },
+            {
+                title: 'Horizon',
+                href: '/horizon',
+                icon: Activity,
+                external: true,
+                permissions: ['view-horizon'],
+            },
+            {
+                title: 'Pulse',
+                href: '/pulse',
+                icon: Gauge,
+                external: true,
+                permissions: ['view-pulse'],
+            },
+        ],
     },
     {
         title: 'Realtime Console',

@@ -2,7 +2,7 @@
 
 ## Architecture
 
-Deploy this repository as one Coolify **Application** using the root `Dockerfile` build pack. The resulting replaceable container listens on port `80` and runs Nginx, PHP-FPM, Laravel queue workers, and the Laravel scheduler under Supervisor.
+Deploy this repository as one Coolify **Application** using the root `Dockerfile` build pack. The resulting replaceable container listens on port `80` and runs Nginx, PHP-FPM, Laravel Horizon, `pulse:check`, and the Laravel scheduler under Supervisor. Do not run `queue:work` alongside Horizon on the same Redis queues.
 
 PostgreSQL, Redis, and Meilisearch are separate Coolify resources. Laravel Reverb is a separate Git repository, Dockerfile, Coolify Application, domain, and deployment lifecycle. This image does not contain or start any of those servers and does not expose ports `5432`, `6379`, `7700`, `8080`, or `9000`.
 
@@ -22,7 +22,7 @@ PostgreSQL, Redis, and Meilisearch are separate Coolify resources. Laravel Rever
 
 `/up` is Laravel's built-in health route. It proves Nginx, PHP-FPM, and Laravel bootstrap without making transient dependency failures trigger restart cascades. Monitor PostgreSQL, Redis, Meilisearch, and Reverb separately for readiness and dependency diagnostics.
 
-The 120-second stop grace exceeds the default queue worker timeout (`60s`) and Supervisor worker wait (`90s`). Increase all three coherently if production jobs legitimately need a longer timeout. Coolify's grace period must remain longer than Supervisor's queue `stopwaitsecs`.
+The 120-second stop grace must stay above Horizon worker timeout (`QUEUE_TIMEOUT=600` / Horizon `timeout` 600) and Supervisor Horizon `stopwaitsecs` (660). Coolify's grace period must remain longer than Supervisor's Horizon `stopwaitsecs` when jobs can run that long — raise Coolify stop grace to at least `700s` if backup/restore jobs run in this container.
 
 ## Runtime Environment
 
@@ -219,7 +219,18 @@ Meilisearch is a separate Coolify resource (official Meilisearch image). The app
 
 Reverb is a separate Coolify Application at `wss://ws.puffmemate.maktechlaravel.cloud` (see above). Port `8080` is not used by this application container.
 
-Supervisor retains fully commented Horizon and Reverb reference programs. They are disabled and do not alter the running process set. Do not enable Horizon until the package is explicitly installed and configured; if it consumes the same queues, disable the standard `laravel-queue-worker` program to prevent duplicate consumers. Do not enable the Reverb template under the current separate-application architecture.
+Supervisor runs Laravel Horizon (sole Redis queue consumer for `default` and `scout`), `pulse:check` (Pulse Servers card), and `schedule:work`. On deploy, run `php artisan horizon:terminate` and `php artisan pulse:restart` so workers pick up new code. Do not enable a parallel `queue:work` program on the same queues. Reverb remains a separate Coolify application — do not enable the commented Reverb Supervisor template under the current architecture.
+
+Platform observability: `/platform/observability` (Inertia hub), `/horizon`, and `/pulse`. Access is platform-only via `view-horizon` / `view-pulse` (platform super-admin bypasses). After migrate, reseed roles/permissions so Admin receives the new keys.
+
+```dotenv
+QUEUE_CONNECTION=redis
+HORIZON_PREFIX=puffmemate_horizon:
+HORIZON_PATH=horizon
+HORIZON_MAIL_TO=
+PULSE_ENABLED=true
+PULSE_PATH=pulse
+```
 
 ## Database Migrations
 
@@ -235,7 +246,7 @@ The current tenancy model uses one shared database and nullable `branch_id` colu
 
 ## Scheduler and Replicas
 
-Supervisor runs `php artisan schedule:work --no-interaction`. No scheduled tasks are currently defined, so there are no tasks requiring `onOneServer()` or `withoutOverlapping()` today.
+Supervisor runs `php artisan schedule:work --no-interaction`. Scheduled tasks include Spatie backup commands and `horizon:snapshot` every five minutes (Horizon metrics graphs). Before adding a global scheduled task on multi-replica deploys, use `onOneServer()` with shared Redis locking.
 
 Scaling application replicas from 1 to 2 to 4 multiplies Nginx, PHP-FPM, queue workers, and scheduler processes together. Before adding a global scheduled task, use `onOneServer()` with shared Redis locking. Add `withoutOverlapping()` only when overlapping runs would be unsafe. A task intentionally designed per instance should state that constraint in code and operations documentation.
 

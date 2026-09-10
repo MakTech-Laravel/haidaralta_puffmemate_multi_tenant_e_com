@@ -6,6 +6,8 @@ export type PermissionKey =
     | 'manage-reports'
     | 'view-activity-logs'
     | 'manage-database-backups'
+    | 'view-horizon'
+    | 'view-pulse'
     | 'view-branch-dashboard'
     | 'manage-branch-products'
     | 'manage-branch-orders'

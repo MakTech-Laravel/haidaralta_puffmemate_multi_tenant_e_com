@@ -1,5 +1,8 @@
 {
-    "agents": ["codex", "cursor"],
+    "agents": [
+        "codex",
+        "cursor"
+    ],
     "cloud": true,
     "guidelines": true,
     "mcp": true,
@@ -10,6 +13,8 @@
         "fortify-development",
         "laravel-best-practices",
         "testing-best-practices",
+        "configuring-horizon",
+        "pulse-development",
         "scout-development",
         "wayfinder-development",
         "inertia-react-development",
