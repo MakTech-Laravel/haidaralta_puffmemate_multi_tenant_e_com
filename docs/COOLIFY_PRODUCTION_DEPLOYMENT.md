@@ -223,6 +223,14 @@ Reverb is a separate Coolify Application at `wss://ws.puffmemate.maktechlaravel.
 
 Supervisor runs Laravel Horizon (sole Redis queue consumer for `default` and `scout`), `pulse:check` (Pulse Servers card), and `schedule:work`. On deploy, run `php artisan horizon:terminate` and `php artisan pulse:restart` so workers pick up new code. Do not enable a parallel `queue:work` program on the same queues. Reverb remains a separate Coolify application — do not enable the commented Reverb Supervisor template under the current architecture.
 
+### Pulse Servers card vs VPS disk
+
+Pulse’s Servers **storage** figure is `disk_total_space` / `disk_free_space` for `PULSE_SERVER_DIRECTORIES` (default `/`) — the **Coolify host filesystem**, not Laravel’s `storage/` folder and not “Horizon disk usage.” Memory is from `/proc/meminfo` (often the host view inside Docker). Multiple container IDs on the card are normal after redeploys; old hostnames age out with `PULSE_STORAGE_KEEP` (default 7 days).
+
+Horizon keeps job state in **Redis** (trimmed). Pulse metrics land in **Postgres** and are trimmed to ~7 days — typically megabytes, not multi‑GB. A sudden +10GB on the Pulse storage number after Horizon/Pulse deploys is almost always **Docker images/layers, container logs, Postgres/Meilisearch/Redis volumes, or Spatie backup zips** on the same VPS — check with `docker system df` on the host and prune unused images/build cache when safe. Cap backups with `BACKUP_MAX_STORAGE_MB` and run `backup:clean`.
+
+After changing Pulse cache `ignore` patterns, run `php artisan pulse:clear` once if the Cache card still shows stale keys (e.g. `livewire-checksum-failures:*`); ignore only stops new recordings.
+
 Platform observability: `/platform/observability` (Inertia hub), `/horizon`, and `/pulse`. Access is platform-only via `view-horizon` / `view-pulse` (platform super-admin bypasses). After migrate, reseed roles/permissions so Admin receives the new keys.
 
 ```dotenv

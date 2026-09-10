@@ -145,8 +145,10 @@ return [
                 ...Pulse::defaultVendorCacheKeys(),
                 '/^puffmemate_cache_/',
                 '/^spatie\.permission\./',
-                // Livewire probes this key every request; misses are normal and skew hit rate.
-                '/^livewire-checksum-failures:/',
+                // Livewire probes this key when the Pulse UI polls; misses are normal and skew hit rate.
+                // Ignore survives prefixing and keeps matching after Pulse already stored historical rows
+                // (run `php artisan pulse:clear` once to drop old aggregates for this key).
+                '/livewire-checksum-failures/',
             ],
             'groups' => [
                 '/^job-exceptions:.*/' => 'job-exceptions:*',
