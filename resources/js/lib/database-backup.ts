@@ -1,9 +1,7 @@
 import type { VariantProps } from 'class-variance-authority';
 import type { badgeVariants } from '@/components/ui/badge';
 
-type BadgeVariant = NonNullable<
-    VariantProps<typeof badgeVariants>['variant']
->;
+type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>;
 
 /** Status badges using app.css theme tokens only. */
 export function backupStatusBadgeVariant(status: string): BadgeVariant {

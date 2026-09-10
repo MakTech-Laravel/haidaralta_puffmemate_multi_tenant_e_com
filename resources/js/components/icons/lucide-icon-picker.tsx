@@ -185,7 +185,7 @@ export const LucideIconPicker = forwardRef<
             {error ? (
                 <p
                     className={cn(
-                        'text-sm text-destructive',
+                        'text-destructive text-sm',
                         resolvedClassNames.error,
                     )}
                     role="alert"

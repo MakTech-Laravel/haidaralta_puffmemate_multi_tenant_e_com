@@ -224,7 +224,7 @@ export function IconPickerCollapsible({
                 >
                     <div
                         className={cn(
-                            'overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground',
+                            'border-border bg-popover text-popover-foreground overflow-hidden rounded-xl border',
                             panelBehavior === 'overlay'
                                 ? 'shadow-lg'
                                 : 'shadow-xs',

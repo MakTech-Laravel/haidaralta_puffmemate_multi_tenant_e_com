@@ -57,7 +57,9 @@ export default function PlatformRolesIndex({
     const [search, setSearch] = useState(filters.search);
     const [kind, setKind] = useState(filters.kind || 'any');
     const [users, setUsers] = useState(filters.users || 'any');
-    const [permissions, setPermissions] = useState(filters.permissions || 'any');
+    const [permissions, setPermissions] = useState(
+        filters.permissions || 'any',
+    );
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
 
@@ -70,10 +72,14 @@ export default function PlatformRolesIndex({
 
     const applyFilters = (event?: React.FormEvent) => {
         event?.preventDefault();
-        router.get(RoleController.index.url({ query: queryPayload() }), {}, {
-            preserveState: true,
-            preserveScroll: true,
-        });
+        router.get(
+            RoleController.index.url({ query: queryPayload() }),
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
     };
 
     const exportUrl = RoleController.export.url({ query: queryPayload() });
@@ -129,7 +135,9 @@ export default function PlatformRolesIndex({
                         <SelectContent>
                             <SelectItem value="any">Any users</SelectItem>
                             <SelectItem value="with">With users</SelectItem>
-                            <SelectItem value="without">Without users</SelectItem>
+                            <SelectItem value="without">
+                                Without users
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                     <Select value={permissions} onValueChange={setPermissions}>
@@ -179,7 +187,9 @@ export default function PlatformRolesIndex({
                                         <TableCell>
                                             {role.permissions_count}
                                         </TableCell>
-                                        <TableCell>{role.users_count}</TableCell>
+                                        <TableCell>
+                                            {role.users_count}
+                                        </TableCell>
                                         <TableCell className="space-x-2 text-right">
                                             <Button
                                                 variant="ghost"

@@ -98,13 +98,10 @@ export default function PlatformStaffShow({
                 processing={processing}
                 onConfirm={() => {
                     setProcessing(true);
-                    router.delete(
-                        StaffController.destroy.url(staffMember.id),
-                        {
-                            preserveScroll: true,
-                            onFinish: () => setProcessing(false),
-                        },
-                    );
+                    router.delete(StaffController.destroy.url(staffMember.id), {
+                        preserveScroll: true,
+                        onFinish: () => setProcessing(false),
+                    });
                 }}
             />
         </>

@@ -66,8 +66,8 @@ export function IconPickerTrigger({
                 aria-invalid={error ? true : undefined}
                 aria-label={`${displayLabel} — ${actionLabel} icon`}
                 className={cn(
-                    'inline-flex size-10 items-center justify-center rounded-lg border border-border/70 bg-background text-foreground shadow-xs transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
-                    open && 'ring-2 ring-ring/40',
+                    'border-border/70 bg-background text-foreground hover:bg-muted/50 focus-visible:ring-ring inline-flex size-10 items-center justify-center rounded-lg border shadow-xs transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                    open && 'ring-ring/40 ring-2',
                     error && 'border-destructive/60',
                     classNames?.trigger,
                     className,
@@ -91,20 +91,20 @@ export function IconPickerTrigger({
                 aria-haspopup={mode !== 'collapsible' ? 'dialog' : undefined}
                 aria-invalid={error ? true : undefined}
                 className={cn(
-                    'inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
-                    open && 'ring-2 ring-ring/40',
+                    'border-border bg-background hover:bg-muted/40 focus-visible:ring-ring inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-sm font-medium shadow-xs transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                    open && 'ring-ring/40 ring-2',
                     error && 'border-destructive/60',
                     classNames?.trigger,
                     className,
                 )}
             >
-                <Icon icon={displayIcon} className="size-4 text-primary" />
+                <Icon icon={displayIcon} className="text-primary size-4" />
                 <span className={cn(classNames?.triggerLabel)}>
                     {displayLabel}
                 </span>
                 <ChevronDown
                     className={cn(
-                        'size-3.5 text-muted-foreground transition-transform',
+                        'text-muted-foreground size-3.5 transition-transform',
                         open && mode === 'collapsible' && 'rotate-180',
                     )}
                 />
@@ -125,7 +125,7 @@ export function IconPickerTrigger({
                 aria-haspopup={mode !== 'collapsible' ? 'dialog' : undefined}
                 aria-invalid={error ? true : undefined}
                 className={cn(
-                    'inline-flex items-center gap-2 rounded-md px-1.5 py-1 text-sm text-foreground transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                    'text-foreground hover:bg-muted/50 focus-visible:ring-ring inline-flex items-center gap-2 rounded-md px-1.5 py-1 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
                     classNames?.trigger,
                     className,
                 )}
@@ -151,8 +151,8 @@ export function IconPickerTrigger({
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? statusId : undefined}
             className={cn(
-                'flex w-full items-center gap-3 rounded-xl border border-border/80 bg-background px-3 py-2.5 text-left shadow-xs transition-colors hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
-                open && 'ring-2 ring-ring/30',
+                'border-border/80 bg-background hover:bg-muted/30 focus-visible:ring-ring flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left shadow-xs transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                open && 'ring-ring/30 ring-2',
                 error && 'border-destructive/60',
                 classNames?.trigger,
                 className,
@@ -160,13 +160,13 @@ export function IconPickerTrigger({
         >
             <div
                 className={cn(
-                    'relative flex size-10 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted/30',
+                    'border-border/60 bg-muted/30 relative flex size-10 shrink-0 items-center justify-center rounded-lg border',
                     classNames?.triggerPreview,
                 )}
             >
-                <Icon icon={displayIcon} className="size-5 text-foreground" />
+                <Icon icon={displayIcon} className="text-foreground size-5" />
                 {showSparkles ? (
-                    <span className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <span className="bg-primary text-primary-foreground absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full">
                         <Sparkles className="size-2.5" />
                     </span>
                 ) : null}
@@ -174,7 +174,7 @@ export function IconPickerTrigger({
             <div className="min-w-0 flex-1">
                 <p
                     className={cn(
-                        'truncate text-sm font-medium text-foreground',
+                        'text-foreground truncate text-sm font-medium',
                         classNames?.triggerLabel,
                     )}
                 >
@@ -182,7 +182,7 @@ export function IconPickerTrigger({
                 </p>
                 <p
                     className={cn(
-                        'truncate font-mono text-[11px] text-muted-foreground',
+                        'text-muted-foreground truncate font-mono text-[11px]',
                         classNames?.triggerDescription,
                     )}
                 >
@@ -191,7 +191,7 @@ export function IconPickerTrigger({
             </div>
             <div
                 className={cn(
-                    'flex shrink-0 items-center gap-1.5 text-muted-foreground',
+                    'text-muted-foreground flex shrink-0 items-center gap-1.5',
                     classNames?.triggerAction,
                 )}
             >

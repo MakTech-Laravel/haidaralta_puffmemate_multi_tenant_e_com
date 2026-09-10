@@ -51,8 +51,8 @@ export const ICON_OPTIONS = [
     {
         key: 'alarm-check',
         label: 'Alarm Check',
-        searchText: 'alarm-check alarm check time',
-        categories: ['time'],
+        searchText: 'alarm-check alarm check security time',
+        categories: ['security', 'time'],
     },
     {
         key: 'alarm-clock',
@@ -87,20 +87,20 @@ export const ICON_OPTIONS = [
     {
         key: 'alarm-minus',
         label: 'Alarm Minus',
-        searchText: 'alarm-minus alarm minus time',
-        categories: ['time'],
+        searchText: 'alarm-minus alarm minus security time',
+        categories: ['security', 'time'],
     },
     {
         key: 'alarm-plus',
         label: 'Alarm Plus',
-        searchText: 'alarm-plus alarm plus time',
-        categories: ['time'],
+        searchText: 'alarm-plus alarm plus security time',
+        categories: ['security', 'time'],
     },
     {
         key: 'alarm-smoke',
         label: 'Alarm Smoke',
-        searchText: 'alarm-smoke alarm smoke time',
-        categories: ['time'],
+        searchText: 'alarm-smoke alarm smoke security time',
+        categories: ['security', 'time'],
     },
     {
         key: 'album',
@@ -385,8 +385,8 @@ export const ICON_OPTIONS = [
     {
         key: 'archive-restore',
         label: 'Archive Restore',
-        searchText: 'archive-restore archive restore files commerce',
-        categories: ['files', 'commerce'],
+        searchText: 'archive-restore archive restore commerce files',
+        categories: ['commerce', 'files'],
     },
     {
         key: 'archive-x',
@@ -505,8 +505,8 @@ export const ICON_OPTIONS = [
     {
         key: 'arrow-down-from-line',
         label: 'Arrow Down From Line',
-        searchText: 'arrow-down-from-line arrow down from line arrows charts',
-        categories: ['arrows', 'charts'],
+        searchText: 'arrow-down-from-line arrow down from line arrows',
+        categories: ['arrows'],
     },
     {
         key: 'arrow-down-left',
@@ -581,8 +581,8 @@ export const ICON_OPTIONS = [
     {
         key: 'arrow-down-to-line',
         label: 'Arrow Down To Line',
-        searchText: 'arrow-down-to-line arrow down to line arrows charts',
-        categories: ['arrows', 'charts'],
+        searchText: 'arrow-down-to-line arrow down to line arrows',
+        categories: ['arrows'],
     },
     {
         key: 'arrow-down-up',
@@ -623,8 +623,8 @@ export const ICON_OPTIONS = [
     {
         key: 'arrow-left-from-line',
         label: 'Arrow Left From Line',
-        searchText: 'arrow-left-from-line arrow left from line arrows charts',
-        categories: ['arrows', 'charts'],
+        searchText: 'arrow-left-from-line arrow left from line arrows',
+        categories: ['arrows'],
     },
     {
         key: 'arrow-left-right',
@@ -641,8 +641,8 @@ export const ICON_OPTIONS = [
     {
         key: 'arrow-left-to-line',
         label: 'Arrow Left To Line',
-        searchText: 'arrow-left-to-line arrow left to line arrows charts',
-        categories: ['arrows', 'charts'],
+        searchText: 'arrow-left-to-line arrow left to line arrows',
+        categories: ['arrows'],
     },
     {
         key: 'arrow-right',
@@ -659,8 +659,8 @@ export const ICON_OPTIONS = [
     {
         key: 'arrow-right-from-line',
         label: 'Arrow Right From Line',
-        searchText: 'arrow-right-from-line arrow right from line arrows charts',
-        categories: ['arrows', 'charts'],
+        searchText: 'arrow-right-from-line arrow right from line arrows',
+        categories: ['arrows'],
     },
     {
         key: 'arrow-right-left',
@@ -677,8 +677,8 @@ export const ICON_OPTIONS = [
     {
         key: 'arrow-right-to-line',
         label: 'Arrow Right To Line',
-        searchText: 'arrow-right-to-line arrow right to line arrows charts',
-        categories: ['arrows', 'charts'],
+        searchText: 'arrow-right-to-line arrow right to line arrows',
+        categories: ['arrows'],
     },
     {
         key: 'arrow-up',
@@ -743,8 +743,8 @@ export const ICON_OPTIONS = [
     {
         key: 'arrow-up-from-line',
         label: 'Arrow Up From Line',
-        searchText: 'arrow-up-from-line arrow up from line arrows charts',
-        categories: ['arrows', 'charts'],
+        searchText: 'arrow-up-from-line arrow up from line arrows',
+        categories: ['arrows'],
     },
     {
         key: 'arrow-up-left',
@@ -813,8 +813,8 @@ export const ICON_OPTIONS = [
     {
         key: 'arrow-up-to-line',
         label: 'Arrow Up To Line',
-        searchText: 'arrow-up-to-line arrow up to line arrows charts',
-        categories: ['arrows', 'charts'],
+        searchText: 'arrow-up-to-line arrow up to line arrows',
+        categories: ['arrows'],
     },
     {
         key: 'arrow-up-wide-narrow',
@@ -837,8 +837,8 @@ export const ICON_OPTIONS = [
     {
         key: 'arrows-up-from-line',
         label: 'Arrows Up From Line',
-        searchText: 'arrows-up-from-line arrows up from line arrows charts',
-        categories: ['arrows', 'charts'],
+        searchText: 'arrows-up-from-line arrows up from line arrows',
+        categories: ['arrows'],
     },
     {
         key: 'asterisk',
@@ -867,8 +867,8 @@ export const ICON_OPTIONS = [
     {
         key: 'audio-lines',
         label: 'Audio Lines',
-        searchText: 'audio-lines audio lines media charts',
-        categories: ['media', 'charts'],
+        searchText: 'audio-lines audio lines media',
+        categories: ['media'],
     },
     {
         key: 'audio-waveform',
@@ -909,8 +909,8 @@ export const ICON_OPTIONS = [
     {
         key: 'backpack',
         label: 'Backpack',
-        searchText: 'backpack backpack arrows',
-        categories: ['arrows'],
+        searchText: 'backpack backpack general',
+        categories: ['general'],
     },
     {
         key: 'badge',
@@ -1089,14 +1089,14 @@ export const ICON_OPTIONS = [
     {
         key: 'barcode',
         label: 'Barcode',
-        searchText: 'barcode barcode charts text',
-        categories: ['charts', 'text'],
+        searchText: 'barcode barcode text',
+        categories: ['text'],
     },
     {
         key: 'baseline',
         label: 'Baseline',
-        searchText: 'baseline baseline design charts',
-        categories: ['design', 'charts'],
+        searchText: 'baseline baseline design',
+        categories: ['design'],
     },
     {
         key: 'bath',
@@ -1317,14 +1317,14 @@ export const ICON_OPTIONS = [
     {
         key: 'bitcoin',
         label: 'Bitcoin',
-        searchText: 'bitcoin bitcoin general',
-        categories: ['general'],
+        searchText: 'bitcoin bitcoin commerce',
+        categories: ['commerce'],
     },
     {
         key: 'blend',
         label: 'Blend',
-        searchText: 'blend blend general',
-        categories: ['general'],
+        searchText: 'blend blend design',
+        categories: ['design'],
     },
     {
         key: 'blinds',
@@ -1401,8 +1401,8 @@ export const ICON_OPTIONS = [
     {
         key: 'book-audio',
         label: 'Book Audio',
-        searchText: 'book-audio book audio media files',
-        categories: ['media', 'files'],
+        searchText: 'book-audio book audio files media',
+        categories: ['files', 'media'],
     },
     {
         key: 'book-check',
@@ -1431,20 +1431,21 @@ export const ICON_OPTIONS = [
     {
         key: 'book-headphones',
         label: 'Book Headphones',
-        searchText: 'book-headphones book headphones files devices',
-        categories: ['files', 'devices'],
+        searchText:
+            'book-headphones book headphones communication devices files',
+        categories: ['communication', 'devices', 'files'],
     },
     {
         key: 'book-heart',
         label: 'Book Heart',
-        searchText: 'book-heart book heart users files',
-        categories: ['users', 'files'],
+        searchText: 'book-heart book heart files users',
+        categories: ['files', 'users'],
     },
     {
         key: 'book-image',
         label: 'Book Image',
-        searchText: 'book-image book image media files',
-        categories: ['media', 'files'],
+        searchText: 'book-image book image files media',
+        categories: ['files', 'media'],
     },
     {
         key: 'book-key',
@@ -1473,20 +1474,20 @@ export const ICON_OPTIONS = [
     {
         key: 'book-open',
         label: 'Book Open',
-        searchText: 'book-open book open files design',
-        categories: ['files', 'design'],
+        searchText: 'book-open book open design files',
+        categories: ['design', 'files'],
     },
     {
         key: 'book-open-check',
         label: 'Book Open Check',
-        searchText: 'book-open-check book open check files design',
-        categories: ['files', 'design'],
+        searchText: 'book-open-check book open check design files',
+        categories: ['design', 'files'],
     },
     {
         key: 'book-open-text',
         label: 'Book Open Text',
-        searchText: 'book-open-text book open text files design text',
-        categories: ['files', 'design', 'text'],
+        searchText: 'book-open-text book open text design files text',
+        categories: ['design', 'files', 'text'],
     },
     {
         key: 'book-plus',
@@ -1509,8 +1510,8 @@ export const ICON_OPTIONS = [
     {
         key: 'book-type',
         label: 'Book Type',
-        searchText: 'book-type book type files design',
-        categories: ['files', 'design'],
+        searchText: 'book-type book type files text',
+        categories: ['files', 'text'],
     },
     {
         key: 'book-up',
@@ -1527,8 +1528,8 @@ export const ICON_OPTIONS = [
     {
         key: 'book-user',
         label: 'Book User',
-        searchText: 'book-user book user users files',
-        categories: ['users', 'files'],
+        searchText: 'book-user book user files users',
+        categories: ['files', 'users'],
     },
     {
         key: 'book-x',
@@ -1569,8 +1570,8 @@ export const ICON_OPTIONS = [
     {
         key: 'boom-box',
         label: 'Boom Box',
-        searchText: 'boom-box boom box general',
-        categories: ['general'],
+        searchText: 'boom-box boom box devices',
+        categories: ['devices'],
     },
     {
         key: 'bot',
@@ -1647,14 +1648,14 @@ export const ICON_OPTIONS = [
     {
         key: 'briefcase',
         label: 'Briefcase',
-        searchText: 'briefcase briefcase text',
-        categories: ['text'],
+        searchText: 'briefcase briefcase general',
+        categories: ['general'],
     },
     {
         key: 'briefcase-business',
         label: 'Briefcase Business',
-        searchText: 'briefcase-business briefcase business travel text',
-        categories: ['travel', 'text'],
+        searchText: 'briefcase-business briefcase business text travel',
+        categories: ['text', 'travel'],
     },
     {
         key: 'briefcase-conveyor-belt',
@@ -1725,14 +1726,14 @@ export const ICON_OPTIONS = [
     {
         key: 'cable',
         label: 'Cable',
-        searchText: 'cable cable general',
-        categories: ['general'],
+        searchText: 'cable cable devices',
+        categories: ['devices'],
     },
     {
         key: 'cable-car',
         label: 'Cable Car',
-        searchText: 'cable-car cable car travel',
-        categories: ['travel'],
+        searchText: 'cable-car cable car devices travel',
+        categories: ['devices', 'travel'],
     },
     {
         key: 'cake',
@@ -1743,8 +1744,8 @@ export const ICON_OPTIONS = [
     {
         key: 'cake-slice',
         label: 'Cake Slice',
-        searchText: 'cake-slice cake slice general',
-        categories: ['general'],
+        searchText: 'cake-slice cake slice design',
+        categories: ['design'],
     },
     {
         key: 'calculator',
@@ -1809,14 +1810,14 @@ export const ICON_OPTIONS = [
     {
         key: 'calendar-fold',
         label: 'Calendar Fold',
-        searchText: 'calendar-fold calendar fold arrows time',
-        categories: ['arrows', 'time'],
+        searchText: 'calendar-fold calendar fold time',
+        categories: ['time'],
     },
     {
         key: 'calendar-heart',
         label: 'Calendar Heart',
-        searchText: 'calendar-heart calendar heart users time',
-        categories: ['users', 'time'],
+        searchText: 'calendar-heart calendar heart time users',
+        categories: ['time', 'users'],
     },
     {
         key: 'calendar-minus',
@@ -2148,8 +2149,8 @@ export const ICON_OPTIONS = [
     {
         key: 'chart-spline',
         label: 'Chart Spline',
-        searchText: 'chart-spline chart spline charts',
-        categories: ['charts'],
+        searchText: 'chart-spline chart spline charts design',
+        categories: ['charts', 'design'],
     },
     {
         key: 'check',
@@ -2476,8 +2477,8 @@ export const ICON_OPTIONS = [
     {
         key: 'circle-dollar-sign',
         label: 'Circle Dollar Sign',
-        searchText: 'circle-dollar-sign circle dollar sign general',
-        categories: ['general'],
+        searchText: 'circle-dollar-sign circle dollar sign commerce',
+        categories: ['commerce'],
     },
     {
         key: 'circle-dot',
@@ -2518,8 +2519,8 @@ export const ICON_OPTIONS = [
     {
         key: 'circle-gauge',
         label: 'Circle Gauge',
-        searchText: 'circle-gauge circle gauge charts',
-        categories: ['charts'],
+        searchText: 'circle-gauge circle gauge general',
+        categories: ['general'],
     },
     {
         key: 'circle-help',
@@ -2692,14 +2693,14 @@ export const ICON_OPTIONS = [
     {
         key: 'clipboard-pen',
         label: 'Clipboard Pen',
-        searchText: 'clipboard-pen clipboard pen files design',
-        categories: ['files', 'design'],
+        searchText: 'clipboard-pen clipboard pen design files',
+        categories: ['design', 'files'],
     },
     {
         key: 'clipboard-pen-line',
         label: 'Clipboard Pen Line',
-        searchText: 'clipboard-pen-line clipboard pen line files design charts',
-        categories: ['files', 'design', 'charts'],
+        searchText: 'clipboard-pen-line clipboard pen line design files',
+        categories: ['design', 'files'],
     },
     {
         key: 'clipboard-plus',
@@ -2716,8 +2717,8 @@ export const ICON_OPTIONS = [
     {
         key: 'clipboard-type',
         label: 'Clipboard Type',
-        searchText: 'clipboard-type clipboard type files design',
-        categories: ['files', 'design'],
+        searchText: 'clipboard-type clipboard type files text',
+        categories: ['files', 'text'],
     },
     {
         key: 'clipboard-x',
@@ -2842,8 +2843,8 @@ export const ICON_OPTIONS = [
     {
         key: 'cloud-download',
         label: 'Cloud Download',
-        searchText: 'cloud-download cloud download files nature',
-        categories: ['files', 'nature'],
+        searchText: 'cloud-download cloud download nature',
+        categories: ['nature'],
     },
     {
         key: 'cloud-drizzle',
@@ -2920,8 +2921,8 @@ export const ICON_OPTIONS = [
     {
         key: 'cloud-upload',
         label: 'Cloud Upload',
-        searchText: 'cloud-upload cloud upload files nature',
-        categories: ['files', 'nature'],
+        searchText: 'cloud-upload cloud upload nature',
+        categories: ['nature'],
     },
     {
         key: 'cloudy',
@@ -3046,8 +3047,8 @@ export const ICON_OPTIONS = [
     {
         key: 'computer',
         label: 'Computer',
-        searchText: 'computer computer general',
-        categories: ['general'],
+        searchText: 'computer computer devices',
+        categories: ['devices'],
     },
     {
         key: 'concierge-bell',
@@ -3298,8 +3299,8 @@ export const ICON_OPTIONS = [
     {
         key: 'database-backup',
         label: 'Database Backup',
-        searchText: 'database-backup database backup arrows',
-        categories: ['arrows'],
+        searchText: 'database-backup database backup general',
+        categories: ['general'],
     },
     {
         key: 'database-zap',
@@ -3400,26 +3401,26 @@ export const ICON_OPTIONS = [
     {
         key: 'disc',
         label: 'Disc',
-        searchText: 'disc disc general',
-        categories: ['general'],
+        searchText: 'disc disc media',
+        categories: ['media'],
     },
     {
         key: 'disc-2',
         label: 'Disc 2',
-        searchText: 'disc-2 disc 2 general',
-        categories: ['general'],
+        searchText: 'disc-2 disc 2 media',
+        categories: ['media'],
     },
     {
         key: 'disc-3',
         label: 'Disc 3',
-        searchText: 'disc-3 disc 3 general',
-        categories: ['general'],
+        searchText: 'disc-3 disc 3 media',
+        categories: ['media'],
     },
     {
         key: 'disc-album',
         label: 'Disc Album',
-        searchText: 'disc-album disc album general',
-        categories: ['general'],
+        searchText: 'disc-album disc album media',
+        categories: ['media'],
     },
     {
         key: 'divide',
@@ -3466,8 +3467,8 @@ export const ICON_OPTIONS = [
     {
         key: 'dollar-sign',
         label: 'Dollar Sign',
-        searchText: 'dollar-sign dollar sign general',
-        categories: ['general'],
+        searchText: 'dollar-sign dollar sign commerce',
+        categories: ['commerce'],
     },
     {
         key: 'donut',
@@ -3502,14 +3503,14 @@ export const ICON_OPTIONS = [
     {
         key: 'download',
         label: 'Download',
-        searchText: 'download download files',
-        categories: ['files'],
+        searchText: 'download download general',
+        categories: ['general'],
     },
     {
         key: 'download-cloud',
         label: 'Download Cloud',
-        searchText: 'download-cloud download cloud files nature',
-        categories: ['files', 'nature'],
+        searchText: 'download-cloud download cloud nature',
+        categories: ['nature'],
     },
     {
         key: 'drafting-compass',
@@ -3520,8 +3521,8 @@ export const ICON_OPTIONS = [
     {
         key: 'drama',
         label: 'Drama',
-        searchText: 'drama drama general',
-        categories: ['general'],
+        searchText: 'drama drama media',
+        categories: ['media'],
     },
     {
         key: 'dribbble',
@@ -3538,20 +3539,20 @@ export const ICON_OPTIONS = [
     {
         key: 'droplet',
         label: 'Droplet',
-        searchText: 'droplet droplet nature',
-        categories: ['nature'],
+        searchText: 'droplet droplet design',
+        categories: ['design'],
     },
     {
         key: 'droplet-off',
         label: 'Droplet Off',
-        searchText: 'droplet-off droplet off nature',
-        categories: ['nature'],
+        searchText: 'droplet-off droplet off design',
+        categories: ['design'],
     },
     {
         key: 'droplets',
         label: 'Droplets',
-        searchText: 'droplets droplets nature',
-        categories: ['nature'],
+        searchText: 'droplets droplets design nature',
+        categories: ['design', 'nature'],
     },
     {
         key: 'drum',
@@ -3688,14 +3689,14 @@ export const ICON_OPTIONS = [
     {
         key: 'euro',
         label: 'Euro',
-        searchText: 'euro euro general',
-        categories: ['general'],
+        searchText: 'euro euro commerce',
+        categories: ['commerce'],
     },
     {
         key: 'expand',
         label: 'Expand',
-        searchText: 'expand expand arrows',
-        categories: ['arrows'],
+        searchText: 'expand expand general',
+        categories: ['general'],
     },
     {
         key: 'external-link',
@@ -3706,20 +3707,20 @@ export const ICON_OPTIONS = [
     {
         key: 'eye',
         label: 'Eye',
-        searchText: 'eye eye security',
-        categories: ['security'],
+        searchText: 'eye eye general',
+        categories: ['general'],
     },
     {
         key: 'eye-closed',
         label: 'Eye Closed',
-        searchText: 'eye-closed eye closed security',
-        categories: ['security'],
+        searchText: 'eye-closed eye closed general',
+        categories: ['general'],
     },
     {
         key: 'eye-off',
         label: 'Eye Off',
-        searchText: 'eye-off eye off security',
-        categories: ['security'],
+        searchText: 'eye-off eye off general',
+        categories: ['general'],
     },
     {
         key: 'facebook',
@@ -3742,8 +3743,8 @@ export const ICON_OPTIONS = [
     {
         key: 'fast-forward',
         label: 'Fast Forward',
-        searchText: 'fast-forward fast forward arrows',
-        categories: ['arrows'],
+        searchText: 'fast-forward fast forward general',
+        categories: ['general'],
     },
     {
         key: 'feather',
@@ -3784,14 +3785,14 @@ export const ICON_OPTIONS = [
     {
         key: 'file-audio',
         label: 'File Audio',
-        searchText: 'file-audio file audio media files',
-        categories: ['media', 'files'],
+        searchText: 'file-audio file audio files media',
+        categories: ['files', 'media'],
     },
     {
         key: 'file-audio-2',
         label: 'File Audio 2',
-        searchText: 'file-audio-2 file audio 2 media files',
-        categories: ['media', 'files'],
+        searchText: 'file-audio-2 file audio 2 files media',
+        categories: ['files', 'media'],
     },
     {
         key: 'file-axis-3-d',
@@ -3820,14 +3821,14 @@ export const ICON_OPTIONS = [
     {
         key: 'file-bar-chart',
         label: 'File Bar Chart',
-        searchText: 'file-bar-chart file bar chart files charts',
-        categories: ['files', 'charts'],
+        searchText: 'file-bar-chart file bar chart charts files',
+        categories: ['charts', 'files'],
     },
     {
         key: 'file-bar-chart-2',
         label: 'File Bar Chart 2',
-        searchText: 'file-bar-chart-2 file bar chart 2 files charts',
-        categories: ['files', 'charts'],
+        searchText: 'file-bar-chart-2 file bar chart 2 charts files',
+        categories: ['charts', 'files'],
     },
     {
         key: 'file-box',
@@ -3838,27 +3839,27 @@ export const ICON_OPTIONS = [
     {
         key: 'file-chart-column',
         label: 'File Chart Column',
-        searchText: 'file-chart-column file chart column files charts',
-        categories: ['files', 'charts'],
+        searchText: 'file-chart-column file chart column charts files',
+        categories: ['charts', 'files'],
     },
     {
         key: 'file-chart-column-increasing',
         label: 'File Chart Column Increasing',
         searchText:
-            'file-chart-column-increasing file chart column increasing files charts',
-        categories: ['files', 'charts'],
+            'file-chart-column-increasing file chart column increasing charts files',
+        categories: ['charts', 'files'],
     },
     {
         key: 'file-chart-line',
         label: 'File Chart Line',
-        searchText: 'file-chart-line file chart line files charts',
-        categories: ['files', 'charts'],
+        searchText: 'file-chart-line file chart line charts files',
+        categories: ['charts', 'files'],
     },
     {
         key: 'file-chart-pie',
         label: 'File Chart Pie',
-        searchText: 'file-chart-pie file chart pie files charts',
-        categories: ['files', 'charts'],
+        searchText: 'file-chart-pie file chart pie charts files',
+        categories: ['charts', 'files'],
     },
     {
         key: 'file-check',
@@ -3929,14 +3930,14 @@ export const ICON_OPTIONS = [
     {
         key: 'file-heart',
         label: 'File Heart',
-        searchText: 'file-heart file heart users files',
-        categories: ['users', 'files'],
+        searchText: 'file-heart file heart files users',
+        categories: ['files', 'users'],
     },
     {
         key: 'file-image',
         label: 'File Image',
-        searchText: 'file-image file image media files',
-        categories: ['media', 'files'],
+        searchText: 'file-image file image files media',
+        categories: ['files', 'media'],
     },
     {
         key: 'file-input',
@@ -3971,8 +3972,8 @@ export const ICON_OPTIONS = [
     {
         key: 'file-line-chart',
         label: 'File Line Chart',
-        searchText: 'file-line-chart file line chart files charts',
-        categories: ['files', 'charts'],
+        searchText: 'file-line-chart file line chart charts files',
+        categories: ['charts', 'files'],
     },
     {
         key: 'file-lock',
@@ -4001,8 +4002,8 @@ export const ICON_OPTIONS = [
     {
         key: 'file-music',
         label: 'File Music',
-        searchText: 'file-music file music media files',
-        categories: ['media', 'files'],
+        searchText: 'file-music file music files media',
+        categories: ['files', 'media'],
     },
     {
         key: 'file-output',
@@ -4013,20 +4014,20 @@ export const ICON_OPTIONS = [
     {
         key: 'file-pen',
         label: 'File Pen',
-        searchText: 'file-pen file pen files design',
-        categories: ['files', 'design'],
+        searchText: 'file-pen file pen design files',
+        categories: ['design', 'files'],
     },
     {
         key: 'file-pen-line',
         label: 'File Pen Line',
-        searchText: 'file-pen-line file pen line files design charts',
-        categories: ['files', 'design', 'charts'],
+        searchText: 'file-pen-line file pen line design files',
+        categories: ['design', 'files'],
     },
     {
         key: 'file-pie-chart',
         label: 'File Pie Chart',
-        searchText: 'file-pie-chart file pie chart files charts',
-        categories: ['files', 'charts'],
+        searchText: 'file-pie-chart file pie chart charts files',
+        categories: ['charts', 'files'],
     },
     {
         key: 'file-plus',
@@ -4073,8 +4074,8 @@ export const ICON_OPTIONS = [
     {
         key: 'file-sliders',
         label: 'File Sliders',
-        searchText: 'file-sliders file sliders files',
-        categories: ['files'],
+        searchText: 'file-sliders file sliders files media',
+        categories: ['files', 'media'],
     },
     {
         key: 'file-spreadsheet',
@@ -4097,8 +4098,8 @@ export const ICON_OPTIONS = [
     {
         key: 'file-terminal',
         label: 'File Terminal',
-        searchText: 'file-terminal file terminal files text',
-        categories: ['files', 'text'],
+        searchText: 'file-terminal file terminal files',
+        categories: ['files'],
     },
     {
         key: 'file-text',
@@ -4109,14 +4110,14 @@ export const ICON_OPTIONS = [
     {
         key: 'file-type',
         label: 'File Type',
-        searchText: 'file-type file type files design',
-        categories: ['files', 'design'],
+        searchText: 'file-type file type files text',
+        categories: ['files', 'text'],
     },
     {
         key: 'file-type-2',
         label: 'File Type 2',
-        searchText: 'file-type-2 file type 2 files design',
-        categories: ['files', 'design'],
+        searchText: 'file-type-2 file type 2 files text',
+        categories: ['files', 'text'],
     },
     {
         key: 'file-up',
@@ -4127,32 +4128,32 @@ export const ICON_OPTIONS = [
     {
         key: 'file-user',
         label: 'File User',
-        searchText: 'file-user file user users files',
-        categories: ['users', 'files'],
+        searchText: 'file-user file user files users',
+        categories: ['files', 'users'],
     },
     {
         key: 'file-video',
         label: 'File Video',
-        searchText: 'file-video file video media files',
-        categories: ['media', 'files'],
+        searchText: 'file-video file video files media',
+        categories: ['files', 'media'],
     },
     {
         key: 'file-video-2',
         label: 'File Video 2',
-        searchText: 'file-video-2 file video 2 media files',
-        categories: ['media', 'files'],
+        searchText: 'file-video-2 file video 2 files media',
+        categories: ['files', 'media'],
     },
     {
         key: 'file-volume',
         label: 'File Volume',
-        searchText: 'file-volume file volume media files',
-        categories: ['media', 'files'],
+        searchText: 'file-volume file volume files media',
+        categories: ['files', 'media'],
     },
     {
         key: 'file-volume-2',
         label: 'File Volume 2',
-        searchText: 'file-volume-2 file volume 2 media files',
-        categories: ['media', 'files'],
+        searchText: 'file-volume-2 file volume 2 files media',
+        categories: ['files', 'media'],
     },
     {
         key: 'file-warning',
@@ -4199,8 +4200,8 @@ export const ICON_OPTIONS = [
     {
         key: 'fingerprint',
         label: 'Fingerprint',
-        searchText: 'fingerprint fingerprint users',
-        categories: ['users'],
+        searchText: 'fingerprint fingerprint security',
+        categories: ['security'],
     },
     {
         key: 'fire-extinguisher',
@@ -4253,14 +4254,14 @@ export const ICON_OPTIONS = [
     {
         key: 'flame',
         label: 'Flame',
-        searchText: 'flame flame nature',
-        categories: ['nature'],
+        searchText: 'flame flame general',
+        categories: ['general'],
     },
     {
         key: 'flame-kindling',
         label: 'Flame Kindling',
-        searchText: 'flame-kindling flame kindling nature',
-        categories: ['nature'],
+        searchText: 'flame-kindling flame kindling general',
+        categories: ['general'],
     },
     {
         key: 'flashlight',
@@ -4331,218 +4332,218 @@ export const ICON_OPTIONS = [
     {
         key: 'focus',
         label: 'Focus',
-        searchText: 'focus focus media',
-        categories: ['media'],
+        searchText: 'focus focus general',
+        categories: ['general'],
     },
     {
         key: 'fold-horizontal',
         label: 'Fold Horizontal',
-        searchText: 'fold-horizontal fold horizontal arrows',
-        categories: ['arrows'],
+        searchText: 'fold-horizontal fold horizontal general',
+        categories: ['general'],
     },
     {
         key: 'fold-vertical',
         label: 'Fold Vertical',
-        searchText: 'fold-vertical fold vertical arrows',
-        categories: ['arrows'],
+        searchText: 'fold-vertical fold vertical general',
+        categories: ['general'],
     },
     {
         key: 'folder',
         label: 'Folder',
-        searchText: 'folder folder arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder folder files',
+        categories: ['files'],
     },
     {
         key: 'folder-archive',
         label: 'Folder Archive',
-        searchText: 'folder-archive folder archive arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-archive folder archive files',
+        categories: ['files'],
     },
     {
         key: 'folder-check',
         label: 'Folder Check',
-        searchText: 'folder-check folder check arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-check folder check files',
+        categories: ['files'],
     },
     {
         key: 'folder-clock',
         label: 'Folder Clock',
-        searchText: 'folder-clock folder clock arrows files security time',
-        categories: ['arrows', 'files', 'security', 'time'],
+        searchText: 'folder-clock folder clock files security time',
+        categories: ['files', 'security', 'time'],
     },
     {
         key: 'folder-closed',
         label: 'Folder Closed',
-        searchText: 'folder-closed folder closed arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-closed folder closed files',
+        categories: ['files'],
     },
     {
         key: 'folder-code',
         label: 'Folder Code',
-        searchText: 'folder-code folder code arrows files text',
-        categories: ['arrows', 'files', 'text'],
+        searchText: 'folder-code folder code files text',
+        categories: ['files', 'text'],
     },
     {
         key: 'folder-cog',
         label: 'Folder Cog',
-        searchText: 'folder-cog folder cog arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-cog folder cog files',
+        categories: ['files'],
     },
     {
         key: 'folder-cog-2',
         label: 'Folder Cog 2',
-        searchText: 'folder-cog-2 folder cog 2 arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-cog-2 folder cog 2 files',
+        categories: ['files'],
     },
     {
         key: 'folder-dot',
         label: 'Folder Dot',
-        searchText: 'folder-dot folder dot arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-dot folder dot files',
+        categories: ['files'],
     },
     {
         key: 'folder-down',
         label: 'Folder Down',
-        searchText: 'folder-down folder down arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-down folder down files',
+        categories: ['files'],
     },
     {
         key: 'folder-edit',
         label: 'Folder Edit',
-        searchText: 'folder-edit folder edit arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-edit folder edit files',
+        categories: ['files'],
     },
     {
         key: 'folder-git',
         label: 'Folder Git',
-        searchText: 'folder-git folder git arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-git folder git files',
+        categories: ['files'],
     },
     {
         key: 'folder-git-2',
         label: 'Folder Git 2',
-        searchText: 'folder-git-2 folder git 2 arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-git-2 folder git 2 files',
+        categories: ['files'],
     },
     {
         key: 'folder-heart',
         label: 'Folder Heart',
-        searchText: 'folder-heart folder heart arrows users files',
-        categories: ['arrows', 'users', 'files'],
+        searchText: 'folder-heart folder heart files users',
+        categories: ['files', 'users'],
     },
     {
         key: 'folder-input',
         label: 'Folder Input',
-        searchText: 'folder-input folder input arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-input folder input files',
+        categories: ['files'],
     },
     {
         key: 'folder-kanban',
         label: 'Folder Kanban',
-        searchText: 'folder-kanban folder kanban arrows files charts security',
-        categories: ['arrows', 'files', 'charts', 'security'],
+        searchText: 'folder-kanban folder kanban charts files security',
+        categories: ['charts', 'files', 'security'],
     },
     {
         key: 'folder-key',
         label: 'Folder Key',
-        searchText: 'folder-key folder key arrows files security',
-        categories: ['arrows', 'files', 'security'],
+        searchText: 'folder-key folder key files security',
+        categories: ['files', 'security'],
     },
     {
         key: 'folder-lock',
         label: 'Folder Lock',
-        searchText: 'folder-lock folder lock arrows files security',
-        categories: ['arrows', 'files', 'security'],
+        searchText: 'folder-lock folder lock files security',
+        categories: ['files', 'security'],
     },
     {
         key: 'folder-minus',
         label: 'Folder Minus',
-        searchText: 'folder-minus folder minus arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-minus folder minus files',
+        categories: ['files'],
     },
     {
         key: 'folder-open',
         label: 'Folder Open',
-        searchText: 'folder-open folder open arrows files design',
-        categories: ['arrows', 'files', 'design'],
+        searchText: 'folder-open folder open design files',
+        categories: ['design', 'files'],
     },
     {
         key: 'folder-open-dot',
         label: 'Folder Open Dot',
-        searchText: 'folder-open-dot folder open dot arrows files design',
-        categories: ['arrows', 'files', 'design'],
+        searchText: 'folder-open-dot folder open dot design files',
+        categories: ['design', 'files'],
     },
     {
         key: 'folder-output',
         label: 'Folder Output',
-        searchText: 'folder-output folder output arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-output folder output files',
+        categories: ['files'],
     },
     {
         key: 'folder-pen',
         label: 'Folder Pen',
-        searchText: 'folder-pen folder pen arrows files design',
-        categories: ['arrows', 'files', 'design'],
+        searchText: 'folder-pen folder pen design files',
+        categories: ['design', 'files'],
     },
     {
         key: 'folder-plus',
         label: 'Folder Plus',
-        searchText: 'folder-plus folder plus arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-plus folder plus files',
+        categories: ['files'],
     },
     {
         key: 'folder-root',
         label: 'Folder Root',
-        searchText: 'folder-root folder root arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-root folder root files',
+        categories: ['files'],
     },
     {
         key: 'folder-search',
         label: 'Folder Search',
-        searchText: 'folder-search folder search arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-search folder search files',
+        categories: ['files'],
     },
     {
         key: 'folder-search-2',
         label: 'Folder Search 2',
-        searchText: 'folder-search-2 folder search 2 arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-search-2 folder search 2 files',
+        categories: ['files'],
     },
     {
         key: 'folder-symlink',
         label: 'Folder Symlink',
-        searchText: 'folder-symlink folder symlink arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-symlink folder symlink files',
+        categories: ['files'],
     },
     {
         key: 'folder-sync',
         label: 'Folder Sync',
-        searchText: 'folder-sync folder sync arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-sync folder sync files',
+        categories: ['files'],
     },
     {
         key: 'folder-tree',
         label: 'Folder Tree',
-        searchText: 'folder-tree folder tree arrows files nature',
-        categories: ['arrows', 'files', 'nature'],
+        searchText: 'folder-tree folder tree files nature',
+        categories: ['files', 'nature'],
     },
     {
         key: 'folder-up',
         label: 'Folder Up',
-        searchText: 'folder-up folder up arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-up folder up files',
+        categories: ['files'],
     },
     {
         key: 'folder-x',
         label: 'Folder X',
-        searchText: 'folder-x folder x arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folder-x folder x files',
+        categories: ['files'],
     },
     {
         key: 'folders',
         label: 'Folders',
-        searchText: 'folders folders arrows files',
-        categories: ['arrows', 'files'],
+        searchText: 'folders folders files',
+        categories: ['files'],
     },
     {
         key: 'footprints',
@@ -4577,8 +4578,8 @@ export const ICON_OPTIONS = [
     {
         key: 'forward',
         label: 'Forward',
-        searchText: 'forward forward arrows',
-        categories: ['arrows'],
+        searchText: 'forward forward general',
+        categories: ['general'],
     },
     {
         key: 'frame',
@@ -4649,14 +4650,14 @@ export const ICON_OPTIONS = [
     {
         key: 'gamepad',
         label: 'Gamepad',
-        searchText: 'gamepad gamepad general',
-        categories: ['general'],
+        searchText: 'gamepad gamepad devices',
+        categories: ['devices'],
     },
     {
         key: 'gamepad-2',
         label: 'Gamepad 2',
-        searchText: 'gamepad-2 gamepad 2 general',
-        categories: ['general'],
+        searchText: 'gamepad-2 gamepad 2 devices',
+        categories: ['devices'],
     },
     {
         key: 'gantt-chart',
@@ -4673,14 +4674,14 @@ export const ICON_OPTIONS = [
     {
         key: 'gauge',
         label: 'Gauge',
-        searchText: 'gauge gauge charts',
-        categories: ['charts'],
+        searchText: 'gauge gauge general',
+        categories: ['general'],
     },
     {
         key: 'gauge-circle',
         label: 'Gauge Circle',
-        searchText: 'gauge-circle gauge circle charts',
-        categories: ['charts'],
+        searchText: 'gauge-circle gauge circle general',
+        categories: ['general'],
     },
     {
         key: 'gavel',
@@ -4757,8 +4758,8 @@ export const ICON_OPTIONS = [
     {
         key: 'git-graph',
         label: 'Git Graph',
-        searchText: 'git-graph git graph charts',
-        categories: ['charts'],
+        searchText: 'git-graph git graph general',
+        categories: ['general'],
     },
     {
         key: 'git-merge',
@@ -4842,8 +4843,8 @@ export const ICON_OPTIONS = [
     {
         key: 'globe-lock',
         label: 'Globe Lock',
-        searchText: 'globe-lock globe lock travel security',
-        categories: ['travel', 'security'],
+        searchText: 'globe-lock globe lock security travel',
+        categories: ['security', 'travel'],
     },
     {
         key: 'goal',
@@ -4986,8 +4987,8 @@ export const ICON_OPTIONS = [
     {
         key: 'hand-coins',
         label: 'Hand Coins',
-        searchText: 'hand-coins hand coins users commerce',
-        categories: ['users', 'commerce'],
+        searchText: 'hand-coins hand coins commerce users',
+        categories: ['commerce', 'users'],
     },
     {
         key: 'hand-heart',
@@ -5028,14 +5029,14 @@ export const ICON_OPTIONS = [
     {
         key: 'hard-drive-download',
         label: 'Hard Drive Download',
-        searchText: 'hard-drive-download hard drive download files devices',
-        categories: ['files', 'devices'],
+        searchText: 'hard-drive-download hard drive download devices',
+        categories: ['devices'],
     },
     {
         key: 'hard-drive-upload',
         label: 'Hard Drive Upload',
-        searchText: 'hard-drive-upload hard drive upload files devices',
-        categories: ['files', 'devices'],
+        searchText: 'hard-drive-upload hard drive upload devices',
+        categories: ['devices'],
     },
     {
         key: 'hard-hat',
@@ -5106,20 +5107,20 @@ export const ICON_OPTIONS = [
     {
         key: 'headphone-off',
         label: 'Headphone Off',
-        searchText: 'headphone-off headphone off devices',
-        categories: ['devices'],
+        searchText: 'headphone-off headphone off communication',
+        categories: ['communication'],
     },
     {
         key: 'headphones',
         label: 'Headphones',
-        searchText: 'headphones headphones devices',
-        categories: ['devices'],
+        searchText: 'headphones headphones communication devices',
+        categories: ['communication', 'devices'],
     },
     {
         key: 'headset',
         label: 'Headset',
-        searchText: 'headset headset general',
-        categories: ['general'],
+        searchText: 'headset headset devices',
+        categories: ['devices'],
     },
     {
         key: 'heart',
@@ -5184,8 +5185,8 @@ export const ICON_OPTIONS = [
     {
         key: 'history',
         label: 'History',
-        searchText: 'history history time',
-        categories: ['time'],
+        searchText: 'history history general',
+        categories: ['general'],
     },
     {
         key: 'home',
@@ -5274,8 +5275,8 @@ export const ICON_OPTIONS = [
     {
         key: 'id-card',
         label: 'Id Card',
-        searchText: 'id-card id card users travel',
-        categories: ['users', 'travel'],
+        searchText: 'id-card id card travel',
+        categories: ['travel'],
     },
     {
         key: 'image',
@@ -5346,26 +5347,26 @@ export const ICON_OPTIONS = [
     {
         key: 'indent',
         label: 'Indent',
-        searchText: 'indent indent text',
-        categories: ['text'],
+        searchText: 'indent indent general',
+        categories: ['general'],
     },
     {
         key: 'indent-decrease',
         label: 'Indent Decrease',
-        searchText: 'indent-decrease indent decrease text',
-        categories: ['text'],
+        searchText: 'indent-decrease indent decrease general',
+        categories: ['general'],
     },
     {
         key: 'indent-increase',
         label: 'Indent Increase',
-        searchText: 'indent-increase indent increase text',
-        categories: ['text'],
+        searchText: 'indent-increase indent increase general',
+        categories: ['general'],
     },
     {
         key: 'indian-rupee',
         label: 'Indian Rupee',
-        searchText: 'indian-rupee indian rupee general',
-        categories: ['general'],
+        searchText: 'indian-rupee indian rupee commerce',
+        categories: ['commerce'],
     },
     {
         key: 'infinity',
@@ -5382,14 +5383,14 @@ export const ICON_OPTIONS = [
     {
         key: 'inspect',
         label: 'Inspect',
-        searchText: 'inspect inspect general',
-        categories: ['general'],
+        searchText: 'inspect inspect design',
+        categories: ['design'],
     },
     {
         key: 'inspection-panel',
         label: 'Inspection Panel',
-        searchText: 'inspection-panel inspection panel general',
-        categories: ['general'],
+        searchText: 'inspection-panel inspection panel design',
+        categories: ['design'],
     },
     {
         key: 'instagram',
@@ -5406,20 +5407,20 @@ export const ICON_OPTIONS = [
     {
         key: 'iteration-ccw',
         label: 'Iteration Ccw',
-        searchText: 'iteration-ccw iteration ccw general',
-        categories: ['general'],
+        searchText: 'iteration-ccw iteration ccw arrows nature',
+        categories: ['arrows', 'nature'],
     },
     {
         key: 'iteration-cw',
         label: 'Iteration Cw',
-        searchText: 'iteration-cw iteration cw general',
-        categories: ['general'],
+        searchText: 'iteration-cw iteration cw arrows nature',
+        categories: ['arrows', 'nature'],
     },
     {
         key: 'japanese-yen',
         label: 'Japanese Yen',
-        searchText: 'japanese-yen japanese yen general',
-        categories: ['general'],
+        searchText: 'japanese-yen japanese yen commerce',
+        categories: ['commerce'],
     },
     {
         key: 'joystick',
@@ -5442,8 +5443,9 @@ export const ICON_OPTIONS = [
     {
         key: 'kanban-square-dashed',
         label: 'Kanban Square Dashed',
-        searchText: 'kanban-square-dashed kanban square dashed charts security',
-        categories: ['charts', 'security'],
+        searchText:
+            'kanban-square-dashed kanban square dashed charts design security',
+        categories: ['charts', 'design', 'security'],
     },
     {
         key: 'key',
@@ -5472,8 +5474,8 @@ export const ICON_OPTIONS = [
     {
         key: 'keyboard-music',
         label: 'Keyboard Music',
-        searchText: 'keyboard-music keyboard music media devices security',
-        categories: ['media', 'devices', 'security'],
+        searchText: 'keyboard-music keyboard music devices media security',
+        categories: ['devices', 'media', 'security'],
     },
     {
         key: 'keyboard-off',
@@ -5526,8 +5528,8 @@ export const ICON_OPTIONS = [
     {
         key: 'landmark',
         label: 'Landmark',
-        searchText: 'landmark landmark travel',
-        categories: ['travel'],
+        searchText: 'landmark landmark general',
+        categories: ['general'],
     },
     {
         key: 'languages',
@@ -5928,8 +5930,8 @@ export const ICON_OPTIONS = [
     {
         key: 'luggage',
         label: 'Luggage',
-        searchText: 'luggage luggage travel',
-        categories: ['travel'],
+        searchText: 'luggage luggage general',
+        categories: ['general'],
     },
     {
         key: 'm-square',
@@ -6132,14 +6134,14 @@ export const ICON_OPTIONS = [
     {
         key: 'megaphone',
         label: 'Megaphone',
-        searchText: 'megaphone megaphone devices communication',
-        categories: ['devices', 'communication'],
+        searchText: 'megaphone megaphone communication',
+        categories: ['communication'],
     },
     {
         key: 'megaphone-off',
         label: 'Megaphone Off',
-        searchText: 'megaphone-off megaphone off devices communication',
-        categories: ['devices', 'communication'],
+        searchText: 'megaphone-off megaphone off communication',
+        categories: ['communication'],
     },
     {
         key: 'meh',
@@ -6150,8 +6152,8 @@ export const ICON_OPTIONS = [
     {
         key: 'memory-stick',
         label: 'Memory Stick',
-        searchText: 'memory-stick memory stick general',
-        categories: ['general'],
+        searchText: 'memory-stick memory stick devices',
+        categories: ['devices'],
     },
     {
         key: 'menu',
@@ -6194,8 +6196,8 @@ export const ICON_OPTIONS = [
         key: 'message-circle-heart',
         label: 'Message Circle Heart',
         searchText:
-            'message-circle-heart message circle heart users communication',
-        categories: ['users', 'communication'],
+            'message-circle-heart message circle heart communication users',
+        categories: ['communication', 'users'],
     },
     {
         key: 'message-circle-more',
@@ -6225,9 +6227,8 @@ export const ICON_OPTIONS = [
     {
         key: 'message-circle-reply',
         label: 'Message Circle Reply',
-        searchText:
-            'message-circle-reply message circle reply arrows communication',
-        categories: ['arrows', 'communication'],
+        searchText: 'message-circle-reply message circle reply communication',
+        categories: ['communication'],
     },
     {
         key: 'message-circle-warning',
@@ -6258,8 +6259,9 @@ export const ICON_OPTIONS = [
     {
         key: 'message-square-dashed',
         label: 'Message Square Dashed',
-        searchText: 'message-square-dashed message square dashed communication',
-        categories: ['communication'],
+        searchText:
+            'message-square-dashed message square dashed communication design',
+        categories: ['communication', 'design'],
     },
     {
         key: 'message-square-diff',
@@ -6277,8 +6279,8 @@ export const ICON_OPTIONS = [
         key: 'message-square-heart',
         label: 'Message Square Heart',
         searchText:
-            'message-square-heart message square heart users communication',
-        categories: ['users', 'communication'],
+            'message-square-heart message square heart communication users',
+        categories: ['communication', 'users'],
     },
     {
         key: 'message-square-lock',
@@ -6315,9 +6317,8 @@ export const ICON_OPTIONS = [
     {
         key: 'message-square-reply',
         label: 'Message Square Reply',
-        searchText:
-            'message-square-reply message square reply arrows communication',
-        categories: ['arrows', 'communication'],
+        searchText: 'message-square-reply message square reply communication',
+        categories: ['communication'],
     },
     {
         key: 'message-square-share',
@@ -6354,44 +6355,44 @@ export const ICON_OPTIONS = [
     {
         key: 'mic',
         label: 'Mic',
-        searchText: 'mic mic media',
-        categories: ['media'],
+        searchText: 'mic mic devices',
+        categories: ['devices'],
     },
     {
         key: 'mic-2',
         label: 'Mic 2',
-        searchText: 'mic-2 mic 2 media',
-        categories: ['media'],
+        searchText: 'mic-2 mic 2 devices',
+        categories: ['devices'],
     },
     {
         key: 'mic-off',
         label: 'Mic Off',
-        searchText: 'mic-off mic off media',
-        categories: ['media'],
+        searchText: 'mic-off mic off devices',
+        categories: ['devices'],
     },
     {
         key: 'mic-vocal',
         label: 'Mic Vocal',
-        searchText: 'mic-vocal mic vocal media',
-        categories: ['media'],
+        searchText: 'mic-vocal mic vocal devices',
+        categories: ['devices'],
     },
     {
         key: 'microchip',
         label: 'Microchip',
-        searchText: 'microchip microchip media',
-        categories: ['media'],
+        searchText: 'microchip microchip devices',
+        categories: ['devices'],
     },
     {
         key: 'microscope',
         label: 'Microscope',
-        searchText: 'microscope microscope media',
-        categories: ['media'],
+        searchText: 'microscope microscope devices',
+        categories: ['devices'],
     },
     {
         key: 'microwave',
         label: 'Microwave',
-        searchText: 'microwave microwave media',
-        categories: ['media'],
+        searchText: 'microwave microwave devices',
+        categories: ['devices'],
     },
     {
         key: 'milestone',
@@ -6480,20 +6481,21 @@ export const ICON_OPTIONS = [
     {
         key: 'monitor-pause',
         label: 'Monitor Pause',
-        searchText: 'monitor-pause monitor pause media devices',
-        categories: ['media', 'devices'],
+        searchText: 'monitor-pause monitor pause devices media',
+        categories: ['devices', 'media'],
     },
     {
         key: 'monitor-play',
         label: 'Monitor Play',
-        searchText: 'monitor-play monitor play media devices',
-        categories: ['media', 'devices'],
+        searchText: 'monitor-play monitor play devices media',
+        categories: ['devices', 'media'],
     },
     {
         key: 'monitor-smartphone',
         label: 'Monitor Smartphone',
-        searchText: 'monitor-smartphone monitor smartphone devices',
-        categories: ['devices'],
+        searchText:
+            'monitor-smartphone monitor smartphone communication devices',
+        categories: ['communication', 'devices'],
     },
     {
         key: 'monitor-speaker',
@@ -6595,8 +6597,8 @@ export const ICON_OPTIONS = [
         key: 'mouse-pointer-square-dashed',
         label: 'Mouse Pointer Square Dashed',
         searchText:
-            'mouse-pointer-square-dashed mouse pointer square dashed devices',
-        categories: ['devices'],
+            'mouse-pointer-square-dashed mouse pointer square dashed design devices',
+        categories: ['design', 'devices'],
     },
     {
         key: 'move',
@@ -6745,8 +6747,8 @@ export const ICON_OPTIONS = [
     {
         key: 'newspaper',
         label: 'Newspaper',
-        searchText: 'newspaper newspaper general',
-        categories: ['general'],
+        searchText: 'newspaper newspaper files',
+        categories: ['files'],
     },
     {
         key: 'nfc',
@@ -6769,8 +6771,8 @@ export const ICON_OPTIONS = [
     {
         key: 'notebook-pen',
         label: 'Notebook Pen',
-        searchText: 'notebook-pen notebook pen files design',
-        categories: ['files', 'design'],
+        searchText: 'notebook-pen notebook pen design files',
+        categories: ['design', 'files'],
     },
     {
         key: 'notebook-tabs',
@@ -6787,14 +6789,14 @@ export const ICON_OPTIONS = [
     {
         key: 'notepad-text',
         label: 'Notepad Text',
-        searchText: 'notepad-text notepad text text',
-        categories: ['text'],
+        searchText: 'notepad-text notepad text files text',
+        categories: ['files', 'text'],
     },
     {
         key: 'notepad-text-dashed',
         label: 'Notepad Text Dashed',
-        searchText: 'notepad-text-dashed notepad text dashed text',
-        categories: ['text'],
+        searchText: 'notepad-text-dashed notepad text dashed files text',
+        categories: ['files', 'text'],
     },
     {
         key: 'nut',
@@ -6829,8 +6831,8 @@ export const ICON_OPTIONS = [
     {
         key: 'octagon-pause',
         label: 'Octagon Pause',
-        searchText: 'octagon-pause octagon pause media commerce',
-        categories: ['media', 'commerce'],
+        searchText: 'octagon-pause octagon pause commerce media',
+        categories: ['commerce', 'media'],
     },
     {
         key: 'octagon-x',
@@ -7171,20 +7173,20 @@ export const ICON_OPTIONS = [
     {
         key: 'pause-octagon',
         label: 'Pause Octagon',
-        searchText: 'pause-octagon pause octagon media commerce',
-        categories: ['media', 'commerce'],
+        searchText: 'pause-octagon pause octagon commerce media',
+        categories: ['commerce', 'media'],
     },
     {
         key: 'paw-print',
         label: 'Paw Print',
-        searchText: 'paw-print paw print general',
-        categories: ['general'],
+        searchText: 'paw-print paw print nature',
+        categories: ['nature'],
     },
     {
         key: 'pc-case',
         label: 'Pc Case',
-        searchText: 'pc-case pc case text',
-        categories: ['text'],
+        searchText: 'pc-case pc case devices',
+        categories: ['devices'],
     },
     {
         key: 'pen',
@@ -7201,8 +7203,8 @@ export const ICON_OPTIONS = [
     {
         key: 'pen-line',
         label: 'Pen Line',
-        searchText: 'pen-line pen line design charts',
-        categories: ['design', 'charts'],
+        searchText: 'pen-line pen line design',
+        categories: ['design'],
     },
     {
         key: 'pen-off',
@@ -7231,8 +7233,8 @@ export const ICON_OPTIONS = [
     {
         key: 'pencil-line',
         label: 'Pencil Line',
-        searchText: 'pencil-line pencil line design charts',
-        categories: ['design', 'charts'],
+        searchText: 'pencil-line pencil line design',
+        categories: ['design'],
     },
     {
         key: 'pencil-off',
@@ -7291,44 +7293,44 @@ export const ICON_OPTIONS = [
     {
         key: 'phone',
         label: 'Phone',
-        searchText: 'phone phone devices',
-        categories: ['devices'],
+        searchText: 'phone phone communication',
+        categories: ['communication'],
     },
     {
         key: 'phone-call',
         label: 'Phone Call',
-        searchText: 'phone-call phone call devices communication',
-        categories: ['devices', 'communication'],
+        searchText: 'phone-call phone call communication',
+        categories: ['communication'],
     },
     {
         key: 'phone-forwarded',
         label: 'Phone Forwarded',
-        searchText: 'phone-forwarded phone forwarded arrows devices',
-        categories: ['arrows', 'devices'],
+        searchText: 'phone-forwarded phone forwarded communication',
+        categories: ['communication'],
     },
     {
         key: 'phone-incoming',
         label: 'Phone Incoming',
-        searchText: 'phone-incoming phone incoming devices',
-        categories: ['devices'],
+        searchText: 'phone-incoming phone incoming communication',
+        categories: ['communication'],
     },
     {
         key: 'phone-missed',
         label: 'Phone Missed',
-        searchText: 'phone-missed phone missed devices',
-        categories: ['devices'],
+        searchText: 'phone-missed phone missed communication',
+        categories: ['communication'],
     },
     {
         key: 'phone-off',
         label: 'Phone Off',
-        searchText: 'phone-off phone off devices',
-        categories: ['devices'],
+        searchText: 'phone-off phone off communication',
+        categories: ['communication'],
     },
     {
         key: 'phone-outgoing',
         label: 'Phone Outgoing',
-        searchText: 'phone-outgoing phone outgoing devices',
-        categories: ['devices'],
+        searchText: 'phone-outgoing phone outgoing communication',
+        categories: ['communication'],
     },
     {
         key: 'pi',
@@ -7375,32 +7377,32 @@ export const ICON_OPTIONS = [
     {
         key: 'piggy-bank',
         label: 'Piggy Bank',
-        searchText: 'piggy-bank piggy bank commerce security',
-        categories: ['commerce', 'security'],
+        searchText: 'piggy-bank piggy bank security',
+        categories: ['security'],
     },
     {
         key: 'pilcrow',
         label: 'Pilcrow',
-        searchText: 'pilcrow pilcrow general',
-        categories: ['general'],
+        searchText: 'pilcrow pilcrow text',
+        categories: ['text'],
     },
     {
         key: 'pilcrow-left',
         label: 'Pilcrow Left',
-        searchText: 'pilcrow-left pilcrow left general',
-        categories: ['general'],
+        searchText: 'pilcrow-left pilcrow left text',
+        categories: ['text'],
     },
     {
         key: 'pilcrow-right',
         label: 'Pilcrow Right',
-        searchText: 'pilcrow-right pilcrow right general',
-        categories: ['general'],
+        searchText: 'pilcrow-right pilcrow right text',
+        categories: ['text'],
     },
     {
         key: 'pilcrow-square',
         label: 'Pilcrow Square',
-        searchText: 'pilcrow-square pilcrow square general',
-        categories: ['general'],
+        searchText: 'pilcrow-square pilcrow square text',
+        categories: ['text'],
     },
     {
         key: 'pill',
@@ -7561,8 +7563,8 @@ export const ICON_OPTIONS = [
     {
         key: 'pound-sterling',
         label: 'Pound Sterling',
-        searchText: 'pound-sterling pound sterling general',
-        categories: ['general'],
+        searchText: 'pound-sterling pound sterling commerce',
+        categories: ['commerce'],
     },
     {
         key: 'power',
@@ -7609,8 +7611,8 @@ export const ICON_OPTIONS = [
     {
         key: 'projector',
         label: 'Projector',
-        searchText: 'projector projector general',
-        categories: ['general'],
+        searchText: 'projector projector devices',
+        categories: ['devices'],
     },
     {
         key: 'proportions',
@@ -7633,8 +7635,8 @@ export const ICON_OPTIONS = [
     {
         key: 'qr-code',
         label: 'Qr Code',
-        searchText: 'qr-code qr code security text',
-        categories: ['security', 'text'],
+        searchText: 'qr-code qr code text',
+        categories: ['text'],
     },
     {
         key: 'quote',
@@ -7669,20 +7671,20 @@ export const ICON_OPTIONS = [
     {
         key: 'radio',
         label: 'Radio',
-        searchText: 'radio radio media',
-        categories: ['media'],
+        searchText: 'radio radio devices',
+        categories: ['devices'],
     },
     {
         key: 'radio-receiver',
         label: 'Radio Receiver',
-        searchText: 'radio-receiver radio receiver media',
-        categories: ['media'],
+        searchText: 'radio-receiver radio receiver devices',
+        categories: ['devices'],
     },
     {
         key: 'radio-tower',
         label: 'Radio Tower',
-        searchText: 'radio-tower radio tower media',
-        categories: ['media'],
+        searchText: 'radio-tower radio tower devices',
+        categories: ['devices'],
     },
     {
         key: 'radius',
@@ -7693,26 +7695,26 @@ export const ICON_OPTIONS = [
     {
         key: 'rail-symbol',
         label: 'Rail Symbol',
-        searchText: 'rail-symbol rail symbol general',
-        categories: ['general'],
+        searchText: 'rail-symbol rail symbol travel',
+        categories: ['travel'],
     },
     {
         key: 'rainbow',
         label: 'Rainbow',
-        searchText: 'rainbow rainbow general',
-        categories: ['general'],
+        searchText: 'rainbow rainbow nature',
+        categories: ['nature'],
     },
     {
         key: 'rat',
         label: 'Rat',
-        searchText: 'rat rat general',
-        categories: ['general'],
+        searchText: 'rat rat nature',
+        categories: ['nature'],
     },
     {
         key: 'ratio',
         label: 'Ratio',
-        searchText: 'ratio ratio general',
-        categories: ['general'],
+        searchText: 'ratio ratio nature',
+        categories: ['nature'],
     },
     {
         key: 'receipt',
@@ -7837,8 +7839,8 @@ export const ICON_OPTIONS = [
     {
         key: 'refrigerator',
         label: 'Refrigerator',
-        searchText: 'refrigerator refrigerator general',
-        categories: ['general'],
+        searchText: 'refrigerator refrigerator nature',
+        categories: ['nature'],
     },
     {
         key: 'regex',
@@ -7885,14 +7887,14 @@ export const ICON_OPTIONS = [
     {
         key: 'reply',
         label: 'Reply',
-        searchText: 'reply reply arrows',
-        categories: ['arrows'],
+        searchText: 'reply reply general',
+        categories: ['general'],
     },
     {
         key: 'reply-all',
         label: 'Reply All',
-        searchText: 'reply-all reply all arrows',
-        categories: ['arrows'],
+        searchText: 'reply-all reply all general',
+        categories: ['general'],
     },
     {
         key: 'rewind',
@@ -7939,26 +7941,26 @@ export const ICON_OPTIONS = [
     {
         key: 'rotate-ccw',
         label: 'Rotate Ccw',
-        searchText: 'rotate-ccw rotate ccw general',
-        categories: ['general'],
+        searchText: 'rotate-ccw rotate ccw arrows',
+        categories: ['arrows'],
     },
     {
         key: 'rotate-ccw-square',
         label: 'Rotate Ccw Square',
-        searchText: 'rotate-ccw-square rotate ccw square general',
-        categories: ['general'],
+        searchText: 'rotate-ccw-square rotate ccw square arrows',
+        categories: ['arrows'],
     },
     {
         key: 'rotate-cw',
         label: 'Rotate Cw',
-        searchText: 'rotate-cw rotate cw general',
-        categories: ['general'],
+        searchText: 'rotate-cw rotate cw arrows',
+        categories: ['arrows'],
     },
     {
         key: 'rotate-cw-square',
         label: 'Rotate Cw Square',
-        searchText: 'rotate-cw-square rotate cw square general',
-        categories: ['general'],
+        searchText: 'rotate-cw-square rotate cw square arrows',
+        categories: ['arrows'],
     },
     {
         key: 'route',
@@ -8011,20 +8013,20 @@ export const ICON_OPTIONS = [
     {
         key: 'ruler',
         label: 'Ruler',
-        searchText: 'ruler ruler general',
-        categories: ['general'],
+        searchText: 'ruler ruler design',
+        categories: ['design'],
     },
     {
         key: 'russian-ruble',
         label: 'Russian Ruble',
-        searchText: 'russian-ruble russian ruble general',
-        categories: ['general'],
+        searchText: 'russian-ruble russian ruble commerce',
+        categories: ['commerce'],
     },
     {
         key: 'sailboat',
         label: 'Sailboat',
-        searchText: 'sailboat sailboat general',
-        categories: ['general'],
+        searchText: 'sailboat sailboat travel',
+        categories: ['travel'],
     },
     {
         key: 'salad',
@@ -8041,14 +8043,14 @@ export const ICON_OPTIONS = [
     {
         key: 'satellite',
         label: 'Satellite',
-        searchText: 'satellite satellite general',
-        categories: ['general'],
+        searchText: 'satellite satellite devices',
+        categories: ['devices'],
     },
     {
         key: 'satellite-dish',
         label: 'Satellite Dish',
-        searchText: 'satellite-dish satellite dish general',
-        categories: ['general'],
+        searchText: 'satellite-dish satellite dish devices',
+        categories: ['devices'],
     },
     {
         key: 'save',
@@ -8083,8 +8085,8 @@ export const ICON_OPTIONS = [
     {
         key: 'scale-3d',
         label: 'Scale 3d',
-        searchText: 'scale-3d scale 3d general',
-        categories: ['general'],
+        searchText: 'scale-3d scale 3d design',
+        categories: ['design'],
     },
     {
         key: 'scaling',
@@ -8101,8 +8103,8 @@ export const ICON_OPTIONS = [
     {
         key: 'scan-barcode',
         label: 'Scan Barcode',
-        searchText: 'scan-barcode scan barcode charts security text',
-        categories: ['charts', 'security', 'text'],
+        searchText: 'scan-barcode scan barcode security text',
+        categories: ['security', 'text'],
     },
     {
         key: 'scan-eye',
@@ -8119,14 +8121,14 @@ export const ICON_OPTIONS = [
     {
         key: 'scan-heart',
         label: 'Scan Heart',
-        searchText: 'scan-heart scan heart users security',
-        categories: ['users', 'security'],
+        searchText: 'scan-heart scan heart security users',
+        categories: ['security', 'users'],
     },
     {
         key: 'scan-line',
         label: 'Scan Line',
-        searchText: 'scan-line scan line charts security',
-        categories: ['charts', 'security'],
+        searchText: 'scan-line scan line security',
+        categories: ['security'],
     },
     {
         key: 'scan-qr-code',
@@ -8167,27 +8169,27 @@ export const ICON_OPTIONS = [
     {
         key: 'scissors',
         label: 'Scissors',
-        searchText: 'scissors scissors general',
-        categories: ['general'],
+        searchText: 'scissors scissors design',
+        categories: ['design'],
     },
     {
         key: 'scissors-line-dashed',
         label: 'Scissors Line Dashed',
-        searchText: 'scissors-line-dashed scissors line dashed charts',
-        categories: ['charts'],
+        searchText: 'scissors-line-dashed scissors line dashed design',
+        categories: ['design'],
     },
     {
         key: 'scissors-square',
         label: 'Scissors Square',
-        searchText: 'scissors-square scissors square general',
-        categories: ['general'],
+        searchText: 'scissors-square scissors square design',
+        categories: ['design'],
     },
     {
         key: 'scissors-square-dashed-bottom',
         label: 'Scissors Square Dashed Bottom',
         searchText:
-            'scissors-square-dashed-bottom scissors square dashed bottom general',
-        categories: ['general'],
+            'scissors-square-dashed-bottom scissors square dashed bottom design',
+        categories: ['design'],
     },
     {
         key: 'screen-share',
@@ -8270,20 +8272,20 @@ export const ICON_OPTIONS = [
     {
         key: 'send-to-back',
         label: 'Send To Back',
-        searchText: 'send-to-back send to back arrows communication',
-        categories: ['arrows', 'communication'],
+        searchText: 'send-to-back send to back communication',
+        categories: ['communication'],
     },
     {
         key: 'separator-horizontal',
         label: 'Separator Horizontal',
-        searchText: 'separator-horizontal separator horizontal general',
-        categories: ['general'],
+        searchText: 'separator-horizontal separator horizontal nature',
+        categories: ['nature'],
     },
     {
         key: 'separator-vertical',
         label: 'Separator Vertical',
-        searchText: 'separator-vertical separator vertical general',
-        categories: ['general'],
+        searchText: 'separator-vertical separator vertical nature',
+        categories: ['nature'],
     },
     {
         key: 'server',
@@ -8474,50 +8476,50 @@ export const ICON_OPTIONS = [
     {
         key: 'shrink',
         label: 'Shrink',
-        searchText: 'shrink shrink arrows',
-        categories: ['arrows'],
+        searchText: 'shrink shrink general',
+        categories: ['general'],
     },
     {
         key: 'shrub',
         label: 'Shrub',
-        searchText: 'shrub shrub general',
-        categories: ['general'],
+        searchText: 'shrub shrub nature',
+        categories: ['nature'],
     },
     {
         key: 'shuffle',
         label: 'Shuffle',
-        searchText: 'shuffle shuffle general',
-        categories: ['general'],
+        searchText: 'shuffle shuffle arrows',
+        categories: ['arrows'],
     },
     {
         key: 'sidebar',
         label: 'Sidebar',
-        searchText: 'sidebar sidebar charts',
-        categories: ['charts'],
+        searchText: 'sidebar sidebar general',
+        categories: ['general'],
     },
     {
         key: 'sidebar-close',
         label: 'Sidebar Close',
-        searchText: 'sidebar-close sidebar close charts',
-        categories: ['charts'],
+        searchText: 'sidebar-close sidebar close general',
+        categories: ['general'],
     },
     {
         key: 'sidebar-open',
         label: 'Sidebar Open',
-        searchText: 'sidebar-open sidebar open design charts',
-        categories: ['design', 'charts'],
+        searchText: 'sidebar-open sidebar open design',
+        categories: ['design'],
     },
     {
         key: 'sigma',
         label: 'Sigma',
-        searchText: 'sigma sigma general',
-        categories: ['general'],
+        searchText: 'sigma sigma charts',
+        categories: ['charts'],
     },
     {
         key: 'sigma-square',
         label: 'Sigma Square',
-        searchText: 'sigma-square sigma square general',
-        categories: ['general'],
+        searchText: 'sigma-square sigma square charts',
+        categories: ['charts'],
     },
     {
         key: 'signal',
@@ -8576,14 +8578,14 @@ export const ICON_OPTIONS = [
     {
         key: 'skip-back',
         label: 'Skip Back',
-        searchText: 'skip-back skip back arrows media',
-        categories: ['arrows', 'media'],
+        searchText: 'skip-back skip back media',
+        categories: ['media'],
     },
     {
         key: 'skip-forward',
         label: 'Skip Forward',
-        searchText: 'skip-forward skip forward arrows media',
-        categories: ['arrows', 'media'],
+        searchText: 'skip-forward skip forward media',
+        categories: ['media'],
     },
     {
         key: 'skull',
@@ -8612,44 +8614,45 @@ export const ICON_OPTIONS = [
     {
         key: 'slice',
         label: 'Slice',
-        searchText: 'slice slice general',
-        categories: ['general'],
+        searchText: 'slice slice design',
+        categories: ['design'],
     },
     {
         key: 'sliders',
         label: 'Sliders',
-        searchText: 'sliders sliders general',
-        categories: ['general'],
+        searchText: 'sliders sliders media',
+        categories: ['media'],
     },
     {
         key: 'sliders-horizontal',
         label: 'Sliders Horizontal',
-        searchText: 'sliders-horizontal sliders horizontal general',
-        categories: ['general'],
+        searchText: 'sliders-horizontal sliders horizontal media',
+        categories: ['media'],
     },
     {
         key: 'sliders-vertical',
         label: 'Sliders Vertical',
-        searchText: 'sliders-vertical sliders vertical general',
-        categories: ['general'],
+        searchText: 'sliders-vertical sliders vertical media',
+        categories: ['media'],
     },
     {
         key: 'smartphone',
         label: 'Smartphone',
-        searchText: 'smartphone smartphone devices',
-        categories: ['devices'],
+        searchText: 'smartphone smartphone communication devices',
+        categories: ['communication', 'devices'],
     },
     {
         key: 'smartphone-charging',
         label: 'Smartphone Charging',
-        searchText: 'smartphone-charging smartphone charging devices',
-        categories: ['devices'],
+        searchText:
+            'smartphone-charging smartphone charging communication devices',
+        categories: ['communication', 'devices'],
     },
     {
         key: 'smartphone-nfc',
         label: 'Smartphone Nfc',
-        searchText: 'smartphone-nfc smartphone nfc devices',
-        categories: ['devices'],
+        searchText: 'smartphone-nfc smartphone nfc communication devices',
+        categories: ['communication', 'devices'],
     },
     {
         key: 'smile',
@@ -8666,8 +8669,8 @@ export const ICON_OPTIONS = [
     {
         key: 'snail',
         label: 'Snail',
-        searchText: 'snail snail general',
-        categories: ['general'],
+        searchText: 'snail snail nature',
+        categories: ['nature'],
     },
     {
         key: 'snowflake',
@@ -8726,14 +8729,14 @@ export const ICON_OPTIONS = [
     {
         key: 'speaker',
         label: 'Speaker',
-        searchText: 'speaker speaker general',
-        categories: ['general'],
+        searchText: 'speaker speaker devices',
+        categories: ['devices'],
     },
     {
         key: 'speech',
         label: 'Speech',
-        searchText: 'speech speech general',
-        categories: ['general'],
+        searchText: 'speech speech communication',
+        categories: ['communication'],
     },
     {
         key: 'spell-check',
@@ -8750,8 +8753,8 @@ export const ICON_OPTIONS = [
     {
         key: 'spline',
         label: 'Spline',
-        searchText: 'spline spline charts',
-        categories: ['charts'],
+        searchText: 'spline spline design',
+        categories: ['design'],
     },
     {
         key: 'split',
@@ -8780,8 +8783,8 @@ export const ICON_OPTIONS = [
     {
         key: 'sprout',
         label: 'Sprout',
-        searchText: 'sprout sprout nature',
-        categories: ['nature'],
+        searchText: 'sprout sprout general',
+        categories: ['general'],
     },
     {
         key: 'square',
@@ -8880,8 +8883,8 @@ export const ICON_OPTIONS = [
         key: 'square-bottom-dashed-scissors',
         label: 'Square Bottom Dashed Scissors',
         searchText:
-            'square-bottom-dashed-scissors square bottom dashed scissors general',
-        categories: ['general'],
+            'square-bottom-dashed-scissors square bottom dashed scissors design',
+        categories: ['design'],
     },
     {
         key: 'square-chart-gantt',
@@ -8934,33 +8937,35 @@ export const ICON_OPTIONS = [
     {
         key: 'square-dashed',
         label: 'Square Dashed',
-        searchText: 'square-dashed square dashed general',
-        categories: ['general'],
+        searchText: 'square-dashed square dashed design',
+        categories: ['design'],
     },
     {
         key: 'square-dashed-bottom',
         label: 'Square Dashed Bottom',
-        searchText: 'square-dashed-bottom square dashed bottom general',
-        categories: ['general'],
+        searchText: 'square-dashed-bottom square dashed bottom design',
+        categories: ['design'],
     },
     {
         key: 'square-dashed-bottom-code',
         label: 'Square Dashed Bottom Code',
-        searchText: 'square-dashed-bottom-code square dashed bottom code text',
-        categories: ['text'],
+        searchText:
+            'square-dashed-bottom-code square dashed bottom code design text',
+        categories: ['design', 'text'],
     },
     {
         key: 'square-dashed-kanban',
         label: 'Square Dashed Kanban',
-        searchText: 'square-dashed-kanban square dashed kanban charts security',
-        categories: ['charts', 'security'],
+        searchText:
+            'square-dashed-kanban square dashed kanban charts design security',
+        categories: ['charts', 'design', 'security'],
     },
     {
         key: 'square-dashed-mouse-pointer',
         label: 'Square Dashed Mouse Pointer',
         searchText:
-            'square-dashed-mouse-pointer square dashed mouse pointer devices',
-        categories: ['devices'],
+            'square-dashed-mouse-pointer square dashed mouse pointer design devices',
+        categories: ['design', 'devices'],
     },
     {
         key: 'square-divide',
@@ -9061,8 +9066,8 @@ export const ICON_OPTIONS = [
     {
         key: 'square-pilcrow',
         label: 'Square Pilcrow',
-        searchText: 'square-pilcrow square pilcrow general',
-        categories: ['general'],
+        searchText: 'square-pilcrow square pilcrow text',
+        categories: ['text'],
     },
     {
         key: 'square-play',
@@ -9091,14 +9096,14 @@ export const ICON_OPTIONS = [
     {
         key: 'square-scissors',
         label: 'Square Scissors',
-        searchText: 'square-scissors square scissors general',
-        categories: ['general'],
+        searchText: 'square-scissors square scissors design',
+        categories: ['design'],
     },
     {
         key: 'square-sigma',
         label: 'Square Sigma',
-        searchText: 'square-sigma square sigma general',
-        categories: ['general'],
+        searchText: 'square-sigma square sigma charts',
+        categories: ['charts'],
     },
     {
         key: 'square-slash',
@@ -9133,8 +9138,8 @@ export const ICON_OPTIONS = [
     {
         key: 'square-terminal',
         label: 'Square Terminal',
-        searchText: 'square-terminal square terminal text',
-        categories: ['text'],
+        searchText: 'square-terminal square terminal general',
+        categories: ['general'],
     },
     {
         key: 'square-user',
@@ -9163,8 +9168,8 @@ export const ICON_OPTIONS = [
     {
         key: 'squirrel',
         label: 'Squirrel',
-        searchText: 'squirrel squirrel general',
-        categories: ['general'],
+        searchText: 'squirrel squirrel nature',
+        categories: ['nature'],
     },
     {
         key: 'stamp',
@@ -9199,14 +9204,14 @@ export const ICON_OPTIONS = [
     {
         key: 'step-back',
         label: 'Step Back',
-        searchText: 'step-back step back arrows',
-        categories: ['arrows'],
+        searchText: 'step-back step back media',
+        categories: ['media'],
     },
     {
         key: 'step-forward',
         label: 'Step Forward',
-        searchText: 'step-forward step forward arrows',
-        categories: ['arrows'],
+        searchText: 'step-forward step forward media',
+        categories: ['media'],
     },
     {
         key: 'stethoscope',
@@ -9223,8 +9228,8 @@ export const ICON_OPTIONS = [
     {
         key: 'sticky-note',
         label: 'Sticky Note',
-        searchText: 'sticky-note sticky note general',
-        categories: ['general'],
+        searchText: 'sticky-note sticky note files',
+        categories: ['files'],
     },
     {
         key: 'stop-circle',
@@ -9259,8 +9264,8 @@ export const ICON_OPTIONS = [
     {
         key: 'subscript',
         label: 'Subscript',
-        searchText: 'subscript subscript general',
-        categories: ['general'],
+        searchText: 'subscript subscript text',
+        categories: ['text'],
     },
     {
         key: 'subtitles',
@@ -9313,20 +9318,20 @@ export const ICON_OPTIONS = [
     {
         key: 'superscript',
         label: 'Superscript',
-        searchText: 'superscript superscript general',
-        categories: ['general'],
+        searchText: 'superscript superscript text',
+        categories: ['text'],
     },
     {
         key: 'swatch-book',
         label: 'Swatch Book',
-        searchText: 'swatch-book swatch book files devices time',
-        categories: ['files', 'devices', 'time'],
+        searchText: 'swatch-book swatch book design files time',
+        categories: ['design', 'files', 'time'],
     },
     {
         key: 'swiss-franc',
         label: 'Swiss Franc',
-        searchText: 'swiss-franc swiss franc general',
-        categories: ['general'],
+        searchText: 'swiss-franc swiss franc commerce',
+        categories: ['commerce'],
     },
     {
         key: 'switch-camera',
@@ -9385,8 +9390,8 @@ export const ICON_OPTIONS = [
     {
         key: 'table-of-contents',
         label: 'Table Of Contents',
-        searchText: 'table-of-contents table of contents travel',
-        categories: ['travel'],
+        searchText: 'table-of-contents table of contents general',
+        categories: ['general'],
     },
     {
         key: 'table-properties',
@@ -9409,8 +9414,8 @@ export const ICON_OPTIONS = [
     {
         key: 'tablet-smartphone',
         label: 'Tablet Smartphone',
-        searchText: 'tablet-smartphone tablet smartphone devices',
-        categories: ['devices'],
+        searchText: 'tablet-smartphone tablet smartphone communication devices',
+        categories: ['communication', 'devices'],
     },
     {
         key: 'tablets',
@@ -9481,26 +9486,26 @@ export const ICON_OPTIONS = [
     {
         key: 'tent',
         label: 'Tent',
-        searchText: 'tent tent travel',
-        categories: ['travel'],
+        searchText: 'tent tent general',
+        categories: ['general'],
     },
     {
         key: 'tent-tree',
         label: 'Tent Tree',
-        searchText: 'tent-tree tent tree nature travel',
-        categories: ['nature', 'travel'],
+        searchText: 'tent-tree tent tree nature',
+        categories: ['nature'],
     },
     {
         key: 'terminal',
         label: 'Terminal',
-        searchText: 'terminal terminal text',
-        categories: ['text'],
+        searchText: 'terminal terminal general',
+        categories: ['general'],
     },
     {
         key: 'terminal-square',
         label: 'Terminal Square',
-        searchText: 'terminal-square terminal square text',
-        categories: ['text'],
+        searchText: 'terminal-square terminal square general',
+        categories: ['general'],
     },
     {
         key: 'test-tube',
@@ -9607,56 +9612,56 @@ export const ICON_OPTIONS = [
     {
         key: 'ticket',
         label: 'Ticket',
-        searchText: 'ticket ticket commerce',
-        categories: ['commerce'],
+        searchText: 'ticket ticket travel',
+        categories: ['travel'],
     },
     {
         key: 'ticket-check',
         label: 'Ticket Check',
-        searchText: 'ticket-check ticket check commerce',
-        categories: ['commerce'],
+        searchText: 'ticket-check ticket check travel',
+        categories: ['travel'],
     },
     {
         key: 'ticket-minus',
         label: 'Ticket Minus',
-        searchText: 'ticket-minus ticket minus commerce',
-        categories: ['commerce'],
+        searchText: 'ticket-minus ticket minus travel',
+        categories: ['travel'],
     },
     {
         key: 'ticket-percent',
         label: 'Ticket Percent',
-        searchText: 'ticket-percent ticket percent commerce',
-        categories: ['commerce'],
+        searchText: 'ticket-percent ticket percent commerce travel',
+        categories: ['commerce', 'travel'],
     },
     {
         key: 'ticket-plus',
         label: 'Ticket Plus',
-        searchText: 'ticket-plus ticket plus commerce',
-        categories: ['commerce'],
+        searchText: 'ticket-plus ticket plus travel',
+        categories: ['travel'],
     },
     {
         key: 'ticket-slash',
         label: 'Ticket Slash',
-        searchText: 'ticket-slash ticket slash commerce',
-        categories: ['commerce'],
+        searchText: 'ticket-slash ticket slash travel',
+        categories: ['travel'],
     },
     {
         key: 'ticket-x',
         label: 'Ticket X',
-        searchText: 'ticket-x ticket x commerce',
-        categories: ['commerce'],
+        searchText: 'ticket-x ticket x travel',
+        categories: ['travel'],
     },
     {
         key: 'tickets',
         label: 'Tickets',
-        searchText: 'tickets tickets commerce',
-        categories: ['commerce'],
+        searchText: 'tickets tickets travel',
+        categories: ['travel'],
     },
     {
         key: 'tickets-plane',
         label: 'Tickets Plane',
-        searchText: 'tickets-plane tickets plane commerce travel',
-        categories: ['commerce', 'travel'],
+        searchText: 'tickets-plane tickets plane travel',
+        categories: ['travel'],
     },
     {
         key: 'timer',
@@ -9739,8 +9744,8 @@ export const ICON_OPTIONS = [
     {
         key: 'traffic-cone',
         label: 'Traffic Cone',
-        searchText: 'traffic-cone traffic cone travel',
-        categories: ['travel'],
+        searchText: 'traffic-cone traffic cone general',
+        categories: ['general'],
     },
     {
         key: 'train',
@@ -9769,8 +9774,8 @@ export const ICON_OPTIONS = [
     {
         key: 'tram-front',
         label: 'Tram Front',
-        searchText: 'tram-front tram front general',
-        categories: ['general'],
+        searchText: 'tram-front tram front travel',
+        categories: ['travel'],
     },
     {
         key: 'transgender',
@@ -9871,8 +9876,8 @@ export const ICON_OPTIONS = [
     {
         key: 'truck',
         label: 'Truck',
-        searchText: 'truck truck general',
-        categories: ['general'],
+        searchText: 'truck truck travel',
+        categories: ['travel'],
     },
     {
         key: 'turtle',
@@ -9901,8 +9906,8 @@ export const ICON_OPTIONS = [
     {
         key: 'tv-minimal-play',
         label: 'Tv Minimal Play',
-        searchText: 'tv-minimal-play tv minimal play media devices',
-        categories: ['media', 'devices'],
+        searchText: 'tv-minimal-play tv minimal play devices media',
+        categories: ['devices', 'media'],
     },
     {
         key: 'twitch',
@@ -9919,32 +9924,32 @@ export const ICON_OPTIONS = [
     {
         key: 'type',
         label: 'Type',
-        searchText: 'type type design',
-        categories: ['design'],
+        searchText: 'type type text',
+        categories: ['text'],
     },
     {
         key: 'type-outline',
         label: 'Type Outline',
-        searchText: 'type-outline type outline design charts',
-        categories: ['design', 'charts'],
+        searchText: 'type-outline type outline text',
+        categories: ['text'],
     },
     {
         key: 'umbrella',
         label: 'Umbrella',
-        searchText: 'umbrella umbrella general',
-        categories: ['general'],
+        searchText: 'umbrella umbrella nature',
+        categories: ['nature'],
     },
     {
         key: 'umbrella-off',
         label: 'Umbrella Off',
-        searchText: 'umbrella-off umbrella off general',
-        categories: ['general'],
+        searchText: 'umbrella-off umbrella off nature',
+        categories: ['nature'],
     },
     {
         key: 'underline',
         label: 'Underline',
-        searchText: 'underline underline charts text',
-        categories: ['charts', 'text'],
+        searchText: 'underline underline text',
+        categories: ['text'],
     },
     {
         key: 'undo',
@@ -9967,14 +9972,14 @@ export const ICON_OPTIONS = [
     {
         key: 'unfold-horizontal',
         label: 'Unfold Horizontal',
-        searchText: 'unfold-horizontal unfold horizontal arrows',
-        categories: ['arrows'],
+        searchText: 'unfold-horizontal unfold horizontal general',
+        categories: ['general'],
     },
     {
         key: 'unfold-vertical',
         label: 'Unfold Vertical',
-        searchText: 'unfold-vertical unfold vertical arrows',
-        categories: ['arrows'],
+        searchText: 'unfold-vertical unfold vertical general',
+        categories: ['general'],
     },
     {
         key: 'ungroup',
@@ -10021,14 +10026,14 @@ export const ICON_OPTIONS = [
     {
         key: 'upload',
         label: 'Upload',
-        searchText: 'upload upload files',
-        categories: ['files'],
+        searchText: 'upload upload general',
+        categories: ['general'],
     },
     {
         key: 'upload-cloud',
         label: 'Upload Cloud',
-        searchText: 'upload-cloud upload cloud files nature',
-        categories: ['files', 'nature'],
+        searchText: 'upload-cloud upload cloud nature',
+        categories: ['nature'],
     },
     {
         key: 'usb',
@@ -10099,8 +10104,8 @@ export const ICON_OPTIONS = [
     {
         key: 'user-pen',
         label: 'User Pen',
-        searchText: 'user-pen user pen users design',
-        categories: ['users', 'design'],
+        searchText: 'user-pen user pen design users',
+        categories: ['design', 'users'],
     },
     {
         key: 'user-plus',
@@ -10141,8 +10146,8 @@ export const ICON_OPTIONS = [
     {
         key: 'user-round-pen',
         label: 'User Round Pen',
-        searchText: 'user-round-pen user round pen users design',
-        categories: ['users', 'design'],
+        searchText: 'user-round-pen user round pen design users',
+        categories: ['design', 'users'],
     },
     {
         key: 'user-round-plus',
@@ -10249,8 +10254,8 @@ export const ICON_OPTIONS = [
     {
         key: 'venetian-mask',
         label: 'Venetian Mask',
-        searchText: 'venetian-mask venetian mask general',
-        categories: ['general'],
+        searchText: 'venetian-mask venetian mask users',
+        categories: ['users'],
     },
     {
         key: 'venus',
@@ -10273,14 +10278,14 @@ export const ICON_OPTIONS = [
     {
         key: 'vibrate',
         label: 'Vibrate',
-        searchText: 'vibrate vibrate general',
-        categories: ['general'],
+        searchText: 'vibrate vibrate nature',
+        categories: ['nature'],
     },
     {
         key: 'vibrate-off',
         label: 'Vibrate Off',
-        searchText: 'vibrate-off vibrate off general',
-        categories: ['general'],
+        searchText: 'vibrate-off vibrate off nature',
+        categories: ['nature'],
     },
     {
         key: 'video',
@@ -10387,20 +10392,20 @@ export const ICON_OPTIONS = [
     {
         key: 'wand',
         label: 'Wand',
-        searchText: 'wand wand general',
-        categories: ['general'],
+        searchText: 'wand wand design',
+        categories: ['design'],
     },
     {
         key: 'wand-2',
         label: 'Wand 2',
-        searchText: 'wand-2 wand 2 general',
-        categories: ['general'],
+        searchText: 'wand-2 wand 2 design',
+        categories: ['design'],
     },
     {
         key: 'wand-sparkles',
         label: 'AI writing',
-        searchText: 'wand-sparkles ai writing general',
-        categories: ['general'],
+        searchText: 'wand-sparkles ai writing design',
+        categories: ['design'],
     },
     {
         key: 'warehouse',
@@ -10417,20 +10422,20 @@ export const ICON_OPTIONS = [
     {
         key: 'watch',
         label: 'Watch',
-        searchText: 'watch watch devices time',
-        categories: ['devices', 'time'],
+        searchText: 'watch watch time',
+        categories: ['time'],
     },
     {
         key: 'waves',
         label: 'Waves',
-        searchText: 'waves waves nature',
-        categories: ['nature'],
+        searchText: 'waves waves general',
+        categories: ['general'],
     },
     {
         key: 'waves-ladder',
         label: 'Waves Ladder',
-        searchText: 'waves-ladder waves ladder nature',
-        categories: ['nature'],
+        searchText: 'waves-ladder waves ladder general',
+        categories: ['general'],
     },
     {
         key: 'waypoints',
@@ -10441,8 +10446,8 @@ export const ICON_OPTIONS = [
     {
         key: 'webcam',
         label: 'Webcam',
-        searchText: 'webcam webcam general',
-        categories: ['general'],
+        searchText: 'webcam webcam devices',
+        categories: ['devices'],
     },
     {
         key: 'webhook',
@@ -10465,20 +10470,20 @@ export const ICON_OPTIONS = [
     {
         key: 'wheat',
         label: 'Wheat',
-        searchText: 'wheat wheat general',
-        categories: ['general'],
+        searchText: 'wheat wheat nature',
+        categories: ['nature'],
     },
     {
         key: 'wheat-off',
         label: 'Wheat Off',
-        searchText: 'wheat-off wheat off general',
-        categories: ['general'],
+        searchText: 'wheat-off wheat off nature',
+        categories: ['nature'],
     },
     {
         key: 'whole-word',
         label: 'Whole Word',
-        searchText: 'whole-word whole word general',
-        categories: ['general'],
+        searchText: 'whole-word whole word text',
+        categories: ['text'],
     },
     {
         key: 'wifi',
@@ -10543,8 +10548,8 @@ export const ICON_OPTIONS = [
     {
         key: 'worm',
         label: 'Worm',
-        searchText: 'worm worm general',
-        categories: ['general'],
+        searchText: 'worm worm nature',
+        categories: ['nature'],
     },
     {
         key: 'wrap-text',
@@ -10585,8 +10590,8 @@ export const ICON_OPTIONS = [
     {
         key: 'youtube',
         label: 'Youtube',
-        searchText: 'youtube youtube general',
-        categories: ['general'],
+        searchText: 'youtube youtube media',
+        categories: ['media'],
     },
     {
         key: 'zap',

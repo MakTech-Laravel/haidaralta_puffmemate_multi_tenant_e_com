@@ -37,13 +37,17 @@ export default function PlatformBranchStaffShow({
 
                 <dl className="grid gap-4 sm:grid-cols-2">
                     <div>
-                        <dt className="text-muted-foreground text-sm">Branch</dt>
+                        <dt className="text-muted-foreground text-sm">
+                            Branch
+                        </dt>
                         <dd className="font-medium">
                             {staffMember.branch?.name ?? '—'}
                         </dd>
                     </div>
                     <div>
-                        <dt className="text-muted-foreground text-sm">Status</dt>
+                        <dt className="text-muted-foreground text-sm">
+                            Status
+                        </dt>
                         <dd className="font-medium">
                             {staffMember.is_active ? 'Active' : 'Inactive'}
                         </dd>

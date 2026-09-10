@@ -491,7 +491,7 @@ function AggregateProgressRow({
     return (
         <div
             className={cn(
-                'flex items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2.5',
+                'bg-muted/40 flex items-center gap-3 rounded-lg border px-3 py-2.5',
                 className,
             )}
         >
@@ -505,7 +505,7 @@ function AggregateProgressRow({
             />
             <div className="min-w-0 flex-1">
                 <div className="mb-1.5 flex items-center justify-between">
-                    <span className="text-xs font-medium text-foreground">
+                    <span className="text-foreground text-xs font-medium">
                         {indeterminate
                             ? 'Uploading…'
                             : capped >= 100
@@ -516,10 +516,10 @@ function AggregateProgressRow({
                         <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-500" />
                     )}
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
                     <div
                         className={cn(
-                            'h-full rounded-full bg-primary transition-all duration-300',
+                            'bg-primary h-full rounded-full transition-all duration-300',
                             indeterminate && 'w-full animate-pulse',
                         )}
                         style={
@@ -534,7 +534,7 @@ function AggregateProgressRow({
                     variant="ghost"
                     size="sm"
                     onClick={onCancel}
-                    className="h-7 shrink-0 px-2 text-xs text-muted-foreground hover:text-destructive"
+                    className="text-muted-foreground hover:text-destructive h-7 shrink-0 px-2 text-xs"
                 >
                     <X className="mr-1 h-3.5 w-3.5" />
                     Cancel
@@ -613,7 +613,7 @@ function FileCard({
     return (
         <div
             className={cn(
-                'group relative rounded-lg border bg-card shadow-sm',
+                'group bg-card relative rounded-lg border shadow-sm',
                 'transition-shadow hover:shadow-md',
                 classNames.card,
             )}
@@ -629,7 +629,7 @@ function FileCard({
                 {/* Thumbnail ──────────────────────────────────────────────── */}
                 <div
                     className={cn(
-                        'relative flex items-center justify-center overflow-hidden bg-muted',
+                        'bg-muted relative flex items-center justify-center overflow-hidden',
                         compact ? 'h-full w-full' : 'aspect-video',
                         classNames.cardMedia,
                     )}
@@ -673,13 +673,13 @@ function FileCard({
                 {!compact ? (
                     <div className={cn('px-2.5 py-2', classNames.cardInfo)}>
                         <p
-                            className="truncate text-xs leading-tight font-medium text-foreground"
+                            className="text-foreground truncate text-xs leading-tight font-medium"
                             title={name}
                         >
                             {name}
                         </p>
                         <div className="mt-0.5 flex items-center justify-between gap-1">
-                            <span className="truncate text-[11px] text-muted-foreground">
+                            <span className="text-muted-foreground truncate text-[11px]">
                                 {size !== undefined ? formatBytes(size) : ''}
                             </span>
                             <Badge
@@ -730,7 +730,7 @@ function FileCard({
                     <div
                         className={cn(
                             'pointer-events-none absolute inset-0 flex items-center justify-center',
-                            'animate-in rounded-[inherit] bg-green-900/40 duration-150 fade-in',
+                            'animate-in fade-in rounded-[inherit] bg-green-900/40 duration-150',
                         )}
                     >
                         <CheckCircle2 className="h-9 w-9 text-white drop-shadow-md" />
@@ -793,19 +793,19 @@ function AvatarUploadCaption({
 }) {
     return (
         <div className="min-w-0 flex-1 space-y-1 pt-1">
-            <p className="text-sm font-medium text-foreground">{title}</p>
+            <p className="text-foreground text-sm font-medium">{title}</p>
             {fileName ? (
-                <p className="truncate text-sm text-muted-foreground">
+                <p className="text-muted-foreground truncate text-sm">
                     {fileName}
                 </p>
             ) : null}
             {fileSize !== undefined ? (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                     {formatBytes(fileSize)}
                 </p>
             ) : null}
             {description ? (
-                <p className="text-xs leading-relaxed text-muted-foreground">
+                <p className="text-muted-foreground text-xs leading-relaxed">
                     {description}
                 </p>
             ) : null}
@@ -1255,7 +1255,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                               'relative flex shrink-0 cursor-pointer items-center justify-center overflow-hidden',
                               'transition-all duration-200 select-none',
                               isDragging
-                                  ? 'scale-[1.03] border-primary bg-primary/10'
+                                  ? 'border-primary bg-primary/10 scale-[1.03]'
                                   : '',
                               disabled &&
                                   'pointer-events-none cursor-not-allowed opacity-50',
@@ -1266,7 +1266,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                               'rounded-xl border-2 border-dashed transition-all duration-200 select-none',
                               'hover:border-primary hover:bg-primary/5',
                               isDragging
-                                  ? 'scale-[1.015] border-primary bg-primary/10'
+                                  ? 'border-primary bg-primary/10 scale-[1.015]'
                                   : 'border-border',
                               disabled &&
                                   'pointer-events-none cursor-not-allowed opacity-50',
@@ -1308,27 +1308,27 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     {isAvatar ? (
                         (avatarFallback ?? (
                             <Upload
-                                className="size-5 text-muted-foreground"
+                                className="text-muted-foreground size-5"
                                 aria-hidden="true"
                             />
                         ))
                     ) : (
                         <Upload
-                            className="h-8 w-8 text-muted-foreground"
+                            className="text-muted-foreground h-8 w-8"
                             aria-hidden="true"
                         />
                     )}
                     {!isAvatar ? (
                         <>
-                            <p className="text-sm font-medium text-foreground">
+                            <p className="text-foreground text-sm font-medium">
                                 {placeholder}
                             </p>
                             {hint ? (
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-muted-foreground text-xs">
                                     {hint}
                                 </p>
                             ) : null}
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                                 Max {maxSize} MB per file
                                 {maxFiles && ` · up to ${maxFiles} files`}
                                 {accept && ` · ${accept}`}
@@ -1368,7 +1368,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                 {rejections.map((r, i) => (
                     <p
                         key={`${r.file.name}-${i}`}
-                        className="flex items-start gap-1.5 text-xs text-destructive"
+                        className="text-destructive flex items-start gap-1.5 text-xs"
                     >
                         <AlertCircle
                             className="mt-px h-3.5 w-3.5 shrink-0"
@@ -1423,7 +1423,9 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 compact={isAvatar}
                                 fixedSize={isAvatar ? avatarSize : undefined}
                                 onRemove={
-                                    !isAvatar && onRemoveExisting && !isUploading
+                                    !isAvatar &&
+                                    onRemoveExisting &&
+                                    !isUploading
                                         ? () => onRemoveExisting(f.id)
                                         : undefined
                                 }
@@ -1434,10 +1436,10 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 }
                                 classNames={mergedClassNames}
                             />
-                            {isAvatar && !isUploading ? HiddenFileInputEl : null}
-                            {isAvatar &&
-                            onRemoveExisting &&
-                            !isUploading ? (
+                            {isAvatar && !isUploading
+                                ? HiddenFileInputEl
+                                : null}
+                            {isAvatar && onRemoveExisting && !isUploading ? (
                                 <Button
                                     type="button"
                                     variant="destructive"
@@ -1462,7 +1464,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     {error && (
                         <p
                             className={cn(
-                                'mt-1.5 text-sm text-destructive',
+                                'text-destructive mt-1.5 text-sm',
                                 mergedClassNames.error,
                             )}
                         >
@@ -1526,7 +1528,9 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 loading={resolveCardLoading()}
                                 classNames={mergedClassNames}
                             />
-                            {isAvatar && !isUploading ? HiddenFileInputEl : null}
+                            {isAvatar && !isUploading
+                                ? HiddenFileInputEl
+                                : null}
                             {isAvatar && !isUploading ? (
                                 <Button
                                     type="button"
@@ -1554,7 +1558,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     {error && (
                         <p
                             className={cn(
-                                'text-sm text-destructive',
+                                'text-destructive text-sm',
                                 mergedClassNames.error,
                             )}
                         >
@@ -1673,7 +1677,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                 {error && (
                     <p
                         className={cn(
-                            'text-sm text-destructive',
+                            'text-destructive text-sm',
                             mergedClassNames.error,
                         )}
                     >

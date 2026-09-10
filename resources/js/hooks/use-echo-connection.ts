@@ -7,6 +7,34 @@ import {
 } from '@/echo';
 import type { ConnectionStatus } from '@/realtime/types';
 
+function stringifyUnknown(value: unknown): string {
+    if (value == null) {
+        return '';
+    }
+
+    if (typeof value === 'string') {
+        return value;
+    }
+
+    if (
+        typeof value === 'number' ||
+        typeof value === 'boolean' ||
+        typeof value === 'bigint'
+    ) {
+        return value.toString();
+    }
+
+    if (typeof value === 'symbol') {
+        return value.toString();
+    }
+
+    try {
+        return JSON.stringify(value) ?? '';
+    } catch {
+        return Object.prototype.toString.call(value);
+    }
+}
+
 function formatConnectionError(payload: unknown): string {
     if (payload == null) {
         return 'Unknown connection error';
@@ -17,7 +45,7 @@ function formatConnectionError(payload: unknown): string {
     }
 
     if (typeof payload !== 'object') {
-        return String(payload);
+        return stringifyUnknown(payload);
     }
 
     const record = payload as Record<string, unknown>;
@@ -29,10 +57,7 @@ function formatConnectionError(payload: unknown): string {
         typeof nested.data === 'string'
             ? (() => {
                   try {
-                      return JSON.parse(nested.data) as Record<
-                          string,
-                          unknown
-                      >;
+                      return JSON.parse(nested.data) as Record<string, unknown>;
                   } catch {
                       return { message: nested.data };
                   }
@@ -44,8 +69,12 @@ function formatConnectionError(payload: unknown): string {
     const code = data.code ?? nested.code ?? record.code;
     const message =
         data.message ?? nested.message ?? record.message ?? 'Connection error';
+    const messageText = stringifyUnknown(message) || 'Connection error';
+    const codeText = stringifyUnknown(code);
 
-    return code != null ? `${message} (code ${code})` : String(message);
+    return code != null && codeText !== ''
+        ? `${messageText} (code ${codeText})`
+        : messageText;
 }
 
 function readPusherState(echo: ReturnType<typeof getEcho>): ConnectionStatus {

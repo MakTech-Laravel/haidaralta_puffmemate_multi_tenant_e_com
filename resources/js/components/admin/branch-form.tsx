@@ -1,12 +1,12 @@
-import { Link, useForm } from "@inertiajs/react";
-import type { FormEvent } from "react";
-import { useEffect, useState } from "react";
-import { FileUploadAvatar } from "@/components/file-upload-avatar";
-import InputError from "@/components/input-error";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Link, useForm } from '@inertiajs/react';
+import type { FormEvent } from 'react';
+import { useEffect, useState } from 'react';
+import { FileUploadAvatar } from '@/components/file-upload-avatar';
+import InputError from '@/components/input-error';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type FormAction = {
     action: string;
@@ -36,8 +36,8 @@ function slugify(value: string): string {
     return value
         .toLowerCase()
         .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
 }
 
 export function BranchForm({
@@ -67,30 +67,30 @@ export function BranchForm({
         super_admin_password_confirmation: string;
         _method?: string;
     }>({
-        name: defaults?.name ?? "",
-        slug: defaults?.slug ?? "",
+        name: defaults?.name ?? '',
+        slug: defaults?.slug ?? '',
         icon: null,
         remove_icon: false,
-        address: defaults?.address ?? "",
+        address: defaults?.address ?? '',
         latitude:
             defaults?.latitude === null || defaults?.latitude === undefined
-                ? ""
+                ? ''
                 : String(defaults.latitude),
         longitude:
             defaults?.longitude === null || defaults?.longitude === undefined
-                ? ""
+                ? ''
                 : String(defaults.longitude),
         is_active: defaults?.is_active ?? true,
-        super_admin_name: "",
-        super_admin_email: "",
-        super_admin_password: "",
-        super_admin_password_confirmation: "",
-        ...(isEdit ? { _method: "put" } : {}),
+        super_admin_name: '',
+        super_admin_email: '',
+        super_admin_password: '',
+        super_admin_password_confirmation: '',
+        ...(isEdit ? { _method: 'put' } : {}),
     });
 
     useEffect(() => {
         if (!slugTouched) {
-            setData("slug", slugify(data.name));
+            setData('slug', slugify(data.name));
         }
     }, [data.name, slugTouched, setData]);
 
@@ -98,11 +98,7 @@ export function BranchForm({
         event.preventDefault();
 
         transform((form) => {
-            const {
-                icon,
-                remove_icon,
-                ...rest
-            } = form;
+            const { icon, remove_icon, ...rest } = form;
 
             return {
                 ...rest,
@@ -159,7 +155,7 @@ export function BranchForm({
                         id="name"
                         value={data.name}
                         onChange={(event) =>
-                            setData("name", event.target.value)
+                            setData('name', event.target.value)
                         }
                         required
                     />
@@ -173,7 +169,7 @@ export function BranchForm({
                         value={data.slug}
                         onChange={(event) => {
                             setSlugTouched(true);
-                            setData("slug", event.target.value);
+                            setData('slug', event.target.value);
                         }}
                         required
                     />
@@ -188,7 +184,7 @@ export function BranchForm({
                         id="address"
                         value={data.address}
                         onChange={(event) =>
-                            setData("address", event.target.value)
+                            setData('address', event.target.value)
                         }
                     />
                     <InputError message={errors.address} />
@@ -204,7 +200,7 @@ export function BranchForm({
                         step="any"
                         value={data.latitude}
                         onChange={(event) =>
-                            setData("latitude", event.target.value)
+                            setData('latitude', event.target.value)
                         }
                     />
                     <InputError message={errors.latitude} />
@@ -218,7 +214,7 @@ export function BranchForm({
                         step="any"
                         value={data.longitude}
                         onChange={(event) =>
-                            setData("longitude", event.target.value)
+                            setData('longitude', event.target.value)
                         }
                     />
                     <InputError message={errors.longitude} />
@@ -245,7 +241,7 @@ export function BranchForm({
                                 value={data.super_admin_name}
                                 onChange={(event) =>
                                     setData(
-                                        "super_admin_name",
+                                        'super_admin_name',
                                         event.target.value,
                                     )
                                 }
@@ -262,7 +258,7 @@ export function BranchForm({
                                 value={data.super_admin_email}
                                 onChange={(event) =>
                                     setData(
-                                        "super_admin_email",
+                                        'super_admin_email',
                                         event.target.value,
                                     )
                                 }
@@ -283,7 +279,7 @@ export function BranchForm({
                                 value={data.super_admin_password}
                                 onChange={(event) =>
                                     setData(
-                                        "super_admin_password",
+                                        'super_admin_password',
                                         event.target.value,
                                     )
                                 }
@@ -303,7 +299,7 @@ export function BranchForm({
                                 value={data.super_admin_password_confirmation}
                                 onChange={(event) =>
                                     setData(
-                                        "super_admin_password_confirmation",
+                                        'super_admin_password_confirmation',
                                         event.target.value,
                                     )
                                 }
@@ -320,7 +316,7 @@ export function BranchForm({
                     id="is_active"
                     checked={data.is_active}
                     onCheckedChange={(value) =>
-                        setData("is_active", value === true)
+                        setData('is_active', value === true)
                     }
                 />
                 <Label htmlFor="is_active" className="font-normal">
@@ -331,7 +327,7 @@ export function BranchForm({
 
             <div className="flex items-center gap-3 border-t pt-5">
                 <Button type="submit" disabled={processing}>
-                    {submitLabel ?? (isEdit ? "Save changes" : "Create branch")}
+                    {submitLabel ?? (isEdit ? 'Save changes' : 'Create branch')}
                 </Button>
                 <Button variant="secondary" asChild>
                     <Link href={cancelHref}>Cancel</Link>

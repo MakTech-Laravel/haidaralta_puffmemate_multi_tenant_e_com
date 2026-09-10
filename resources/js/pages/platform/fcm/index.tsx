@@ -44,8 +44,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
     const [title, setTitle] = useState('FCM test');
     const [body, setBody] = useState('Hello from PuffMeMate');
     const [sendMode, setSendMode] = useState<SendMode>('token');
-    const [recipientMode, setRecipientMode] =
-        useState<RecipientMode>('single');
+    const [recipientMode, setRecipientMode] = useState<RecipientMode>('single');
     const [lastResult, setLastResult] = useState<string | null>(null);
     const idRef = useRef(0);
 
@@ -60,7 +59,10 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
         const config = getFirebaseWebConfig();
 
         if (!config) {
-            addLog('warn', 'VITE_FIREBASE_* env incomplete — token generation disabled');
+            addLog(
+                'warn',
+                'VITE_FIREBASE_* env incomplete — token generation disabled',
+            );
 
             return;
         }
@@ -276,24 +278,24 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
             <Head title="FCM Console" />
 
             <div className="mx-auto max-w-5xl space-y-4 p-6 font-mono text-sm">
-                <header className="rounded-lg border border-border bg-card p-4">
-                    <h1 className="text-lg font-bold text-foreground">
+                <header className="border-border bg-card rounded-lg border p-4">
+                    <h1 className="text-foreground text-lg font-bold">
                         Firebase Cloud Messaging Console
                     </h1>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 text-xs">
                         Generate a web FCM token, register it, and send test
                         pushes by token(s) or user(s).
                     </p>
                     {!firebaseConfigured ? (
                         <p className="mt-2 text-xs text-red-600">
-                            Set VITE_FIREBASE_* (including VAPID key) in .env and
-                            restart Vite / rebuild.
+                            Set VITE_FIREBASE_* (including VAPID key) in .env
+                            and restart Vite / rebuild.
                         </p>
                     ) : null}
                 </header>
 
-                <section className="space-y-3 rounded-lg border border-border bg-card p-4">
-                    <h2 className="font-semibold text-foreground">
+                <section className="border-border bg-card space-y-3 rounded-lg border p-4">
+                    <h2 className="text-foreground font-semibold">
                         Device / token tools
                     </h2>
                     <div className="flex flex-wrap gap-2">
@@ -301,7 +303,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                             type="button"
                             disabled={busy || !firebaseConfigured}
                             onClick={() => void generateToken()}
-                            className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
+                            className="bg-primary text-primary-foreground rounded px-3 py-1.5 text-xs font-medium hover:opacity-90 disabled:opacity-40"
                         >
                             Generate FCM token
                         </button>
@@ -309,7 +311,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                             type="button"
                             disabled={busy}
                             onClick={() => void registerToken()}
-                            className="rounded border border-primary px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/5 disabled:opacity-40"
+                            className="border-primary text-primary hover:bg-primary/5 rounded border px-3 py-1.5 text-xs font-medium disabled:opacity-40"
                         >
                             Register token
                         </button>
@@ -317,7 +319,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                             type="button"
                             disabled={busy}
                             onClick={() => void unregisterToken()}
-                            className="rounded border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-40"
+                            className="border-border hover:bg-muted rounded border px-3 py-1.5 text-xs font-medium disabled:opacity-40"
                         >
                             Unregister token
                         </button>
@@ -326,12 +328,12 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                         readOnly
                         value={generatedToken}
                         placeholder="Generated token appears here"
-                        className="min-h-24 w-full rounded border border-border bg-muted/40 p-2 text-xs break-all"
+                        className="border-border bg-muted/40 min-h-24 w-full rounded border p-2 text-xs break-all"
                     />
                 </section>
 
-                <section className="space-y-3 rounded-lg border border-border bg-card p-4">
-                    <h2 className="font-semibold text-foreground">
+                <section className="border-border bg-card space-y-3 rounded-lg border p-4">
+                    <h2 className="text-foreground font-semibold">
                         Send test push
                     </h2>
 
@@ -342,7 +344,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                             className={`rounded px-3 py-1.5 text-xs font-medium ${
                                 sendMode === 'token'
                                     ? 'bg-primary text-primary-foreground'
-                                    : 'border border-border hover:bg-muted'
+                                    : 'border-border hover:bg-muted border'
                             }`}
                         >
                             By FCM token(s)
@@ -353,7 +355,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                             className={`rounded px-3 py-1.5 text-xs font-medium ${
                                 sendMode === 'user'
                                     ? 'bg-primary text-primary-foreground'
-                                    : 'border border-border hover:bg-muted'
+                                    : 'border-border hover:bg-muted border'
                             }`}
                         >
                             By user(s)
@@ -364,7 +366,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                             className={`rounded px-3 py-1.5 text-xs font-medium ${
                                 recipientMode === 'single'
                                     ? 'bg-accent text-accent-foreground'
-                                    : 'border border-border hover:bg-muted'
+                                    : 'border-border hover:bg-muted border'
                             }`}
                         >
                             Single
@@ -375,7 +377,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                             className={`rounded px-3 py-1.5 text-xs font-medium ${
                                 recipientMode === 'multiple'
                                     ? 'bg-accent text-accent-foreground'
-                                    : 'border border-border hover:bg-muted'
+                                    : 'border-border hover:bg-muted border'
                             }`}
                         >
                             Multiple
@@ -387,7 +389,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                             value={tokenInput}
                             onChange={(e) => setTokenInput(e.target.value)}
                             placeholder="FCM device token"
-                            className="w-full rounded border border-border bg-background px-3 py-2 text-xs"
+                            className="border-border bg-background w-full rounded border px-3 py-2 text-xs"
                         />
                     ) : null}
 
@@ -396,7 +398,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                             value={tokensMulti}
                             onChange={(e) => setTokensMulti(e.target.value)}
                             placeholder="One FCM token per line"
-                            className="min-h-28 w-full rounded border border-border bg-background p-2 text-xs"
+                            className="border-border bg-background min-h-28 w-full rounded border p-2 text-xs"
                         />
                     ) : null}
 
@@ -404,7 +406,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                         <select
                             value={userId}
                             onChange={(e) => setUserId(e.target.value)}
-                            className="w-full rounded border border-border bg-background px-3 py-2 text-xs"
+                            className="border-border bg-background w-full rounded border px-3 py-2 text-xs"
                         >
                             {users.map((u) => (
                                 <option key={u.id} value={u.id}>
@@ -420,7 +422,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                             value={userIdsMulti}
                             onChange={(e) => setUserIdsMulti(e.target.value)}
                             placeholder="User ids, comma or space separated"
-                            className="min-h-20 w-full rounded border border-border bg-background p-2 text-xs"
+                            className="border-border bg-background min-h-20 w-full rounded border p-2 text-xs"
                         />
                     ) : null}
 
@@ -429,13 +431,13 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Title"
-                            className="rounded border border-border bg-background px-3 py-2 text-xs"
+                            className="border-border bg-background rounded border px-3 py-2 text-xs"
                         />
                         <input
                             value={body}
                             onChange={(e) => setBody(e.target.value)}
                             placeholder="Body"
-                            className="rounded border border-border bg-background px-3 py-2 text-xs"
+                            className="border-border bg-background rounded border px-3 py-2 text-xs"
                         />
                     </div>
 
@@ -443,20 +445,20 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                         type="button"
                         disabled={busy}
                         onClick={() => void sendTest()}
-                        className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-40"
+                        className="bg-primary text-primary-foreground rounded px-3 py-1.5 text-xs font-medium hover:opacity-90 disabled:opacity-40"
                     >
                         Send test push
                     </button>
                 </section>
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <section className="rounded-lg border border-border bg-card p-3">
-                        <h2 className="mb-2 font-semibold text-foreground">
+                    <section className="border-border bg-card rounded-lg border p-3">
+                        <h2 className="text-foreground mb-2 font-semibold">
                             Debug log ({logs.length})
                         </h2>
-                        <div className="h-64 space-y-0.5 overflow-y-auto rounded bg-muted/40 p-2">
+                        <div className="bg-muted/40 h-64 space-y-0.5 overflow-y-auto rounded p-2">
                             {logs.length === 0 ? (
-                                <p className="mt-8 text-center text-muted-foreground">
+                                <p className="text-muted-foreground mt-8 text-center">
                                     No log entries.
                                 </p>
                             ) : (
@@ -465,7 +467,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                                         key={l.id}
                                         className="flex gap-2 text-xs leading-5"
                                     >
-                                        <span className="shrink-0 text-muted-foreground">
+                                        <span className="text-muted-foreground shrink-0">
                                             {l.ts}
                                         </span>
                                         <span
@@ -481,7 +483,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                                         >
                                             [{l.level.toUpperCase()}]
                                         </span>
-                                        <span className="break-all text-foreground">
+                                        <span className="text-foreground break-all">
                                             {l.message}
                                         </span>
                                     </div>
@@ -490,11 +492,11 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                         </div>
                     </section>
 
-                    <section className="rounded-lg border border-border bg-card p-3">
-                        <h2 className="mb-2 font-semibold text-foreground">
+                    <section className="border-border bg-card rounded-lg border p-3">
+                        <h2 className="text-foreground mb-2 font-semibold">
                             Last API response
                         </h2>
-                        <pre className="h-64 overflow-auto whitespace-pre-wrap break-all rounded bg-muted/40 p-2 text-xs text-foreground">
+                        <pre className="bg-muted/40 text-foreground h-64 overflow-auto rounded p-2 text-xs break-all whitespace-pre-wrap">
                             {lastResult ?? 'No response yet.'}
                         </pre>
                     </section>

@@ -1,9 +1,9 @@
 packages:
-  - '.'
+    - '.'
 
 allowBuilds:
-  '@firebase/util': false
-  protobufjs: false
+    '@firebase/util': false
+    protobufjs: false
 
 publicHoistPattern:
-  - '@inertiajs/core'
+    - '@inertiajs/core'

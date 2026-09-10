@@ -1,7 +1,10 @@
 export type LucideIconPickerMode = 'collapsible' | 'dialog' | 'sheet';
 
 export type LucideIconPickerTriggerVariant =
-    'field' | 'compact' | 'button' | 'ghost';
+    | 'field'
+    | 'compact'
+    | 'button'
+    | 'ghost';
 
 export type LucideIconPickerDensity = 'comfortable' | 'compact';
 

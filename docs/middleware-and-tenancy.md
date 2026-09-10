@@ -43,10 +43,10 @@ route parameter (a slug):
 
 ### Why branch isolation is 403, not redirect-to-login
 
-| Scenario | Response | Reasoning |
-|---|---|---|
-| Not authenticated on `branch` guard at all | 302 → `/login` | `EnsurePortalGuard` fails first — you were never recognized on this guard |
-| Authenticated on `branch` guard, but for a **different** branch | 403 | `ResolveBranchContext` fails — you're a real branch user, just not for *this* branch |
+| Scenario                                                        | Response       | Reasoning                                                                            |
+| --------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------ |
+| Not authenticated on `branch` guard at all                      | 302 → `/login` | `EnsurePortalGuard` fails first — you were never recognized on this guard            |
+| Authenticated on `branch` guard, but for a **different** branch | 403            | `ResolveBranchContext` fails — you're a real branch user, just not for _this_ branch |
 
 Mixing these up (e.g. redirecting a wrong-branch user to login) would hide a real authorization
 failure behind a generic "please log in" screen, making the isolation bug much harder to notice

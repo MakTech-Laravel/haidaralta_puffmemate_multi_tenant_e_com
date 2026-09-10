@@ -24,7 +24,9 @@ export default function StorefrontShop() {
                             <span className="bg-accent text-accent-foreground w-fit rounded px-1.5 py-0.5 text-xs">
                                 {product.category}
                             </span>
-                            <p className="text-sm font-medium">{product.name}</p>
+                            <p className="text-sm font-medium">
+                                {product.name}
+                            </p>
                             <p className="text-muted-foreground text-sm">
                                 {product.price}
                             </p>

@@ -79,9 +79,7 @@ export default function BranchRolesShow({
                     />
                     <div className="flex gap-2">
                         <Button variant="secondary" asChild>
-                            <Link
-                                href={RoleController.index.url(branch.slug)}
-                            >
+                            <Link href={RoleController.index.url(branch.slug)}>
                                 Back
                             </Link>
                         </Button>
