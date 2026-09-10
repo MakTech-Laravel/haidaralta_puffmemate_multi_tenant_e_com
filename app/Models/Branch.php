@@ -2,19 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\AuditsChanges;
 use App\Support\SearchableTimestamp;
 use Database\Factories\BranchFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Scout\Searchable;
-use Spatie\Activitylog\Models\Concerns\LogsActivity;
-use Spatie\Activitylog\Support\LogOptions;
 
 class Branch extends Model
 {
     /** @use HasFactory<BranchFactory> */
-    use HasFactory, LogsActivity, Searchable;
+    use AuditsChanges, HasFactory, Searchable;
 
     /**
      * @var list<string>
@@ -67,29 +66,5 @@ class Branch extends Model
             'longitude' => 'decimal:7',
             'is_active' => 'boolean',
         ];
-    }
-
-    // log activity
-    public function getActivitylogOptions(): LogOptions
-    {
-
-        // log changes all column
-        // return LogOptions::defaults()
-        //     ->logAll()
-        //     ->logOnlyDirty();
-
-        // log changes only dirty column
-        return LogOptions::defaults()
-            ->logOnly([
-                'name',
-                'slug',
-                'icon',
-                'address',
-                'latitude',
-                'longitude',
-                'is_active',
-            ])
-            ->logOnlyDirty();
-
     }
 }

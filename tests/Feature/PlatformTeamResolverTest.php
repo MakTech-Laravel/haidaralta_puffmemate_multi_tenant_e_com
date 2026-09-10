@@ -2,13 +2,13 @@
 
 use App\Enums\RoleEnum;
 use App\Models\Branch;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Spatie\Permission\Exceptions\RoleAlreadyExists;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {

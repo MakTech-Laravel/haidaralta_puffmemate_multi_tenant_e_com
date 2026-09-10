@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum DatabaseBackupType: string
 {
-    case Export = 'export';
-    case Import = 'import';
+    case Run = 'run';
+    case Cleanup = 'cleanup';
+    case Restore = 'restore';
 }

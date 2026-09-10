@@ -3,13 +3,13 @@
 use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Support\Facades\Gate;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {

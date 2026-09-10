@@ -4,122 +4,127 @@ use App\Enums\DatabaseBackupStatus;
 use App\Enums\DatabaseBackupType;
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
+use App\Jobs\CleanBackupJob;
+use App\Jobs\RestoreDatabaseFromBackupJob;
+use App\Jobs\RunBackupJob;
 use App\Models\DatabaseBackupHistory;
+use App\Models\Permission;
 use App\Models\User;
+use App\Services\Backup\BackupService;
+use App\Services\Backup\DatabaseRestoreRunner;
 use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
+use ZipArchive;
 
 beforeEach(function () {
-    Storage::fake('local');
+    Storage::fake('backups');
 
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(BranchSeeder::class);
     $this->seed(UserSeeder::class);
 });
 
-test('platform super admin can export database sql and see history', function () {
+test('platform super admin can queue a backup run', function () {
+    Queue::fake();
+
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
-        ->post(route('platform.database-backups.export'))
+        ->post(route('platform.database-backups.run'))
         ->assertRedirect(route('platform.database-backups.index'))
         ->assertInertiaFlash('toast', [
             'type' => 'success',
-            'message' => 'Database export completed (#1). Download starting…',
-        ])
-        ->assertInertiaFlash(
-            'download_url',
-            route('platform.database-backups.download', 1),
-        );
+            'message' => 'Backup queued (#1).',
+        ]);
 
     $history = DatabaseBackupHistory::query()->latest('id')->first();
 
     expect($history)->not->toBeNull()
-        ->and($history->type)->toBe(DatabaseBackupType::Export)
-        ->and($history->status)->toBe(DatabaseBackupStatus::Completed)
-        ->and($history->filename)->not->toBeNull()
-        ->and(Storage::disk('local')->exists((string) $history->path))->toBeTrue();
+        ->and($history->type)->toBe(DatabaseBackupType::Run)
+        ->and($history->status)->toBe(DatabaseBackupStatus::Pending);
+
+    Queue::assertPushed(RunBackupJob::class, fn (RunBackupJob $job): bool => $job->historyId === $history->id);
+});
+
+test('platform super admin can list and download zip from backups disk', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $backupName = (string) config('backup.backup.name');
+    $path = $backupName.'/demo-backup.zip';
+    Storage::disk('backups')->put($path, 'zip-bytes');
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.database-backups.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/database-backups/index')
-            ->has('histories.data', 1)
-            ->where('histories.data.0.id', $history->id)
-            ->where('histories.data.0.can_download', true)
-            ->where('histories.data.0.can_restore', true)
+            ->has('backups', 1)
+            ->where('backups.0.path', $path)
+            ->where('backups.0.filename', 'demo-backup.zip')
         );
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.database-backups.download', $history))
+        ->get(route('platform.database-backups.download', ['path' => $path]))
         ->assertOk();
 });
 
-test('platform super admin can import sql upload with confirmation', function () {
+test('platform super admin can queue cleanup', function () {
+    Queue::fake();
+
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
-    $sql = UploadedFile::fake()->createWithContent(
-        'restore.sql',
-        "PRAGMA foreign_keys=OFF;\nSELECT 1;\nPRAGMA foreign_keys=ON;\n",
-    );
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.database-backups.clean'))
+        ->assertRedirect(route('platform.database-backups.index'));
+
+    Queue::assertPushed(CleanBackupJob::class);
+});
+
+test('restore requires confirmation', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
-        ->post(route('platform.database-backups.import'), [
-            'file' => $sql,
-            'confirmed' => '1',
+        ->post(route('platform.database-backups.restore'), [
+            'path' => 'app/missing.zip',
+            'confirmed' => '0',
+        ])
+        ->assertSessionHasErrors('confirmed');
+});
+
+test('platform super admin can queue restore from zip', function () {
+    Queue::fake();
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $backupName = (string) config('backup.backup.name');
+    $path = $backupName.'/restore-me.zip';
+    Storage::disk('backups')->put($path, 'zip');
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.database-backups.restore'), [
+            'path' => $path,
+            'confirmed' => true,
         ])
         ->assertRedirect(route('platform.database-backups.index'))
         ->assertInertiaFlash('toast', [
             'type' => 'success',
-            'message' => 'Database import completed (#1).',
+            'message' => 'Database restore queued (#1).',
         ]);
 
     $history = DatabaseBackupHistory::query()->latest('id')->first();
 
     expect($history)->not->toBeNull()
-        ->and($history->type)->toBe(DatabaseBackupType::Import)
-        ->and($history->status)->toBe(DatabaseBackupStatus::Completed);
+        ->and($history->type)->toBe(DatabaseBackupType::Restore)
+        ->and($history->status)->toBe(DatabaseBackupStatus::Pending);
+
+    Queue::assertPushed(RestoreDatabaseFromBackupJob::class);
 });
 
-test('import strips postgres restrict meta commands before restore', function () {
-    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-
-    $sql = UploadedFile::fake()->createWithContent(
-        'restore.sql',
-        implode("\n", [
-            '-- PostgreSQL database dump',
-            '\restrict 622a52b6d8c542e6f8e258c35dfedab3',
-            'SELECT 1;',
-            '\unrestrict 622a52b6d8c542e6f8e258c35dfedab3',
-            '',
-        ]),
-    );
-
-    $this->actingAs($admin, 'platform')
-        ->post(route('platform.database-backups.import'), [
-            'file' => $sql,
-            'confirmed' => '1',
-        ])
-        ->assertRedirect(route('platform.database-backups.index'))
-        ->assertInertiaFlash('toast', [
-            'type' => 'success',
-            'message' => 'Database import completed (#1).',
-        ]);
-
-    $history = DatabaseBackupHistory::query()->latest('id')->first();
-
-    expect($history)->not->toBeNull()
-        ->and($history->status)->toBe(DatabaseBackupStatus::Completed);
-});
-
-test('import resyncs manage-database-backups permission so admins keep access', function () {
+test('restore job applies sql from zip and resyncs manage-database-backups permission', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
@@ -138,74 +143,48 @@ test('import resyncs manage-database-backups permission so admins keep access', 
             ->exists()
     )->toBeFalse();
 
-    $sql = UploadedFile::fake()->createWithContent(
-        'restore.sql',
+    $tempZip = storage_path('framework/testing/'.uniqid('backup-', true).'.zip');
+    @mkdir(dirname($tempZip), 0777, true);
+
+    $zip = new ZipArchive;
+    expect($zip->open($tempZip, ZipArchive::CREATE))->toBeTrue();
+    $zip->addFromString(
+        'db-dumps/sqlite.sql',
         "PRAGMA foreign_keys=OFF;\nSELECT 1;\nPRAGMA foreign_keys=ON;\n",
     );
+    $zip->close();
 
-    $this->actingAs($admin, 'platform')
-        ->post(route('platform.database-backups.import'), [
-            'file' => $sql,
-            'confirmed' => '1',
-        ])
-        ->assertRedirect(route('platform.database-backups.index'))
-        ->assertInertiaFlash('toast', [
-            'type' => 'success',
-            'message' => 'Database import completed (#1).',
-        ]);
+    $backupName = (string) config('backup.backup.name');
+    $path = $backupName.'/restore-job.zip';
+    Storage::disk('backups')->put($path, file_get_contents($tempZip));
+    @unlink($tempZip);
 
-    expect(
-        Permission::query()
-            ->where('name', 'manage-database-backups')
-            ->where('guard_name', RolesAndPermissionsSeeder::PLATFORM_GUARD)
-            ->exists()
-    )->toBeTrue();
+    $history = DatabaseBackupHistory::query()->create([
+        'type' => DatabaseBackupType::Restore,
+        'status' => DatabaseBackupStatus::Pending,
+        'disk' => BackupService::DISK,
+        'path' => $path,
+        'filename' => basename($path),
+        'triggered_by' => $admin->id,
+        'connection' => (string) config('database.default'),
+        'message' => 'Restore queued',
+    ]);
 
-    $this->actingAs($admin, 'platform')
-        ->get(route('platform.database-backups.index'))
-        ->assertOk();
+    (new RestoreDatabaseFromBackupJob($history->id, $path))->handle(app(DatabaseRestoreRunner::class));
+
+    expect($history->fresh()->status)->toBe(DatabaseBackupStatus::Completed)
+        ->and(
+            Permission::query()
+                ->where('name', 'manage-database-backups')
+                ->where('guard_name', RolesAndPermissionsSeeder::PLATFORM_GUARD)
+                ->exists()
+        )->toBeTrue();
 });
 
-test('import requires confirmation', function () {
-    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-
-    $sql = UploadedFile::fake()->createWithContent('restore.sql', "BEGIN;\nCOMMIT;\n");
-
-    $this->actingAs($admin, 'platform')
-        ->post(route('platform.database-backups.import'), [
-            'file' => $sql,
-            'confirmed' => '0',
-        ])
-        ->assertSessionHasErrors('confirmed');
-});
-
-test('platform super admin can restore from export history', function () {
-    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-
-    $this->actingAs($admin, 'platform')
-        ->post(route('platform.database-backups.export'))
+test('unauthorized users cannot access backup routes', function () {
+    $this->get(route('platform.database-backups.index'))
         ->assertRedirect();
 
-    $export = DatabaseBackupHistory::query()->latest('id')->firstOrFail();
-
-    $this->actingAs($admin, 'platform')
-        ->post(route('platform.database-backups.restore', $export), [
-            'confirmed' => true,
-        ])
-        ->assertRedirect(route('platform.database-backups.index'))
-        ->assertInertiaFlash('toast', [
-            'type' => 'success',
-            'message' => 'Database restore completed (#2).',
-        ]);
-
-    $import = DatabaseBackupHistory::query()->where('type', DatabaseBackupType::Import)->latest('id')->first();
-
-    expect($import)->not->toBeNull()
-        ->and($import->source_history_id)->toBe($export->id)
-        ->and($import->status)->toBe(DatabaseBackupStatus::Completed);
-});
-
-test('platform staff without manage database backups cannot access', function () {
     $user = User::factory()->create([
         'user_type' => UserType::PLATFORM,
         'email_verified_at' => now(),
@@ -219,7 +198,7 @@ test('platform staff without manage database backups cannot access', function ()
         ->assertForbidden();
 
     $this->actingAs($user, 'platform')
-        ->post(route('platform.database-backups.export'))
+        ->post(route('platform.database-backups.run'))
         ->assertForbidden();
 });
 

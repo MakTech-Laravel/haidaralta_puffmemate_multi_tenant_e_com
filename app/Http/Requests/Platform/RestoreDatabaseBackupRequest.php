@@ -2,22 +2,23 @@
 
 namespace App\Http\Requests\Platform;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ImportDatabaseBackupRequest extends FormRequest
+class RestoreDatabaseBackupRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user() !== null;
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'extensions:sql,txt', 'max:51200'],
+            'path' => ['required', 'string', 'max:500'],
             'confirmed' => ['accepted'],
         ];
     }
@@ -28,7 +29,7 @@ class ImportDatabaseBackupRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'confirmed.accepted' => 'You must confirm that importing will overwrite the current database.',
+            'confirmed.accepted' => 'You must confirm that restoring will overwrite the current database.',
         ];
     }
 }

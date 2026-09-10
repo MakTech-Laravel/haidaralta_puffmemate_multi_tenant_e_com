@@ -53,7 +53,9 @@ DB_PASSWORD=...
 DB_SSLMODE=prefer
 ```
 
-Platform database export/import shells out to `pg_dump` / `psql` **inside the PUFFMEMATE app container**, then connects to the separate Postgres resource via `DB_HOST`. The production Dockerfile installs `postgresql-client` for that; do not put dump/restore tools only on the database container. After changing the Dockerfile, rebuild and redeploy the app image.
+Platform Spatie backups shell out to `pg_dump` / `psql` **inside the PUFFMEMATE app container**, then connect to the separate Postgres resource via `DB_HOST`. Set `POSTGRES_BINARY_PATH=/usr/bin` so Spatie’s db-dumper finds the binaries. The production Dockerfile installs `postgresql-client` for that; do not put dump/restore tools only on the database container. After changing the Dockerfile, rebuild and redeploy the app image.
+
+Backup zips live on the `backups` disk at `storage/app/private/spatie-backups`. Mount a Coolify persistent volume for at least `storage/app/private` (or the backups path) — otherwise redeploys wipe zip inventory. Optional: `BACKUP_ARCHIVE_PASSWORD`, `BACKUP_MAIL_TO` (leave empty to disable backup mail notifications).
 
 Use the internal Coolify Redis hostname. Separate logical databases prevent normal cache eviction from targeting queue data, but they are not a security boundary:
 
@@ -238,7 +240,7 @@ Current tenant isolation is request middleware plus `branch_id` query scoping an
 - Authorize private/presence channels against the authenticated tenant.
 - Prefix object keys by tenant and never trust a client-supplied tenant ID.
 
-The configured local/public disks use container storage and are ephemeral unless Coolify mounts persistent storage. The current app has no user-upload workflow and no installed S3 adapter. Before production uploads, either configure a deliberate persistent Coolify volume for `storage/app` or approve and install an object-storage adapter for S3/R2/MinIO. Do not rely on the image layer for permanent files.
+The configured local/public/backups disks use container storage and are ephemeral unless Coolify mounts persistent storage. Spatie backup zips and uploads under `storage/app/private` are lost on redeploy without a volume. Before production uploads or relying on backups, mount a deliberate Coolify volume for `storage/app/private` (or approve and install an object-storage adapter for S3/R2/MinIO). Do not rely on the image layer for permanent files.
 
 Redis sessions support multiple replicas without sticky sessions. Use secure cookies in production (`SESSION_SECURE_COOKIE=true`, `SESSION_HTTP_ONLY=true`, `SESSION_SAME_SITE=lax`) and set `SESSION_DOMAIN` only when cross-subdomain login is intentionally required.
 

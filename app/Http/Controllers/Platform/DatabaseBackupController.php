@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Platform\ImportDatabaseBackupRequest;
-use App\Models\DatabaseBackupHistory;
-use App\Services\DatabaseBackup\DatabaseBackupService;
+use App\Http\Requests\Platform\RestoreDatabaseBackupRequest;
+use App\Services\Backup\BackupService;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -17,101 +15,83 @@ use Throwable;
 
 class DatabaseBackupController extends Controller
 {
-    public function __construct(private DatabaseBackupService $databaseBackups) {}
+    public function __construct(private BackupService $backups) {}
 
     /**
-     * List database backup history and actions.
+     * List Spatie backup zips and operator history.
      */
     public function index(): Response
     {
         return Inertia::render('platform/database-backups/index', [
-            'histories' => $this->databaseBackups->paginateHistory(),
+            'backups' => $this->backups->list(),
+            'histories' => $this->backups->paginateHistory(),
             'connection' => (string) config('database.default'),
         ]);
     }
 
     /**
-     * Export the current database to SQL, record history, and trigger download.
+     * Queue a full Spatie backup (database + storage/app files).
      */
-    public function export(Request $request): RedirectResponse
+    public function run(Request $request): RedirectResponse
     {
         try {
-            $history = $this->databaseBackups->export($request->user());
-
-            Inertia::flash(
-                'download_url',
-                route('platform.database-backups.download', $history),
-            );
-            Toast::success('Database export completed (#'.$history->id.'). Download starting…');
+            $history = $this->backups->run($request->user());
+            Toast::success('Backup queued (#'.$history->id.').');
         } catch (Throwable $exception) {
             report($exception);
-            Toast::error('Database export failed: '.$exception->getMessage());
+            Toast::error('Failed to queue backup: '.$exception->getMessage());
         }
 
         return redirect()->route('platform.database-backups.index');
     }
 
     /**
-     * Import an uploaded SQL dump and record history.
+     * Queue Spatie cleanup of old backups.
      */
-    public function import(ImportDatabaseBackupRequest $request): RedirectResponse
+    public function clean(Request $request): RedirectResponse
     {
         try {
-            $history = $this->databaseBackups->importUpload(
-                $request->file('file'),
-                $request->user(),
-            );
-            Toast::success('Database import completed (#'.$history->id.').');
+            $history = $this->backups->clean($request->user());
+            Toast::success('Backup cleanup queued (#'.$history->id.').');
         } catch (Throwable $exception) {
             report($exception);
-            Toast::error('Database import failed: '.$exception->getMessage());
+            Toast::error('Failed to queue cleanup: '.$exception->getMessage());
         }
 
         return redirect()->route('platform.database-backups.index');
     }
 
     /**
-     * Download a completed backup SQL file.
+     * Download a backup zip from the backups disk.
      */
-    public function download(DatabaseBackupHistory $databaseBackupHistory): StreamedResponse|RedirectResponse
+    public function download(Request $request): StreamedResponse|RedirectResponse
     {
-        if (! $databaseBackupHistory->hasDownloadableFile()
-            || ! Storage::disk($databaseBackupHistory->disk)->exists((string) $databaseBackupHistory->path)) {
-            Toast::error('Backup file is not available.');
+        $path = (string) $request->query('path', '');
+
+        try {
+            return $this->backups->download($path);
+        } catch (Throwable $exception) {
+            report($exception);
+            Toast::error($exception->getMessage());
 
             return redirect()->route('platform.database-backups.index');
         }
-
-        return Storage::disk($databaseBackupHistory->disk)->download(
-            (string) $databaseBackupHistory->path,
-            (string) $databaseBackupHistory->filename,
-            [
-                'Content-Type' => 'application/sql',
-                'Content-Disposition' => 'attachment; filename="'.$databaseBackupHistory->filename.'"',
-            ],
-        );
     }
 
     /**
-     * Restore the database from a previous export history entry.
+     * Queue a database-only restore from a Spatie backup zip.
      */
-    public function restore(Request $request, DatabaseBackupHistory $databaseBackupHistory): RedirectResponse
+    public function restore(RestoreDatabaseBackupRequest $request): RedirectResponse
     {
-        if (! $request->boolean('confirmed')) {
-            Toast::error('You must confirm that restoring will overwrite the current database.');
-
-            return redirect()->route('platform.database-backups.index');
-        }
-
         try {
-            $history = $this->databaseBackups->restoreFromHistory(
-                $databaseBackupHistory,
+            $history = $this->backups->restoreDatabase(
+                (string) $request->validated('path'),
                 $request->user(),
             );
-            Toast::success('Database restore completed (#'.$history->id.').');
+            Toast::success('Database restore queued (#'.$history->id.').');
         } catch (Throwable $exception) {
             report($exception);
-            Toast::error('Database restore failed: '.$exception->getMessage());
+            Toast::error('Failed to queue restore: '.$exception->getMessage());
         }
 
         return redirect()->route('platform.database-backups.index');

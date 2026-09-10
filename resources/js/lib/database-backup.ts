@@ -19,7 +19,15 @@ export function backupStatusBadgeVariant(status: string): BadgeVariant {
 }
 
 export function backupTypeBadgeVariant(type: string): BadgeVariant {
-    return type === 'import' ? 'secondary' : 'outline';
+    switch (type) {
+        case 'restore':
+            return 'secondary';
+        case 'cleanup':
+            return 'outline';
+        case 'run':
+        default:
+            return 'outline';
+    }
 }
 
 export function formatBytes(bytes: number | null): string {

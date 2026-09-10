@@ -5,9 +5,9 @@ namespace Database\Seeders;
 use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
 use App\Models\Branch;
+use App\Models\Permission;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
@@ -115,6 +115,8 @@ class RolesAndPermissionsSeeder extends Seeder
                     ->filter(fn (Permission $permission) => in_array($permission->name, [
                         PermissionEnum::VIEW_DASHBOARD->value,
                         PermissionEnum::VIEW_BRANCH_DASHBOARD->value,
+                        PermissionEnum::VIEW_ACTIVITY_LOGS->value,
+                        PermissionEnum::VIEW_BRANCH_ACTIVITY_LOGS->value,
                     ], true))
                     ->values()
                     ->all(),

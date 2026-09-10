@@ -29,7 +29,7 @@ export const platformNav: NavNode[] = [
         title: 'Activity log',
         href: '/platform/activity-logs',
         icon: ScrollText,
-        permissions: ['manage-reports'],
+        permissions: ['view-activity-logs'],
     },
     {
         title: 'Database backups',

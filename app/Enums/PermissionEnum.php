@@ -9,6 +9,7 @@ enum PermissionEnum: string
     case MANAGE_ROLES = 'manage-roles';
     case MANAGE_BRANCHES = 'manage-branches';
     case MANAGE_REPORTS = 'manage-reports';
+    case VIEW_ACTIVITY_LOGS = 'view-activity-logs';
     case MANAGE_DATABASE_BACKUPS = 'manage-database-backups';
     case VIEW_BRANCHES = 'view-branches';
     case CREATE_BRANCHES = 'create-branches';
@@ -20,6 +21,7 @@ enum PermissionEnum: string
     case MANAGE_BRANCH_ORDERS = 'manage-branch-orders';
     case MANAGE_BRANCH_STAFF = 'manage-branch-staff';
     case MANAGE_BRANCH_ROLES = 'manage-branch-roles';
+    case VIEW_BRANCH_ACTIVITY_LOGS = 'view-branch-activity-logs';
 
     /**
      * The auth guard this permission belongs to.
@@ -31,6 +33,7 @@ enum PermissionEnum: string
             self::MANAGE_USERS,
             self::MANAGE_ROLES,
             self::MANAGE_REPORTS,
+            self::VIEW_ACTIVITY_LOGS,
             self::MANAGE_DATABASE_BACKUPS,
             self::VIEW_BRANCHES,
             self::CREATE_BRANCHES,
@@ -42,7 +45,8 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_PRODUCTS,
             self::MANAGE_BRANCH_ORDERS,
             self::MANAGE_BRANCH_STAFF,
-            self::MANAGE_BRANCH_ROLES => 'branch',
+            self::MANAGE_BRANCH_ROLES,
+            self::VIEW_BRANCH_ACTIVITY_LOGS => 'branch',
         };
     }
 
@@ -70,6 +74,8 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_PRODUCTS => 'Products',
             self::MANAGE_BRANCH_ORDERS => 'Orders',
             self::MANAGE_REPORTS => 'Reports',
+            self::VIEW_ACTIVITY_LOGS,
+            self::VIEW_BRANCH_ACTIVITY_LOGS => 'Activity',
             self::MANAGE_DATABASE_BACKUPS => 'Database',
         };
     }
@@ -85,6 +91,7 @@ enum PermissionEnum: string
             self::MANAGE_ROLES => 'Manage roles',
             self::MANAGE_BRANCHES => 'Manage branches',
             self::MANAGE_REPORTS => 'Manage reports',
+            self::VIEW_ACTIVITY_LOGS => 'View activity logs',
             self::MANAGE_DATABASE_BACKUPS => 'Manage database backups',
             self::VIEW_BRANCHES => 'View branches',
             self::CREATE_BRANCHES => 'Create branches',
@@ -95,6 +102,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_ORDERS => 'Manage branch orders',
             self::MANAGE_BRANCH_STAFF => 'Manage branch staff',
             self::MANAGE_BRANCH_ROLES => 'Manage branch roles',
+            self::VIEW_BRANCH_ACTIVITY_LOGS => 'View branch activity logs',
         };
     }
 
