@@ -1,5 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
+import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +13,8 @@ type StaffMember = {
     is_active: boolean;
     branch: { id: number; name: string; slug: string } | null;
     roles: string[];
+    is_super_admin: boolean;
+    effective_permissions: string[];
 };
 
 export default function PlatformBranchStaffShow({
@@ -18,60 +22,104 @@ export default function PlatformBranchStaffShow({
 }: {
     staffMember: StaffMember;
 }) {
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [processing, setProcessing] = useState(false);
+
     return (
         <>
             <Head title={staffMember.name} />
 
-            <div className="space-y-6 p-2">
+            <div className="flex flex-col gap-6 p-2">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title={staffMember.name}
                         description={staffMember.email}
                     />
-                    <Button variant="secondary" asChild>
-                        <Link href={BranchStaffController.index.url()}>
-                            Back
-                        </Link>
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="secondary" asChild>
+                            <Link href={BranchStaffController.index.url()}>
+                                Back
+                            </Link>
+                        </Button>
+                        <Button asChild>
+                            <Link
+                                href={BranchStaffController.edit.url(
+                                    staffMember.id,
+                                )}
+                            >
+                                Edit
+                            </Link>
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => setConfirmOpen(true)}
+                        >
+                            Delete
+                        </Button>
+                    </div>
                 </div>
 
-                <dl className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <dt className="text-muted-foreground text-sm">
-                            Branch
-                        </dt>
-                        <dd className="font-medium">
-                            {staffMember.branch?.name ?? '—'}
-                        </dd>
+                <section className="flex flex-col gap-2">
+                    <h2 className="text-sm font-medium">Branch</h2>
+                    <p className="text-sm">
+                        {staffMember.branch?.name ?? '—'}
+                    </p>
+                </section>
+
+                <section className="flex flex-col gap-2">
+                    <h2 className="text-sm font-medium">Status</h2>
+                    <p className="text-sm">
+                        {staffMember.is_active ? 'Active' : 'Inactive'}
+                    </p>
+                </section>
+
+                <section className="flex flex-col gap-2">
+                    <h2 className="text-sm font-medium">Roles</h2>
+                    <div className="flex flex-wrap gap-2">
+                        {staffMember.roles.map((role) => (
+                            <Badge key={role} variant="secondary">
+                                {role}
+                            </Badge>
+                        ))}
                     </div>
-                    <div>
-                        <dt className="text-muted-foreground text-sm">
-                            Status
-                        </dt>
-                        <dd className="font-medium">
-                            {staffMember.is_active ? 'Active' : 'Inactive'}
-                        </dd>
+                </section>
+
+                <section className="flex flex-col gap-2">
+                    <h2 className="text-sm font-medium">
+                        Effective permissions
+                    </h2>
+                    {staffMember.is_super_admin ? (
+                        <p className="text-muted-foreground text-sm">
+                            Branch super-admin bypasses permission checks via
+                            Gate within this branch team.
+                        </p>
+                    ) : null}
+                    <div className="flex flex-wrap gap-2">
+                        {staffMember.effective_permissions.map((permission) => (
+                            <Badge key={permission} variant="outline">
+                                {permission}
+                            </Badge>
+                        ))}
                     </div>
-                    <div className="sm:col-span-2">
-                        <dt className="text-muted-foreground mb-2 text-sm">
-                            Roles
-                        </dt>
-                        <dd className="flex flex-wrap gap-2">
-                            {staffMember.roles.length === 0 ? (
-                                <span className="text-muted-foreground text-sm">
-                                    No roles assigned
-                                </span>
-                            ) : (
-                                staffMember.roles.map((role) => (
-                                    <Badge key={role} variant="secondary">
-                                        {role}
-                                    </Badge>
-                                ))
-                            )}
-                        </dd>
-                    </div>
-                </dl>
+                </section>
             </div>
+
+            <ConfirmDeleteDialog
+                open={confirmOpen}
+                onOpenChange={setConfirmOpen}
+                description={`Delete “${staffMember.name}” permanently?`}
+                processing={processing}
+                onConfirm={() => {
+                    setProcessing(true);
+                    router.delete(
+                        BranchStaffController.destroy.url(staffMember.id),
+                        {
+                            preserveScroll: true,
+                            onFinish: () => setProcessing(false),
+                        },
+                    );
+                }}
+            />
         </>
     );
 }

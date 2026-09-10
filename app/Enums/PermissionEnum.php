@@ -6,6 +6,7 @@ enum PermissionEnum: string
 {
     case VIEW_DASHBOARD = 'view-dashboard';
     case MANAGE_USERS = 'manage-users';
+    case MANAGE_BRANCH_USERS = 'manage-branch-users';
     case MANAGE_ROLES = 'manage-roles';
     case MANAGE_BRANCHES = 'manage-branches';
     case MANAGE_REPORTS = 'manage-reports';
@@ -31,6 +32,7 @@ enum PermissionEnum: string
         return match ($this) {
             self::VIEW_DASHBOARD,
             self::MANAGE_USERS,
+            self::MANAGE_BRANCH_USERS,
             self::MANAGE_ROLES,
             self::MANAGE_REPORTS,
             self::VIEW_ACTIVITY_LOGS,
@@ -60,6 +62,7 @@ enum PermissionEnum: string
             self::VIEW_BRANCH_DASHBOARD => 'Dashboard',
 
             self::MANAGE_USERS,
+            self::MANAGE_BRANCH_USERS,
             self::MANAGE_BRANCH_STAFF => 'Users',
 
             self::MANAGE_ROLES,
@@ -88,6 +91,7 @@ enum PermissionEnum: string
         return match ($this) {
             self::VIEW_DASHBOARD => 'View dashboard',
             self::MANAGE_USERS => 'Manage users',
+            self::MANAGE_BRANCH_USERS => 'Manage branch users',
             self::MANAGE_ROLES => 'Manage roles',
             self::MANAGE_BRANCHES => 'Manage branches',
             self::MANAGE_REPORTS => 'Manage reports',

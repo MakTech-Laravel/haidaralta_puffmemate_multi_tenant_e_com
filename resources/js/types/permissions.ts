@@ -1,6 +1,7 @@
 export type PermissionKey =
     | 'view-dashboard'
     | 'manage-users'
+    | 'manage-branch-users'
     | 'manage-roles'
     | 'manage-branches'
     | 'manage-reports'

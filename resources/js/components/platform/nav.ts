@@ -71,6 +71,6 @@ export const platformNav: NavNode[] = [
         title: 'Branch staff',
         href: '/platform/branch-staff',
         icon: Users,
-        permissions: ['manage-users'],
+        permissions: ['manage-branch-users'],
     },
 ];

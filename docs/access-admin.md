@@ -16,11 +16,13 @@ Roles and permissions are always team-scoped. Platform staff users have `users.b
 | Permission            | Guard    | What it unlocks                                          |
 | --------------------- | -------- | -------------------------------------------------------- |
 | `manage-roles`        | platform | Platform roles CRUD, permission catalog, CSV export      |
-| `manage-users`        | platform | Platform staff CRUD, branch-staff overview               |
-| `manage-branch-roles` | branch   | Branch roles CRUD, branch permission catalog, CSV export |
-| `manage-branch-staff` | branch   | Branch staff CRUD                                        |
+| `manage-users`         | platform | Platform staff CRUD                                      |
+| `manage-branch-users`  | platform | Branch staff CRUD across all branches (platform portal)  |
+| `manage-branch-roles`  | branch   | Branch roles CRUD, branch permission catalog, CSV export |
+| `manage-branch-staff`  | branch   | Branch staff CRUD (within own branch portal)             |
 
 Branch managers are seeded **without** `manage-branch-staff` and `manage-branch-roles`.
+Platform managers are seeded **without** `manage-branch-users`, `manage-roles`, and `manage-database-backups`.
 
 ## Routes
 
@@ -29,7 +31,7 @@ Branch managers are seeded **without** `manage-branch-staff` and `manage-branch-
 - `platform/roles` (+ `roles/export`)
 - `platform/permissions` (+ `permissions/export`)
 - `platform/staff`
-- `platform/branch-staff` (read-only oversight)
+- `platform/branch-staff` (full CRUD; permission `manage-branch-users`)
 
 ### Branch (`ensure.guard:branch` + `resolve.branch`)
 
