@@ -48,17 +48,17 @@ Each layout is a thin shell composing:
 ```tsx
 // resources/js/Layouts/BranchLayout.tsx (shape shared by all 4 layouts)
 export default function BranchLayout({ children }: PropsWithChildren) {
-  const { branch } = usePage<PageProps>().props;
+    const { branch } = usePage<PageProps>().props;
 
-  return (
-    <div className="flex min-h-screen">
-      <SidebarNav nodes={branchNav} />
-      <div className="flex-1">
-        <TopBar title={branch?.name ?? 'Branch'} />
-        <main className="p-6">{children}</main>
-      </div>
-    </div>
-  );
+    return (
+        <div className="flex min-h-screen">
+            <SidebarNav nodes={branchNav} />
+            <div className="flex-1">
+                <TopBar title={branch?.name ?? 'Branch'} />
+                <main className="p-6">{children}</main>
+            </div>
+        </div>
+    );
 }
 ```
 
@@ -78,28 +78,30 @@ resources/js/components/navigation/
 ```ts
 // types.ts
 interface NavNode {
-  title: string;
-  href: string;
-  icon?: LucideIcon;
-  permissions?: PermissionKey[]; // ANY-match: user needs at least one to see this node
-  items?: NavNode[];
+    title: string;
+    href: string;
+    icon?: LucideIcon;
+    permissions?: PermissionKey[]; // ANY-match: user needs at least one to see this node
+    items?: NavNode[];
 }
 ```
 
 ```ts
 // nav-utils.ts
 export function filterNavNodes(
-  nodes: NavNode[],
-  canAny: (perms: PermissionKey[]) => boolean,
+    nodes: NavNode[],
+    canAny: (perms: PermissionKey[]) => boolean,
 ): NavNode[] {
-  return nodes
-    .map((node) => {
-      const items = node.items ? filterNavNodes(node.items, canAny) : undefined;
-      const visible = !node.permissions || canAny(node.permissions);
-      if (!visible && (!items || items.length === 0)) return null;
-      return { ...node, items };
-    })
-    .filter((n): n is NavNode => n !== null);
+    return nodes
+        .map((node) => {
+            const items = node.items
+                ? filterNavNodes(node.items, canAny)
+                : undefined;
+            const visible = !node.permissions || canAny(node.permissions);
+            if (!visible && (!items || items.length === 0)) return null;
+            return { ...node, items };
+        })
+        .filter((n): n is NavNode => n !== null);
 }
 ```
 
@@ -114,9 +116,17 @@ Each portal keeps its own small nav array, e.g.:
 ```ts
 // resources/js/components/platform/nav.ts
 export const platformNav: NavNode[] = [
-  { title: 'Dashboard', href: '/platform/dashboard', permissions: ['view-dashboard'] },
-  { title: 'Roles', href: '/platform/roles', permissions: ['manage-roles'] },      // Phase 8
-  { title: 'Branches', href: '/platform/branches', permissions: ['manage-branches'] }, // Phase 8
+    {
+        title: 'Dashboard',
+        href: '/platform/dashboard',
+        permissions: ['view-dashboard'],
+    },
+    { title: 'Roles', href: '/platform/roles', permissions: ['manage-roles'] }, // Phase 8
+    {
+        title: 'Branches',
+        href: '/platform/branches',
+        permissions: ['manage-branches'],
+    }, // Phase 8
 ];
 ```
 

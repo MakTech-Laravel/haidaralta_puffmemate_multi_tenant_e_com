@@ -52,11 +52,11 @@ export function IconPickerPreview({
         return (
             <div
                 className={cn(
-                    'flex items-center gap-3 border-t border-border bg-background px-5 py-4',
+                    'border-border bg-background flex items-center gap-3 border-t px-5 py-4',
                     classNames?.preview,
                 )}
             >
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40">
+                <div className="border-border bg-muted/40 flex size-11 shrink-0 items-center justify-center rounded-xl border">
                     <CachedLucideIcon
                         key={icon}
                         name={icon}
@@ -64,13 +64,13 @@ export function IconPickerPreview({
                     />
                 </div>
                 <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                    <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                         {isPreview ? labels.preview : labels.selected}
                     </p>
-                    <p className="truncate text-sm font-medium text-foreground">
+                    <p className="text-foreground truncate text-sm font-medium">
                         {label}
                     </p>
-                    <p className="truncate font-mono text-[11px] text-muted-foreground">
+                    <p className="text-muted-foreground truncate font-mono text-[11px]">
                         {icon}
                     </p>
                 </div>
@@ -101,15 +101,15 @@ export function IconPickerPreview({
     return (
         <aside
             className={cn(
-                'flex h-full flex-col gap-4 border-l border-border bg-muted/20 p-5',
+                'border-border bg-muted/20 flex h-full flex-col gap-4 border-l p-5',
                 classNames?.preview,
             )}
         >
             <div className="flex flex-1 flex-col items-center justify-center gap-4">
-                <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                     {isPreview ? labels.preview : labels.selected}
                 </p>
-                <div className="flex size-24 items-center justify-center rounded-2xl border border-border bg-background shadow-xs">
+                <div className="border-border bg-background flex size-24 items-center justify-center rounded-2xl border shadow-xs">
                     <CachedLucideIcon
                         key={icon}
                         name={icon}
@@ -117,10 +117,10 @@ export function IconPickerPreview({
                     />
                 </div>
                 <div className="space-y-1 text-center">
-                    <p className="text-sm font-semibold text-foreground">
+                    <p className="text-foreground text-sm font-semibold">
                         {label}
                     </p>
-                    <p className="font-mono text-xs text-muted-foreground">
+                    <p className="text-muted-foreground font-mono text-xs">
                         {icon}
                     </p>
                 </div>

@@ -365,7 +365,7 @@ export function VirtualIconGrid({
                 onKeyDown={handleKeyDown}
                 tabIndex={disabled ? -1 : 0}
                 className={cn(
-                    'max-h-80 scrollbar-thin overflow-y-auto rounded-xl border border-border/60 bg-muted/10 p-3 outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    'border-border/60 bg-muted/10 focus-visible:ring-ring max-h-80 scrollbar-thin overflow-y-auto rounded-xl border p-3 outline-none focus-visible:ring-2',
                     className,
                 )}
                 role="listbox"
@@ -422,7 +422,7 @@ export function VirtualIconGrid({
                                         }}
                                         onBlur={clearHoverTip}
                                         className={cn(
-                                            'relative flex w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-transparent bg-background px-1.5 py-1 text-center transition-colors hover:bg-muted/40',
+                                            'bg-background hover:bg-muted/40 relative flex w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-transparent px-1.5 py-1 text-center transition-colors',
                                             isSelected &&
                                                 cn(
                                                     'border-primary bg-primary/15 text-primary shadow-xs',
@@ -431,24 +431,24 @@ export function VirtualIconGrid({
                                             isPending &&
                                                 !isSelected &&
                                                 cn(
-                                                    'border-2 border-dashed border-primary bg-primary/10 text-primary',
+                                                    'border-primary bg-primary/10 text-primary border-2 border-dashed',
                                                     optionPendingClassName,
                                                 ),
                                             isFocused &&
                                                 !isSelected &&
                                                 !isPending &&
-                                                'bg-muted/60 ring-1 ring-border',
+                                                'bg-muted/60 ring-border ring-1',
                                             optionClassName,
                                         )}
                                     >
                                         {isSelected ? (
                                             <Check
-                                                className="absolute top-1 right-1 size-3 text-primary"
+                                                className="text-primary absolute top-1 right-1 size-3"
                                                 aria-hidden
                                             />
                                         ) : null}
                                         {isPending && !isSelected ? (
-                                            <span className="absolute top-1 right-1 size-1.5 rounded-full bg-primary" />
+                                            <span className="bg-primary absolute top-1 right-1 size-1.5 rounded-full" />
                                         ) : null}
                                         <CachedLucideIcon
                                             name={option.key}
@@ -457,7 +457,7 @@ export function VirtualIconGrid({
                                         {showLabel ? (
                                             <span
                                                 className={cn(
-                                                    'line-clamp-1 w-full px-0.5 text-[10px] leading-tight font-medium text-muted-foreground',
+                                                    'text-muted-foreground line-clamp-1 w-full px-0.5 text-[10px] leading-tight font-medium',
                                                     optionLabelClassName,
                                                 )}
                                             >

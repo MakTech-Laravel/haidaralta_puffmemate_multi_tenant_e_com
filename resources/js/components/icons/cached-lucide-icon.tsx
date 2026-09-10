@@ -55,7 +55,7 @@ export function CachedLucideIcon({
         return (
             <span
                 className={cn(
-                    'inline-block animate-pulse rounded-sm bg-muted/50',
+                    'bg-muted/50 inline-block animate-pulse rounded-sm',
                     fallbackClassName ?? className,
                 )}
                 aria-hidden

@@ -29,7 +29,10 @@ class RolesAndPermissionsSeeder extends Seeder
         $this->createGuardRoles(
             self::PLATFORM_GUARD,
             $platformPermissions,
-            [PermissionEnum::MANAGE_ROLES->value],
+            [
+                PermissionEnum::MANAGE_ROLES->value,
+                PermissionEnum::MANAGE_DATABASE_BACKUPS->value,
+            ],
         );
 
         $this->resetTeamContext();

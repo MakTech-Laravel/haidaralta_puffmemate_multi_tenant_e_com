@@ -57,11 +57,7 @@ export function StaffForm({
     const toggleRole = (value: string) => {
         const hasRole = selectedRoles.includes(value);
 
-        if (
-            value === SUPER_ADMIN_ROLE &&
-            hasRole &&
-            lockedSuperAdmin
-        ) {
+        if (value === SUPER_ADMIN_ROLE && hasRole && lockedSuperAdmin) {
             return;
         }
 

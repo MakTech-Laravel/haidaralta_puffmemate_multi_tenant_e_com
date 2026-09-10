@@ -7,11 +7,11 @@ its own HTTP request.
 
 ```ts
 const {
-  can,       // (permission: PermissionKey) => boolean
-  canAny,    // (permissions: PermissionKey[]) => boolean — true if user has at least one
-  canAll,    // (permissions: PermissionKey[]) => boolean — true only if user has every one
-  hasRole,   // (role: string) => boolean
-  hasAnyRole // (roles: string[]) => boolean
+    can, // (permission: PermissionKey) => boolean
+    canAny, // (permissions: PermissionKey[]) => boolean — true if user has at least one
+    canAll, // (permissions: PermissionKey[]) => boolean — true only if user has every one
+    hasRole, // (role: string) => boolean
+    hasAnyRole, // (roles: string[]) => boolean
 } = usePermission();
 ```
 
@@ -27,15 +27,15 @@ error, not a silent runtime `false`.
 
 ```tsx
 function RolesPageActions() {
-  const { can } = usePermission();
+    const { can } = usePermission();
 
-  return (
-    <div className="flex gap-2">
-      {can('manage-roles') && (
-        <Button onClick={openCreateRoleModal}>New role</Button>
-      )}
-    </div>
-  );
+    return (
+        <div className="flex gap-2">
+            {can('manage-roles') && (
+                <Button onClick={openCreateRoleModal}>New role</Button>
+            )}
+        </div>
+    );
 }
 ```
 
@@ -43,13 +43,13 @@ function RolesPageActions() {
 
 ```tsx
 function StaffDirectoryLink() {
-  const { canAny } = usePermission();
+    const { canAny } = usePermission();
 
-  if (!canAny(['manage-branch-staff', 'manage-branch-orders'])) {
-    return null;
-  }
+    if (!canAny(['manage-branch-staff', 'manage-branch-orders'])) {
+        return null;
+    }
 
-  return <Link href="/branch/staff">Staff directory</Link>;
+    return <Link href="/branch/staff">Staff directory</Link>;
 }
 ```
 
@@ -57,12 +57,13 @@ function StaffDirectoryLink() {
 
 ```tsx
 function BulkArchiveButton() {
-  const { canAll } = usePermission();
+    const { canAll } = usePermission();
 
-  // Only show if the user can both view AND manage — a narrower gate than canAny
-  if (!canAll(['manage-branch-products', 'manage-branch-orders'])) return null;
+    // Only show if the user can both view AND manage — a narrower gate than canAny
+    if (!canAll(['manage-branch-products', 'manage-branch-orders']))
+        return null;
 
-  return <Button onClick={bulkArchive}>Archive selected</Button>;
+    return <Button onClick={bulkArchive}>Archive selected</Button>;
 }
 ```
 
@@ -75,13 +76,9 @@ permission strings are the stable contract. Business-logic gating should almost 
 
 ```tsx
 function WelcomeBanner() {
-  const { hasRole } = usePermission();
+    const { hasRole } = usePermission();
 
-  return (
-    <p>
-      Welcome back{hasRole('super-admin') ? ', Super Admin' : ''}!
-    </p>
-  );
+    return <p>Welcome back{hasRole('super-admin') ? ', Super Admin' : ''}!</p>;
 }
 ```
 
