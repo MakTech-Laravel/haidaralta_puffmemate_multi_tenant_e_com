@@ -125,7 +125,7 @@ export default function PlatformActivityLogsIndex({
                     </Button>
                 </form>
 
-                <div className="rounded-xl border border-border bg-card">
+                <div className="border-border bg-card rounded-xl border">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -170,13 +170,13 @@ export default function PlatformActivityLogsIndex({
                                                 </span>
                                             )}
                                         </TableCell>
-                                        <TableCell className="max-w-xs truncate font-medium text-foreground">
+                                        <TableCell className="text-foreground max-w-xs truncate font-medium">
                                             {activity.description}
                                         </TableCell>
                                         <TableCell>
                                             {activity.causer ? (
                                                 <div className="min-w-0">
-                                                    <p className="truncate text-foreground">
+                                                    <p className="text-foreground truncate">
                                                         {activity.causer.name}
                                                     </p>
                                                     {activity.causer.email ? (
@@ -197,7 +197,7 @@ export default function PlatformActivityLogsIndex({
                                         <TableCell>
                                             {activity.subject ? (
                                                 <div className="min-w-0">
-                                                    <p className="truncate text-foreground">
+                                                    <p className="text-foreground truncate">
                                                         {activity.subject
                                                             .label ??
                                                             `#${activity.subject.id}`}

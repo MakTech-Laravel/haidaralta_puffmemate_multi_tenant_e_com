@@ -105,10 +105,7 @@ export function RoleForm({
                     </div>
 
                     <div className="flex items-center gap-3 border-t pt-5">
-                        <Button
-                            type="submit"
-                            disabled={processing || locked}
-                        >
+                        <Button type="submit" disabled={processing || locked}>
                             {submitLabel ??
                                 (isEdit ? 'Save changes' : 'Create role')}
                         </Button>

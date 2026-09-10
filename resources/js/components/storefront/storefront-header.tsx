@@ -2,7 +2,15 @@ import { Link, usePage } from '@inertiajs/react';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Button } from '@/components/ui/button';
 import { cn, toUrl } from '@/lib/utils';
-import { about, contact, dashboard, home, login, register, shop } from '@/routes';
+import {
+    about,
+    contact,
+    dashboard,
+    home,
+    login,
+    register,
+    shop,
+} from '@/routes';
 
 const nav = [
     { label: 'Home', href: home },
@@ -33,9 +41,7 @@ export function StorefrontHeader() {
                     {nav.map((item) => {
                         const href = toUrl(item.href());
                         const active =
-                            href === '/'
-                                ? url === '/'
-                                : url.startsWith(href);
+                            href === '/' ? url === '/' : url.startsWith(href);
 
                         return (
                             <Link

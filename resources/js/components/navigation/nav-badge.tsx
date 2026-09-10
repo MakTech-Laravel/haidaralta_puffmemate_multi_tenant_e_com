@@ -15,7 +15,7 @@ export function NavBadge({
     return (
         <span
             className={cn(
-                'inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-md bg-primary/10 px-1.5 text-xs font-medium text-primary tabular-nums',
+                'bg-primary/10 text-primary inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-md px-1.5 text-xs font-medium tabular-nums',
                 'group-data-[collapsible=icon]:hidden',
                 className,
             )}

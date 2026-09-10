@@ -136,12 +136,12 @@ export function IconPickerSheet({
             <SheetContent
                 side="right"
                 className={cn(
-                    'flex h-full w-full flex-col gap-0 overflow-hidden bg-background p-0 text-foreground',
+                    'bg-background text-foreground flex h-full w-full flex-col gap-0 overflow-hidden p-0',
                     sheetMaxWidth(size),
                     classNames?.sheetContent,
                 )}
             >
-                <SheetHeader className="shrink-0 space-y-1.5 border-b border-border px-5 py-5 pr-12 text-left">
+                <SheetHeader className="border-border shrink-0 space-y-1.5 border-b px-5 py-5 pr-12 text-left">
                     <SheetTitle>{dialogTitle}</SheetTitle>
                     <SheetDescription>{dialogDescription}</SheetDescription>
                 </SheetHeader>

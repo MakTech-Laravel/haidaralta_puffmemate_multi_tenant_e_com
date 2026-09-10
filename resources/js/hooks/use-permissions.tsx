@@ -21,7 +21,9 @@ export function usePermission() {
             return true;
         }
 
-        return permissionList.some((permission) => permissions.includes(permission));
+        return permissionList.some((permission) =>
+            permissions.includes(permission),
+        );
     };
 
     const canAll = (permissionList: PermissionKey[]): boolean => {
@@ -29,7 +31,9 @@ export function usePermission() {
             return true;
         }
 
-        return permissionList.every((permission) => permissions.includes(permission));
+        return permissionList.every((permission) =>
+            permissions.includes(permission),
+        );
     };
 
     const hasRole = (role: string): boolean => roles.includes(role);

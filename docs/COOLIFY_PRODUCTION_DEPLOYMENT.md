@@ -8,17 +8,17 @@ PostgreSQL, Redis, and Meilisearch are separate Coolify resources. Laravel Rever
 
 ## Coolify Application Settings
 
-| Setting | Value |
-| --- | --- |
-| Build pack | Dockerfile |
-| Dockerfile | `Dockerfile` |
-| Internal port | `80` |
-| Health path | `/up` |
-| Expected health status | `200` |
-| Health interval | `30s` |
-| Health timeout | `5s` |
-| Health retries | `3` |
-| Stop Grace Period | `120s` initially |
+| Setting                | Value            |
+| ---------------------- | ---------------- |
+| Build pack             | Dockerfile       |
+| Dockerfile             | `Dockerfile`     |
+| Internal port          | `80`             |
+| Health path            | `/up`            |
+| Expected health status | `200`            |
+| Health interval        | `30s`            |
+| Health timeout         | `5s`             |
+| Health retries         | `3`              |
+| Stop Grace Period      | `120s` initially |
 
 `/up` is Laravel's built-in health route. It proves Nginx, PHP-FPM, and Laravel bootstrap without making transient dependency failures trigger restart cascades. Monitor PostgreSQL, Redis, Meilisearch, and Reverb separately for readiness and dependency diagnostics.
 
@@ -146,9 +146,9 @@ FCM_SW_SHOW_NOTIFICATION=false
 
 ## Reverb integration (live)
 
-| Role | URL |
-|------|-----|
-| App | https://puffmemate.maktechlaravel.cloud |
+| Role   | URL                                        |
+| ------ | ------------------------------------------ |
+| App    | https://puffmemate.maktechlaravel.cloud    |
 | Reverb | https://ws.puffmemate.maktechlaravel.cloud |
 
 **App Coolify runtime** (publisher — do not install `laravel/reverb` here):

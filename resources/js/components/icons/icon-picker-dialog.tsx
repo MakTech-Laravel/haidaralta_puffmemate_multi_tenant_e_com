@@ -135,7 +135,7 @@ export function IconPickerDialog({
 
             <DialogContent
                 className={cn(
-                    'flex max-h-[min(90vh,720px)] w-full flex-col gap-0 overflow-hidden bg-background p-0 text-foreground',
+                    'bg-background text-foreground flex max-h-[min(90vh,720px)] w-full flex-col gap-0 overflow-hidden p-0',
                     dialogMaxWidth(size),
                     classNames?.dialogContent,
                 )}
@@ -152,7 +152,7 @@ export function IconPickerDialog({
             >
                 <DialogHeader
                     className={cn(
-                        'shrink-0 space-y-1.5 border-b border-border px-5 py-5 text-left',
+                        'border-border shrink-0 space-y-1.5 border-b px-5 py-5 text-left',
                         classNames?.dialogHeader,
                     )}
                 >
@@ -199,7 +199,7 @@ export function IconPickerDialog({
                         />
                     </div>
 
-                    <div className="hidden min-h-0 border-l border-border lg:block">
+                    <div className="border-border hidden min-h-0 border-l lg:block">
                         <IconPickerPreview
                             icon={activeIcon}
                             label={activeLabel}

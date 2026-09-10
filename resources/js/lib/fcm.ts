@@ -1,8 +1,5 @@
 import { getToken, onMessage, type MessagePayload } from 'firebase/messaging';
-import {
-    getFirebaseMessaging,
-    getFirebaseVapidKey,
-} from '@/lib/firebase';
+import { getFirebaseMessaging, getFirebaseVapidKey } from '@/lib/firebase';
 
 const SERVICE_WORKER_URL = '/firebase-messaging-sw.js';
 

@@ -24,7 +24,9 @@ export function FileUploadAvatar({
     onClearExisting,
     ...props
 }: FileUploadAvatarProps) {
-    const selected = Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
+    const selected = Array.isArray(value)
+        ? (value[0] ?? null)
+        : (value ?? null);
 
     const existingFiles: ExistingFile[] =
         !selected && existingUrl

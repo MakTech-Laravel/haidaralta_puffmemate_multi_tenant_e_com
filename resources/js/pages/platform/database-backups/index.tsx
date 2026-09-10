@@ -110,9 +110,9 @@ export default function PlatformDatabaseBackupsIndex({
                     </Button>
                 </div>
 
-                <section className="space-y-4 rounded-xl border border-border bg-card p-4">
+                <section className="border-border bg-card space-y-4 rounded-xl border p-4">
                     <div>
-                        <h2 className="text-sm font-medium text-foreground">
+                        <h2 className="text-foreground text-sm font-medium">
                             Import SQL
                         </h2>
                         <p className="text-muted-foreground mt-1 text-sm">
@@ -188,10 +188,10 @@ export default function PlatformDatabaseBackupsIndex({
                 </section>
 
                 <section className="space-y-3">
-                    <h2 className="text-sm font-medium text-foreground">
+                    <h2 className="text-foreground text-sm font-medium">
                         History
                     </h2>
-                    <div className="rounded-xl border border-border bg-card">
+                    <div className="border-border bg-card rounded-xl border">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -246,7 +246,7 @@ export default function PlatformDatabaseBackupsIndex({
                                             </TableCell>
                                             <TableCell>
                                                 <div className="min-w-0">
-                                                    <p className="truncate text-foreground">
+                                                    <p className="text-foreground truncate">
                                                         {history.filename ??
                                                             '—'}
                                                     </p>
@@ -263,7 +263,7 @@ export default function PlatformDatabaseBackupsIndex({
                                             <TableCell>
                                                 {history.triggered_by ? (
                                                     <div className="min-w-0">
-                                                        <p className="truncate text-foreground">
+                                                        <p className="text-foreground truncate">
                                                             {
                                                                 history
                                                                     .triggered_by

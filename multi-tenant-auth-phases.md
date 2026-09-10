@@ -675,7 +675,7 @@ state at that time rather than guessing now.
 ## After this: what's deliberately out of scope for now
 
 Once Phase 9 is green, you have a working, tested, isolated 4-portal auth system with real admin
-management UI and shared infra. Explicitly *not* covered yet (future work, don't let an agent
+management UI and shared infra. Explicitly _not_ covered yet (future work, don't let an agent
 scope-creep into these):
 
 - Branch product/stock/order CRUD

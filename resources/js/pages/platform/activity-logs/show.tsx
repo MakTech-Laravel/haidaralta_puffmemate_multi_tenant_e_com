@@ -48,9 +48,7 @@ function formatValue(value: unknown): string {
     return JSON.stringify(value);
 }
 
-function changeKeys(
-    changes: ActivityDetail['attribute_changes'],
-): string[] {
+function changeKeys(changes: ActivityDetail['attribute_changes']): string[] {
     return Array.from(
         new Set([
             ...Object.keys(changes.attributes),
@@ -84,12 +82,12 @@ export default function PlatformActivityLogsShow({
                     </Button>
                 </div>
 
-                <section className="grid gap-4 rounded-xl border border-border bg-card p-4 sm:grid-cols-2">
+                <section className="border-border bg-card grid gap-4 rounded-xl border p-4 sm:grid-cols-2">
                     <div>
                         <h2 className="text-muted-foreground text-sm font-medium">
                             When
                         </h2>
-                        <p className="mt-1 text-sm text-foreground">
+                        <p className="text-foreground mt-1 text-sm">
                             {formatWhen(activity.created_at)}
                         </p>
                     </div>
@@ -115,7 +113,7 @@ export default function PlatformActivityLogsShow({
                         <h2 className="text-muted-foreground text-sm font-medium">
                             Log name
                         </h2>
-                        <p className="mt-1 text-sm text-foreground">
+                        <p className="text-foreground mt-1 text-sm">
                             {activity.log_name ?? '—'}
                         </p>
                     </div>
@@ -123,15 +121,15 @@ export default function PlatformActivityLogsShow({
                         <h2 className="text-muted-foreground text-sm font-medium">
                             Description
                         </h2>
-                        <p className="mt-1 text-sm text-foreground">
+                        <p className="text-foreground mt-1 text-sm">
                             {activity.description}
                         </p>
                     </div>
                 </section>
 
                 <section className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-xl border border-border bg-card p-4">
-                        <h2 className="text-sm font-medium text-foreground">
+                    <div className="border-border bg-card rounded-xl border p-4">
+                        <h2 className="text-foreground text-sm font-medium">
                             Causer
                         </h2>
                         {activity.causer ? (
@@ -160,8 +158,8 @@ export default function PlatformActivityLogsShow({
                         )}
                     </div>
 
-                    <div className="rounded-xl border border-border bg-card p-4">
-                        <h2 className="text-sm font-medium text-foreground">
+                    <div className="border-border bg-card rounded-xl border p-4">
+                        <h2 className="text-foreground text-sm font-medium">
                             Subject
                         </h2>
                         {activity.subject ? (
@@ -200,7 +198,7 @@ export default function PlatformActivityLogsShow({
                 </section>
 
                 <section className="space-y-3">
-                    <h2 className="text-sm font-medium text-foreground">
+                    <h2 className="text-foreground text-sm font-medium">
                         Attribute changes
                     </h2>
                     {keys.length === 0 ? (
@@ -208,17 +206,17 @@ export default function PlatformActivityLogsShow({
                             No attribute changes recorded.
                         </p>
                     ) : (
-                        <div className="overflow-hidden rounded-xl border border-border bg-card">
+                        <div className="border-border bg-card overflow-hidden rounded-xl border">
                             <table className="w-full text-sm">
                                 <thead className="bg-muted/60">
-                                    <tr className="border-b border-border text-left">
-                                        <th className="px-4 py-2 font-medium text-foreground">
+                                    <tr className="border-border border-b text-left">
+                                        <th className="text-foreground px-4 py-2 font-medium">
                                             Attribute
                                         </th>
-                                        <th className="px-4 py-2 font-medium text-foreground">
+                                        <th className="text-foreground px-4 py-2 font-medium">
                                             Old
                                         </th>
-                                        <th className="px-4 py-2 font-medium text-foreground">
+                                        <th className="text-foreground px-4 py-2 font-medium">
                                             New
                                         </th>
                                     </tr>
@@ -227,18 +225,18 @@ export default function PlatformActivityLogsShow({
                                     {keys.map((key) => (
                                         <tr
                                             key={key}
-                                            className="border-b border-border last:border-0"
+                                            className="border-border border-b last:border-0"
                                         >
-                                            <td className="px-4 py-2 font-medium text-foreground">
+                                            <td className="text-foreground px-4 py-2 font-medium">
                                                 {key}
                                             </td>
-                                            <td className="bg-muted/40 px-4 py-2 text-muted-foreground">
+                                            <td className="bg-muted/40 text-muted-foreground px-4 py-2">
                                                 {formatValue(
                                                     activity.attribute_changes
                                                         .old[key],
                                                 )}
                                             </td>
-                                            <td className="bg-accent/50 px-4 py-2 text-foreground">
+                                            <td className="bg-accent/50 text-foreground px-4 py-2">
                                                 {formatValue(
                                                     activity.attribute_changes
                                                         .attributes[key],
@@ -253,7 +251,7 @@ export default function PlatformActivityLogsShow({
                 </section>
 
                 <section className="space-y-3">
-                    <h2 className="text-sm font-medium text-foreground">
+                    <h2 className="text-foreground text-sm font-medium">
                         Properties
                     </h2>
                     {propertyEntries.length === 0 ? (
@@ -261,7 +259,7 @@ export default function PlatformActivityLogsShow({
                             No extra properties.
                         </p>
                     ) : (
-                        <pre className="overflow-x-auto rounded-xl border border-border bg-muted/40 p-4 text-xs text-foreground">
+                        <pre className="border-border bg-muted/40 text-foreground overflow-x-auto rounded-xl border p-4 text-xs">
                             {JSON.stringify(activity.properties, null, 2)}
                         </pre>
                     )}

@@ -213,7 +213,7 @@ export function useIconPickerState({
     const catalogLoading = open && catalog === null && !useAllowListOnly;
 
     useEffect(() => {
-        void prefetchLucideIcons([displayIcon]);
+        prefetchLucideIcons([displayIcon]);
     }, [displayIcon]);
 
     useEffect(() => {

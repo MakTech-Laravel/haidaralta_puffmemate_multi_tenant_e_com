@@ -90,9 +90,7 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                         </div>
                         <div>
                             <dt className="text-muted-foreground">Status</dt>
-                            <dd>
-                                {branch.is_active ? 'Active' : 'Inactive'}
-                            </dd>
+                            <dd>{branch.is_active ? 'Active' : 'Inactive'}</dd>
                         </div>
                         <div>
                             <dt className="text-muted-foreground">Address</dt>
