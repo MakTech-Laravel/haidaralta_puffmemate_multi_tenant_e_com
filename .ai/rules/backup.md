@@ -14,3 +14,12 @@ Clean old backups = Spatie `backup:clean` using env retention. Operator-facing p
 
 ## Env backup retention keys
 Retention via BACKUP_KEEP_ALL_DAYS; ladder env keys default 0 for hard age delete; BACKUP_MAX_STORAGE_MB empty = unlimited.
+
+## History message size
+Failed Spatie runs can produce multi-KB console/stack text. Always store and broadcast via BackupHistoryMessage::summarize (≤500 chars) so Reverb/Pusher does not hit “Payload too large”.
+
+## Restore SQL selection and wipe safety
+Spatie zips include storage/app plus db-dumps/*.sql. Always resolve SQL via BackupZipSqlLocator (prefer db-dumps/, then largest .sql). Full Postgres restores DROP SCHEMA public — refuse the wipe unless the dump CREATE TABLE users, and fail the job if users is still missing afterward.
+
+## Restore must prefer db-dumps SQL
+Spatie zips include storage/app; never pick the first .sql. Use BackupZipSqlLocator (db-dumps/ then largest). Before DROP SCHEMA public, require CREATE TABLE users; after restore, fail if users is missing.

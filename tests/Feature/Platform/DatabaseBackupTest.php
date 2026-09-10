@@ -12,6 +12,7 @@ use App\Models\DatabaseBackupHistory;
 use App\Models\Permission;
 use App\Models\User;
 use App\Services\Backup\BackupService;
+use App\Services\Backup\BackupZipSqlLocator;
 use App\Services\Backup\DatabaseRestoreRunner;
 use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
@@ -22,6 +23,8 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use ReflectionMethod;
+use RuntimeException;
 use Spatie\Permission\PermissionRegistrar;
 use ZipArchive;
 
@@ -118,6 +121,60 @@ test('run backup job broadcasts running and completed history updates', function
     expect($history->fresh()->status)->toBe(DatabaseBackupStatus::Completed);
 
     Event::assertDispatchedTimes(DatabaseBackupHistoryUpdated::class, 2);
+});
+
+test('run backup job stores a short failure message from pg_dump mismatch output', function () {
+    Event::fake([DatabaseBackupHistoryUpdated::class]);
+
+    $longOutput = <<<'TXT'
+Starting backup...
+Dumping database postgres...
+Backup failed because: The dump process failed with a non-successful exit code.
+Exitcode
+========
+1: General error
+
+Output
+======
+<no output>
+
+Error Output
+============
+pg_dump: error: aborting because of server version mismatch
+pg_dump: detail: server version: 18.6 (Debian 18.6-1.pgdg12+2); pg_dump version: 15.19 (Debian 15.19-0+deb12u1)
+.
+#0 /var/www/vendor/spatie/db-dumper/src/DbDumper.php(227): Spatie\DbDumper\Exceptions\DumpFailed::processDidNotEndSuccessfully()
+TXT;
+
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('backup:run')
+        ->andReturn(1);
+
+    Artisan::shouldReceive('output')
+        ->andReturn($longOutput);
+
+    $history = DatabaseBackupHistory::factory()->create([
+        'status' => DatabaseBackupStatus::Pending,
+        'message' => 'Backup queued',
+    ]);
+
+    try {
+        (new RunBackupJob($history->id))->handle();
+    } catch (Throwable) {
+        // Job rethrows after marking failed.
+    }
+
+    $fresh = $history->fresh();
+
+    expect($fresh->status)->toBe(DatabaseBackupStatus::Failed)
+        ->and($fresh->message)->toBe('Backup failed: server version: 18.6 (Debian 18.6-1.pgdg12+2); pg_dump version: 15.19 (Debian 15.19-0+deb12u1)')
+        ->and(mb_strlen((string) $fresh->message))->toBeLessThanOrEqual(500);
+
+    Event::assertDispatched(DatabaseBackupHistoryUpdated::class, function (DatabaseBackupHistoryUpdated $event): bool {
+        return $event->broadcastWith()['status'] === 'failed'
+            && mb_strlen((string) $event->broadcastWith()['message']) <= 500;
+    });
 });
 
 test('platform super admin can list and download zip from backups disk', function () {
@@ -274,7 +331,10 @@ test('restore job applies sql from zip and resyncs manage-database-backups permi
         'message' => 'Restore queued',
     ]);
 
-    (new RestoreDatabaseFromBackupJob($history->id, $path))->handle(app(DatabaseRestoreRunner::class));
+    (new RestoreDatabaseFromBackupJob($history->id, $path))->handle(
+        app(DatabaseRestoreRunner::class),
+        app(BackupZipSqlLocator::class),
+    );
 
     expect($history->fresh()->status)->toBe(DatabaseBackupStatus::Completed)
         ->and(
@@ -283,6 +343,23 @@ test('restore job applies sql from zip and resyncs manage-database-backups permi
                 ->where('guard_name', RolesAndPermissionsSeeder::PLATFORM_GUARD)
                 ->exists()
         )->toBeTrue();
+});
+
+test('postgres restore refuses full wipe when dump lacks users table', function () {
+    $sqlPath = storage_path('framework/testing/'.uniqid('bad-dump-', true).'.sql');
+    @mkdir(dirname($sqlPath), 0777, true);
+    file_put_contents(
+        $sqlPath,
+        "-- PostgreSQL database dump\nCREATE TABLE public.sessions (id text);\n",
+    );
+
+    $runner = app(DatabaseRestoreRunner::class);
+    $method = new ReflectionMethod(DatabaseRestoreRunner::class, 'restorePostgreSql');
+
+    expect(fn () => $method->invoke($runner, 'pgsql', $sqlPath))
+        ->toThrow(RuntimeException::class, 'does not create the users table');
+
+    @unlink($sqlPath);
 });
 
 test('unauthorized users cannot access backup routes', function () {

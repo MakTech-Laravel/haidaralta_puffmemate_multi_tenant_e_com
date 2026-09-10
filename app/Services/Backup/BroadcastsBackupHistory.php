@@ -15,7 +15,7 @@ trait BroadcastsBackupHistory
     ): void {
         $history->update([
             'status' => $status,
-            'message' => $message,
+            'message' => BackupHistoryMessage::summarize($message),
         ]);
 
         DatabaseBackupHistoryUpdated::dispatch($history->fresh() ?? $history);

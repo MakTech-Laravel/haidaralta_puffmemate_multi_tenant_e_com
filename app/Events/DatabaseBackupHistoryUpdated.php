@@ -3,6 +3,7 @@
 namespace App\Events;
 
 use App\Models\DatabaseBackupHistory;
+use App\Services\Backup\BackupHistoryMessage;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -47,7 +48,7 @@ class DatabaseBackupHistoryUpdated implements ShouldBroadcastNow
             'type' => $this->history->type->value,
             'status' => $this->history->status->value,
             'filename' => $this->history->filename,
-            'message' => $this->history->message,
+            'message' => BackupHistoryMessage::summarize((string) $this->history->message),
         ];
     }
 }
