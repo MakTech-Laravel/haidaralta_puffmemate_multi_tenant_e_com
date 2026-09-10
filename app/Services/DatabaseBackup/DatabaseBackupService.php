@@ -4,8 +4,10 @@ namespace App\Services\DatabaseBackup;
 
 use App\Enums\DatabaseBackupStatus;
 use App\Enums\DatabaseBackupType;
+use App\Models\Branch;
 use App\Models\DatabaseBackupHistory;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
@@ -15,6 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Spatie\DbDumper\Databases\MySql;
+use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\Process\Process;
 use Throwable;
 
@@ -257,6 +260,30 @@ class DatabaseBackupService
             'sqlite' => $this->restoreSqlite($connection, $absolutePath),
             default => throw new RuntimeException("Unsupported database driver [{$driver}] for import."),
         };
+
+        // Dumps from older environments may omit newer permissions (e.g. manage-database-backups).
+        $this->resyncRolesAndPermissions();
+    }
+
+    /**
+     * Re-apply current app role/permission definitions after a restore.
+     */
+    private function resyncRolesAndPermissions(): void
+    {
+        try {
+            $seeder = app(RolesAndPermissionsSeeder::class);
+            $seeder->run();
+
+            if (Schema::hasTable('branches')) {
+                Branch::query()
+                    ->orderBy('id')
+                    ->each(fn (Branch $branch) => $seeder->seedBranchRolesForBranch($branch));
+            }
+
+            app(PermissionRegistrar::class)->forgetCachedPermissions();
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     private function dumpPostgreSql(string $connection, string $absolutePath): void

@@ -12,6 +12,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
@@ -116,6 +117,53 @@ test('import strips postgres restrict meta commands before restore', function ()
 
     expect($history)->not->toBeNull()
         ->and($history->status)->toBe(DatabaseBackupStatus::Completed);
+});
+
+test('import resyncs manage-database-backups permission so admins keep access', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
+
+    $permission = Permission::findByName(
+        'manage-database-backups',
+        RolesAndPermissionsSeeder::PLATFORM_GUARD,
+    );
+    $permission->delete();
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    expect(
+        Permission::query()
+            ->where('name', 'manage-database-backups')
+            ->where('guard_name', RolesAndPermissionsSeeder::PLATFORM_GUARD)
+            ->exists()
+    )->toBeFalse();
+
+    $sql = UploadedFile::fake()->createWithContent(
+        'restore.sql',
+        "PRAGMA foreign_keys=OFF;\nSELECT 1;\nPRAGMA foreign_keys=ON;\n",
+    );
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.database-backups.import'), [
+            'file' => $sql,
+            'confirmed' => '1',
+        ])
+        ->assertRedirect(route('platform.database-backups.index'))
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Database import completed (#1).',
+        ]);
+
+    expect(
+        Permission::query()
+            ->where('name', 'manage-database-backups')
+            ->where('guard_name', RolesAndPermissionsSeeder::PLATFORM_GUARD)
+            ->exists()
+    )->toBeTrue();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.database-backups.index'))
+        ->assertOk();
 });
 
 test('import requires confirmation', function () {
