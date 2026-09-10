@@ -21,5 +21,8 @@ Failed Spatie runs can produce multi-KB console/stack text. Always store and bro
 ## Restore SQL selection and wipe safety
 Spatie zips include storage/app plus db-dumps/*.sql. Always resolve SQL via BackupZipSqlLocator (prefer db-dumps/, then largest .sql). Full Postgres restores DROP SCHEMA public — refuse the wipe unless the dump CREATE TABLE users, and fail the job if users is still missing afterward.
 
+## Restore UI race
+While restore is pending/running, stop Inertia polling and skip Echo partial reloads (Auth hits missing users). On restore completed/failed, hard-reload the browser (`window.location`). EnsurePortalGuard catches QueryException during the wipe and redirects to login instead of Ignition 500.
+
 ## Restore must prefer db-dumps SQL
 Spatie zips include storage/app; never pick the first .sql. Use BackupZipSqlLocator (db-dumps/ then largest). Before DROP SCHEMA public, require CREATE TABLE users; after restore, fail if users is missing.
