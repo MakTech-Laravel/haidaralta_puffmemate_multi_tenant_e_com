@@ -1,7 +1,7 @@
 <?php
 
 require __DIR__.'/public.php';
-require __DIR__.'/platfrom.php';
+require __DIR__.'/platform.php';
 require __DIR__.'/branch.php';
 require __DIR__.'/driver.php';
 require __DIR__.'/customer.php';
