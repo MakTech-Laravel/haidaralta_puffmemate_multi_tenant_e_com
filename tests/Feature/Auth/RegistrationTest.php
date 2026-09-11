@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\UserType;
+use App\Models\User;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
@@ -22,4 +24,37 @@ test('new users can register', function () {
 
     $this->assertAuthenticated('customer');
     $response->assertRedirect(route('phone.verification.notice', absolute: false));
+
+    $user = User::query()->where('phone', '+61412345678')->firstOrFail();
+
+    expect($user->user_type)->toBe(UserType::CUSTOMER)
+        ->and($user->branch_id)->toBeNull();
 });
+
+test('registration always creates a customer and ignores portal spoofing', function (string $spoofedType) {
+    $this->post(route('register.store'), [
+        'name' => 'Spoof Attempt',
+        'phone' => '0412987654',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'user_type' => $spoofedType,
+        'branch_id' => 1,
+    ])->assertRedirect(route('phone.verification.notice', absolute: false));
+
+    $user = User::query()->where('phone', '+61412987654')->firstOrFail();
+
+    expect($user->user_type)->toBe(UserType::CUSTOMER)
+        ->and($user->branch_id)->toBeNull()
+        ->and($user->user_type)->not->toBe(UserType::PLATFORM)
+        ->and($user->user_type)->not->toBe(UserType::BRANCH)
+        ->and($user->user_type)->not->toBe(UserType::DRIVER);
+
+    $this->assertAuthenticated('customer');
+    $this->assertGuest('platform');
+    $this->assertGuest('branch');
+    $this->assertGuest('driver');
+})->with([
+    'platform' => [UserType::PLATFORM->value],
+    'branch' => [UserType::BRANCH->value],
+    'driver' => [UserType::DRIVER->value],
+]);
