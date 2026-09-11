@@ -85,3 +85,28 @@ test('customer user lands on customer dashboard', function () {
             ->where('portal', 'customer')
         );
 });
+
+test('portal dashboards keep placeholder boards client-side', function (
+    string $email,
+    string $url,
+    string $component,
+) {
+    $this->post(route('login.store'), [
+        'email' => $email,
+        'password' => $email,
+    ])->assertRedirect();
+
+    $this->get($url)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component($component)
+            ->missing('kpis')
+            ->missing('orders')
+            ->missing('stats')
+        );
+})->with([
+    'platform' => [UserSeeder::PLATFORM_SUPER_ADMIN, '/platform/dashboard', 'platform/dashboard'],
+    'branch' => [UserSeeder::BRANCH_1_SUPER_ADMIN, '/branch/downtown/dashboard', 'branch/dashboard'],
+    'driver' => [UserSeeder::DRIVER, '/driver/dashboard', 'driver/dashboard'],
+    'customer' => [UserSeeder::CUSTOMER, '/dashboard', 'customer/dashboard'],
+]);
