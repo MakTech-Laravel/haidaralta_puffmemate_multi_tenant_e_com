@@ -47,8 +47,9 @@ export function RoleForm({
             method={(action.method ?? 'post').toLowerCase() as FormMethod}
             className="space-y-6"
             options={{ preserveScroll: true }}
+            validationTimeout={500}
         >
-            {({ processing, errors }) => (
+            {({ processing, errors, validate }) => (
                 <>
                     {locked && (
                         <Alert>
@@ -76,6 +77,11 @@ export function RoleForm({
                             disabled={locked}
                             readOnly={locked}
                             placeholder="e.g. auditor"
+                            onBlur={() => {
+                                if (!locked) {
+                                    validate('name');
+                                }
+                            }}
                         />
                         {locked && (
                             <input

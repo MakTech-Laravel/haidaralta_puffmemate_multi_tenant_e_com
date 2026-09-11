@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\StoreRegisteredUserRequest;
 use App\Support\PortalAuth;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -30,15 +30,15 @@ class RegisterController extends Controller
     /**
      * Handle a registration request for a new customer account.
      */
-    public function store(Request $request, CreatesNewUsers $creator): RedirectResponse
+    public function store(StoreRegisteredUserRequest $request, CreatesNewUsers $creator): RedirectResponse
     {
-        if (config('fortify.lowercase_usernames') && $request->has(Fortify::username())) {
-            $request->merge([
-                Fortify::username() => Str::lower($request->string(Fortify::username())->value()),
-            ]);
+        $input = $request->validated();
+
+        if (config('fortify.lowercase_usernames') && array_key_exists(Fortify::username(), $input)) {
+            $input[Fortify::username()] = Str::lower((string) $input[Fortify::username()]);
         }
 
-        event(new Registered($user = $creator->create($request->all())));
+        event(new Registered($user = $creator->create($input)));
 
         Auth::guard('customer')->login($user, $request->boolean('remember'));
 

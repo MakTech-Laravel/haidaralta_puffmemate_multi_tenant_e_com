@@ -8,6 +8,7 @@ use App\Http\Middleware\ResolveBranchContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Spatie\Permission\Middleware\PermissionMiddleware;
@@ -43,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'resolve.branch' => ResolveBranchContext::class,
             'permission' => PermissionMiddleware::class,
             'role' => RoleMiddleware::class,
+            'precognitive' => HandlePrecognitiveRequests::class,
         ]);
 
         $middleware->priority([

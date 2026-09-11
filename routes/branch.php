@@ -19,7 +19,9 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
 
     Route::middleware(['permission:manage-branch-roles'])->group(function () {
         Route::get('roles/export', [BranchRoleController::class, 'export'])->name('branch.roles.export');
-        Route::resource('roles', BranchRoleController::class)->names('branch.roles');
+        Route::resource('roles', BranchRoleController::class)
+            ->names('branch.roles')
+            ->middlewareFor(['store', 'update'], 'precognitive');
         Route::get('permissions/export', [BranchPermissionController::class, 'export'])->name('branch.permissions.export');
         Route::get('permissions', [BranchPermissionController::class, 'index'])->name('branch.permissions.index');
     });
@@ -27,6 +29,7 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
     Route::middleware(['permission:manage-branch-staff'])->group(function () {
         Route::resource('staff', BranchStaffController::class)
             ->parameters(['staff' => 'user'])
-            ->names('branch.staff');
+            ->names('branch.staff')
+            ->middlewareFor(['store', 'update'], 'precognitive');
     });
 });

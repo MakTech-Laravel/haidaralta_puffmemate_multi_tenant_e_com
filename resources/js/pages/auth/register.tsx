@@ -21,9 +21,10 @@ export default function Register({ passwordRules }: Props) {
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
+                validationTimeout={500}
                 className="flex flex-col gap-6"
             >
-                {({ processing, errors }) => (
+                {({ processing, errors, validate }) => (
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
@@ -54,6 +55,7 @@ export default function Register({ passwordRules }: Props) {
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@example.com"
+                                    onBlur={() => validate('email')}
                                 />
                                 <InputError message={errors.email} />
                             </div>

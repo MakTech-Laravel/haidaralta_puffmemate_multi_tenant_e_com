@@ -118,8 +118,9 @@ export function StaffForm({
             action={action.action}
             method={(action.method ?? 'post').toLowerCase() as FormMethod}
             options={{ preserveScroll: true }}
+            validationTimeout={500}
         >
-            {({ processing, errors }) => (
+            {({ processing, errors, validate }) => (
                 <Card>
                     <CardHeader>
                         <CardTitle>
@@ -212,6 +213,7 @@ export function StaffForm({
                                     autoComplete="email"
                                     placeholder="name@example.com"
                                     aria-invalid={Boolean(errors.email)}
+                                    onBlur={() => validate('email')}
                                 />
                                 <InputError message={errors.email} />
                             </div>

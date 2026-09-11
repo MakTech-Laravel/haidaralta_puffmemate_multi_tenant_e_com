@@ -47,9 +47,10 @@ export default function Profile({
                     options={{
                         preserveScroll: true,
                     }}
+                    validationTimeout={500}
                     className="space-y-6"
                 >
-                    {({ processing, errors }) => (
+                    {({ processing, errors, validate }) => (
                         <>
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
@@ -82,6 +83,7 @@ export default function Profile({
                                     required
                                     autoComplete="username"
                                     placeholder="Email address"
+                                    onBlur={() => validate('email')}
                                 />
 
                                 <InputError

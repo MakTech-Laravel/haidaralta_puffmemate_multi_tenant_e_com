@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { useEffect } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -30,18 +31,28 @@ export default function PlatformBranchesCreateSuperAdmin({
 }: {
     branch: Branch;
 }) {
-    const { data, setData, post, processing, errors } = useForm({
+    const {
+        data,
+        setData,
+        submit,
+        processing,
+        errors,
+        validate,
+        setValidationTimeout,
+    } = useForm(BranchController.storeSuperAdmin(branch.slug), {
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
     });
 
-    const submit = (event: FormEvent) => {
+    useEffect(() => {
+        setValidationTimeout(500);
+    }, [setValidationTimeout]);
+
+    const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
-        post(BranchController.storeSuperAdmin.url(branch.slug), {
-            preserveScroll: true,
-        });
+        submit({ preserveScroll: true });
     };
 
     return (
@@ -73,7 +84,7 @@ export default function PlatformBranchesCreateSuperAdmin({
                     </AlertDescription>
                 </Alert>
 
-                <form onSubmit={submit}>
+                <form onSubmit={handleSubmit}>
                     <Card>
                         <CardHeader>
                             <CardTitle>Account details</CardTitle>
@@ -103,6 +114,7 @@ export default function PlatformBranchesCreateSuperAdmin({
                                         onChange={(event) =>
                                             setData('email', event.target.value)
                                         }
+                                        onBlur={() => validate('email')}
                                         required
                                         placeholder="admin@example.com"
                                     />

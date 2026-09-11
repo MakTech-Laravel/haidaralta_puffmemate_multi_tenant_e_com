@@ -32,7 +32,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
 
     Route::middleware(['permission:manage-roles'])->group(function () {
         Route::get('roles/export', [PlatformRoleController::class, 'export'])->name('platform.roles.export');
-        Route::resource('roles', PlatformRoleController::class)->names('platform.roles');
+        Route::resource('roles', PlatformRoleController::class)
+            ->names('platform.roles')
+            ->middlewareFor(['store', 'update'], 'precognitive');
         Route::get('permissions/export', [PlatformPermissionController::class, 'export'])->name('platform.permissions.export');
         Route::get('permissions', [PlatformPermissionController::class, 'index'])->name('platform.permissions.index');
     });
@@ -40,25 +42,31 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::middleware(['permission:manage-users'])->group(function () {
         Route::resource('staff', PlatformStaffController::class)
             ->parameters(['staff' => 'user'])
-            ->names('platform.staff');
+            ->names('platform.staff')
+            ->middlewareFor(['store', 'update'], 'precognitive');
     });
 
     Route::middleware(['permission:manage-branch-users'])->group(function () {
         Route::resource('branch-staff', PlatformBranchStaffController::class)
             ->parameters(['branch-staff' => 'user'])
-            ->names('platform.branch-staff');
+            ->names('platform.branch-staff')
+            ->middlewareFor(['store', 'update'], 'precognitive');
 
         Route::resource('branches.staff', PlatformBranchScopedStaffController::class)
             ->parameters(['staff' => 'user'])
-            ->names('platform.branches.staff');
+            ->names('platform.branches.staff')
+            ->middlewareFor(['store', 'update'], 'precognitive');
     });
 
     Route::middleware(['permission:create-branches'])->group(function () {
         Route::get('branches/create', [PlatformBranchController::class, 'create'])->name('platform.branches.create');
-        Route::post('branches', [PlatformBranchController::class, 'store'])->name('platform.branches.store');
+        Route::post('branches', [PlatformBranchController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.branches.store');
         Route::get('branches/{branch}/super-admin/create', [PlatformBranchController::class, 'createSuperAdmin'])
             ->name('platform.branches.super-admin.create');
         Route::post('branches/{branch}/super-admin', [PlatformBranchController::class, 'storeSuperAdmin'])
+            ->middleware('precognitive')
             ->name('platform.branches.super-admin.store');
     });
 
@@ -69,7 +77,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
 
     Route::middleware(['permission:edit-branches'])->group(function () {
         Route::get('branches/{branch}/edit', [PlatformBranchController::class, 'edit'])->name('platform.branches.edit');
-        Route::put('branches/{branch}', [PlatformBranchController::class, 'update'])->name('platform.branches.update');
+        Route::put('branches/{branch}', [PlatformBranchController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.branches.update');
     });
 
     Route::middleware(['permission:delete-branches'])->group(function () {

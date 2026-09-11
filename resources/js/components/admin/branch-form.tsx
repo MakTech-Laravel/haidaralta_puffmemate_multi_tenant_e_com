@@ -67,26 +67,24 @@ export function BranchForm({
         defaults?.logo_url ?? null,
     );
 
-    const { data, setData, post, processing, errors, transform } = useForm<{
-        name: string;
-        slug: string;
-        code: string;
-        logo: File | null;
-        remove_logo: boolean;
-        phone: string;
-        email: string;
-        address: string;
-        latitude: string;
-        longitude: string;
-        opening_time: string;
-        closing_time: string;
-        status: boolean;
-        _method?: string;
-    }>({
+    const formMethod = (
+        action.method ?? 'post'
+    ).toLowerCase() as 'get' | 'post' | 'put' | 'patch' | 'delete';
+
+    const {
+        data,
+        setData,
+        post,
+        processing,
+        errors,
+        transform,
+        validate,
+        setValidationTimeout,
+    } = useForm(formMethod, action.action, {
         name: defaults?.name ?? '',
         slug: defaults?.slug ?? '',
         code: defaults?.code ?? '',
-        logo: null,
+        logo: null as File | null,
         remove_logo: false,
         phone: defaults?.phone ?? '',
         email: defaults?.email ?? '',
@@ -106,10 +104,19 @@ export function BranchForm({
     });
 
     useEffect(() => {
+        setValidationTimeout(500);
+    }, [setValidationTimeout]);
+
+    useEffect(() => {
         if (!slugTouched) {
-            setData('slug', slugify(data.name));
+            const nextSlug = slugify(data.name);
+            setData('slug', nextSlug);
+
+            if (nextSlug !== '') {
+                validate('slug');
+            }
         }
-    }, [data.name, slugTouched, setData]);
+    }, [data.name, slugTouched, setData, validate]);
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -201,6 +208,7 @@ export function BranchForm({
                                     setSlugTouched(true);
                                     setData('slug', event.target.value);
                                 }}
+                                onBlur={() => validate('slug')}
                                 required
                                 placeholder="e.g. downtown-store"
                             />
@@ -217,6 +225,7 @@ export function BranchForm({
                                 onChange={(event) =>
                                     setData('code', event.target.value)
                                 }
+                                onBlur={() => validate('code')}
                                 required
                                 placeholder="e.g. DTN"
                             />

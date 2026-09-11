@@ -9,7 +9,9 @@ Route::middleware(['ensure.any.portal'])->group(function () {
     Route::redirect('settings', '/settings/profile');
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('settings/profile', [ProfileController::class, 'update'])
+        ->middleware('precognitive')
+        ->name('profile.update');
 });
 
 Route::middleware(['ensure.any.portal', 'verified'])->group(function () {

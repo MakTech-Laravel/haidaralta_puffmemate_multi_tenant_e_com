@@ -72,6 +72,7 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         }
 
         Route::post(RoutePath::for('register', '/register'), [RegisterController::class, 'store'])
+            ->middleware('precognitive')
             ->name('register.store');
     }
 
