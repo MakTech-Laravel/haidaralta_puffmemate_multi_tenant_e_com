@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\VerifyPasswordOtpRequest;
-use App\Services\PhoneOtpService;
+use App\Services\OtpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
@@ -34,7 +34,7 @@ class ResetPasswordController extends Controller
     /**
      * Verify the password-reset OTP and open the set-password form.
      */
-    public function storeOtp(VerifyPasswordOtpRequest $request, PhoneOtpService $otpService): RedirectResponse
+    public function storeOtp(VerifyPasswordOtpRequest $request, OtpService $otpService): RedirectResponse
     {
         $request->verify($otpService);
 

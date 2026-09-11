@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\PhoneOtpPurpose;
+use App\Enums\OtpPurpose;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\VerifyPhoneRequest;
-use App\Services\PhoneOtpService;
+use App\Services\OtpService;
 use App\Support\PortalAuth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,7 +34,7 @@ class VerifyPhoneController extends Controller
     /**
      * Send (or resend) a phone verification OTP.
      */
-    public function send(Request $request, PhoneOtpService $otpService): RedirectResponse
+    public function send(Request $request, OtpService $otpService): RedirectResponse
     {
         $user = $request->user();
 
@@ -44,7 +44,7 @@ class VerifyPhoneController extends Controller
             return redirect()->intended(PortalAuth::dashboardPath($user));
         }
 
-        $otpService->issue($user->phone, PhoneOtpPurpose::PhoneVerify);
+        $otpService->issue($user->phone, OtpPurpose::PhoneVerify);
 
         return back()->with('status', __('A verification code was sent to your phone.'));
     }
@@ -52,7 +52,7 @@ class VerifyPhoneController extends Controller
     /**
      * Verify the phone OTP.
      */
-    public function verify(VerifyPhoneRequest $request, PhoneOtpService $otpService): RedirectResponse
+    public function verify(VerifyPhoneRequest $request, OtpService $otpService): RedirectResponse
     {
         $request->verify($otpService);
 

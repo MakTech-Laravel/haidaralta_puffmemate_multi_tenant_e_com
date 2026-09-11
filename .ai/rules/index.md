@@ -17,9 +17,10 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
 | resources/js/lib/fcm.ts | .ai/rules/lib.md |
 | database/migrations/** | .ai/rules/migrations.md |
-| app/Models/{User,Branch}.php | .ai/rules/models.md |
+| app/Models/{User,Branch}.php, app/Models/OtpRecord.php | .ai/rules/models.md |
 | app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |
 | database/seeders/** | .ai/rules/seeders.md |
+| app/Services/OtpService.php | .ai/rules/services.md |
 | resources/js/{layouts,components,pages}/storefront/** | .ai/rules/storefront.md |
 | app/Support/OpsDashboardAccess.php, config/cache.php | .ai/rules/support.md |

@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\PhoneOtpPurpose;
+use App\Enums\OtpPurpose;
 use App\Models\User;
 use App\Services\Sms\FakeSmsSender;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +18,7 @@ test('forgot password always returns success without revealing phone existence',
 test('forgot password sends otp for an existing user and allows password reset', function () {
     $user = User::factory()->create([
         'phone' => '+61412987654',
-        'password' => Hash::make('old-password'),
+        'password' => 'old-password',
     ]);
 
     $this->post(route('password.email'), [
@@ -50,8 +50,10 @@ test('password reset otp purpose is stored', function () {
         'phone' => '+61412987654',
     ]);
 
-    $this->assertDatabaseHas('phone_otps', [
+    $this->assertDatabaseHas('otp_records', [
         'phone' => '+61412987654',
-        'purpose' => PhoneOtpPurpose::PasswordReset->value,
+        'purpose' => OtpPurpose::PasswordReset->value,
+        'subject_type' => null,
+        'subject_id' => null,
     ]);
 });

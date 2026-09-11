@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
-use App\Enums\PhoneOtpPurpose;
+use App\Enums\OtpPurpose;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $phone
- * @property PhoneOtpPurpose $purpose
+ * @property OtpPurpose $purpose
+ * @property string|null $subject_type
+ * @property int|null $subject_id
  * @property string $code_hash
  * @property Carbon $expires_at
  * @property int $attempts
@@ -17,7 +20,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class PhoneOtp extends Model
+class OtpRecord extends Model
 {
     /**
      * @var list<string>
@@ -25,6 +28,8 @@ class PhoneOtp extends Model
     protected $fillable = [
         'phone',
         'purpose',
+        'subject_type',
+        'subject_id',
         'code_hash',
         'expires_at',
         'attempts',
@@ -32,12 +37,20 @@ class PhoneOtp extends Model
     ];
 
     /**
+     * @return MorphTo<Model, $this>
+     */
+    public function subject(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
-            'purpose' => PhoneOtpPurpose::class,
+            'purpose' => OtpPurpose::class,
             'expires_at' => 'datetime',
             'consumed_at' => 'datetime',
             'attempts' => 'integer',

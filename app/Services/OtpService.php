@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Contracts\SendsSms;
-use App\Enums\PhoneOtpPurpose;
-use App\Models\PhoneOtp;
+use App\Enums\OtpPurpose;
+use App\Models\OtpRecord;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
-class PhoneOtpService
+class OtpService
 {
     public const CODE_LENGTH = 6;
 
@@ -22,19 +24,17 @@ class PhoneOtpService
      * Issue a new OTP for the given phone and purpose. Always sends an SMS
      * (callers decide whether the phone exists for enumeration safety).
      */
-    public function issue(string $phoneE164, PhoneOtpPurpose $purpose): PhoneOtp
+    public function issue(string $phoneE164, OtpPurpose $purpose, ?Model $subject = null): OtpRecord
     {
-        PhoneOtp::query()
-            ->where('phone', $phoneE164)
-            ->where('purpose', $purpose)
-            ->whereNull('consumed_at')
-            ->delete();
+        $this->activeQuery($phoneE164, $purpose, $subject)->delete();
 
         $code = $this->generateCode();
 
-        $otp = PhoneOtp::query()->create([
+        $otp = OtpRecord::query()->create([
             'phone' => $phoneE164,
             'purpose' => $purpose,
+            'subject_type' => $subject?->getMorphClass(),
+            'subject_id' => $subject?->getKey(),
             'code_hash' => Hash::make($code),
             'expires_at' => now()->addMinutes(self::TTL_MINUTES),
             'attempts' => 0,
@@ -54,12 +54,9 @@ class PhoneOtpService
     /**
      * @throws ValidationException
      */
-    public function verify(string $phoneE164, PhoneOtpPurpose $purpose, string $code): PhoneOtp
+    public function verify(string $phoneE164, OtpPurpose $purpose, string $code, ?Model $subject = null): OtpRecord
     {
-        $otp = PhoneOtp::query()
-            ->where('phone', $phoneE164)
-            ->where('purpose', $purpose)
-            ->whereNull('consumed_at')
+        $otp = $this->activeQuery($phoneE164, $purpose, $subject)
             ->latest('id')
             ->first();
 
@@ -86,6 +83,27 @@ class PhoneOtpService
         $otp->forceFill(['consumed_at' => now()])->save();
 
         return $otp->refresh();
+    }
+
+    /**
+     * @return Builder<OtpRecord>
+     */
+    private function activeQuery(string $phoneE164, OtpPurpose $purpose, ?Model $subject): Builder
+    {
+        $query = OtpRecord::query()
+            ->where('phone', $phoneE164)
+            ->where('purpose', $purpose)
+            ->whereNull('consumed_at');
+
+        if ($subject === null) {
+            return $query
+                ->whereNull('subject_type')
+                ->whereNull('subject_id');
+        }
+
+        return $query
+            ->where('subject_type', $subject->getMorphClass())
+            ->where('subject_id', $subject->getKey());
     }
 
     private function generateCode(): string

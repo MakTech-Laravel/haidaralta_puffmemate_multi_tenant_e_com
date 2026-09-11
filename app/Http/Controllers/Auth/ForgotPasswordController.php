@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
-use App\Services\PhoneOtpService;
+use App\Services\OtpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,7 +25,7 @@ class ForgotPasswordController extends Controller
     /**
      * Request a password-reset OTP (does not reveal whether the phone exists).
      */
-    public function store(ForgotPasswordRequest $request, PhoneOtpService $otpService): RedirectResponse
+    public function store(ForgotPasswordRequest $request, OtpService $otpService): RedirectResponse
     {
         $request->sendResetOtp($otpService);
 

@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\PhoneOtpPurpose;
+use App\Enums\OtpPurpose;
 use App\Models\User;
 use App\Services\Sms\FakeSmsSender;
 use Laravel\Fortify\Features;
@@ -60,8 +60,10 @@ test('phone verification marks phone_verified_at', function () {
 
     expect($user->fresh()->phone_verified_at)->not->toBeNull();
 
-    $this->assertDatabaseHas('phone_otps', [
+    $this->assertDatabaseHas('otp_records', [
         'phone' => '+61412345678',
-        'purpose' => PhoneOtpPurpose::PhoneVerify->value,
+        'purpose' => OtpPurpose::PhoneVerify->value,
+        'subject_type' => null,
+        'subject_id' => null,
     ]);
 });

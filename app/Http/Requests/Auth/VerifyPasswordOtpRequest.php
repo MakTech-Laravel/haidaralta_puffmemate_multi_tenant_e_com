@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Auth;
 
-use App\Enums\PhoneOtpPurpose;
-use App\Services\PhoneOtpService;
+use App\Enums\OtpPurpose;
+use App\Services\OtpService;
 use App\Support\Phone;
 use Illuminate\Foundation\Http\FormRequest;
 use Throwable;
@@ -41,11 +41,11 @@ class VerifyPasswordOtpRequest extends FormRequest
         ];
     }
 
-    public function verify(PhoneOtpService $otpService): void
+    public function verify(OtpService $otpService): void
     {
         $otpService->verify(
             $this->string('phone')->value(),
-            PhoneOtpPurpose::PasswordReset,
+            OtpPurpose::PasswordReset,
             $this->string('code')->value(),
         );
     }

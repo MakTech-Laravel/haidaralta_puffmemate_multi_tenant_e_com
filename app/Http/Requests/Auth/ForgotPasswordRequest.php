@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\Auth;
 
-use App\Enums\PhoneOtpPurpose;
+use App\Enums\OtpPurpose;
 use App\Enums\UserType;
 use App\Models\User;
-use App\Services\PhoneOtpService;
+use App\Services\OtpService;
 use App\Support\Phone;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
@@ -49,7 +49,7 @@ class ForgotPasswordRequest extends FormRequest
     /**
      * Send an OTP when the account exists and is eligible. Always silent about existence.
      */
-    public function sendResetOtp(PhoneOtpService $otpService): void
+    public function sendResetOtp(OtpService $otpService): void
     {
         $this->ensureIsNotRateLimited();
 
@@ -61,7 +61,7 @@ class ForgotPasswordRequest extends FormRequest
             ->first();
 
         if ($this->shouldSendOtp($user)) {
-            $otpService->issue($phone, PhoneOtpPurpose::PasswordReset);
+            $otpService->issue($phone, OtpPurpose::PasswordReset);
         }
 
         RateLimiter::hit($this->throttleKey(), 600);
