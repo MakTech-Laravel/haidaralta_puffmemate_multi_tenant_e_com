@@ -118,6 +118,16 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                     </div>
                 </div>
 
+                {!branch.status ? (
+                    <Alert>
+                        <AlertTitle>Branch portal inaccessible</AlertTitle>
+                        <AlertDescription>
+                            This branch is inactive. Staff cannot open the
+                            branch portal until you reactivate it.
+                        </AlertDescription>
+                    </Alert>
+                ) : null}
+
                 {branch.needs_super_admin ? (
                     <Alert>
                         <AlertTitle>Super-admin missing</AlertTitle>

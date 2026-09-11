@@ -147,3 +147,29 @@ test('branch staff show page includes effective permissions', function () {
             ->component('branch/staff/show')
             ->has('staffMember.effective_permissions'));
 });
+
+test('branch staff index can search by phone', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+
+    $clerk = User::factory()->create([
+        'name' => 'Searchable Clerk',
+        'phone' => '+61412001122',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $downtown->id,
+    ]);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId($downtown->id);
+    $clerk->assignRole(RoleEnum::STAFF->value);
+    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.staff.index', [$downtown, 'search' => '412001122']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/staff/index')
+            ->where('filters.search', '412001122')
+            ->has('staff.data', 1)
+            ->where('staff.data.0.phone', '+61412001122')
+        );
+});

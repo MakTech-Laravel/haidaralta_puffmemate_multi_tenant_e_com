@@ -7,6 +7,7 @@ import Heading from '@/components/heading';
 import { SimplePagination } from '@/components/simple-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -50,10 +51,30 @@ export default function PlatformBranchStaffIndex({
 }: {
     staff: PaginatedStaff;
     branches: { id: number; name: string; slug: string }[];
-    filters: { branch_id: number | null };
+    filters: { branch_id: number | null; search: string };
 }) {
+    const [search, setSearch] = useState(filters.search);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
+
+    const queryFor = (overrides: {
+        branch_id?: string | null;
+        search?: string;
+    }) => {
+        const branchId =
+            overrides.branch_id !== undefined
+                ? overrides.branch_id
+                : filters.branch_id
+                  ? String(filters.branch_id)
+                  : null;
+        const nextSearch =
+            overrides.search !== undefined ? overrides.search : search;
+
+        return {
+            ...(branchId ? { branch_id: branchId } : {}),
+            ...(nextSearch ? { search: nextSearch } : {}),
+        };
+    };
 
     return (
         <>
@@ -72,45 +93,71 @@ export default function PlatformBranchStaffIndex({
                     </Button>
                 </div>
 
-                <div className="max-w-xs">
-                    <Select
-                        value={
-                            filters.branch_id
-                                ? String(filters.branch_id)
-                                : 'all'
-                        }
-                        onValueChange={(value) => {
+                <div className="flex flex-wrap items-end gap-3">
+                    <form
+                        className="flex max-w-md flex-1 gap-2"
+                        onSubmit={(event) => {
+                            event.preventDefault();
                             router.get(
                                 BranchStaffController.index.url({
-                                    query:
-                                        value === 'all'
-                                            ? {}
-                                            : { branch_id: value },
+                                    query: queryFor({ search }),
                                 }),
                                 {},
                                 { preserveState: true },
                             );
                         }}
                     >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Filter by branch" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem value="all">
-                                    All branches
-                                </SelectItem>
-                                {branches.map((branch) => (
-                                    <SelectItem
-                                        key={branch.id}
-                                        value={String(branch.id)}
-                                    >
-                                        {branch.name}
+                        <Input
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            placeholder="Search by name or phone"
+                        />
+                        <Button type="submit" variant="secondary">
+                            Search
+                        </Button>
+                    </form>
+
+                    <div className="max-w-xs min-w-48">
+                        <Select
+                            value={
+                                filters.branch_id
+                                    ? String(filters.branch_id)
+                                    : 'all'
+                            }
+                            onValueChange={(value) => {
+                                router.get(
+                                    BranchStaffController.index.url({
+                                        query: queryFor({
+                                            branch_id:
+                                                value === 'all' ? null : value,
+                                            search: filters.search,
+                                        }),
+                                    }),
+                                    {},
+                                    { preserveState: true },
+                                );
+                            }}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Filter by branch" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem value="all">
+                                        All branches
                                     </SelectItem>
-                                ))}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
+                                    {branches.map((branch) => (
+                                        <SelectItem
+                                            key={branch.id}
+                                            value={String(branch.id)}
+                                        >
+                                            {branch.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 <div className="overflow-hidden rounded-xl border">

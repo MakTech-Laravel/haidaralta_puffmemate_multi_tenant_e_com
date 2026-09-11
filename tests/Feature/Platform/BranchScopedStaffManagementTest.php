@@ -143,3 +143,34 @@ test('platform admin can update and delete nested branch staff', function () {
 
     expect(User::query()->whereKey($clerk->id)->exists())->toBeFalse();
 });
+
+test('nested branch staff index can search by name', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+
+    $match = User::factory()->create([
+        'name' => 'Nested Zelda Clerk',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $downtown->id,
+    ]);
+
+    User::factory()->create([
+        'name' => 'Nested Other Clerk',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $downtown->id,
+    ]);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId($downtown->id);
+    $match->assignRole(RoleEnum::STAFF->value);
+    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.staff.index', [$downtown, 'search' => 'Nested Zelda']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/staff/index')
+            ->where('filters.search', 'Nested Zelda')
+            ->has('staff.data', 1)
+            ->where('staff.data.0.name', 'Nested Zelda Clerk')
+        );
+});

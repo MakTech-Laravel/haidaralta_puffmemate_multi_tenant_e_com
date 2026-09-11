@@ -10,6 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
     Table,
     TableBody,
     TableCell,
@@ -39,17 +47,39 @@ type PaginatedBranches = {
     }[];
 };
 
+type StatusFilter = 'all' | 'active' | 'inactive';
+
 export default function PlatformBranchesIndex({
     branches,
     filters,
 }: {
     branches: PaginatedBranches;
-    filters: { search: string };
+    filters: { search: string; status: StatusFilter };
 }) {
     const { can } = usePermission();
     const [search, setSearch] = useState(filters.search);
+    const [status, setStatus] = useState<StatusFilter>(filters.status);
     const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
+
+    const applyFilters = (next: {
+        search?: string;
+        status?: StatusFilter;
+    }) => {
+        const nextSearch = next.search ?? search;
+        const nextStatus = next.status ?? status;
+
+        router.get(
+            BranchController.index.url({
+                query: {
+                    search: nextSearch || undefined,
+                    status: nextStatus === 'all' ? undefined : nextStatus,
+                },
+            }),
+            {},
+            { preserveState: true },
+        );
+    };
 
     return (
         <>
@@ -70,28 +100,52 @@ export default function PlatformBranchesIndex({
                     ) : null}
                 </div>
 
-                <form
-                    className="flex max-w-md gap-2"
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        router.get(
-                            BranchController.index.url({
-                                query: { search: search || undefined },
-                            }),
-                            {},
-                            { preserveState: true },
-                        );
-                    }}
-                >
-                    <Input
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Search branches"
-                    />
-                    <Button type="submit" variant="secondary">
-                        Search
-                    </Button>
-                </form>
+                <div className="flex flex-wrap items-end gap-3">
+                    <form
+                        className="flex max-w-md flex-1 gap-2"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            applyFilters({ search });
+                        }}
+                    >
+                        <Input
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            placeholder="Search branches"
+                        />
+                        <Button type="submit" variant="secondary">
+                            Search
+                        </Button>
+                    </form>
+
+                    <div className="w-44">
+                        <Select
+                            value={status}
+                            onValueChange={(value) => {
+                                const next = value as StatusFilter;
+                                setStatus(next);
+                                applyFilters({ status: next });
+                            }}
+                        >
+                            <SelectTrigger aria-label="Filter by status">
+                                <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem value="all">
+                                        All statuses
+                                    </SelectItem>
+                                    <SelectItem value="active">
+                                        Active
+                                    </SelectItem>
+                                    <SelectItem value="inactive">
+                                        Inactive
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
 
                 <div className="overflow-hidden rounded-xl border">
                     <Table>

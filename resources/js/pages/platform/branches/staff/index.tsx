@@ -8,6 +8,7 @@ import Heading from '@/components/heading';
 import { SimplePagination } from '@/components/simple-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -45,10 +46,13 @@ type PaginatedStaff = {
 export default function PlatformBranchScopedStaffIndex({
     branch,
     staff,
+    filters,
 }: {
     branch: Branch;
     staff: PaginatedStaff;
+    filters: { search: string };
 }) {
+    const [search, setSearch] = useState(filters.search);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
 
@@ -79,6 +83,31 @@ export default function PlatformBranchScopedStaffIndex({
                         </Button>
                     </div>
                 </div>
+
+                <form
+                    className="flex max-w-md gap-2"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        router.get(
+                            BranchScopedStaffController.index.url(branch.slug, {
+                                query: {
+                                    search: search || undefined,
+                                },
+                            }),
+                            {},
+                            { preserveState: true },
+                        );
+                    }}
+                >
+                    <Input
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Search by name or phone"
+                    />
+                    <Button type="submit" variant="secondary">
+                        Search
+                    </Button>
+                </form>
 
                 <div className="overflow-hidden rounded-xl border">
                     <Table>
