@@ -17,6 +17,8 @@ interface SidebarNavProps {
     label?: string;
     /** Class for the wrapping `SidebarGroup`. */
     className?: string;
+    /** Class for the group heading. */
+    labelClassName?: string;
     /**
      * Default per-slot classes applied to every item. Individual items can
      * still override these via their own `classNames`.
@@ -32,6 +34,7 @@ export function SidebarNav({
     items,
     label,
     className,
+    labelClassName,
     classNames,
 }: SidebarNavProps) {
     const { canAny } = usePermission();
@@ -48,7 +51,11 @@ export function SidebarNav({
 
     return (
         <SidebarGroup className={cn('px-2 py-0', className)}>
-            {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+            {label && (
+                <SidebarGroupLabel className={labelClassName}>
+                    {label}
+                </SidebarGroupLabel>
+            )}
             <SidebarMenu>
                 {visible.map((node) => (
                     <NavNodeItem
