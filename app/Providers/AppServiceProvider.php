@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Contracts\SendsSms;
 use App\Listeners\AuthActivitySubscriber;
 use App\Models\User;
+use App\Services\Sms\FakeSmsSender;
+use App\Services\Sms\LogSmsSender;
 use App\Support\OpsDashboardAccess;
 use Carbon\CarbonImmutable;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Contracts\Auth\Access\Gate as GateContract;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +28,22 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         Fortify::ignoreRoutes();
+
+        $this->app->singleton(SendsSms::class, function (): SendsSms {
+            if ($this->app->environment('testing')) {
+                return new FakeSmsSender;
+            }
+
+            return new LogSmsSender;
+        });
+
+        $this->app->singleton(FakeSmsSender::class, function ($app): FakeSmsSender {
+            $sender = $app->make(SendsSms::class);
+
+            return $sender instanceof FakeSmsSender
+                ? $sender
+                : new FakeSmsSender;
+        });
     }
 
     /**
@@ -34,7 +52,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
-        $this->configurePasswordResetUrls();
         $this->configureActivityLogContext();
         $this->configureOpsDashboards();
 
@@ -57,7 +74,7 @@ class AppServiceProvider extends ServiceProvider
 
         Pulse::user(fn ($user) => [
             'name' => $user->name,
-            'extra' => $user->email,
+            'extra' => $user->phone ?? $user->email,
             'avatar' => null,
         ]);
     }
@@ -74,16 +91,6 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $activity->properties = $properties;
-        });
-    }
-
-    protected function configurePasswordResetUrls(): void
-    {
-        ResetPassword::createUrlUsing(function (object $notifiable, string $token): string {
-            return route('password.reset', [
-                'token' => $token,
-                'email' => $notifiable->getEmailForPasswordReset(),
-            ]);
         });
     }
 

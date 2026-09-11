@@ -14,7 +14,7 @@ Route::middleware(['ensure.any.portal'])->group(function () {
         ->name('profile.update');
 });
 
-Route::middleware(['ensure.any.portal', 'verified'])->group(function () {
+Route::middleware(['ensure.any.portal', 'phone.verified'])->group(function () {
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('settings/security', [SecurityController::class, 'edit'])

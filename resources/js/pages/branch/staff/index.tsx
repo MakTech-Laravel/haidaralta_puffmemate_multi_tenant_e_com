@@ -18,7 +18,8 @@ import {
 type StaffRow = {
     id: number;
     name: string;
-    email: string;
+    phone: string;
+    email: string | null;
     is_active: boolean;
     roles: string[];
 };
@@ -80,7 +81,7 @@ export default function BranchStaffIndex({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
-                                <TableHead>Email</TableHead>
+                                <TableHead>Phone</TableHead>
                                 <TableHead>Roles</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">
@@ -94,7 +95,7 @@ export default function BranchStaffIndex({
                                     <TableCell className="font-medium">
                                         {member.name}
                                     </TableCell>
-                                    <TableCell>{member.email}</TableCell>
+                                    <TableCell>{member.phone}</TableCell>
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">
                                             {member.roles.map((role) => (

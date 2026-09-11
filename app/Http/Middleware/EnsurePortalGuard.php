@@ -44,7 +44,7 @@ class EnsurePortalGuard
             return redirect()
                 ->guest(route('login'))
                 ->withErrors([
-                    'email' => __('The application database is temporarily unavailable. Please try again in a moment.'),
+                    'phone' => __('The application database is temporarily unavailable. Please try again in a moment.'),
                 ]);
         }
 
@@ -53,7 +53,7 @@ class EnsurePortalGuard
 
             return redirect()
                 ->route('login')
-                ->withErrors(['email' => __('auth.failed')]);
+                ->withErrors(['phone' => __('auth.failed')]);
         }
 
         return $next($request);

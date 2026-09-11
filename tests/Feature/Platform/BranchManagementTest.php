@@ -62,6 +62,7 @@ test('platform super admin can create a branch then add super admin in step two'
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.super-admin.store', 'midtown'), [
             'name' => 'Midtown Super Admin',
+            'phone' => '0412000099',
             'email' => 'midtown.superadmin@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -72,10 +73,12 @@ test('platform super admin can create a branch then add super admin in step two'
             'message' => 'Branch super-admin created.',
         ]);
 
-    $superAdmin = User::query()->where('email', 'midtown.superadmin@test.com')->firstOrFail();
+    $superAdmin = User::query()->where('phone', '+61412000099')->firstOrFail();
 
     expect($superAdmin->user_type)->toBe(UserType::BRANCH)
-        ->and($superAdmin->branch_id)->toBe($branch->id);
+        ->and($superAdmin->branch_id)->toBe($branch->id)
+        ->and($superAdmin->email)->toBe('midtown.superadmin@test.com')
+        ->and($superAdmin->phone_verified_at)->not->toBeNull();
 
     app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
     expect($superAdmin->hasRole(RoleEnum::SUPER_ADMIN->value))->toBeTrue();
@@ -89,7 +92,7 @@ test('platform super admin can create a branch then add super admin in step two'
             ->where('branch.slug', 'midtown')
             ->where('branch.needs_super_admin', false)
             ->has('branch.super_admins', 1)
-            ->where('branch.super_admins.0.email', 'midtown.superadmin@test.com'));
+            ->where('branch.super_admins.0.phone', '+61412000099'));
 });
 
 test('cannot create a second branch super admin', function () {
@@ -99,6 +102,7 @@ test('cannot create a second branch super admin', function () {
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.super-admin.store', $downtown), [
             'name' => 'Another Super',
+            'phone' => '0412000098',
             'email' => 'another.super@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -109,9 +113,8 @@ test('cannot create a second branch super admin', function () {
             'message' => 'This branch already has a super-admin.',
         ]);
 
-    expect(User::query()->where('email', 'another.super@test.com')->exists())->toBeFalse();
+    expect(User::query()->where('phone', '+61412000098')->exists())->toBeFalse();
 });
-
 test('platform staff without create branches cannot create a branch', function () {
     $user = User::factory()->create([
         'user_type' => UserType::PLATFORM,

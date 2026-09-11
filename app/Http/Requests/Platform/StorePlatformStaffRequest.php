@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Platform;
 
+use App\Concerns\NormalizesPhoneInput;
 use App\Enums\RoleEnum;
+use App\Support\Phone;
 use App\Support\PlatformTeamResolver;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -12,9 +14,17 @@ use Spatie\Permission\PermissionRegistrar;
 
 class StorePlatformStaffRequest extends FormRequest
 {
+    use NormalizesPhoneInput;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->mergeNormalizedPhone();
+        $this->normalizeBlankEmailToNull();
     }
 
     /**
@@ -26,7 +36,8 @@ class StorePlatformStaffRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+            'phone' => ['required', 'string', ...Phone::validationRule(), Rule::unique('users', 'phone')],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'confirmed', Password::defaults()],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => [

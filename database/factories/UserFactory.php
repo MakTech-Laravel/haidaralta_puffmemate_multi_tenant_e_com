@@ -4,8 +4,8 @@ namespace Database\Factories;
 
 use App\Enums\UserType;
 use App\Models\User;
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -19,6 +19,11 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
+     * Monotonic suffix so factory phones stay unique and valid AU mobiles.
+     */
+    protected static int $phoneSequence = 0;
+
+    /**
      * Define the model's default state.
      *
      * @return array<string, mixed>
@@ -27,9 +32,11 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'phone' => $this->uniqueValidAuMobile(),
+            'phone_verified_at' => now(),
+            'email' => fake()->boolean(70) ? fake()->unique()->safeEmail() : null,
+            'email_verified_at' => null,
+            'password' => static::$password ??= 'password',
             'user_type' => UserType::CUSTOMER,
             'branch_id' => null,
             'is_active' => true,
@@ -41,11 +48,12 @@ class UserFactory extends Factory
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Indicate that the model's phone is unverified.
      */
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => [
+            'phone_verified_at' => null,
             'email_verified_at' => null,
         ]);
     }
@@ -60,5 +68,15 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
             'two_factor_confirmed_at' => now(),
         ]);
+    }
+
+    private function uniqueValidAuMobile(): string
+    {
+        static::$phoneSequence++;
+
+        // 0410 000 001 … stays within AU mobile ranges accepted by libphonenumber.
+        $local = sprintf('0410%06d', static::$phoneSequence);
+
+        return Phone::toE164($local);
     }
 }

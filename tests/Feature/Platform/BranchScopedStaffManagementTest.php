@@ -31,6 +31,7 @@ test('platform super admin can list and create staff for a nested branch', funct
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.staff.store', $downtown), [
             'name' => 'Scoped Clerk',
+            'phone' => '0412000003',
             'email' => 'scoped-clerk@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -76,6 +77,7 @@ test('nested branch staff routes return 404 for staff of another branch', functi
     $this->actingAs($admin, 'platform')
         ->put(route('platform.branches.staff.update', [$downtown, $uptownStaff]), [
             'name' => 'Hacked',
+            'phone' => $uptownStaff->phone,
             'email' => 'uptown-scoped@test.com',
             'roles' => [RoleEnum::MANAGER->value],
             'is_active' => true,
@@ -119,6 +121,7 @@ test('platform admin can update and delete nested branch staff', function () {
     $this->actingAs($admin, 'platform')
         ->put(route('platform.branches.staff.update', [$downtown, $clerk]), [
             'name' => 'Nested Manager',
+            'phone' => $clerk->phone,
             'email' => 'nested-clerk@test.com',
             'roles' => [RoleEnum::MANAGER->value],
             'is_active' => true,

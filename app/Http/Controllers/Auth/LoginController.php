@@ -49,7 +49,7 @@ class LoginController extends Controller
             $request->session()->regenerateToken();
 
             throw ValidationException::withMessages([
-                'email' => [__('auth.failed')],
+                'phone' => [__('auth.failed')],
             ]);
         }
 

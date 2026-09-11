@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Support\Facades\Notification;
+use App\Services\Sms\FakeSmsSender;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
@@ -15,66 +15,66 @@ test('reset password link screen can be rendered', function () {
     $response->assertOk();
 });
 
-test('reset password link can be requested', function () {
-    Notification::fake();
+test('password reset otp can be requested', function () {
+    $user = User::factory()->create([
+        'phone' => '+61412987654',
+    ]);
 
-    $user = User::factory()->create();
+    $response = $this->post(route('password.email'), ['phone' => '0412987654']);
 
-    $response = $this->post(route('password.email'), ['email' => $user->email]);
+    $response->assertRedirect(route('password.otp'))->assertSessionHas('status');
 
-    $response->assertRedirect()->assertSessionHas('status', __('passwords.sent'));
-    Notification::assertSentTo($user, ResetPassword::class);
+    /** @var FakeSmsSender $sms */
+    $sms = app(FakeSmsSender::class);
+    expect($sms->lastCode())->not->toBeNull();
 });
 
-test('reset password screen can be rendered', function () {
-    Notification::fake();
+test('password reset otp screen can be rendered after request', function () {
+    User::factory()->create(['phone' => '+61412987654']);
 
-    $user = User::factory()->create();
+    $this->post(route('password.email'), ['phone' => '+61412987654']);
 
-    $this->post(route('password.email'), ['email' => $user->email]);
-
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-        $response = $this->get(route('password.reset', $notification->token));
-
-        $response->assertOk();
-
-        return true;
-    });
+    $this->get(route('password.otp'))->assertOk();
 });
 
-test('password can be reset with valid token', function () {
-    Notification::fake();
+test('password can be reset after otp verification', function () {
+    $user = User::factory()->create([
+        'phone' => '+61412987654',
+        'password' => Hash::make('old-password'),
+    ]);
 
-    $user = User::factory()->create();
+    $this->post(route('password.email'), ['phone' => '+61412987654']);
 
-    $this->post(route('password.email'), ['email' => $user->email]);
+    /** @var FakeSmsSender $sms */
+    $sms = app(FakeSmsSender::class);
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-        $response = $this->post(route('password.update'), [
-            'token' => $notification->token,
-            'email' => $user->email,
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
+    $this->post(route('password.otp.store'), [
+        'phone' => '+61412987654',
+        'code' => $sms->lastCode(),
+    ])->assertRedirect(route('password.reset'));
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('login'))
-            ->assertSessionHas('status', __('passwords.reset'));
+    $this->get(route('password.reset'))->assertOk();
 
-        return true;
-    });
+    $this->post(route('password.update'), [
+        'phone' => '+61412987654',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('status', __('passwords.reset'));
+
+    expect(Hash::check('password', $user->fresh()->password))->toBeTrue();
 });
 
-test('password cannot be reset with invalid token', function () {
-    $user = User::factory()->create();
+test('password cannot be reset without a verified otp session', function () {
+    $user = User::factory()->create(['phone' => '+61412987654']);
 
     $response = $this->post(route('password.update'), [
-        'token' => 'invalid-token',
-        'email' => $user->email,
+        'phone' => $user->phone,
         'password' => 'newpassword123',
         'password_confirmation' => 'newpassword123',
     ]);
 
-    $response->assertSessionHasErrors('email');
+    $response->assertSessionHasErrors('phone');
 });

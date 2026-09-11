@@ -27,7 +27,8 @@ import {
 type StaffRow = {
     id: number;
     name: string;
-    email: string;
+    phone: string;
+    email: string | null;
     is_active: boolean;
     branch: { id: number; name: string; slug: string } | null;
     roles: string[];
@@ -117,7 +118,7 @@ export default function PlatformBranchStaffIndex({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
-                                <TableHead>Email</TableHead>
+                                <TableHead>Phone</TableHead>
                                 <TableHead>Branch</TableHead>
                                 <TableHead>Roles</TableHead>
                                 <TableHead>Status</TableHead>
@@ -142,7 +143,7 @@ export default function PlatformBranchStaffIndex({
                                         <TableCell className="font-medium">
                                             {member.name}
                                         </TableCell>
-                                        <TableCell>{member.email}</TableCell>
+                                        <TableCell>{member.phone}</TableCell>
                                         <TableCell>
                                             {member.branch?.name ?? '—'}
                                         </TableCell>

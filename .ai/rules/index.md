@@ -16,6 +16,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | package.json | .ai/rules/general.md |
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
 | resources/js/lib/fcm.ts | .ai/rules/lib.md |
+| database/migrations/** | .ai/rules/migrations.md |
 | app/Models/{User,Branch}.php | .ai/rules/models.md |
 | app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |

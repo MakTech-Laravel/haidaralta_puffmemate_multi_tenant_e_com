@@ -26,6 +26,7 @@ test('platform super admin can create update and delete branch staff', function 
         ->post(route('platform.branch-staff.store'), [
             'branch_id' => $downtown->id,
             'name' => 'Platform Created Clerk',
+            'phone' => '0412000001',
             'email' => 'platform-created-clerk@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -50,6 +51,7 @@ test('platform super admin can create update and delete branch staff', function 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.branch-staff.update', $clerk), [
             'name' => 'Platform Updated Clerk',
+            'phone' => '0412000001',
             'email' => 'platform-created-clerk@test.com',
             'roles' => [RoleEnum::MANAGER->value],
             'is_active' => true,
@@ -84,6 +86,7 @@ test('platform admin with manage-branch-users can create branch staff', function
         ->post(route('platform.branch-staff.store'), [
             'branch_id' => $downtown->id,
             'name' => 'Admin Created Clerk',
+            'phone' => '0412000004',
             'email' => 'admin-created-clerk@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -153,6 +156,7 @@ test('granting manage-branch-users to a custom platform role unlocks branch staf
         ->post(route('platform.branch-staff.store'), [
             'branch_id' => $downtown->id,
             'name' => 'Ops Created Clerk',
+            'phone' => '0412000005',
             'email' => 'ops-created-clerk@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -172,6 +176,7 @@ test('only platform super admin can assign branch super-admin role', function ()
         ->post(route('platform.branch-staff.store'), [
             'branch_id' => $downtown->id,
             'name' => 'Should Fail Super',
+            'phone' => '0412000006',
             'email' => 'should-fail-super@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',

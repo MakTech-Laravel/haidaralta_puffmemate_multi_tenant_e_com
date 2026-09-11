@@ -37,7 +37,7 @@ class EnsureAnyPortalGuard
 
             return redirect()
                 ->route('login')
-                ->withErrors(['email' => __('auth.failed')]);
+                ->withErrors(['phone' => __('auth.failed')]);
         }
 
         return $next($request);

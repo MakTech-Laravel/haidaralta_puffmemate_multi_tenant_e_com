@@ -13,8 +13,8 @@ beforeEach(function () {
 
 test('platform user lands on platform dashboard with shared auth props', function () {
     $response = $this->post(route('login.store'), [
-        'email' => UserSeeder::PLATFORM_SUPER_ADMIN,
-        'password' => UserSeeder::PLATFORM_SUPER_ADMIN,
+        'phone' => UserSeeder::PLATFORM_SUPER_ADMIN_PHONE,
+        'password' => UserSeeder::DEFAULT_PASSWORD,
     ]);
 
     $response->assertRedirect('/platform/dashboard');
@@ -33,8 +33,8 @@ test('platform user lands on platform dashboard with shared auth props', functio
 
 test('branch user lands on branch dashboard with branch context', function () {
     $response = $this->post(route('login.store'), [
-        'email' => UserSeeder::BRANCH_1_SUPER_ADMIN,
-        'password' => UserSeeder::BRANCH_1_SUPER_ADMIN,
+        'phone' => UserSeeder::BRANCH_1_SUPER_ADMIN_PHONE,
+        'password' => UserSeeder::DEFAULT_PASSWORD,
     ]);
 
     $response->assertRedirect('/branch/downtown/dashboard');
@@ -54,8 +54,8 @@ test('branch user lands on branch dashboard with branch context', function () {
 
 test('driver user lands on driver dashboard', function () {
     $response = $this->post(route('login.store'), [
-        'email' => UserSeeder::DRIVER,
-        'password' => UserSeeder::DRIVER,
+        'phone' => UserSeeder::DRIVER_PHONE,
+        'password' => UserSeeder::DEFAULT_PASSWORD,
     ]);
 
     $response->assertRedirect('/driver/dashboard');
@@ -71,8 +71,8 @@ test('driver user lands on driver dashboard', function () {
 
 test('customer user lands on customer dashboard', function () {
     $response = $this->post(route('login.store'), [
-        'email' => UserSeeder::CUSTOMER,
-        'password' => UserSeeder::CUSTOMER,
+        'phone' => UserSeeder::CUSTOMER_PHONE,
+        'password' => UserSeeder::DEFAULT_PASSWORD,
     ]);
 
     $response->assertRedirect('/dashboard');
@@ -87,13 +87,13 @@ test('customer user lands on customer dashboard', function () {
 });
 
 test('portal dashboards keep placeholder boards client-side', function (
-    string $email,
+    string $phone,
     string $url,
     string $component,
 ) {
     $this->post(route('login.store'), [
-        'email' => $email,
-        'password' => $email,
+        'phone' => $phone,
+        'password' => UserSeeder::DEFAULT_PASSWORD,
     ])->assertRedirect();
 
     $this->get($url)
@@ -105,8 +105,8 @@ test('portal dashboards keep placeholder boards client-side', function (
             ->missing('stats')
         );
 })->with([
-    'platform' => [UserSeeder::PLATFORM_SUPER_ADMIN, '/platform/dashboard', 'platform/dashboard'],
-    'branch' => [UserSeeder::BRANCH_1_SUPER_ADMIN, '/branch/downtown/dashboard', 'branch/dashboard'],
-    'driver' => [UserSeeder::DRIVER, '/driver/dashboard', 'driver/dashboard'],
-    'customer' => [UserSeeder::CUSTOMER, '/dashboard', 'customer/dashboard'],
+    'platform' => [UserSeeder::PLATFORM_SUPER_ADMIN_PHONE, '/platform/dashboard', 'platform/dashboard'],
+    'branch' => [UserSeeder::BRANCH_1_SUPER_ADMIN_PHONE, '/branch/downtown/dashboard', 'branch/dashboard'],
+    'driver' => [UserSeeder::DRIVER_PHONE, '/driver/dashboard', 'driver/dashboard'],
+    'customer' => [UserSeeder::CUSTOMER_PHONE, '/dashboard', 'customer/dashboard'],
 ]);

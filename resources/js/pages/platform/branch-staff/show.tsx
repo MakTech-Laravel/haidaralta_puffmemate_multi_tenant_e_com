@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 type StaffMember = {
     id: number;
     name: string;
-    email: string;
+    phone: string;
+    email: string | null;
     is_active: boolean;
     branch: { id: number; name: string; slug: string } | null;
     roles: string[];
@@ -33,7 +34,7 @@ export default function PlatformBranchStaffShow({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title={staffMember.name}
-                        description={staffMember.email}
+                        description={staffMember.phone}
                     />
                     <div className="flex gap-2">
                         <Button variant="secondary" asChild>
