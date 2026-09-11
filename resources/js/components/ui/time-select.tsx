@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 /** Row height inside each wheel column. */
 const ITEM_HEIGHT = 44;
 /** How many rows are visible in the scroll viewport (taller = bigger pick area). */
-const VISIBLE_ITEMS = 9;
+const VISIBLE_ITEMS = 5;
 const WHEEL_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 const SETTLE_MS = 120;
 
