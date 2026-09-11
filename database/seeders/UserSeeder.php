@@ -11,6 +11,25 @@ use Spatie\Permission\PermissionRegistrar;
 
 class UserSeeder extends Seeder
 {
+    public const PLATFORM_SUPER_ADMIN_PHONE = '+61411111111';
+
+    public const PLATFORM_ADMIN_PHONE = '+61422222222';
+
+    public const PLATFORM_MANAGER_PHONE = '+61433333333';
+
+    public const BRANCH_1_SUPER_ADMIN_PHONE = '+61444444444';
+
+    public const BRANCH_1_ADMIN_PHONE = '+61455555555';
+
+    public const BRANCH_2_SUPER_ADMIN_PHONE = '+61466666666';
+
+    public const BRANCH_2_ADMIN_PHONE = '+61477777777';
+
+    public const DRIVER_PHONE = '+61488888888';
+
+    public const CUSTOMER_PHONE = '+61499999999';
+
+    /** @deprecated Prefer *_PHONE constants for login. Kept for display/email lookups. */
     public const PLATFORM_SUPER_ADMIN = 'superadmin@dev.com';
 
     public const PLATFORM_ADMIN = 'admin@dev.com';
@@ -29,24 +48,26 @@ class UserSeeder extends Seeder
 
     public const CUSTOMER = 'user@dev.com';
 
+    public const DEFAULT_PASSWORD = 'password';
+
     /**
-     * Seed portal login accounts. Password for each user is their email.
+     * Seed portal login accounts. Canonical login is phone; password is "password".
      */
     public function run(): void
     {
-        $this->forgetLegacyAccounts();
-
         $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
         $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
 
         $this->seedPlatformUsers();
         $this->seedBranchUsers($downtown, [
             [
+                'phone' => self::BRANCH_1_SUPER_ADMIN_PHONE,
                 'email' => self::BRANCH_1_SUPER_ADMIN,
                 'name' => 'Branch 1 Super Admin',
                 'role' => RoleEnum::SUPER_ADMIN,
             ],
             [
+                'phone' => self::BRANCH_1_ADMIN_PHONE,
                 'email' => self::BRANCH_1_ADMIN,
                 'name' => 'Branch 1 Admin',
                 'role' => RoleEnum::ADMIN,
@@ -54,11 +75,13 @@ class UserSeeder extends Seeder
         ]);
         $this->seedBranchUsers($uptown, [
             [
+                'phone' => self::BRANCH_2_SUPER_ADMIN_PHONE,
                 'email' => self::BRANCH_2_SUPER_ADMIN,
                 'name' => 'Branch 2 Super Admin',
                 'role' => RoleEnum::SUPER_ADMIN,
             ],
             [
+                'phone' => self::BRANCH_2_ADMIN_PHONE,
                 'email' => self::BRANCH_2_ADMIN,
                 'name' => 'Branch 2 Admin',
                 'role' => RoleEnum::ADMIN,
@@ -66,12 +89,14 @@ class UserSeeder extends Seeder
         ]);
 
         $this->seedPortalUser(
+            phone: self::DRIVER_PHONE,
             email: self::DRIVER,
             name: 'Driver',
             userType: UserType::DRIVER,
         );
 
         $this->seedPortalUser(
+            phone: self::CUSTOMER_PHONE,
             email: self::CUSTOMER,
             name: 'Customer',
             userType: UserType::CUSTOMER,
@@ -86,22 +111,26 @@ class UserSeeder extends Seeder
 
         foreach ([
             [
+                'phone' => self::PLATFORM_SUPER_ADMIN_PHONE,
                 'email' => self::PLATFORM_SUPER_ADMIN,
                 'name' => 'Platform Super Admin',
                 'role' => RoleEnum::SUPER_ADMIN,
             ],
             [
+                'phone' => self::PLATFORM_ADMIN_PHONE,
                 'email' => self::PLATFORM_ADMIN,
                 'name' => 'Platform Admin',
                 'role' => RoleEnum::ADMIN,
             ],
             [
+                'phone' => self::PLATFORM_MANAGER_PHONE,
                 'email' => self::PLATFORM_MANAGER,
                 'name' => 'Platform Manager',
                 'role' => RoleEnum::MANAGER,
             ],
         ] as $account) {
             $user = $this->seedPortalUser(
+                phone: $account['phone'],
                 email: $account['email'],
                 name: $account['name'],
                 userType: UserType::PLATFORM,
@@ -112,7 +141,7 @@ class UserSeeder extends Seeder
     }
 
     /**
-     * @param  list<array{email: string, name: string, role: RoleEnum}>  $accounts
+     * @param  list<array{phone: string, email: string, name: string, role: RoleEnum}>  $accounts
      */
     private function seedBranchUsers(Branch $branch, array $accounts): void
     {
@@ -120,6 +149,7 @@ class UserSeeder extends Seeder
 
         foreach ($accounts as $account) {
             $user = $this->seedPortalUser(
+                phone: $account['phone'],
                 email: $account['email'],
                 name: $account['name'],
                 userType: UserType::BRANCH,
@@ -131,36 +161,25 @@ class UserSeeder extends Seeder
     }
 
     private function seedPortalUser(
+        string $phone,
         string $email,
         string $name,
         UserType $userType,
         ?int $branchId = null,
     ): User {
         return User::query()->updateOrCreate(
-            ['email' => $email],
+            ['phone' => $phone],
             [
                 'name' => $name,
-                'password' => $email,
+                'email' => $email,
+                'password' => self::DEFAULT_PASSWORD,
                 'user_type' => $userType,
                 'branch_id' => $branchId,
                 'is_active' => true,
+                'phone_verified_at' => now(),
                 'email_verified_at' => now(),
             ],
         );
     }
 
-    /**
-     * Drop Phase-early @test.com accounts so reseed does not leave duplicates.
-     */
-    private function forgetLegacyAccounts(): void
-    {
-        User::query()
-            ->whereIn('email', [
-                'platform@test.com',
-                'branch@test.com',
-                'driver@test.com',
-                'customer@test.com',
-            ])
-            ->delete();
-    }
 }

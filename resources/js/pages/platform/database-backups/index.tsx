@@ -125,7 +125,6 @@ export default function PlatformDatabaseBackupsIndex({
         3000,
         {
             only: ['backups', 'histories'],
-            preserveScroll: true,
         },
         { autoStart: false },
     );

@@ -157,6 +157,7 @@ return [
                 ],
                 'sortableAttributes' => [
                     'name',
+                    'phone',
                     'email',
                     'created_at',
                 ],

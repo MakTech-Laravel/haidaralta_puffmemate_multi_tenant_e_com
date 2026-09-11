@@ -16,7 +16,8 @@ type RoleOption = {
 type StaffMember = {
     id: number;
     name: string;
-    email: string;
+    phone: string;
+    email: string | null;
     is_active: boolean;
     branch_id: number;
     roles: string[];
@@ -52,6 +53,7 @@ export default function PlatformBranchStaffEdit({
                     lockedSuperAdmin={lockedSuperAdmin}
                     defaults={{
                         name: staffMember.name,
+                        phone: staffMember.phone,
                         email: staffMember.email,
                         roles: staffMember.roles,
                         is_active: staffMember.is_active,

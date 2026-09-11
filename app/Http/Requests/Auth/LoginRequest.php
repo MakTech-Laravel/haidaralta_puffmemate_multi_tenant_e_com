@@ -4,26 +4,22 @@ namespace App\Http\Requests\Auth;
 
 use App\Enums\UserType;
 use App\Models\User;
+use App\Support\Phone;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class LoginRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Normalize HTML checkbox values (e.g. "on") before boolean validation.
-     */
     protected function prepareForValidation(): void
     {
         if ($this->has('remember')) {
@@ -31,6 +27,8 @@ class LoginRequest extends FormRequest
                 'remember' => $this->boolean('remember'),
             ]);
         }
+
+        $this->mergeNormalizedPhone();
     }
 
     /**
@@ -39,36 +37,36 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'phone' => ['required', 'string', ...Phone::validationRule()],
             'password' => ['required', 'string'],
             'remember' => ['sometimes', 'boolean'],
         ];
     }
 
     /**
-     * Attempt to authenticate the request's credentials on the user's portal guard.
-     *
      * @throws ValidationException
      */
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
 
+        $phone = $this->string('phone')->value();
+
         $user = User::query()
             ->with('branch')
-            ->where('email', $this->string('email'))
+            ->where('phone', $phone)
             ->first();
 
         if ($this->shouldRejectLogin($user)) {
             $this->recordFailedAttempt();
 
             throw ValidationException::withMessages([
-                'email' => [__('auth.failed')],
+                'phone' => [__('auth.failed')],
             ]);
         }
 
         $credentials = [
-            'email' => $this->string('email')->value(),
+            'phone' => $phone,
             'password' => $this->string('password')->value(),
         ];
 
@@ -76,16 +74,13 @@ class LoginRequest extends FormRequest
             $this->recordFailedAttempt();
 
             throw ValidationException::withMessages([
-                'email' => [__('auth.failed')],
+                'phone' => [__('auth.failed')],
             ]);
         }
 
         RateLimiter::clear($this->throttleKey());
     }
 
-    /**
-     * Whether login should fail before attempting credentials.
-     */
     private function shouldRejectLogin(?User $user): bool
     {
         if ($user === null || ! $user->is_active) {
@@ -100,8 +95,6 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Ensure the login request is not rate limited.
-     *
      * @throws ValidationException
      */
     public function ensureIsNotRateLimited(): void
@@ -115,7 +108,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'email' => [__('auth.throttle', [
+            'phone' => [__('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => (int) ceil($seconds / 60),
             ])],
@@ -127,11 +120,23 @@ class LoginRequest extends FormRequest
         RateLimiter::hit($this->throttleKey(), 60);
     }
 
-    /**
-     * Get the rate limiting throttle key for the request.
-     */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')->value()).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('phone')->value()).'|'.$this->ip());
+    }
+
+    private function mergeNormalizedPhone(): void
+    {
+        $raw = $this->input('phone');
+
+        if (! is_string($raw) || $raw === '') {
+            return;
+        }
+
+        try {
+            $this->merge(['phone' => Phone::toE164($raw)]);
+        } catch (Throwable) {
+            // Leave raw value for the phone validation rule.
+        }
     }
 }

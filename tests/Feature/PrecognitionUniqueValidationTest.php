@@ -33,14 +33,14 @@ function precognitionHeaders(string $only): array
     ];
 }
 
-test('precognitive staff store returns 204 for an available email without creating a user', function () {
+test('precognitive staff store returns 204 for an available phone without creating a user', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $before = User::query()->count();
 
     $this->actingAs($admin, 'platform')
-        ->withHeaders(precognitionHeaders('email'))
+        ->withHeaders(precognitionHeaders('phone'))
         ->post(route('platform.staff.store'), [
-            'email' => 'available-staff@test.com',
+            'phone' => '0412987654',
         ])
         ->assertNoContent()
         ->assertHeader('Precognition', 'true');
@@ -48,29 +48,29 @@ test('precognitive staff store returns 204 for an available email without creati
     expect(User::query()->count())->toBe($before);
 });
 
-test('precognitive staff store returns 422 for a taken email without creating a user', function () {
+test('precognitive staff store returns 422 for a taken phone without creating a user', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $before = User::query()->count();
 
     $this->actingAs($admin, 'platform')
-        ->withHeaders(precognitionHeaders('email'))
+        ->withHeaders(precognitionHeaders('phone'))
         ->post(route('platform.staff.store'), [
-            'email' => UserSeeder::PLATFORM_SUPER_ADMIN,
+            'phone' => $admin->phone,
         ])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['email'])
+        ->assertJsonValidationErrors(['phone'])
         ->assertHeader('Precognition', 'true');
 
     expect(User::query()->count())->toBe($before);
 });
 
-test('precognitive staff update ignores the current users email', function () {
+test('precognitive staff update ignores the current users phone', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
-        ->withHeaders(precognitionHeaders('email'))
+        ->withHeaders(precognitionHeaders('phone'))
         ->put(route('platform.staff.update', $admin), [
-            'email' => $admin->email,
+            'phone' => $admin->phone,
         ])
         ->assertNoContent()
         ->assertHeader('Precognition', 'true');
@@ -137,31 +137,31 @@ test('precognitive role store returns 422 for a taken platform role name', funct
     expect(Role::query()->count())->toBe($before);
 });
 
-test('precognitive register returns 422 for a taken email without creating a user', function () {
+test('precognitive register returns 422 for a taken phone without creating a user', function () {
     $this->skipUnlessFortifyHas(Features::registration());
 
     $before = User::query()->count();
 
-    $this->withHeaders(precognitionHeaders('email'))
+    $this->withHeaders(precognitionHeaders('phone'))
         ->post(route('register.store'), [
-            'email' => UserSeeder::PLATFORM_SUPER_ADMIN,
+            'phone' => UserSeeder::PLATFORM_SUPER_ADMIN_PHONE,
         ])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['email'])
+        ->assertJsonValidationErrors(['phone'])
         ->assertHeader('Precognition', 'true');
 
     expect(User::query()->count())->toBe($before)
         ->and(auth('customer')->check())->toBeFalse();
 });
 
-test('precognitive register returns 204 for an available email without creating a user', function () {
+test('precognitive register returns 204 for an available phone without creating a user', function () {
     $this->skipUnlessFortifyHas(Features::registration());
 
     $before = User::query()->count();
 
-    $this->withHeaders(precognitionHeaders('email'))
+    $this->withHeaders(precognitionHeaders('phone'))
         ->post(route('register.store'), [
-            'email' => 'new-customer@test.com',
+            'phone' => '0412987654',
         ])
         ->assertNoContent()
         ->assertHeader('Precognition', 'true');
@@ -170,34 +170,34 @@ test('precognitive register returns 204 for an available email without creating 
         ->and(auth('customer')->check())->toBeFalse();
 });
 
-test('precognitive profile update returns 422 when email belongs to another user', function () {
+test('precognitive profile update returns 422 when phone belongs to another user', function () {
     $user = User::factory()->create([
         'user_type' => UserType::CUSTOMER,
-        'email_verified_at' => now(),
+        'phone_verified_at' => now(),
     ]);
 
     $this->actingAs($user, 'customer')
-        ->withHeaders(precognitionHeaders('email'))
+        ->withHeaders(precognitionHeaders('phone'))
         ->patch(route('profile.update'), [
-            'email' => UserSeeder::PLATFORM_SUPER_ADMIN,
+            'phone' => UserSeeder::PLATFORM_SUPER_ADMIN_PHONE,
         ])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['email'])
+        ->assertJsonValidationErrors(['phone'])
         ->assertHeader('Precognition', 'true');
 
-    expect($user->fresh()->email)->not->toBe(UserSeeder::PLATFORM_SUPER_ADMIN);
+    expect($user->fresh()->phone)->not->toBe(UserSeeder::PLATFORM_SUPER_ADMIN_PHONE);
 });
 
-test('precognitive profile update returns 204 when keeping the current email', function () {
+test('precognitive profile update returns 204 when keeping the current phone', function () {
     $user = User::factory()->create([
         'user_type' => UserType::CUSTOMER,
-        'email_verified_at' => now(),
+        'phone_verified_at' => now(),
     ]);
 
     $this->actingAs($user, 'customer')
-        ->withHeaders(precognitionHeaders('email'))
+        ->withHeaders(precognitionHeaders('phone'))
         ->patch(route('profile.update'), [
-            'email' => $user->email,
+            'phone' => $user->phone,
         ])
         ->assertNoContent()
         ->assertHeader('Precognition', 'true');

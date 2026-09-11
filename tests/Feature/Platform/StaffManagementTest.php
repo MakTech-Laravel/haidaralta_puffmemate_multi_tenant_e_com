@@ -23,6 +23,7 @@ test('platform super admin can create and view platform staff', function () {
     $this->actingAs($admin, 'platform')
         ->post(route('platform.staff.store'), [
             'name' => 'Platform Clerk',
+            'phone' => '0412987654',
             'email' => 'platform-clerk@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -35,7 +36,7 @@ test('platform super admin can create and view platform staff', function () {
             'message' => 'Staff member created.',
         ]);
 
-    $clerk = User::query()->where('email', 'platform-clerk@test.com')->firstOrFail();
+    $clerk = User::query()->where('phone', '+61412987654')->firstOrFail();
 
     expect($clerk->user_type)->toBe(UserType::PLATFORM)
         ->and($clerk->branch_id)->toBeNull();

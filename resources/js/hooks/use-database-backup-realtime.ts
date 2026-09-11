@@ -9,7 +9,6 @@ const EVENT = '.database-backup.history-updated';
 function reloadBackupProps(): void {
     router.reload({
         only: ['backups', 'histories'],
-        preserveScroll: true,
     });
 }
 

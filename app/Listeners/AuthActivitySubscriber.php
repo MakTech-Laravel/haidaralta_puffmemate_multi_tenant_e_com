@@ -71,7 +71,7 @@ class AuthActivitySubscriber
             subject: $event->user,
             properties: [
                 'guard' => $event->guard,
-                'email' => $event->credentials['email'] ?? null,
+                'phone' => $event->credentials['phone'] ?? null,
             ],
             event: 'failed',
             logName: 'auth',

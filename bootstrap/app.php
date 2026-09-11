@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAnyPortalGuard;
+use App\Http\Middleware\EnsurePhoneIsVerified;
 use App\Http\Middleware\EnsurePortalGuard;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -45,6 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role' => RoleMiddleware::class,
             'precognitive' => HandlePrecognitiveRequests::class,
+            'phone.verified' => EnsurePhoneIsVerified::class,
         ]);
 
         $middleware->priority([

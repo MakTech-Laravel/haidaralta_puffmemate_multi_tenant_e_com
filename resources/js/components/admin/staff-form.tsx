@@ -47,7 +47,8 @@ type BranchOption = {
 
 interface StaffFormDefaults {
     name?: string;
-    email?: string;
+    phone?: string;
+    email?: string | null;
     roles?: string[];
     is_active?: boolean;
     branch_id?: string | number | null;
@@ -203,20 +204,41 @@ export function StaffForm({
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="phone">Phone number</Label>
                                 <Input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    defaultValue={defaults?.email ?? ''}
+                                    id="phone"
+                                    name="phone"
+                                    type="tel"
+                                    defaultValue={defaults?.phone ?? ''}
                                     required
-                                    autoComplete="email"
-                                    placeholder="name@example.com"
-                                    aria-invalid={Boolean(errors.email)}
-                                    onBlur={() => validate('email')}
+                                    autoComplete="tel"
+                                    placeholder="04XX XXX XXX"
+                                    aria-invalid={Boolean(errors.phone)}
+                                    onBlur={() => validate('phone')}
                                 />
-                                <InputError message={errors.email} />
+                                <InputError message={errors.phone} />
                             </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="email">
+                                Email (optional)
+                            </Label>
+                            <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                defaultValue={defaults?.email ?? ''}
+                                autoComplete="email"
+                                placeholder="name@example.com"
+                                aria-invalid={Boolean(errors.email)}
+                                onBlur={(e) => {
+                                    if (e.target.value.trim() !== '') {
+                                        validate('email');
+                                    }
+                                }}
+                            />
+                            <InputError message={errors.email} />
                         </div>
 
                         <div className="grid gap-5 sm:grid-cols-2">

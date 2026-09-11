@@ -4,13 +4,12 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\VerifyPhoneController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Http\Controllers\ConfirmablePasswordController;
 use Laravel\Fortify\Http\Controllers\ConfirmedPasswordStatusController;
 use Laravel\Fortify\Http\Controllers\ConfirmedTwoFactorAuthenticationController;
-use Laravel\Fortify\Http\Controllers\EmailVerificationNotificationController;
-use Laravel\Fortify\Http\Controllers\EmailVerificationPromptController;
 use Laravel\Fortify\Http\Controllers\PasswordController;
 use Laravel\Fortify\Http\Controllers\ProfileInformationController;
 use Laravel\Fortify\Http\Controllers\RecoveryCodeController;
@@ -18,7 +17,6 @@ use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\TwoFactorQrCodeController;
 use Laravel\Fortify\Http\Controllers\TwoFactorSecretKeyController;
-use Laravel\Fortify\Http\Controllers\VerifyEmailController;
 use Laravel\Fortify\RoutePath;
 use Laravel\Passkeys\Http\Controllers\PasskeyConfirmationController;
 use Laravel\Passkeys\Http\Controllers\PasskeyLoginController;
@@ -46,19 +44,26 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
     Route::post(RoutePath::for('logout', '/logout'), [LoginController::class, 'destroy'])
         ->name('logout');
 
-    // Password Reset...
+    // Password Reset via phone OTP...
     if (Features::enabled(Features::resetPasswords())) {
         if ($enableViews) {
             Route::get(RoutePath::for('password.request', '/forgot-password'), [ForgotPasswordController::class, 'create'])
                 ->name('password.request');
 
-            Route::get(RoutePath::for('password.reset', '/reset-password/{token}'), [ResetPasswordController::class, 'create'])
+            Route::get('/forgot-password/verify', [ResetPasswordController::class, 'createOtp'])
+                ->name('password.otp');
+
+            Route::get('/reset-password', [ResetPasswordController::class, 'create'])
                 ->name('password.reset');
         }
 
         Route::post(RoutePath::for('password.email', '/forgot-password'), [ForgotPasswordController::class, 'store'])
             ->middleware(['throttle:password-reset'])
             ->name('password.email');
+
+        Route::post('/forgot-password/verify', [ResetPasswordController::class, 'storeOtp'])
+            ->middleware(['throttle:password-reset'])
+            ->name('password.otp.store');
 
         Route::post(RoutePath::for('password.update', '/reset-password'), [ResetPasswordController::class, 'store'])
             ->name('password.update');
@@ -76,22 +81,20 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
             ->name('register.store');
     }
 
-    // Email Verification...
-    if (Features::enabled(Features::emailVerification())) {
-        if ($enableViews) {
-            Route::get(RoutePath::for('verification.notice', '/email/verify'), [EmailVerificationPromptController::class, '__invoke'])
-                ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
-                ->name('verification.notice');
-        }
-
-        Route::get(RoutePath::for('verification.verify', '/email/verify/{id}/{hash}'), [VerifyEmailController::class, '__invoke'])
-            ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard'), 'signed', 'throttle:'.$verificationLimiter])
-            ->name('verification.verify');
-
-        Route::post(RoutePath::for('verification.send', '/email/verification-notification'), [EmailVerificationNotificationController::class, 'store'])
-            ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard'), 'throttle:'.$verificationLimiter])
-            ->name('verification.send');
+    // Phone Verification...
+    if ($enableViews) {
+        Route::get('/phone/verify', [VerifyPhoneController::class, 'notice'])
+            ->middleware(['ensure.any.portal'])
+            ->name('phone.verification.notice');
     }
+
+    Route::post('/phone/verification-notification', [VerifyPhoneController::class, 'send'])
+        ->middleware(['ensure.any.portal', 'throttle:'.$verificationLimiter])
+        ->name('phone.verification.send');
+
+    Route::post('/phone/verify', [VerifyPhoneController::class, 'verify'])
+        ->middleware(['ensure.any.portal', 'throttle:'.$verificationLimiter])
+        ->name('phone.verification.verify');
 
     // Profile Information...
     if (Features::enabled(Features::updateProfileInformation())) {

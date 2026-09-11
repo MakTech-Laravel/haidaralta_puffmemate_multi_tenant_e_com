@@ -52,6 +52,7 @@ class StaffController extends Controller
 
         $user = $this->branchStaffService->create($branch, [
             'name' => $request->validated('name'),
+            'phone' => $request->validated('phone'),
             'email' => $request->validated('email'),
             'password' => $request->validated('password'),
             'roles' => $request->validated('roles', []),
@@ -77,6 +78,7 @@ class StaffController extends Controller
             'staffMember' => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'phone' => $user->phone,
                 'email' => $user->email,
                 'is_active' => $user->is_active,
                 'roles' => $detail['roles'],
@@ -101,6 +103,7 @@ class StaffController extends Controller
             'staffMember' => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'phone' => $user->phone,
                 'email' => $user->email,
                 'is_active' => $user->is_active,
                 'roles' => $this->branchStaffService->roleNames($user, $branch),
@@ -126,6 +129,7 @@ class StaffController extends Controller
 
         $this->branchStaffService->update($user, $branch, [
             'name' => $request->validated('name'),
+            'phone' => $request->validated('phone'),
             'email' => $request->validated('email'),
             'password' => $request->validated('password'),
             'roles' => $roles,

@@ -15,7 +15,6 @@ use Spatie\Permission\PermissionRegistrar;
 
 class BranchService
 {
-
     public function create(array $data, ?UploadedFile $logo = null): Branch
     {
         return DB::transaction(function () use ($data, $logo): Branch {
@@ -39,7 +38,6 @@ class BranchService
             return $branch;
         });
     }
-
 
     public function update(Branch $branch, array $data, ?UploadedFile $logo = null, bool $removeLogo = false): Branch
     {
@@ -72,7 +70,7 @@ class BranchService
     }
 
     /**
-     * @param  array{name: string, email: string, password: string}  $data
+     * @param  array{name: string, phone: string, email?: string|null, password: string}  $data
      */
     public function createSuperAdmin(Branch $branch, array $data): User
     {
@@ -86,12 +84,13 @@ class BranchService
             try {
                 $superAdmin = User::query()->create([
                     'name' => $data['name'],
-                    'email' => $data['email'],
+                    'phone' => $data['phone'],
+                    'email' => $data['email'] ?? null,
                     'password' => $data['password'],
                     'user_type' => UserType::BRANCH,
                     'branch_id' => $branch->id,
                     'is_active' => true,
-                    'email_verified_at' => now(),
+                    'phone_verified_at' => now(),
                 ]);
 
                 $superAdmin->assignRole(RoleEnum::SUPER_ADMIN->value);
@@ -119,7 +118,7 @@ class BranchService
     }
 
     /**
-     * @return list<array{id: int, name: string, email: string, is_active: bool}>
+     * @return list<array{id: int, name: string, phone: string, email: string|null, is_active: bool}>
      */
     public function listSuperAdmins(Branch $branch): array
     {
@@ -131,10 +130,11 @@ class BranchService
                 ->where('branch_id', $branch->id)
                 ->role(RoleEnum::SUPER_ADMIN->value, 'branch')
                 ->orderBy('name')
-                ->get(['id', 'name', 'email', 'is_active'])
+                ->get(['id', 'name', 'phone', 'email', 'is_active'])
                 ->map(fn (User $user): array => [
                     'id' => $user->id,
                     'name' => $user->name,
+                    'phone' => $user->phone,
                     'email' => $user->email,
                     'is_active' => $user->is_active,
                 ])

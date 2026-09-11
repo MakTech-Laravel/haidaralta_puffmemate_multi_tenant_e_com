@@ -15,7 +15,7 @@ use Spatie\Permission\PermissionRegistrar;
 class BranchStaffService
 {
     /**
-     * @param  array{name: string, email: string, password: string, roles?: list<string>, is_active?: bool}  $data
+     * @param  array{name: string, phone: string, email?: string|null, password: string, roles?: list<string>, is_active?: bool}  $data
      */
     public function create(Branch $branch, array $data): User
     {
@@ -23,12 +23,13 @@ class BranchStaffService
 
         $user = User::query()->create([
             'name' => $data['name'],
-            'email' => $data['email'],
+            'phone' => $data['phone'],
+            'email' => $data['email'] ?? null,
             'password' => $data['password'],
             'user_type' => UserType::BRANCH,
             'branch_id' => $branch->id,
             'is_active' => $data['is_active'] ?? true,
-            'email_verified_at' => now(),
+            'phone_verified_at' => now(),
         ]);
 
         $user->syncRoles($data['roles'] ?? []);
@@ -39,7 +40,7 @@ class BranchStaffService
     }
 
     /**
-     * @param  array{name: string, email: string, password?: string|null, roles: list<string>, is_active: bool}  $data
+     * @param  array{name: string, phone: string, email?: string|null, password?: string|null, roles: list<string>, is_active: bool}  $data
      */
     public function update(User $user, Branch $branch, array $data): User
     {
@@ -47,7 +48,8 @@ class BranchStaffService
 
         $payload = [
             'name' => $data['name'],
-            'email' => $data['email'],
+            'phone' => $data['phone'],
+            'email' => $data['email'] ?? null,
             'is_active' => $data['is_active'],
             'user_type' => UserType::BRANCH,
             'branch_id' => $branch->id,
@@ -156,6 +158,7 @@ class BranchStaffService
                 $row = [
                     'id' => $user->id,
                     'name' => $user->name,
+                    'phone' => $user->phone,
                     'email' => $user->email,
                     'is_active' => $user->is_active,
                     'roles' => $user->getRoleNames()->values()->all(),
@@ -193,6 +196,7 @@ class BranchStaffService
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
+                    'phone' => $user->phone,
                     'email' => $user->email,
                     'is_active' => $user->is_active,
                     'branch' => $user->branch?->only(['id', 'name', 'slug']),
