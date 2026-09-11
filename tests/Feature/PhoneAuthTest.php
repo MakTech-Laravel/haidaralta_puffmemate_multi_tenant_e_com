@@ -40,9 +40,22 @@ test('invalid phones are rejected on login', function () {
     $this->post(route('login.store'), [
         'phone' => 'not-a-phone',
         'password' => 'password',
-    ])->assertSessionHasErrors('phone');
+    ])->assertSessionHasErrors([
+        'phone' => __('validation.phone', ['attribute' => 'phone number']),
+    ]);
 
     $this->assertGuest('customer');
+});
+
+test('non australian mobiles show a friendly phone validation message', function () {
+    $this->post(route('register.store'), [
+        'name' => 'User User',
+        'phone' => '+880123456789',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ])->assertSessionHasErrors([
+        'phone' => __('validation.phone', ['attribute' => 'phone number']),
+    ]);
 });
 
 test('seeded platform super admin can login with phone and shared password', function () {
