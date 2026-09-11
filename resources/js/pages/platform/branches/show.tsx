@@ -20,7 +20,8 @@ import { usePermission } from '@/hooks/use-permissions';
 type SuperAdmin = {
     id: number;
     name: string;
-    email: string;
+    phone: string;
+    email: string | null;
     is_active: boolean;
 };
 
@@ -224,7 +225,10 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                                                     {admin.name}
                                                 </p>
                                                 <p className="text-muted-foreground text-sm">
-                                                    {admin.email}
+                                                    {admin.phone}
+                                                    {admin.email
+                                                        ? ` · ${admin.email}`
+                                                        : null}
                                                 </p>
                                             </div>
                                             <Badge

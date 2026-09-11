@@ -22,6 +22,7 @@ test('branch admin can create and update staff in their own branch', function ()
     $this->actingAs($admin, 'branch')
         ->post(route('branch.staff.store', $downtown), [
             'name' => 'Downtown Clerk',
+            'phone' => '0412000002',
             'email' => 'downtown-clerk@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -48,6 +49,7 @@ test('branch admin can create and update staff in their own branch', function ()
     $this->actingAs($admin, 'branch')
         ->put(route('branch.staff.update', [$downtown, $clerk]), [
             'name' => 'Downtown Manager',
+            'phone' => '0412000002',
             'email' => 'downtown-clerk@test.com',
             'roles' => [RoleEnum::MANAGER->value],
             'is_active' => true,
@@ -90,6 +92,7 @@ test('branch admin cannot manage staff from another branch by url', function () 
     $this->actingAs($admin, 'branch')
         ->put(route('branch.staff.update', [$downtown, $uptownStaff]), [
             'name' => 'Hacked',
+            'phone' => $uptownStaff->phone,
             'email' => 'uptown-only@test.com',
             'roles' => [RoleEnum::ADMIN->value],
             'is_active' => true,
@@ -119,6 +122,7 @@ test('deactivating the last branch super admin is blocked', function () {
     $this->actingAs($admin, 'branch')
         ->put(route('branch.staff.update', [$downtown, $admin]), [
             'name' => $admin->name,
+            'phone' => $admin->phone,
             'email' => $admin->email,
             'roles' => [RoleEnum::SUPER_ADMIN->value],
             'is_active' => false,

@@ -46,6 +46,7 @@ class StaffController extends Controller
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
+                    'phone' => $user->phone,
                     'email' => $user->email,
                     'is_active' => $user->is_active,
                     'roles' => $user->getRoleNames()->values()->all(),
@@ -81,12 +82,13 @@ class StaffController extends Controller
 
         $user = User::query()->create([
             'name' => $request->validated('name'),
+            'phone' => $request->validated('phone'),
             'email' => $request->validated('email'),
             'password' => $request->validated('password'),
             'user_type' => UserType::PLATFORM,
             'branch_id' => null,
             'is_active' => $request->boolean('is_active', true),
-            'email_verified_at' => now(),
+            'phone_verified_at' => now(),
         ]);
 
         $user->syncRoles($request->validated('roles', []));
@@ -111,6 +113,7 @@ class StaffController extends Controller
             'staffMember' => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'phone' => $user->phone,
                 'email' => $user->email,
                 'is_active' => $user->is_active,
                 'roles' => $user->getRoleNames()->values()->all(),
@@ -136,6 +139,7 @@ class StaffController extends Controller
             'staffMember' => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'phone' => $user->phone,
                 'email' => $user->email,
                 'is_active' => $user->is_active,
                 'roles' => $user->getRoleNames()->values()->all(),
@@ -160,6 +164,7 @@ class StaffController extends Controller
 
         $payload = [
             'name' => $request->validated('name'),
+            'phone' => $request->validated('phone'),
             'email' => $request->validated('email'),
             'is_active' => $isActive,
             'user_type' => UserType::PLATFORM,

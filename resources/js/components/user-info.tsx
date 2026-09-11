@@ -10,6 +10,7 @@ export function UserInfo({
     showEmail?: boolean;
 }) {
     const getInitials = useInitials();
+    const secondary = user.phone ?? user.email;
 
     return (
         <>
@@ -21,9 +22,9 @@ export function UserInfo({
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
-                {showEmail && (
+                {showEmail && secondary && (
                     <span className="text-muted-foreground truncate text-xs">
-                        {user.email}
+                        {secondary}
                     </span>
                 )}
             </div>

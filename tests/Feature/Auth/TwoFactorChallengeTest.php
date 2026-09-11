@@ -22,7 +22,7 @@ test('unified login skips fortify two factor challenge', function () {
     $user = User::factory()->withTwoFactor()->create();
 
     $this->post(route('login.store'), [
-        'email' => $user->email,
+        'phone' => $user->phone,
         'password' => 'password',
     ])->assertRedirect('/dashboard');
 

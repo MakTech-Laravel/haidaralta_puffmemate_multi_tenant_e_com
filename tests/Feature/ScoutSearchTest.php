@@ -28,6 +28,7 @@ test('user searchable array casts filter fields to engine-safe types', function 
 
     expect($payload['id'])->toBeInt()
         ->and($payload['name'])->toBe($user->name)
+        ->and($payload['phone'])->toBe($user->phone)
         ->and($payload['email'])->toBe($user->email)
         ->and($payload['user_type'])->toBe(UserType::PLATFORM->value)
         ->and($payload['branch_id'])->toBeNull()
@@ -48,8 +49,8 @@ test('user searchable array survives remember-token saves with timestamps disabl
 
 test('login with remember me does not error while syncing scout', function () {
     $this->post(route('login.store'), [
-        'email' => UserSeeder::PLATFORM_ADMIN,
-        'password' => UserSeeder::PLATFORM_ADMIN,
+        'phone' => UserSeeder::PLATFORM_ADMIN_PHONE,
+        'password' => UserSeeder::DEFAULT_PASSWORD,
         'remember' => true,
     ])->assertRedirect('/platform/dashboard');
 

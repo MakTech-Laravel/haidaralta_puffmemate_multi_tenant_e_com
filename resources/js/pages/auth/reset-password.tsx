@@ -8,36 +8,35 @@ import { Spinner } from '@/components/ui/spinner';
 import { update } from '@/routes/password';
 
 type Props = {
-    token: string;
-    email: string;
+    phone: string;
     passwordRules: string;
 };
 
-export default function ResetPassword({ token, email, passwordRules }: Props) {
+export default function ResetPassword({ phone, passwordRules }: Props) {
     return (
         <>
             <Head title="Reset password" />
 
             <Form
                 {...update.form()}
-                transform={(data) => ({ ...data, token, email })}
+                transform={(data) => ({ ...data, phone })}
                 resetOnSuccess={['password', 'password_confirmation']}
             >
                 {({ processing, errors }) => (
                     <div className="grid gap-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="phone">Phone number</Label>
                             <Input
-                                id="email"
-                                type="email"
-                                name="email"
-                                autoComplete="email"
-                                value={email}
+                                id="phone"
+                                type="tel"
+                                name="phone"
+                                autoComplete="tel"
+                                value={phone}
                                 className="mt-1 block w-full"
                                 readOnly
                             />
                             <InputError
-                                message={errors.email}
+                                message={errors.phone}
                                 className="mt-2"
                             />
                         </div>

@@ -98,7 +98,7 @@ test('inactive portal user is logged out and redirected to login', function () {
 
     $response
         ->assertRedirect(route('login'))
-        ->assertSessionHasErrors('email');
+        ->assertSessionHasErrors('phone');
 
     $this->assertGuest('platform');
 });

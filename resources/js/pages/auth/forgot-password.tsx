@@ -1,4 +1,3 @@
-// Components
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import InputError from '@/components/input-error';
@@ -25,29 +24,29 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label htmlFor="phone">Phone number</Label>
                                 <Input
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    autoComplete="off"
+                                    id="phone"
+                                    type="tel"
+                                    name="phone"
+                                    autoComplete="tel"
                                     autoFocus
-                                    placeholder="email@example.com"
+                                    placeholder="04XX XXX XXX"
                                 />
 
-                                <InputError message={errors.email} />
+                                <InputError message={errors.phone} />
                             </div>
 
                             <div className="my-6 flex items-center justify-start">
                                 <Button
                                     className="w-full"
                                     disabled={processing}
-                                    data-test="email-password-reset-link-button"
+                                    data-test="send-password-reset-otp-button"
                                 >
                                     {processing && (
                                         <LoaderCircle className="h-4 w-4 animate-spin" />
                                     )}
-                                    Email password reset link
+                                    Send verification code
                                 </Button>
                             </div>
                         </>
@@ -65,5 +64,6 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
 ForgotPassword.layout = {
     title: 'Forgot password',
-    description: 'Enter your email to receive a password reset link',
+    description:
+        'Enter your phone number to receive a verification code',
 };

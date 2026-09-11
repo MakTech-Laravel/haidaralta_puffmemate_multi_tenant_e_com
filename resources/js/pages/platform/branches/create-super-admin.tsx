@@ -41,6 +41,7 @@ export default function PlatformBranchesCreateSuperAdmin({
         setValidationTimeout,
     } = useForm(BranchController.storeSuperAdmin(branch.slug), {
         name: '',
+        phone: '',
         email: '',
         password: '',
         password_confirmation: '',
@@ -106,20 +107,41 @@ export default function PlatformBranchesCreateSuperAdmin({
                                 </div>
 
                                 <div className="flex flex-col gap-2">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="phone">Phone number</Label>
                                     <Input
-                                        id="email"
-                                        type="email"
-                                        value={data.email}
+                                        id="phone"
+                                        type="tel"
+                                        value={data.phone}
                                         onChange={(event) =>
-                                            setData('email', event.target.value)
+                                            setData('phone', event.target.value)
                                         }
-                                        onBlur={() => validate('email')}
+                                        onBlur={() => validate('phone')}
                                         required
-                                        placeholder="admin@example.com"
+                                        placeholder="04XX XXX XXX"
                                     />
-                                    <InputError message={errors.email} />
+                                    <InputError message={errors.phone} />
                                 </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="email">
+                                    Email (optional)
+                                </Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    value={data.email}
+                                    onChange={(event) =>
+                                        setData('email', event.target.value)
+                                    }
+                                    onBlur={() => {
+                                        if (data.email.trim() !== '') {
+                                            validate('email');
+                                        }
+                                    }}
+                                    placeholder="admin@example.com"
+                                />
+                                <InputError message={errors.email} />
                             </div>
 
                             <div className="grid gap-5 sm:grid-cols-2">

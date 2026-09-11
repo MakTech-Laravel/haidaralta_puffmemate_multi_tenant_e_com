@@ -24,7 +24,9 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @property int $id
  * @property string $name
- * @property string $email
+ * @property string $phone
+ * @property Carbon|null $phone_verified_at
+ * @property string|null $email
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property UserType $user_type
@@ -38,7 +40,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $updated_at
  * @property-read Branch|null $branch
  */
-#[Fillable(['name', 'email', 'password', 'user_type', 'branch_id', 'is_active'])]
+#[Fillable(['name', 'phone', 'email', 'password', 'user_type', 'branch_id', 'is_active', 'phone_verified_at', 'email_verified_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -61,6 +63,7 @@ class User extends Authenticatable implements PasskeyUser
         return [
             'id' => (int) $this->id,
             'name' => $this->name,
+            'phone' => $this->phone,
             'email' => $this->email,
             'user_type' => $this->user_type->value,
             'branch_id' => $this->branch_id !== null ? (int) $this->branch_id : null,
@@ -94,6 +97,14 @@ class User extends Authenticatable implements PasskeyUser
         return $this->user_type->guard();
     }
 
+    /**
+     * Passkey username display / WebAuthn user name.
+     */
+    public function getPasskeyUsername(): string
+    {
+        return $this->phone;
+    }
+
     protected function getDefaultGuardName(): string
     {
         return $this->guardName();
@@ -105,6 +116,7 @@ class User extends Authenticatable implements PasskeyUser
     protected function casts(): array
     {
         return [
+            'phone_verified_at' => 'datetime',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'user_type' => UserType::class,

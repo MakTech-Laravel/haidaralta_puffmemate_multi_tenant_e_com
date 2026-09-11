@@ -13,12 +13,16 @@ test('profile page is displayed', function () {
 });
 
 test('profile information can be updated', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create([
+        'phone' => '+61412345678',
+        'phone_verified_at' => now(),
+    ]);
 
     $response = $this
         ->actingAs($user, 'customer')
         ->patch(route('profile.update'), [
             'name' => 'Test User',
+            'phone' => '0412987654',
             'email' => 'test@example.com',
         ]);
 
@@ -28,18 +32,25 @@ test('profile information can be updated', function () {
 
     $user->refresh();
 
-    expect($user->name)->toBe('Test User');
-    expect($user->email)->toBe('test@example.com');
-    expect($user->email_verified_at)->toBeNull();
+    expect($user->name)->toBe('Test User')
+        ->and($user->phone)->toBe('+61412987654')
+        ->and($user->email)->toBe('test@example.com')
+        ->and($user->phone_verified_at)->toBeNull();
 });
 
-test('email verification status is unchanged when the email address is unchanged', function () {
-    $user = User::factory()->create();
+test('phone verification status is unchanged when the phone number is unchanged', function () {
+    $user = User::factory()->create([
+        'phone' => '+61412345678',
+        'phone_verified_at' => now(),
+        'email' => 'keep@example.com',
+        'email_verified_at' => now(),
+    ]);
 
     $response = $this
         ->actingAs($user, 'customer')
         ->patch(route('profile.update'), [
             'name' => 'Test User',
+            'phone' => $user->phone,
             'email' => $user->email,
         ]);
 
@@ -47,7 +58,7 @@ test('email verification status is unchanged when the email address is unchanged
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('profile.edit'));
 
-    expect($user->refresh()->email_verified_at)->not->toBeNull();
+    expect($user->refresh()->phone_verified_at)->not->toBeNull();
 });
 
 test('user can delete their account', function () {

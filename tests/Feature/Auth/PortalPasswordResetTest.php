@@ -6,11 +6,11 @@
  */
 
 use App\Models\User;
+use App\Services\Sms\FakeSmsSender;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
@@ -21,118 +21,112 @@ beforeEach(function () {
     $this->seed(UserSeeder::class);
 });
 
-test('password reset link can be requested for each portal user type', function (string $email) {
-    Notification::fake();
+test('password reset otp can be requested for each portal user type', function (string $phone) {
+    $user = User::query()->where('phone', $phone)->firstOrFail();
 
-    $user = User::query()->where('email', $email)->firstOrFail();
+    $response = $this->post(route('password.email'), ['phone' => $phone]);
 
-    $response = $this->post(route('password.email'), ['email' => $email]);
+    $response->assertRedirect(route('password.otp'))->assertSessionHas('status');
 
-    $response->assertRedirect()->assertSessionHas('status', __('passwords.sent'));
-    Notification::assertSentTo($user, ResetPassword::class);
+    /** @var FakeSmsSender $sms */
+    $sms = app(FakeSmsSender::class);
+    expect($sms->lastCode())->not->toBeNull()
+        ->and($sms->messages[array_key_last($sms->messages)]['to'] ?? null)->toBe($user->phone);
 })->with([
-    'platform' => ['superadmin@dev.com'],
-    'branch' => ['branch1.superadmin@dev.com'],
-    'driver' => ['driver@dev.com'],
-    'customer' => ['user@dev.com'],
+    'platform' => [UserSeeder::PLATFORM_SUPER_ADMIN_PHONE],
+    'branch' => [UserSeeder::BRANCH_1_SUPER_ADMIN_PHONE],
+    'driver' => [UserSeeder::DRIVER_PHONE],
+    'customer' => [UserSeeder::CUSTOMER_PHONE],
 ]);
 
-test('portal users can reset password and log in with the new password', function (string $email, string $guard, string $dashboardPath) {
-    Notification::fake();
-
-    $user = User::query()->where('email', $email)->firstOrFail();
+test('portal users can reset password via otp and log in with the new password', function (string $phone, string $guard, string $dashboardPath) {
+    $user = User::query()->where('phone', $phone)->firstOrFail();
     $newPassword = 'new-secure-password';
 
-    $this->post(route('password.email'), ['email' => $email]);
+    $this->post(route('password.email'), ['phone' => $phone])
+        ->assertRedirect(route('password.otp'));
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user, $newPassword, $guard, $dashboardPath) {
-        $response = $this->post(route('password.update'), [
-            'token' => $notification->token,
-            'email' => $user->email,
-            'password' => $newPassword,
-            'password_confirmation' => $newPassword,
-        ]);
+    /** @var FakeSmsSender $sms */
+    $sms = app(FakeSmsSender::class);
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('login'))
-            ->assertSessionHas('status', __('passwords.reset'));
+    $this->post(route('password.otp.store'), [
+        'phone' => $phone,
+        'code' => $sms->lastCode(),
+    ])->assertRedirect(route('password.reset'));
 
-        $this->assertGuest($guard);
+    $this->post(route('password.update'), [
+        'phone' => $phone,
+        'password' => $newPassword,
+        'password_confirmation' => $newPassword,
+    ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('status', __('passwords.reset'));
 
-        $loginResponse = $this->post(route('login.store'), [
-            'email' => $user->email,
-            'password' => $newPassword,
-        ]);
+    $this->assertGuest($guard);
+    expect(Hash::check($newPassword, $user->fresh()->password))->toBeTrue();
 
-        $loginResponse->assertRedirect($dashboardPath);
-        $this->assertAuthenticated($guard);
+    $this->post(route('login.store'), [
+        'phone' => $phone,
+        'password' => $newPassword,
+    ])->assertRedirect($dashboardPath);
 
-        return true;
-    });
+    $this->assertAuthenticated($guard);
 })->with([
-    'platform' => ['superadmin@dev.com', 'platform', '/platform/dashboard'],
-    'branch' => ['branch1.superadmin@dev.com', 'branch', '/branch/downtown/dashboard'],
-    'driver' => ['driver@dev.com', 'driver', '/driver/dashboard'],
-    'customer' => ['user@dev.com', 'customer', '/dashboard'],
+    'platform' => [UserSeeder::PLATFORM_SUPER_ADMIN_PHONE, 'platform', '/platform/dashboard'],
+    'branch' => [UserSeeder::BRANCH_1_SUPER_ADMIN_PHONE, 'branch', '/branch/downtown/dashboard'],
+    'driver' => [UserSeeder::DRIVER_PHONE, 'driver', '/driver/dashboard'],
+    'customer' => [UserSeeder::CUSTOMER_PHONE, 'customer', '/dashboard'],
 ]);
 
-test('unknown email still receives generic success without sending a notification', function () {
-    Notification::fake();
+test('unknown phone still receives generic success without sending an otp', function () {
+    /** @var FakeSmsSender $sms */
+    $sms = app(FakeSmsSender::class);
+    $sms->reset();
 
-    $response = $this->post(route('password.email'), ['email' => 'missing@example.com']);
+    $response = $this->post(route('password.email'), ['phone' => '0412987654']);
 
-    $response->assertRedirect()->assertSessionHas('status', __('passwords.sent'));
-    Notification::assertNothingSent();
+    $response->assertRedirect(route('password.otp'))->assertSessionHas('status');
+    expect($sms->lastCode())->toBeNull();
 });
 
-test('inactive users receive generic success without sending a notification', function () {
-    Notification::fake();
+test('inactive users receive generic success without sending an otp', function () {
+    /** @var FakeSmsSender $sms */
+    $sms = app(FakeSmsSender::class);
+    $sms->reset();
 
-    User::query()->where('email', 'superadmin@dev.com')->update(['is_active' => false]);
+    User::query()->where('phone', UserSeeder::PLATFORM_SUPER_ADMIN_PHONE)->update(['is_active' => false]);
 
-    $response = $this->post(route('password.email'), ['email' => 'superadmin@dev.com']);
+    $response = $this->post(route('password.email'), [
+        'phone' => UserSeeder::PLATFORM_SUPER_ADMIN_PHONE,
+    ]);
 
-    $response->assertRedirect()->assertSessionHas('status', __('passwords.sent'));
-    Notification::assertNothingSent();
+    $response->assertRedirect(route('password.otp'))->assertSessionHas('status');
+    expect($sms->lastCode())->toBeNull();
 });
 
-test('password cannot be reset with an invalid token', function () {
-    $user = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
+test('password cannot be reset without a verified otp session', function () {
+    $user = User::query()->where('phone', UserSeeder::PLATFORM_SUPER_ADMIN_PHONE)->firstOrFail();
 
     $response = $this->post(route('password.update'), [
-        'token' => 'invalid-token',
-        'email' => $user->email,
+        'phone' => $user->phone,
         'password' => 'newpassword123',
         'password_confirmation' => 'newpassword123',
     ]);
 
-    $response->assertSessionHasErrors('email');
+    $response->assertSessionHasErrors('phone');
 });
 
 test('fourth forgot password request within ten minutes is rate limited', function () {
     for ($attempt = 0; $attempt < 3; $attempt++) {
-        $this->post(route('password.email'), ['email' => 'superadmin@dev.com']);
+        $this->post(route('password.email'), [
+            'phone' => UserSeeder::PLATFORM_SUPER_ADMIN_PHONE,
+        ]);
     }
 
-    $response = $this->post(route('password.email'), ['email' => 'superadmin@dev.com']);
+    $response = $this->post(route('password.email'), [
+        'phone' => UserSeeder::PLATFORM_SUPER_ADMIN_PHONE,
+    ]);
 
     $response->assertTooManyRequests();
-});
-
-test('reset password notification uses the shared reset url with email query', function () {
-    Notification::fake();
-
-    $user = User::query()->where('email', 'driver@dev.com')->firstOrFail();
-
-    $this->post(route('password.email'), ['email' => $user->email]);
-
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-        $url = $notification->toMail($user)->actionUrl;
-
-        expect($url)->toContain('/reset-password/'.$notification->token)
-            ->and($url)->toContain('email='.urlencode($user->email));
-
-        return true;
-    });
 });

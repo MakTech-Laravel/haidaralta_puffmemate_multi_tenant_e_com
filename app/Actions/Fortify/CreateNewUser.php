@@ -15,13 +15,21 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        $email = $input['email'] ?? null;
+
+        if (is_string($email) && trim($email) === '') {
+            $email = null;
+        }
+
         return User::create([
             'name' => $input['name'],
-            'email' => $input['email'],
+            'phone' => $input['phone'],
+            'email' => $email,
             'password' => $input['password'],
             'user_type' => UserType::CUSTOMER,
             'branch_id' => null,
             'is_active' => true,
+            'phone_verified_at' => null,
         ]);
     }
 }

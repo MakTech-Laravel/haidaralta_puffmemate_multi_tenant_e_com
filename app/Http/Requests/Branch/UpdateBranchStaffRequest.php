@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests\Branch;
 
+use App\Concerns\NormalizesPhoneInput;
 use App\Enums\RoleEnum;
 use App\Models\Branch;
 use App\Models\User;
+use App\Support\Phone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -12,9 +14,17 @@ use Illuminate\Validation\Validator;
 
 class UpdateBranchStaffRequest extends FormRequest
 {
+    use NormalizesPhoneInput;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->mergeNormalizedPhone();
+        $this->normalizeBlankEmailToNull();
     }
 
     /**
@@ -30,8 +40,14 @@ class UpdateBranchStaffRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => [
+            'phone' => [
                 'required',
+                'string',
+                ...Phone::validationRule(),
+                Rule::unique('users', 'phone')->ignore($user->id),
+            ],
+            'email' => [
+                'nullable',
                 'email',
                 'max:255',
                 Rule::unique('users', 'email')->ignore($user->id),

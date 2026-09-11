@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Services\PhoneOtpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,12 +23,16 @@ class ForgotPasswordController extends Controller
     }
 
     /**
-     * Send a password reset link when the account is eligible.
+     * Request a password-reset OTP (does not reveal whether the phone exists).
      */
-    public function store(ForgotPasswordRequest $request): RedirectResponse
+    public function store(ForgotPasswordRequest $request, PhoneOtpService $otpService): RedirectResponse
     {
-        $request->sendResetLink();
+        $request->sendResetOtp($otpService);
 
-        return back()->with('status', __('passwords.sent'));
+        $request->session()->put('password_reset_otp_phone', $request->string('phone')->value());
+
+        return redirect()
+            ->route('password.otp')
+            ->with('status', __('If that phone number is registered, we sent a verification code.'));
     }
 }
