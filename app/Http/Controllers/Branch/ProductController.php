@@ -146,6 +146,7 @@ class ProductController extends Controller
             $branch,
             $data,
             $request->file('image'),
+            [],
             $request->user('branch'),
         );
 

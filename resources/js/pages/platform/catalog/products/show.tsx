@@ -52,6 +52,12 @@ type Product = {
     category_name: string;
     image: string | null;
     image_url: string | null;
+    gallery: {
+        id: number;
+        path: string;
+        url: string;
+        sort_order: number;
+    }[];
     status: boolean;
     variants: ProductVariant[];
 };
@@ -101,7 +107,7 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
         <>
             <Head title={product.name} />
 
-            <div className="flex flex-col gap-6 p-2">
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <Avatar className="size-14 rounded-xl">
@@ -182,6 +188,37 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                                 value={product.description ?? '—'}
                             />
                         </dl>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Gallery</CardTitle>
+                        <CardDescription>
+                            Extra images shown on the product page
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {product.gallery.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">
+                                No gallery images yet.
+                            </p>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                                {product.gallery.map((image) => (
+                                    <div
+                                        key={image.id}
+                                        className="overflow-hidden rounded-xl border bg-muted/20"
+                                    >
+                                        <img
+                                            src={image.url}
+                                            alt={`${product.name} gallery`}
+                                            className="aspect-square w-full object-cover"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 

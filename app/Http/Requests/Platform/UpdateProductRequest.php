@@ -40,6 +40,13 @@ class UpdateProductRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_image' => ['sometimes', 'boolean'],
+            'gallery' => ['nullable', 'array', 'max:12'],
+            'gallery.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_gallery_ids' => ['nullable', 'array'],
+            'remove_gallery_ids.*' => [
+                'integer',
+                Rule::exists('product_images', 'id')->where('product_id', $product->id),
+            ],
             'status' => ['sometimes', 'boolean'],
         ];
     }

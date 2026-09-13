@@ -57,6 +57,14 @@ class Product extends Model
     }
 
     /**
+     * @return HasMany<ProductImage, $this>
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
      * @return HasMany<BranchProduct, $this>
      */
     public function branchProducts(): HasMany

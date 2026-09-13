@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
-import { ProductForm } from '@/components/platform/product-form';
 import Heading from '@/components/heading';
+import { ProductForm } from '@/components/platform/product-form';
 
 type CategoryOption = {
     id: number;
@@ -17,10 +17,10 @@ export default function PlatformProductsCreate({
         <>
             <Head title="Add product" />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-6 p-2">
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <Heading
                     title="Add product"
-                    description="Create a catalog product"
+                    description="Create a global catalog product with primary image and gallery"
                 />
 
                 <ProductForm

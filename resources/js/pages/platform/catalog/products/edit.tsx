@@ -1,12 +1,20 @@
 import { Head } from '@inertiajs/react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
-import { ProductForm } from '@/components/platform/product-form';
 import Heading from '@/components/heading';
+import { ProductForm } from '@/components/platform/product-form';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type CategoryOption = {
     id: number;
     name: string;
+};
+
+type GalleryImage = {
+    id: number;
+    path: string;
+    url: string;
+    sort_order: number;
+    mime_type?: string;
 };
 
 type Product = {
@@ -18,6 +26,7 @@ type Product = {
     description: string | null;
     image: string | null;
     image_url: string | null;
+    gallery: GalleryImage[];
     status: boolean;
 };
 
@@ -32,10 +41,10 @@ export default function PlatformProductsEdit({
         <>
             <Head title={`Edit ${product.name}`} />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-6 p-2">
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <Heading
                     title={`Edit ${product.name}`}
-                    description="Update product details"
+                    description="Update catalog details, primary image, and gallery"
                 />
 
                 {!product.status ? (
@@ -60,6 +69,7 @@ export default function PlatformProductsEdit({
                         description: product.description,
                         image: product.image,
                         image_url: product.image_url,
+                        gallery: product.gallery,
                         status: product.status,
                     }}
                     cancelHref={ProductController.show.url(product.slug)}
