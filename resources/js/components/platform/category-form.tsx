@@ -101,15 +101,16 @@ export function CategoryForm({
     }, [setValidationTimeout]);
 
     useEffect(() => {
-        if (!slugTouched) {
-            const nextSlug = slugify(data.name);
-            setData('slug', nextSlug);
-
-            if (nextSlug !== '') {
-                validate('slug');
-            }
+        if (slugTouched) {
+            return;
         }
-    }, [data.name, slugTouched, setData, validate]);
+
+        const nextSlug = slugify(data.name);
+
+        if (nextSlug !== data.slug) {
+            setData('slug', nextSlug);
+        }
+    }, [data.name, data.slug, slugTouched, setData]);
 
     const submit = (event: FormEvent) => {
         event.preventDefault();

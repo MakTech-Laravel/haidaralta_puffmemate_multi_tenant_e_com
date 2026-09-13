@@ -20,6 +20,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/migrations/** | .ai/rules/migrations.md |
 | app/Models/{User,Branch}.php, app/Models/OtpRecord.php | .ai/rules/models.md |
 | app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |
+| resources/js/components/{platform,admin}/*-form.tsx | .ai/rules/platformadmin.md |
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |
 | database/seeders/** | .ai/rules/seeders.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
