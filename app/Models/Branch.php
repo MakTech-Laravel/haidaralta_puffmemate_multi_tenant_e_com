@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\AuditsChanges;
+use App\Models\Concerns\HasDataTableConfig;
 use App\Support\SearchableTimestamp;
 use Database\Factories\BranchFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,17 @@ use Laravel\Scout\Searchable;
 class Branch extends Model
 {
     /** @use HasFactory<BranchFactory> */
-    use AuditsChanges, HasFactory, Searchable;
+    use AuditsChanges, HasDataTableConfig, HasFactory, Searchable;
+
+    /**
+     * @var list<string>
+     */
+    public static array $dataTableSortable = ['name', 'slug', 'code', 'status', 'created_at', 'users_count'];
+
+    /**
+     * @var list<string>
+     */
+    public static array $dataTableFilterable = ['status'];
 
     /**
      * @var list<string>
@@ -39,6 +50,22 @@ class Branch extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * @return HasMany<BranchProduct, $this>
+     */
+    public function branchProducts(): HasMany
+    {
+        return $this->hasMany(BranchProduct::class);
+    }
+
+    /**
+     * @return HasMany<Inventory, $this>
+     */
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(Inventory::class);
     }
 
     /**

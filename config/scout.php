@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Branch;
+use App\Models\Category;
+use App\Models\Product;
 use App\Models\User;
 
 return [
@@ -173,6 +175,34 @@ return [
                     'name',
                     'slug',
                     'code',
+                    'created_at',
+                ],
+            ],
+            Category::class => [
+                'filterableAttributes' => [
+                    'id',
+                    'parent_id',
+                    'status',
+                    'slug',
+                ],
+                'sortableAttributes' => [
+                    'name',
+                    'slug',
+                    'created_at',
+                ],
+            ],
+            Product::class => [
+                'filterableAttributes' => [
+                    'id',
+                    'category_ids',
+                    'status',
+                    'slug',
+                    'sku',
+                ],
+                'sortableAttributes' => [
+                    'name',
+                    'slug',
+                    'sku',
                     'created_at',
                 ],
             ],

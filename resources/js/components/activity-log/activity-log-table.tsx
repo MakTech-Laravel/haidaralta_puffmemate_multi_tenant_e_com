@@ -1,18 +1,14 @@
-import { Link } from '@inertiajs/react';
+import { type ColumnDef } from '@tanstack/react-table';
 import { Eye } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useMemo } from 'react';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    DataTable,
+    DataTableRowActions,
+    type DataTablePayload,
+} from '@/components/data-table';
+import { Badge } from '@/components/ui/badge';
 import { eventBadgeVariant } from '@/lib/activity-log';
-import type { PaginatedActivities } from '@/components/activity-log/types';
-import { SimplePagination } from '@/components/simple-pagination';
+import type { ActivityRow } from '@/components/activity-log/types';
 
 function formatWhen(value: string | null): string {
     if (!value) {
@@ -23,120 +19,113 @@ function formatWhen(value: string | null): string {
 }
 
 export function ActivityLogTable({
-    activities,
+    payload,
+    perPage,
+    onPerPageChange,
     showUrl,
 }: {
-    activities: PaginatedActivities;
+    payload: DataTablePayload<ActivityRow>;
+    perPage: number;
+    onPerPageChange: (value: number) => void;
     showUrl: (id: number) => string;
 }) {
-    return (
-        <>
-            <div className="border-border bg-card rounded-xl border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>When</TableHead>
-                            <TableHead>Event</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Causer</TableHead>
-                            <TableHead>Subject</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {activities.data.length === 0 ? (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={6}
-                                    className="text-muted-foreground py-10 text-center"
-                                >
-                                    No activity found.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            activities.data.map((activity) => (
-                                <TableRow key={activity.id}>
-                                    <TableCell className="text-muted-foreground whitespace-nowrap">
-                                        {formatWhen(activity.created_at)}
-                                    </TableCell>
-                                    <TableCell>
-                                        {activity.event ? (
-                                            <Badge
-                                                variant={eventBadgeVariant(
-                                                    activity.event,
-                                                )}
-                                            >
-                                                {activity.event}
-                                            </Badge>
-                                        ) : (
-                                            <span className="text-muted-foreground">
-                                                —
-                                            </span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-foreground max-w-xs truncate font-medium">
-                                        {activity.description}
-                                    </TableCell>
-                                    <TableCell>
-                                        {activity.causer ? (
-                                            <div className="min-w-0">
-                                                <p className="text-foreground truncate">
-                                                    {activity.causer.name}
-                                                </p>
-                                                {activity.causer.email ? (
-                                                    <p className="text-muted-foreground truncate text-xs">
-                                                        {activity.causer.email}
-                                                    </p>
-                                                ) : null}
-                                            </div>
-                                        ) : (
-                                            <span className="text-muted-foreground">
-                                                System
-                                            </span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {activity.subject ? (
-                                            <div className="min-w-0">
-                                                <p className="text-foreground truncate">
-                                                    {activity.subject.label ??
-                                                        `#${activity.subject.id}`}
-                                                </p>
-                                                <p className="text-muted-foreground text-xs">
-                                                    {activity.subject.type}
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <span className="text-muted-foreground">
-                                                —
-                                            </span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <Link
-                                                href={showUrl(activity.id)}
-                                                aria-label={`View activity ${activity.id}`}
-                                            >
-                                                <Eye className="size-4" />
-                                                <span className="sr-only">
-                                                    View
-                                                </span>
-                                            </Link>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+    const columns = useMemo<ColumnDef<ActivityRow>[]>(
+        () => [
+            {
+                accessorKey: 'created_at',
+                header: 'When',
+                cell: ({ row }) => (
+                    <span className="text-muted-foreground whitespace-nowrap">
+                        {formatWhen(row.original.created_at)}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'event',
+                header: 'Event',
+                cell: ({ row }) =>
+                    row.original.event ? (
+                        <Badge
+                            variant={eventBadgeVariant(row.original.event)}
+                        >
+                            {row.original.event}
+                        </Badge>
+                    ) : (
+                        <span className="text-muted-foreground">—</span>
+                    ),
+            },
+            {
+                accessorKey: 'description',
+                header: 'Description',
+                cell: ({ row }) => (
+                    <span className="text-foreground max-w-xs truncate font-medium">
+                        {row.original.description}
+                    </span>
+                ),
+            },
+            {
+                id: 'causer',
+                header: 'Causer',
+                cell: ({ row }) =>
+                    row.original.causer ? (
+                        <div className="min-w-0">
+                            <p className="text-foreground truncate">
+                                {row.original.causer.name}
+                            </p>
+                            {row.original.causer.email ? (
+                                <p className="text-muted-foreground truncate text-xs">
+                                    {row.original.causer.email}
+                                </p>
+                            ) : null}
+                        </div>
+                    ) : (
+                        <span className="text-muted-foreground">System</span>
+                    ),
+            },
+            {
+                id: 'subject',
+                header: 'Subject',
+                cell: ({ row }) =>
+                    row.original.subject ? (
+                        <div className="min-w-0">
+                            <p className="text-foreground truncate">
+                                {row.original.subject.label ??
+                                    `#${row.original.subject.id}`}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                                {row.original.subject.type}
+                            </p>
+                        </div>
+                    ) : (
+                        <span className="text-muted-foreground">—</span>
+                    ),
+            },
+            {
+                id: 'actions',
+                header: 'Actions',
+                cell: ({ row }) => (
+                    <DataTableRowActions
+                        items={[
+                            {
+                                label: 'View',
+                                icon: Eye,
+                                href: showUrl(row.original.id),
+                            },
+                        ]}
+                    />
+                ),
+            },
+        ],
+        [showUrl],
+    );
 
-            <SimplePagination links={activities.links} />
-        </>
+    return (
+        <DataTable
+            columns={columns}
+            payload={payload}
+            perPage={perPage}
+            onPerPageChange={onPerPageChange}
+            emptyMessage="No activity found."
+        />
     );
 }

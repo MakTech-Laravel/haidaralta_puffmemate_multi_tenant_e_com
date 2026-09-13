@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\DataTables\PlatformRoleDataTable;
 use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
 use App\Http\Controllers\Controller;
@@ -26,18 +27,8 @@ class RoleController extends Controller
      */
     public function index(Request $request): Response
     {
-        $this->usePlatformTeam();
-
-        $filters = $this->resolveFilters($request);
-
-        $roles = $this->rolesQuery($filters)
-            ->paginate(15)
-            ->withQueryString()
-            ->through(fn (Role $role): array => $this->mapRole($role));
-
         return Inertia::render('platform/roles/index', [
-            'roles' => $roles,
-            'filters' => $filters,
+            'table' => PlatformRoleDataTable::make($request),
         ]);
     }
 
@@ -222,12 +213,15 @@ class RoleController extends Controller
      */
     private function resolveFilters(Request $request): array
     {
-        $kind = strtolower(trim((string) $request->query('kind', '')));
-        $users = strtolower(trim((string) $request->query('users', '')));
-        $permissions = strtolower(trim((string) $request->query('permissions', '')));
+        $filter = $request->input('filter', []);
+        $filter = is_array($filter) ? $filter : [];
+
+        $kind = strtolower(trim((string) ($filter['kind'] ?? $request->query('kind', ''))));
+        $users = strtolower(trim((string) ($filter['users'] ?? $request->query('users', ''))));
+        $permissions = strtolower(trim((string) ($filter['permissions'] ?? $request->query('permissions', ''))));
 
         return [
-            'search' => trim((string) $request->query('search', '')),
+            'search' => trim((string) ($filter['search'] ?? $request->query('search', ''))),
             'kind' => in_array($kind, ['system', 'custom'], true) ? $kind : '',
             'users' => in_array($users, ['with', 'without'], true) ? $users : '',
             'permissions' => in_array($permissions, ['none', 'some', 'many'], true) ? $permissions : '',

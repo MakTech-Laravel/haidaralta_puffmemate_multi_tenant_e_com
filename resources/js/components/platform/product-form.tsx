@@ -1,0 +1,758 @@
+import { Link, useForm } from '@inertiajs/react';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import type { FormEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import FileUpload, { type ExistingFile } from '@/components/file-upload';
+import InputError from '@/components/input-error';
+import { ColorPicker } from '@/components/color-picker';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    CATALOG_COLOR_PICKER_MODES,
+    colorPickerStyle,
+    isTransparentColorPickerValue,
+    normalizeCatalogColorPickerValue,
+    type ColorPickerValue,
+} from '@/lib/color-picker';
+import { cn } from '@/lib/utils';
+
+type FormAction = {
+    action: string;
+    method?: string;
+};
+
+export type ProductCategoryOption = {
+    id: number;
+    name: string;
+};
+
+export type ProductGalleryImage = {
+    id: number;
+    path: string;
+    url: string;
+    sort_order: number;
+    mime_type?: string;
+};
+
+type ProductSuggestion = {
+    id: number;
+    name: string;
+    slug: string;
+    sku: string | null;
+    image_url: string | null;
+};
+
+interface ProductFormDefaults {
+    category_ids?: number[];
+    name?: string;
+    slug?: string;
+    sku?: string | null;
+    description?: string | null;
+    image?: string | null;
+    image_url?: string | null;
+    gallery?: ProductGalleryImage[];
+    color_code?: ColorPickerValue | null;
+    status?: boolean;
+}
+
+interface ProductFormProps {
+    action: FormAction;
+    categoryOptions: ProductCategoryOption[];
+    defaults?: ProductFormDefaults;
+    isEdit?: boolean;
+    showBranchNotice?: boolean;
+    /** Platform catalog create/edit — match existing products while typing. */
+    enableSuggestions?: boolean;
+    excludeProductId?: number | null;
+    cancelHref: string;
+    submitLabel?: string;
+}
+
+function slugify(value: string): string {
+    return value
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+export function ProductForm({
+    action,
+    categoryOptions,
+    defaults,
+    isEdit = false,
+    showBranchNotice = false,
+    enableSuggestions = false,
+    excludeProductId = null,
+    cancelHref,
+    submitLabel,
+}: ProductFormProps) {
+    const [slugTouched, setSlugTouched] = useState(isEdit);
+    const [existingPrimary, setExistingPrimary] = useState<ExistingFile[]>(
+        () =>
+            defaults?.image && defaults?.image_url
+                ? [
+                      {
+                          id: 'primary',
+                          path: defaults.image,
+                          url: defaults.image_url,
+                          mime_type: 'image/jpeg',
+                          name:
+                              defaults.image.split('/').pop() ?? 'primary-image',
+                      },
+                  ]
+                : [],
+    );
+    const [existingGallery, setExistingGallery] = useState<ExistingFile[]>(
+        () =>
+            (defaults?.gallery ?? []).map((image) => ({
+                id: image.id,
+                path: image.path,
+                url: image.url,
+                mime_type: image.mime_type ?? 'image/jpeg',
+                name: image.path.split('/').pop() ?? `image-${image.id}`,
+            })),
+    );
+    const [removeGalleryIds, setRemoveGalleryIds] = useState<number[]>([]);
+    const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
+    const [categoryOpen, setCategoryOpen] = useState(false);
+
+    const formMethod = (
+        action.method ?? 'post'
+    ).toLowerCase() as 'get' | 'post' | 'put' | 'patch' | 'delete';
+
+    const {
+        data,
+        setData,
+        post,
+        processing,
+        errors,
+        progress,
+        transform,
+        validate,
+        setValidationTimeout,
+        cancel,
+    } = useForm(formMethod, action.action, {
+        category_ids: defaults?.category_ids ?? ([] as number[]),
+        name: defaults?.name ?? '',
+        slug: defaults?.slug ?? '',
+        sku: defaults?.sku ?? '',
+        description: defaults?.description ?? '',
+        image: null as File | null,
+        gallery: [] as File[],
+        remove_image: false,
+        remove_gallery_ids: [] as number[],
+        color_code: normalizeCatalogColorPickerValue(defaults?.color_code),
+        status: defaults?.status ?? true,
+        ...(isEdit ? { _method: 'put' } : {}),
+    });
+
+    const selectedCategories = useMemo(
+        () =>
+            categoryOptions.filter((option) =>
+                data.category_ids.includes(option.id),
+            ),
+        [categoryOptions, data.category_ids],
+    );
+
+    const imageTileStyle = colorPickerStyle(data.color_code);
+    const imageTileTransparent = isTransparentColorPickerValue(data.color_code);
+
+    const toggleCategory = (categoryId: number) => {
+        const next = data.category_ids.includes(categoryId)
+            ? data.category_ids.filter((id) => id !== categoryId)
+            : [...data.category_ids, categoryId];
+
+        setData('category_ids', next);
+    };
+
+    useEffect(() => {
+        setValidationTimeout(500);
+    }, [setValidationTimeout]);
+
+    useEffect(() => {
+        if (slugTouched) {
+            return;
+        }
+
+        const nextSlug = slugify(data.name);
+
+        if (nextSlug !== data.slug) {
+            setData('slug', nextSlug);
+        }
+    }, [data.name, data.slug, slugTouched, setData]);
+
+    useEffect(() => {
+        if (!enableSuggestions) {
+            return;
+        }
+
+        const query = data.name.trim();
+
+        if (query.length < 2) {
+            setSuggestions([]);
+
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            fetch(
+                ProductController.suggestions.url({
+                    query: {
+                        q: query,
+                        ...(excludeProductId
+                            ? { exclude: excludeProductId }
+                            : {}),
+                    },
+                }),
+                {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                },
+            )
+                .then((response) => response.json())
+                .then((payload: { suggestions: ProductSuggestion[] }) => {
+                    setSuggestions(payload.suggestions ?? []);
+                })
+                .catch(() => setSuggestions([]));
+        }, 300);
+
+        return () => window.clearTimeout(timer);
+    }, [data.name, enableSuggestions, excludeProductId]);
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+
+        transform((form) => {
+            const {
+                image,
+                gallery,
+                remove_image,
+                remove_gallery_ids,
+                color_code,
+                ...rest
+            } = form;
+
+            return {
+                ...rest,
+                color_code: JSON.stringify(
+                    normalizeCatalogColorPickerValue(color_code),
+                ),
+                ...(image ? { image } : {}),
+                ...(gallery.length > 0 ? { gallery } : {}),
+                ...(remove_image ? { remove_image: true } : {}),
+                ...(remove_gallery_ids.length > 0
+                    ? { remove_gallery_ids }
+                    : {}),
+            };
+        });
+
+        post(action.action, {
+            forceFormData: true,
+            preserveScroll: true,
+        });
+    };
+
+    return (
+        <form onSubmit={submit} className="space-y-6">
+            {showBranchNotice ? (
+                <Alert className="border-primary/20 bg-primary/5">
+                    <AlertTitle>Branch availability</AlertTitle>
+                    <AlertDescription>
+                        Disabled for all branches — enable from branch
+                        inventory after creating the product.
+                    </AlertDescription>
+                </Alert>
+            ) : null}
+
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
+                <section
+                    className={cn(
+                        'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                        'sm:p-6',
+                    )}
+                >
+                    <div className="mb-5 space-y-1">
+                        <h2 className="text-base font-semibold tracking-tight">
+                            {isEdit ? 'Product details' : 'Product information'}
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                            Catalog metadata shared across every branch.
+                        </p>
+                    </div>
+
+                    <div className="space-y-5">
+                        <div className="flex w-full min-w-0 flex-col gap-2">
+                            <Label htmlFor="category_ids">Categories</Label>
+                            <Popover
+                                open={categoryOpen}
+                                onOpenChange={setCategoryOpen}
+                            >
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        id="category_ids"
+                                        type="button"
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={categoryOpen}
+                                        aria-invalid={Boolean(
+                                            errors.category_ids ??
+                                                errors['category_ids.0'],
+                                        )}
+                                        className="h-auto min-h-9 w-full min-w-0 justify-between gap-2 px-3 py-1.5 font-normal"
+                                    >
+                                        {selectedCategories.length === 0 ? (
+                                            <span className="text-muted-foreground truncate">
+                                                Select categories
+                                            </span>
+                                        ) : (
+                                            <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-left">
+                                                {selectedCategories.map(
+                                                    (category) => (
+                                                        <Badge
+                                                            key={category.id}
+                                                            variant="secondary"
+                                                            className="max-w-full font-normal"
+                                                        >
+                                                            <span className="truncate">
+                                                                {category.name}
+                                                            </span>
+                                                        </Badge>
+                                                    ),
+                                                )}
+                                            </span>
+                                        )}
+                                        <ChevronsUpDown className="size-4 shrink-0 self-center opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    className="w-[var(--radix-popover-trigger-width)] p-0"
+                                    align="start"
+                                >
+                                    <Command>
+                                        <CommandInput placeholder="Search categories…" />
+                                        <CommandList>
+                                            <CommandEmpty>
+                                                No category found.
+                                            </CommandEmpty>
+                                            <CommandGroup>
+                                                {categoryOptions.map(
+                                                    (option) => {
+                                                        const selected =
+                                                            data.category_ids.includes(
+                                                                option.id,
+                                                            );
+
+                                                        return (
+                                                            <CommandItem
+                                                                key={option.id}
+                                                                value={
+                                                                    option.name
+                                                                }
+                                                                onSelect={() =>
+                                                                    toggleCategory(
+                                                                        option.id,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        'size-4',
+                                                                        selected
+                                                                            ? 'opacity-100'
+                                                                            : 'opacity-0',
+                                                                    )}
+                                                                />
+                                                                {option.name}
+                                                            </CommandItem>
+                                                        );
+                                                    },
+                                                )}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <InputError
+                                message={
+                                    errors.category_ids ??
+                                    errors['category_ids.0']
+                                }
+                            />
+                        </div>
+
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="name">Name</Label>
+                                <Input
+                                    id="name"
+                                    value={data.name}
+                                    onChange={(event) =>
+                                        setData('name', event.target.value)
+                                    }
+                                    required
+                                    placeholder="e.g. Air Pro Kit"
+                                    autoComplete="off"
+                                />
+                                <InputError message={errors.name} />
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="slug">Slug</Label>
+                                <Input
+                                    id="slug"
+                                    value={data.slug}
+                                    onChange={(event) => {
+                                        setSlugTouched(true);
+                                        setData('slug', event.target.value);
+                                    }}
+                                    onBlur={() => validate('slug')}
+                                    required
+                                    placeholder="e.g. air-pro-kit"
+                                />
+                                <InputError message={errors.slug} />
+                            </div>
+                        </div>
+
+                        {enableSuggestions && suggestions.length > 0 ? (
+                            <div className="space-y-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+                                <p className="text-sm font-medium">
+                                    Similar products already exist
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                    Review these before creating a duplicate.
+                                </p>
+                                <ul className="space-y-2">
+                                    {suggestions.map((suggestion) => (
+                                        <li
+                                            key={suggestion.id}
+                                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-background px-3 py-2"
+                                        >
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                {suggestion.image_url ? (
+                                                    <img
+                                                        src={
+                                                            suggestion.image_url
+                                                        }
+                                                        alt=""
+                                                        className="size-9 shrink-0 rounded-md object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="bg-muted size-9 shrink-0 rounded-md" />
+                                                )}
+                                                <div className="min-w-0">
+                                                    <div className="truncate font-medium">
+                                                        {suggestion.name}
+                                                    </div>
+                                                    <div className="text-muted-foreground truncate text-xs">
+                                                        {suggestion.sku ??
+                                                            suggestion.slug}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={ProductController.show.url(
+                                                        suggestion.slug,
+                                                    )}
+                                                >
+                                                    View
+                                                </Link>
+                                            </Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ) : null}
+
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="sku">SKU</Label>
+                            <Input
+                                id="sku"
+                                value={data.sku}
+                                onChange={(event) =>
+                                    setData('sku', event.target.value)
+                                }
+                                onBlur={() => {
+                                    if (data.sku.trim() !== '') {
+                                        validate('sku');
+                                    }
+                                }}
+                                placeholder="e.g. POM-AIR-PRO"
+                            />
+                            <InputError message={errors.sku} />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                                id="description"
+                                value={data.description}
+                                onChange={(event) =>
+                                    setData(
+                                        'description',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="Tell customers what makes this product stand out"
+                                rows={7}
+                                className="min-h-40 resize-y"
+                            />
+                            <InputError message={errors.description} />
+                        </div>
+
+                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                            <Checkbox
+                                id="status"
+                                checked={data.status}
+                                onCheckedChange={(value) =>
+                                    setData('status', value === true)
+                                }
+                            />
+                            <div className="space-y-0.5">
+                                <Label
+                                    htmlFor="status"
+                                    className="font-medium"
+                                >
+                                    Active in catalog
+                                </Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Inactive products stay hidden from browsing.
+                                </p>
+                            </div>
+                            <InputError message={errors.status} />
+                        </div>
+                    </div>
+                </section>
+
+                <section
+                    className={cn(
+                        'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                        'sm:p-6',
+                    )}
+                >
+                    <div className="mb-5 space-y-1">
+                        <h2 className="text-base font-semibold tracking-tight">
+                            Media
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                            Set a primary image for listings, then add gallery
+                            shots for the product page.
+                        </p>
+                    </div>
+
+                    <div className="space-y-5">
+                        <div className="grid gap-4 sm:grid-cols-2 sm:items-stretch">
+                            <ColorPicker
+                                mode="dialog"
+                                enabledModes={[...CATALOG_COLOR_PICKER_MODES]}
+                                defaultMode="transparent"
+                                value={data.color_code}
+                                onChange={(color_code) =>
+                                    setData('color_code', color_code)
+                                }
+                                label="Image background"
+                                description="Soft fill behind product imagery"
+                                dialogTitle="Image background"
+                                dialogDescription="Choose none, a solid fill, or a two-tone gradient for catalog imagery."
+                                classNames={{
+                                    wrapper: 'h-full',
+                                    shell: 'h-full',
+                                    trigger: 'h-full',
+                                }}
+                                error={
+                                    errors.color_code ??
+                                    errors['color_code.mode'] ??
+                                    errors['color_code.color'] ??
+                                    errors['color_code.from'] ??
+                                    errors['color_code.to']
+                                }
+                            />
+
+                            <div className="border-border/80 bg-card/60 flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border shadow-sm">
+                                <div className="border-border/60 shrink-0 border-b px-4 py-3">
+                                    <Label className="text-sm font-semibold">
+                                        Primary image
+                                    </Label>
+                                    <p className="text-muted-foreground text-xs">
+                                        Shown on product cards · Max 2MB
+                                    </p>
+                                </div>
+
+                                <div
+                                    className={cn(
+                                        'flex min-h-0 flex-1 flex-col p-3.5',
+                                        imageTileTransparent && 'bg-muted/20',
+                                    )}
+                                    style={
+                                        imageTileTransparent
+                                            ? undefined
+                                            : imageTileStyle
+                                    }
+                                >
+                                    <FileUpload
+                                        value={data.image}
+                                        onChange={(file) => {
+                                            const next = Array.isArray(file)
+                                                ? (file[0] ?? null)
+                                                : file;
+                                            setExistingPrimary([]);
+                                            setData((current) => ({
+                                                ...current,
+                                                image: next,
+                                                remove_image: next
+                                                    ? false
+                                                    : current.remove_image,
+                                            }));
+                                        }}
+                                        existingFiles={
+                                            data.image || data.remove_image
+                                                ? []
+                                                : existingPrimary
+                                        }
+                                        onRemoveExisting={() => {
+                                            setExistingPrimary([]);
+                                            setData((current) => ({
+                                                ...current,
+                                                image: null,
+                                                remove_image: true,
+                                            }));
+                                        }}
+                                        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
+                                        maxSize={2}
+                                        lightbox
+                                        isUploading={processing}
+                                        uploadProgress={
+                                            progress?.percentage ?? null
+                                        }
+                                        onCancel={
+                                            processing ? cancel : undefined
+                                        }
+                                        placeholder="Drop image or click to browse"
+                                        hint="PNG, JPG, SVG, or WebP"
+                                        classNames={{
+                                            wrapper:
+                                                'flex h-full min-h-0 w-full flex-1 flex-col',
+                                            dropzone:
+                                                'flex h-full min-h-[8.5rem] w-full flex-1 border-border/70 bg-background/80 px-4 py-5 backdrop-blur-sm',
+                                            dropzoneContent: 'gap-1',
+                                            card: 'w-full overflow-hidden border-border/70 bg-background/90 shadow-xs backdrop-blur-sm',
+                                            cardMedia:
+                                                'aspect-video max-h-40 bg-muted/20 [&_img]:object-contain',
+                                            cardInfo: '[&_p]:truncate',
+                                        }}
+                                        error={errors.image}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                                <Label>Image gallery</Label>
+                                <span className="text-muted-foreground text-xs">
+                                    Up to 12 images
+                                </span>
+                            </div>
+                            <FileUpload
+                                multiple
+                                value={data.gallery}
+                                onChange={(files) => {
+                                    const next = Array.isArray(files)
+                                        ? files
+                                        : files
+                                          ? [files]
+                                          : [];
+                                    setData('gallery', next);
+                                }}
+                                existingFiles={existingGallery}
+                                onRemoveExisting={(id) => {
+                                    const numericId = Number(id);
+                                    setExistingGallery((current) =>
+                                        current.filter(
+                                            (file) => file.id !== id,
+                                        ),
+                                    );
+                                    setRemoveGalleryIds((current) => {
+                                        const next = current.includes(numericId)
+                                            ? current
+                                            : [...current, numericId];
+                                        setData('remove_gallery_ids', next);
+                                        return next;
+                                    });
+                                }}
+                                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
+                                maxSize={2}
+                                maxFiles={12}
+                                lightbox
+                                isUploading={processing}
+                                uploadProgress={progress?.percentage ?? null}
+                                onCancel={processing ? cancel : undefined}
+                                placeholder="Drop gallery images here"
+                                hint="PNG, JPG, SVG, or WebP · up to 12 images"
+                                classNames={{
+                                    dropzone: 'py-6',
+                                    grid: 'max-h-48 overflow-y-auto pr-1',
+                                }}
+                                error={
+                                    errors.gallery ??
+                                    errors['gallery.0'] ??
+                                    errors['gallery.1']
+                                }
+                            />
+                            <InputError
+                                message={
+                                    errors.gallery ??
+                                    errors['gallery.0'] ??
+                                    errors.remove_gallery_ids
+                                }
+                            />
+                            {removeGalleryIds.length > 0 ? (
+                                <p className="text-muted-foreground text-xs">
+                                    {removeGalleryIds.length} gallery image
+                                    {removeGalleryIds.length === 1 ? '' : 's'}{' '}
+                                    marked for removal on save.
+                                </p>
+                            ) : null}
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                <Button variant="secondary" asChild>
+                    <Link href={cancelHref}>Cancel</Link>
+                </Button>
+                <Button type="submit" disabled={processing}>
+                    {processing ? <Spinner /> : null}
+                    {submitLabel ?? (isEdit ? 'Save changes' : 'Create product')}
+                </Button>
+            </div>
+        </form>
+    );
+}

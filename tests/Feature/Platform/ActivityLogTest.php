@@ -40,16 +40,16 @@ test('platform super admin can view activity log index and show', function () {
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.activity-logs.index', [
-            'search' => 'branch-audit-unique-marker',
+            'filter' => ['search' => 'branch-audit-unique-marker'],
         ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/activity-logs/index')
-            ->has('activities.data', 1)
-            ->where('activities.data.0.id', $activity->id)
-            ->where('activities.data.0.event', 'updated')
-            ->where('activities.data.0.causer.name', $admin->name)
-            ->where('activities.data.0.subject.label', 'Logged Branch')
+            ->has('table.data', 1)
+            ->where('table.data.0.id', $activity->id)
+            ->where('table.data.0.event', 'updated')
+            ->where('table.data.0.causer.name', $admin->name)
+            ->where('table.data.0.subject.label', 'Logged Branch')
         );
 
     $this->actingAs($admin, 'platform')
@@ -136,13 +136,15 @@ test('activity log index filters by event', function () {
     activity()->causedBy($admin)->performedOn($branch)->event('updated')->log('updated');
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.activity-logs.index', ['event' => 'updated']))
+        ->get(route('platform.activity-logs.index', [
+            'filter' => ['event' => 'updated'],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/activity-logs/index')
-            ->has('activities.data', 1)
-            ->where('activities.data.0.event', 'updated')
-            ->where('filters.event', 'updated')
+            ->has('table.data', 1)
+            ->where('table.data.0.event', 'updated')
+            ->where('table.filters.event', 'updated')
         );
 });
 
@@ -171,8 +173,8 @@ test('branch portal sees only its branch activities', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/activity-logs/index')
-            ->has('activities.data', 1)
-            ->where('activities.data.0.description', 'branch-a-marker')
+            ->has('table.data', 1)
+            ->where('table.data.0.description', 'branch-a-marker')
         );
 
     $other = Activity::query()->where('description', 'branch-b-marker')->firstOrFail();
@@ -192,15 +194,19 @@ test('driver only sees own causer activities and guests are redirected', functio
     Activity::query()->delete();
 
     activity()->causedBy($driver)->event('login')->log('driver-own-login');
+    activity()->causedBy($driver)->event('updated')->log('driver-own-updated');
     activity()->causedBy($other)->event('login')->log('driver-other-login');
 
     $this->actingAs($driver, 'driver')
-        ->get(route('driver.activity.index'))
+        ->get(route('driver.activity.index', [
+            'filter' => ['event' => 'login'],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('driver/activity/index')
-            ->has('activities.data', 1)
-            ->where('activities.data.0.description', 'driver-own-login')
+            ->has('table.data', 1)
+            ->where('table.data.0.description', 'driver-own-login')
+            ->where('table.filters.event', 'login')
         );
 
     auth()->guard('driver')->logout();
@@ -214,12 +220,21 @@ test('customer can open my activity', function () {
     Activity::query()->delete();
 
     activity()->causedBy($customer)->event('login')->log('customer-login');
+    activity()->causedBy($customer)->event('updated')->log('customer-updated');
 
     $this->actingAs($customer, 'customer')
-        ->get(route('customer.activity.index'))
+        ->get(route('customer.activity.index', [
+            'filter' => [
+                'search' => 'customer-login',
+                'event' => 'login',
+            ],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('customer/activity/index')
-            ->has('activities.data', 1)
+            ->has('table.data', 1)
+            ->where('table.data.0.description', 'customer-login')
+            ->where('table.filters.search', 'customer-login')
+            ->where('table.filters.event', 'login')
         );
 });

@@ -195,12 +195,23 @@ test('platform super admin can list and download zip from backups disk', functio
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/database-backups/index')
-            ->has('backups', 1)
-            ->where('backups.0.path', $path)
-            ->where('backups.0.filename', 'demo-backup.zip')
+            ->has('archives.data', 1)
+            ->where('archives.data.0.path', $path)
+            ->where('archives.data.0.filename', 'demo-backup.zip')
             ->where('cleanup_policy.keep_all_days', 14)
             ->where('cleanup_policy.keep_daily_days', 0)
             ->where('cleanup_policy.max_storage_mb', 2500)
+        );
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.database-backups.index', [
+            'archives_search' => 'missing-name',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/database-backups/index')
+            ->has('archives.data', 0)
+            ->where('archives.filters.search', 'missing-name')
         );
 
     $this->actingAs($admin, 'platform')

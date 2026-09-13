@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\DataTables\ActivityLogDataTable;
 use App\Http\Controllers\Controller;
 use App\Services\ActivityLog\ActivityLogService;
 use Illuminate\Http\Request;
@@ -15,16 +16,8 @@ class ActivityLogController extends Controller
 
     public function index(Request $request): Response
     {
-        $search = $request->string('search')->trim()->toString();
-        $event = $request->string('event')->trim()->toString();
-        $userId = (int) $request->user()->id;
-
         return Inertia::render('customer/activity/index', [
-            'activities' => $this->activityLogs->paginateForCauser($userId, $search, $event),
-            'filters' => [
-                'search' => $search,
-                'event' => $event,
-            ],
+            'table' => ActivityLogDataTable::forCauser($request, $request->user()),
         ]);
     }
 

@@ -1,11 +1,14 @@
-import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head } from '@inertiajs/react';
 import ActivityLogController from '@/actions/App/Http/Controllers/Platform/ActivityLogController';
 import { ActivityLogTable } from '@/components/activity-log/activity-log-table';
-import type { PaginatedActivities } from '@/components/activity-log/types';
+import type { ActivityRow } from '@/components/activity-log/types';
+import {
+    DataTableToolbar,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -15,99 +18,119 @@ import {
 } from '@/components/ui/select';
 
 export default function PlatformActivityLogsIndex({
-    activities,
-    filters,
+    table: tablePayload,
 }: {
-    activities: PaginatedActivities;
-    filters: { search: string; event: string; portal: string };
+    table: DataTablePayload<ActivityRow>;
 }) {
-    const [search, setSearch] = useState(filters.search);
-    const [event, setEvent] = useState(filters.event || 'all');
-    const [portal, setPortal] = useState(filters.portal || 'all');
-
-    const applyFilters = (nextEvent = event, nextPortal = portal) => {
-        router.get(
-            ActivityLogController.index.url({
-                query: {
-                    search: search || undefined,
-                    event: nextEvent === 'all' ? undefined : nextEvent,
-                    portal: nextPortal === 'all' ? undefined : nextPortal,
-                },
-            }),
-            {},
-            { preserveState: true },
-        );
-    };
+    const query = useDataTableQuery({
+        indexUrl: ActivityLogController.index.url(),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
+                event: tablePayload.filters.event ?? 'all',
+                portal: tablePayload.filters.portal ?? 'all',
+            },
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
+    });
 
     return (
         <>
             <Head title="Activity log" />
 
-            <div className="space-y-6 p-2">
+            <div className="space-y-6 p-2 md:p-4">
                 <Heading
                     title="Activity log"
                     description="Site-wide audit trail across all portals"
                 />
 
-                <form
-                    className="flex max-w-3xl flex-wrap gap-2"
-                    onSubmit={(eventSubmit) => {
-                        eventSubmit.preventDefault();
-                        applyFilters();
-                    }}
-                >
-                    <Input
-                        value={search}
-                        onChange={(changeEvent) =>
-                            setSearch(changeEvent.target.value)
-                        }
-                        placeholder="Search description, subject, or causer"
-                        className="min-w-56 flex-1"
-                    />
-                    <Select
-                        value={event}
-                        onValueChange={(value) => {
-                            setEvent(value);
-                            applyFilters(value, portal);
-                        }}
-                    >
-                        <SelectTrigger className="w-40">
-                            <SelectValue placeholder="Event" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All events</SelectItem>
-                            <SelectItem value="created">Created</SelectItem>
-                            <SelectItem value="updated">Updated</SelectItem>
-                            <SelectItem value="deleted">Deleted</SelectItem>
-                            <SelectItem value="login">Login</SelectItem>
-                            <SelectItem value="logout">Logout</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select
-                        value={portal}
-                        onValueChange={(value) => {
-                            setPortal(value);
-                            applyFilters(event, value);
-                        }}
-                    >
-                        <SelectTrigger className="w-40">
-                            <SelectValue placeholder="Portal" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All portals</SelectItem>
-                            <SelectItem value="platform">Platform</SelectItem>
-                            <SelectItem value="branch">Branch</SelectItem>
-                            <SelectItem value="driver">Driver</SelectItem>
-                            <SelectItem value="customer">Customer</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Button type="submit" variant="secondary">
-                        Search
-                    </Button>
-                </form>
+                <DataTableToolbar
+                    search={query.search}
+                    onSearchChange={query.setSearch}
+                    searchPlaceholder="Search description, subject, or causer…"
+                    onClear={query.clearFilters}
+                    filters={
+                        <>
+                            <div className="grid gap-2">
+                                <Label>Event</Label>
+                                <Select
+                                    value={String(query.filters.event ?? 'all')}
+                                    onValueChange={(value) =>
+                                        query.setFilter(
+                                            'event',
+                                            value === 'all' ? null : value,
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger className="w-40">
+                                        <SelectValue placeholder="Event" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All events
+                                        </SelectItem>
+                                        <SelectItem value="created">
+                                            Created
+                                        </SelectItem>
+                                        <SelectItem value="updated">
+                                            Updated
+                                        </SelectItem>
+                                        <SelectItem value="deleted">
+                                            Deleted
+                                        </SelectItem>
+                                        <SelectItem value="login">
+                                            Login
+                                        </SelectItem>
+                                        <SelectItem value="logout">
+                                            Logout
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Portal</Label>
+                                <Select
+                                    value={String(
+                                        query.filters.portal ?? 'all',
+                                    )}
+                                    onValueChange={(value) =>
+                                        query.setFilter(
+                                            'portal',
+                                            value === 'all' ? null : value,
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger className="w-40">
+                                        <SelectValue placeholder="Portal" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All portals
+                                        </SelectItem>
+                                        <SelectItem value="platform">
+                                            Platform
+                                        </SelectItem>
+                                        <SelectItem value="branch">
+                                            Branch
+                                        </SelectItem>
+                                        <SelectItem value="driver">
+                                            Driver
+                                        </SelectItem>
+                                        <SelectItem value="customer">
+                                            Customer
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </>
+                    }
+                />
 
                 <ActivityLogTable
-                    activities={activities}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
                     showUrl={(id) => ActivityLogController.show.url(id)}
                 />
             </div>

@@ -62,7 +62,7 @@ test('branch searchable array includes slug and address', function () {
         'name' => 'Harbor',
         'slug' => 'harbor',
         'address' => '12 Dock Rd',
-        'is_active' => true,
+        'status' => true,
     ]);
 
     $payload = $branch->toSearchableArray();
@@ -71,7 +71,7 @@ test('branch searchable array includes slug and address', function () {
         ->and($payload['name'])->toBe('Harbor')
         ->and($payload['slug'])->toBe('harbor')
         ->and($payload['address'])->toBe('12 Dock Rd')
-        ->and($payload['is_active'])->toBeTrue()
+        ->and($payload['status'])->toBeTrue()
         ->and($payload['created_at'])->toBeInt();
 });
 
@@ -94,13 +94,15 @@ test('platform staff index search returns matching platform users', function () 
     ]);
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.staff.index', ['search' => 'Zelda Unique']))
+        ->get(route('platform.staff.index', [
+            'filter' => ['search' => 'Zelda Unique'],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/staff/index')
-            ->has('staff.data', 1)
-            ->where('staff.data.0.email', 'zelda.unique.staff@test.com')
-            ->where('filters.search', 'Zelda Unique'));
+            ->has('table.data', 1)
+            ->where('table.data.0.email', 'zelda.unique.staff@test.com')
+            ->where('table.filters.search', 'Zelda Unique'));
 });
 
 test('platform branches index search returns matching branches', function () {
@@ -109,15 +111,17 @@ test('platform branches index search returns matching branches', function () {
     Branch::factory()->create([
         'name' => 'Quokka Quarter',
         'slug' => 'quokka-quarter',
-        'is_active' => true,
+        'status' => true,
     ]);
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.branches.index', ['search' => 'Quokka']))
+        ->get(route('platform.branches.index', [
+            'filter' => ['search' => 'Quokka'],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branches/index')
-            ->where('filters.search', 'Quokka')
-            ->has('branches.data', 1)
-            ->where('branches.data.0.slug', 'quokka-quarter'));
+            ->where('table.filters.search', 'Quokka')
+            ->has('table.data', 1)
+            ->where('table.data.0.slug', 'quokka-quarter'));
 });

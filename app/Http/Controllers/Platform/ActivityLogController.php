@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\DataTables\ActivityLogDataTable;
 use App\Http\Controllers\Controller;
 use App\Services\ActivityLog\ActivityLogService;
 use Illuminate\Http\Request;
@@ -18,17 +19,8 @@ class ActivityLogController extends Controller
      */
     public function index(Request $request): Response
     {
-        $search = $request->string('search')->trim()->toString();
-        $event = $request->string('event')->trim()->toString();
-        $portal = $request->string('portal')->trim()->toString();
-
         return Inertia::render('platform/activity-logs/index', [
-            'activities' => $this->activityLogs->paginateForPlatform($search, $event, $portal),
-            'filters' => [
-                'search' => $search,
-                'event' => $event,
-                'portal' => $portal,
-            ],
+            'table' => ActivityLogDataTable::forPlatform($request),
         ]);
     }
 

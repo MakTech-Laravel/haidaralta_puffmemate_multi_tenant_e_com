@@ -112,9 +112,15 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                                 </Link>
                             </Button>
                         ) : null}
-                        <Button type="button" variant="default" disabled>
-                            Product management
-                        </Button>
+                        {can('manage-branch-inventories') ? (
+                            <Button variant="default" asChild>
+                                <Link
+                                    href={`/platform/branches/${branch.slug}/products`}
+                                >
+                                    Product management
+                                </Link>
+                            </Button>
+                        ) : null}
                     </div>
                 </div>
 
