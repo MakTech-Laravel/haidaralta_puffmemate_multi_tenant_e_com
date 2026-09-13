@@ -12,6 +12,14 @@ import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -79,7 +87,9 @@ export default function BranchProductShow({
                     />
                     <div className="flex flex-wrap gap-2">
                         <Button variant="outline" asChild>
-                            <Link href={ProductController.index.url(branch.slug)}>
+                            <Link
+                                href={ProductController.index.url(branch.slug)}
+                            >
                                 Back
                             </Link>
                         </Button>
@@ -96,46 +106,73 @@ export default function BranchProductShow({
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <Checkbox
-                            checked={enabled}
-                            onCheckedChange={(checked) => {
-                                const next = checked === true;
-                                setEnabled(next);
-                                router.put(
-                                    ProductController.toggle.url({
-                                        branch: branch.slug,
-                                        product: product.slug,
-                                    }),
-                                    { status: next },
-                                    { preserveScroll: true },
-                                );
-                            }}
-                        />
-                        <span className="text-sm">
-                            {enabled ? 'Enabled' : 'Disabled'} for this branch
-                        </span>
-                    </div>
-                    {product.inventory?.is_low_stock ? (
-                        <Badge variant="destructive">Low stock</Badge>
-                    ) : null}
-                </div>
-
-                <div className="grid gap-2 text-sm">
-                    <div>
-                        <span className="text-muted-foreground">SKU: </span>
-                        {product.sku ?? '—'}
-                    </div>
-                    {product.description ? (
-                        <div>
-                            <span className="text-muted-foreground">
-                                Description:{' '}
-                            </span>
-                            {product.description}
+                <Card className="border-border/80 shadow-sm">
+                    <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="space-y-1">
+                            <CardTitle className="text-base">
+                                Branch availability
+                            </CardTitle>
+                            <CardDescription>
+                                Enablement and catalog details for this branch.
+                            </CardDescription>
                         </div>
-                    ) : null}
-                </div>
+                        {product.inventory?.is_low_stock ? (
+                            <Badge variant="destructive">Low stock</Badge>
+                        ) : null}
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                            <Checkbox
+                                id="branch-enabled"
+                                checked={enabled}
+                                onCheckedChange={(checked) => {
+                                    const next = checked === true;
+                                    setEnabled(next);
+                                    router.put(
+                                        ProductController.toggle.url({
+                                            branch: branch.slug,
+                                            product: product.slug,
+                                        }),
+                                        { status: next },
+                                        { preserveScroll: true },
+                                    );
+                                }}
+                            />
+                            <div className="space-y-0.5">
+                                <Label
+                                    htmlFor="branch-enabled"
+                                    className="font-medium"
+                                >
+                                    {enabled ? 'Enabled' : 'Disabled'} for this
+                                    branch
+                                </Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Disabled products stay in catalog but are
+                                    unavailable here.
+                                </p>
+                            </div>
+                        </div>
+
+                        <dl className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-1">
+                                <dt className="text-muted-foreground text-sm">
+                                    SKU
+                                </dt>
+                                <dd className="text-sm font-medium">
+                                    {product.sku ?? '—'}
+                                </dd>
+                            </div>
+                            <div className="space-y-1 sm:col-span-2">
+                                <dt className="text-muted-foreground text-sm">
+                                    Description
+                                </dt>
+                                <dd className="text-sm font-medium whitespace-pre-wrap">
+                                    {product.description?.trim() || '—'}
+                                </dd>
+                            </div>
+                        </dl>
+                    </CardContent>
+                </Card>
 
                 <ProductInventoryPanel
                     variants={product.variants}
