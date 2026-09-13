@@ -27,6 +27,7 @@ export default function PlatformProductsCreate({
                     action={ProductController.store.form()}
                     categoryOptions={categoryOptions}
                     showBranchNotice
+                    enableSuggestions
                     cancelHref={ProductController.index.url()}
                 />
             </div>

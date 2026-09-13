@@ -1,6 +1,7 @@
 import { Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
+import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import { FileUploadAvatar } from '@/components/file-upload-avatar';
 import InputError from '@/components/input-error';
@@ -39,6 +40,14 @@ export type ProductGalleryImage = {
     mime_type?: string;
 };
 
+type ProductSuggestion = {
+    id: number;
+    name: string;
+    slug: string;
+    sku: string | null;
+    image_url: string | null;
+};
+
 interface ProductFormDefaults {
     category_id?: number;
     name?: string;
@@ -57,6 +66,9 @@ interface ProductFormProps {
     defaults?: ProductFormDefaults;
     isEdit?: boolean;
     showBranchNotice?: boolean;
+    /** Platform catalog create/edit — match existing products while typing. */
+    enableSuggestions?: boolean;
+    excludeProductId?: number | null;
     cancelHref: string;
     submitLabel?: string;
 }
@@ -75,6 +87,8 @@ export function ProductForm({
     defaults,
     isEdit = false,
     showBranchNotice = false,
+    enableSuggestions = false,
+    excludeProductId = null,
     cancelHref,
     submitLabel,
 }: ProductFormProps) {
@@ -93,6 +107,7 @@ export function ProductForm({
             })),
     );
     const [removeGalleryIds, setRemoveGalleryIds] = useState<number[]>([]);
+    const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
 
     const formMethod = (
         action.method ?? 'post'
@@ -139,6 +154,44 @@ export function ProductForm({
         }
     }, [data.name, data.slug, slugTouched, setData]);
 
+    useEffect(() => {
+        if (!enableSuggestions) {
+            return;
+        }
+
+        const query = data.name.trim();
+
+        if (query.length < 2) {
+            setSuggestions([]);
+
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            fetch(
+                ProductController.suggestions.url({
+                    query: {
+                        q: query,
+                        ...(excludeProductId
+                            ? { exclude: excludeProductId }
+                            : {}),
+                    },
+                }),
+                {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                },
+            )
+                .then((response) => response.json())
+                .then((payload: { suggestions: ProductSuggestion[] }) => {
+                    setSuggestions(payload.suggestions ?? []);
+                })
+                .catch(() => setSuggestions([]));
+        }, 300);
+
+        return () => window.clearTimeout(timer);
+    }, [data.name, enableSuggestions, excludeProductId]);
+
     const submit = (event: FormEvent) => {
         event.preventDefault();
 
@@ -180,10 +233,206 @@ export function ProductForm({
                 </Alert>
             ) : null}
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
                 <section
                     className={cn(
-                        'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                        'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                        'sm:p-6',
+                    )}
+                >
+                    <div className="mb-5 space-y-1">
+                        <h2 className="text-base font-semibold tracking-tight">
+                            {isEdit ? 'Product details' : 'Product information'}
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                            Catalog metadata shared across every branch.
+                        </p>
+                    </div>
+
+                    <div className="space-y-5">
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="category_id">Category</Label>
+                            <Select
+                                value={
+                                    data.category_id === ''
+                                        ? undefined
+                                        : String(data.category_id)
+                                }
+                                onValueChange={(value) =>
+                                    setData('category_id', Number(value))
+                                }
+                            >
+                                <SelectTrigger id="category_id">
+                                    <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        {categoryOptions.map((option) => (
+                                            <SelectItem
+                                                key={option.id}
+                                                value={String(option.id)}
+                                            >
+                                                {option.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
+                            <InputError message={errors.category_id} />
+                        </div>
+
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="name">Name</Label>
+                                <Input
+                                    id="name"
+                                    value={data.name}
+                                    onChange={(event) =>
+                                        setData('name', event.target.value)
+                                    }
+                                    required
+                                    placeholder="e.g. Air Pro Kit"
+                                    autoComplete="off"
+                                />
+                                <InputError message={errors.name} />
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="slug">Slug</Label>
+                                <Input
+                                    id="slug"
+                                    value={data.slug}
+                                    onChange={(event) => {
+                                        setSlugTouched(true);
+                                        setData('slug', event.target.value);
+                                    }}
+                                    onBlur={() => validate('slug')}
+                                    required
+                                    placeholder="e.g. air-pro-kit"
+                                />
+                                <InputError message={errors.slug} />
+                            </div>
+                        </div>
+
+                        {enableSuggestions && suggestions.length > 0 ? (
+                            <div className="space-y-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+                                <p className="text-sm font-medium">
+                                    Similar products already exist
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                    Review these before creating a duplicate.
+                                </p>
+                                <ul className="space-y-2">
+                                    {suggestions.map((suggestion) => (
+                                        <li
+                                            key={suggestion.id}
+                                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-background px-3 py-2"
+                                        >
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                {suggestion.image_url ? (
+                                                    <img
+                                                        src={
+                                                            suggestion.image_url
+                                                        }
+                                                        alt=""
+                                                        className="size-9 shrink-0 rounded-md object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="bg-muted size-9 shrink-0 rounded-md" />
+                                                )}
+                                                <div className="min-w-0">
+                                                    <div className="truncate font-medium">
+                                                        {suggestion.name}
+                                                    </div>
+                                                    <div className="text-muted-foreground truncate text-xs">
+                                                        {suggestion.sku ??
+                                                            suggestion.slug}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={ProductController.show.url(
+                                                        suggestion.slug,
+                                                    )}
+                                                >
+                                                    View
+                                                </Link>
+                                            </Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ) : null}
+
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="sku">SKU</Label>
+                            <Input
+                                id="sku"
+                                value={data.sku}
+                                onChange={(event) =>
+                                    setData('sku', event.target.value)
+                                }
+                                onBlur={() => {
+                                    if (data.sku.trim() !== '') {
+                                        validate('sku');
+                                    }
+                                }}
+                                placeholder="e.g. POM-AIR-PRO"
+                            />
+                            <InputError message={errors.sku} />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                                id="description"
+                                value={data.description}
+                                onChange={(event) =>
+                                    setData(
+                                        'description',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="Tell customers what makes this product stand out"
+                                rows={7}
+                                className="min-h-40 resize-y"
+                            />
+                            <InputError message={errors.description} />
+                        </div>
+
+                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                            <Checkbox
+                                id="status"
+                                checked={data.status}
+                                onCheckedChange={(value) =>
+                                    setData('status', value === true)
+                                }
+                            />
+                            <div className="space-y-0.5">
+                                <Label
+                                    htmlFor="status"
+                                    className="font-medium"
+                                >
+                                    Active in catalog
+                                </Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Inactive products stay hidden from browsing.
+                                </p>
+                            </div>
+                            <InputError message={errors.status} />
+                        </div>
+                    </div>
+                </section>
+
+                <section
+                    className={cn(
+                        'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
                         'sm:p-6',
                     )}
                 >
@@ -287,6 +536,9 @@ export function ProductForm({
                                 onCancel={processing ? cancel : undefined}
                                 placeholder="Drop gallery images here"
                                 hint="Additional product photos for the detail page"
+                                classNames={{
+                                    grid: 'max-h-72 overflow-y-auto pr-1 sm:max-h-80',
+                                }}
                                 error={
                                     errors.gallery ??
                                     errors['gallery.0'] ??
@@ -307,145 +559,6 @@ export function ProductForm({
                                     marked for removal on save.
                                 </p>
                             ) : null}
-                        </div>
-                    </div>
-                </section>
-
-                <section
-                    className={cn(
-                        'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
-                        'sm:p-6',
-                    )}
-                >
-                    <div className="mb-5 space-y-1">
-                        <h2 className="text-base font-semibold tracking-tight">
-                            {isEdit ? 'Product details' : 'Product information'}
-                        </h2>
-                        <p className="text-muted-foreground text-sm">
-                            Catalog metadata shared across every branch.
-                        </p>
-                    </div>
-
-                    <div className="space-y-5">
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="category_id">Category</Label>
-                            <Select
-                                value={
-                                    data.category_id === ''
-                                        ? undefined
-                                        : String(data.category_id)
-                                }
-                                onValueChange={(value) =>
-                                    setData('category_id', Number(value))
-                                }
-                            >
-                                <SelectTrigger id="category_id">
-                                    <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        {categoryOptions.map((option) => (
-                                            <SelectItem
-                                                key={option.id}
-                                                value={String(option.id)}
-                                            >
-                                                {option.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                            <InputError message={errors.category_id} />
-                        </div>
-
-                        <div className="grid gap-5 sm:grid-cols-2">
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    value={data.name}
-                                    onChange={(event) =>
-                                        setData('name', event.target.value)
-                                    }
-                                    required
-                                    placeholder="e.g. Air Pro Kit"
-                                />
-                                <InputError message={errors.name} />
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="slug">Slug</Label>
-                                <Input
-                                    id="slug"
-                                    value={data.slug}
-                                    onChange={(event) => {
-                                        setSlugTouched(true);
-                                        setData('slug', event.target.value);
-                                    }}
-                                    onBlur={() => validate('slug')}
-                                    required
-                                    placeholder="e.g. air-pro-kit"
-                                />
-                                <InputError message={errors.slug} />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="sku">SKU</Label>
-                            <Input
-                                id="sku"
-                                value={data.sku}
-                                onChange={(event) =>
-                                    setData('sku', event.target.value)
-                                }
-                                onBlur={() => {
-                                    if (data.sku.trim() !== '') {
-                                        validate('sku');
-                                    }
-                                }}
-                                placeholder="e.g. POM-AIR-PRO"
-                            />
-                            <InputError message={errors.sku} />
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea
-                                id="description"
-                                value={data.description}
-                                onChange={(event) =>
-                                    setData(
-                                        'description',
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder="Tell customers what makes this product stand out"
-                                rows={7}
-                                className="min-h-40 resize-y"
-                            />
-                            <InputError message={errors.description} />
-                        </div>
-
-                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-                            <Checkbox
-                                id="status"
-                                checked={data.status}
-                                onCheckedChange={(value) =>
-                                    setData('status', value === true)
-                                }
-                            />
-                            <div className="space-y-0.5">
-                                <Label
-                                    htmlFor="status"
-                                    className="font-medium"
-                                >
-                                    Active in catalog
-                                </Label>
-                                <p className="text-muted-foreground text-xs">
-                                    Inactive products stay hidden from browsing.
-                                </p>
-                            </div>
-                            <InputError message={errors.status} />
                         </div>
                     </div>
                 </section>

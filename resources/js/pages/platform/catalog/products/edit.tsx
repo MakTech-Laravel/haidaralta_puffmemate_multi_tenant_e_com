@@ -61,6 +61,8 @@ export default function PlatformProductsEdit({
                     action={ProductController.update.form(product.slug)}
                     categoryOptions={categoryOptions}
                     isEdit
+                    enableSuggestions
+                    excludeProductId={product.id}
                     defaults={{
                         category_id: product.category_id,
                         name: product.name,

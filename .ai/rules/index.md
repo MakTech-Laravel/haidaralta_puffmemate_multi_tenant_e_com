@@ -4,6 +4,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 
 | Applies to | Rule file |
 | --- | --- |
+| resources/js/actions/** | .ai/rules/actions.md |
 | app/Services/ActivityLog/** | .ai/rules/activity-log.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php | .ai/rules/backup.md |
 | app/Models/{Category,Product,ProductVariant,BranchProduct,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php | .ai/rules/branch.md |
@@ -21,6 +22,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/migrations/** | .ai/rules/migrations.md |
 | app/Models/{User,Branch}.php, app/Models/OtpRecord.php | .ai/rules/models.md |
 | app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |
+| resources/js/components/platform/product-form.tsx | .ai/rules/platform.md |
 | resources/js/components/{platform,admin}/*-form.tsx | .ai/rules/platformadmin.md |
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |
 | database/seeders/** | .ai/rules/seeders.md |

@@ -10,7 +10,9 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Services\Catalog\ProductService;
+use App\Services\Catalog\ProductSuggestionService;
 use App\Support\Toast;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -19,7 +21,10 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function __construct(private ProductService $products) {}
+    public function __construct(
+        private ProductService $products,
+        private ProductSuggestionService $suggestions,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -47,6 +52,19 @@ class ProductController extends Controller
     {
         return Inertia::render('platform/catalog/products/create', [
             'categoryOptions' => $this->categoryOptions(),
+        ]);
+    }
+
+    public function suggestions(Request $request): JsonResponse
+    {
+        $query = $request->string('q')->trim()->toString();
+        $excludeProductId = $request->integer('exclude') ?: null;
+
+        return response()->json([
+            'suggestions' => $this->suggestions->suggest(
+                $query,
+                excludeProductId: $excludeProductId,
+            ),
         ]);
     }
 

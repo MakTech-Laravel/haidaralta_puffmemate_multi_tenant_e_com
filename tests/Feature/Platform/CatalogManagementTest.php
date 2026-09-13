@@ -83,3 +83,30 @@ test('platform can restore a soft-deleted product', function () {
 
     expect(Product::query()->where('slug', 'restorable-pack')->exists())->toBeTrue();
 });
+
+test('platform product suggestions match existing catalog items', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $match = Product::factory()->create([
+        'name' => 'Air Pro Disposable',
+        'slug' => 'air-pro-disposable',
+        'sku' => 'POM-AIR-PRO',
+    ]);
+    $other = Product::factory()->create([
+        'name' => 'Berry Mist Pod',
+        'slug' => 'berry-mist-pod',
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.products.suggestions', ['q' => 'Air']))
+        ->assertOk()
+        ->assertJsonPath('suggestions.0.id', $match->id)
+        ->assertJsonMissing(['id' => $other->id]);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.products.suggestions', [
+            'q' => 'Air',
+            'exclude' => $match->id,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('suggestions', []);
+});

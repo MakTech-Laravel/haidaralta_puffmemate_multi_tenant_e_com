@@ -111,6 +111,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.categories.restore')
             ->withTrashed();
 
+        Route::get('products/suggestions', [PlatformProductController::class, 'suggestions'])
+            ->name('platform.products.suggestions');
         Route::resource('products', PlatformProductController::class)
             ->names('platform.products')
             ->middlewareFor(['store', 'update'], 'precognitive');
