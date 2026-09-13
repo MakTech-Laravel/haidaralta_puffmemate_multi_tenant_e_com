@@ -142,6 +142,8 @@ export interface FileUploadClassNames {
     card?: string;
     /** Thumbnail area of a card */
     cardMedia?: string;
+    /** `<img>` / `<video>` inside the thumbnail */
+    cardImage?: string;
     /** Filename + size text row */
     cardInfo?: string;
     /** Remove (×) button */
@@ -567,7 +569,12 @@ interface FileCardProps {
     fixedSize?: number;
     classNames?: Pick<
         FileUploadClassNames,
-        'card' | 'cardMedia' | 'cardInfo' | 'removeButton' | 'progressOverlay'
+        | 'card'
+        | 'cardMedia'
+        | 'cardImage'
+        | 'cardInfo'
+        | 'removeButton'
+        | 'progressOverlay'
     >;
 }
 
@@ -641,8 +648,9 @@ function FileCard({
                             draggable={false}
                             onClick={onPreview}
                             className={cn(
-                                'h-full w-full object-cover',
+                                'h-full w-full object-cover object-center',
                                 onPreview ? 'cursor-zoom-in' : 'cursor-default',
+                                classNames.cardImage,
                             )}
                         />
                     ) : type === 'video' && preview ? (
@@ -651,8 +659,9 @@ function FileCard({
                             preload="metadata"
                             onClick={onPreview}
                             className={cn(
-                                'h-full w-full object-cover',
+                                'h-full w-full object-cover object-center',
                                 onPreview ? 'cursor-pointer' : 'cursor-default',
+                                classNames.cardImage,
                             )}
                         />
                     ) : (
@@ -1429,7 +1438,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     >
                         <div
                             className={cn(
-                                isAvatar ? 'relative shrink-0' : 'h-full w-full',
+                                isAvatar ? 'relative shrink-0' : 'w-full',
                             )}
                             style={
                                 isAvatar
@@ -1526,7 +1535,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     >
                         <div
                             className={cn(
-                                isAvatar ? 'relative shrink-0' : 'h-full w-full',
+                                isAvatar ? 'relative shrink-0' : 'w-full',
                             )}
                             style={
                                 isAvatar

@@ -421,10 +421,13 @@ export function CategoryForm({
                                     dropzone:
                                         'flex h-full min-h-[11rem] w-full flex-1 border-dashed border-border/60 bg-background/75 px-4 py-8 backdrop-blur-sm',
                                     dropzoneContent: 'gap-1.5',
-                                    card: 'w-full overflow-hidden border-border/70 bg-background/90 shadow-xs backdrop-blur-sm',
+                                    card: 'flex h-full w-full flex-col overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
                                     cardMedia:
-                                        'aspect-[4/3] max-h-52 bg-transparent [&_img]:object-contain',
-                                    cardInfo: '[&_p]:truncate',
+                                        'aspect-auto min-h-[12rem] flex-1 bg-transparent',
+                                    cardImage:
+                                        'mx-auto !h-auto !w-auto max-h-52 max-w-full object-contain object-center',
+                                    cardInfo:
+                                        'border-border/50 border-t bg-background/70',
                                 }}
                                 error={errors.image}
                             />

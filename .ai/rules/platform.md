@@ -29,3 +29,9 @@ CategoryForm Media is one listing-preview card: full-width image upload on the c
 
 ## Parent category uses searchable combobox
 CategoryForm parent_id is a single-select Popover+Command combobox (searchable), with a No parent option that clears parent_id. Match ProductForm combobox styling; close on select.
+
+## Category preview image is centered
+Category listing-preview FileUpload card is max-w centered (mx-auto) with square object-contain image. Single-file FileUpload must not force an h-full inner wrapper or vertical centering fails.
+
+## Center category image, no nested card
+Category listing preview: do not shrink FileUpload into a nested max-w card. Keep full-width transparent shell; center the image via cardImage object-contain (mx-auto max-h). FileUpload supports classNames.cardImage.
