@@ -14,6 +14,7 @@ use App\Http\Requests\Branch\UpsertBranchProductPriceRequest;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductSuggestionService;
@@ -25,6 +26,7 @@ use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Inertia\Inertia;
 use Inertia\Response;
 use InvalidArgumentException;
@@ -79,14 +81,14 @@ class ProductController extends Controller
     public function store(StoreBranchProductRequest $request): RedirectResponse
     {
         $branch = $this->currentBranch();
-        $data = $request->safe()->except(['image', 'selling_price', 'discount_price', 'quantity', 'minimum_stock']);
+        $data = $request->safe()->except(['image', 'gallery', 'selling_price', 'discount_price', 'quantity', 'minimum_stock']);
         $data['status'] = $request->boolean('status', true);
 
         $product = $this->products->createFromBranch(
             $branch,
             $data,
             $request->file('image'),
-            [],
+            $this->uploadedGallery($request),
             $request->user('branch'),
         );
 
@@ -128,7 +130,7 @@ class ProductController extends Controller
     public function edit(string $branchSlug, Product $product): Response
     {
         $branch = $this->currentBranch();
-        $product->load(['categories:id,name,slug']);
+        $product->load(['categories:id,name,slug', 'images']);
 
         return Inertia::render('branch/products/edit', [
             'branch' => $branch->only(['id', 'name', 'slug']),
@@ -143,6 +145,16 @@ class ProductController extends Controller
                 'image_url' => $product->imageUrl(),
                 'color_code' => $product->color_code,
                 'status' => (bool) $product->status,
+                'gallery' => $product->images
+                    ->map(fn (ProductImage $image): array => [
+                        'id' => $image->id,
+                        'path' => $image->path,
+                        'url' => $image->url(),
+                        'sort_order' => $image->sort_order,
+                        'mime_type' => 'image/jpeg',
+                    ])
+                    ->values()
+                    ->all(),
             ],
             'categoryOptions' => Category::query()
                 ->orderBy('name')
@@ -159,14 +171,18 @@ class ProductController extends Controller
     public function update(UpdateBranchProductRequest $request, string $branchSlug, Product $product): RedirectResponse
     {
         $branch = $this->currentBranch();
-        $data = $request->safe()->except(['image']);
+        $data = $request->safe()->except(['image', 'gallery', 'remove_gallery_ids']);
         $data['status'] = $request->boolean('status', true);
         $data['remove_image'] = $request->boolean('remove_image');
+        $data['remove_gallery_ids'] = collect($request->input('remove_gallery_ids', []))
+            ->map(fn ($id): int => (int) $id)
+            ->all();
 
         $product = $this->products->update(
             $product,
             $data,
             $request->file('image'),
+            $this->uploadedGallery($request),
         );
 
         Toast::success('Product updated.');
@@ -283,6 +299,23 @@ class ProductController extends Controller
         abort_unless($variant->product_id === $product->id, 404);
 
         return $variant;
+    }
+
+    /**
+     * @return list<UploadedFile>
+     */
+    private function uploadedGallery(Request $request): array
+    {
+        $files = $request->file('gallery', []);
+
+        if ($files instanceof UploadedFile) {
+            return [$files];
+        }
+
+        return array_values(array_filter(
+            is_array($files) ? $files : [],
+            fn ($file): bool => $file instanceof UploadedFile,
+        ));
     }
 
     private function currentBranch(): Branch

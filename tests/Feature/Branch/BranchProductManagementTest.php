@@ -13,6 +13,7 @@ use App\Services\Inventory\InventoryService;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function () {
@@ -64,6 +65,31 @@ test('branch create enables only the creating branch', function () {
             ->where('status', true)
             ->exists(),
     )->toBeTrue();
+});
+
+test('branch create persists gallery images', function () {
+    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
+    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($staff, 'branch')
+        ->post(route('branch.products.store', $branch), [
+            'category_ids' => [$category->id],
+            'name' => 'Gallery Branch Pack',
+            'slug' => 'gallery-branch-pack',
+            'status' => true,
+            'image' => UploadedFile::fake()->image('primary.jpg', 400, 400),
+            'gallery' => [
+                UploadedFile::fake()->image('gallery-a.jpg', 400, 400),
+                UploadedFile::fake()->image('gallery-b.jpg', 400, 400),
+            ],
+        ])
+        ->assertRedirect(route('branch.products.show', [$branch, 'gallery-branch-pack']));
+
+    $product = Product::query()->where('slug', 'gallery-branch-pack')->firstOrFail();
+
+    expect($product->image)->not->toBeNull()
+        ->and($product->images()->count())->toBe(2);
 });
 
 test('disabling a product at branch A does not affect branch B', function () {

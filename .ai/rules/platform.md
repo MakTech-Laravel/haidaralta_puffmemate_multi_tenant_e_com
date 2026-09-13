@@ -42,8 +42,8 @@ Category listing-preview FileUpload card is max-w centered (mx-auto) with square
 ## Center category image, no nested card
 Category listing preview: do not shrink FileUpload into a nested max-w card. Keep full-width transparent shell; center the image via cardImage object-contain (mx-auto max-h). FileUpload supports classNames.cardImage.
 
-## Branch ProductForm ops fields hide gallery
-Branch create sets ProductForm branchOpsFields + showGallery=false. branchOpsFields adds selling_price/quantity/minimum_stock; gallery stays platform-only until createFromBranch supports it.
+## Branch ProductForm ops fields keep gallery
+Branch create/edit use ProductForm with gallery enabled (same as platform). branchOpsFields adds selling_price/quantity/minimum_stock on create only. createFromBranch / update persist gallery via ProductService.
 
 ## Catalog forms suggestions + slug Precognition
 CategoryForm and ProductForm: enableSuggestions with portal-specific suggestionsUrl; slug uniqueness via Precognition on name/slug blur. Routes need precognitive middleware.

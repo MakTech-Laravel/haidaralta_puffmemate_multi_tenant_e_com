@@ -51,6 +51,13 @@ class UpdateBranchProductRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'image' => $this->catalogImageFileRules(),
             'remove_image' => ['sometimes', 'boolean'],
+            'gallery' => ['nullable', 'array', 'max:12'],
+            'gallery.*' => $this->catalogImageFileRules(required: true),
+            'remove_gallery_ids' => ['nullable', 'array'],
+            'remove_gallery_ids.*' => [
+                'integer',
+                Rule::exists('product_images', 'id')->where('product_id', $product->id),
+            ],
             'status' => ['sometimes', 'boolean'],
             ...$this->colorCodeRules(),
         ];

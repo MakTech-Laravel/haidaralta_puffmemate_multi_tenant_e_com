@@ -21,8 +21,17 @@ type Product = {
     description: string | null;
     image: string | null;
     image_url: string | null;
+    gallery: GalleryImage[];
     color_code?: ColorPickerValue | null;
     status: boolean;
+};
+
+type GalleryImage = {
+    id: number;
+    path: string;
+    url: string;
+    sort_order: number;
+    mime_type?: string;
 };
 
 export default function BranchProductsEdit({
@@ -99,7 +108,6 @@ export default function BranchProductsEdit({
                         })
                     }
                     excludeProductId={product.id}
-                    showGallery={false}
                     defaults={{
                         category_ids: product.category_ids,
                         name: product.name,
@@ -108,6 +116,7 @@ export default function BranchProductsEdit({
                         description: product.description,
                         image: product.image,
                         image_url: product.image_url,
+                        gallery: product.gallery,
                         color_code: product.color_code,
                         status: product.status,
                     }}

@@ -1,4 +1,4 @@
-import { Head, Link, setLayoutProps, useForm } from '@inertiajs/react';
+import { Head, setLayoutProps, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import Heading from '@/components/heading';
@@ -223,15 +223,8 @@ export default function BranchProductsCreate({
                         cancelHref={ProductController.index.url(branch.slug)}
                         submitLabel="Create & enable here"
                         branchOpsFields
-                        showGallery={false}
                     />
                 </section>
-
-                <Button variant="ghost" asChild>
-                    <Link href={ProductController.index.url(branch.slug)}>
-                        Cancel
-                    </Link>
-                </Button>
             </div>
         </>
     );

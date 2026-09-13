@@ -35,6 +35,8 @@ class StoreBranchProductRequest extends FormRequest
             'sku' => ['nullable', 'string', 'max:100', Rule::unique('products', 'sku')],
             'description' => ['nullable', 'string'],
             'image' => $this->catalogImageFileRules(),
+            'gallery' => ['nullable', 'array', 'max:12'],
+            'gallery.*' => $this->catalogImageFileRules(required: true),
             'status' => ['sometimes', 'boolean'],
             'selling_price' => ['nullable', 'numeric', 'min:0'],
             'discount_price' => ['nullable', 'numeric', 'min:0'],
