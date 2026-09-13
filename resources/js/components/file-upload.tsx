@@ -866,13 +866,16 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
         useEffect(() => {
             previewsRef.current = filePreviews;
         }, [filePreviews]);
-        useEffect(
-            () => () => {
+        useEffect(() => {
+            // Strict Mode runs effect cleanup once on mount in development.
+            // Re-arm so the first real selection still creates previews.
+            alive.current = true;
+
+            return () => {
                 alive.current = false;
                 previewsRef.current.forEach(revokePreview);
-            },
-            [],
-        );
+            };
+        }, []);
 
         // ── Imperative handle ────────────────────────────────────────────────────
         useImperativeHandle(
@@ -892,22 +895,31 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
             [onChange],
         );
 
-        // ── Sync when value is cleared externally (form.reset() etc.) ────────────
-        // Render-time reconciliation — React's recommended alternative to an
-        // effect for "adjust state when a prop changes". When the controlled
-        // value drops to empty we release the object URLs and clear the cards.
-        // The follow-up setState re-renders before commit, so the revoked URLs
-        // are never painted.
-        const [prevValue, setPrevValue] = useState(value);
+        // ── Keep local Object-URL previews aligned with the controlled value ─────
+        // Empty array must count as cleared (ProductForm uses `gallery: []`).
+        // Rebuild when the parent has files but local previews were lost (Strict
+        // Mode remount, external setData, etc.).
+        useEffect(() => {
+            const files = Array.isArray(value)
+                ? value
+                : value
+                  ? [value]
+                  : [];
 
-        if (value !== prevValue) {
-            setPrevValue(value);
+            setFilePreviews((prev) => {
+                const same =
+                    prev.length === files.length &&
+                    prev.every((preview, index) => preview.file === files[index]);
 
-            if (!value && filePreviews.length) {
-                filePreviews.forEach(revokePreview);
-                setFilePreviews([]);
-            }
-        }
+                if (same) {
+                    return prev;
+                }
+
+                prev.forEach(revokePreview);
+
+                return files.map(buildPreview);
+            });
+        }, [value]);
 
         // ── Lightbox slides (built only when lightbox=true) ───────────────────────
         const lightboxSlides = lightbox
