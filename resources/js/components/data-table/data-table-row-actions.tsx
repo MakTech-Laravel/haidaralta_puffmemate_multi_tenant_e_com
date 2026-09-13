@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { MoreHorizontal } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -19,6 +19,36 @@ export type DataTableActionItem = {
     separatorBefore?: boolean;
     disabled?: boolean;
 };
+
+function ActionItem({ item }: { item: DataTableActionItem }) {
+    const content: ReactNode = item.label;
+
+    if (item.href) {
+        return (
+            <DropdownMenuItem
+                variant={item.destructive ? 'destructive' : 'default'}
+                disabled={item.disabled}
+                asChild
+            >
+                <Link href={item.href}>{content}</Link>
+            </DropdownMenuItem>
+        );
+    }
+
+    return (
+        <DropdownMenuItem
+            variant={item.destructive ? 'destructive' : 'default'}
+            disabled={item.disabled}
+            onSelect={(event) => {
+                // Keep the menu from swallowing the click before the confirm dialog opens.
+                event.preventDefault();
+                item.onSelect?.();
+            }}
+        >
+            {content}
+        </DropdownMenuItem>
+    );
+}
 
 export function DataTableRowActions({
     items,
@@ -42,70 +72,12 @@ export function DataTableRowActions({
             <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuLabel>{label}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {items.map((item) => {
-                    const content: ReactNode = item.label;
-
-                    if (item.separatorBefore) {
-                        return (
-                            <div key={`sep-${item.label}`}>
-                                <DropdownMenuSeparator />
-                                {item.href ? (
-                                    <DropdownMenuItem
-                                        variant={
-                                            item.destructive
-                                                ? 'destructive'
-                                                : 'default'
-                                        }
-                                        disabled={item.disabled}
-                                        asChild
-                                    >
-                                        <Link href={item.href}>{content}</Link>
-                                    </DropdownMenuItem>
-                                ) : (
-                                    <DropdownMenuItem
-                                        variant={
-                                            item.destructive
-                                                ? 'destructive'
-                                                : 'default'
-                                        }
-                                        disabled={item.disabled}
-                                        onSelect={item.onSelect}
-                                    >
-                                        {content}
-                                    </DropdownMenuItem>
-                                )}
-                            </div>
-                        );
-                    }
-
-                    if (item.href) {
-                        return (
-                            <DropdownMenuItem
-                                key={item.label}
-                                variant={
-                                    item.destructive ? 'destructive' : 'default'
-                                }
-                                disabled={item.disabled}
-                                asChild
-                            >
-                                <Link href={item.href}>{content}</Link>
-                            </DropdownMenuItem>
-                        );
-                    }
-
-                    return (
-                        <DropdownMenuItem
-                            key={item.label}
-                            variant={
-                                item.destructive ? 'destructive' : 'default'
-                            }
-                            disabled={item.disabled}
-                            onSelect={item.onSelect}
-                        >
-                            {content}
-                        </DropdownMenuItem>
-                    );
-                })}
+                {items.map((item) => (
+                    <Fragment key={item.label}>
+                        {item.separatorBefore ? <DropdownMenuSeparator /> : null}
+                        <ActionItem item={item} />
+                    </Fragment>
+                ))}
             </DropdownMenuContent>
         </DropdownMenu>
     );
