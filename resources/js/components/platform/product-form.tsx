@@ -1,6 +1,7 @@
 import { Link, useForm } from '@inertiajs/react';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import { FileUploadAvatar } from '@/components/file-upload-avatar';
@@ -8,16 +9,21 @@ import InputError from '@/components/input-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -108,6 +114,7 @@ export function ProductForm({
     );
     const [removeGalleryIds, setRemoveGalleryIds] = useState<number[]>([]);
     const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
+    const [categoryOpen, setCategoryOpen] = useState(false);
 
     const formMethod = (
         action.method ?? 'post'
@@ -125,7 +132,7 @@ export function ProductForm({
         setValidationTimeout,
         cancel,
     } = useForm(formMethod, action.action, {
-        category_id: defaults?.category_id ?? categoryOptions[0]?.id ?? '',
+        category_id: defaults?.category_id ?? '',
         name: defaults?.name ?? '',
         slug: defaults?.slug ?? '',
         sku: defaults?.sku ?? '',
@@ -137,6 +144,14 @@ export function ProductForm({
         status: defaults?.status ?? true,
         ...(isEdit ? { _method: 'put' } : {}),
     });
+
+    const selectedCategory = useMemo(
+        () =>
+            categoryOptions.find(
+                (option) => option.id === Number(data.category_id),
+            ) ?? null,
+        [categoryOptions, data.category_id],
+    );
 
     useEffect(() => {
         setValidationTimeout(500);
@@ -250,34 +265,81 @@ export function ProductForm({
                     </div>
 
                     <div className="space-y-5">
-                        <div className="flex flex-col gap-2">
+                        <div className="flex w-full min-w-0 flex-col gap-2">
                             <Label htmlFor="category_id">Category</Label>
-                            <Select
-                                value={
-                                    data.category_id === ''
-                                        ? undefined
-                                        : String(data.category_id)
-                                }
-                                onValueChange={(value) =>
-                                    setData('category_id', Number(value))
-                                }
+                            <Popover
+                                open={categoryOpen}
+                                onOpenChange={setCategoryOpen}
                             >
-                                <SelectTrigger id="category_id">
-                                    <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        {categoryOptions.map((option) => (
-                                            <SelectItem
-                                                key={option.id}
-                                                value={String(option.id)}
-                                            >
-                                                {option.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        id="category_id"
+                                        type="button"
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={categoryOpen}
+                                        aria-invalid={Boolean(
+                                            errors.category_id,
+                                        )}
+                                        className="h-9 w-full min-w-0 justify-between font-normal"
+                                    >
+                                        <span
+                                            className={cn(
+                                                'truncate',
+                                                !selectedCategory &&
+                                                    'text-muted-foreground',
+                                            )}
+                                        >
+                                            {selectedCategory?.name ??
+                                                'Select category'}
+                                        </span>
+                                        <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    className="w-[var(--radix-popover-trigger-width)] p-0"
+                                    align="start"
+                                >
+                                    <Command>
+                                        <CommandInput placeholder="Search categories…" />
+                                        <CommandList>
+                                            <CommandEmpty>
+                                                No category found.
+                                            </CommandEmpty>
+                                            <CommandGroup>
+                                                {categoryOptions.map(
+                                                    (option) => (
+                                                        <CommandItem
+                                                            key={option.id}
+                                                            value={option.name}
+                                                            onSelect={() => {
+                                                                setData(
+                                                                    'category_id',
+                                                                    option.id,
+                                                                );
+                                                                setCategoryOpen(
+                                                                    false,
+                                                                );
+                                                            }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    'size-4',
+                                                                    selectedCategory?.id ===
+                                                                        option.id
+                                                                        ? 'opacity-100'
+                                                                        : 'opacity-0',
+                                                                )}
+                                                            />
+                                                            {option.name}
+                                                        </CommandItem>
+                                                    ),
+                                                )}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                             <InputError message={errors.category_id} />
                         </div>
 
