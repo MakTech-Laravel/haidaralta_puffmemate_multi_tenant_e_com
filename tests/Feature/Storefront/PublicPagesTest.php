@@ -30,3 +30,20 @@ test('storefront category page returns not found for unknown slug', function () 
     $this->get(route('shop.category', ['category' => 'unknown-category']))
         ->assertNotFound();
 });
+
+test('storefront product details page renders for a valid product', function () {
+    $this->get(route('products.show', ['product' => '1']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/product')
+            ->where('product.id', '1')
+            ->where('product.name', 'Marlboro Gold')
+            ->has('product.specifications')
+            ->has('similarProducts')
+            ->has('backHref'));
+});
+
+test('storefront product details page returns not found for unknown product', function () {
+    $this->get(route('products.show', ['product' => 'missing-product']))
+        ->assertNotFound();
+});

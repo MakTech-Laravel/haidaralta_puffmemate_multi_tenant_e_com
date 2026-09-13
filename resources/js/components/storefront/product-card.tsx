@@ -1,5 +1,7 @@
+import { Link } from '@inertiajs/react';
 import type { StorefrontProduct } from '@/lib/storefront-demo';
 import { cn } from '@/lib/utils';
+import { show as productShow } from '@/routes/products';
 
 type ProductCardProps = {
     product: StorefrontProduct;
@@ -8,9 +10,11 @@ type ProductCardProps = {
 
 export function ProductCard({ product, className }: ProductCardProps) {
     return (
-        <article
+        <Link
+            href={productShow(product.id)}
+            prefetch
             className={cn(
-                'border-border bg-card flex flex-col overflow-hidden rounded-xl border',
+                'border-border bg-card flex flex-col overflow-hidden rounded-xl border transition hover:border-primary/40',
                 className,
             )}
         >
@@ -38,10 +42,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 <p className="text-primary mt-2 text-lg font-semibold">
                     {product.price}
                 </p>
-                <p className="text-tertiary text-sm font-normal">
+                <p className="text-muted-foreground text-sm font-normal">
                     Available stock: {product.stock} pcs
                 </p>
             </div>
-        </article>
+        </Link>
     );
 }
