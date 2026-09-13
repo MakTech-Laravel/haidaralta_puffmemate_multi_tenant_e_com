@@ -114,18 +114,30 @@ export function ColorPickerTrigger({
                 aria-haspopup={mode !== 'collapsible' ? 'dialog' : undefined}
                 aria-invalid={error ? true : undefined}
                 className={cn(
-                    'border-border bg-background hover:bg-muted/40 focus-visible:ring-ring inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-sm font-medium shadow-xs transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                    'border-border bg-background hover:bg-muted/40 focus-visible:ring-ring inline-flex h-10 items-center gap-2.5 rounded-lg border px-2.5 pr-3 text-sm font-medium shadow-xs transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
                     open && 'ring-ring/40 ring-2',
                     error && 'border-destructive/60',
                     classNames?.trigger,
                     className,
                 )}
             >
-                {swatch}
-                <span className={cn(classNames?.triggerLabel)}>{summary}</span>
+                <span
+                    className={cn(
+                        'relative size-6 shrink-0 overflow-hidden rounded-md border border-border/70 shadow-inner',
+                        transparent ? COLOR_PICKER_CHECKERBOARD : null,
+                        classNames?.triggerPreview,
+                    )}
+                    style={transparent ? undefined : previewStyle}
+                    aria-hidden
+                >
+                    <span className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/5" />
+                </span>
+                <span className={cn('min-w-0 truncate', classNames?.triggerLabel)}>
+                    {summary}
+                </span>
                 <ChevronDown
                     className={cn(
-                        'text-muted-foreground size-3.5 transition-transform',
+                        'text-muted-foreground size-3.5 shrink-0 transition-transform',
                         open && mode === 'collapsible' && 'rotate-180',
                     )}
                 />

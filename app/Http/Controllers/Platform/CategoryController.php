@@ -46,7 +46,8 @@ class CategoryController extends Controller
 
     public function show(Category $category): Response
     {
-        $category->load(['parent:id,name,slug', 'children:id,name,slug,parent_id,status']);
+        $category->load(['parent:id,name,slug', 'children:id,name,slug,parent_id,status'])
+            ->loadCount(['products', 'children']);
 
         return Inertia::render('platform/catalog/categories/show', [
             'category' => $this->mapCategory($category, detailed: true),
@@ -121,6 +122,7 @@ class CategoryController extends Controller
             'name' => $category->name,
             'slug' => $category->slug,
             'parent_id' => $category->parent_id,
+            'parent_name' => $category->parent?->name,
             'parent' => $category->parent
                 ? [
                     'id' => $category->parent->id,
@@ -136,6 +138,8 @@ class CategoryController extends Controller
         ];
 
         if ($detailed) {
+            $payload['products_count'] = (int) ($category->products_count ?? $category->products()->count());
+            $payload['children_count'] = (int) ($category->children_count ?? $category->children->count());
             $payload['children'] = $category->children
                 ->map(fn (Category $child): array => [
                     'id' => $child->id,

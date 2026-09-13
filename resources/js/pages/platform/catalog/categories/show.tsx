@@ -2,7 +2,6 @@ import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
 import Heading from '@/components/heading';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,9 +14,13 @@ import {
 import { usePermission } from '@/hooks/use-permissions';
 import {
     colorPickerStyle,
+    colorPickerSummary,
     isTransparentColorPickerValue,
+    normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
+import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
+import { cn } from '@/lib/utils';
 
 type Category = {
     id: number;
@@ -53,47 +56,26 @@ export default function PlatformCategoriesShow({
     category: Category;
 }) {
     const { can } = usePermission();
+    const colorCode = normalizeCatalogColorPickerValue(category.color_code);
+    const transparent = isTransparentColorPickerValue(colorCode);
 
     return (
         <>
             <Head title={category.name} />
 
-            <div className="flex flex-col gap-6 p-2">
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                        <Avatar
-                            className="size-14 rounded-xl"
-                            style={
-                                isTransparentColorPickerValue(
-                                    category.color_code,
-                                )
-                                    ? undefined
-                                    : colorPickerStyle(category.color_code)
-                            }
+                    <div className="flex flex-col gap-2">
+                        <Heading
+                            title={category.name}
+                            description={`/${category.slug}`}
+                        />
+                        <Badge
+                            variant={category.status ? 'default' : 'secondary'}
+                            className="w-fit"
                         >
-                            {category.image_url ? (
-                                <AvatarImage
-                                    src={category.image_url}
-                                    alt={category.name}
-                                />
-                            ) : null}
-                            <AvatarFallback className="rounded-xl bg-transparent text-base">
-                                {category.name.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col gap-2">
-                            <Heading
-                                title={category.name}
-                                description={`/${category.slug}`}
-                            />
-                            <Badge
-                                variant={
-                                    category.status ? 'default' : 'secondary'
-                                }
-                            >
-                                {category.status ? 'Active' : 'Inactive'}
-                            </Badge>
-                        </div>
+                            {category.status ? 'Active' : 'Inactive'}
+                        </Badge>
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <Button variant="default" asChild>
@@ -115,34 +97,92 @@ export default function PlatformCategoriesShow({
                     </div>
                 </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Details</CardTitle>
-                        <CardDescription>
-                            Hierarchy and catalog usage
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <dl className="grid gap-5 sm:grid-cols-2">
-                            <DetailItem
-                                label="Parent"
-                                value={category.parent_name ?? '—'}
-                            />
-                            <DetailItem
-                                label="Products"
-                                value={category.products_count}
-                            />
-                            <DetailItem
-                                label="Subcategories"
-                                value={category.children_count}
-                            />
-                            <DetailItem
-                                label="Slug"
-                                value={category.slug}
-                            />
-                        </dl>
-                    </CardContent>
-                </Card>
+                <div className="grid items-stretch gap-6 xl:grid-cols-2">
+                    <Card className="h-full">
+                        <CardHeader>
+                            <CardTitle>Details</CardTitle>
+                            <CardDescription>
+                                Hierarchy and catalog usage
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <dl className="grid gap-5 sm:grid-cols-2">
+                                <DetailItem
+                                    label="Parent"
+                                    value={category.parent_name ?? '—'}
+                                />
+                                <DetailItem
+                                    label="Products"
+                                    value={category.products_count}
+                                />
+                                <DetailItem
+                                    label="Subcategories"
+                                    value={category.children_count}
+                                />
+                                <DetailItem
+                                    label="Slug"
+                                    value={category.slug}
+                                />
+                            </dl>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="h-full overflow-hidden py-0">
+                        <CardHeader className="px-6 pt-6">
+                            <CardTitle>Listing preview</CardTitle>
+                            <CardDescription>
+                                Image and background fill
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="px-0 pb-0">
+                            <div
+                                className={cn(
+                                    'flex min-h-52 items-center justify-center px-6 py-8',
+                                    transparent && 'bg-muted/25',
+                                )}
+                                style={
+                                    transparent
+                                        ? undefined
+                                        : colorPickerStyle(colorCode)
+                                }
+                            >
+                                {category.image_url ? (
+                                    <img
+                                        src={category.image_url}
+                                        alt={category.name}
+                                        className="max-h-48 max-w-full object-contain"
+                                    />
+                                ) : (
+                                    <p className="rounded-xl border border-dashed border-border/70 bg-background/70 px-4 py-8 text-muted-foreground text-sm backdrop-blur-sm">
+                                        No category image
+                                    </p>
+                                )}
+                            </div>
+                            <div className="border-border/60 flex items-center justify-between gap-3 border-t px-6 py-3">
+                                <div className="min-w-0">
+                                    <p className="text-sm font-medium">
+                                        Image background
+                                    </p>
+                                    <p className="text-muted-foreground truncate text-xs">
+                                        {colorPickerSummary(colorCode)}
+                                    </p>
+                                </div>
+                                <span
+                                    className={cn(
+                                        'size-9 shrink-0 rounded-lg border border-border/70 shadow-inner',
+                                        transparent && COLOR_PICKER_CHECKERBOARD,
+                                    )}
+                                    style={
+                                        transparent
+                                            ? undefined
+                                            : colorPickerStyle(colorCode)
+                                    }
+                                    aria-hidden
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </>
     );

@@ -3,6 +3,7 @@ import CategoryController from '@/actions/App/Http/Controllers/Platform/Category
 import { CategoryForm } from '@/components/platform/category-form';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import type { ColorPickerValue } from '@/lib/color-picker';
 
 type ParentOption = {
     id: number;
@@ -16,7 +17,7 @@ type Category = {
     parent_id: number | null;
     image: string | null;
     image_url: string | null;
-    color_code?: import('@/lib/color-picker').ColorPickerValue | null;
+    color_code?: ColorPickerValue | null;
     status: boolean;
 };
 
@@ -31,10 +32,10 @@ export default function PlatformCategoriesEdit({
         <>
             <Head title={`Edit ${category.name}`} />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-6 p-2">
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <Heading
                     title={`Edit ${category.name}`}
-                    description="Update category details"
+                    description="Update category details and media"
                 />
 
                 {!category.status ? (

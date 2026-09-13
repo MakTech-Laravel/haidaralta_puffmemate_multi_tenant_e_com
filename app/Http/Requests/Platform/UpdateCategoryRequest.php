@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Platform;
 
 use App\Http\Requests\Concerns\ValidatesCatalogColorCode;
+use App\Http\Requests\Concerns\ValidatesCatalogProductImages;
 use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -10,6 +11,7 @@ use Illuminate\Validation\Rule;
 class UpdateCategoryRequest extends FormRequest
 {
     use ValidatesCatalogColorCode;
+    use ValidatesCatalogProductImages;
 
     public function authorize(): bool
     {
@@ -44,7 +46,7 @@ class UpdateCategoryRequest extends FormRequest
                 'alpha_dash',
                 Rule::unique('categories', 'slug')->ignore($category->id),
             ],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'image' => $this->catalogImageFileRules(),
             'remove_image' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'boolean'],
             ...$this->colorCodeRules(),

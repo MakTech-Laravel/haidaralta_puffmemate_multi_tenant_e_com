@@ -17,10 +17,10 @@ export default function PlatformCategoriesCreate({
         <>
             <Head title="Add category" />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-6 p-2">
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <Heading
                     title="Add category"
-                    description="Create a catalog category"
+                    description="Create a catalog category with listing image and background"
                 />
 
                 <CategoryForm

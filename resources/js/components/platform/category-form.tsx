@@ -1,28 +1,27 @@
 import { Link, useForm } from '@inertiajs/react';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useEffect, useState } from 'react';
-import { FileUploadAvatar } from '@/components/file-upload-avatar';
+import { useEffect, useMemo, useState } from 'react';
+import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import { ColorPicker } from '@/components/color-picker';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
 import {
     CATALOG_COLOR_PICKER_MODES,
@@ -62,6 +61,9 @@ interface CategoryFormProps {
     submitLabel?: string;
 }
 
+const CATALOG_IMAGE_ACCEPT =
+    'image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg';
+
 function slugify(value: string): string {
     return value
         .toLowerCase()
@@ -79,8 +81,21 @@ export function CategoryForm({
     submitLabel,
 }: CategoryFormProps) {
     const [slugTouched, setSlugTouched] = useState(isEdit);
-    const [existingImageUrl, setExistingImageUrl] = useState<string | null>(
-        defaults?.image_url ?? null,
+    const [parentOpen, setParentOpen] = useState(false);
+    const [existingPrimary, setExistingPrimary] = useState<ExistingFile[]>(
+        () =>
+            defaults?.image && defaults?.image_url
+                ? [
+                      {
+                          id: 'primary',
+                          path: defaults.image,
+                          url: defaults.image_url,
+                          mime_type: 'image/jpeg',
+                          name:
+                              defaults.image.split('/').pop() ?? 'category-image',
+                      },
+                  ]
+                : [],
     );
 
     const formMethod = (
@@ -93,9 +108,11 @@ export function CategoryForm({
         post,
         processing,
         errors,
+        progress,
         transform,
         validate,
         setValidationTimeout,
+        cancel,
     } = useForm(formMethod, action.action, {
         name: defaults?.name ?? '',
         slug: defaults?.slug ?? '',
@@ -109,6 +126,14 @@ export function CategoryForm({
 
     const imageTileStyle = colorPickerStyle(data.color_code);
     const imageTileTransparent = isTransparentColorPickerValue(data.color_code);
+    const selectedParent = useMemo(
+        () =>
+            data.parent_id === null
+                ? null
+                : (parentOptions.find((option) => option.id === data.parent_id) ??
+                  null),
+        [data.parent_id, parentOptions],
+    );
 
     useEffect(() => {
         setValidationTimeout(500);
@@ -149,86 +174,26 @@ export function CategoryForm({
     };
 
     return (
-        <form onSubmit={submit}>
-            <Card>
-                <CardHeader>
-                    <CardTitle>
-                        {isEdit ? 'Category details' : 'Category information'}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-6">
-                    <div className="flex flex-col gap-2">
-                        <Label>Category image</Label>
-                        <div
-                            className={cn(
-                                'rounded-xl border border-dashed border-border/80 p-4',
-                                imageTileTransparent && 'bg-muted/20',
-                            )}
-                            style={
-                                imageTileTransparent
-                                    ? undefined
-                                    : imageTileStyle
-                            }
-                        >
-                            <FileUploadAvatar
-                                value={data.image}
-                                onChange={(file) => {
-                                    const next = Array.isArray(file)
-                                        ? (file[0] ?? null)
-                                        : file;
-                                    setData((current) => ({
-                                        ...current,
-                                        image: next,
-                                        remove_image: next
-                                            ? false
-                                            : current.remove_image,
-                                    }));
-                                }}
-                                existingUrl={
-                                    data.image || data.remove_image
-                                        ? null
-                                        : existingImageUrl
-                                }
-                                onClearExisting={() => {
-                                    setExistingImageUrl(null);
-                                    setData((current) => ({
-                                        ...current,
-                                        image: null,
-                                        remove_image: true,
-                                    }));
-                                }}
-                                accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
-                                maxSize={2}
-                                error={errors.image}
-                                hint="PNG, JPG, or WebP up to 2MB"
-                                placeholder="Category image"
-                            />
-                        </div>
-                        <InputError message={errors.image} />
+        <form onSubmit={submit} className="space-y-6">
+            <div className="grid items-stretch gap-6 xl:grid-cols-2">
+                <section
+                    className={cn(
+                        'flex h-full flex-col rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                        'sm:p-6',
+                    )}
+                >
+                    <div className="mb-5 space-y-1">
+                        <h2 className="text-base font-semibold tracking-tight">
+                            {isEdit
+                                ? 'Category details'
+                                : 'Category information'}
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                            Catalog metadata shared across every branch.
+                        </p>
                     </div>
 
-                    <ColorPicker
-                        mode="dialog"
-                        enabledModes={[...CATALOG_COLOR_PICKER_MODES]}
-                        defaultMode="transparent"
-                        value={data.color_code}
-                        onChange={(color_code) =>
-                            setData('color_code', color_code)
-                        }
-                        label="Image background"
-                        description="Soft fill behind product and category imagery"
-                        dialogTitle="Image background"
-                        dialogDescription="Choose none, a solid fill, or a two-tone gradient for catalog imagery."
-                        error={
-                            errors.color_code ??
-                            errors['color_code.mode'] ??
-                            errors['color_code.color'] ??
-                            errors['color_code.from'] ??
-                            errors['color_code.to']
-                        }
-                    />
-
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="flex flex-1 flex-col gap-5">
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="name">Name</Label>
                             <Input
@@ -239,6 +204,7 @@ export function CategoryForm({
                                 }
                                 required
                                 placeholder="e.g. Disposables"
+                                autoComplete="off"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -258,69 +224,257 @@ export function CategoryForm({
                             />
                             <InputError message={errors.slug} />
                         </div>
+
+                        <div className="flex w-full min-w-0 flex-col gap-2">
+                            <Label htmlFor="parent_id">Parent category</Label>
+                            <Popover
+                                open={parentOpen}
+                                onOpenChange={setParentOpen}
+                            >
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        id="parent_id"
+                                        type="button"
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={parentOpen}
+                                        aria-invalid={Boolean(errors.parent_id)}
+                                        className="h-9 w-full min-w-0 justify-between gap-2 px-3 font-normal"
+                                    >
+                                        <span
+                                            className={cn(
+                                                'truncate text-left',
+                                                !selectedParent &&
+                                                    'text-muted-foreground',
+                                            )}
+                                        >
+                                            {selectedParent?.name ?? 'No parent'}
+                                        </span>
+                                        <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    className="w-[var(--radix-popover-trigger-width)] p-0"
+                                    align="start"
+                                >
+                                    <Command>
+                                        <CommandInput placeholder="Search categories…" />
+                                        <CommandList>
+                                            <CommandEmpty>
+                                                No category found.
+                                            </CommandEmpty>
+                                            <CommandGroup>
+                                                <CommandItem
+                                                    value="No parent"
+                                                    onSelect={() => {
+                                                        setData(
+                                                            'parent_id',
+                                                            null,
+                                                        );
+                                                        setParentOpen(false);
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            'size-4',
+                                                            data.parent_id ===
+                                                                null
+                                                                ? 'opacity-100'
+                                                                : 'opacity-0',
+                                                        )}
+                                                    />
+                                                    No parent
+                                                </CommandItem>
+                                                {parentOptions.map((option) => {
+                                                    const selected =
+                                                        data.parent_id ===
+                                                        option.id;
+
+                                                    return (
+                                                        <CommandItem
+                                                            key={option.id}
+                                                            value={option.name}
+                                                            onSelect={() => {
+                                                                setData(
+                                                                    'parent_id',
+                                                                    option.id,
+                                                                );
+                                                                setParentOpen(
+                                                                    false,
+                                                                );
+                                                            }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    'size-4',
+                                                                    selected
+                                                                        ? 'opacity-100'
+                                                                        : 'opacity-0',
+                                                                )}
+                                                            />
+                                                            {option.name}
+                                                        </CommandItem>
+                                                    );
+                                                })}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <InputError message={errors.parent_id} />
+                        </div>
+
+                        <div className="mt-auto flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                            <Checkbox
+                                id="status"
+                                checked={data.status}
+                                onCheckedChange={(value) =>
+                                    setData('status', value === true)
+                                }
+                            />
+                            <div className="space-y-0.5">
+                                <Label
+                                    htmlFor="status"
+                                    className="font-medium"
+                                >
+                                    Active in catalog
+                                </Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Inactive categories stay hidden from
+                                    browsing.
+                                </p>
+                            </div>
+                            <InputError message={errors.status} />
+                        </div>
+                    </div>
+                </section>
+
+                <section
+                    className={cn(
+                        'flex h-full flex-col rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                        'sm:p-6',
+                    )}
+                >
+                    <div className="mb-5 space-y-1">
+                        <h2 className="text-base font-semibold tracking-tight">
+                            Listing preview
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                            Image and background as they appear on category
+                            cards.
+                        </p>
                     </div>
 
-                    <div className="flex flex-col gap-2">
-                        <Label htmlFor="parent_id">Parent category</Label>
-                        <Select
-                            value={
-                                data.parent_id === null
-                                    ? 'none'
-                                    : String(data.parent_id)
-                            }
-                            onValueChange={(value) =>
-                                setData(
-                                    'parent_id',
-                                    value === 'none' ? null : Number(value),
-                                )
+                    <div className="border-border/80 flex flex-1 flex-col overflow-hidden rounded-2xl border shadow-sm">
+                        <div
+                            className={cn(
+                                'flex min-h-[14rem] flex-1 flex-col p-4 sm:min-h-[16rem]',
+                                imageTileTransparent && 'bg-muted/25',
+                            )}
+                            style={
+                                imageTileTransparent
+                                    ? undefined
+                                    : imageTileStyle
                             }
                         >
-                            <SelectTrigger id="parent_id">
-                                <SelectValue placeholder="No parent" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="none">
-                                        No parent
-                                    </SelectItem>
-                                    {parentOptions.map((option) => (
-                                        <SelectItem
-                                            key={option.id}
-                                            value={String(option.id)}
-                                        >
-                                            {option.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                        <InputError message={errors.parent_id} />
-                    </div>
+                            <FileUpload
+                                value={data.image}
+                                onChange={(file) => {
+                                    const next = Array.isArray(file)
+                                        ? (file[0] ?? null)
+                                        : file;
+                                    setExistingPrimary([]);
+                                    setData((current) => ({
+                                        ...current,
+                                        image: next,
+                                        remove_image: next
+                                            ? false
+                                            : current.remove_image,
+                                    }));
+                                }}
+                                existingFiles={
+                                    data.image || data.remove_image
+                                        ? []
+                                        : existingPrimary
+                                }
+                                onRemoveExisting={() => {
+                                    setExistingPrimary([]);
+                                    setData((current) => ({
+                                        ...current,
+                                        image: null,
+                                        remove_image: true,
+                                    }));
+                                }}
+                                accept={CATALOG_IMAGE_ACCEPT}
+                                maxSize={2}
+                                lightbox
+                                isUploading={processing}
+                                uploadProgress={
+                                    progress?.percentage ?? null
+                                }
+                                onCancel={processing ? cancel : undefined}
+                                placeholder="Drop category image"
+                                hint="PNG, JPG, SVG, or WebP · Max 2MB"
+                                classNames={{
+                                    wrapper:
+                                        'flex h-full min-h-0 w-full flex-1 flex-col',
+                                    dropzone:
+                                        'flex h-full min-h-[11rem] w-full flex-1 border-dashed border-border/60 bg-background/75 px-4 py-8 backdrop-blur-sm',
+                                    dropzoneContent: 'gap-1.5',
+                                    card: 'w-full overflow-hidden border-border/70 bg-background/90 shadow-xs backdrop-blur-sm',
+                                    cardMedia:
+                                        'aspect-[4/3] max-h-52 bg-transparent [&_img]:object-contain',
+                                    cardInfo: '[&_p]:truncate',
+                                }}
+                                error={errors.image}
+                            />
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                        <Checkbox
-                            id="status"
-                            checked={data.status}
-                            onCheckedChange={(value) =>
-                                setData('status', value === true)
-                            }
-                        />
-                        <Label htmlFor="status" className="font-normal">
-                            Active
-                        </Label>
-                        <InputError message={errors.status} />
+                        <div className="border-border/60 bg-card flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
+                            <div className="min-w-0 space-y-0.5">
+                                <p className="text-sm font-medium">
+                                    Image background
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                    Soft fill behind the category image
+                                </p>
+                            </div>
+                            <ColorPicker
+                                mode="dialog"
+                                triggerVariant="button"
+                                enabledModes={[...CATALOG_COLOR_PICKER_MODES]}
+                                defaultMode="transparent"
+                                value={data.color_code}
+                                onChange={(color_code) =>
+                                    setData('color_code', color_code)
+                                }
+                                label="Image background"
+                                description="Soft fill behind category imagery"
+                                dialogTitle="Image background"
+                                dialogDescription="Choose none, a solid fill, or a two-tone gradient for catalog imagery."
+                                error={
+                                    errors.color_code ??
+                                    errors['color_code.mode'] ??
+                                    errors['color_code.color'] ??
+                                    errors['color_code.from'] ??
+                                    errors['color_code.to']
+                                }
+                            />
+                        </div>
                     </div>
-                </CardContent>
-                <CardFooter className="flex items-center gap-3 border-t pt-6">
-                    <Button type="submit" disabled={processing}>
-                        {processing ? <Spinner /> : null}
-                        {submitLabel ?? (isEdit ? 'Save changes' : 'Create')}
-                    </Button>
-                    <Button variant="secondary" asChild>
-                        <Link href={cancelHref}>Cancel</Link>
-                    </Button>
-                </CardFooter>
-            </Card>
+                </section>
+            </div>
+
+            <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                <Button variant="secondary" asChild>
+                    <Link href={cancelHref}>Cancel</Link>
+                </Button>
+                <Button type="submit" disabled={processing}>
+                    {processing ? <Spinner /> : null}
+                    {submitLabel ??
+                        (isEdit ? 'Save changes' : 'Create category')}
+                </Button>
+            </div>
         </form>
     );
 }

@@ -20,3 +20,12 @@ Product/category forms use ColorPicker mode=dialog with enabledModes transparent
 
 ## Product primary and gallery image types
 ProductForm primary + gallery accept PNG, JPG/JPEG, SVG, WebP (max 2MB). Backend ValidatesCatalogProductImages uses image:allow_svg + mimes; serve SVG as img src only.
+
+## Category form matches product media layout
+Platform CategoryForm mirrors ProductForm: details left / Media right, items-start (no sticky Media scroll). Media row: ColorPicker + rectangular FileUpload side-by-side with items-stretch on color tile (not avatar). Create/edit pages use full width p-2 md:p-4. Image accept PNG/JPG/SVG/WebP via ValidatesCatalogProductImages.
+
+## Category media is a listing preview card
+CategoryForm Media is one listing-preview card: full-width image upload on the color tile, compact ColorPicker triggerVariant=button in a footer row. Do not side-by-side stretch field ColorPicker with FileUpload (leaves empty space without a gallery). Equal-height xl:grid-cols-2 details | preview.
+
+## Parent category uses searchable combobox
+CategoryForm parent_id is a single-select Popover+Command combobox (searchable), with a No parent option that clears parent_id. Match ProductForm combobox styling; close on select.
