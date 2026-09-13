@@ -19,7 +19,7 @@ class ProductService
 
     /**
      * @param  array{
-     *     category_id: int,
+     *     category_ids: list<int>,
      *     name: string,
      *     slug: string,
      *     sku?: string|null,
@@ -41,7 +41,7 @@ class ProductService
 
     /**
      * @param  array{
-     *     category_id: int,
+     *     category_ids: list<int>,
      *     name: string,
      *     slug: string,
      *     sku?: string|null,
@@ -64,7 +64,7 @@ class ProductService
 
     /**
      * @param  array{
-     *     category_id?: int,
+     *     category_ids?: list<int>,
      *     name?: string,
      *     slug?: string,
      *     sku?: string|null,
@@ -96,7 +96,9 @@ class ProductService
 
             /** @var list<int> $removeGalleryIds */
             $removeGalleryIds = $data['remove_gallery_ids'] ?? [];
-            unset($data['remove_image'], $data['remove_gallery_ids']);
+            /** @var list<int>|null $categoryIds */
+            $categoryIds = $data['category_ids'] ?? null;
+            unset($data['remove_image'], $data['remove_gallery_ids'], $data['category_ids']);
 
             if ($removeGalleryIds !== []) {
                 $this->deleteGalleryImages($product, $removeGalleryIds);
@@ -105,11 +107,15 @@ class ProductService
             $product->fill($data);
             $product->save();
 
+            if ($categoryIds !== null) {
+                $product->categories()->sync($categoryIds);
+            }
+
             if ($galleryImages !== []) {
                 $this->appendGalleryImages($product, $galleryImages);
             }
 
-            return $product->refresh()->load('images');
+            return $product->refresh()->load(['images', 'categories:id,name,slug']);
         });
     }
 
@@ -127,7 +133,7 @@ class ProductService
 
     /**
      * @param  array{
-     *     category_id: int,
+     *     category_ids: list<int>,
      *     name: string,
      *     slug: string,
      *     sku?: string|null,
@@ -150,8 +156,9 @@ class ProductService
             $galleryImages = array_slice($galleryImages, 1);
         }
 
+        $categoryIds = array_values(array_unique(array_map('intval', $data['category_ids'])));
+
         $product = Product::query()->create([
-            'category_id' => $data['category_id'],
             'name' => $data['name'],
             'slug' => $data['slug'],
             'sku' => $data['sku'] ?? null,
@@ -161,6 +168,8 @@ class ProductService
             'created_by' => $actor?->id,
         ]);
 
+        $product->categories()->sync($categoryIds);
+
         if ($galleryImages !== []) {
             $this->appendGalleryImages($product, $galleryImages);
         }
@@ -169,7 +178,7 @@ class ProductService
             $this->availability->enableForBranchOnly($enableForBranch, $product);
         }
 
-        return $product->refresh()->load('images');
+        return $product->refresh()->load(['images', 'categories:id,name,slug']);
     }
 
     /**

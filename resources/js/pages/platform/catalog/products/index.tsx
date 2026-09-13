@@ -31,7 +31,7 @@ type ProductRow = {
     name: string;
     slug: string;
     sku: string | null;
-    category_id: number;
+    category_ids: number[];
     category_name: string;
     image: string | null;
     image_url: string | null;
@@ -126,7 +126,7 @@ export default function PlatformProductsIndex({
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Category"
+                        title="Categories"
                         sortable
                         sortKey="category_name"
                         currentSort={query.sort}

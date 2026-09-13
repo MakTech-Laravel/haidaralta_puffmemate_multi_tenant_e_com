@@ -9,6 +9,7 @@ use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
@@ -32,13 +33,12 @@ class Product extends Model
     /**
      * @var list<string>
      */
-    public static array $dataTableFilterable = ['category_id', 'status'];
+    public static array $dataTableFilterable = ['status'];
 
     /**
      * @var list<string>
      */
     protected $fillable = [
-        'category_id',
         'name',
         'slug',
         'sku',
@@ -49,11 +49,11 @@ class Product extends Model
     ];
 
     /**
-     * @return BelongsTo<Category, $this>
+     * @return BelongsToMany<Category, $this>
      */
-    public function category(): BelongsTo
+    public function categories(): BelongsToMany
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsToMany(Category::class)->withTimestamps();
     }
 
     /**
@@ -119,14 +119,29 @@ class Product extends Model
             ->exists();
     }
 
+    public function categoryNamesLabel(): string
+    {
+        if (! $this->relationLoaded('categories')) {
+            $this->load('categories:id,name');
+        }
+
+        $names = $this->categories->pluck('name')->filter()->values();
+
+        return $names->isEmpty() ? '—' : $names->implode(', ');
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function toSearchableArray(): array
     {
+        if (! $this->relationLoaded('categories')) {
+            $this->load('categories:id');
+        }
+
         return [
             'id' => (int) $this->id,
-            'category_id' => (int) $this->category_id,
+            'category_ids' => $this->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
             'name' => $this->name,
             'slug' => $this->slug,
             'sku' => $this->sku,

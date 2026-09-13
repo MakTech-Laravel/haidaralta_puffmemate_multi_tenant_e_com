@@ -19,7 +19,7 @@ test('platform can enable a platform-created product for a specific branch', fun
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
     $product = app(ProductService::class)->createFromPlatform([
-        'category_id' => Category::factory()->create()->id,
+        'category_ids' => [Category::factory()->create()->id],
         'name' => 'Platform Pack',
         'slug' => 'platform-pack',
         'status' => true,

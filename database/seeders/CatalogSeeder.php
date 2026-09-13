@@ -224,7 +224,6 @@ class CatalogSeeder extends Seeder
         $product = Product::query()->firstOrCreate(
             ['slug' => $data['slug']],
             [
-                'category_id' => $category->id,
                 'name' => $data['name'],
                 'sku' => $data['sku'],
                 'description' => $data['description'],
@@ -233,6 +232,8 @@ class CatalogSeeder extends Seeder
                 'created_by' => $creator?->id,
             ],
         );
+
+        $product->categories()->syncWithoutDetaching([$category->id]);
 
         foreach ($data['variants'] as $variant) {
             ProductVariant::query()->firstOrCreate(

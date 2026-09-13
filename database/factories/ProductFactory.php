@@ -21,7 +21,6 @@ class ProductFactory extends Factory
         $name = fake()->unique()->words(3, true);
 
         return [
-            'category_id' => Category::factory(),
             'name' => Str::title($name),
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
             'sku' => strtoupper(fake()->unique()->bothify('SKU-####??')),
@@ -30,6 +29,17 @@ class ProductFactory extends Factory
             'status' => true,
             'created_by' => null,
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Product $product): void {
+            if ($product->categories()->exists()) {
+                return;
+            }
+
+            $product->categories()->attach(Category::factory()->create());
+        });
     }
 
     public function createdBy(User $user): static

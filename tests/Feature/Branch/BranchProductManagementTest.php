@@ -25,7 +25,7 @@ test('branch create enables only the creating branch', function () {
 
     $this->actingAs($staff, 'branch')
         ->post(route('branch.products.store', $branchA), [
-            'category_id' => $category->id,
+            'category_ids' => [$category->id],
             'name' => 'Downtown Exclusive',
             'slug' => 'downtown-exclusive',
             'sku' => 'SKU-DT-1',

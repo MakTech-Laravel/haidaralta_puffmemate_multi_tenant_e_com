@@ -18,7 +18,8 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
+            'category_ids' => ['required', 'array', 'min:1'],
+            'category_ids.*' => ['integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('products', 'slug')],
             'sku' => ['nullable', 'string', 'max:100', Rule::unique('products', 'sku')],

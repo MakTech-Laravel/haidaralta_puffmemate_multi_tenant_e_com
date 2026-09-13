@@ -26,7 +26,7 @@ class ProductDataTable extends AbstractDataTable
     protected function baseQuery(): Builder
     {
         return Product::query()
-            ->with('category:id,name,slug')
+            ->with('categories:id,name,slug')
             ->withCount('variants');
     }
 
@@ -36,7 +36,16 @@ class ProductDataTable extends AbstractDataTable
     protected function allowedFilters(): array
     {
         return [
-            AllowedFilter::exact('category_id'),
+            AllowedFilter::callback('category_id', function (Builder $query, mixed $value): void {
+                if ($value === null || $value === '' || $value === 'all') {
+                    return;
+                }
+
+                $query->whereHas(
+                    'categories',
+                    fn (Builder $categories): Builder => $categories->where('categories.id', (int) $value),
+                );
+            }),
             StatusBooleanFilter::make('status'),
             $this->searchFilter(),
             AllowedFilter::trashed(),
@@ -57,8 +66,10 @@ class ProductDataTable extends AbstractDataTable
             AllowedSort::callback('category_name', function (Builder $query, bool $descending): void {
                 $query->orderBy(
                     Category::query()
-                        ->select('name')
-                        ->whereColumn('categories.id', 'products.category_id')
+                        ->select('categories.name')
+                        ->join('category_product', 'categories.id', '=', 'category_product.category_id')
+                        ->whereColumn('category_product.product_id', 'products.id')
+                        ->orderBy('categories.name')
                         ->limit(1),
                     $descending ? 'desc' : 'asc',
                 );
@@ -98,8 +109,16 @@ class ProductDataTable extends AbstractDataTable
         /** @var Product $model */
         return [
             'id' => $model->id,
-            'category_id' => $model->category_id,
-            'category_name' => $model->category?->name ?? '—',
+            'category_ids' => $model->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
+            'categories' => $model->categories
+                ->map(fn (Category $category): array => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                ])
+                ->values()
+                ->all(),
+            'category_name' => $model->categoryNamesLabel(),
             'name' => $model->name,
             'slug' => $model->slug,
             'sku' => $model->sku,

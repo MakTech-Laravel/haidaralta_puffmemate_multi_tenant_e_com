@@ -194,7 +194,7 @@ return [
             Product::class => [
                 'filterableAttributes' => [
                     'id',
-                    'category_id',
+                    'category_ids',
                     'status',
                     'slug',
                     'sku',

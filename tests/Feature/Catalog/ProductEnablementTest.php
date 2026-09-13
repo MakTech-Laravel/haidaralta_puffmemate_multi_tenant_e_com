@@ -15,7 +15,7 @@ test('platform product create leaves all branches disabled', function () {
     $branchB = Branch::factory()->create();
 
     $product = app(ProductService::class)->createFromPlatform([
-        'category_id' => $category->id,
+        'category_ids' => [$category->id],
         'name' => 'Classic Pack',
         'slug' => 'classic-pack',
         'sku' => 'SKU-CLASSIC',
@@ -33,7 +33,7 @@ test('branch product create enables only the creating branch', function () {
     $branchB = Branch::factory()->create();
 
     $product = app(ProductService::class)->createFromBranch($branchA, [
-        'category_id' => $category->id,
+        'category_ids' => [$category->id],
         'name' => 'Branch Pack',
         'slug' => 'branch-pack',
         'sku' => 'SKU-BRANCH',

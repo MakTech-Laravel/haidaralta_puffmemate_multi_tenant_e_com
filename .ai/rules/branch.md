@@ -4,6 +4,7 @@ paths:
   - 'app/Services/Catalog/**'
   - 'app/Services/Inventory/**'
   - app/Models/ProductImage.php
+  - 'app/Models/{Category,Product}.php'
 ---
 
 # Catalog
@@ -13,3 +14,6 @@ Global catalog tables (categories, products, product_variants) are soft-deletabl
 
 ## Primary image vs product_images gallery
 products.image is the primary listing image. product_images holds gallery photos (path + sort_order). Soft-deleting a product leaves gallery rows until cascade/hard cleanup; prefer deleting gallery files via ProductService when removing gallery ids.
+
+## Products belong to many categories via category_product
+Products↔categories are belongsToMany through category_product (not products.category_id). Forms/API use category_ids (required min 1). List filters keep filter[category_id] meaning “has this category”. Scout filterable attribute is category_ids (array). Display uses categoryNamesLabel() / joined category_name.

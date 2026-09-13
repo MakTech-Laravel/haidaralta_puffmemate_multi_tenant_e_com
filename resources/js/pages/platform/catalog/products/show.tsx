@@ -249,7 +249,7 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                     <CardContent>
                         <dl className="grid gap-5 sm:grid-cols-2">
                             <DetailItem
-                                label="Category"
+                                label="Categories"
                                 value={product.category_name}
                             />
                             <DetailItem

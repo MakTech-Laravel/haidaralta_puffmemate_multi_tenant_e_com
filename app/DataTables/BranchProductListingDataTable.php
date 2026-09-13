@@ -56,7 +56,7 @@ class BranchProductListingDataTable extends AbstractDataTable
      */
     protected function baseQuery(): Builder
     {
-        return Product::query()->with('category:id,name,slug');
+        return Product::query()->with('categories:id,name,slug');
     }
 
     /**
@@ -169,13 +169,21 @@ class BranchProductListingDataTable extends AbstractDataTable
             'name' => $model->name,
             'slug' => $model->slug,
             'sku' => $model->sku,
-            'category_id' => $model->category_id,
-            'category_name' => $model->category?->name ?? '—',
-            'category' => $model->category
+            'category_ids' => $model->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
+            'category_name' => $model->categoryNamesLabel(),
+            'categories' => $model->categories
+                ->map(fn ($category): array => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                ])
+                ->values()
+                ->all(),
+            'category' => $model->categories->first()
                 ? [
-                    'id' => $model->category->id,
-                    'name' => $model->category->name,
-                    'slug' => $model->category->slug,
+                    'id' => $model->categories->first()->id,
+                    'name' => $model->categories->first()->name,
+                    'slug' => $model->categories->first()->slug,
                 ]
                 : null,
             'status' => (bool) $model->status,

@@ -19,7 +19,7 @@ type GalleryImage = {
 
 type Product = {
     id: number;
-    category_id: number;
+    category_ids: number[];
     name: string;
     slug: string;
     sku: string | null;
@@ -64,7 +64,7 @@ export default function PlatformProductsEdit({
                     enableSuggestions
                     excludeProductId={product.id}
                     defaults={{
-                        category_id: product.category_id,
+                        category_ids: product.category_ids,
                         name: product.name,
                         slug: product.slug,
                         sku: product.sku,

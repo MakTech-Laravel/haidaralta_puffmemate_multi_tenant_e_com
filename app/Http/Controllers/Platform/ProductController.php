@@ -73,7 +73,7 @@ class ProductController extends Controller
 
     public function show(Product $product): Response
     {
-        $product->load(['category:id,name,slug', 'variants', 'images']);
+        $product->load(['categories:id,name,slug', 'variants', 'images']);
 
         return Inertia::render('platform/catalog/products/show', [
             'product' => $this->mapProduct($product, detailed: true),
@@ -82,7 +82,7 @@ class ProductController extends Controller
 
     public function edit(Product $product): Response
     {
-        $product->load(['category:id,name,slug', 'images']);
+        $product->load(['categories:id,name,slug', 'images']);
 
         return Inertia::render('platform/catalog/products/edit', [
             'product' => $this->mapProduct($product, detailed: true),
@@ -171,15 +171,16 @@ class ProductController extends Controller
     {
         $payload = [
             'id' => $product->id,
-            'category_id' => $product->category_id,
-            'category' => $product->category
-                ? [
-                    'id' => $product->category->id,
-                    'name' => $product->category->name,
-                    'slug' => $product->category->slug,
-                ]
-                : null,
-            'category_name' => $product->category?->name ?? '—',
+            'category_ids' => $product->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
+            'categories' => $product->categories
+                ->map(fn (Category $category): array => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                ])
+                ->values()
+                ->all(),
+            'category_name' => $product->categoryNamesLabel(),
             'name' => $product->name,
             'slug' => $product->slug,
             'sku' => $product->sku,

@@ -34,7 +34,9 @@ type ProductShow = {
     description: string | null;
     status: boolean;
     image_url: string | null;
-    category: { id: number; name: string; slug: string } | null;
+    category_ids: number[];
+    categories: { id: number; name: string; slug: string }[];
+    category_name: string;
     variants: { id: number; name: string; sku: string | null; status: boolean }[];
     enabled: boolean;
     inventory: {
@@ -113,7 +115,7 @@ export default function BranchProductShow({
                     <Heading
                         title={product.name}
                         description={
-                            product.category?.name ??
+                            product.category_name ||
                             'Branch inventory and pricing'
                         }
                     />

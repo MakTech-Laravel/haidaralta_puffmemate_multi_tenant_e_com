@@ -55,7 +55,7 @@ type ProductSuggestion = {
 };
 
 interface ProductFormDefaults {
-    category_id?: number;
+    category_ids?: number[];
     name?: string;
     slug?: string;
     sku?: string | null;
@@ -132,7 +132,7 @@ export function ProductForm({
         setValidationTimeout,
         cancel,
     } = useForm(formMethod, action.action, {
-        category_id: defaults?.category_id ?? '',
+        category_ids: defaults?.category_ids ?? ([] as number[]),
         name: defaults?.name ?? '',
         slug: defaults?.slug ?? '',
         sku: defaults?.sku ?? '',
@@ -145,13 +145,28 @@ export function ProductForm({
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
-    const selectedCategory = useMemo(
+    const selectedCategories = useMemo(
         () =>
-            categoryOptions.find(
-                (option) => option.id === Number(data.category_id),
-            ) ?? null,
-        [categoryOptions, data.category_id],
+            categoryOptions.filter((option) =>
+                data.category_ids.includes(option.id),
+            ),
+        [categoryOptions, data.category_ids],
     );
+
+    const categorySummary =
+        selectedCategories.length === 0
+            ? 'Select categories'
+            : selectedCategories.length <= 2
+              ? selectedCategories.map((category) => category.name).join(', ')
+              : `${selectedCategories.length} categories selected`;
+
+    const toggleCategory = (categoryId: number) => {
+        const next = data.category_ids.includes(categoryId)
+            ? data.category_ids.filter((id) => id !== categoryId)
+            : [...data.category_ids, categoryId];
+
+        setData('category_ids', next);
+    };
 
     useEffect(() => {
         setValidationTimeout(500);
@@ -266,32 +281,33 @@ export function ProductForm({
 
                     <div className="space-y-5">
                         <div className="flex w-full min-w-0 flex-col gap-2">
-                            <Label htmlFor="category_id">Category</Label>
+                            <Label htmlFor="category_ids">Categories</Label>
                             <Popover
                                 open={categoryOpen}
                                 onOpenChange={setCategoryOpen}
                             >
                                 <PopoverTrigger asChild>
                                     <Button
-                                        id="category_id"
+                                        id="category_ids"
                                         type="button"
                                         variant="outline"
                                         role="combobox"
                                         aria-expanded={categoryOpen}
                                         aria-invalid={Boolean(
-                                            errors.category_id,
+                                            errors.category_ids ??
+                                                errors['category_ids.0'],
                                         )}
                                         className="h-9 w-full min-w-0 justify-between font-normal"
                                     >
                                         <span
                                             className={cn(
                                                 'truncate',
-                                                !selectedCategory &&
+                                                selectedCategories.length ===
+                                                    0 &&
                                                     'text-muted-foreground',
                                             )}
                                         >
-                                            {selectedCategory?.name ??
-                                                'Select category'}
+                                            {categorySummary}
                                         </span>
                                         <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
                                     </Button>
@@ -308,39 +324,48 @@ export function ProductForm({
                                             </CommandEmpty>
                                             <CommandGroup>
                                                 {categoryOptions.map(
-                                                    (option) => (
-                                                        <CommandItem
-                                                            key={option.id}
-                                                            value={option.name}
-                                                            onSelect={() => {
-                                                                setData(
-                                                                    'category_id',
-                                                                    option.id,
-                                                                );
-                                                                setCategoryOpen(
-                                                                    false,
-                                                                );
-                                                            }}
-                                                        >
-                                                            <Check
-                                                                className={cn(
-                                                                    'size-4',
-                                                                    selectedCategory?.id ===
-                                                                        option.id
-                                                                        ? 'opacity-100'
-                                                                        : 'opacity-0',
-                                                                )}
-                                                            />
-                                                            {option.name}
-                                                        </CommandItem>
-                                                    ),
+                                                    (option) => {
+                                                        const selected =
+                                                            data.category_ids.includes(
+                                                                option.id,
+                                                            );
+
+                                                        return (
+                                                            <CommandItem
+                                                                key={option.id}
+                                                                value={
+                                                                    option.name
+                                                                }
+                                                                onSelect={() =>
+                                                                    toggleCategory(
+                                                                        option.id,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        'size-4',
+                                                                        selected
+                                                                            ? 'opacity-100'
+                                                                            : 'opacity-0',
+                                                                    )}
+                                                                />
+                                                                {option.name}
+                                                            </CommandItem>
+                                                        );
+                                                    },
                                                 )}
                                             </CommandGroup>
                                         </CommandList>
                                     </Command>
                                 </PopoverContent>
                             </Popover>
-                            <InputError message={errors.category_id} />
+                            <InputError
+                                message={
+                                    errors.category_ids ??
+                                    errors['category_ids.0']
+                                }
+                            />
                         </div>
 
                         <div className="grid gap-5 sm:grid-cols-2">

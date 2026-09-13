@@ -7,7 +7,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/actions/** | .ai/rules/actions.md |
 | app/Services/ActivityLog/** | .ai/rules/activity-log.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php | .ai/rules/backup.md |
-| app/Models/{Category,Product,ProductVariant,BranchProduct,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php | .ai/rules/branch.md |
+| app/Models/{Category,Product,ProductVariant,BranchProduct,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php | .ai/rules/branch.md |
 | resources/js/components/file-upload.tsx | .ai/rules/components.md |
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |

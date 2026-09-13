@@ -33,7 +33,9 @@ type ProductShow = {
     sku: string | null;
     status: boolean;
     image_url: string | null;
-    category: { id: number; name: string } | null;
+    category_ids: number[];
+    categories: { id: number; name: string; slug: string }[];
+    category_name: string;
     variants: { id: number; name: string; sku: string | null }[];
     enabled: boolean;
     inventory: {

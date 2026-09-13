@@ -41,7 +41,7 @@ class BranchInventoryController extends Controller
 
     public function show(Branch $branch, Product $product): Response
     {
-        $product->load(['category:id,name,slug', 'variants']);
+        $product->load(['categories:id,name,slug', 'variants']);
 
         $inventory = Inventory::query()
             ->where('branch_id', $branch->id)
@@ -82,9 +82,16 @@ class BranchInventoryController extends Controller
                 'sku' => $product->sku,
                 'status' => (bool) $product->status,
                 'image_url' => $product->imageUrl(),
-                'category' => $product->category
-                    ? ['id' => $product->category->id, 'name' => $product->category->name]
-                    : null,
+                'category_ids' => $product->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
+                'categories' => $product->categories
+                    ->map(fn ($category): array => [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'slug' => $category->slug,
+                    ])
+                    ->values()
+                    ->all(),
+                'category_name' => $product->categoryNamesLabel(),
                 'variants' => $product->variants->map(fn (ProductVariant $variant): array => [
                     'id' => $variant->id,
                     'name' => $variant->name,

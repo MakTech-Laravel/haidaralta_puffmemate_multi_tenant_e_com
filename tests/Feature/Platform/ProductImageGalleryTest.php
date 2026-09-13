@@ -24,7 +24,7 @@ test('platform can create a product with primary image and gallery', function ()
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.products.store'), [
-            'category_id' => $category->id,
+            'category_ids' => [$category->id],
             'name' => 'Gallery Pack',
             'slug' => 'gallery-pack',
             'sku' => 'SKU-GAL-1',
@@ -76,7 +76,7 @@ test('platform can remove gallery images on update', function () {
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.products.update', $product), [
-            'category_id' => $product->category_id,
+            'category_ids' => $product->categories()->pluck('categories.id')->all(),
             'name' => $product->name,
             'slug' => $product->slug,
             'sku' => $product->sku,

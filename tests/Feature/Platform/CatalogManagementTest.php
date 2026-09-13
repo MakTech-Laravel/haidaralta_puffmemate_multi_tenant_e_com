@@ -35,7 +35,7 @@ test('platform admin can create a category and product without enabling branches
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.products.store'), [
-            'category_id' => $category->id,
+            'category_ids' => [$category->id],
             'name' => 'Starter Kit',
             'slug' => 'starter-kit',
             'sku' => 'SKU-START',
@@ -50,7 +50,8 @@ test('platform admin can create a category and product without enabling branches
     $product = Product::query()->where('slug', 'starter-kit')->firstOrFail();
 
     expect($product->isEnabledForBranch($branch->id))->toBeFalse()
-        ->and(BranchProduct::query()->where('product_id', $product->id)->count())->toBe(0);
+        ->and(BranchProduct::query()->where('product_id', $product->id)->count())->toBe(0)
+        ->and($product->categories()->pluck('categories.id')->all())->toBe([$category->id]);
 });
 
 test('platform soft delete hides product from default index', function () {
@@ -165,20 +166,17 @@ test('platform products data table filters sorts and paginates', function () {
     $fruit = Category::factory()->create(['name' => 'Fruit', 'slug' => 'fruit-dt']);
     $gear = Category::factory()->create(['name' => 'Gear', 'slug' => 'gear-dt']);
 
-    $active = Product::factory()->create([
-        'category_id' => $fruit->id,
+    $active = Product::factory()->hasAttached($fruit)->create([
         'name' => 'Alpha Active',
         'slug' => 'alpha-active',
         'status' => true,
     ]);
-    Product::factory()->create([
-        'category_id' => $gear->id,
+    Product::factory()->hasAttached($gear)->create([
         'name' => 'Beta Inactive',
         'slug' => 'beta-inactive',
         'status' => false,
     ]);
-    $trashed = Product::factory()->create([
-        'category_id' => $fruit->id,
+    $trashed = Product::factory()->hasAttached($fruit)->create([
         'name' => 'Zulu Trashed',
         'slug' => 'zulu-trashed',
         'status' => true,
