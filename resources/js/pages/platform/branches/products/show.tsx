@@ -10,9 +10,17 @@ import {
     type TransactionsPage,
 } from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
+import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    colorPickerStyle,
+    isTransparentColorPickerValue,
+    normalizeCatalogColorPickerValue,
+    type ColorPickerValue,
+} from '@/lib/color-picker';
+import { cn } from '@/lib/utils';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -24,6 +32,7 @@ type ProductShow = {
     description?: string | null;
     status: boolean;
     image_url: string | null;
+    color_code?: ColorPickerValue | null;
     category_name: string;
     gallery?: {
         id: number;
@@ -53,6 +62,8 @@ export default function PlatformBranchProductShow({
     discountTypes: { value: string; label: string }[];
 }) {
     const [enabled, setEnabled] = useState(product.enabled);
+    const colorCode = normalizeCatalogColorPickerValue(product.color_code);
+    const transparent = isTransparentColorPickerValue(colorCode);
 
     setLayoutProps({
         breadcrumbs: [
@@ -95,14 +106,25 @@ export default function PlatformBranchProductShow({
             <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
-                        <Avatar className="size-14 rounded-xl border border-border/70">
+                        <Avatar
+                            className={cn(
+                                'size-14 rounded-xl border border-border/70',
+                                transparent && COLOR_PICKER_CHECKERBOARD,
+                            )}
+                            style={
+                                transparent
+                                    ? undefined
+                                    : colorPickerStyle(colorCode)
+                            }
+                        >
                             {product.image_url ? (
                                 <AvatarImage
                                     src={product.image_url}
                                     alt={product.name}
+                                    className="object-contain p-1"
                                 />
                             ) : null}
-                            <AvatarFallback className="rounded-xl text-base">
+                            <AvatarFallback className="rounded-xl bg-transparent text-base">
                                 {product.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
@@ -144,6 +166,7 @@ export default function PlatformBranchProductShow({
                     description={product.description}
                     categoryName={product.category_name}
                     imageUrl={product.image_url}
+                    colorCode={product.color_code}
                     gallery={product.gallery ?? []}
                     enabled={enabled}
                     lowStock={Boolean(product.inventory?.is_low_stock)}

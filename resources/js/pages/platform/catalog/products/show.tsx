@@ -14,6 +14,7 @@ import {
 import Heading from '@/components/heading';
 import { VariantForm } from '@/components/platform/variant-form';
 import { ProductGallery } from '@/components/product-gallery';
+import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -36,9 +37,10 @@ import { usePermission } from '@/hooks/use-permissions';
 import {
     colorPickerStyle,
     isTransparentColorPickerValue,
+    normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-
+import { cn } from '@/lib/utils';
 type ProductVariant = {
     id: number;
     name: string;
@@ -109,6 +111,8 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
     };
 
     const canManageCatalog = can('manage-catalog');
+    const colorCode = normalizeCatalogColorPickerValue(product.color_code);
+    const transparent = isTransparentColorPickerValue(colorCode);
 
     const variantColumns = useMemo<ColumnDef<ProductVariant>[]>(() => {
         const columns: ColumnDef<ProductVariant>[] = [
@@ -195,17 +199,21 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <Avatar
-                            className="size-14 rounded-xl"
+                            className={cn(
+                                'size-14 rounded-xl border border-border/70',
+                                transparent && COLOR_PICKER_CHECKERBOARD,
+                            )}
                             style={
-                                isTransparentColorPickerValue(product.color_code)
+                                transparent
                                     ? undefined
-                                    : colorPickerStyle(product.color_code)
+                                    : colorPickerStyle(colorCode)
                             }
                         >
                             {product.image_url ? (
                                 <AvatarImage
                                     src={product.image_url}
                                     alt={product.name}
+                                    className="object-contain p-1"
                                 />
                             ) : null}
                             <AvatarFallback className="rounded-xl bg-transparent text-base">
@@ -285,6 +293,7 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                 <ProductGallery
                     productName={product.name}
                     images={product.gallery}
+                    colorCode={product.color_code}
                 />
 
                 <Card>

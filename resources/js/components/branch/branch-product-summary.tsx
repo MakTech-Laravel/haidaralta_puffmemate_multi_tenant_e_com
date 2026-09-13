@@ -1,4 +1,9 @@
 import type { ReactNode } from 'react';
+import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
+import {
+    ProductGallery,
+    type ProductGalleryImage,
+} from '@/components/product-gallery';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,9 +17,12 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import {
-    ProductGallery,
-    type ProductGalleryImage,
-} from '@/components/product-gallery';
+    colorPickerStyle,
+    isTransparentColorPickerValue,
+    normalizeCatalogColorPickerValue,
+    type ColorPickerValue,
+} from '@/lib/color-picker';
+import { cn } from '@/lib/utils';
 
 function DetailItem({
     label,
@@ -44,6 +52,7 @@ type BranchProductSummaryProps = {
     description?: string | null;
     categoryName: string;
     imageUrl?: string | null;
+    colorCode?: ColorPickerValue | null;
     gallery?: ProductGalleryImage[];
     enabled: boolean;
     lowStock?: boolean;
@@ -57,6 +66,7 @@ export function BranchProductSummary({
     description,
     categoryName,
     imageUrl = null,
+    colorCode = null,
     gallery = [],
     enabled,
     lowStock = false,
@@ -64,6 +74,8 @@ export function BranchProductSummary({
     enabledLabel = 'Available at this branch',
 }: BranchProductSummaryProps) {
     const categories = categoryLabels(categoryName);
+    const normalizedColor = normalizeCatalogColorPickerValue(colorCode);
+    const transparent = isTransparentColorPickerValue(normalizedColor);
 
     return (
         <div className="space-y-6">
@@ -79,11 +91,25 @@ export function BranchProductSummary({
                     </CardHeader>
                     <CardContent className="px-5">
                         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-                            <Avatar className="size-20 rounded-xl border border-border/70">
+                            <Avatar
+                                className={cn(
+                                    'size-20 rounded-xl border border-border/70',
+                                    transparent && COLOR_PICKER_CHECKERBOARD,
+                                )}
+                                style={
+                                    transparent
+                                        ? undefined
+                                        : colorPickerStyle(normalizedColor)
+                                }
+                            >
                                 {imageUrl ? (
-                                    <AvatarImage src={imageUrl} alt={name} />
+                                    <AvatarImage
+                                        src={imageUrl}
+                                        alt={name}
+                                        className="object-contain p-1"
+                                    />
                                 ) : null}
-                                <AvatarFallback className="rounded-xl text-base">
+                                <AvatarFallback className="rounded-xl bg-transparent text-base">
                                     {name.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                             </Avatar>
@@ -190,7 +216,11 @@ export function BranchProductSummary({
                 </Card>
             </div>
 
-            <ProductGallery productName={name} images={gallery} />
+            <ProductGallery
+                productName={name}
+                images={gallery}
+                colorCode={normalizedColor}
+            />
         </div>
     );
 }

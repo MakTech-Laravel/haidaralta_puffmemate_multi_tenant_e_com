@@ -17,3 +17,6 @@ FileUpload dropzone never dumps raw accept MIME/extension lists into helper text
 
 ## Compact gallery with lightbox
 Product show gallery uses compact thumbnails (dense grid) + yet-another-react-lightbox click-to-preview. BranchProductShowPayload includes gallery; branch/platform inventory show render ProductGallery.
+
+## Gallery/primary use color_code tile
+Product primary + gallery thumbnails/lightbox use product.color_code via colorPickerStyle (object-contain). Transparent mode uses checkerboard. Apply on platform catalog show and branch/platform inventory show.
