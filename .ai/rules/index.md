@@ -5,8 +5,8 @@ Before planning or editing, find the row whose globs match the file's path and r
 | Applies to | Rule file |
 | --- | --- |
 | app/Services/ActivityLog/** | .ai/rules/activity-log.md |
-| app/Services/Backup/**, config/backup.php | .ai/rules/backup.md |
-| app/Models/{Category,Product,ProductVariant,BranchProduct,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/{Catalog,Inventory}/** | .ai/rules/branch.md |
+| app/Services/Backup/**, config/backup.php, config/scout.php | .ai/rules/backup.md |
+| app/Models/{Category,Product,ProductVariant,BranchProduct,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/** | .ai/rules/branch.md |
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
 | resources/css/app.css | .ai/rules/css.md |
