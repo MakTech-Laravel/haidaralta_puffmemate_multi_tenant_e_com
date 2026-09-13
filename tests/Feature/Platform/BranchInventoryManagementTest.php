@@ -3,6 +3,7 @@
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\Catalog\ProductService;
 use Database\Seeders\BranchSeeder;
@@ -62,7 +63,41 @@ test('platform can set stock and price for any branch', function () {
         ->assertInertia(fn ($page) => $page
             ->component('platform/branches/products/show')
             ->where('product.inventory.quantity', 12)
-            ->where('product.price.selling_price', '29.50'));
+            ->where('product.price.selling_price', '29.50')
+            ->has('product.variant_inventories')
+            ->has('product.variant_prices'));
+});
+
+test('platform can set variant stock and price on branch inventory show', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $product = Product::factory()->create();
+    $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 3,
+            'minimum_stock' => 1,
+            'variant_id' => $variant->id,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.prices', [$branch, $product]), [
+            'selling_price' => 9.99,
+            'variant_id' => $variant->id,
+            'status' => true,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.show', [$branch, $product]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/products/show')
+            ->where('product.variant_inventories.'.$variant->id.'.quantity', 3)
+            ->where('product.variant_prices.'.$variant->id.'.selling_price', '9.99'));
 });
 
 test('branch user still cannot soft-delete catalog products after platform inventory ops', function () {

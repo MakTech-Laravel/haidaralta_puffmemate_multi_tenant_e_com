@@ -1347,14 +1347,13 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 {placeholder}
                             </p>
                             {hint ? (
-                                <p className="text-muted-foreground text-xs">
+                                <p className="text-muted-foreground max-w-full px-2 text-center text-xs wrap-break-word">
                                     {hint}
                                 </p>
                             ) : null}
-                            <p className="text-muted-foreground text-xs">
+                            <p className="text-muted-foreground max-w-full px-2 text-center text-xs">
                                 Max {maxSize} MB per file
-                                {maxFiles && ` · up to ${maxFiles} files`}
-                                {accept && ` · ${accept}`}
+                                {maxFiles ? ` · up to ${maxFiles} files` : null}
                             </p>
                         </>
                     ) : null}

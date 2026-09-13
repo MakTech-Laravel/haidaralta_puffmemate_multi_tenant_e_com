@@ -84,6 +84,10 @@ interface ProductFormProps {
     /** Platform catalog create/edit — match existing products while typing. */
     enableSuggestions?: boolean;
     excludeProductId?: number | null;
+    /** Branch create: include initial selling_price / quantity / minimum_stock. */
+    branchOpsFields?: boolean;
+    /** Hide gallery when backend ignores it (branch create). Default true. */
+    showGallery?: boolean;
     cancelHref: string;
     submitLabel?: string;
 }
@@ -104,6 +108,8 @@ export function ProductForm({
     showBranchNotice = false,
     enableSuggestions = false,
     excludeProductId = null,
+    branchOpsFields = false,
+    showGallery = true,
     cancelHref,
     submitLabel,
 }: ProductFormProps) {
@@ -164,6 +170,13 @@ export function ProductForm({
         remove_gallery_ids: [] as number[],
         color_code: normalizeCatalogColorPickerValue(defaults?.color_code),
         status: defaults?.status ?? true,
+        ...(branchOpsFields
+            ? {
+                  selling_price: '',
+                  quantity: 0,
+                  minimum_stock: 0,
+              }
+            : {}),
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
@@ -250,8 +263,15 @@ export function ProductForm({
                 remove_image,
                 remove_gallery_ids,
                 color_code,
+                selling_price,
+                quantity,
+                minimum_stock,
                 ...rest
-            } = form;
+            } = form as typeof form & {
+                selling_price?: string;
+                quantity?: number;
+                minimum_stock?: number;
+            };
 
             return {
                 ...rest,
@@ -259,10 +279,20 @@ export function ProductForm({
                     normalizeCatalogColorPickerValue(color_code),
                 ),
                 ...(image ? { image } : {}),
-                ...(gallery.length > 0 ? { gallery } : {}),
+                ...(showGallery && gallery.length > 0 ? { gallery } : {}),
                 ...(remove_image ? { remove_image: true } : {}),
-                ...(remove_gallery_ids.length > 0
+                ...(showGallery && remove_gallery_ids.length > 0
                     ? { remove_gallery_ids }
+                    : {}),
+                ...(branchOpsFields
+                    ? {
+                          ...(selling_price !== undefined &&
+                          selling_price !== ''
+                              ? { selling_price }
+                              : {}),
+                          quantity: quantity ?? 0,
+                          minimum_stock: minimum_stock ?? 0,
+                      }
                     : {}),
             };
         });
@@ -547,6 +577,92 @@ export function ProductForm({
                             </div>
                             <InputError message={errors.status} />
                         </div>
+
+                        {branchOpsFields ? (
+                            <div className="grid gap-5 sm:grid-cols-3">
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="selling_price">
+                                        Selling price
+                                    </Label>
+                                    <Input
+                                        id="selling_price"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={
+                                            (
+                                                data as typeof data & {
+                                                    selling_price?: string;
+                                                }
+                                            ).selling_price ?? ''
+                                        }
+                                        onChange={(event) =>
+                                            setData(
+                                                'selling_price' as never,
+                                                event.target.value as never,
+                                            )
+                                        }
+                                        placeholder="Optional"
+                                    />
+                                    <InputError
+                                        message={errors.selling_price}
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="quantity">
+                                        Initial quantity
+                                    </Label>
+                                    <Input
+                                        id="quantity"
+                                        type="number"
+                                        value={
+                                            (
+                                                data as typeof data & {
+                                                    quantity?: number;
+                                                }
+                                            ).quantity ?? 0
+                                        }
+                                        onChange={(event) =>
+                                            setData(
+                                                'quantity' as never,
+                                                Number(
+                                                    event.target.value,
+                                                ) as never,
+                                            )
+                                        }
+                                    />
+                                    <InputError message={errors.quantity} />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="minimum_stock">
+                                        Minimum stock
+                                    </Label>
+                                    <Input
+                                        id="minimum_stock"
+                                        type="number"
+                                        min="0"
+                                        value={
+                                            (
+                                                data as typeof data & {
+                                                    minimum_stock?: number;
+                                                }
+                                            ).minimum_stock ?? 0
+                                        }
+                                        onChange={(event) =>
+                                            setData(
+                                                'minimum_stock' as never,
+                                                Number(
+                                                    event.target.value,
+                                                ) as never,
+                                            )
+                                        }
+                                    />
+                                    <InputError
+                                        message={errors.minimum_stock}
+                                    />
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                 </section>
 
@@ -561,8 +677,9 @@ export function ProductForm({
                             Media
                         </h2>
                         <p className="text-muted-foreground text-sm">
-                            Set a primary image for listings, then add gallery
-                            shots for the product page.
+                            {showGallery
+                                ? 'Set a primary image for listings, then add gallery shots for the product page.'
+                                : 'Set a primary image for listings. Gallery images can be added from the platform catalog.'}
                         </p>
                     </div>
 
@@ -672,6 +789,7 @@ export function ProductForm({
                             </div>
                         </div>
 
+                        {showGallery ? (
                         <div className="space-y-3">
                             <div className="flex items-center justify-between gap-3">
                                 <Label>Image gallery</Label>
@@ -740,6 +858,7 @@ export function ProductForm({
                                 </p>
                             ) : null}
                         </div>
+                        ) : null}
                     </div>
                 </section>
             </div>

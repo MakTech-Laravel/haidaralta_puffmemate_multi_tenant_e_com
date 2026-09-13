@@ -9,11 +9,12 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/Backup/**, config/backup.php, config/scout.php | .ai/rules/backup.md |
 | app/Models/{Category,Product,ProductVariant,BranchProduct,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php | .ai/rules/branch.md |
 | resources/js/components/color-picker/** | .ai/rules/color-picker.md |
+| resources/js/components/branch/** | .ai/rules/components-branch.md |
 | resources/js/components/file-upload.tsx | .ai/rules/components.md |
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
 | resources/css/app.css | .ai/rules/css.md |
-| app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php | .ai/rules/data-tables.md |
+| app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php, app/DataTables/BranchProductListingDataTable.php | .ai/rules/data-tables.md |
 | docker/**, docker/nginx.conf | .ai/rules/docker.md |
 | Dockerfile | .ai/rules/dockerfile.md |
 | app/Events/** | .ai/rules/events.md |
