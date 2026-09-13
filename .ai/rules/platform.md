@@ -10,3 +10,6 @@ Platform create/edit ProductForm: details left, media right, grid items-start so
 
 ## Product form multi-selects category_ids
 ProductForm categories field is multi-select Popover+Command combobox posting category_ids (number[], min 1). Full width; no auto-select on create — only defaults.category_ids on edit. Keep searchable; toggle chips/checks per option.
+
+## Category multi-select shows name badges
+Selected categories render as wrapping secondary Badge chips (keyword style) on the combobox trigger — never a count summary like “N categories selected”.

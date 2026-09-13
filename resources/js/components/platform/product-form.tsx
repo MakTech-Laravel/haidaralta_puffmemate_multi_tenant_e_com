@@ -7,6 +7,7 @@ import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import { FileUploadAvatar } from '@/components/file-upload-avatar';
 import InputError from '@/components/input-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -153,13 +154,6 @@ export function ProductForm({
         [categoryOptions, data.category_ids],
     );
 
-    const categorySummary =
-        selectedCategories.length === 0
-            ? 'Select categories'
-            : selectedCategories.length <= 2
-              ? selectedCategories.map((category) => category.name).join(', ')
-              : `${selectedCategories.length} categories selected`;
-
     const toggleCategory = (categoryId: number) => {
         const next = data.category_ids.includes(categoryId)
             ? data.category_ids.filter((id) => id !== categoryId)
@@ -297,19 +291,30 @@ export function ProductForm({
                                             errors.category_ids ??
                                                 errors['category_ids.0'],
                                         )}
-                                        className="h-9 w-full min-w-0 justify-between font-normal"
+                                        className="h-auto min-h-9 w-full min-w-0 justify-between gap-2 px-3 py-1.5 font-normal"
                                     >
-                                        <span
-                                            className={cn(
-                                                'truncate',
-                                                selectedCategories.length ===
-                                                    0 &&
-                                                    'text-muted-foreground',
-                                            )}
-                                        >
-                                            {categorySummary}
-                                        </span>
-                                        <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+                                        {selectedCategories.length === 0 ? (
+                                            <span className="text-muted-foreground truncate">
+                                                Select categories
+                                            </span>
+                                        ) : (
+                                            <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-left">
+                                                {selectedCategories.map(
+                                                    (category) => (
+                                                        <Badge
+                                                            key={category.id}
+                                                            variant="secondary"
+                                                            className="max-w-full font-normal"
+                                                        >
+                                                            <span className="truncate">
+                                                                {category.name}
+                                                            </span>
+                                                        </Badge>
+                                                    ),
+                                                )}
+                                            </span>
+                                        )}
+                                        <ChevronsUpDown className="size-4 shrink-0 self-center opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent
