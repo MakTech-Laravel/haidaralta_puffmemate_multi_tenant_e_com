@@ -1,11 +1,5 @@
 import { ChevronDownIcon, Clock } from 'lucide-react';
-import {
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
-    type UIEvent,
-} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Popover,
@@ -14,10 +8,12 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
+/** Row height inside each wheel column. */
 const ITEM_HEIGHT = 40;
+/** How many rows are visible in the scroll viewport (taller = bigger pick area). */
 const VISIBLE_ITEMS = 5;
 const WHEEL_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
-const SETTLE_MS = 100;
+const SETTLE_MS = 120;
 
 const HOURS = Array.from({ length: 12 }, (_, index) => String(index + 1));
 const MINUTES = Array.from({ length: 60 }, (_, index) =>
@@ -103,11 +99,12 @@ function defaultDraft(): ParsedTime {
     };
 }
 
+function clampIndex(index: number, length: number): number {
+    return Math.min(length - 1, Math.max(0, index));
+}
+
 function indexFromScrollTop(scrollTop: number, length: number): number {
-    return Math.min(
-        length - 1,
-        Math.max(0, Math.round(scrollTop / ITEM_HEIGHT)),
-    );
+    return clampIndex(Math.round(scrollTop / ITEM_HEIGHT), length);
 }
 
 type TimeSelectProps = {
@@ -122,7 +119,7 @@ type TimeSelectProps = {
 
 type WheelColumnProps = {
     options: readonly string[];
-    value: string;
+    initialValue: string;
     onChange: (value: string) => void;
     className?: string;
     'aria-label': string;
@@ -130,124 +127,102 @@ type WheelColumnProps = {
 
 function WheelColumn({
     options,
-    value,
+    initialValue,
     onChange,
     className,
     'aria-label': ariaLabel,
 }: WheelColumnProps) {
     const listRef = useRef<HTMLDivElement>(null);
-    const programmaticRef = useRef(false);
     const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const valueRef = useRef(value);
     const onChangeRef = useRef(onChange);
     const [activeIndex, setActiveIndex] = useState(() =>
-        Math.max(0, options.indexOf(value)),
+        Math.max(0, options.indexOf(initialValue)),
     );
 
-    valueRef.current = value;
     onChangeRef.current = onChange;
 
+    // Only enough inset to center the active row — keeps the scroll viewport tall.
     const spacer = (WHEEL_HEIGHT - ITEM_HEIGHT) / 2;
 
-    const setScrollTop = useEffectEvent(
-        (nextIndex: number, smooth: boolean) => {
-            const node = listRef.current;
+    const notify = (index: number): void => {
+        const next = options[index];
 
-            if (!node) {
-                return;
-            }
-
-            programmaticRef.current = true;
-            node.scrollTo({
-                top: nextIndex * ITEM_HEIGHT,
-                behavior: smooth ? 'smooth' : 'auto',
-            });
-
-            window.setTimeout(
-                () => {
-                    programmaticRef.current = false;
-                },
-                smooth ? 220 : 32,
-            );
-        },
-    );
-
-    const commitIndex = useEffectEvent((nextIndex: number) => {
-        const clamped = Math.min(
-            options.length - 1,
-            Math.max(0, nextIndex),
-        );
-        const nextValue = options[clamped];
-
-        setActiveIndex(clamped);
-        setScrollTop(clamped, false);
-
-        if (nextValue && nextValue !== valueRef.current) {
-            onChangeRef.current(nextValue);
-        }
-    });
-
-    const scheduleSettle = useEffectEvent(() => {
-        if (settleTimerRef.current) {
-            clearTimeout(settleTimerRef.current);
+        if (!next) {
+            return;
         }
 
-        settleTimerRef.current = setTimeout(() => {
-            const node = listRef.current;
+        onChangeRef.current(next);
+    };
 
-            if (!node) {
-                return;
-            }
+    const alignToIndex = (index: number): void => {
+        const node = listRef.current;
 
-            commitIndex(indexFromScrollTop(node.scrollTop, options.length));
-        }, SETTLE_MS);
-    });
+        if (!node) {
+            return;
+        }
+
+        node.scrollTop = index * ITEM_HEIGHT;
+    };
+
+    const settleFromScroll = (): void => {
+        const node = listRef.current;
+
+        if (!node) {
+            return;
+        }
+
+        const nextIndex = indexFromScrollTop(node.scrollTop, options.length);
+        setActiveIndex(nextIndex);
+        notify(nextIndex);
+    };
 
     useEffect(() => {
-        const initial = Math.max(0, options.indexOf(value));
-        setActiveIndex(initial);
+        const startIndex = Math.max(0, options.indexOf(initialValue));
+        setActiveIndex(startIndex);
+        notify(startIndex);
 
-        const frame = window.requestAnimationFrame(() => {
-            window.requestAnimationFrame(() => {
-                setScrollTop(initial, false);
-            });
-        });
+        const timer = window.setTimeout(() => {
+            alignToIndex(startIndex);
+        }, 40);
 
         return () => {
-            window.cancelAnimationFrame(frame);
+            window.clearTimeout(timer);
 
             if (settleTimerRef.current) {
                 clearTimeout(settleTimerRef.current);
             }
         };
-        // Intentional mount-only alignment after popover layout.
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- mount sync
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- mount / session only
     }, []);
-
-    const handleScroll = (event: UIEvent<HTMLDivElement>): void => {
-        if (programmaticRef.current) {
-            return;
-        }
-
-        const nextIndex = indexFromScrollTop(
-            event.currentTarget.scrollTop,
-            options.length,
-        );
-        setActiveIndex(nextIndex);
-        scheduleSettle();
-    };
 
     return (
         <div
             className={cn('relative min-w-0 flex-1', className)}
             aria-label={ariaLabel}
             role="listbox"
-            aria-activedescendant={`${ariaLabel}-${activeIndex}`}
         >
             <div
                 ref={listRef}
-                onScroll={handleScroll}
-                className="h-full snap-y snap-mandatory overflow-y-auto overscroll-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                onScroll={() => {
+                    const node = listRef.current;
+
+                    if (!node) {
+                        return;
+                    }
+
+                    setActiveIndex(
+                        indexFromScrollTop(node.scrollTop, options.length),
+                    );
+
+                    if (settleTimerRef.current) {
+                        clearTimeout(settleTimerRef.current);
+                    }
+
+                    settleTimerRef.current = setTimeout(() => {
+                        settleFromScroll();
+                    }, SETTLE_MS);
+                }}
+                className="h-full snap-y snap-mandatory overflow-y-auto overscroll-contain touch-pan-y [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
                 <div style={{ height: spacer }} aria-hidden />
                 {options.map((option, optionIndex) => {
@@ -257,24 +232,31 @@ function WheelColumn({
                     return (
                         <div
                             key={option}
-                            id={`${ariaLabel}-${optionIndex}`}
                             role="option"
                             aria-selected={isSelected}
-                            onClick={() => commitIndex(optionIndex)}
+                            onClick={() => {
+                                if (settleTimerRef.current) {
+                                    clearTimeout(settleTimerRef.current);
+                                }
+
+                                alignToIndex(optionIndex);
+                                setActiveIndex(optionIndex);
+                                notify(optionIndex);
+                            }}
                             className={cn(
-                                'flex w-full cursor-pointer snap-center items-center justify-center transition-[color,opacity,transform] duration-100',
+                                'flex w-full cursor-pointer snap-center items-center justify-center select-none',
                                 isSelected
-                                    ? 'text-foreground text-xl font-semibold'
-                                    : 'text-muted-foreground font-normal',
+                                    ? 'text-foreground text-2xl font-semibold'
+                                    : 'text-muted-foreground text-lg font-normal',
                             )}
                             style={{
                                 height: ITEM_HEIGHT,
                                 opacity: isSelected
                                     ? 1
-                                    : Math.max(0.25, 1 - distance * 0.28),
+                                    : Math.max(0.2, 1 - distance * 0.18),
                                 transform: isSelected
                                     ? 'scale(1)'
-                                    : `scale(${Math.max(0.82, 1 - distance * 0.06)})`,
+                                    : `scale(${Math.max(0.8, 1 - distance * 0.05)})`,
                             }}
                         >
                             {option}
@@ -299,31 +281,18 @@ export function TimeSelect({
     const [open, setOpen] = useState(false);
     const [session, setSession] = useState(0);
     const committed = parse24Hour(value);
-    const [draft, setDraft] = useState<ParsedTime>(
-        () => committed ?? defaultDraft(),
-    );
-    const draftRef = useRef(draft);
-    draftRef.current = draft;
-
-    const openPicker = (): void => {
-        const next = committed ?? defaultDraft();
-        setDraft(next);
-        draftRef.current = next;
-        setSession((current) => current + 1);
-        setOpen(true);
-    };
+    const draftRef = useRef<ParsedTime>(committed ?? defaultDraft());
 
     return (
         <Popover
             open={open}
             onOpenChange={(nextOpen) => {
                 if (nextOpen) {
-                    openPicker();
-
-                    return;
+                    draftRef.current = committed ?? defaultDraft();
+                    setSession((current) => current + 1);
                 }
 
-                setOpen(false);
+                setOpen(nextOpen);
             }}
         >
             <PopoverTrigger asChild>
@@ -352,21 +321,22 @@ export function TimeSelect({
             <PopoverContent
                 align="start"
                 sideOffset={4}
-                className="w-[17.5rem] overflow-hidden p-0 shadow-lg"
+                className="w-72 overflow-hidden p-0 shadow-lg"
                 onOpenAutoFocus={(event) => event.preventDefault()}
             >
                 <div className="relative" style={{ height: WHEEL_HEIGHT }}>
                     <div
                         aria-hidden
-                        className="bg-muted/70 pointer-events-none absolute inset-x-3 top-1/2 z-10 h-10 -translate-y-1/2 rounded-lg"
+                        className="bg-muted/70 pointer-events-none absolute inset-x-2 top-1/2 z-10 h-11 -translate-y-1/2 rounded-lg"
+                    />
+                    {/* Thin fades so more of the scroll area stays usable */}
+                    <div
+                        aria-hidden
+                        className="from-popover pointer-events-none absolute inset-x-0 top-0 z-20 h-8 bg-gradient-to-b to-transparent"
                     />
                     <div
                         aria-hidden
-                        className="from-popover pointer-events-none absolute inset-x-0 top-0 z-20 h-12 bg-gradient-to-b to-transparent"
-                    />
-                    <div
-                        aria-hidden
-                        className="from-popover pointer-events-none absolute inset-x-0 bottom-0 z-20 h-12 bg-gradient-to-t to-transparent"
+                        className="from-popover pointer-events-none absolute inset-x-0 bottom-0 z-20 h-8 bg-gradient-to-t to-transparent"
                     />
 
                     <div className="relative z-0 flex h-full px-1">
@@ -374,45 +344,36 @@ export function TimeSelect({
                             key={`hour-${session}`}
                             aria-label="Hour"
                             options={HOURS}
-                            value={draft.hour12}
+                            initialValue={draftRef.current.hour12}
                             onChange={(hour12) => {
-                                setDraft((current) => {
-                                    const next = { ...current, hour12 };
-                                    draftRef.current = next;
-
-                                    return next;
-                                });
+                                draftRef.current = {
+                                    ...draftRef.current,
+                                    hour12,
+                                };
                             }}
                         />
                         <WheelColumn
                             key={`minute-${session}`}
                             aria-label="Minute"
                             options={MINUTES}
-                            value={draft.minute}
+                            initialValue={draftRef.current.minute}
                             onChange={(minute) => {
-                                setDraft((current) => {
-                                    const next = { ...current, minute };
-                                    draftRef.current = next;
-
-                                    return next;
-                                });
+                                draftRef.current = {
+                                    ...draftRef.current,
+                                    minute,
+                                };
                             }}
                         />
                         <WheelColumn
                             key={`period-${session}`}
                             aria-label="Period"
                             options={PERIODS}
-                            value={draft.period}
+                            initialValue={draftRef.current.period}
                             onChange={(period) => {
-                                setDraft((current) => {
-                                    const next = {
-                                        ...current,
-                                        period: period as Period,
-                                    };
-                                    draftRef.current = next;
-
-                                    return next;
-                                });
+                                draftRef.current = {
+                                    ...draftRef.current,
+                                    period: period as Period,
+                                };
                             }}
                             className="max-w-16"
                         />
