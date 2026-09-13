@@ -25,6 +25,12 @@ type ProductShow = {
     status: boolean;
     image_url: string | null;
     category_name: string;
+    gallery?: {
+        id: number;
+        url: string;
+        path?: string;
+        sort_order?: number;
+    }[];
     variants: BranchProductVariantRow[];
     enabled: boolean;
     inventory: BranchInventorySnapshot | null;
@@ -138,6 +144,7 @@ export default function PlatformBranchProductShow({
                     description={product.description}
                     categoryName={product.category_name}
                     imageUrl={product.image_url}
+                    gallery={product.gallery ?? []}
                     enabled={enabled}
                     lowStock={Boolean(product.inventory?.is_low_stock)}
                     onEnabledChange={toggleEnabled}

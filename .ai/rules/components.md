@@ -1,6 +1,7 @@
 ---
 paths:
   - resources/js/components/file-upload.tsx
+  - resources/js/components/product-gallery.tsx
 ---
 
 # Components
@@ -13,3 +14,6 @@ When maxFiles is exceeded, emit one count rejection summarizing N skipped files 
 
 ## FileUpload hint is human-readable
 FileUpload dropzone never dumps raw accept MIME/extension lists into helper text (overflows). Show hint + Max N MB / up to N files only; keep accept for validation/input only.
+
+## Compact gallery with lightbox
+Product show gallery uses compact thumbnails (dense grid) + yet-another-react-lightbox click-to-preview. BranchProductShowPayload includes gallery; branch/platform inventory show render ProductGallery.

@@ -13,6 +13,7 @@ import {
 } from '@/components/data-table';
 import Heading from '@/components/heading';
 import { VariantForm } from '@/components/platform/variant-form';
+import { ProductGallery } from '@/components/product-gallery';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -281,36 +282,10 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Gallery</CardTitle>
-                        <CardDescription>
-                            Extra images shown on the product page
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {product.gallery.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
-                                No gallery images yet.
-                            </p>
-                        ) : (
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                                {product.gallery.map((image) => (
-                                    <div
-                                        key={image.id}
-                                        className="overflow-hidden rounded-xl border bg-muted/20"
-                                    >
-                                        <img
-                                            src={image.url}
-                                            alt={`${product.name} gallery`}
-                                            className="aspect-square w-full object-cover"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                <ProductGallery
+                    productName={product.name}
+                    images={product.gallery}
+                />
 
                 <Card>
                     <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
