@@ -126,16 +126,15 @@ export default function BranchProductsCreate({
                                         type="button"
                                         size="sm"
                                         onClick={() => {
-                                            reuseForm
-                                                .transform((data) => ({
-                                                    ...data,
-                                                    product_id: suggestion.id,
-                                                }))
-                                                .post(
-                                                    ProductController.reuse.url(
-                                                        branch.slug,
-                                                    ),
-                                                );
+                                            reuseForm.transform((data) => ({
+                                                ...data,
+                                                product_id: suggestion.id,
+                                            }));
+                                            reuseForm.post(
+                                                ProductController.reuse.url(
+                                                    branch.slug,
+                                                ),
+                                            );
                                         }}
                                         disabled={reuseForm.processing}
                                     >
