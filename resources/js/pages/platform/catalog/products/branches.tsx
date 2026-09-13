@@ -1,39 +1,38 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
+import { type ColumnDef } from '@tanstack/react-table';
 import {
     AlertTriangle,
     Building2,
     CircleDollarSign,
     PackageCheck,
-    Search,
     Settings2,
-    Store,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import {
+    DataTable,
+    DataTableColumnHeader,
+    DataTableRowActions,
+    DataTableToolbar,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
 import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     colorPickerStyle,
     isTransparentColorPickerValue,
@@ -42,24 +41,20 @@ import {
 } from '@/lib/color-picker';
 import { cn } from '@/lib/utils';
 
-type BranchInventoryRow = {
+type BranchRow = {
     id: number;
     name: string;
     slug: string;
     code: string | null;
     branch_active: boolean;
     enabled: boolean;
-    inventory: {
-        quantity: number;
-        available_quantity: number;
-        minimum_stock: number;
-        is_low_stock: boolean;
-    } | null;
-    price: {
-        selling_price: string;
-        discount_type: 'none' | 'fixed' | 'percent';
-        discount_price: string | null;
-    } | null;
+    quantity: number | null;
+    available_quantity: number | null;
+    minimum_stock: number | null;
+    is_low_stock: boolean;
+    selling_price: string | null;
+    discount_type: 'none' | 'fixed' | 'percent';
+    discount_price: string | null;
     manage_url: string;
 };
 
@@ -81,50 +76,31 @@ type Summary = {
     missing_price: number;
 };
 
-type ScopeFilter =
-    | 'all'
-    | 'enabled'
-    | 'disabled'
-    | 'low_stock'
-    | 'missing_price';
-
-const SCOPE_OPTIONS: { value: ScopeFilter; label: string }[] = [
-    { value: 'all', label: 'All' },
-    { value: 'enabled', label: 'Enabled' },
-    { value: 'disabled', label: 'Disabled' },
-    { value: 'low_stock', label: 'Low stock' },
-    { value: 'missing_price', label: 'Missing price' },
-];
-
-function formatPrice(row: BranchInventoryRow): string {
-    if (!row.price) {
+function formatPrice(row: BranchRow): string {
+    if (row.selling_price === null) {
         return '—';
     }
 
-    const base = row.price.selling_price;
-
-    if (row.price.discount_type === 'percent' && row.price.discount_price) {
-        return `${base} · ${row.price.discount_price}% off`;
+    if (row.discount_type === 'percent' && row.discount_price) {
+        return `${row.selling_price} · ${row.discount_price}% off`;
     }
 
-    if (row.price.discount_type === 'fixed' && row.price.discount_price) {
-        return `${base} · sale ${row.price.discount_price}`;
+    if (row.discount_type === 'fixed' && row.discount_price) {
+        return `${row.selling_price} · sale ${row.discount_price}`;
     }
 
-    return base;
+    return row.selling_price;
 }
 
 export default function PlatformProductBranches({
     product,
     summary,
-    branches,
+    table: tablePayload,
 }: {
     product: ProductSummary;
     summary: Summary;
-    branches: BranchInventoryRow[];
+    table: DataTablePayload<BranchRow>;
 }) {
-    const [search, setSearch] = useState('');
-    const [scope, setScope] = useState<ScopeFilter>('all');
     const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
 
     const colorCode = normalizeCatalogColorPickerValue(product.color_code);
@@ -145,52 +121,133 @@ export default function PlatformProductBranches({
         ],
     });
 
-    const filtered = useMemo(() => {
-        const needle = search.trim().toLowerCase();
-
-        return branches.filter((row) => {
-            if (scope === 'enabled' && !row.enabled) {
-                return false;
-            }
-
-            if (scope === 'disabled' && row.enabled) {
-                return false;
-            }
-
-            if (scope === 'low_stock' && !row.inventory?.is_low_stock) {
-                return false;
-            }
-
-            if (scope === 'missing_price' && row.price !== null) {
-                return false;
-            }
-
-            if (!needle) {
-                return true;
-            }
-
-            return (
-                row.name.toLowerCase().includes(needle) ||
-                row.slug.toLowerCase().includes(needle) ||
-                (row.code?.toLowerCase().includes(needle) ?? false)
-            );
-        });
-    }, [branches, scope, search]);
-
-    const toggleEnabled = (row: BranchInventoryRow, next: boolean) => {
-        setTogglingSlug(row.slug);
-        router.put(
-            BranchInventoryController.toggle.url({
-                branch: row.slug,
-                product: product.slug,
-            }),
-            { status: next },
-            {
-                preserveScroll: true,
-                onFinish: () => setTogglingSlug(null),
+    const query = useDataTableQuery({
+        indexUrl: BranchInventoryController.forProduct.url(product.slug),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
+                enabled: tablePayload.filters.enabled ?? null,
+                low_stock: tablePayload.filters.low_stock ?? null,
+                missing_price: tablePayload.filters.missing_price ?? null,
             },
-        );
-    };
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
+    });
+
+    const columns = useMemo<ColumnDef<BranchRow>[]>(
+        () => [
+            {
+                accessorKey: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Branch"
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <div className="flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium">
+                                {row.original.name}
+                            </span>
+                            {!row.original.branch_active ? (
+                                <Badge variant="secondary">
+                                    Branch inactive
+                                </Badge>
+                            ) : null}
+                            {row.original.is_low_stock ? (
+                                <Badge
+                                    variant="outline"
+                                    className="border-destructive/40 text-destructive"
+                                >
+                                    Low stock
+                                </Badge>
+                            ) : null}
+                        </div>
+                        <div className="text-muted-foreground text-xs">
+                            {row.original.code
+                                ? `${row.original.code} · `
+                                : ''}
+                            /{row.original.slug}
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                id: 'enabled',
+                header: 'Enabled',
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.original.enabled}
+                        disabled={togglingSlug === row.original.slug}
+                        onCheckedChange={(checked) => {
+                            setTogglingSlug(row.original.slug);
+                            router.put(
+                                BranchInventoryController.toggle.url({
+                                    branch: row.original.slug,
+                                    product: product.slug,
+                                }),
+                                { status: checked === true },
+                                {
+                                    preserveScroll: true,
+                                    onFinish: () => setTogglingSlug(null),
+                                },
+                            );
+                        }}
+                        aria-label={`Enable ${row.original.name}`}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'quantity',
+                header: 'On hand',
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {row.original.quantity ?? '—'}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'available_quantity',
+                header: 'Available',
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {row.original.available_quantity ?? '—'}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'selling_price',
+                header: 'Price',
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {formatPrice(row.original)}
+                    </span>
+                ),
+            },
+            {
+                id: 'actions',
+                header: 'Actions',
+                cell: ({ row }) => (
+                    <DataTableRowActions
+                        items={[
+                            {
+                                label: 'Manage',
+                                icon: Settings2,
+                                href: row.original.manage_url,
+                            },
+                        ]}
+                    />
+                ),
+            },
+        ],
+        [product.slug, query.sort, query.toggleSort, togglingSlug],
+    );
 
     return (
         <>
@@ -227,7 +284,9 @@ export default function PlatformProductBranches({
                                 description={`Inventory, pricing, and enablement for ${product.name}`}
                             />
                             <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-2 text-sm">
-                                <span>{product.category_name || 'Uncategorized'}</span>
+                                <span>
+                                    {product.category_name || 'Uncategorized'}
+                                </span>
                                 {product.sku ? (
                                     <>
                                         <span aria-hidden>·</span>
@@ -294,166 +353,114 @@ export default function PlatformProductBranches({
                     />
                 </div>
 
-                <Card className="shadow-none">
-                    <CardHeader className="gap-4 border-b border-border/60 pb-4">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div className="space-y-1">
-                                <CardTitle className="flex items-center gap-2 text-base">
-                                    <Store className="text-muted-foreground size-4" />
-                                    Branch inventory
-                                </CardTitle>
-                                <CardDescription>
-                                    Enable a branch, then open Manage to adjust
-                                    stock and pricing.
-                                </CardDescription>
-                            </div>
-                            <p className="text-muted-foreground text-xs tabular-nums">
-                                {filtered.length} of {branches.length} shown
-                            </p>
-                        </div>
-                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                            <div className="flex flex-wrap gap-1.5">
-                                {SCOPE_OPTIONS.map((option) => (
-                                    <Button
-                                        key={option.value}
-                                        type="button"
-                                        size="sm"
-                                        variant={
-                                            scope === option.value
-                                                ? 'default'
-                                                : 'outline'
-                                        }
-                                        className="h-8"
-                                        onClick={() => setScope(option.value)}
-                                    >
-                                        {option.label}
-                                    </Button>
-                                ))}
-                            </div>
-                            <div className="relative w-full max-w-sm">
-                                <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-                                <Input
-                                    value={search}
-                                    onChange={(event) =>
-                                        setSearch(event.target.value)
-                                    }
-                                    placeholder="Search branch name, slug, or code…"
-                                    className="pl-9"
-                                />
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="hover:bg-transparent">
-                                    <TableHead>Branch</TableHead>
-                                    <TableHead className="w-[7rem]">
-                                        Enabled
-                                    </TableHead>
-                                    <TableHead className="w-[9rem]">
-                                        On hand
-                                    </TableHead>
-                                    <TableHead className="w-[9rem]">
-                                        Available
-                                    </TableHead>
-                                    <TableHead className="min-w-[10rem]">
-                                        Price
-                                    </TableHead>
-                                    <TableHead className="w-[7rem] text-right">
-                                        Actions
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filtered.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={6}
-                                            className="text-muted-foreground h-24 text-center"
+                <DataTable
+                    columns={columns}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
+                    emptyMessage="No branches match this filter."
+                    toolbar={
+                        <DataTableToolbar
+                            search={query.search}
+                            onSearchChange={query.setSearch}
+                            searchPlaceholder="Search branch name, slug, or code…"
+                            onClear={query.clearFilters}
+                            filters={
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label>Enabled</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.enabled ?? 'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'enabled',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
                                         >
-                                            No branches match this filter.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    filtered.map((row) => (
-                                        <TableRow key={row.id}>
-                                            <TableCell>
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <span className="font-medium">
-                                                            {row.name}
-                                                        </span>
-                                                        {!row.branch_active ? (
-                                                            <Badge variant="secondary">
-                                                                Branch inactive
-                                                            </Badge>
-                                                        ) : null}
-                                                        {row.inventory
-                                                            ?.is_low_stock ? (
-                                                            <Badge
-                                                                variant="outline"
-                                                                className="border-destructive/40 text-destructive"
-                                                            >
-                                                                Low stock
-                                                            </Badge>
-                                                        ) : null}
-                                                    </div>
-                                                    <div className="text-muted-foreground text-xs">
-                                                        {row.code
-                                                            ? `${row.code} · `
-                                                            : ''}
-                                                        /{row.slug}
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Checkbox
-                                                    checked={row.enabled}
-                                                    disabled={
-                                                        togglingSlug ===
-                                                        row.slug
-                                                    }
-                                                    onCheckedChange={(
-                                                        checked,
-                                                    ) =>
-                                                        toggleEnabled(
-                                                            row,
-                                                            checked === true,
-                                                        )
-                                                    }
-                                                    aria-label={`Enable ${row.name}`}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="tabular-nums">
-                                                {row.inventory?.quantity ?? '—'}
-                                            </TableCell>
-                                            <TableCell className="tabular-nums">
-                                                {row.inventory
-                                                    ?.available_quantity ?? '—'}
-                                            </TableCell>
-                                            <TableCell className="tabular-nums">
-                                                {formatPrice(row)}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    asChild
-                                                >
-                                                    <Link href={row.manage_url}>
-                                                        <Settings2 className="size-3.5" />
-                                                        Manage
-                                                    </Link>
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Enabled" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All enablement
+                                                </SelectItem>
+                                                <SelectItem value="1">
+                                                    Enabled
+                                                </SelectItem>
+                                                <SelectItem value="0">
+                                                    Disabled
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Stock</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.low_stock ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'low_stock',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Stock" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All stock
+                                                </SelectItem>
+                                                <SelectItem value="1">
+                                                    Low stock
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Price</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.missing_price ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'missing_price',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Price" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All prices
+                                                </SelectItem>
+                                                <SelectItem value="1">
+                                                    Missing price
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
+                            }
+                        />
+                    }
+                />
             </div>
         </>
     );

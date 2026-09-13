@@ -194,6 +194,13 @@ test('platform can open product branch inventory overview', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $product = Product::factory()->create(['slug' => 'branch-overview-pack']);
     $branchCount = Branch::query()->count();
+    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.enable', [$downtown, $product]), [
+            'status' => true,
+        ])
+        ->assertRedirect();
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.products.branches', $product))
@@ -202,8 +209,74 @@ test('platform can open product branch inventory overview', function () {
             ->component('platform/catalog/products/branches')
             ->where('product.slug', 'branch-overview-pack')
             ->where('summary.branches', $branchCount)
-            ->has('branches', $branchCount)
-            ->where('branches.0.manage_url', fn ($url) => is_string($url) && str_contains($url, '/products/')));
+            ->where('summary.enabled', 1)
+            ->has('table.data', $branchCount)
+            ->has('table.meta')
+            ->has('table.links')
+            ->where('table.data.0.manage_url', fn ($url) => is_string($url) && str_contains($url, '/products/')));
+});
+
+test('platform can search and filter product branch inventory table', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $product = Product::factory()->create(['slug' => 'branch-filter-pack']);
+    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.enable', [$downtown, $product]), [
+            'status' => true,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$downtown, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 2,
+            'minimum_stock' => 5,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.products.branches', [
+            'product' => $product,
+            'filter' => ['search' => 'Downtown'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('table.data', 1)
+            ->where('table.data.0.slug', 'downtown'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.products.branches', [
+            'product' => $product,
+            'filter' => ['enabled' => '1'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('table.data', 1)
+            ->where('table.data.0.slug', 'downtown'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.products.branches', [
+            'product' => $product,
+            'filter' => ['low_stock' => '1'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['slug'] === 'downtown' && $row['is_low_stock'] === true,
+            )));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.products.branches', [
+            'product' => $product,
+            'filter' => ['missing_price' => '1'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['slug'] === $uptown->slug && $row['selling_price'] === null,
+            )));
 });
 
 test('platform staff without manage-branch-inventories cannot open product branch overview', function () {

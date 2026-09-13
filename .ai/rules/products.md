@@ -11,3 +11,6 @@ Product show variants use in-memory DataTable (toClientDataTablePayload + showPa
 
 ## Catalog Manage branches overview
 Platform catalog products expose Manage branches (permission manage-branch-inventories) to GET platform.products.branches — a product-centric list of every branch with enable/stock/price snapshots and Manage → platform.branches.products.show. Wire from products index row actions and product show header/alert; do not nest this under branch-first inventory only.
+
+## Manage branches uses server DataTable
+Manage branches list is a server DataTable (filter[search|enabled|low_stock|missing_price], sort, per_page, page) via useDataTableQuery — not client-only filtering. Keep DemoStatCard summary from server summary prop.
