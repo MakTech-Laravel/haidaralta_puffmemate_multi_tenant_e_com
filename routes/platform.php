@@ -104,6 +104,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     });
 
     Route::middleware(['permission:manage-catalog'])->group(function () {
+        Route::get('categories/suggestions', [PlatformCategoryController::class, 'suggestions'])
+            ->name('platform.categories.suggestions');
         Route::resource('categories', PlatformCategoryController::class)
             ->names('platform.categories')
             ->middlewareFor(['store', 'update'], 'precognitive');

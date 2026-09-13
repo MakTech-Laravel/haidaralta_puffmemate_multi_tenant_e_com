@@ -91,3 +91,61 @@ test('branch catalog mutations require manage-branch-products', function () {
         ])
         ->assertForbidden();
 });
+
+test('branch category suggestions match existing catalog items', function () {
+    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
+    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $match = Category::factory()->create([
+        'name' => 'Pro Coils',
+        'slug' => 'pro-coils',
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->getJson(route('branch.categories.suggestions', [$branch, 'q' => 'Pro']))
+        ->assertOk()
+        ->assertJsonFragment(['id' => $match->id]);
+});
+
+test('precognitive branch category store returns 422 for a taken slug', function () {
+    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
+    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $existing = Category::factory()->create(['slug' => 'branch-taken-slug']);
+    $before = Category::query()->count();
+
+    $this->actingAs($staff, 'branch')
+        ->withHeaders([
+            'Precognition' => 'true',
+            'Precognition-Validate-Only' => 'slug',
+            'Accept' => 'application/json',
+        ])
+        ->post(route('branch.categories.store', $branch), [
+            'slug' => $existing->slug,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['slug'])
+        ->assertHeader('Precognition', 'true');
+
+    expect(Category::query()->count())->toBe($before);
+});
+
+test('precognitive branch product store returns 422 for a taken slug', function () {
+    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
+    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $existing = Product::factory()->create(['slug' => 'branch-taken-product']);
+    $before = Product::query()->count();
+
+    $this->actingAs($staff, 'branch')
+        ->withHeaders([
+            'Precognition' => 'true',
+            'Precognition-Validate-Only' => 'slug',
+            'Accept' => 'application/json',
+        ])
+        ->post(route('branch.products.store', $branch), [
+            'slug' => $existing->slug,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['slug'])
+        ->assertHeader('Precognition', 'true');
+
+    expect(Product::query()->count())->toBe($before);
+});

@@ -126,6 +126,74 @@ test('platform product suggestions match existing catalog items', function () {
         ->assertJsonFragment(['id' => $mesh->id]);
 });
 
+test('platform category suggestions match existing catalog items', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $match = Category::factory()->create([
+        'name' => 'Air Devices',
+        'slug' => 'air-devices',
+    ]);
+    $other = Category::factory()->create([
+        'name' => 'Berry Pods',
+        'slug' => 'berry-pods',
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.categories.suggestions', ['q' => 'Air']))
+        ->assertOk()
+        ->assertJsonFragment(['id' => $match->id])
+        ->assertJsonMissing(['id' => $other->id]);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.categories.suggestions', [
+            'q' => 'Air',
+            'exclude' => $match->id,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('suggestions', []);
+});
+
+test('precognitive platform category store returns 422 for a taken slug', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $existing = Category::factory()->create(['slug' => 'taken-category']);
+    $before = Category::query()->count();
+
+    $this->actingAs($admin, 'platform')
+        ->withHeaders([
+            'Precognition' => 'true',
+            'Precognition-Validate-Only' => 'slug',
+            'Accept' => 'application/json',
+        ])
+        ->post(route('platform.categories.store'), [
+            'slug' => $existing->slug,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['slug'])
+        ->assertHeader('Precognition', 'true');
+
+    expect(Category::query()->count())->toBe($before);
+});
+
+test('precognitive platform product store returns 422 for a taken slug', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $existing = Product::factory()->create(['slug' => 'taken-product']);
+    $before = Product::query()->count();
+
+    $this->actingAs($admin, 'platform')
+        ->withHeaders([
+            'Precognition' => 'true',
+            'Precognition-Validate-Only' => 'slug',
+            'Accept' => 'application/json',
+        ])
+        ->post(route('platform.products.store'), [
+            'slug' => $existing->slug,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['slug'])
+        ->assertHeader('Precognition', 'true');
+
+    expect(Product::query()->count())->toBe($before);
+});
+
 test('platform categories data table filters sorts and paginates', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 

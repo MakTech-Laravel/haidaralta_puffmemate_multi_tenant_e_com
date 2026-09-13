@@ -82,6 +82,17 @@ export default function BranchCategoriesEdit({
                     })}
                     parentOptions={parentOptions}
                     isEdit
+                    enableSuggestions
+                    suggestionsUrl={CategoryController.suggestions.url(
+                        branch.slug,
+                    )}
+                    suggestionShowHref={(slug) =>
+                        CategoryController.show.url({
+                            branch: branch.slug,
+                            category: slug,
+                        })
+                    }
+                    excludeCategoryId={category.id}
                     defaults={{
                         name: category.name,
                         slug: category.slug,

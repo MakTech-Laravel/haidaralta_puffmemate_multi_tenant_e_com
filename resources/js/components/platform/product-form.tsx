@@ -83,6 +83,9 @@ interface ProductFormProps {
     showBranchNotice?: boolean;
     /** Platform catalog create/edit — match existing products while typing. */
     enableSuggestions?: boolean;
+    /** Defaults to platform products suggestions when omitted. */
+    suggestionsUrl?: string;
+    suggestionShowHref?: (slug: string) => string;
     excludeProductId?: number | null;
     /** Branch create: include initial selling_price / quantity / minimum_stock. */
     branchOpsFields?: boolean;
@@ -107,6 +110,8 @@ export function ProductForm({
     isEdit = false,
     showBranchNotice = false,
     enableSuggestions = false,
+    suggestionsUrl,
+    suggestionShowHref,
     excludeProductId = null,
     branchOpsFields = false,
     showGallery = true,
@@ -228,21 +233,21 @@ export function ProductForm({
             return;
         }
 
+        const endpoint =
+            suggestionsUrl ?? ProductController.suggestions.url();
+
         const timer = window.setTimeout(() => {
-            fetch(
-                ProductController.suggestions.url({
-                    query: {
-                        q: query,
-                        ...(excludeProductId
-                            ? { exclude: excludeProductId }
-                            : {}),
-                    },
-                }),
-                {
-                    headers: { Accept: 'application/json' },
-                    credentials: 'same-origin',
-                },
-            )
+            const url = new URL(endpoint, window.location.origin);
+            url.searchParams.set('q', query);
+
+            if (excludeProductId) {
+                url.searchParams.set('exclude', String(excludeProductId));
+            }
+
+            fetch(url.toString(), {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            })
                 .then((response) => response.json())
                 .then((payload: { suggestions: ProductSuggestion[] }) => {
                     setSuggestions(payload.suggestions ?? []);
@@ -251,7 +256,12 @@ export function ProductForm({
         }, 300);
 
         return () => window.clearTimeout(timer);
-    }, [data.name, enableSuggestions, excludeProductId]);
+    }, [
+        data.name,
+        enableSuggestions,
+        excludeProductId,
+        suggestionsUrl,
+    ]);
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -440,6 +450,11 @@ export function ProductForm({
                                     onChange={(event) =>
                                         setData('name', event.target.value)
                                     }
+                                    onBlur={() => {
+                                        if (data.slug.trim() !== '') {
+                                            validate('slug');
+                                        }
+                                    }}
                                     required
                                     placeholder="e.g. Air Pro Kit"
                                     autoComplete="off"
@@ -456,7 +471,11 @@ export function ProductForm({
                                         setSlugTouched(true);
                                         setData('slug', event.target.value);
                                     }}
-                                    onBlur={() => validate('slug')}
+                                    onBlur={() => {
+                                        if (data.slug.trim() !== '') {
+                                            validate('slug');
+                                        }
+                                    }}
                                     required
                                     placeholder="e.g. air-pro-kit"
                                 />
@@ -507,9 +526,15 @@ export function ProductForm({
                                                 asChild
                                             >
                                                 <Link
-                                                    href={ProductController.show.url(
-                                                        suggestion.slug,
-                                                    )}
+                                                    href={
+                                                        suggestionShowHref
+                                                            ? suggestionShowHref(
+                                                                  suggestion.slug,
+                                                              )
+                                                            : ProductController.show.url(
+                                                                  suggestion.slug,
+                                                              )
+                                                    }
                                                 >
                                                     View
                                                 </Link>

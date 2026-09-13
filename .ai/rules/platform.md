@@ -2,13 +2,19 @@
 paths:
   - resources/js/components/platform/product-form.tsx
   - resources/js/components/platform/category-form.tsx
+  - 'resources/js/components/platform/{category,product}-form.tsx'
 ---
 
 # Platform
 
 ## Platform product form layout and suggestions
-Platform create/edit ProductForm: details left, media right, grid items-start (no sticky Media scroll). Media top row: ColorPicker + primary FileUpload side-by-side with items-stretch (equal card height); primary is full-width rectangular drop/preview on color tile (not avatar). Gallery grid max-h scroll. Over-limit gallery picks collapse to one count rejection message. enableSuggestions fetches platform.products.suggestions while typing name (not on branch ProductForm — branch has its own reuse search).
+Platform create/edit ProductForm: details left, media right, grid items-start (no sticky Media scroll). Media top row: ColorPicker + primary FileUpload side-by-side with items-stretch (equal card height); primary is full-width rectangular drop/preview on color tile (not avatar). Gallery grid max-h scroll. Over-limit gallery picks collapse to one count rejection message. enableSuggestions fetches suggestionsUrl (default platform.products.suggestions) while typing name. Branch edit can pass branch suggestions URL; branch create keeps its own reuse search above ProductForm.
 
+## Catalog slug unique via Precognition
+CategoryForm and ProductForm live-validate `slug` uniqueness with Inertia useForm Precognition (blur on name after auto-slug sync, and blur on slug). Store/update routes must keep `precognitive` middleware. validationTimeout 500.
+
+## Category form name suggestions
+CategoryForm enableSuggestions + suggestionsUrl + suggestionShowHref show similar categories while typing name (platform + branch create/edit). Exclude current id on edit.
 ## Product form multi-selects category_ids
 ProductForm categories field is multi-select Popover+Command combobox posting category_ids (number[], min 1). Full width; no auto-select on create — only defaults.category_ids on edit. Keep searchable; toggle chips/checks per option.
 
@@ -38,3 +44,6 @@ Category listing preview: do not shrink FileUpload into a nested max-w card. Kee
 
 ## Branch ProductForm ops fields hide gallery
 Branch create sets ProductForm branchOpsFields + showGallery=false. branchOpsFields adds selling_price/quantity/minimum_stock; gallery stays platform-only until createFromBranch supports it.
+
+## Catalog forms suggestions + slug Precognition
+CategoryForm and ProductForm: enableSuggestions with portal-specific suggestionsUrl; slug uniqueness via Precognition on name/slug blur. Routes need precognitive middleware.

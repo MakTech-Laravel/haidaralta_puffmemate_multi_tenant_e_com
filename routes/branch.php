@@ -13,6 +13,8 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
     Route::get('dashboard', [BranchDashboardController::class, 'index'])->name('branch.dashboard');
 
     Route::middleware(['permission:manage-branch-products'])->group(function () {
+        Route::get('categories/suggestions', [BranchCategoryController::class, 'suggestions'])
+            ->name('branch.categories.suggestions');
         Route::get('categories', [BranchCategoryController::class, 'index'])->name('branch.categories.index');
         Route::get('categories/create', [BranchCategoryController::class, 'create'])->name('branch.categories.create');
         Route::post('categories', [BranchCategoryController::class, 'store'])

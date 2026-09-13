@@ -44,6 +44,16 @@ export default function BranchCategoriesCreate({
                     action={CategoryController.store.form(branch.slug)}
                     parentOptions={parentOptions}
                     cancelHref={CategoryController.index.url(branch.slug)}
+                    enableSuggestions
+                    suggestionsUrl={CategoryController.suggestions.url(
+                        branch.slug,
+                    )}
+                    suggestionShowHref={(slug) =>
+                        CategoryController.show.url({
+                            branch: branch.slug,
+                            category: slug,
+                        })
+                    }
                 />
             </div>
         </>
