@@ -69,7 +69,7 @@ test('platform soft delete hides product from default index', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/catalog/products/index')
-            ->has('products.data', 0));
+            ->has('table.data', 0));
 });
 
 test('platform can restore a soft-deleted product', function () {
@@ -109,4 +109,135 @@ test('platform product suggestions match existing catalog items', function () {
         ]))
         ->assertOk()
         ->assertJsonPath('suggestions', []);
+});
+
+test('platform categories data table filters sorts and paginates', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $parent = Category::factory()->create(['name' => 'Parent DT', 'slug' => 'parent-dt']);
+    $active = Category::factory()->create([
+        'name' => 'Alpha Category',
+        'slug' => 'alpha-category',
+        'parent_id' => $parent->id,
+        'status' => true,
+    ]);
+    Category::factory()->create([
+        'name' => 'Beta Inactive',
+        'slug' => 'beta-inactive-cat',
+        'status' => false,
+    ]);
+    $trashed = Category::factory()->create([
+        'name' => 'Zulu Trashed',
+        'slug' => 'zulu-trashed-cat',
+        'status' => true,
+    ]);
+    $trashed->delete();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.categories.index', [
+            'filter' => [
+                'status' => 'active',
+                'parent_id' => $parent->id,
+            ],
+            'sort' => 'name',
+            'per_page' => 25,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/catalog/categories/index')
+            ->has('table.data', 1)
+            ->where('table.data.0.id', $active->id)
+            ->where('table.per_page', 25)
+            ->has('table.filterOptions.parents'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.categories.index', [
+            'filter' => ['trashed' => 'only'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('table.data', 1)
+            ->where('table.data.0.slug', 'zulu-trashed-cat'));
+});
+
+test('platform products data table filters sorts and paginates', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $fruit = Category::factory()->create(['name' => 'Fruit', 'slug' => 'fruit-dt']);
+    $gear = Category::factory()->create(['name' => 'Gear', 'slug' => 'gear-dt']);
+
+    $active = Product::factory()->create([
+        'category_id' => $fruit->id,
+        'name' => 'Alpha Active',
+        'slug' => 'alpha-active',
+        'status' => true,
+    ]);
+    Product::factory()->create([
+        'category_id' => $gear->id,
+        'name' => 'Beta Inactive',
+        'slug' => 'beta-inactive',
+        'status' => false,
+    ]);
+    $trashed = Product::factory()->create([
+        'category_id' => $fruit->id,
+        'name' => 'Zulu Trashed',
+        'slug' => 'zulu-trashed',
+        'status' => true,
+    ]);
+    $trashed->delete();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.products.index', [
+            'filter' => [
+                'status' => 'active',
+                'category_id' => $fruit->id,
+            ],
+            'sort' => 'name',
+            'per_page' => 25,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/catalog/products/index')
+            ->has('table.data', 1)
+            ->where('table.data.0.id', $active->id)
+            ->where('table.data.0.variants_count', 0)
+            ->where('table.per_page', 25)
+            ->has('table.filterOptions.categories'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.products.index', [
+            'filter' => ['trashed' => 'only'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('table.data', 1)
+            ->where('table.data.0.slug', 'zulu-trashed'));
+});
+
+test('platform categories data table filters by status', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $active = Category::factory()->create([
+        'name' => 'Active Cat',
+        'slug' => 'active-cat-dt',
+        'status' => true,
+    ]);
+    Category::factory()->create([
+        'name' => 'Inactive Cat',
+        'slug' => 'inactive-cat-dt',
+        'status' => false,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.categories.index', [
+            'filter' => [
+                'status' => 'active',
+                'search' => 'Active Cat',
+            ],
+            'sort' => 'name',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/catalog/categories/index')
+            ->has('table.data', 1)
+            ->where('table.data.0.id', $active->id)
+            ->where('table.data.0.products_count', 0));
 });

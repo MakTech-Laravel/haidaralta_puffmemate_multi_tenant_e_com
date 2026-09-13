@@ -1,29 +1,27 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { type ColumnDef } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import {
+    DataTable,
+    DataTableColumnHeader,
+    DataTableRowActions,
+    DataTableToolbar,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
-import { SimplePagination } from '@/components/simple-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
-    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 
 type StaffRow = {
     id: number;
@@ -35,52 +33,129 @@ type StaffRow = {
     roles: string[];
 };
 
-type PaginatedStaff = {
-    data: StaffRow[];
-    links: {
-        url: string | null;
-        label: string;
-        active: boolean;
-    }[];
-};
+type BranchOption = { id: number; name: string; slug: string };
 
 export default function PlatformBranchStaffIndex({
-    staff,
-    branches,
-    filters,
+    table: tablePayload,
 }: {
-    staff: PaginatedStaff;
-    branches: { id: number; name: string; slug: string }[];
-    filters: { branch_id: number | null; search: string };
+    table: DataTablePayload<StaffRow> & {
+        filterOptions?: { branches?: BranchOption[] };
+    };
 }) {
-    const [search, setSearch] = useState(filters.search);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
 
-    const queryFor = (overrides: {
-        branch_id?: string | null;
-        search?: string;
-    }) => {
-        const branchId =
-            overrides.branch_id !== undefined
-                ? overrides.branch_id
-                : filters.branch_id
-                  ? String(filters.branch_id)
-                  : null;
-        const nextSearch =
-            overrides.search !== undefined ? overrides.search : search;
+    const query = useDataTableQuery({
+        indexUrl: BranchStaffController.index.url(),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
+                branch_id: tablePayload.filters.branch_id ?? 'all',
+                is_active: tablePayload.filters.is_active ?? 'all',
+            },
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
+    });
 
-        return {
-            ...(branchId ? { branch_id: branchId } : {}),
-            ...(nextSearch ? { search: nextSearch } : {}),
-        };
-    };
+    const branches = tablePayload.filterOptions?.branches ?? [];
+
+    const columns = useMemo<ColumnDef<StaffRow>[]>(
+        () => [
+            {
+                accessorKey: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Name"
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'phone',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Phone"
+                        sortable
+                        sortKey="phone"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                id: 'branch',
+                header: 'Branch',
+                cell: ({ row }) => row.original.branch?.name ?? '—',
+            },
+            {
+                id: 'roles',
+                header: 'Roles',
+                cell: ({ row }) => (
+                    <div className="flex flex-wrap gap-1">
+                        {row.original.roles.map((role) => (
+                            <Badge key={role} variant="secondary">
+                                {role}
+                            </Badge>
+                        ))}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'is_active',
+                header: 'Status',
+                cell: ({ row }) => (
+                    <Badge
+                        variant={
+                            row.original.is_active ? 'default' : 'secondary'
+                        }
+                    >
+                        {row.original.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                ),
+            },
+            {
+                id: 'actions',
+                header: () => <span className="sr-only">Actions</span>,
+                cell: ({ row }) => (
+                    <DataTableRowActions
+                        items={[
+                            {
+                                label: 'View',
+                                href: BranchStaffController.show.url(
+                                    row.original.id,
+                                ),
+                            },
+                            {
+                                label: 'Edit',
+                                href: BranchStaffController.edit.url(
+                                    row.original.id,
+                                ),
+                            },
+                            {
+                                label: 'Delete',
+                                destructive: true,
+                                separatorBefore: true,
+                                onSelect: () => setDeletingId(row.original.id),
+                            },
+                        ]}
+                    />
+                ),
+            },
+        ],
+        [query.sort, query.toggleSort],
+    );
 
     return (
         <>
             <Head title="Branch staff" />
 
-            <div className="flex flex-col gap-6 p-2">
+            <div className="flex flex-col gap-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Branch staff"
@@ -93,192 +168,93 @@ export default function PlatformBranchStaffIndex({
                     </Button>
                 </div>
 
-                <div className="flex flex-wrap items-end gap-3">
-                    <form
-                        className="flex max-w-md flex-1 gap-2"
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            router.get(
-                                BranchStaffController.index.url({
-                                    query: queryFor({ search }),
-                                }),
-                                {},
-                                { preserveState: true },
-                            );
-                        }}
-                    >
-                        <Input
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Search by name or phone"
-                        />
-                        <Button type="submit" variant="secondary">
-                            Search
-                        </Button>
-                    </form>
-
-                    <div className="max-w-xs min-w-48">
-                        <Select
-                            value={
-                                filters.branch_id
-                                    ? String(filters.branch_id)
-                                    : 'all'
-                            }
-                            onValueChange={(value) => {
-                                router.get(
-                                    BranchStaffController.index.url({
-                                        query: queryFor({
-                                            branch_id:
-                                                value === 'all' ? null : value,
-                                            search: filters.search,
-                                        }),
-                                    }),
-                                    {},
-                                    { preserveState: true },
-                                );
-                            }}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Filter by branch" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="all">
-                                        All branches
-                                    </SelectItem>
-                                    {branches.map((branch) => (
-                                        <SelectItem
-                                            key={branch.id}
-                                            value={String(branch.id)}
+                <DataTable
+                    columns={columns}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
+                    emptyMessage="No branch staff found."
+                    toolbar={
+                        <DataTableToolbar
+                            search={query.search}
+                            onSearchChange={query.setSearch}
+                            searchPlaceholder="Search name or phone…"
+                            onClear={query.clearFilters}
+                            filters={
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label>Branch</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.branch_id ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'branch_id',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
                                         >
-                                            {branch.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                <div className="overflow-hidden rounded-xl border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Phone</TableHead>
-                                <TableHead>Branch</TableHead>
-                                <TableHead>Roles</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">
-                                    Actions
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {staff.data.length === 0 ? (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={6}
-                                        className="text-muted-foreground py-10 text-center"
-                                    >
-                                        No branch staff found.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                staff.data.map((member) => (
-                                    <TableRow key={member.id}>
-                                        <TableCell className="font-medium">
-                                            {member.name}
-                                        </TableCell>
-                                        <TableCell>{member.phone}</TableCell>
-                                        <TableCell>
-                                            {member.branch?.name ?? '—'}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-wrap gap-1">
-                                                {member.roles.map((role) => (
-                                                    <Badge
-                                                        key={role}
-                                                        variant="secondary"
+                                            <SelectTrigger className="w-[12rem]">
+                                                <SelectValue placeholder="Branch" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All branches
+                                                </SelectItem>
+                                                {branches.map((branch) => (
+                                                    <SelectItem
+                                                        key={branch.id}
+                                                        value={String(
+                                                            branch.id,
+                                                        )}
                                                     >
-                                                        {role}
-                                                    </Badge>
+                                                        {branch.name}
+                                                    </SelectItem>
                                                 ))}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                variant={
-                                                    member.is_active
-                                                        ? 'default'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {member.is_active
-                                                    ? 'Active'
-                                                    : 'Inactive'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={BranchStaffController.show.url(
-                                                            member.id,
-                                                        )}
-                                                        aria-label={`View ${member.name}`}
-                                                    >
-                                                        <Eye className="size-4" />
-                                                        <span className="sr-only">
-                                                            View
-                                                        </span>
-                                                    </Link>
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={BranchStaffController.edit.url(
-                                                            member.id,
-                                                        )}
-                                                        aria-label={`Edit ${member.name}`}
-                                                    >
-                                                        <Pencil className="size-4" />
-                                                        <span className="sr-only">
-                                                            Edit
-                                                        </span>
-                                                    </Link>
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    aria-label={`Delete ${member.name}`}
-                                                    onClick={() =>
-                                                        setDeletingId(member.id)
-                                                    }
-                                                >
-                                                    <Trash2 className="text-destructive size-4" />
-                                                    <span className="sr-only">
-                                                        Delete
-                                                    </span>
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-
-                <SimplePagination links={staff.links} />
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Status</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.is_active ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'is_active',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All statuses
+                                                </SelectItem>
+                                                <SelectItem value="active">
+                                                    Active
+                                                </SelectItem>
+                                                <SelectItem value="inactive">
+                                                    Inactive
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
+                            }
+                        />
+                    }
+                />
             </div>
 
             <ConfirmDeleteDialog
@@ -299,7 +275,6 @@ export default function PlatformBranchStaffIndex({
                     router.delete(
                         BranchStaffController.destroy.url(deletingId),
                         {
-                            preserveScroll: true,
                             onFinish: () => {
                                 setProcessing(false);
                                 setDeletingId(null);

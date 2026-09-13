@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\AuditsChanges;
+use App\Models\Concerns\HasDataTableConfig;
 use App\Support\SearchableTimestamp;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,22 @@ use Laravel\Scout\Searchable;
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
-    use AuditsChanges, HasFactory, Searchable, SoftDeletes;
+    use AuditsChanges, HasDataTableConfig, HasFactory, Searchable, SoftDeletes;
+
+    /**
+     * @var list<string>
+     */
+    public static array $dataTableSearchable = ['name', 'slug', 'sku'];
+
+    /**
+     * @var list<string>
+     */
+    public static array $dataTableSortable = ['name', 'sku', 'status', 'created_at', 'variants_count'];
+
+    /**
+     * @var list<string>
+     */
+    public static array $dataTableFilterable = ['category_id', 'status'];
 
     /**
      * @var list<string>

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\AuditsChanges;
+use App\Models\Concerns\HasDataTableConfig;
 use App\Support\SearchableTimestamp;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,22 @@ use Laravel\Scout\Searchable;
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
-    use AuditsChanges, HasFactory, Searchable, SoftDeletes;
+    use AuditsChanges, HasDataTableConfig, HasFactory, Searchable, SoftDeletes;
+
+    /**
+     * @var list<string>
+     */
+    public static array $dataTableSearchable = ['name', 'slug'];
+
+    /**
+     * @var list<string>
+     */
+    public static array $dataTableSortable = ['name', 'slug', 'status', 'created_at', 'products_count'];
+
+    /**
+     * @var list<string>
+     */
+    public static array $dataTableFilterable = ['parent_id', 'status'];
 
     /**
      * @var list<string>

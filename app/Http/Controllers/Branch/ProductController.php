@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Branch;
 
+use App\DataTables\BranchProductListingDataTable;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\AdjustBranchInventoryRequest;
@@ -10,7 +11,6 @@ use App\Http\Requests\Branch\StoreBranchProductRequest;
 use App\Http\Requests\Branch\ToggleBranchProductRequest;
 use App\Http\Requests\Branch\UpsertBranchProductPriceRequest;
 use App\Models\Branch;
-use App\Models\BranchProduct;
 use App\Models\BranchProductPrice;
 use App\Models\Category;
 use App\Models\Inventory;
@@ -42,70 +42,10 @@ class ProductController extends Controller
     public function index(Request $request): Response
     {
         $branch = $this->currentBranch();
-        $search = $request->string('search')->trim()->toString();
-
-        $products = $search !== ''
-            ? Product::search($search)->orderBy('name')->paginate(15)
-            : Product::query()->with('category:id,name,slug')->orderBy('name')->paginate(15);
-
-        if ($search !== '') {
-            $products->getCollection()->load('category:id,name,slug');
-        }
-
-        $productIds = $products->getCollection()->pluck('id');
-
-        $enabledMap = BranchProduct::query()
-            ->where('branch_id', $branch->id)
-            ->whereIn('product_id', $productIds)
-            ->pluck('status', 'product_id');
-
-        $inventories = Inventory::query()
-            ->where('branch_id', $branch->id)
-            ->whereIn('product_id', $productIds)
-            ->whereNull('variant_id')
-            ->get()
-            ->keyBy('product_id');
-
-        $prices = BranchProductPrice::query()
-            ->where('branch_id', $branch->id)
-            ->whereIn('product_id', $productIds)
-            ->whereNull('variant_id')
-            ->where('status', true)
-            ->get()
-            ->keyBy('product_id');
-
-        $products = $products
-            ->withQueryString()
-            ->through(function (Product $product) use ($enabledMap, $inventories, $prices): array {
-                /** @var Inventory|null $inventory */
-                $inventory = $inventories->get($product->id);
-                /** @var BranchProductPrice|null $price */
-                $price = $prices->get($product->id);
-
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'slug' => $product->slug,
-                    'sku' => $product->sku,
-                    'category' => $product->category
-                        ? ['id' => $product->category->id, 'name' => $product->category->name, 'slug' => $product->category->slug]
-                        : null,
-                    'status' => (bool) $product->status,
-                    'enabled' => (bool) ($enabledMap[$product->id] ?? false),
-                    'quantity' => $inventory?->quantity ?? 0,
-                    'available_quantity' => $inventory?->available_quantity ?? 0,
-                    'minimum_stock' => $inventory?->minimum_stock ?? 0,
-                    'is_low_stock' => $inventory?->isLowStock() ?? false,
-                    'selling_price' => $price?->selling_price,
-                    'discount_price' => $price?->discount_price,
-                    'image_url' => $product->imageUrl(),
-                ];
-            });
 
         return Inertia::render('branch/products/index', [
-            'products' => $products,
             'branch' => $branch->only(['id', 'name', 'slug']),
-            'filters' => ['search' => $search],
+            'table' => BranchProductListingDataTable::make($request, $branch, includeImage: true),
         ]);
     }
 

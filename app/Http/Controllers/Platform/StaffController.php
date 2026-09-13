@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\DataTables\PlatformStaffDataTable;
 use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
@@ -26,38 +27,8 @@ class StaffController extends Controller
      */
     public function index(Request $request): Response
     {
-        $this->usePlatformTeam();
-
-        $search = $request->string('search')->trim()->toString();
-
-        $staff = (
-            $search !== ''
-                ? User::search($search)
-                    ->where('user_type', UserType::PLATFORM->value)
-                    ->orderBy('name')
-                    ->paginate(15)
-                : User::query()
-                    ->where('user_type', UserType::PLATFORM)
-                    ->orderBy('name')
-                    ->paginate(15)
-        )
-            ->withQueryString()
-            ->through(function (User $user): array {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'phone' => $user->phone,
-                    'email' => $user->email,
-                    'is_active' => $user->is_active,
-                    'roles' => $user->getRoleNames()->values()->all(),
-                ];
-            });
-
         return Inertia::render('platform/staff/index', [
-            'staff' => $staff,
-            'filters' => [
-                'search' => $search,
-            ],
+            'table' => PlatformStaffDataTable::make($request),
         ]);
     }
 

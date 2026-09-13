@@ -1,29 +1,30 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { type ColumnDef } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import {
+    DataTable,
+    DataTableColumnHeader,
+    DataTableRowActions,
+    DataTableToolbar,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
-import { SimplePagination } from '@/components/simple-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
-type Branch = {
-    id: number;
-    name: string;
-    slug: string;
-    code: string;
-};
+type Branch = { id: number; name: string; slug: string; code: string };
 
 type StaffRow = {
     id: number;
@@ -34,33 +35,121 @@ type StaffRow = {
     roles: string[];
 };
 
-type PaginatedStaff = {
-    data: StaffRow[];
-    links: {
-        url: string | null;
-        label: string;
-        active: boolean;
-    }[];
-};
-
 export default function PlatformBranchScopedStaffIndex({
     branch,
-    staff,
-    filters,
+    table: tablePayload,
 }: {
     branch: Branch;
-    staff: PaginatedStaff;
-    filters: { search: string };
+    table: DataTablePayload<StaffRow>;
 }) {
-    const [search, setSearch] = useState(filters.search);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
+
+    const query = useDataTableQuery({
+        indexUrl: BranchScopedStaffController.index.url(branch.slug),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
+                is_active: tablePayload.filters.is_active ?? 'all',
+            },
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
+    });
+
+    const columns = useMemo<ColumnDef<StaffRow>[]>(
+        () => [
+            {
+                accessorKey: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Name"
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'phone',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Phone"
+                        sortable
+                        sortKey="phone"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                id: 'roles',
+                header: 'Roles',
+                cell: ({ row }) => (
+                    <div className="flex flex-wrap gap-1">
+                        {row.original.roles.map((role) => (
+                            <Badge key={role} variant="secondary">
+                                {role}
+                            </Badge>
+                        ))}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'is_active',
+                header: 'Status',
+                cell: ({ row }) => (
+                    <Badge
+                        variant={
+                            row.original.is_active ? 'default' : 'secondary'
+                        }
+                    >
+                        {row.original.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                ),
+            },
+            {
+                id: 'actions',
+                header: () => <span className="sr-only">Actions</span>,
+                cell: ({ row }) => (
+                    <DataTableRowActions
+                        items={[
+                            {
+                                label: 'View',
+                                href: BranchScopedStaffController.show.url([
+                                    branch.slug,
+                                    row.original.id,
+                                ]),
+                            },
+                            {
+                                label: 'Edit',
+                                href: BranchScopedStaffController.edit.url([
+                                    branch.slug,
+                                    row.original.id,
+                                ]),
+                            },
+                            {
+                                label: 'Delete',
+                                destructive: true,
+                                separatorBefore: true,
+                                onSelect: () => setDeletingId(row.original.id),
+                            },
+                        ]}
+                    />
+                ),
+            },
+        ],
+        [branch.slug, query.sort, query.toggleSort],
+    );
 
     return (
         <>
             <Head title={`Staff · ${branch.name}`} />
 
-            <div className="flex flex-col gap-6 p-2">
+            <div className="flex flex-col gap-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title={`${branch.name} staff`}
@@ -84,152 +173,52 @@ export default function PlatformBranchScopedStaffIndex({
                     </div>
                 </div>
 
-                <form
-                    className="flex max-w-md gap-2"
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        router.get(
-                            BranchScopedStaffController.index.url(branch.slug, {
-                                query: {
-                                    search: search || undefined,
-                                },
-                            }),
-                            {},
-                            { preserveState: true },
-                        );
-                    }}
-                >
-                    <Input
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Search by name or phone"
-                    />
-                    <Button type="submit" variant="secondary">
-                        Search
-                    </Button>
-                </form>
-
-                <div className="overflow-hidden rounded-xl border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Phone</TableHead>
-                                <TableHead>Roles</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">
-                                    Actions
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {staff.data.length === 0 ? (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={5}
-                                        className="text-muted-foreground py-10 text-center"
+                <DataTable
+                    columns={columns}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
+                    emptyMessage="No staff found for this branch."
+                    toolbar={
+                        <DataTableToolbar
+                            search={query.search}
+                            onSearchChange={query.setSearch}
+                            searchPlaceholder="Search name or phone…"
+                            onClear={query.clearFilters}
+                            filters={
+                                <div className="grid gap-2">
+                                    <Label>Status</Label>
+                                    <Select
+                                        value={String(
+                                            query.filters.is_active ?? 'all',
+                                        )}
+                                        onValueChange={(value) =>
+                                            query.setFilter(
+                                                'is_active',
+                                                value === 'all' ? null : value,
+                                            )
+                                        }
                                     >
-                                        No staff found for this branch.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                staff.data.map((member) => (
-                                    <TableRow key={member.id}>
-                                        <TableCell className="font-medium">
-                                            {member.name}
-                                        </TableCell>
-                                        <TableCell>{member.phone}</TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-wrap gap-1">
-                                                {member.roles.map((role) => (
-                                                    <Badge
-                                                        key={role}
-                                                        variant="secondary"
-                                                    >
-                                                        {role}
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                variant={
-                                                    member.is_active
-                                                        ? 'default'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {member.is_active
-                                                    ? 'Active'
-                                                    : 'Inactive'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={BranchScopedStaffController.show.url(
-                                                            [
-                                                                branch.slug,
-                                                                member.id,
-                                                            ],
-                                                        )}
-                                                        aria-label={`View ${member.name}`}
-                                                    >
-                                                        <Eye className="size-4" />
-                                                        <span className="sr-only">
-                                                            View
-                                                        </span>
-                                                    </Link>
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={BranchScopedStaffController.edit.url(
-                                                            [
-                                                                branch.slug,
-                                                                member.id,
-                                                            ],
-                                                        )}
-                                                        aria-label={`Edit ${member.name}`}
-                                                    >
-                                                        <Pencil className="size-4" />
-                                                        <span className="sr-only">
-                                                            Edit
-                                                        </span>
-                                                    </Link>
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    aria-label={`Delete ${member.name}`}
-                                                    onClick={() =>
-                                                        setDeletingId(member.id)
-                                                    }
-                                                >
-                                                    <Trash2 className="text-destructive size-4" />
-                                                    <span className="sr-only">
-                                                        Delete
-                                                    </span>
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-
-                <SimplePagination links={staff.links} />
+                                        <SelectTrigger className="w-[10rem]">
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All statuses
+                                            </SelectItem>
+                                            <SelectItem value="active">
+                                                Active
+                                            </SelectItem>
+                                            <SelectItem value="inactive">
+                                                Inactive
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            }
+                        />
+                    }
+                />
             </div>
 
             <ConfirmDeleteDialog
@@ -253,7 +242,6 @@ export default function PlatformBranchScopedStaffIndex({
                             deletingId,
                         ]),
                         {
-                            preserveScroll: true,
                             onFinish: () => {
                                 setProcessing(false);
                                 setDeletingId(null);

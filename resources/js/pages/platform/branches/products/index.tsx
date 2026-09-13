@@ -1,52 +1,40 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { useState } from 'react';
+import { type ColumnDef } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
-import Heading from '@/components/heading';
-import { SimplePagination } from '@/components/simple-pagination';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    DataTable,
+    DataTableColumnHeader,
+    DataTableRowActions,
+    DataTableToolbar,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
+import Heading from '@/components/heading';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type ProductRow = {
     id: number;
     name: string;
     slug: string;
     sku: string | null;
-    category: { id: number; name: string } | null;
+    category_name: string;
     enabled: boolean;
-    quantity: number;
     available_quantity: number;
-    minimum_stock: number;
     is_low_stock: boolean;
     selling_price: string | number | null;
-};
-
-type PaginatedProducts = {
-    data: ProductRow[];
-    links: { url: string | null; label: string; active: boolean }[];
 };
 
 type Branch = { id: number; name: string; slug: string };
 
 export default function PlatformBranchProductsIndex({
     branch,
-    products,
-    filters,
+    table: tablePayload,
 }: {
     branch: Branch;
-    products: PaginatedProducts;
-    filters: { search: string };
+    table: DataTablePayload<ProductRow>;
 }) {
-    const [search, setSearch] = useState(filters.search);
     const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
 
     setLayoutProps({
@@ -64,118 +52,126 @@ export default function PlatformBranchProductsIndex({
         ],
     });
 
+    const query = useDataTableQuery({
+        indexUrl: BranchInventoryController.index.url(branch.slug),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
+            },
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
+    });
+
+    const columns = useMemo<ColumnDef<ProductRow>[]>(
+        () => [
+            {
+                accessorKey: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Product"
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <div>
+                        <div className="font-medium">{row.original.name}</div>
+                        <div className="text-muted-foreground text-xs">
+                            {row.original.sku ?? row.original.slug}
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'available_quantity',
+                header: 'Stock',
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-2">
+                        {row.original.available_quantity}
+                        {row.original.is_low_stock ? (
+                            <Badge variant="destructive">Low</Badge>
+                        ) : null}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'selling_price',
+                header: 'Price',
+                cell: ({ row }) => row.original.selling_price ?? '—',
+            },
+            {
+                id: 'enabled',
+                header: 'Enabled',
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.original.enabled}
+                        disabled={togglingSlug === row.original.slug}
+                        onCheckedChange={(checked) => {
+                            setTogglingSlug(row.original.slug);
+                            router.put(
+                                BranchInventoryController.toggle.url({
+                                    branch: branch.slug,
+                                    product: row.original.slug,
+                                }),
+                                { status: checked === true },
+                                {
+                                    preserveScroll: true,
+                                    onFinish: () => setTogglingSlug(null),
+                                },
+                            );
+                        }}
+                    />
+                ),
+            },
+            {
+                id: 'actions',
+                header: () => <span className="sr-only">Actions</span>,
+                cell: ({ row }) => (
+                    <DataTableRowActions
+                        items={[
+                            {
+                                label: 'Manage',
+                                href: BranchInventoryController.show.url({
+                                    branch: branch.slug,
+                                    product: row.original.slug,
+                                }),
+                            },
+                        ]}
+                    />
+                ),
+            },
+        ],
+        [branch.slug, query.sort, query.toggleSort, togglingSlug],
+    );
+
     return (
         <>
             <Head title={`${branch.name} products`} />
 
-            <div className="space-y-6 p-2">
+            <div className="space-y-6 p-2 md:p-4">
                 <Heading
                     title={`${branch.name} products`}
                     description="Enablement, stock, and pricing for this branch"
                 />
 
-                <form
-                    className="flex max-w-md gap-2"
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        router.get(
-                            BranchInventoryController.index.url(branch.slug, {
-                                query: { search: search || undefined },
-                            }),
-                            {},
-                            { preserveState: true },
-                        );
-                    }}
-                >
-                    <Input
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Search products…"
-                    />
-                    <Button type="submit" variant="secondary">
-                        Search
-                    </Button>
-                </form>
-
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Product</TableHead>
-                            <TableHead>Stock</TableHead>
-                            <TableHead>Price</TableHead>
-                            <TableHead>Enabled</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {products.data.map((product) => (
-                            <TableRow key={product.id}>
-                                <TableCell>
-                                    <div className="font-medium">
-                                        {product.name}
-                                    </div>
-                                    <div className="text-muted-foreground text-xs">
-                                        {product.sku ?? product.slug}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        {product.available_quantity}
-                                        {product.is_low_stock ? (
-                                            <Badge variant="destructive">
-                                                Low
-                                            </Badge>
-                                        ) : null}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    {product.selling_price ?? '—'}
-                                </TableCell>
-                                <TableCell>
-                                    <Checkbox
-                                        checked={product.enabled}
-                                        disabled={
-                                            togglingSlug === product.slug
-                                        }
-                                        onCheckedChange={(checked) => {
-                                            setTogglingSlug(product.slug);
-                                            router.put(
-                                                BranchInventoryController.toggle.url(
-                                                    {
-                                                        branch: branch.slug,
-                                                        product: product.slug,
-                                                    },
-                                                ),
-                                                { status: checked === true },
-                                                {
-                                                    preserveScroll: true,
-                                                    onFinish: () =>
-                                                        setTogglingSlug(null),
-                                                },
-                                            );
-                                        }}
-                                    />
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link
-                                            href={BranchInventoryController.show.url(
-                                                {
-                                                    branch: branch.slug,
-                                                    product: product.slug,
-                                                },
-                                            )}
-                                        >
-                                            Manage
-                                        </Link>
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-
-                <SimplePagination links={products.links} />
+                <DataTable
+                    columns={columns}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
+                    toolbar={
+                        <DataTableToolbar
+                            search={query.search}
+                            onSearchChange={query.setSearch}
+                            searchPlaceholder="Search products…"
+                            onClear={query.clearFilters}
+                        />
+                    }
+                />
             </div>
         </>
     );

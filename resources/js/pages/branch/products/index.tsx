@@ -1,54 +1,47 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { useState } from 'react';
+import { type ColumnDef } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
+import {
+    DataTable,
+    DataTableColumnHeader,
+    DataTableRowActions,
+    DataTableToolbar,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
-import { SimplePagination } from '@/components/simple-pagination';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 
 type ProductRow = {
     id: number;
     name: string;
     slug: string;
     sku: string | null;
-    category: { id: number; name: string; slug: string } | null;
-    status: boolean;
+    category_name: string;
+    image_url: string | null;
     enabled: boolean;
-    quantity: number;
     available_quantity: number;
-    minimum_stock: number;
     is_low_stock: boolean;
     selling_price: string | number | null;
-    image_url: string | null;
-};
-
-type PaginatedProducts = {
-    data: ProductRow[];
-    links: { url: string | null; label: string; active: boolean }[];
 };
 
 type Branch = { id: number; name: string; slug: string };
 
+function initials(name: string): string {
+    return name.slice(0, 2).toUpperCase();
+}
+
 export default function BranchProductsIndex({
-    products,
     branch,
-    filters,
+    table: tablePayload,
 }: {
-    products: PaginatedProducts;
     branch: Branch;
-    filters: { search: string };
+    table: DataTablePayload<ProductRow>;
 }) {
-    const [search, setSearch] = useState(filters.search);
     const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
 
     setLayoutProps({
@@ -57,30 +50,143 @@ export default function BranchProductsIndex({
                 title: 'Dashboard',
                 href: `/branch/${branch.slug}/dashboard`,
             },
-            { title: 'Products', href: ProductController.index.url(branch.slug) },
+            {
+                title: 'Products',
+                href: ProductController.index.url(branch.slug),
+            },
         ],
     });
 
-    const toggleEnabled = (product: ProductRow, status: boolean) => {
-        setTogglingSlug(product.slug);
-        router.put(
-            ProductController.toggle.url({
-                branch: branch.slug,
-                product: product.slug,
-            }),
-            { status },
-            {
-                preserveScroll: true,
-                onFinish: () => setTogglingSlug(null),
+    const query = useDataTableQuery({
+        indexUrl: ProductController.index.url(branch.slug),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
             },
-        );
-    };
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
+    });
+
+    const columns = useMemo<ColumnDef<ProductRow>[]>(
+        () => [
+            {
+                id: 'image',
+                header: 'Image',
+                cell: ({ row }) => (
+                    <Avatar className="size-10 rounded-md">
+                        <AvatarImage
+                            src={row.original.image_url ?? undefined}
+                            alt={row.original.name}
+                        />
+                        <AvatarFallback className="rounded-md">
+                            {initials(row.original.name)}
+                        </AvatarFallback>
+                    </Avatar>
+                ),
+            },
+            {
+                accessorKey: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Product"
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <div>
+                        <div className="font-medium">{row.original.name}</div>
+                        <div className="text-muted-foreground text-xs">
+                            {row.original.category_name}
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'sku',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="SKU"
+                        sortable
+                        sortKey="sku"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => row.original.sku ?? '—',
+            },
+            {
+                accessorKey: 'available_quantity',
+                header: 'Stock',
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-2">
+                        {row.original.available_quantity}
+                        {row.original.is_low_stock ? (
+                            <Badge variant="destructive">Low</Badge>
+                        ) : null}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'selling_price',
+                header: 'Price',
+                cell: ({ row }) => row.original.selling_price ?? '—',
+            },
+            {
+                id: 'enabled',
+                header: 'Enabled',
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.original.enabled}
+                        disabled={togglingSlug === row.original.slug}
+                        onCheckedChange={(checked) => {
+                            setTogglingSlug(row.original.slug);
+                            router.put(
+                                ProductController.toggle.url({
+                                    branch: branch.slug,
+                                    product: row.original.slug,
+                                }),
+                                { status: checked === true },
+                                {
+                                    preserveScroll: true,
+                                    onFinish: () => setTogglingSlug(null),
+                                },
+                            );
+                        }}
+                    />
+                ),
+            },
+            {
+                id: 'actions',
+                header: () => <span className="sr-only">Actions</span>,
+                cell: ({ row }) => (
+                    <DataTableRowActions
+                        items={[
+                            {
+                                label: 'Manage',
+                                href: ProductController.show.url({
+                                    branch: branch.slug,
+                                    product: row.original.slug,
+                                }),
+                            },
+                        ]}
+                    />
+                ),
+            },
+        ],
+        [branch.slug, query.sort, query.toggleSort, togglingSlug],
+    );
 
     return (
         <>
             <Head title="Products" />
 
-            <div className="space-y-6 p-2">
+            <div className="space-y-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Products"
@@ -93,112 +199,21 @@ export default function BranchProductsIndex({
                     </Button>
                 </div>
 
-                <form
-                    className="flex max-w-md gap-2"
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        router.get(
-                            ProductController.index.url(branch.slug, {
-                                query: { search: search || undefined },
-                            }),
-                            {},
-                            { preserveState: true },
-                        );
-                    }}
-                >
-                    <Input
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Search products…"
-                    />
-                    <Button type="submit" variant="secondary">
-                        Search
-                    </Button>
-                </form>
-
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Product</TableHead>
-                            <TableHead>SKU</TableHead>
-                            <TableHead>Stock</TableHead>
-                            <TableHead>Price</TableHead>
-                            <TableHead>Enabled</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {products.data.length === 0 ? (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={6}
-                                    className="text-muted-foreground text-center"
-                                >
-                                    No products found.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            products.data.map((product) => (
-                                <TableRow key={product.id}>
-                                    <TableCell>
-                                        <div className="font-medium">
-                                            {product.name}
-                                        </div>
-                                        <div className="text-muted-foreground text-xs">
-                                            {product.category?.name ?? '—'}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{product.sku ?? '—'}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <span>
-                                                {product.available_quantity}
-                                            </span>
-                                            {product.is_low_stock ? (
-                                                <Badge variant="destructive">
-                                                    Low
-                                                </Badge>
-                                            ) : null}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        {product.selling_price ?? '—'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Checkbox
-                                            checked={product.enabled}
-                                            disabled={
-                                                togglingSlug === product.slug
-                                            }
-                                            onCheckedChange={(checked) =>
-                                                toggleEnabled(
-                                                    product,
-                                                    checked === true,
-                                                )
-                                            }
-                                        />
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" asChild>
-                                            <Link
-                                                href={ProductController.show.url(
-                                                    {
-                                                        branch: branch.slug,
-                                                        product: product.slug,
-                                                    },
-                                                )}
-                                            >
-                                                Manage
-                                            </Link>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-
-                <SimplePagination links={products.links} />
+                <DataTable
+                    columns={columns}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
+                    emptyMessage="No products found."
+                    toolbar={
+                        <DataTableToolbar
+                            search={query.search}
+                            onSearchChange={query.setSearch}
+                            searchPlaceholder="Search products…"
+                            onClear={query.clearFilters}
+                        />
+                    }
+                />
             </div>
         </>
     );

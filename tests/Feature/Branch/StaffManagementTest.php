@@ -164,12 +164,15 @@ test('branch staff index can search by phone', function () {
     app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
     $this->actingAs($admin, 'branch')
-        ->get(route('branch.staff.index', [$downtown, 'search' => '412001122']))
+        ->get(route('branch.staff.index', [
+            $downtown,
+            'filter' => ['search' => '412001122'],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/staff/index')
-            ->where('filters.search', '412001122')
-            ->has('staff.data', 1)
-            ->where('staff.data.0.phone', '+61412001122')
+            ->where('table.filters.search', '412001122')
+            ->has('table.data', 1)
+            ->where('table.data.0.phone', '+61412001122')
         );
 });

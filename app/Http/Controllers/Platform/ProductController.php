@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\DataTables\ProductDataTable;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreProductRequest;
 use App\Http\Requests\Platform\UpdateProductRequest;
@@ -28,23 +29,8 @@ class ProductController extends Controller
 
     public function index(Request $request): Response
     {
-        $search = $request->string('search')->trim()->toString();
-
-        $products = $search !== ''
-            ? Product::search($search)->orderBy('name')->paginate(15)
-            : Product::query()->with('category:id,name,slug')->orderBy('name')->paginate(15);
-
-        if ($search !== '') {
-            $products->getCollection()->load('category:id,name,slug');
-        }
-
-        $products = $products
-            ->withQueryString()
-            ->through(fn (Product $product): array => $this->mapProduct($product));
-
         return Inertia::render('platform/catalog/products/index', [
-            'products' => $products,
-            'filters' => ['search' => $search],
+            'table' => ProductDataTable::make($request),
         ]);
     }
 

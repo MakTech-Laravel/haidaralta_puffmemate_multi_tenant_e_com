@@ -156,17 +156,19 @@ test('platform roles index supports filters and show includes coverage', functio
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.roles.index', [
-            'search' => 'ops',
-            'kind' => 'custom',
-            'users' => 'without',
-            'permissions' => 'some',
+            'filter' => [
+                'search' => 'ops',
+                'kind' => 'custom',
+                'users' => 'without',
+                'permissions' => 'some',
+            ],
         ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/roles/index')
-            ->where('filters.search', 'ops')
-            ->where('filters.kind', 'custom')
-            ->has('roles.data'));
+            ->where('table.filters.search', 'ops')
+            ->where('table.filters.kind', 'custom')
+            ->has('table.data'));
 
     $role = Role::query()->where('name', 'ops-custom')->firstOrFail();
 

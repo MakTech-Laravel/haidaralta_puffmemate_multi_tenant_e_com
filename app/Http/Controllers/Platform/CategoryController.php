@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\DataTables\CategoryDataTable;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreCategoryRequest;
 use App\Http\Requests\Platform\UpdateCategoryRequest;
@@ -19,23 +20,8 @@ class CategoryController extends Controller
 
     public function index(Request $request): Response
     {
-        $search = $request->string('search')->trim()->toString();
-
-        $categories = $search !== ''
-            ? Category::search($search)->orderBy('name')->paginate(15)
-            : Category::query()->with('parent:id,name,slug')->orderBy('name')->paginate(15);
-
-        if ($search !== '') {
-            $categories->getCollection()->load('parent:id,name,slug');
-        }
-
-        $categories = $categories
-            ->withQueryString()
-            ->through(fn (Category $category): array => $this->mapCategory($category));
-
         return Inertia::render('platform/catalog/categories/index', [
-            'categories' => $categories,
-            'filters' => ['search' => $search],
+            'table' => CategoryDataTable::make($request),
         ]);
     }
 

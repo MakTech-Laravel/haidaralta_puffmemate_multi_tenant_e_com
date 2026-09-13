@@ -2,10 +2,10 @@ import { Head } from '@inertiajs/react';
 import { Download } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import PermissionController from '@/actions/App/Http/Controllers/Platform/PermissionController';
+import { DataTableToolbar } from '@/components/data-table';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -69,11 +69,11 @@ export default function PlatformPermissionsIndex({
                     </Button>
                 </div>
 
-                <Input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search permissions"
-                    className="max-w-md"
+                <DataTableToolbar
+                    search={search}
+                    onSearchChange={setSearch}
+                    searchPlaceholder="Search permissions…"
+                    onClear={() => setSearch('')}
                 />
 
                 {filteredGroups.length === 0 ? (

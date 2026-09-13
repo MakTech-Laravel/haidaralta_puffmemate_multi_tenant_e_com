@@ -165,12 +165,15 @@ test('nested branch staff index can search by name', function () {
     app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.branches.staff.index', [$downtown, 'search' => 'Nested Zelda']))
+        ->get(route('platform.branches.staff.index', [
+            $downtown,
+            'filter' => ['search' => 'Nested Zelda'],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branches/staff/index')
-            ->where('filters.search', 'Nested Zelda')
-            ->has('staff.data', 1)
-            ->where('staff.data.0.name', 'Nested Zelda Clerk')
+            ->where('table.filters.search', 'Nested Zelda')
+            ->has('table.data', 1)
+            ->where('table.data.0.name', 'Nested Zelda Clerk')
         );
 });

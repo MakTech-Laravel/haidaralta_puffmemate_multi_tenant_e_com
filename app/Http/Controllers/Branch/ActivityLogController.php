@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Branch;
 
+use App\DataTables\ActivityLogDataTable;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Services\ActivityLog\ActivityLogService;
@@ -17,8 +18,6 @@ class ActivityLogController extends Controller
     public function index(Request $request): Response
     {
         $branch = $this->currentBranch();
-        $search = $request->string('search')->trim()->toString();
-        $event = $request->string('event')->trim()->toString();
 
         return Inertia::render('branch/activity-logs/index', [
             'branch' => [
@@ -26,15 +25,7 @@ class ActivityLogController extends Controller
                 'name' => $branch->name,
                 'slug' => $branch->slug,
             ],
-            'activities' => $this->activityLogs->paginateForBranch(
-                (int) $branch->id,
-                $search,
-                $event,
-            ),
-            'filters' => [
-                'search' => $search,
-                'event' => $event,
-            ],
+            'table' => ActivityLogDataTable::forBranch($request, $branch),
         ]);
     }
 

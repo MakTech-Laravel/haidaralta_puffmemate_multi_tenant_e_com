@@ -1,30 +1,28 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { type ColumnDef } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import {
+    DataTable,
+    DataTableColumnHeader,
+    DataTableRowActions,
+    DataTableToolbar,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
-import { SimplePagination } from '@/components/simple-pagination';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
-    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { usePermission } from '@/hooks/use-permissions';
 
 type ProductRow = {
@@ -32,61 +30,208 @@ type ProductRow = {
     name: string;
     slug: string;
     sku: string | null;
+    category_id: number;
     category_name: string;
     image: string | null;
     image_url: string | null;
     status: boolean;
     variants_count: number;
+    deleted_at: string | null;
 };
 
-type PaginatedProducts = {
-    data: ProductRow[];
-    links: {
-        url: string | null;
-        label: string;
-        active: boolean;
-    }[];
-};
+type CategoryOption = { id: number; name: string; slug: string };
 
-type StatusFilter = 'all' | 'active' | 'inactive';
+function initials(name: string): string {
+    return name
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
+}
 
 export default function PlatformProductsIndex({
-    products,
-    filters,
+    table: tablePayload,
 }: {
-    products: PaginatedProducts;
-    filters: { search: string; status: StatusFilter };
+    table: DataTablePayload<ProductRow> & {
+        filterOptions?: { categories?: CategoryOption[] };
+    };
 }) {
     const { can } = usePermission();
-    const [search, setSearch] = useState(filters.search);
-    const [status, setStatus] = useState<StatusFilter>(filters.status);
     const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
 
-    const applyFilters = (next: {
-        search?: string;
-        status?: StatusFilter;
-    }) => {
-        const nextSearch = next.search ?? search;
-        const nextStatus = next.status ?? status;
+    const query = useDataTableQuery({
+        indexUrl: ProductController.index.url(),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
+                status: tablePayload.filters.status ?? 'all',
+                category_id: tablePayload.filters.category_id ?? 'all',
+                trashed: tablePayload.filters.trashed ?? 'active',
+            },
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
+    });
 
-        router.get(
-            ProductController.index.url({
-                query: {
-                    search: nextSearch || undefined,
-                    status: nextStatus === 'all' ? undefined : nextStatus,
+    const categories = tablePayload.filterOptions?.categories ?? [];
+
+    const columns = useMemo<ColumnDef<ProductRow>[]>(
+        () => [
+            {
+                id: 'image',
+                header: 'Image',
+                cell: ({ row }) => (
+                    <Avatar className="size-10">
+                        <AvatarImage
+                            src={row.original.image_url ?? undefined}
+                            alt={row.original.name}
+                        />
+                        <AvatarFallback>
+                            {initials(row.original.name)}
+                        </AvatarFallback>
+                    </Avatar>
+                ),
+            },
+            {
+                accessorKey: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Name"
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'sku',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="SKU"
+                        sortable
+                        sortKey="sku"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => row.original.sku ?? '—',
+            },
+            {
+                accessorKey: 'category_name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Category"
+                        sortable
+                        sortKey="category_name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'variants_count',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Variants"
+                        sortable
+                        sortKey="variants_count"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'status',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Status"
+                        sortable
+                        sortKey="status"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <div className="flex flex-wrap gap-1">
+                        <Badge
+                            variant={
+                                row.original.status ? 'default' : 'secondary'
+                            }
+                        >
+                            {row.original.status ? 'Active' : 'Inactive'}
+                        </Badge>
+                        {row.original.deleted_at ? (
+                            <Badge variant="destructive">Trashed</Badge>
+                        ) : null}
+                    </div>
+                ),
+            },
+            {
+                id: 'actions',
+                header: () => <span className="sr-only">Actions</span>,
+                cell: ({ row }) => {
+                    const product = row.original;
+                    const items = [
+                        {
+                            label: 'View',
+                            href: ProductController.show.url(product.slug),
+                        },
+                        ...(can('manage-catalog') && !product.deleted_at
+                            ? [
+                                  {
+                                      label: 'Edit',
+                                      href: ProductController.edit.url(
+                                          product.slug,
+                                      ),
+                                  },
+                              ]
+                            : []),
+                        ...(can('manage-catalog') && product.deleted_at
+                            ? [
+                                  {
+                                      label: 'Restore',
+                                      onSelect: () => {
+                                          router.post(
+                                              ProductController.restore.url(
+                                                  product.slug,
+                                              ),
+                                          );
+                                      },
+                                  },
+                              ]
+                            : []),
+                        ...(can('manage-catalog') && !product.deleted_at
+                            ? [
+                                  {
+                                      label: 'Delete',
+                                      destructive: true,
+                                      separatorBefore: true,
+                                      onSelect: () =>
+                                          setDeletingSlug(product.slug),
+                                  },
+                              ]
+                            : []),
+                    ];
+
+                    return <DataTableRowActions items={items} />;
                 },
-            }),
-            {},
-            { preserveState: true },
-        );
-    };
+            },
+        ],
+        [can, query.sort, query.toggleSort],
+    );
 
     return (
         <>
             <Head title="Products" />
 
-            <div className="flex flex-col gap-6 p-2">
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Products"
@@ -101,189 +246,123 @@ export default function PlatformProductsIndex({
                     ) : null}
                 </div>
 
-                <div className="flex flex-wrap items-end gap-3">
-                    <form
-                        className="flex max-w-md flex-1 gap-2"
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            applyFilters({ search });
-                        }}
-                    >
-                        <Input
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Search products"
-                        />
-                        <Button type="submit" variant="secondary">
-                            Search
-                        </Button>
-                    </form>
-
-                    <div className="w-44">
-                        <Select
-                            value={status}
-                            onValueChange={(value) => {
-                                const next = value as StatusFilter;
-                                setStatus(next);
-                                applyFilters({ status: next });
-                            }}
-                        >
-                            <SelectTrigger aria-label="Filter by status">
-                                <SelectValue placeholder="Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="all">
-                                        All statuses
-                                    </SelectItem>
-                                    <SelectItem value="active">
-                                        Active
-                                    </SelectItem>
-                                    <SelectItem value="inactive">
-                                        Inactive
-                                    </SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                <div className="overflow-hidden rounded-xl border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Slug</TableHead>
-                                <TableHead>SKU</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead>Image</TableHead>
-                                <TableHead>Variants</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">
-                                    Actions
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {products.data.length === 0 ? (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={8}
-                                        className="text-muted-foreground py-10 text-center"
-                                    >
-                                        No products found.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                products.data.map((product) => (
-                                    <TableRow key={product.id}>
-                                        <TableCell className="font-medium">
-                                            {product.name}
-                                        </TableCell>
-                                        <TableCell>{product.slug}</TableCell>
-                                        <TableCell>
-                                            {product.sku ?? '—'}
-                                        </TableCell>
-                                        <TableCell>
-                                            {product.category_name}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Avatar className="size-8 rounded-md">
-                                                {product.image_url ? (
-                                                    <AvatarImage
-                                                        src={product.image_url}
-                                                        alt=""
-                                                    />
-                                                ) : null}
-                                                <AvatarFallback className="rounded-md text-xs">
-                                                    {product.name
-                                                        .slice(0, 2)
-                                                        .toUpperCase()}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                        </TableCell>
-                                        <TableCell>
-                                            {product.variants_count}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                variant={
-                                                    product.status
-                                                        ? 'default'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {product.status
-                                                    ? 'Active'
-                                                    : 'Inactive'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={ProductController.show.url(
-                                                            product.slug,
+                <DataTable
+                    columns={columns}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
+                    toolbar={
+                        <DataTableToolbar
+                            search={query.search}
+                            onSearchChange={query.setSearch}
+                            searchPlaceholder="Search name, slug, or SKU…"
+                            onClear={query.clearFilters}
+                            filters={
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label>Status</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.status ?? 'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'status',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All statuses
+                                                </SelectItem>
+                                                <SelectItem value="active">
+                                                    Active
+                                                </SelectItem>
+                                                <SelectItem value="inactive">
+                                                    Inactive
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Category</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.category_id ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'category_id',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[12rem]">
+                                                <SelectValue placeholder="Category" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All categories
+                                                </SelectItem>
+                                                {categories.map((category) => (
+                                                    <SelectItem
+                                                        key={category.id}
+                                                        value={String(
+                                                            category.id,
                                                         )}
-                                                        aria-label={`View ${product.name}`}
                                                     >
-                                                        <Eye className="size-4" />
-                                                        <span className="sr-only">
-                                                            View
-                                                        </span>
-                                                    </Link>
-                                                </Button>
-                                                {can('manage-catalog') ? (
-                                                    <>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            asChild
-                                                        >
-                                                            <Link
-                                                                href={ProductController.edit.url(
-                                                                    product.slug,
-                                                                )}
-                                                                aria-label={`Edit ${product.name}`}
-                                                            >
-                                                                <Pencil className="size-4" />
-                                                                <span className="sr-only">
-                                                                    Edit
-                                                                </span>
-                                                            </Link>
-                                                        </Button>
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            aria-label={`Delete ${product.name}`}
-                                                            onClick={() =>
-                                                                setDeletingSlug(
-                                                                    product.slug,
-                                                                )
-                                                            }
-                                                        >
-                                                            <Trash2 className="text-destructive size-4" />
-                                                            <span className="sr-only">
-                                                                Delete
-                                                            </span>
-                                                        </Button>
-                                                    </>
-                                                ) : null}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-
-                <SimplePagination links={products.links} />
+                                                        {category.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Trash</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.trashed ??
+                                                    'active',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'trashed',
+                                                    value === 'active'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Trash" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="active">
+                                                    Active only
+                                                </SelectItem>
+                                                <SelectItem value="only">
+                                                    Trashed only
+                                                </SelectItem>
+                                                <SelectItem value="with">
+                                                    Include trashed
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
+                            }
+                        />
+                    }
+                />
             </div>
 
             <ConfirmDeleteDialog
@@ -293,6 +372,7 @@ export default function PlatformProductsIndex({
                         setDeletingSlug(null);
                     }
                 }}
+                title="Delete product?"
                 description="This will soft-delete the product and its variants."
                 processing={processing}
                 onConfirm={() => {
@@ -301,13 +381,15 @@ export default function PlatformProductsIndex({
                     }
 
                     setProcessing(true);
-                    router.delete(ProductController.destroy.url(deletingSlug), {
-                        preserveScroll: true,
-                        onFinish: () => {
-                            setProcessing(false);
-                            setDeletingSlug(null);
+                    router.delete(
+                        ProductController.destroy.url(deletingSlug),
+                        {
+                            onFinish: () => {
+                                setProcessing(false);
+                                setDeletingSlug(null);
+                            },
                         },
-                    });
+                    );
                 }}
             />
         </>

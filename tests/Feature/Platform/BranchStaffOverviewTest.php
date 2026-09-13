@@ -41,7 +41,7 @@ test('platform admin can view branch staff across branches and filter by branch'
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branch-staff/index')
-            ->has('staff.data', $seededBranchStaffCount + 1)
+            ->has('table.data', $seededBranchStaffCount + 1)
         );
 
     $downtownStaffCount = User::query()
@@ -50,12 +50,14 @@ test('platform admin can view branch staff across branches and filter by branch'
         ->count();
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.branch-staff.index', ['branch_id' => $downtown->id]))
+        ->get(route('platform.branch-staff.index', [
+            'filter' => ['branch_id' => $downtown->id],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branch-staff/index')
-            ->has('staff.data', $downtownStaffCount)
-            ->where('staff.data', fn ($staff) => collect($staff)->contains(
+            ->has('table.data', $downtownStaffCount)
+            ->where('table.data', fn ($staff) => collect($staff)->contains(
                 fn ($row) => $row['email'] === UserSeeder::BRANCH_1_SUPER_ADMIN,
             ))
         );
@@ -91,12 +93,14 @@ test('platform branch staff index can search by name', function () {
     app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.branch-staff.index', ['search' => 'Zelda Branch']))
+        ->get(route('platform.branch-staff.index', [
+            'filter' => ['search' => 'Zelda Branch'],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branch-staff/index')
-            ->where('filters.search', 'Zelda Branch')
-            ->has('staff.data', 1)
-            ->where('staff.data.0.name', 'Zelda Branch Finder')
+            ->where('table.filters.search', 'Zelda Branch')
+            ->has('table.data', 1)
+            ->where('table.data.0.name', 'Zelda Branch Finder')
         );
 });

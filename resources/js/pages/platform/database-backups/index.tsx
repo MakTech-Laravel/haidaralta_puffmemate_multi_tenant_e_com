@@ -1,10 +1,17 @@
 import { Head, router, usePoll } from '@inertiajs/react';
-import { Download, RotateCcw, Trash2 } from 'lucide-react';
+import { type ColumnDef } from '@tanstack/react-table';
 import { useEffect, useMemo, useState } from 'react';
 import DatabaseBackupController from '@/actions/App/Http/Controllers/Platform/DatabaseBackupController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import {
+    DataTable,
+    DataTableColumnHeader,
+    DataTableRowActions,
+    DataTableToolbar,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
-import { SimplePagination } from '@/components/simple-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -44,15 +51,6 @@ type HistoryRow = {
     created_at: string | null;
 };
 
-type PaginatedHistories = {
-    data: HistoryRow[];
-    links: {
-        url: string | null;
-        label: string;
-        active: boolean;
-    }[];
-};
-
 type CleanupPolicy = {
     keep_all_days: number;
     keep_daily_days: number;
@@ -82,12 +80,12 @@ function formatWhen(value: string | null): string {
 
 export default function PlatformDatabaseBackupsIndex({
     backups,
-    histories,
+    table: historyTable,
     connection,
     cleanup_policy,
 }: {
     backups: BackupZip[];
-    histories: PaginatedHistories;
+    table: DataTablePayload<HistoryRow>;
     connection: string;
     cleanup_policy: CleanupPolicy;
 }) {
@@ -101,24 +99,107 @@ export default function PlatformDatabaseBackupsIndex({
 
     useDatabaseBackupRealtime();
 
+    const historyQuery = useDataTableQuery({
+        indexUrl: DatabaseBackupController.index.url(),
+        initial: {
+            filter: {
+                search: historyTable.filters.search ?? '',
+                type: historyTable.filters.type ?? 'all',
+                status: historyTable.filters.status ?? 'all',
+            },
+            sort: historyTable.sort,
+            per_page: historyTable.per_page,
+        },
+    });
+
     const hasActiveRestore = useMemo(
         () =>
-            histories.data.some(
+            historyTable.data.some(
                 (history) =>
                     history.type === 'restore' &&
                     (history.status === 'pending' ||
                         history.status === 'running'),
             ),
-        [histories.data],
+        [historyTable.data],
     );
 
     const hasActiveHistory = useMemo(
         () =>
-            histories.data.some(
+            historyTable.data.some(
                 (history) =>
                     history.status === 'pending' || history.status === 'running',
             ),
-        [histories.data],
+        [historyTable.data],
+    );
+
+    const historyColumns = useMemo<ColumnDef<HistoryRow>[]>(
+        () => [
+            {
+                accessorKey: 'created_at',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="When"
+                        sortable
+                        sortKey="created_at"
+                        currentSort={historyQuery.sort}
+                        onSort={historyQuery.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-muted-foreground whitespace-nowrap">
+                        {formatWhen(row.original.created_at)}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'type',
+                header: 'Type',
+                cell: ({ row }) => (
+                    <Badge
+                        variant={backupTypeBadgeVariant(row.original.type)}
+                    >
+                        {row.original.type}
+                    </Badge>
+                ),
+            },
+            {
+                accessorKey: 'status',
+                header: 'Status',
+                cell: ({ row }) => (
+                    <Badge
+                        variant={backupStatusBadgeVariant(row.original.status)}
+                    >
+                        {row.original.status}
+                    </Badge>
+                ),
+            },
+            {
+                accessorKey: 'filename',
+                header: 'File',
+                cell: ({ row }) => (
+                    <span className="max-w-xs truncate">
+                        {row.original.filename ?? '—'}
+                    </span>
+                ),
+            },
+            {
+                id: 'triggered_by',
+                header: 'Triggered by',
+                cell: ({ row }) =>
+                    row.original.triggered_by?.name ?? 'System',
+            },
+            {
+                accessorKey: 'message',
+                header: 'Message',
+                cell: ({ row }) => (
+                    <span className="text-muted-foreground max-w-sm truncate">
+                        {row.original.message ?? '—'}
+                    </span>
+                ),
+            },
+        ],
+        [historyQuery.sort, historyQuery.toggleSort],
     );
 
     const { start: startPoll, stop: stopPoll } = usePoll(
@@ -261,58 +342,41 @@ export default function PlatformDatabaseBackupsIndex({
                                             <TableCell>
                                                 {formatBytes(backup.size_bytes)}
                                             </TableCell>
-                                            <TableCell className="space-x-1 text-right">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <a
-                                                        href={DatabaseBackupController.download.url(
-                                                            {
-                                                                query: {
-                                                                    path: backup.path,
+                                            <TableCell className="text-right">
+                                                <DataTableRowActions
+                                                    items={[
+                                                        {
+                                                            label: 'Download',
+                                                            href: DatabaseBackupController.download.url(
+                                                                {
+                                                                    query: {
+                                                                        path: backup.path,
+                                                                    },
                                                                 },
+                                                            ),
+                                                        },
+                                                        {
+                                                            label: 'Restore DB',
+                                                            onSelect: () => {
+                                                                setConfirmedRestore(
+                                                                    false,
+                                                                );
+                                                                setRestorePath(
+                                                                    backup.path,
+                                                                );
                                                             },
-                                                        )}
-                                                    >
-                                                        <Download className="size-4" />
-                                                        <span className="sr-only">
-                                                            Download
-                                                        </span>
-                                                    </a>
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setConfirmedRestore(
-                                                            false,
-                                                        );
-                                                        setRestorePath(
-                                                            backup.path,
-                                                        );
-                                                    }}
-                                                >
-                                                    <RotateCcw className="size-4" />
-                                                    <span className="sr-only">
-                                                        Restore DB
-                                                    </span>
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        setDeletePath(
-                                                            backup.path,
-                                                        )
-                                                    }
-                                                >
-                                                    <Trash2 className="text-destructive size-4" />
-                                                    <span className="sr-only">
-                                                        Delete zip
-                                                    </span>
-                                                </Button>
+                                                        },
+                                                        {
+                                                            label: 'Delete zip',
+                                                            destructive: true,
+                                                            separatorBefore: true,
+                                                            onSelect: () =>
+                                                                setDeletePath(
+                                                                    backup.path,
+                                                                ),
+                                                        },
+                                                    ]}
+                                                />
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -326,69 +390,21 @@ export default function PlatformDatabaseBackupsIndex({
                     <h2 className="text-foreground text-sm font-semibold">
                         Operator history
                     </h2>
-                    <div className="border-border bg-card rounded-xl border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>When</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>File</TableHead>
-                                    <TableHead>Triggered by</TableHead>
-                                    <TableHead>Message</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {histories.data.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={6}
-                                            className="text-muted-foreground py-10 text-center"
-                                        >
-                                            No operator history yet.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    histories.data.map((history) => (
-                                        <TableRow key={history.id}>
-                                            <TableCell className="text-muted-foreground whitespace-nowrap">
-                                                {formatWhen(history.created_at)}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={backupTypeBadgeVariant(
-                                                        history.type,
-                                                    )}
-                                                >
-                                                    {history.type}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={backupStatusBadgeVariant(
-                                                        history.status,
-                                                    )}
-                                                >
-                                                    {history.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="max-w-xs truncate">
-                                                {history.filename ?? '—'}
-                                            </TableCell>
-                                            <TableCell>
-                                                {history.triggered_by?.name ??
-                                                    'System'}
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground max-w-sm truncate">
-                                                {history.message ?? '—'}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                    <SimplePagination links={histories.links} />
+                    <DataTable
+                        columns={historyColumns}
+                        payload={historyTable}
+                        perPage={historyQuery.perPage}
+                        onPerPageChange={historyQuery.changePerPage}
+                        emptyMessage="No operator history yet."
+                        toolbar={
+                            <DataTableToolbar
+                                search={historyQuery.search}
+                                onSearchChange={historyQuery.setSearch}
+                                searchPlaceholder="Search filename or message…"
+                                onClear={historyQuery.clearFilters}
+                            />
+                        }
+                    />
                 </div>
             </div>
 

@@ -1,20 +1,27 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { useState } from 'react';
+import { type ColumnDef } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 import StaffController from '@/actions/App/Http/Controllers/Branch/StaffController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import {
+    DataTable,
+    DataTableColumnHeader,
+    DataTableRowActions,
+    DataTableToolbar,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
-import { SimplePagination } from '@/components/simple-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type StaffRow = {
     id: number;
@@ -25,31 +32,15 @@ type StaffRow = {
     roles: string[];
 };
 
-type PaginatedStaff = {
-    data: StaffRow[];
-    links: {
-        url: string | null;
-        label: string;
-        active: boolean;
-    }[];
-};
-
-type Branch = {
-    id: number;
-    name: string;
-    slug: string;
-};
+type Branch = { id: number; name: string; slug: string };
 
 export default function BranchStaffIndex({
-    staff,
     branch,
-    filters,
+    table: tablePayload,
 }: {
-    staff: PaginatedStaff;
     branch: Branch;
-    filters: { search: string };
+    table: DataTablePayload<StaffRow>;
 }) {
-    const [search, setSearch] = useState(filters.search);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
 
@@ -63,11 +54,111 @@ export default function BranchStaffIndex({
         ],
     });
 
+    const query = useDataTableQuery({
+        indexUrl: StaffController.index.url(branch.slug),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
+                is_active: tablePayload.filters.is_active ?? 'all',
+            },
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
+    });
+
+    const columns = useMemo<ColumnDef<StaffRow>[]>(
+        () => [
+            {
+                accessorKey: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Name"
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'phone',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Phone"
+                        sortable
+                        sortKey="phone"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                id: 'roles',
+                header: 'Roles',
+                cell: ({ row }) => (
+                    <div className="flex flex-wrap gap-1">
+                        {row.original.roles.map((role) => (
+                            <Badge key={role} variant="secondary">
+                                {role}
+                            </Badge>
+                        ))}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'is_active',
+                header: 'Status',
+                cell: ({ row }) => (
+                    <Badge
+                        variant={
+                            row.original.is_active ? 'default' : 'secondary'
+                        }
+                    >
+                        {row.original.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                ),
+            },
+            {
+                id: 'actions',
+                header: () => <span className="sr-only">Actions</span>,
+                cell: ({ row }) => (
+                    <DataTableRowActions
+                        items={[
+                            {
+                                label: 'View',
+                                href: StaffController.show.url([
+                                    branch.slug,
+                                    row.original.id,
+                                ]),
+                            },
+                            {
+                                label: 'Edit',
+                                href: StaffController.edit.url([
+                                    branch.slug,
+                                    row.original.id,
+                                ]),
+                            },
+                            {
+                                label: 'Delete',
+                                destructive: true,
+                                separatorBefore: true,
+                                onSelect: () => setDeletingId(row.original.id),
+                            },
+                        ]}
+                    />
+                ),
+            },
+        ],
+        [branch.slug, query.sort, query.toggleSort],
+    );
+
     return (
         <>
             <Head title="Staff" />
 
-            <div className="space-y-6 p-2">
+            <div className="space-y-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Staff"
@@ -80,116 +171,52 @@ export default function BranchStaffIndex({
                     </Button>
                 </div>
 
-                <form
-                    className="flex max-w-md gap-2"
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        router.get(
-                            StaffController.index.url(branch.slug, {
-                                query: {
-                                    search: search || undefined,
-                                },
-                            }),
-                            {},
-                            { preserveState: true },
-                        );
-                    }}
-                >
-                    <Input
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Search by name or phone"
-                    />
-                    <Button type="submit" variant="secondary">
-                        Search
-                    </Button>
-                </form>
-
-                <div className="rounded-xl border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Phone</TableHead>
-                                <TableHead>Roles</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">
-                                    Actions
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {staff.data.map((member) => (
-                                <TableRow key={member.id}>
-                                    <TableCell className="font-medium">
-                                        {member.name}
-                                    </TableCell>
-                                    <TableCell>{member.phone}</TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-wrap gap-1">
-                                            {member.roles.map((role) => (
-                                                <Badge
-                                                    key={role}
-                                                    variant="secondary"
-                                                >
-                                                    {role}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        {member.is_active
-                                            ? 'Active'
-                                            : 'Inactive'}
-                                    </TableCell>
-                                    <TableCell className="space-x-2 text-right">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <Link
-                                                href={StaffController.show.url({
-                                                    branch: branch.slug,
-                                                    user: member.id,
-                                                })}
-                                            >
-                                                View
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <Link
-                                                href={StaffController.edit.url({
-                                                    branch: branch.slug,
-                                                    user: member.id,
-                                                })}
-                                            >
-                                                Edit
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-destructive"
-                                            onClick={() =>
-                                                setDeletingId(member.id)
-                                            }
-                                        >
-                                            Delete
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-
-                <SimplePagination links={staff.links} />
+                <DataTable
+                    columns={columns}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
+                    emptyMessage="No staff found."
+                    toolbar={
+                        <DataTableToolbar
+                            search={query.search}
+                            onSearchChange={query.setSearch}
+                            searchPlaceholder="Search name or phone…"
+                            onClear={query.clearFilters}
+                            filters={
+                                <div className="grid gap-2">
+                                    <Label>Status</Label>
+                                    <Select
+                                        value={String(
+                                            query.filters.is_active ?? 'all',
+                                        )}
+                                        onValueChange={(value) =>
+                                            query.setFilter(
+                                                'is_active',
+                                                value === 'all' ? null : value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger className="w-[10rem]">
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All statuses
+                                            </SelectItem>
+                                            <SelectItem value="active">
+                                                Active
+                                            </SelectItem>
+                                            <SelectItem value="inactive">
+                                                Inactive
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            }
+                        />
+                    }
+                />
             </div>
 
             <ConfirmDeleteDialog
@@ -199,7 +226,7 @@ export default function BranchStaffIndex({
                         setDeletingId(null);
                     }
                 }}
-                description="This will permanently delete the staff account."
+                description="This will permanently delete the staff member."
                 processing={processing}
                 onConfirm={() => {
                     if (deletingId === null) {
@@ -208,12 +235,11 @@ export default function BranchStaffIndex({
 
                     setProcessing(true);
                     router.delete(
-                        StaffController.destroy.url({
-                            branch: branch.slug,
-                            user: deletingId,
-                        }),
+                        StaffController.destroy.url([
+                            branch.slug,
+                            deletingId,
+                        ]),
                         {
-                            preserveScroll: true,
                             onFinish: () => {
                                 setProcessing(false);
                                 setDeletingId(null);
