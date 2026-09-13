@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import { BranchForm } from '@/components/admin/branch-form';
 import Heading from '@/components/heading';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type Branch = {
     id: number;
@@ -30,6 +31,16 @@ export default function PlatformBranchesEdit({ branch }: { branch: Branch }) {
                     title={`Edit ${branch.name}`}
                     description="Update branch details"
                 />
+
+                {!branch.status ? (
+                    <Alert>
+                        <AlertTitle>Branch portal inaccessible</AlertTitle>
+                        <AlertDescription>
+                            This branch is inactive. Staff cannot open the
+                            branch portal until you reactivate it.
+                        </AlertDescription>
+                    </Alert>
+                ) : null}
 
                 <BranchForm
                     action={BranchController.update.form(branch.slug)}

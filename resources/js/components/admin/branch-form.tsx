@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import { TimeSelect } from '@/components/ui/time-select';
 
 type FormAction = {
@@ -236,11 +237,17 @@ export function BranchForm({
                             <Label htmlFor="phone">Phone</Label>
                             <Input
                                 id="phone"
+                                type="tel"
                                 value={data.phone}
                                 onChange={(event) =>
                                     setData('phone', event.target.value)
                                 }
-                                placeholder="e.g. +880 1700-000000"
+                                onBlur={() => {
+                                    if (data.phone.trim() !== '') {
+                                        validate('phone');
+                                    }
+                                }}
+                                placeholder="04XX XXX XXX or +61…"
                             />
                             <InputError message={errors.phone} />
                         </div>
@@ -256,20 +263,26 @@ export function BranchForm({
                                 onChange={(event) =>
                                     setData('email', event.target.value)
                                 }
+                                onBlur={() => {
+                                    if (data.email.trim() !== '') {
+                                        validate('email');
+                                    }
+                                }}
                                 placeholder="branch@example.com"
                             />
                             <InputError message={errors.email} />
                         </div>
 
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2 sm:col-span-2">
                             <Label htmlFor="address">Address</Label>
-                            <Input
+                            <Textarea
                                 id="address"
                                 value={data.address}
                                 onChange={(event) =>
                                     setData('address', event.target.value)
                                 }
                                 placeholder="Street, city, area"
+                                rows={3}
                             />
                             <InputError message={errors.address} />
                         </div>

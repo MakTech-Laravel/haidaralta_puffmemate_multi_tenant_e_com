@@ -69,3 +69,34 @@ test('platform admin can view branch staff across branches and filter by branch'
             ->where('staffMember.branch.slug', 'uptown')
         );
 });
+
+test('platform branch staff index can search by name', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
+
+    $match = User::factory()->create([
+        'name' => 'Zelda Branch Finder',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $uptown->id,
+    ]);
+
+    User::factory()->create([
+        'name' => 'Other Branch Noise',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $uptown->id,
+    ]);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId($uptown->id);
+    $match->assignRole(RoleEnum::STAFF->value);
+    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-staff.index', ['search' => 'Zelda Branch']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branch-staff/index')
+            ->where('filters.search', 'Zelda Branch')
+            ->has('staff.data', 1)
+            ->where('staff.data.0.name', 'Zelda Branch Finder')
+        );
+});

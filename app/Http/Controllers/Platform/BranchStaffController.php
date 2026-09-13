@@ -24,14 +24,19 @@ class BranchStaffController extends Controller
     public function index(Request $request): Response
     {
         $branchId = $request->integer('branch_id') ?: null;
+        $search = $request->string('search')->trim()->toString();
 
         return Inertia::render('platform/branch-staff/index', [
-            'staff' => $this->branchStaffService->paginateAcrossBranches($branchId),
+            'staff' => $this->branchStaffService->paginateAcrossBranches(
+                $branchId,
+                search: $search !== '' ? $search : null,
+            ),
             'branches' => Branch::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'slug']),
             'filters' => [
                 'branch_id' => $branchId,
+                'search' => $search,
             ],
         ]);
     }

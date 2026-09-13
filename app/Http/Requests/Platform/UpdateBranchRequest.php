@@ -3,14 +3,37 @@
 namespace App\Http\Requests\Platform;
 
 use App\Models\Branch;
+use App\Support\Phone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class UpdateBranchRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('phone') === '' || $this->input('phone') === null) {
+            $this->merge(['phone' => null]);
+
+            return;
+        }
+
+        $raw = $this->input('phone');
+
+        if (! is_string($raw)) {
+            return;
+        }
+
+        try {
+            $this->merge(['phone' => Phone::toE164($raw)]);
+        } catch (Throwable) {
+            // Leave raw value for the phone validation rule.
+        }
     }
 
     /**
@@ -38,7 +61,7 @@ class UpdateBranchRequest extends FormRequest
             ],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_logo' => ['sometimes', 'boolean'],
-            'phone' => ['nullable', 'string', 'max:50'],
+            'phone' => ['nullable', 'string', ...Phone::validationRule(mobileOnly: false)],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],

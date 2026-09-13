@@ -25,13 +25,32 @@ class BranchController extends Controller
     public function index(Request $request): Response
     {
         $search = $request->string('search')->trim()->toString();
+        $statusFilter = $request->string('status')->trim()->toString();
+
+        if (! in_array($statusFilter, ['active', 'inactive'], true)) {
+            $statusFilter = 'all';
+        }
+
+        $statusValue = match ($statusFilter) {
+            'active' => true,
+            'inactive' => false,
+            default => null,
+        };
 
         $branches = $search !== ''
             ? Branch::search($search)
+                ->when(
+                    $statusValue !== null,
+                    fn ($builder) => $builder->where('status', $statusValue),
+                )
                 ->orderBy('name')
                 ->paginate(15)
             : Branch::query()
                 ->withCount('users')
+                ->when(
+                    $statusValue !== null,
+                    fn ($query) => $query->where('status', $statusValue),
+                )
                 ->orderBy('name')
                 ->paginate(15);
 
@@ -47,6 +66,7 @@ class BranchController extends Controller
             'branches' => $branches,
             'filters' => [
                 'search' => $search,
+                'status' => $statusFilter,
             ],
         ]);
     }

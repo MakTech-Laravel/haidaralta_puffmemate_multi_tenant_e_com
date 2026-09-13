@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Branch\BranchStaffService;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,13 +21,21 @@ class StaffController extends Controller
     /**
      * Display staff for the current branch only.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $branch = $this->currentBranch();
+        $search = $request->string('search')->trim()->toString();
 
         return Inertia::render('branch/staff/index', [
-            'staff' => $this->branchStaffService->paginateForBranch($branch, includeBranch: false),
+            'staff' => $this->branchStaffService->paginateForBranch(
+                $branch,
+                includeBranch: false,
+                search: $search !== '' ? $search : null,
+            ),
             'branch' => $branch->only(['id', 'name', 'slug']),
+            'filters' => [
+                'search' => $search,
+            ],
         ]);
     }
 

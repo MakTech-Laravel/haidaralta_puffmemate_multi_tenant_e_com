@@ -30,7 +30,7 @@ test('platform super admin can create a branch then add super admin in step two'
             'slug' => 'midtown',
             'code' => 'MID-001',
             'logo' => $logo,
-            'phone' => '+1-555-0100',
+            'phone' => '0298765432',
             'email' => 'midtown@test.com',
             'address' => '789 Center St',
             'opening_time' => '09:00',
@@ -47,6 +47,7 @@ test('platform super admin can create a branch then add super admin in step two'
 
     expect($branch->name)->toBe('Midtown')
         ->and($branch->code)->toBe('MID-001')
+        ->and($branch->phone)->toBe('+61298765432')
         ->and($branch->status)->toBeTrue()
         ->and($branch->logo)->not->toBeNull();
 
@@ -165,7 +166,7 @@ test('platform admin can update a branch', function () {
             'slug' => 'new-name',
             'code' => 'NEW-001',
             'logo' => $logo,
-            'phone' => '+1-555-9999',
+            'phone' => '0387654321',
             'opening_time' => '08:00',
             'closing_time' => '20:00',
             'status' => true,
@@ -177,7 +178,54 @@ test('platform admin can update a branch', function () {
     expect($branch->name)->toBe('New Name')
         ->and($branch->slug)->toBe('new-name')
         ->and($branch->code)->toBe('NEW-001')
+        ->and($branch->phone)->toBe('+61387654321')
         ->and($branch->logo)->not->toBeNull();
 
     Storage::disk('public')->assertExists($branch->logo);
+});
+
+test('invalid branch contact phone is rejected', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.store'), [
+            'name' => 'Bad Phone',
+            'slug' => 'bad-phone',
+            'code' => 'BAD-001',
+            'phone' => 'not-a-phone',
+            'status' => true,
+        ])
+        ->assertSessionHasErrors('phone');
+});
+
+test('platform can filter branches by inactive status and still open inactive branches', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $inactive = Branch::factory()->create([
+        'name' => 'Closed Store',
+        'slug' => 'closed-store',
+        'code' => 'CLS-001',
+        'status' => false,
+    ]);
+
+    (new RolesAndPermissionsSeeder)->seedBranchRolesForBranch($inactive);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.index', ['status' => 'inactive']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/index')
+            ->where('filters.status', 'inactive')
+            ->where('branches.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['slug'] === 'closed-store',
+            ))
+        );
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.show', $inactive))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/show')
+            ->where('branch.status', false)
+        );
 });

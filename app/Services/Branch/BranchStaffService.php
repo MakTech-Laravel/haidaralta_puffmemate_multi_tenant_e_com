@@ -144,15 +144,29 @@ class BranchStaffService
         return $roles;
     }
 
-    public function paginateForBranch(Branch $branch, int $perPage = 15, bool $includeBranch = true): LengthAwarePaginator
-    {
+    public function paginateForBranch(
+        Branch $branch,
+        int $perPage = 15,
+        bool $includeBranch = true,
+        ?string $search = null,
+    ): LengthAwarePaginator {
         $this->useBranchTeam($branch);
 
-        $staff = User::query()
-            ->where('user_type', UserType::BRANCH)
-            ->where('branch_id', $branch->id)
-            ->orderBy('name')
-            ->paginate($perPage)
+        $search = trim((string) $search);
+
+        $staff = (
+            $search !== ''
+                ? User::search($search)
+                    ->where('user_type', UserType::BRANCH->value)
+                    ->where('branch_id', $branch->id)
+                    ->orderBy('name')
+                    ->paginate($perPage)
+                : User::query()
+                    ->where('user_type', UserType::BRANCH)
+                    ->where('branch_id', $branch->id)
+                    ->orderBy('name')
+                    ->paginate($perPage)
+        )
             ->withQueryString()
             ->through(function (User $user) use ($branch, $includeBranch): array {
                 $row = [
@@ -176,14 +190,36 @@ class BranchStaffService
         return $staff;
     }
 
-    public function paginateAcrossBranches(?int $branchId, int $perPage = 15): LengthAwarePaginator
-    {
-        $staff = User::query()
-            ->where('user_type', UserType::BRANCH)
-            ->with('branch:id,name,slug')
-            ->when($branchId !== null, fn ($query) => $query->where('branch_id', $branchId))
-            ->orderBy('name')
-            ->paginate($perPage)
+    public function paginateAcrossBranches(
+        ?int $branchId,
+        int $perPage = 15,
+        ?string $search = null,
+    ): LengthAwarePaginator {
+        $search = trim((string) $search);
+
+        $staff = (
+            $search !== ''
+                ? User::search($search)
+                    ->where('user_type', UserType::BRANCH->value)
+                    ->when(
+                        $branchId !== null,
+                        fn ($builder) => $builder->where('branch_id', $branchId),
+                    )
+                    ->orderBy('name')
+                    ->paginate($perPage)
+                : User::query()
+                    ->where('user_type', UserType::BRANCH)
+                    ->with('branch:id,name,slug')
+                    ->when($branchId !== null, fn ($query) => $query->where('branch_id', $branchId))
+                    ->orderBy('name')
+                    ->paginate($perPage)
+        );
+
+        if ($search !== '') {
+            $staff->getCollection()->load('branch:id,name,slug');
+        }
+
+        $staff = $staff
             ->withQueryString()
             ->through(function (User $user): array {
                 $roles = [];
