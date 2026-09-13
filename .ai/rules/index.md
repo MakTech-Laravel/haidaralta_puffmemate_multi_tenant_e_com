@@ -24,7 +24,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Models/{User,Branch}.php, app/Models/OtpRecord.php | .ai/rules/models.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |
-| resources/js/components/platform/product-form.tsx | .ai/rules/platform.md |
+| resources/js/components/platform/product-form.tsx, resources/js/components/platform/catalog-background-color-field.tsx | .ai/rules/platform.md |
 | resources/js/components/{platform,admin}/*-form.tsx | .ai/rules/platformadmin.md |
 | resources/js/pages/platform/catalog/products/show.tsx | .ai/rules/products.md |
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |
