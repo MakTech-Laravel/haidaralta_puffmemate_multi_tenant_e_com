@@ -66,7 +66,7 @@ export default function StorefrontHome() {
                             Hand-picked for you
                         </p>
                         <h2 className="text-foreground text-2xl font-medium tracking-tight sm:text-[40px] uppercase">
-                            Featured products
+                            Best selling products
                         </h2>
                     </div>
                     <Link
