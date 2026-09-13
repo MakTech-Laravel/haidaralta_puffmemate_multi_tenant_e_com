@@ -4,7 +4,6 @@ import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
-import { FileUploadAvatar } from '@/components/file-upload-avatar';
 import InputError from '@/components/input-error';
 import { ColorPicker } from '@/components/color-picker';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -109,8 +108,20 @@ export function ProductForm({
     submitLabel,
 }: ProductFormProps) {
     const [slugTouched, setSlugTouched] = useState(isEdit);
-    const [existingImageUrl, setExistingImageUrl] = useState<string | null>(
-        defaults?.image_url ?? null,
+    const [existingPrimary, setExistingPrimary] = useState<ExistingFile[]>(
+        () =>
+            defaults?.image && defaults?.image_url
+                ? [
+                      {
+                          id: 'primary',
+                          path: defaults.image,
+                          url: defaults.image_url,
+                          mime_type: 'image/jpeg',
+                          name:
+                              defaults.image.split('/').pop() ?? 'primary-image',
+                      },
+                  ]
+                : [],
     );
     const [existingGallery, setExistingGallery] = useState<ExistingFile[]>(
         () =>
@@ -556,8 +567,8 @@ export function ProductForm({
                         </p>
                     </div>
 
-                    <div className="space-y-6">
-                        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start">
+                    <div className="space-y-5">
+                        <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
                             <ColorPicker
                                 mode="dialog"
                                 enabledModes={[...CATALOG_COLOR_PICKER_MODES]}
@@ -567,7 +578,7 @@ export function ProductForm({
                                     setData('color_code', color_code)
                                 }
                                 label="Image background"
-                                description="Soft fill behind product and category imagery"
+                                description="Soft fill behind product imagery"
                                 dialogTitle="Image background"
                                 dialogDescription="Choose none, a solid fill, or a two-tone gradient for catalog imagery."
                                 error={
@@ -579,16 +590,24 @@ export function ProductForm({
                                 }
                             />
 
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between gap-3">
-                                    <Label>Primary image</Label>
-                                    <span className="text-muted-foreground text-xs">
-                                        Shown on cards
+                            <div className="border-border/80 bg-card/60 overflow-hidden rounded-2xl border shadow-sm">
+                                <div className="border-border/60 flex items-start justify-between gap-3 border-b px-4 py-3">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-sm font-semibold">
+                                            Primary image
+                                        </Label>
+                                        <p className="text-muted-foreground text-xs">
+                                            Shown on product cards
+                                        </p>
+                                    </div>
+                                    <span className="text-muted-foreground shrink-0 text-[11px]">
+                                        Max 2MB
                                     </span>
                                 </div>
+
                                 <div
                                     className={cn(
-                                        'rounded-xl border border-dashed border-border/80 p-3',
+                                        'flex items-center justify-center p-3.5',
                                         imageTileTransparent && 'bg-muted/20',
                                     )}
                                     style={
@@ -597,12 +616,13 @@ export function ProductForm({
                                             : imageTileStyle
                                     }
                                 >
-                                    <FileUploadAvatar
+                                    <FileUpload
                                         value={data.image}
                                         onChange={(file) => {
                                             const next = Array.isArray(file)
                                                 ? (file[0] ?? null)
                                                 : file;
+                                            setExistingPrimary([]);
                                             setData((current) => ({
                                                 ...current,
                                                 image: next,
@@ -611,13 +631,13 @@ export function ProductForm({
                                                     : current.remove_image,
                                             }));
                                         }}
-                                        existingUrl={
+                                        existingFiles={
                                             data.image || data.remove_image
-                                                ? null
-                                                : existingImageUrl
+                                                ? []
+                                                : existingPrimary
                                         }
-                                        onClearExisting={() => {
-                                            setExistingImageUrl(null);
+                                        onRemoveExisting={() => {
+                                            setExistingPrimary([]);
                                             setData((current) => ({
                                                 ...current,
                                                 image: null,
@@ -626,13 +646,28 @@ export function ProductForm({
                                         }}
                                         accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
                                         maxSize={2}
+                                        lightbox
+                                        isUploading={processing}
+                                        uploadProgress={
+                                            progress?.percentage ?? null
+                                        }
+                                        onCancel={
+                                            processing ? cancel : undefined
+                                        }
+                                        placeholder="Drop primary image here"
+                                        hint="PNG, JPG, or WebP"
+                                        classNames={{
+                                            wrapper: 'w-full',
+                                            dropzone:
+                                                'min-h-28 w-full rounded-xl border-border/70 bg-background/75 backdrop-blur-sm',
+                                            card: 'mx-auto w-full overflow-hidden rounded-xl border-border/70 bg-background/85 shadow-xs',
+                                            cardMedia:
+                                                'aspect-auto! h-28 w-full',
+                                            cardInfo: 'px-2.5 py-1.5',
+                                        }}
                                         error={errors.image}
-                                        hint="PNG, JPG, or WebP up to 2MB"
-                                        placeholder="Primary image"
-                                        avatarSize={120}
                                     />
                                 </div>
-                                <InputError message={errors.image} />
                             </div>
                         </div>
 

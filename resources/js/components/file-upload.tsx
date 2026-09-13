@@ -1422,11 +1422,15 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     {LightboxEl}
                     <div
                         className={cn(
-                            isAvatar ? 'flex items-center gap-4' : undefined,
+                            isAvatar
+                                ? 'flex items-center gap-4'
+                                : 'flex w-full justify-center',
                         )}
                     >
                         <div
-                            className={cn(isAvatar && 'relative shrink-0')}
+                            className={cn(
+                                isAvatar ? 'relative shrink-0' : 'w-full',
+                            )}
                             style={
                                 isAvatar
                                     ? { width: avatarSize, height: avatarSize }
@@ -1491,6 +1495,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                             {error}
                         </p>
                     )}
+                    {RejectionsEl}
                 </div>
             );
         }
@@ -1514,11 +1519,15 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     {LightboxEl}
                     <div
                         className={cn(
-                            isAvatar ? 'flex items-center gap-4' : undefined,
+                            isAvatar
+                                ? 'flex items-center gap-4'
+                                : 'flex w-full justify-center',
                         )}
                     >
                         <div
-                            className={cn(isAvatar && 'relative shrink-0')}
+                            className={cn(
+                                isAvatar ? 'relative shrink-0' : 'w-full',
+                            )}
                             style={
                                 isAvatar
                                     ? { width: avatarSize, height: avatarSize }
