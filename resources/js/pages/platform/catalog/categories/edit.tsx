@@ -16,7 +16,7 @@ type Category = {
     parent_id: number | null;
     image: string | null;
     image_url: string | null;
-    color_code?: import('@/lib/catalog-background').CatalogColorCode | null;
+    color_code?: import('@/lib/color-picker').ColorPickerValue | null;
     status: boolean;
 };
 

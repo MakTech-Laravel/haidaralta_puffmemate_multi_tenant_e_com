@@ -27,7 +27,7 @@ type Product = {
     image: string | null;
     image_url: string | null;
     gallery: GalleryImage[];
-    color_code?: import('@/lib/catalog-background').CatalogColorCode | null;
+    color_code?: import('@/lib/color-picker').ColorPickerValue | null;
     status: boolean;
 };
 

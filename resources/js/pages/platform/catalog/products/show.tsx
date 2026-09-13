@@ -33,10 +33,10 @@ import {
 } from '@/components/ui/dialog';
 import { usePermission } from '@/hooks/use-permissions';
 import {
-    catalogBackgroundStyle,
-    isTransparentCatalogColor,
-    type CatalogColorCode,
-} from '@/lib/catalog-background';
+    colorPickerStyle,
+    isTransparentColorPickerValue,
+    type ColorPickerValue,
+} from '@/lib/color-picker';
 
 type ProductVariant = {
     id: number;
@@ -55,7 +55,7 @@ type Product = {
     category_name: string;
     image: string | null;
     image_url: string | null;
-    color_code?: CatalogColorCode | null;
+    color_code?: ColorPickerValue | null;
     gallery: {
         id: number;
         path: string;
@@ -196,9 +196,9 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                         <Avatar
                             className="size-14 rounded-xl"
                             style={
-                                isTransparentCatalogColor(product.color_code)
+                                isTransparentColorPickerValue(product.color_code)
                                     ? undefined
-                                    : catalogBackgroundStyle(product.color_code)
+                                    : colorPickerStyle(product.color_code)
                             }
                         >
                             {product.image_url ? (

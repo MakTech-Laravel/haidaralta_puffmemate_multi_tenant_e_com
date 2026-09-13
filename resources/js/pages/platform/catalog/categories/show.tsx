@@ -14,10 +14,10 @@ import {
 } from '@/components/ui/card';
 import { usePermission } from '@/hooks/use-permissions';
 import {
-    catalogBackgroundStyle,
-    isTransparentCatalogColor,
-    type CatalogColorCode,
-} from '@/lib/catalog-background';
+    colorPickerStyle,
+    isTransparentColorPickerValue,
+    type ColorPickerValue,
+} from '@/lib/color-picker';
 
 type Category = {
     id: number;
@@ -26,7 +26,7 @@ type Category = {
     parent_name: string | null;
     image: string | null;
     image_url: string | null;
-    color_code?: CatalogColorCode | null;
+    color_code?: ColorPickerValue | null;
     status: boolean;
     products_count: number;
     children_count: number;
@@ -64,11 +64,11 @@ export default function PlatformCategoriesShow({
                         <Avatar
                             className="size-14 rounded-xl"
                             style={
-                                isTransparentCatalogColor(category.color_code)
+                                isTransparentColorPickerValue(
+                                    category.color_code,
+                                )
                                     ? undefined
-                                    : catalogBackgroundStyle(
-                                          category.color_code,
-                                      )
+                                    : colorPickerStyle(category.color_code)
                             }
                         >
                             {category.image_url ? (

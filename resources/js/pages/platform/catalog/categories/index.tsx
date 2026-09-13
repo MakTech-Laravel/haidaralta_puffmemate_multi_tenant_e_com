@@ -26,10 +26,10 @@ import {
 } from '@/components/ui/select';
 import { usePermission } from '@/hooks/use-permissions';
 import {
-    catalogBackgroundStyle,
-    isTransparentCatalogColor,
-    type CatalogColorCode,
-} from '@/lib/catalog-background';
+    colorPickerStyle,
+    isTransparentColorPickerValue,
+    type ColorPickerValue,
+} from '@/lib/color-picker';
 
 type CategoryRow = {
     id: number;
@@ -39,7 +39,7 @@ type CategoryRow = {
     parent_name: string | null;
     image: string | null;
     image_url: string | null;
-    color_code?: CatalogColorCode | null;
+    color_code?: ColorPickerValue | null;
     status: boolean;
     products_count: number;
     deleted_at: string | null;
@@ -91,11 +91,11 @@ export default function PlatformCategoriesIndex({
                     <Avatar
                         className="size-10 rounded-md"
                         style={
-                            isTransparentCatalogColor(row.original.color_code)
+                            isTransparentColorPickerValue(
+                                row.original.color_code,
+                            )
                                 ? undefined
-                                : catalogBackgroundStyle(
-                                      row.original.color_code,
-                                  )
+                                : colorPickerStyle(row.original.color_code)
                         }
                     >
                         <AvatarImage

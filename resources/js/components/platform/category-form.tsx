@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { FileUploadAvatar } from '@/components/file-upload-avatar';
 import InputError from '@/components/input-error';
-import { CatalogBackgroundColorField } from '@/components/platform/catalog-background-color-field';
+import { ColorPicker } from '@/components/color-picker';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -25,11 +25,12 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import {
-    catalogBackgroundStyle,
-    isTransparentCatalogColor,
-    normalizeCatalogColorCode,
-    type CatalogColorCode,
-} from '@/lib/catalog-background';
+    CATALOG_COLOR_PICKER_MODES,
+    colorPickerStyle,
+    isTransparentColorPickerValue,
+    normalizeCatalogColorPickerValue,
+    type ColorPickerValue,
+} from '@/lib/color-picker';
 import { cn } from '@/lib/utils';
 
 type FormAction = {
@@ -48,7 +49,7 @@ interface CategoryFormDefaults {
     parent_id?: number | null;
     image?: string | null;
     image_url?: string | null;
-    color_code?: CatalogColorCode | null;
+    color_code?: ColorPickerValue | null;
     status?: boolean;
 }
 
@@ -101,13 +102,13 @@ export function CategoryForm({
         parent_id: defaults?.parent_id ?? null,
         image: null as File | null,
         remove_image: false,
-        color_code: normalizeCatalogColorCode(defaults?.color_code),
+        color_code: normalizeCatalogColorPickerValue(defaults?.color_code),
         status: defaults?.status ?? true,
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
-    const imageTileStyle = catalogBackgroundStyle(data.color_code);
-    const imageTileTransparent = isTransparentCatalogColor(data.color_code);
+    const imageTileStyle = colorPickerStyle(data.color_code);
+    const imageTileTransparent = isTransparentColorPickerValue(data.color_code);
 
     useEffect(() => {
         setValidationTimeout(500);
@@ -134,7 +135,7 @@ export function CategoryForm({
             return {
                 ...rest,
                 color_code: JSON.stringify(
-                    normalizeCatalogColorCode(color_code),
+                    normalizeCatalogColorPickerValue(color_code),
                 ),
                 ...(image ? { image } : {}),
                 ...(remove_image ? { remove_image: true } : {}),
@@ -206,11 +207,18 @@ export function CategoryForm({
                         <InputError message={errors.image} />
                     </div>
 
-                    <CatalogBackgroundColorField
+                    <ColorPicker
+                        mode="dialog"
+                        enabledModes={[...CATALOG_COLOR_PICKER_MODES]}
+                        defaultMode="transparent"
                         value={data.color_code}
                         onChange={(color_code) =>
                             setData('color_code', color_code)
                         }
+                        label="Image background"
+                        description="Soft fill behind product and category imagery"
+                        dialogTitle="Image background"
+                        dialogDescription="Choose none, a solid fill, or a two-tone gradient for catalog imagery."
                         error={
                             errors.color_code ??
                             errors['color_code.mode'] ??

@@ -6,7 +6,7 @@ import ProductController from '@/actions/App/Http/Controllers/Platform/ProductCo
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import { FileUploadAvatar } from '@/components/file-upload-avatar';
 import InputError from '@/components/input-error';
-import { CatalogBackgroundColorField } from '@/components/platform/catalog-background-color-field';
+import { ColorPicker } from '@/components/color-picker';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,11 +29,12 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import {
-    catalogBackgroundStyle,
-    isTransparentCatalogColor,
-    normalizeCatalogColorCode,
-    type CatalogColorCode,
-} from '@/lib/catalog-background';
+    CATALOG_COLOR_PICKER_MODES,
+    colorPickerStyle,
+    isTransparentColorPickerValue,
+    normalizeCatalogColorPickerValue,
+    type ColorPickerValue,
+} from '@/lib/color-picker';
 import { cn } from '@/lib/utils';
 
 type FormAction = {
@@ -71,7 +72,7 @@ interface ProductFormDefaults {
     image?: string | null;
     image_url?: string | null;
     gallery?: ProductGalleryImage[];
-    color_code?: CatalogColorCode | null;
+    color_code?: ColorPickerValue | null;
     status?: boolean;
 }
 
@@ -150,7 +151,7 @@ export function ProductForm({
         gallery: [] as File[],
         remove_image: false,
         remove_gallery_ids: [] as number[],
-        color_code: normalizeCatalogColorCode(defaults?.color_code),
+        color_code: normalizeCatalogColorPickerValue(defaults?.color_code),
         status: defaults?.status ?? true,
         ...(isEdit ? { _method: 'put' } : {}),
     });
@@ -163,8 +164,8 @@ export function ProductForm({
         [categoryOptions, data.category_ids],
     );
 
-    const imageTileStyle = catalogBackgroundStyle(data.color_code);
-    const imageTileTransparent = isTransparentCatalogColor(data.color_code);
+    const imageTileStyle = colorPickerStyle(data.color_code);
+    const imageTileTransparent = isTransparentColorPickerValue(data.color_code);
 
     const toggleCategory = (categoryId: number) => {
         const next = data.category_ids.includes(categoryId)
@@ -244,7 +245,7 @@ export function ProductForm({
             return {
                 ...rest,
                 color_code: JSON.stringify(
-                    normalizeCatalogColorCode(color_code),
+                    normalizeCatalogColorPickerValue(color_code),
                 ),
                 ...(image ? { image } : {}),
                 ...(gallery.length > 0 ? { gallery } : {}),
@@ -555,11 +556,18 @@ export function ProductForm({
                     </div>
 
                     <div className="space-y-8">
-                        <CatalogBackgroundColorField
+                        <ColorPicker
+                            mode="dialog"
+                            enabledModes={[...CATALOG_COLOR_PICKER_MODES]}
+                            defaultMode="transparent"
                             value={data.color_code}
                             onChange={(color_code) =>
                                 setData('color_code', color_code)
                             }
+                            label="Image background"
+                            description="Soft fill behind product and category imagery"
+                            dialogTitle="Image background"
+                            dialogDescription="Choose none, a solid fill, or a two-tone gradient for catalog imagery."
                             error={
                                 errors.color_code ??
                                 errors['color_code.mode'] ??
