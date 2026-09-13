@@ -52,6 +52,12 @@ export default function PlatformCategoriesEdit({
                     action={CategoryController.update.form(category.slug)}
                     parentOptions={parentOptions}
                     isEdit
+                    enableSuggestions
+                    suggestionsUrl={CategoryController.suggestions.url()}
+                    suggestionShowHref={(slug) =>
+                        CategoryController.show.url(slug)
+                    }
+                    excludeCategoryId={category.id}
                     defaults={{
                         name: category.name,
                         slug: category.slug,

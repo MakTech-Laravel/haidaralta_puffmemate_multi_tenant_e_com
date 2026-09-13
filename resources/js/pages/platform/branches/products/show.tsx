@@ -1,28 +1,26 @@
-import { Head, Link, router, setLayoutProps, useForm } from '@inertiajs/react';
+import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
+import { BranchProductSummary } from '@/components/branch/branch-product-summary';
+import {
+    ProductInventoryPanel,
+    type BranchInventorySnapshot,
+    type BranchPriceSnapshot,
+    type BranchProductVariantRow,
+    type TransactionsPage,
+} from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
+import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    colorPickerStyle,
+    isTransparentColorPickerValue,
+    normalizeCatalogColorPickerValue,
+    type ColorPickerValue,
+} from '@/lib/color-picker';
+import { cn } from '@/lib/utils';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -31,58 +29,41 @@ type ProductShow = {
     name: string;
     slug: string;
     sku: string | null;
+    description?: string | null;
     status: boolean;
     image_url: string | null;
-    category_ids: number[];
-    categories: { id: number; name: string; slug: string }[];
+    color_code?: ColorPickerValue | null;
     category_name: string;
-    variants: { id: number; name: string; sku: string | null }[];
-    enabled: boolean;
-    inventory: {
-        quantity: number;
-        reserved_quantity: number;
-        available_quantity: number;
-        minimum_stock: number;
-        is_low_stock: boolean;
-    } | null;
-    price: {
-        selling_price: string | number;
-        discount_price: string | number | null;
-        start_date: string | null;
-        end_date: string | null;
-    } | null;
-    transactions: {
+    gallery?: {
         id: number;
-        type: string;
-        quantity: number;
-        before_quantity: number;
-        after_quantity: number;
-        created_at: string | null;
+        url: string;
+        path?: string;
+        sort_order?: number;
     }[];
+    variants: BranchProductVariantRow[];
+    enabled: boolean;
+    inventory: BranchInventorySnapshot | null;
+    price: BranchPriceSnapshot | null;
+    variant_inventories: Record<string, BranchInventorySnapshot>;
+    variant_prices: Record<string, BranchPriceSnapshot>;
 };
 
 export default function PlatformBranchProductShow({
     branch,
     product,
+    transactions,
     transactionTypes,
+    discountTypes,
 }: {
     branch: Branch;
     product: ProductShow;
+    transactions: TransactionsPage;
     transactionTypes: { value: string; label: string }[];
+    discountTypes: { value: string; label: string }[];
 }) {
     const [enabled, setEnabled] = useState(product.enabled);
-    const inventoryForm = useForm({
-        type: 'stock_in',
-        quantity: 1,
-        minimum_stock: product.inventory?.minimum_stock ?? 0,
-    });
-    const priceForm = useForm({
-        selling_price: product.price?.selling_price ?? '',
-        discount_price: product.price?.discount_price ?? '',
-        start_date: product.price?.start_date ?? '',
-        end_date: product.price?.end_date ?? '',
-        status: true,
-    });
+    const colorCode = normalizeCatalogColorPickerValue(product.color_code);
+    const transparent = isTransparentColorPickerValue(colorCode);
 
     setLayoutProps({
         breadcrumbs: [
@@ -106,16 +87,62 @@ export default function PlatformBranchProductShow({
         ],
     });
 
+    const toggleEnabled = (next: boolean) => {
+        setEnabled(next);
+        router.put(
+            BranchInventoryController.toggle.url({
+                branch: branch.slug,
+                product: product.slug,
+            }),
+            { status: next },
+            { preserveScroll: true },
+        );
+    };
+
     return (
         <>
             <Head title={`${product.name} · ${branch.name}`} />
 
-            <div className="mx-auto flex max-w-4xl flex-col gap-8 p-2">
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <Heading
-                        title={product.name}
-                        description={`Inventory for ${branch.name}`}
-                    />
+                    <div className="flex items-start gap-4">
+                        <Avatar
+                            className={cn(
+                                'size-14 rounded-xl border border-border/70',
+                                transparent && COLOR_PICKER_CHECKERBOARD,
+                            )}
+                            style={
+                                transparent
+                                    ? undefined
+                                    : colorPickerStyle(colorCode)
+                            }
+                        >
+                            {product.image_url ? (
+                                <AvatarImage
+                                    src={product.image_url}
+                                    alt={product.name}
+                                    className="object-contain p-1"
+                                />
+                            ) : null}
+                            <AvatarFallback className="rounded-xl bg-transparent text-base">
+                                {product.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="[&_header]:mb-0">
+                            <Heading
+                                title={product.name}
+                                description={`Inventory for ${branch.name}`}
+                            />
+                            {product.inventory?.is_low_stock ? (
+                                <Badge
+                                    variant="outline"
+                                    className="mt-2 border-destructive/40 text-destructive"
+                                >
+                                    Low stock
+                                </Badge>
+                            ) : null}
+                        </div>
+                    </div>
                     <Button variant="outline" asChild>
                         <Link
                             href={BranchInventoryController.index.url(
@@ -127,215 +154,44 @@ export default function PlatformBranchProductShow({
                     </Button>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <Checkbox
-                            checked={enabled}
-                            onCheckedChange={(checked) => {
-                                const next = checked === true;
-                                setEnabled(next);
-                                router.put(
-                                    BranchInventoryController.toggle.url({
-                                        branch: branch.slug,
-                                        product: product.slug,
-                                    }),
-                                    { status: next },
-                                    { preserveScroll: true },
-                                );
-                            }}
-                        />
-                        <span className="text-sm">
-                            {enabled ? 'Enabled' : 'Disabled'} at this branch
-                        </span>
-                    </div>
-                    {product.inventory?.is_low_stock ? (
-                        <Badge variant="destructive">Low stock</Badge>
-                    ) : null}
-                </div>
+                <BranchProductSummary
+                    name={product.name}
+                    sku={product.sku}
+                    description={product.description}
+                    categoryName={product.category_name}
+                    imageUrl={product.image_url}
+                    colorCode={product.color_code}
+                    gallery={product.gallery ?? []}
+                    enabled={enabled}
+                    lowStock={Boolean(product.inventory?.is_low_stock)}
+                    onEnabledChange={toggleEnabled}
+                    enabledLabel="Enabled at this branch"
+                />
 
-                <section className="space-y-4">
-                    <h2 className="text-lg font-medium">Adjust inventory</h2>
-                    <form
-                        className="grid gap-4 sm:grid-cols-3"
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            inventoryForm.post(
-                                BranchInventoryController.adjustInventory.url({
-                                    branch: branch.slug,
-                                    product: product.slug,
-                                }),
-                                { preserveScroll: true },
-                            );
-                        }}
-                    >
-                        <div className="grid gap-2">
-                            <Label>Type</Label>
-                            <Select
-                                value={inventoryForm.data.type}
-                                onValueChange={(value) =>
-                                    inventoryForm.setData('type', value)
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {transactionTypes.map((type) => (
-                                        <SelectItem
-                                            key={type.value}
-                                            value={type.value}
-                                        >
-                                            {type.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="quantity">Quantity</Label>
-                            <Input
-                                id="quantity"
-                                type="number"
-                                value={inventoryForm.data.quantity}
-                                onChange={(event) =>
-                                    inventoryForm.setData(
-                                        'quantity',
-                                        Number(event.target.value),
-                                    )
-                                }
-                            />
-                            <InputError
-                                message={inventoryForm.errors.quantity}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="minimum_stock">Minimum stock</Label>
-                            <Input
-                                id="minimum_stock"
-                                type="number"
-                                value={inventoryForm.data.minimum_stock}
-                                onChange={(event) =>
-                                    inventoryForm.setData(
-                                        'minimum_stock',
-                                        Number(event.target.value),
-                                    )
-                                }
-                            />
-                        </div>
-                        <div className="sm:col-span-3">
-                            <Button
-                                type="submit"
-                                disabled={inventoryForm.processing}
-                            >
-                                Save inventory
-                            </Button>
-                        </div>
-                    </form>
-                </section>
-
-                <section className="space-y-4">
-                    <h2 className="text-lg font-medium">Pricing</h2>
-                    <form
-                        className="grid gap-4 sm:grid-cols-2"
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            priceForm.put(
-                                BranchInventoryController.upsertPrice.url({
-                                    branch: branch.slug,
-                                    product: product.slug,
-                                }),
-                                { preserveScroll: true },
-                            );
-                        }}
-                    >
-                        <div className="grid gap-2">
-                            <Label htmlFor="selling_price">Selling price</Label>
-                            <Input
-                                id="selling_price"
-                                type="number"
-                                step="0.01"
-                                value={priceForm.data.selling_price}
-                                onChange={(event) =>
-                                    priceForm.setData(
-                                        'selling_price',
-                                        event.target.value,
-                                    )
-                                }
-                            />
-                            <InputError
-                                message={priceForm.errors.selling_price}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="discount_price">
-                                Discount price
-                            </Label>
-                            <Input
-                                id="discount_price"
-                                type="number"
-                                step="0.01"
-                                value={priceForm.data.discount_price}
-                                onChange={(event) =>
-                                    priceForm.setData(
-                                        'discount_price',
-                                        event.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-                        <div className="sm:col-span-2">
-                            <Button
-                                type="submit"
-                                disabled={priceForm.processing}
-                            >
-                                Save price
-                            </Button>
-                        </div>
-                    </form>
-                </section>
-
-                <section className="space-y-4">
-                    <h2 className="text-lg font-medium">Recent transactions</h2>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Qty</TableHead>
-                                <TableHead>Before</TableHead>
-                                <TableHead>After</TableHead>
-                                <TableHead>When</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {product.transactions.length === 0 ? (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={5}
-                                        className="text-muted-foreground text-center"
-                                    >
-                                        No transactions yet.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                product.transactions.map((txn) => (
-                                    <TableRow key={txn.id}>
-                                        <TableCell>{txn.type}</TableCell>
-                                        <TableCell>{txn.quantity}</TableCell>
-                                        <TableCell>
-                                            {txn.before_quantity}
-                                        </TableCell>
-                                        <TableCell>
-                                            {txn.after_quantity}
-                                        </TableCell>
-                                        <TableCell>
-                                            {txn.created_at ?? '—'}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </section>
+                <ProductInventoryPanel
+                    variants={product.variants}
+                    inventory={product.inventory}
+                    price={product.price}
+                    variantInventories={product.variant_inventories}
+                    variantPrices={product.variant_prices}
+                    transactions={transactions}
+                    transactionTypes={transactionTypes}
+                    discountTypes={discountTypes}
+                    inventoryUrl={BranchInventoryController.adjustInventory.url(
+                        {
+                            branch: branch.slug,
+                            product: product.slug,
+                        },
+                    )}
+                    priceUrl={BranchInventoryController.upsertPrice.url({
+                        branch: branch.slug,
+                        product: product.slug,
+                    })}
+                    showUrl={BranchInventoryController.show.url({
+                        branch: branch.slug,
+                        product: product.slug,
+                    })}
+                />
             </div>
         </>
     );

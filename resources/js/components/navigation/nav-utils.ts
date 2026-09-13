@@ -71,8 +71,10 @@ export function isNodeActive(node: NavNode, currentPath: string): boolean {
 
 /**
  * Filter a tree by permissions:
- *   - drop any node whose explicit `permissions` the user lacks;
- *   - recurse into groups and drop empty groups that have no own link.
+ *   - drop any node whose explicit `permissions` the user lacks (`canAny`);
+ *   - recurse into groups;
+ *   - drop empty groups that have no own `href`;
+ *   - keep empty-child groups that still have their own `href`.
  */
 export function filterNavNodes(
     nodes: NavNode[],

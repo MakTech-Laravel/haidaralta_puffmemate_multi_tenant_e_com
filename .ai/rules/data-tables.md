@@ -4,6 +4,8 @@ paths:
   - 'resources/js/components/data-table/**'
   - 'resources/js/pages/**/index.tsx'
   - app/DataTables/DatabaseBackupZipDataTable.php
+  - app/DataTables/BranchProductListingDataTable.php
+  - app/DataTables/BranchCategoryDataTable.php
 ---
 
 # Data Tables
@@ -24,3 +26,9 @@ Free-text search may use Scout/Meilisearch only on Searchable models when driver
 
 ## Backup zip DataTable uses archives_* query keys
 Backup zip listing is filesystem metadata, not Eloquent. Use DatabaseBackupZipDataTable + archives_* query keys (archives_search/sort/per_page/page) so it coexists with operator history DataTable on the same page. Frontend prop is archives. No Meilisearch.
+
+## Branch listing makeForBranch + filters
+Use BranchProductListingDataTable::makeForBranch (not make) — child signature cannot override AbstractDataTable::make. Filters: enabled (branch_products.status) and low_stock (product-level inventory available <= minimum).
+
+## Branch categories DataTable no trash
+Branch category index uses BranchCategoryDataTable without AllowedFilter::trashed — soft-delete UI stays platform-only.

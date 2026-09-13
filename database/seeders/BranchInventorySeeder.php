@@ -102,6 +102,7 @@ class BranchInventorySeeder extends Seeder
 
             $pricing->upsert($branch, $product, [
                 'selling_price' => $line['price'],
+                'discount_type' => $line['discount'] !== null ? 'fixed' : 'none',
                 'discount_price' => $line['discount'],
                 'status' => true,
             ]);

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DiscountType;
 use App\Models\Concerns\AuditsChanges;
 use Database\Factories\BranchProductPriceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,10 +22,18 @@ class BranchProductPrice extends Model
         'product_id',
         'variant_id',
         'selling_price',
+        'discount_type',
         'discount_price',
         'start_date',
         'end_date',
         'status',
+    ];
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'discount_type' => DiscountType::None->value,
     ];
 
     /**
@@ -58,6 +67,7 @@ class BranchProductPrice extends Model
     {
         return [
             'selling_price' => 'decimal:2',
+            'discount_type' => DiscountType::class,
             'discount_price' => 'decimal:2',
             'start_date' => 'date',
             'end_date' => 'date',

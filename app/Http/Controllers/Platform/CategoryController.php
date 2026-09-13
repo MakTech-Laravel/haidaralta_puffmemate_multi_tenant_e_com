@@ -8,7 +8,9 @@ use App\Http\Requests\Platform\StoreCategoryRequest;
 use App\Http\Requests\Platform\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Services\Catalog\CategoryService;
+use App\Services\Catalog\CategorySuggestionService;
 use App\Support\Toast;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,7 +18,10 @@ use Inertia\Response;
 
 class CategoryController extends Controller
 {
-    public function __construct(private CategoryService $categories) {}
+    public function __construct(
+        private CategoryService $categories,
+        private CategorySuggestionService $suggestions,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -29,6 +34,19 @@ class CategoryController extends Controller
     {
         return Inertia::render('platform/catalog/categories/create', [
             'parentOptions' => $this->parentOptions(),
+        ]);
+    }
+
+    public function suggestions(Request $request): JsonResponse
+    {
+        $query = $request->string('q')->trim()->toString();
+        $excludeCategoryId = $request->integer('exclude') ?: null;
+
+        return response()->json([
+            'suggestions' => $this->suggestions->suggest(
+                $query,
+                excludeCategoryId: $excludeCategoryId,
+            ),
         ]);
     }
 

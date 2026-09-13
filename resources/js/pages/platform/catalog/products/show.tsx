@@ -13,6 +13,8 @@ import {
 } from '@/components/data-table';
 import Heading from '@/components/heading';
 import { VariantForm } from '@/components/platform/variant-form';
+import { ProductGallery } from '@/components/product-gallery';
+import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -35,9 +37,10 @@ import { usePermission } from '@/hooks/use-permissions';
 import {
     colorPickerStyle,
     isTransparentColorPickerValue,
+    normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-
+import { cn } from '@/lib/utils';
 type ProductVariant = {
     id: number;
     name: string;
@@ -108,6 +111,8 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
     };
 
     const canManageCatalog = can('manage-catalog');
+    const colorCode = normalizeCatalogColorPickerValue(product.color_code);
+    const transparent = isTransparentColorPickerValue(colorCode);
 
     const variantColumns = useMemo<ColumnDef<ProductVariant>[]>(() => {
         const columns: ColumnDef<ProductVariant>[] = [
@@ -194,35 +199,32 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <Avatar
-                            className="size-14 rounded-xl"
+                            className={cn(
+                                'size-14 rounded-xl border border-border/70',
+                                transparent && COLOR_PICKER_CHECKERBOARD,
+                            )}
                             style={
-                                isTransparentColorPickerValue(product.color_code)
+                                transparent
                                     ? undefined
-                                    : colorPickerStyle(product.color_code)
+                                    : colorPickerStyle(colorCode)
                             }
                         >
                             {product.image_url ? (
                                 <AvatarImage
                                     src={product.image_url}
                                     alt={product.name}
+                                    className="object-contain p-1"
                                 />
                             ) : null}
                             <AvatarFallback className="rounded-xl bg-transparent text-base">
                                 {product.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col gap-2">
+                        <div className="[&_header]:mb-0">
                             <Heading
                                 title={product.name}
                                 description={`/${product.slug}${product.sku ? ` · ${product.sku}` : ''}`}
                             />
-                            <Badge
-                                variant={
-                                    product.status ? 'default' : 'secondary'
-                                }
-                            >
-                                {product.status ? 'Active' : 'Inactive'}
-                            </Badge>
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -262,6 +264,12 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                     <CardContent>
                         <dl className="grid gap-5 sm:grid-cols-2">
                             <DetailItem
+                                label="Status"
+                                value={
+                                    product.status ? 'Active' : 'Inactive'
+                                }
+                            />
+                            <DetailItem
                                 label="Categories"
                                 value={product.category_name}
                             />
@@ -281,36 +289,11 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Gallery</CardTitle>
-                        <CardDescription>
-                            Extra images shown on the product page
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {product.gallery.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
-                                No gallery images yet.
-                            </p>
-                        ) : (
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                                {product.gallery.map((image) => (
-                                    <div
-                                        key={image.id}
-                                        className="overflow-hidden rounded-xl border bg-muted/20"
-                                    >
-                                        <img
-                                            src={image.url}
-                                            alt={`${product.name} gallery`}
-                                            className="aspect-square w-full object-cover"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                <ProductGallery
+                    productName={product.name}
+                    images={product.gallery}
+                    colorCode={product.color_code}
+                />
 
                 <Card>
                     <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
