@@ -465,7 +465,7 @@ export function ProductInventoryPanel({
                             </CardDescription>
                         </CardHeader>
                         <form
-                            className="flex flex-1 flex-col"
+                            className="flex min-h-0 flex-1 flex-col"
                             onSubmit={(event) => {
                                 event.preventDefault();
                                 inventoryForm.transform((data) => ({
@@ -480,7 +480,7 @@ export function ProductInventoryPanel({
                                 });
                             }}
                         >
-                            <CardContent className="grid flex-1 gap-4 px-5 py-5">
+                            <CardContent className="grid content-start gap-4 px-5 py-5">
                                 <div className="grid gap-2">
                                     <Label htmlFor="inventory-type">Type</Label>
                                     <Select
@@ -507,7 +507,7 @@ export function ProductInventoryPanel({
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div className="grid gap-2">
                                         <Label htmlFor="quantity">
                                             Quantity
@@ -579,7 +579,7 @@ export function ProductInventoryPanel({
                             </CardDescription>
                         </CardHeader>
                         <form
-                            className="flex flex-1 flex-col"
+                            className="flex min-h-0 flex-1 flex-col"
                             onSubmit={(event) => {
                                 event.preventDefault();
                                 priceForm.transform((data) => {
@@ -613,7 +613,7 @@ export function ProductInventoryPanel({
                                 });
                             }}
                         >
-                            <CardContent className="grid flex-1 gap-4 px-5 py-5">
+                            <CardContent className="grid content-start gap-4 px-5 py-5">
                                 <div className="grid gap-2">
                                     <Label htmlFor="selling_price">
                                         Selling price
