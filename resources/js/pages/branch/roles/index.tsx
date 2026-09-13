@@ -1,6 +1,6 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Download } from 'lucide-react';
+import { Download, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import RoleController from '@/actions/App/Http/Controllers/Branch/RoleController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -122,12 +122,13 @@ export default function BranchRolesIndex({
             },
             {
                 id: 'actions',
-                header: () => <span className="sr-only">Actions</span>,
+                header: 'Actions',
                 cell: ({ row }) => {
                     const role = row.original;
                     const items = [
                         {
                             label: 'View',
+                            icon: Eye,
                             href: RoleController.show.url({
                                 branch: branch.slug,
                                 role: role.id,
@@ -135,6 +136,7 @@ export default function BranchRolesIndex({
                         },
                         {
                             label: 'Edit',
+                            icon: Pencil,
                             href: RoleController.edit.url({
                                 branch: branch.slug,
                                 role: role.id,
@@ -144,6 +146,7 @@ export default function BranchRolesIndex({
                             ? [
                                   {
                                       label: 'Delete',
+                                      icon: Trash2,
                                       destructive: true,
                                       separatorBefore: true,
                                       onSelect: () => setDeletingId(role.id),

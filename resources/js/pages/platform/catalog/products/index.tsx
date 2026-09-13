@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
+import { Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -175,18 +176,20 @@ export default function PlatformProductsIndex({
             },
             {
                 id: 'actions',
-                header: () => <span className="sr-only">Actions</span>,
+                header: 'Actions',
                 cell: ({ row }) => {
                     const product = row.original;
                     const items = [
                         {
                             label: 'View',
+                            icon: Eye,
                             href: ProductController.show.url(product.slug),
                         },
                         ...(can('manage-catalog') && !product.deleted_at
                             ? [
                                   {
                                       label: 'Edit',
+                                      icon: Pencil,
                                       href: ProductController.edit.url(
                                           product.slug,
                                       ),
@@ -197,6 +200,7 @@ export default function PlatformProductsIndex({
                             ? [
                                   {
                                       label: 'Restore',
+                                      icon: RotateCcw,
                                       onSelect: () => {
                                           router.post(
                                               ProductController.restore.url(
@@ -211,6 +215,7 @@ export default function PlatformProductsIndex({
                             ? [
                                   {
                                       label: 'Delete',
+                                      icon: Trash2,
                                       destructive: true,
                                       separatorBefore: true,
                                       onSelect: () =>

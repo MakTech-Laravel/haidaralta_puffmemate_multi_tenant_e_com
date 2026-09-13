@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table';
+import { Eye } from 'lucide-react';
 import { useMemo } from 'react';
 import {
     DataTable,
@@ -101,12 +102,13 @@ export function ActivityLogTable({
             },
             {
                 id: 'actions',
-                header: () => <span className="sr-only">Actions</span>,
+                header: 'Actions',
                 cell: ({ row }) => (
                     <DataTableRowActions
                         items={[
                             {
                                 label: 'View',
+                                icon: Eye,
                                 href: showUrl(row.original.id),
                             },
                         ]}

@@ -1,5 +1,6 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
+import { Settings2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import {
@@ -129,12 +130,13 @@ export default function PlatformBranchProductsIndex({
             },
             {
                 id: 'actions',
-                header: () => <span className="sr-only">Actions</span>,
+                header: 'Actions',
                 cell: ({ row }) => (
                     <DataTableRowActions
                         items={[
                             {
                                 label: 'Manage',
+                                icon: Settings2,
                                 href: BranchInventoryController.show.url({
                                     branch: branch.slug,
                                     product: row.original.slug,

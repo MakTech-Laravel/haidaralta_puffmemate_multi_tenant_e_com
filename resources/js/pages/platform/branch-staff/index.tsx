@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -121,24 +122,27 @@ export default function PlatformBranchStaffIndex({
             },
             {
                 id: 'actions',
-                header: () => <span className="sr-only">Actions</span>,
+                header: 'Actions',
                 cell: ({ row }) => (
                     <DataTableRowActions
                         items={[
                             {
                                 label: 'View',
+                                icon: Eye,
                                 href: BranchStaffController.show.url(
                                     row.original.id,
                                 ),
                             },
                             {
                                 label: 'Edit',
+                                icon: Pencil,
                                 href: BranchStaffController.edit.url(
                                     row.original.id,
                                 ),
                             },
                             {
                                 label: 'Delete',
+                                icon: Trash2,
                                 destructive: true,
                                 separatorBefore: true,
                                 onSelect: () => setDeletingId(row.original.id),

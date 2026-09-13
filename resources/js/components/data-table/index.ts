@@ -1,7 +1,10 @@
 export { DataTable } from '@/components/data-table/data-table';
 export { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 export { DataTablePagination } from '@/components/data-table/data-table-pagination';
-export { DataTableRowActions } from '@/components/data-table/data-table-row-actions';
+export {
+    DataTableRowActions,
+    defaultDataTableActionIcons,
+} from '@/components/data-table/data-table-row-actions';
 export type { DataTableActionItem } from '@/components/data-table/data-table-row-actions';
 export { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
 export {

@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
+import { Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -174,18 +175,20 @@ export default function PlatformCategoriesIndex({
             },
             {
                 id: 'actions',
-                header: () => <span className="sr-only">Actions</span>,
+                header: 'Actions',
                 cell: ({ row }) => {
                     const category = row.original;
                     const items = [
                         {
                             label: 'View',
+                            icon: Eye,
                             href: CategoryController.show.url(category.slug),
                         },
                         ...(can('manage-catalog') && !category.deleted_at
                             ? [
                                   {
                                       label: 'Edit',
+                                      icon: Pencil,
                                       href: CategoryController.edit.url(
                                           category.slug,
                                       ),
@@ -196,6 +199,7 @@ export default function PlatformCategoriesIndex({
                             ? [
                                   {
                                       label: 'Restore',
+                                      icon: RotateCcw,
                                       onSelect: () => {
                                           router.post(
                                               CategoryController.restore.url(
@@ -210,6 +214,7 @@ export default function PlatformCategoriesIndex({
                             ? [
                                   {
                                       label: 'Delete',
+                                      icon: Trash2,
                                       destructive: true,
                                       separatorBefore: true,
                                       onSelect: () =>

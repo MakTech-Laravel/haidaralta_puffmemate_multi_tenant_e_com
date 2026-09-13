@@ -27,6 +27,10 @@ type DataTableProps<TData> = {
     showPagination?: boolean;
 };
 
+function isActionsColumn(columnId: string): boolean {
+    return columnId === 'actions';
+}
+
 export function DataTable<TData>({
     columns,
     payload,
@@ -56,7 +60,14 @@ export function DataTable<TData>({
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id}>
+                                    <TableHead
+                                        key={header.id}
+                                        className={
+                                            isActionsColumn(header.column.id)
+                                                ? 'w-[1%] text-right'
+                                                : undefined
+                                        }
+                                    >
                                         {header.isPlaceholder
                                             ? null
                                             : flexRender(
@@ -74,7 +85,14 @@ export function DataTable<TData>({
                             table.getRowModel().rows.map((row) => (
                                 <TableRow key={row.id}>
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
+                                        <TableCell
+                                            key={cell.id}
+                                            className={
+                                                isActionsColumn(cell.column.id)
+                                                    ? 'w-[1%] text-right'
+                                                    : undefined
+                                            }
+                                        >
                                             {flexRender(
                                                 cell.column.columnDef.cell,
                                                 cell.getContext(),

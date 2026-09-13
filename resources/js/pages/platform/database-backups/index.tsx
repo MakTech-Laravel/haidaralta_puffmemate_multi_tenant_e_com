@@ -1,6 +1,6 @@
 import { Head, router, usePoll } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Trash2 } from 'lucide-react';
+import { Download, RotateCcw, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import DatabaseBackupController from '@/actions/App/Http/Controllers/Platform/DatabaseBackupController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -220,13 +220,14 @@ export default function PlatformDatabaseBackupsIndex({
             },
             {
                 id: 'actions',
-                header: () => <span className="sr-only">Actions</span>,
+                header: 'Actions',
                 cell: ({ row }) => (
                     <div className="flex justify-end">
                         <DataTableRowActions
                             items={[
                                 {
                                     label: 'Download',
+                                    icon: Download,
                                     href: DatabaseBackupController.download.url(
                                         {
                                             query: {
@@ -237,6 +238,7 @@ export default function PlatformDatabaseBackupsIndex({
                                 },
                                 {
                                     label: 'Restore DB',
+                                    icon: RotateCcw,
                                     onSelect: () => {
                                         setConfirmedRestore(false);
                                         setRestorePath(row.original.path);
@@ -244,6 +246,7 @@ export default function PlatformDatabaseBackupsIndex({
                                 },
                                 {
                                     label: 'Delete zip',
+                                    icon: Trash2,
                                     destructive: true,
                                     separatorBefore: true,
                                     onSelect: () =>

@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Plus } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
@@ -146,18 +146,20 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
         if (canManageCatalog) {
             columns.push({
                 id: 'actions',
-                header: () => <span className="sr-only">Actions</span>,
+                header: 'Actions',
                 cell: ({ row }) => (
                     <div className="flex justify-end">
                         <DataTableRowActions
                             items={[
                                 {
                                     label: 'Edit',
+                                    icon: Pencil,
                                     onSelect: () =>
                                         openEditVariant(row.original),
                                 },
                                 {
                                     label: 'Delete',
+                                    icon: Trash2,
                                     destructive: true,
                                     separatorBefore: true,
                                     onSelect: () =>

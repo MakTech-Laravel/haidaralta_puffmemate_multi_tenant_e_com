@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -152,18 +153,20 @@ export default function PlatformBranchesIndex({
             },
             {
                 id: 'actions',
-                header: () => <span className="sr-only">Actions</span>,
+                header: 'Actions',
                 cell: ({ row }) => {
                     const branch = row.original;
                     const items = [
                         {
                             label: 'View',
+                            icon: Eye,
                             href: BranchController.show.url(branch.slug),
                         },
                         ...(can('edit-branches')
                             ? [
                                   {
                                       label: 'Edit',
+                                      icon: Pencil,
                                       href: BranchController.edit.url(
                                           branch.slug,
                                       ),
@@ -174,6 +177,7 @@ export default function PlatformBranchesIndex({
                             ? [
                                   {
                                       label: 'Delete',
+                                      icon: Trash2,
                                       destructive: true,
                                       separatorBefore: true,
                                       onSelect: () =>
