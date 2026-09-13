@@ -1,84 +1,119 @@
-import { Head, Link, usePage } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { storefrontProducts } from '@/lib/storefront-demo';
+import { Head, Link } from '@inertiajs/react';
+import { ArrowRight } from 'lucide-react';
+import { CategoryCard } from '@/components/storefront/category-card';
+import { FeaturesBar } from '@/components/storefront/features-bar';
+import { HeroSlider } from '@/components/storefront/hero-slider';
+import { ProductCard } from '@/components/storefront/product-card';
+import {
+    storefrontCategoryItems,
+    storefrontFeaturedProducts,
+    storefrontFeatures,
+    storefrontHeroSlides,
+    storefrontNewArrivals,
+} from '@/lib/storefront-demo';
 import { shop } from '@/routes';
 
-function ProductCard({
-    name,
-    price,
-    category,
-}: {
-    name: string;
-    price: string;
-    category: string;
-}) {
-    return (
-        <div className="border-border bg-card flex flex-col gap-2 rounded-lg border p-4">
-            <div className="bg-muted aspect-[4/3] rounded-md" />
-            <span className="bg-accent text-accent-foreground w-fit rounded px-1.5 py-0.5 text-xs">
-                {category}
-            </span>
-            <p className="text-sm font-medium">{name}</p>
-            <p className="text-muted-foreground text-sm">{price}</p>
-        </div>
-    );
-}
-
 export default function StorefrontHome() {
-    const { name: brand } = usePage().props;
+    const topCategories = storefrontCategoryItems.filter(
+        (category) => !category.wide,
+    );
+    const wideCategories = storefrontCategoryItems.filter(
+        (category) => category.wide,
+    );
 
     return (
         <>
             <Head title="Home" />
 
-            <section className="border-border border-b">
-                <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-16 sm:px-6 sm:py-20">
-                    <p className="text-primary text-sm font-semibold tracking-wide uppercase">
-                        {brand}
-                    </p>
-                    <h1 className="max-w-xl text-3xl font-semibold tracking-tight sm:text-4xl">
-                        Cigarettes &amp; accessories, ready for pickup
-                    </h1>
-                    <p className="text-muted-foreground max-w-lg text-base">
-                        Browse packs and essentials from your local branch.
-                        Temporary placeholder until the Figma storefront lands.
-                    </p>
-                    <div>
-                        <Button asChild size="lg">
-                            <Link href={shop()} prefetch>
-                                Shop now
-                            </Link>
-                        </Button>
-                    </div>
-                </div>
-            </section>
+            <HeroSlider slides={storefrontHeroSlides} />
 
-            <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-                <div className="mb-6 flex items-end justify-between gap-4">
-                    <h2 className="text-lg font-semibold">Featured</h2>
+            <section className="mx-auto container px-4 py-14 sm:px-6 sm:py-16">
+                <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <p className="text-muted-foreground font-inter mb-1 text-xs font-semibold tracking-[0.18em] uppercase">
+                            Browse the collection
+                        </p>
+                        <h2 className="text-foreground text-2xl font-semibold tracking-tight sm:text-3xl">
+                            Shop by category
+                        </h2>
+                    </div>
                     <Link
                         href={shop()}
-                        className="text-muted-foreground hover:text-foreground text-sm"
+                        prefetch
+                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium transition"
                     >
-                        View shop
+                        View All
+                        <ArrowRight className="size-4" />
                     </Link>
                 </div>
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    {storefrontProducts.map((product) => (
-                        <ProductCard key={product.id} {...product} />
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {topCategories.map((category) => (
+                        <CategoryCard key={category.id} category={category} />
+                    ))}
+                </div>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    {wideCategories.map((category) => (
+                        <CategoryCard key={category.id} category={category} />
                     ))}
                 </div>
             </section>
 
-            <section className="bg-muted/50 border-border border-t">
-                <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-                    <h2 className="mb-2 text-lg font-semibold">Accessories</h2>
-                    <p className="text-muted-foreground max-w-md text-sm">
-                        Lighters, cases, and everyday carry — stocked beside the
-                        packs at each branch.
-                    </p>
+            <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">
+                <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-[0.18em] uppercase">
+                            Hand-picked for you
+                        </p>
+                        <h2 className="text-foreground text-2xl font-semibold tracking-tight sm:text-3xl">
+                            Featured products
+                        </h2>
+                    </div>
+                    <Link
+                        href={shop()}
+                        prefetch
+                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium transition"
+                    >
+                        View All
+                        <ArrowRight className="size-4" />
+                    </Link>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    {storefrontFeaturedProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
                 </div>
             </section>
+
+            <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">
+                <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-[0.18em] uppercase">
+                            Just landed
+                        </p>
+                        <h2 className="text-foreground text-2xl font-semibold tracking-tight sm:text-3xl">
+                            New arrivals
+                        </h2>
+                    </div>
+                    <Link
+                        href={shop()}
+                        prefetch
+                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium transition"
+                    >
+                        View All
+                        <ArrowRight className="size-4" />
+                    </Link>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    {storefrontNewArrivals.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
+                </div>
+            </section>
+
+            <FeaturesBar features={storefrontFeatures} />
         </>
     );
 }
