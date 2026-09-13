@@ -10,6 +10,7 @@ test('public storefront pages render', function (string $route, string $componen
     'home' => ['home', 'storefront/home'],
     'shop' => ['shop', 'storefront/shop'],
     'about' => ['about', 'storefront/about'],
+    'faqs' => ['faqs', 'storefront/faq'],
     'contact' => ['contact', 'storefront/contact'],
 ]);
 
@@ -46,4 +47,28 @@ test('storefront product details page renders for a valid product', function () 
 test('storefront product details page returns not found for unknown product', function () {
     $this->get(route('products.show', ['product' => 'missing-product']))
         ->assertNotFound();
+});
+
+test('storefront cart page renders', function () {
+    $this->get(route('cart'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/cart')
+            ->has('groups')
+            ->has('summary')
+            ->has('branches')
+            ->where('stockReserved', true));
+});
+
+test('storefront checkout page renders', function () {
+    $this->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout')
+            ->has('items')
+            ->has('summary')
+            ->has('deliveryMethods')
+            ->has('paymentMethods')
+            ->has('timeSlots')
+            ->where('itemCount', 2));
 });

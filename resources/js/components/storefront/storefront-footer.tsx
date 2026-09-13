@@ -6,7 +6,7 @@ import {
     storefrontFooterShop,
     type StorefrontChromeItem,
 } from '@/lib/storefront-chrome';
-import { about, contact, home, shop } from '@/routes';
+import { about, contact, faqs, home, shop } from '@/routes';
 import { category as shopCategory } from '@/routes/shop';
 
 function resolveHref(item: StorefrontChromeItem): string {
@@ -21,6 +21,8 @@ function resolveHref(item: StorefrontChromeItem): string {
             return shop.url();
         case 'about':
             return about.url();
+        case 'faqs':
+            return faqs.url();
         case 'contact':
             return contact.url();
         default:

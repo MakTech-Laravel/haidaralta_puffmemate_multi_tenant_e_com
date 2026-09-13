@@ -345,10 +345,10 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                     <VariantForm
                         action={
                             editingVariant
-                                ? ProductVariantController.update.form(
-                                      product.slug,
-                                      editingVariant.id,
-                                  )
+                                ? ProductVariantController.update.form({
+                                      product: product.slug,
+                                      variant: editingVariant.id,
+                                  })
                                 : ProductVariantController.store.form(
                                       product.slug,
                                   )
@@ -386,10 +386,10 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
 
                     setProcessing(true);
                     router.delete(
-                        ProductVariantController.destroy.url(
-                            product.slug,
-                            deletingVariantId,
-                        ),
+                        ProductVariantController.destroy.url({
+                            product: product.slug,
+                            variant: deletingVariantId,
+                        }),
                         {
                             preserveScroll: true,
                             onFinish: () => {
