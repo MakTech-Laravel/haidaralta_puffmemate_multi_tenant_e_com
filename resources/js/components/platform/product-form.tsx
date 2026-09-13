@@ -643,7 +643,7 @@ export function ProductForm({
                                                 remove_image: true,
                                             }));
                                         }}
-                                        accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                                        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
                                         maxSize={2}
                                         lightbox
                                         isUploading={processing}
@@ -654,7 +654,7 @@ export function ProductForm({
                                             processing ? cancel : undefined
                                         }
                                         placeholder="Drop image or click to browse"
-                                        hint="PNG, JPG, or WebP"
+                                        hint="PNG, JPG, SVG, or WebP"
                                         classNames={{
                                             wrapper:
                                                 'flex h-full min-h-0 w-full flex-1 flex-col',
@@ -706,7 +706,7 @@ export function ProductForm({
                                         return next;
                                     });
                                 }}
-                                accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
                                 maxSize={2}
                                 maxFiles={12}
                                 lightbox
@@ -714,7 +714,7 @@ export function ProductForm({
                                 uploadProgress={progress?.percentage ?? null}
                                 onCancel={processing ? cancel : undefined}
                                 placeholder="Drop gallery images here"
-                                hint="Additional product photos for the detail page"
+                                hint="PNG, JPG, SVG, or WebP · up to 12 images"
                                 classNames={{
                                     dropzone: 'py-6',
                                     grid: 'max-h-48 overflow-y-auto pr-1',

@@ -18,6 +18,56 @@ beforeEach(function () {
     $this->seed(UserSeeder::class);
 });
 
+test('platform can upload svg primary and gallery images', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $svg = UploadedFile::fake()->createWithContent(
+        'mark.svg',
+        '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"></svg>',
+    );
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.store'), [
+            'category_ids' => [$category->id],
+            'name' => 'SVG Pack',
+            'slug' => 'svg-pack',
+            'sku' => 'SKU-SVG-1',
+            'status' => true,
+            'image' => $svg,
+            'gallery' => [
+                UploadedFile::fake()->createWithContent(
+                    'gallery.svg',
+                    '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"></svg>',
+                ),
+                UploadedFile::fake()->image('gallery.webp', 200, 200),
+            ],
+        ])
+        ->assertRedirect(route('platform.products.show', 'svg-pack'));
+
+    $product = Product::query()->where('slug', 'svg-pack')->firstOrFail();
+
+    expect($product->image)->toEndWith('.svg')
+        ->and(Storage::disk('public')->exists($product->image))->toBeTrue()
+        ->and(ProductImage::query()->where('product_id', $product->id)->count())->toBe(2);
+});
+
+test('platform rejects unsupported primary image mime types', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.store'), [
+            'category_ids' => [$category->id],
+            'name' => 'Bad Image',
+            'slug' => 'bad-image',
+            'sku' => 'SKU-BAD-1',
+            'status' => true,
+            'image' => UploadedFile::fake()->create('notes.pdf', 100, 'application/pdf'),
+        ])
+        ->assertSessionHasErrors('image');
+});
+
 test('platform can create a product with primary image and gallery', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $category = Category::factory()->create();

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Platform;
 
 use App\Http\Requests\Concerns\ValidatesCatalogColorCode;
+use App\Http\Requests\Concerns\ValidatesCatalogProductImages;
 use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -10,6 +11,7 @@ use Illuminate\Validation\Rule;
 class UpdateProductRequest extends FormRequest
 {
     use ValidatesCatalogColorCode;
+    use ValidatesCatalogProductImages;
 
     public function authorize(): bool
     {
@@ -47,10 +49,10 @@ class UpdateProductRequest extends FormRequest
                 Rule::unique('products', 'sku')->ignore($product->id),
             ],
             'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'image' => $this->catalogImageFileRules(),
             'remove_image' => ['sometimes', 'boolean'],
             'gallery' => ['nullable', 'array', 'max:12'],
-            'gallery.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'gallery.*' => $this->catalogImageFileRules(required: true),
             'remove_gallery_ids' => ['nullable', 'array'],
             'remove_gallery_ids.*' => [
                 'integer',

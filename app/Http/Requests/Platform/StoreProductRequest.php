@@ -3,12 +3,14 @@
 namespace App\Http\Requests\Platform;
 
 use App\Http\Requests\Concerns\ValidatesCatalogColorCode;
+use App\Http\Requests\Concerns\ValidatesCatalogProductImages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
     use ValidatesCatalogColorCode;
+    use ValidatesCatalogProductImages;
 
     public function authorize(): bool
     {
@@ -32,9 +34,9 @@ class StoreProductRequest extends FormRequest
             'slug' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('products', 'slug')],
             'sku' => ['nullable', 'string', 'max:100', Rule::unique('products', 'sku')],
             'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'image' => $this->catalogImageFileRules(),
             'gallery' => ['nullable', 'array', 'max:12'],
-            'gallery.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'gallery.*' => $this->catalogImageFileRules(required: true),
             'status' => ['sometimes', 'boolean'],
             ...$this->colorCodeRules(),
         ];

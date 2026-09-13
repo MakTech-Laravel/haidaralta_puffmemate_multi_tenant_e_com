@@ -17,3 +17,6 @@ Selected categories render as wrapping secondary Badge chips (keyword style) on 
 
 ## Catalog color_code uses ColorPicker dialog
 Product/category forms use ColorPicker mode=dialog with enabledModes transparent|solid|gradient and defaultMode=transparent. Post JSON.stringify(color_code). Display tiles via colorPickerStyle. Do not enable radial until PHP CatalogBackgroundMode supports it.
+
+## Product primary and gallery image types
+ProductForm primary + gallery accept PNG, JPG/JPEG, SVG, WebP (max 2MB). Backend ValidatesCatalogProductImages uses image:allow_svg + mimes; serve SVG as img src only.
