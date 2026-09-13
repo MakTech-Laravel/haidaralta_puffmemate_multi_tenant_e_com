@@ -42,6 +42,13 @@ export type CategoryOption = {
     name: string;
 };
 
+type CategorySuggestion = {
+    id: number;
+    name: string;
+    slug: string;
+    image_url: string | null;
+};
+
 interface CategoryFormDefaults {
     name?: string;
     slug?: string;
@@ -59,6 +66,11 @@ interface CategoryFormProps {
     isEdit?: boolean;
     cancelHref: string;
     submitLabel?: string;
+    /** When set with suggestionsUrl, fetch similar categories while typing the name. */
+    enableSuggestions?: boolean;
+    suggestionsUrl?: string;
+    suggestionShowHref?: (slug: string) => string;
+    excludeCategoryId?: number;
 }
 
 const CATALOG_IMAGE_ACCEPT =
@@ -79,9 +91,14 @@ export function CategoryForm({
     isEdit = false,
     cancelHref,
     submitLabel,
+    enableSuggestions = false,
+    suggestionsUrl,
+    suggestionShowHref,
+    excludeCategoryId,
 }: CategoryFormProps) {
     const [slugTouched, setSlugTouched] = useState(isEdit);
     const [parentOpen, setParentOpen] = useState(false);
+    const [suggestions, setSuggestions] = useState<CategorySuggestion[]>([]);
     const [existingPrimary, setExistingPrimary] = useState<ExistingFile[]>(
         () =>
             defaults?.image && defaults?.image_url
@@ -151,6 +168,54 @@ export function CategoryForm({
         }
     }, [data.name, data.slug, slugTouched, setData]);
 
+    useEffect(() => {
+        if (!enableSuggestions || !suggestionsUrl) {
+            return;
+        }
+
+        const query = data.name.trim();
+
+        if (query.length < 2) {
+            setSuggestions([]);
+
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            const url = new URL(suggestionsUrl, window.location.origin);
+            url.searchParams.set('q', query);
+
+            if (excludeCategoryId) {
+                url.searchParams.set('exclude', String(excludeCategoryId));
+            }
+
+            fetch(url.toString(), {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            })
+                .then((response) => response.json())
+                .then((payload: { suggestions: CategorySuggestion[] }) => {
+                    setSuggestions(payload.suggestions ?? []);
+                })
+                .catch(() => setSuggestions([]));
+        }, 300);
+
+        return () => window.clearTimeout(timer);
+    }, [
+        data.name,
+        enableSuggestions,
+        excludeCategoryId,
+        suggestionsUrl,
+    ]);
+
+    const validateSlug = () => {
+        if (data.slug.trim() === '') {
+            return;
+        }
+
+        validate('slug');
+    };
+
     const submit = (event: FormEvent) => {
         event.preventDefault();
 
@@ -202,6 +267,7 @@ export function CategoryForm({
                                 onChange={(event) =>
                                     setData('name', event.target.value)
                                 }
+                                onBlur={validateSlug}
                                 required
                                 placeholder="e.g. Disposables"
                                 autoComplete="off"
@@ -218,12 +284,69 @@ export function CategoryForm({
                                     setSlugTouched(true);
                                     setData('slug', event.target.value);
                                 }}
-                                onBlur={() => validate('slug')}
+                                onBlur={validateSlug}
                                 required
                                 placeholder="e.g. disposables"
                             />
                             <InputError message={errors.slug} />
                         </div>
+
+                        {enableSuggestions && suggestions.length > 0 ? (
+                            <div className="space-y-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+                                <p className="text-sm font-medium">
+                                    Similar categories already exist
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                    Review these before creating a duplicate.
+                                </p>
+                                <ul className="space-y-2">
+                                    {suggestions.map((suggestion) => (
+                                        <li
+                                            key={suggestion.id}
+                                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-background px-3 py-2"
+                                        >
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                {suggestion.image_url ? (
+                                                    <img
+                                                        src={
+                                                            suggestion.image_url
+                                                        }
+                                                        alt=""
+                                                        className="size-9 shrink-0 rounded-md object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="bg-muted size-9 shrink-0 rounded-md" />
+                                                )}
+                                                <div className="min-w-0">
+                                                    <div className="truncate font-medium">
+                                                        {suggestion.name}
+                                                    </div>
+                                                    <div className="text-muted-foreground truncate text-xs">
+                                                        {suggestion.slug}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {suggestionShowHref ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    asChild
+                                                >
+                                                    <Link
+                                                        href={suggestionShowHref(
+                                                            suggestion.slug,
+                                                        )}
+                                                    >
+                                                        View
+                                                    </Link>
+                                                </Button>
+                                            ) : null}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ) : null}
 
                         <div className="flex w-full min-w-0 flex-col gap-2">
                             <Label htmlFor="parent_id">Parent category</Label>

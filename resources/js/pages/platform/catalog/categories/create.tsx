@@ -27,6 +27,11 @@ export default function PlatformCategoriesCreate({
                     action={CategoryController.store.form()}
                     parentOptions={parentOptions}
                     cancelHref={CategoryController.index.url()}
+                    enableSuggestions
+                    suggestionsUrl={CategoryController.suggestions.url()}
+                    suggestionShowHref={(slug) =>
+                        CategoryController.show.url(slug)
+                    }
                 />
             </div>
         </>

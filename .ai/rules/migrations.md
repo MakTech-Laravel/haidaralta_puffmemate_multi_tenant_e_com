@@ -10,3 +10,6 @@ After handover / shared environments with real data: never edit, rename, or dele
 
 ## Pre-handover: edit create migrations, never data-move mods
 Development / pre-handover: prefer editing the original create_* migration when a column should never have existed (e.g. drop products.category_id). One new table = one new create migration (e.g. category_product). Do not add Schema::table data-copy + drop-column migrations for greenfield schema changes. Post-handover shared DBs remain modification-only.
+
+## Discount type belongs on create migration
+Pre-handover: put new columns on the original create_* migration (e.g. branch_product_prices.discount_type). Do not ship a separate Schema::table + data backfill migration for greenfield schema.

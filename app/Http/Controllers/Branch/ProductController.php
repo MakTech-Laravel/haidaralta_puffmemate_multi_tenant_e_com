@@ -9,22 +9,24 @@ use App\Http\Requests\Branch\AdjustBranchInventoryRequest;
 use App\Http\Requests\Branch\ReuseBranchProductRequest;
 use App\Http\Requests\Branch\StoreBranchProductRequest;
 use App\Http\Requests\Branch\ToggleBranchProductRequest;
+use App\Http\Requests\Branch\UpdateBranchProductRequest;
 use App\Http\Requests\Branch\UpsertBranchProductPriceRequest;
 use App\Models\Branch;
-use App\Models\BranchProductPrice;
 use App\Models\Category;
-use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductSuggestionService;
 use App\Services\Inventory\BranchPricingService;
 use App\Services\Inventory\BranchProductAvailabilityService;
 use App\Services\Inventory\InventoryService;
+use App\Support\BranchProductShowPayload;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Inertia\Inertia;
 use Inertia\Response;
 use InvalidArgumentException;
@@ -45,7 +47,7 @@ class ProductController extends Controller
 
         return Inertia::render('branch/products/index', [
             'branch' => $branch->only(['id', 'name', 'slug']),
-            'table' => BranchProductListingDataTable::make($request, $branch, includeImage: true),
+            'table' => BranchProductListingDataTable::makeForBranch($request, $branch, includeImage: true),
         ]);
     }
 
@@ -79,14 +81,14 @@ class ProductController extends Controller
     public function store(StoreBranchProductRequest $request): RedirectResponse
     {
         $branch = $this->currentBranch();
-        $data = $request->safe()->except(['image', 'selling_price', 'discount_price', 'quantity', 'minimum_stock']);
+        $data = $request->safe()->except(['image', 'gallery', 'selling_price', 'discount_price', 'quantity', 'minimum_stock']);
         $data['status'] = $request->boolean('status', true);
 
         $product = $this->products->createFromBranch(
             $branch,
             $data,
             $request->file('image'),
-            [],
+            $this->uploadedGallery($request),
             $request->user('branch'),
         );
 
@@ -110,93 +112,84 @@ class ProductController extends Controller
         return redirect()->route('branch.products.show', [$branch, $product]);
     }
 
-    public function show(string $branchSlug, Product $product): Response
+    public function show(Request $request, string $branchSlug, Product $product): Response
     {
         $branch = $this->currentBranch();
-        $product->load(['categories:id,name,slug', 'variants']);
-
-        $inventory = Inventory::query()
-            ->where('branch_id', $branch->id)
-            ->where('product_id', $product->id)
-            ->whereNull('variant_id')
-            ->first();
-
-        $price = BranchProductPrice::query()
-            ->where('branch_id', $branch->id)
-            ->where('product_id', $product->id)
-            ->whereNull('variant_id')
-            ->where('status', true)
-            ->first();
-
-        $transactions = $inventory
-            ? $inventory->transactions()
-                ->whereNull('variant_id')
-                ->latest('created_at')
-                ->limit(25)
-                ->get()
-                ->map(fn ($txn): array => [
-                    'id' => $txn->id,
-                    'type' => $txn->type->value,
-                    'quantity' => $txn->quantity,
-                    'before_quantity' => $txn->before_quantity,
-                    'after_quantity' => $txn->after_quantity,
-                    'created_at' => $txn->created_at?->toIso8601String(),
-                ])
-                ->all()
-            : [];
 
         return Inertia::render('branch/products/show', [
             'branch' => $branch->only(['id', 'name', 'slug']),
+            'product' => BranchProductShowPayload::product(
+                $branch,
+                $product,
+                $this->availability->isEnabled($branch, $product),
+            ),
+            'transactions' => BranchProductShowPayload::transactions($branch, $product, $request),
+            'transactionTypes' => BranchProductShowPayload::transactionTypes(),
+            'discountTypes' => BranchProductShowPayload::discountTypes(),
+        ]);
+    }
+
+    public function edit(string $branchSlug, Product $product): Response
+    {
+        $branch = $this->currentBranch();
+        $product->load(['categories:id,name,slug', 'images']);
+
+        return Inertia::render('branch/products/edit', [
+            'branch' => $branch->only(['id', 'name', 'slug']),
             'product' => [
                 'id' => $product->id,
+                'category_ids' => $product->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'sku' => $product->sku,
                 'description' => $product->description,
-                'status' => (bool) $product->status,
+                'image' => $product->image,
                 'image_url' => $product->imageUrl(),
                 'color_code' => $product->color_code,
-                'category_ids' => $product->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
-                'categories' => $product->categories
-                    ->map(fn (Category $category): array => [
-                        'id' => $category->id,
-                        'name' => $category->name,
-                        'slug' => $category->slug,
+                'status' => (bool) $product->status,
+                'gallery' => $product->images
+                    ->map(fn (ProductImage $image): array => [
+                        'id' => $image->id,
+                        'path' => $image->path,
+                        'url' => $image->url(),
+                        'sort_order' => $image->sort_order,
+                        'mime_type' => 'image/jpeg',
                     ])
                     ->values()
                     ->all(),
-                'category_name' => $product->categoryNamesLabel(),
-                'variants' => $product->variants->map(fn (ProductVariant $variant): array => [
-                    'id' => $variant->id,
-                    'name' => $variant->name,
-                    'sku' => $variant->sku,
-                    'status' => (bool) $variant->status,
-                ])->values()->all(),
-                'enabled' => $this->availability->isEnabled($branch, $product),
-                'inventory' => $inventory ? [
-                    'quantity' => $inventory->quantity,
-                    'reserved_quantity' => $inventory->reserved_quantity,
-                    'available_quantity' => $inventory->available_quantity,
-                    'minimum_stock' => $inventory->minimum_stock,
-                    'is_low_stock' => $inventory->isLowStock(),
-                ] : null,
-                'price' => $price ? [
-                    'selling_price' => $price->selling_price,
-                    'discount_price' => $price->discount_price,
-                    'start_date' => $price->start_date?->toDateString(),
-                    'end_date' => $price->end_date?->toDateString(),
-                    'status' => (bool) $price->status,
-                ] : null,
-                'transactions' => $transactions,
             ],
-            'transactionTypes' => collect(InventoryTransactionType::cases())
-                ->map(fn (InventoryTransactionType $type): array => [
-                    'value' => $type->value,
-                    'label' => str_replace('_', ' ', ucfirst($type->value)),
+            'categoryOptions' => Category::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug'])
+                ->map(fn (Category $category): array => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
                 ])
-                ->values()
                 ->all(),
         ]);
+    }
+
+    public function update(UpdateBranchProductRequest $request, string $branchSlug, Product $product): RedirectResponse
+    {
+        $branch = $this->currentBranch();
+        $data = $request->safe()->except(['image', 'gallery', 'remove_gallery_ids']);
+        $data['status'] = $request->boolean('status', true);
+        $data['remove_image'] = $request->boolean('remove_image');
+        $data['remove_gallery_ids'] = collect($request->input('remove_gallery_ids', []))
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+
+        $product = $this->products->update(
+            $product,
+            $data,
+            $request->file('image'),
+            $this->uploadedGallery($request),
+        );
+
+        Toast::success('Product updated.');
+
+        return redirect()->route('branch.products.show', [$branch, $product]);
     }
 
     public function toggle(ToggleBranchProductRequest $request, string $branchSlug, Product $product): RedirectResponse
@@ -292,6 +285,7 @@ class ProductController extends Controller
         if (! empty($data['selling_price'])) {
             $this->pricing->upsert($branch, $product, [
                 'selling_price' => $data['selling_price'],
+                'discount_type' => ! empty($data['discount_price']) ? 'fixed' : 'none',
                 'discount_price' => $data['discount_price'] ?? null,
                 'status' => true,
             ]);
@@ -308,6 +302,23 @@ class ProductController extends Controller
         abort_unless($variant->product_id === $product->id, 404);
 
         return $variant;
+    }
+
+    /**
+     * @return list<UploadedFile>
+     */
+    private function uploadedGallery(Request $request): array
+    {
+        $files = $request->file('gallery', []);
+
+        if ($files instanceof UploadedFile) {
+            return [$files];
+        }
+
+        return array_values(array_filter(
+            is_array($files) ? $files : [],
+            fn ($file): bool => $file instanceof UploadedFile,
+        ));
     }
 
     private function currentBranch(): Branch

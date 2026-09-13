@@ -14,6 +14,14 @@ import {
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type ProductRow = {
     id: number;
@@ -58,6 +66,8 @@ export default function PlatformBranchProductsIndex({
         initial: {
             filter: {
                 search: tablePayload.filters.search ?? '',
+                enabled: tablePayload.filters.enabled ?? null,
+                low_stock: tablePayload.filters.low_stock ?? null,
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,
@@ -171,6 +181,70 @@ export default function PlatformBranchProductsIndex({
                             onSearchChange={query.setSearch}
                             searchPlaceholder="Search products…"
                             onClear={query.clearFilters}
+                            filters={
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label>Enabled</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.enabled ?? 'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'enabled',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Enabled" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All enablement
+                                                </SelectItem>
+                                                <SelectItem value="1">
+                                                    Enabled
+                                                </SelectItem>
+                                                <SelectItem value="0">
+                                                    Disabled
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Stock</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.low_stock ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'low_stock',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Stock" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All stock
+                                                </SelectItem>
+                                                <SelectItem value="1">
+                                                    Low stock
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
+                            }
                         />
                     }
                 />

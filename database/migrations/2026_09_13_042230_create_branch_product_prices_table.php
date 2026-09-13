@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DiscountType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,6 +15,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->foreignId('variant_id')->nullable()->constrained('product_variants')->nullOnDelete();
             $table->decimal('selling_price', 12, 2);
+            $table->string('discount_type', 20)->default(DiscountType::None->value);
             $table->decimal('discount_price', 12, 2)->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();

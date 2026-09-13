@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Branch\ActivityLogController as BranchActivityLogController;
+use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
@@ -12,6 +13,19 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
     Route::get('dashboard', [BranchDashboardController::class, 'index'])->name('branch.dashboard');
 
     Route::middleware(['permission:manage-branch-products'])->group(function () {
+        Route::get('categories/suggestions', [BranchCategoryController::class, 'suggestions'])
+            ->name('branch.categories.suggestions');
+        Route::get('categories', [BranchCategoryController::class, 'index'])->name('branch.categories.index');
+        Route::get('categories/create', [BranchCategoryController::class, 'create'])->name('branch.categories.create');
+        Route::post('categories', [BranchCategoryController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('branch.categories.store');
+        Route::get('categories/{category}', [BranchCategoryController::class, 'show'])->name('branch.categories.show');
+        Route::get('categories/{category}/edit', [BranchCategoryController::class, 'edit'])->name('branch.categories.edit');
+        Route::put('categories/{category}', [BranchCategoryController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('branch.categories.update');
+
         Route::get('products/suggestions', [BranchProductController::class, 'suggestions'])
             ->name('branch.products.suggestions');
         Route::get('products', [BranchProductController::class, 'index'])->name('branch.products.index');
@@ -22,6 +36,10 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('products/reuse', [BranchProductController::class, 'reuse'])
             ->name('branch.products.reuse');
         Route::get('products/{product}', [BranchProductController::class, 'show'])->name('branch.products.show');
+        Route::get('products/{product}/edit', [BranchProductController::class, 'edit'])->name('branch.products.edit');
+        Route::put('products/{product}', [BranchProductController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('branch.products.update');
         Route::put('products/{product}/enable', [BranchProductController::class, 'toggle'])
             ->name('branch.products.enable');
         Route::post('products/{product}/inventory', [BranchProductController::class, 'adjustInventory'])
