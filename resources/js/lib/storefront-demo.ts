@@ -61,28 +61,28 @@ export const storefrontCategoryItems: StorefrontCategoryItem[] = [
         name: 'Cigarettes',
         description: 'Top brands & everyday packs',
         image: '/images/storefront/category-cigarettes.png',
-        href: '/shop',
+        href: '/shop/cigarettes',
     },
     {
         id: 'vapes',
         name: 'Vapes',
         description: 'Devices, pods & disposables',
         image: '/images/storefront/category-vapes.png',
-        href: '/shop',
+        href: '/shop/vapes',
     },
     {
         id: 'tobacco',
         name: 'Tobacco',
         description: 'Rolling & pipe tobacco',
         image: '/images/storefront/category-tobacco.png',
-        href: '/shop',
+        href: '/shop/tobacco',
     },
     {
         id: 'nicotine-pouches',
         name: 'Nicotine Pouches',
         description: 'Smoke-free nicotine options',
         image: '/images/storefront/category-pouches.png',
-        href: '/shop',
+        href: '/shop/nicotine-pouches',
         wide: true,
     },
     {
@@ -90,7 +90,7 @@ export const storefrontCategoryItems: StorefrontCategoryItem[] = [
         name: 'Accessories',
         description: 'Lighters, cases & more',
         image: '/images/storefront/category-accessories.png',
-        href: '/shop',
+        href: '/shop/accessories',
         wide: true,
     },
 ];
@@ -167,7 +167,7 @@ export const storefrontProducts: StorefrontProduct[] = [
         stock: 120,
         category: 'Accessories',
         image: '/images/storefront/product-vuse.png',
-    },
+    }, 
 ];
 
 export const storefrontFeaturedProducts: StorefrontProduct[] =

@@ -17,8 +17,13 @@ import {
 } from '@/lib/storefront-chrome';
 import { cn } from '@/lib/utils';
 import { about, contact, dashboard, home, login, shop } from '@/routes';
+import { category as shopCategory } from '@/routes/shop';
 
 function resolveHref(item: StorefrontChromeItem): string {
+    if (item.categorySlug) {
+        return shopCategory.url(item.categorySlug);
+    }
+
     switch (item.route) {
         case 'home':
             return home.url();
@@ -34,11 +39,15 @@ function resolveHref(item: StorefrontChromeItem): string {
 }
 
 function isActive(url: string, item: StorefrontChromeItem): boolean {
+    const href = resolveHref(item);
+
+    if (item.categorySlug) {
+        return url === href || url.startsWith(`${href}?`);
+    }
+
     if (!item.route) {
         return false;
     }
-
-    const href = resolveHref(item);
 
     return href === '/' ? url === '/' : url.startsWith(href);
 }

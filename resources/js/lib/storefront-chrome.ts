@@ -8,23 +8,25 @@ export type StorefrontChromeItem = {
     label: string;
     /** Named route when it exists; otherwise links fall back to shop. */
     route?: 'home' | 'shop' | 'about' | 'contact';
+    /** Category slug for /shop/{category} links. */
+    categorySlug?: string;
 };
 
 export const storefrontNavItems: StorefrontChromeItem[] = [
     { label: 'Home', route: 'home' },
-    { label: 'Cigarettes' },
-    { label: 'Tobacco' },
-    { label: 'Vapes' },
-    { label: 'Nicotine Pouches' },
-    { label: 'Packs & Saves' },
-    { label: 'Wholesale' },
+    { label: 'Cigarettes', categorySlug: 'cigarettes' },
+    { label: 'Tobacco', categorySlug: 'tobacco' },
+    { label: 'Vapes', categorySlug: 'vapes' },
+    { label: 'Nicotine Pouches', categorySlug: 'nicotine-pouches' },
+    { label: 'Packs & Saves', categorySlug: 'packs-saves' },
+    { label: 'Wholesale', categorySlug: 'wholesale' },
 ];
 
 export const storefrontFooterShop: StorefrontChromeItem[] = [
-    { label: 'Cigarettes' },
-    { label: 'Vapes' },
-    { label: 'Tobacco' },
-    { label: 'Nicotine' },
+    { label: 'Cigarettes', categorySlug: 'cigarettes' },
+    { label: 'Vapes', categorySlug: 'vapes' },
+    { label: 'Tobacco', categorySlug: 'tobacco' },
+    { label: 'Nicotine', categorySlug: 'nicotine' },
 ];
 
 export const storefrontFooterCustomer: StorefrontChromeItem[] = [
@@ -36,7 +38,7 @@ export const storefrontFooterCustomer: StorefrontChromeItem[] = [
 
 export const storefrontFooterBrand: StorefrontChromeItem[] = [
     { label: 'About Us', route: 'about' },
-    { label: 'Wholesale' },
+    { label: 'Wholesale', categorySlug: 'wholesale' },
     { label: 'Price Beat' },
     { label: 'Privacy' },
 ];

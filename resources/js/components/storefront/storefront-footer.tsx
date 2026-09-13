@@ -7,8 +7,13 @@ import {
     type StorefrontChromeItem,
 } from '@/lib/storefront-chrome';
 import { about, contact, home, shop } from '@/routes';
+import { category as shopCategory } from '@/routes/shop';
 
 function resolveHref(item: StorefrontChromeItem): string {
+    if (item.categorySlug) {
+        return shopCategory.url(item.categorySlug);
+    }
+
     switch (item.route) {
         case 'home':
             return home.url();
