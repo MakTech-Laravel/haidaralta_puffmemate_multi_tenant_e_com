@@ -16,7 +16,7 @@ import {
     type StorefrontChromeItem,
 } from '@/lib/storefront-chrome';
 import { cn } from '@/lib/utils';
-import { about, contact, dashboard, home, login, shop } from '@/routes';
+import { about, cart, contact, dashboard, home, login, shop } from '@/routes';
 import { category as shopCategory } from '@/routes/shop';
 
 function resolveHref(item: StorefrontChromeItem): string {
@@ -90,6 +90,11 @@ export function StorefrontHeader() {
     const url = page.url;
     const [mobileOpen, setMobileOpen] = useState(false);
     const accountHref = auth.user ? dashboard() : login();
+    const cartActive =
+        url === '/cart' ||
+        url.startsWith('/cart?') ||
+        url === '/checkout' ||
+        url.startsWith('/checkout?');
 
     return (
         <div className="sticky top-0 z-40">
@@ -121,10 +126,16 @@ export function StorefrontHeader() {
 
                     <div className="ml-auto flex items-center gap-1 sm:gap-2">
                         <Link
-                            href={shop()}
+                            href={cart()}
                             prefetch
-                            className="text-foreground inline-flex size-10 items-center justify-center rounded-md"
+                            className={cn(
+                                'relative inline-flex size-10 items-center justify-center rounded-md transition-colors',
+                                cartActive
+                                    ? 'text-primary after:bg-primary after:absolute after:inset-x-2 after:bottom-0.5 after:h-0.5'
+                                    : 'text-foreground',
+                            )}
                             aria-label="Cart"
+                            aria-current={cartActive ? 'page' : undefined}
                         >
                             <ShoppingCart className="size-8" strokeWidth={1.75} />
                         </Link>

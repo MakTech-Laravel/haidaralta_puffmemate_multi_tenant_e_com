@@ -7,7 +7,7 @@ export const storefrontLogoSrc = '/images/storefront/logo.png';
 export type StorefrontChromeItem = {
     label: string;
     /** Named route when it exists; otherwise links fall back to shop. */
-    route?: 'home' | 'shop' | 'about' | 'contact';
+    route?: 'home' | 'shop' | 'about' | 'faqs' | 'contact';
     /** Category slug for /shop/{category} links. */
     categorySlug?: string;
 };
@@ -30,16 +30,14 @@ export const storefrontFooterShop: StorefrontChromeItem[] = [
 ];
 
 export const storefrontFooterCustomer: StorefrontChromeItem[] = [
-    { label: 'Delivery' },
     { label: 'Contact', route: 'contact' },
     { label: 'WhatsApp' },
-    { label: 'FAQs' },
+    { label: 'FAQs', route: 'faqs' },
 ];
 
 export const storefrontFooterBrand: StorefrontChromeItem[] = [
     { label: 'About Us', route: 'about' },
     { label: 'Wholesale', categorySlug: 'wholesale' },
-    { label: 'Price Beat' },
     { label: 'Privacy' },
 ];
 

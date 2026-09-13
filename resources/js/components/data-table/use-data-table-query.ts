@@ -4,6 +4,7 @@ import type {
     DataTableFilterValue,
     DataTableQueryState,
 } from '@/components/data-table/types';
+import type { QueryParams } from '@/wayfinder';
 
 type UseDataTableQueryOptions = {
     indexUrl: string;
@@ -11,16 +12,12 @@ type UseDataTableQueryOptions = {
     searchKey?: string;
     debounceMs?: number;
     /** Merge sibling-table (or other) query keys so dual lists on one page keep state. */
-    extraQuery?:
-        | Record<string, unknown>
-        | (() => Record<string, unknown>);
+    extraQuery?: QueryParams | (() => QueryParams);
     /** Override default Spatie-style query serialization. */
-    buildQuery?: (state: DataTableQueryState) => Record<string, unknown>;
+    buildQuery?: (state: DataTableQueryState) => QueryParams;
 };
 
-export function buildDataTableQuery(
-    state: DataTableQueryState,
-): Record<string, unknown> {
+export function buildDataTableQuery(state: DataTableQueryState): QueryParams {
     const filter: Record<string, string> = {};
 
     Object.entries(state.filter).forEach(([key, value]) => {
@@ -42,7 +39,7 @@ export function buildDataTableQuery(
 /** Query keys for filesystem backup zip list (coexists with history DataTable). */
 export function buildArchivesDataTableQuery(
     state: DataTableQueryState,
-): Record<string, unknown> {
+): QueryParams {
     const search = state.filter.search;
 
     return {

@@ -333,4 +333,218 @@ class DemoCatalog
             ],
         ];
     }
+
+    /**
+     * @return array{
+     *     itemCount: int,
+     *     stockReserved: bool,
+     *     groups: list<array{
+     *         id: string,
+     *         branchName: string,
+     *         selected: bool,
+     *         items: list<array{
+     *             id: string,
+     *             productId: string,
+     *             name: string,
+     *             category: string,
+     *             description: string,
+     *             image: string,
+     *             unitPrice: float,
+     *             quantity: int,
+     *             available: int|null,
+     *             unavailable: bool,
+     *             branchId: string,
+     *             branchName: string,
+     *             selected: bool
+     *         }>
+     *     }>,
+     *     summary: array{
+     *         lines: list<array{label: string, amount: float, tone: string}>,
+     *         total: float
+     *     },
+     *     branches: list<array{id: string, name: string}>
+     * }
+     */
+    public static function cart(): array
+    {
+        $products = self::products();
+        $marlboro = $products[0];
+        $winfield = $products[1];
+        $iqos = $products[2];
+
+        $groups = [
+            [
+                'id' => 'g1',
+                'branchName' => 'Williamsburg Branch',
+                'selected' => true,
+                'items' => [
+                    [
+                        'id' => 'ci1',
+                        'productId' => $marlboro['id'],
+                        'name' => 'L&M Blue Label',
+                        'category' => 'Cigarettes',
+                        'description' => 'King size · 20 cigarettes',
+                        'image' => $marlboro['image'],
+                        'unitPrice' => 12.00,
+                        'quantity' => 2,
+                        'available' => 6,
+                        'unavailable' => false,
+                        'branchId' => 'williamsburg',
+                        'branchName' => 'Williamsburg Branch',
+                        'selected' => true,
+                    ],
+                    [
+                        'id' => 'ci2',
+                        'productId' => $winfield['id'],
+                        'name' => $winfield['name'],
+                        'category' => $winfield['category'],
+                        'description' => $winfield['description'],
+                        'image' => $winfield['image'],
+                        'unitPrice' => 13.50,
+                        'quantity' => 1,
+                        'available' => null,
+                        'unavailable' => true,
+                        'branchId' => 'williamsburg',
+                        'branchName' => 'Williamsburg Branch',
+                        'selected' => true,
+                    ],
+                ],
+            ],
+            [
+                'id' => 'g2',
+                'branchName' => 'Pacific Coast Tobacco – Brisbane Branch',
+                'selected' => true,
+                'items' => [
+                    [
+                        'id' => 'ci3',
+                        'productId' => $iqos['id'],
+                        'name' => $iqos['name'],
+                        'category' => $iqos['category'],
+                        'description' => $iqos['description'],
+                        'image' => $iqos['image'],
+                        'unitPrice' => 20.00,
+                        'quantity' => 1,
+                        'available' => 4,
+                        'unavailable' => false,
+                        'branchId' => 'brisbane',
+                        'branchName' => 'Pacific Coast Tobacco – Brisbane Branch',
+                        'selected' => true,
+                    ],
+                ],
+            ],
+        ];
+
+        $itemCount = 0;
+
+        foreach ($groups as $group) {
+            $itemCount += count($group['items']);
+        }
+
+        return [
+            'itemCount' => $itemCount,
+            'stockReserved' => true,
+            'groups' => $groups,
+            'summary' => [
+                'lines' => [
+                    ['label' => 'Subtotal', 'amount' => 44.00, 'tone' => 'default'],
+                    ['label' => 'Delivery fee', 'amount' => 3.50, 'tone' => 'default'],
+                    ['label' => 'First delivery discount', 'amount' => -3.50, 'tone' => 'discount'],
+                ],
+                'total' => 44.00,
+            ],
+            'branches' => [
+                ['id' => 'williamsburg', 'name' => 'Williamsburg Branch'],
+                ['id' => 'brisbane', 'name' => 'Pacific Coast Tobacco – Brisbane Branch'],
+                ['id' => 'westside', 'name' => 'West Village Branch'],
+                ['id' => 'downtown', 'name' => 'Downtown'],
+            ],
+        ];
+    }
+
+    /**
+     * @return array{
+     *     itemCount: int,
+     *     items: list<array{id: string, name: string, image: string, quantity: int, unitPrice: float}>,
+     *     summary: array{subtotal: float, deliveryLabel: string, deliveryAmount: float|null, total: float},
+     *     deliveryMethods: list<array{id: string, title: string, description: string, meta: string}>,
+     *     paymentMethods: list<array{id: string, title: string, description: string, badge: string}>,
+     *     timeSlots: list<array{id: string, label: string}>,
+     *     trustBadges: list<string>,
+     *     deliveryAlert: string,
+     *     legalNote: string
+     * }
+     */
+    public static function checkout(): array
+    {
+        $products = self::products();
+        $first = $products[0];
+        $vape = $products[3];
+
+        return [
+            'itemCount' => 2,
+            'items' => [
+                [
+                    'id' => 'co1',
+                    'name' => 'L&M Blue Label',
+                    'image' => $first['image'],
+                    'quantity' => 1,
+                    'unitPrice' => 29.95,
+                ],
+                [
+                    'id' => 'co2',
+                    'name' => 'Vuse GO Berry',
+                    'image' => $vape['image'],
+                    'quantity' => 1,
+                    'unitPrice' => 39.95,
+                ],
+            ],
+            'summary' => [
+                'subtotal' => 69.90,
+                'deliveryLabel' => 'FREE',
+                'deliveryAmount' => null,
+                'total' => 69.90,
+            ],
+            'deliveryMethods' => [
+                [
+                    'id' => 'same-day',
+                    'title' => 'Same-day local delivery',
+                    'description' => 'Fast local delivery in selected areas.',
+                    'meta' => 'Usually within hours',
+                ],
+                [
+                    'id' => 'australia-wide',
+                    'title' => 'Australia-wide shipping',
+                    'description' => 'Shipping available for eligible orders.',
+                    'meta' => '2–5 business days',
+                ],
+            ],
+            'paymentMethods' => [
+                [
+                    'id' => 'cash',
+                    'title' => 'Cash on delivery',
+                    'description' => 'Pay the driver in cash',
+                    'badge' => '$',
+                ],
+                [
+                    'id' => 'card',
+                    'title' => 'Card on delivery',
+                    'description' => 'Driver carries an EFTPOS machine',
+                    'badge' => 'EFT',
+                ],
+            ],
+            'timeSlots' => [
+                ['id' => 'morning', 'label' => '9:00 AM – 12:00 PM'],
+                ['id' => 'afternoon', 'label' => '12:00 PM – 3:00 PM'],
+                ['id' => 'evening', 'label' => '3:00 PM – 6:00 PM'],
+            ],
+            'trustBadges' => [
+                'Private packaging',
+                'Discreet delivery',
+                'EFTPOS available',
+                'WhatsApp support',
+            ],
+            'deliveryAlert' => 'Local delivery covers selected metro zones near your branch. Outside those areas, choose Australia-wide shipping.',
+            'legalNote' => 'Age-restricted products. You must be 18+ with valid photo ID. Orders may be refused if ID cannot be verified on delivery.',
+        ];
+    }
 }
