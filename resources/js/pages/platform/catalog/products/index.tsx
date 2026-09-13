@@ -1,7 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { Eye, Network, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import {
@@ -200,6 +201,18 @@ export default function PlatformProductsIndex({
                             icon: Eye,
                             href: ProductController.show.url(product.slug),
                         },
+                        ...(can('manage-branch-inventories') &&
+                        !product.deleted_at
+                            ? [
+                                  {
+                                      label: 'Manage branches',
+                                      icon: Network,
+                                      href: BranchInventoryController.forProduct.url(
+                                          product.slug,
+                                      ),
+                                  },
+                              ]
+                            : []),
                         ...(can('manage-catalog') && !product.deleted_at
                             ? [
                                   {

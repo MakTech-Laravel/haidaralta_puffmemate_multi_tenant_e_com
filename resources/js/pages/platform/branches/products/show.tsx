@@ -143,15 +143,26 @@ export default function PlatformBranchProductShow({
                             ) : null}
                         </div>
                     </div>
-                    <Button variant="outline" asChild>
-                        <Link
-                            href={BranchInventoryController.index.url(
-                                branch.slug,
-                            )}
-                        >
-                            Back
-                        </Link>
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={BranchInventoryController.forProduct.url(
+                                    product.slug,
+                                )}
+                            >
+                                All branches
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={BranchInventoryController.index.url(
+                                    branch.slug,
+                                )}
+                            >
+                                Back
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <BranchProductSummary

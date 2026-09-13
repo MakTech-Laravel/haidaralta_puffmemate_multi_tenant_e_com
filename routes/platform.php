@@ -91,6 +91,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     });
 
     Route::middleware(['permission:manage-branch-inventories'])->group(function () {
+        Route::get('products/{product}/branches', [PlatformBranchInventoryController::class, 'forProduct'])
+            ->name('platform.products.branches');
         Route::get('branches/{branch}/products', [PlatformBranchInventoryController::class, 'index'])
             ->name('platform.branches.products.index');
         Route::get('branches/{branch}/products/{product}', [PlatformBranchInventoryController::class, 'show'])

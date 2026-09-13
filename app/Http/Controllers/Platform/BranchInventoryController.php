@@ -15,6 +15,7 @@ use App\Services\Inventory\BranchPricingService;
 use App\Services\Inventory\BranchProductAvailabilityService;
 use App\Services\Inventory\InventoryService;
 use App\Support\BranchProductShowPayload;
+use App\Support\ProductBranchInventoryPayload;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,14 @@ class BranchInventoryController extends Controller
             'branch' => $branch->only(['id', 'name', 'slug']),
             'table' => BranchProductListingDataTable::makeForBranch($request, $branch),
         ]);
+    }
+
+    public function forProduct(Product $product): Response
+    {
+        return Inertia::render(
+            'platform/catalog/products/branches',
+            ProductBranchInventoryPayload::make($product),
+        );
     }
 
     public function show(Request $request, Branch $branch, Product $product): Response
