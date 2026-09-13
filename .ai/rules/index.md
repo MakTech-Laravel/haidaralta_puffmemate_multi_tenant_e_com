@@ -19,7 +19,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | Dockerfile | .ai/rules/dockerfile.md |
 | app/Events/** | .ai/rules/events.md |
 | app/Services/Fcm/** | .ai/rules/fcm.md |
-| package.json | .ai/rules/general.md |
+| package.json, vite.config.ts | .ai/rules/general.md |
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
 | resources/js/lib/fcm.ts, resources/js/lib/color-picker.ts | .ai/rules/lib.md |
 | database/migrations/** | .ai/rules/migrations.md |
