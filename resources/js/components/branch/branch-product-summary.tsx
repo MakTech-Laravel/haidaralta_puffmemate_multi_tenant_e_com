@@ -184,34 +184,21 @@ export function BranchProductSummary({
 
                         <Separator />
 
-                        <dl className="grid gap-4">
-                            <DetailItem
-                                label="Status"
-                                value={
-                                    <Badge
-                                        variant={
-                                            enabled ? 'default' : 'secondary'
-                                        }
-                                    >
-                                        {enabled ? 'Enabled' : 'Disabled'}
-                                    </Badge>
-                                }
-                            />
-                            <DetailItem
-                                label="Stock alert"
-                                value={
-                                    lowStock ? (
-                                        <Badge variant="destructive">
-                                            Low stock
-                                        </Badge>
-                                    ) : (
-                                        <span className="text-muted-foreground">
-                                            Healthy
-                                        </span>
-                                    )
-                                }
-                            />
-                        </dl>
+                        <div className="space-y-1">
+                            <p className="text-muted-foreground text-sm">
+                                Stock alert
+                            </p>
+                            {lowStock ? (
+                                <Badge
+                                    variant="outline"
+                                    className="border-destructive/40 text-destructive"
+                                >
+                                    Low stock
+                                </Badge>
+                            ) : (
+                                <p className="text-sm font-medium">Healthy</p>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
             </div>

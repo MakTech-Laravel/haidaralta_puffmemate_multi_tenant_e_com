@@ -128,25 +128,19 @@ export default function PlatformBranchProductShow({
                                 {product.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col gap-2">
+                        <div className="[&_header]:mb-0">
                             <Heading
                                 title={product.name}
                                 description={`Inventory for ${branch.name}`}
                             />
-                            <div className="flex flex-wrap gap-2">
+                            {product.inventory?.is_low_stock ? (
                                 <Badge
-                                    variant={
-                                        enabled ? 'default' : 'secondary'
-                                    }
+                                    variant="outline"
+                                    className="mt-2 border-destructive/40 text-destructive"
                                 >
-                                    {enabled ? 'Enabled' : 'Disabled'}
+                                    Low stock
                                 </Badge>
-                                {product.inventory?.is_low_stock ? (
-                                    <Badge variant="destructive">
-                                        Low stock
-                                    </Badge>
-                                ) : null}
-                            </div>
+                            ) : null}
                         </div>
                     </div>
                     <Button variant="outline" asChild>

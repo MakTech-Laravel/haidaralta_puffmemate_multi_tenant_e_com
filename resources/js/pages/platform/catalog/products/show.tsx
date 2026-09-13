@@ -220,18 +220,11 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                                 {product.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col gap-2">
+                        <div className="[&_header]:mb-0">
                             <Heading
                                 title={product.name}
                                 description={`/${product.slug}${product.sku ? ` · ${product.sku}` : ''}`}
                             />
-                            <Badge
-                                variant={
-                                    product.status ? 'default' : 'secondary'
-                                }
-                            >
-                                {product.status ? 'Active' : 'Inactive'}
-                            </Badge>
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -270,6 +263,12 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                     </CardHeader>
                     <CardContent>
                         <dl className="grid gap-5 sm:grid-cols-2">
+                            <DetailItem
+                                label="Status"
+                                value={
+                                    product.status ? 'Active' : 'Inactive'
+                                }
+                            />
                             <DetailItem
                                 label="Categories"
                                 value={product.category_name}
