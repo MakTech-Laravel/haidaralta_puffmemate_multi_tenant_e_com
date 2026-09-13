@@ -144,7 +144,7 @@ export default function StorefrontProduct({
                         <h2 className="text-foreground mb-6 text-2xl font-bold tracking-tight">
                             Similar Products
                         </h2>
-                        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                             {similarProducts.map((item) => (
                                 <ProductCard key={item.id} product={item} />
                             ))}

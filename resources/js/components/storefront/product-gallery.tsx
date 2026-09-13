@@ -29,7 +29,7 @@ export function ProductGallery({ images, alt, className }: ProductGalleryProps) 
                         type="button"
                         onClick={() => setActiveIndex(index)}
                         className={cn(
-                            'bg-muted relative aspect-square overflow-hidden rounded-lg border-2 transition',
+                            'bg-muted relative aspect-square overflow-hidden border-2 transition',
                             index === activeIndex
                                 ? 'border-primary'
                                 : 'border-transparent hover:border-border',
