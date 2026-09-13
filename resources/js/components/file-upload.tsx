@@ -1414,7 +1414,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
             return (
                 <div
                     className={cn(
-                        isAvatar ? mergedClassNames.wrapper : 'w-full',
+                        isAvatar ? mergedClassNames.wrapper : 'h-full w-full',
                         className,
                         !isAvatar && mergedClassNames.wrapper,
                     )}
@@ -1424,12 +1424,12 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                         className={cn(
                             isAvatar
                                 ? 'flex items-center gap-4'
-                                : 'flex w-full justify-center',
+                                : 'flex h-full w-full items-center justify-center',
                         )}
                     >
                         <div
                             className={cn(
-                                isAvatar ? 'relative shrink-0' : 'w-full',
+                                isAvatar ? 'relative shrink-0' : 'h-full w-full',
                             )}
                             style={
                                 isAvatar
@@ -1511,7 +1511,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     className={cn(
                         isAvatar
                             ? cn(mergedClassNames.wrapper, 'space-y-2')
-                            : 'w-full space-y-2',
+                            : 'h-full w-full space-y-2',
                         className,
                         !isAvatar && mergedClassNames.wrapper,
                     )}
@@ -1521,12 +1521,12 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                         className={cn(
                             isAvatar
                                 ? 'flex items-center gap-4'
-                                : 'flex w-full justify-center',
+                                : 'flex h-full w-full items-center justify-center',
                         )}
                     >
                         <div
                             className={cn(
-                                isAvatar ? 'relative shrink-0' : 'w-full',
+                                isAvatar ? 'relative shrink-0' : 'h-full w-full',
                             )}
                             style={
                                 isAvatar
