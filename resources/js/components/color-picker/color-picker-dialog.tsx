@@ -91,7 +91,7 @@ export function ColorPickerDialog({
                 }
             }}
         >
-            <div className={cn(classNames?.shell)}>
+            <div className={cn('h-full', classNames?.shell)}>
                 <DialogTrigger asChild>
                     <ColorPickerTrigger
                         ref={triggerRef}

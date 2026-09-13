@@ -7,7 +7,7 @@ paths:
 # Platform
 
 ## Platform product form layout and suggestions
-Platform create/edit ProductForm: details left, media right, grid items-start. On xl+, Media is sticky with max-h viewport scroll. Media stacks full-width: ColorPicker, then primary FileUpload (normal single drop/preview on color tile — not side-by-side height matching), then gallery grid (max-h scroll). Over-limit gallery picks collapse to one count rejection message. enableSuggestions fetches platform.products.suggestions while typing name (not on branch ProductForm — branch has its own reuse search).
+Platform create/edit ProductForm: details left, media right, grid items-start (no sticky Media scroll). Media top row: ColorPicker + primary FileUpload side-by-side with items-stretch (equal card height); primary is full-width rectangular drop/preview on color tile (not avatar). Gallery grid max-h scroll. Over-limit gallery picks collapse to one count rejection message. enableSuggestions fetches platform.products.suggestions while typing name (not on branch ProductForm — branch has its own reuse search).
 
 ## Product form multi-selects category_ids
 ProductForm categories field is multi-select Popover+Command combobox posting category_ids (number[], min 1). Full width; no auto-select on create — only defaults.category_ids on edit. Keep searchable; toggle chips/checks per option.

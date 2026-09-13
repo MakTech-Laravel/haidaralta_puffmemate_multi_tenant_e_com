@@ -138,7 +138,7 @@ export const ColorPicker = forwardRef<ColorPickerHandle, ColorPickerProps>(
         const serialized = JSON.stringify(committedValue);
 
         return (
-            <div className={cn('grid gap-2', resolvedClassNames.wrapper)}>
+            <div className={cn('grid h-full gap-2', resolvedClassNames.wrapper)}>
                 {name ? (
                     <input
                         type="hidden"

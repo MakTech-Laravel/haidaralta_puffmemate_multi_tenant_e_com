@@ -171,15 +171,15 @@ export function ColorPickerTrigger({
             aria-haspopup={mode !== 'collapsible' ? 'dialog' : undefined}
             aria-invalid={error ? true : undefined}
             className={cn(
-                'border-border/80 bg-card/60 hover:bg-card focus-visible:ring-ring flex w-full items-stretch overflow-hidden rounded-2xl border p-0 text-left shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                'border-border/80 bg-card/60 hover:bg-card focus-visible:ring-ring flex h-full w-full flex-col items-stretch overflow-hidden rounded-2xl border p-0 text-left shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
                 open && 'ring-ring/40 ring-2',
                 error && 'border-destructive/60',
                 classNames?.trigger,
                 className,
             )}
         >
-            <div className="flex w-full flex-col">
-                <div className="border-border/60 flex items-start justify-between gap-3 border-b px-4 py-3">
+            <div className="flex min-h-0 w-full flex-1 flex-col">
+                <div className="border-border/60 flex shrink-0 items-start justify-between gap-3 border-b px-4 py-3">
                     <div className="space-y-0.5">
                         <span
                             className={cn(
@@ -209,7 +209,7 @@ export function ColorPickerTrigger({
                         {actionLabel}
                     </span>
                 </div>
-                <div className="flex items-center gap-3 p-3.5">
+                <div className="flex flex-1 items-center gap-3 p-3.5">
                     <span
                         className={cn(
                             'relative size-12 shrink-0 overflow-hidden rounded-xl border border-border/70 shadow-inner',
