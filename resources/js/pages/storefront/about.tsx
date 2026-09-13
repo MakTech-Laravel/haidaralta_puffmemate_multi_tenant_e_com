@@ -1,28 +1,22 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
+import { AboutCta } from '@/components/storefront/about-cta';
+import { AboutDelivery } from '@/components/storefront/about-delivery';
+import { AboutHero } from '@/components/storefront/about-hero';
+import { AboutHowItWorks } from '@/components/storefront/about-how-it-works';
+import { AboutMultiBranch } from '@/components/storefront/about-multi-branch';
+import { AboutWhoWeAre } from '@/components/storefront/about-who-we-are';
 
 export default function StorefrontAbout() {
-    const { name: brand } = usePage().props;
-
     return (
         <>
             <Head title="About" />
 
-            <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-                <h1 className="mb-4 text-2xl font-semibold tracking-tight">
-                    About
-                </h1>
-                <div className="text-muted-foreground space-y-4 text-sm leading-relaxed">
-                    <p>
-                        {brand} is a multi-branch tobacco retailer for
-                        cigarettes and related accessories, with pickup at your
-                        local store.
-                    </p>
-                    <p>
-                        This page is placeholder copy for layout only and will
-                        be replaced with the final Figma design.
-                    </p>
-                </div>
-            </div>
+            <AboutHero />
+            <AboutWhoWeAre />
+            <AboutHowItWorks />
+            <AboutMultiBranch />
+            <AboutDelivery />
+            <AboutCta />
         </>
     );
 }

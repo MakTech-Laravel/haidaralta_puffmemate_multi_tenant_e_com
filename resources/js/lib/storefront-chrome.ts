@@ -30,7 +30,6 @@ export const storefrontFooterShop: StorefrontChromeItem[] = [
 ];
 
 export const storefrontFooterCustomer: StorefrontChromeItem[] = [
-    { label: 'Delivery' },
     { label: 'Contact', route: 'contact' },
     { label: 'WhatsApp' },
     { label: 'FAQs' },
