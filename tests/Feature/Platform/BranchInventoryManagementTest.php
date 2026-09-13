@@ -53,6 +53,7 @@ test('platform can set stock and price for any branch', function () {
     $this->actingAs($admin, 'platform')
         ->put(route('platform.branches.products.prices', [$branch, $product]), [
             'selling_price' => 29.5,
+            'discount_type' => 'fixed',
             'discount_price' => 24.0,
         ])
         ->assertRedirect();
@@ -64,8 +65,93 @@ test('platform can set stock and price for any branch', function () {
             ->component('platform/branches/products/show')
             ->where('product.inventory.quantity', 12)
             ->where('product.price.selling_price', '29.50')
+            ->where('product.price.discount_type', 'fixed')
+            ->where('product.price.discount_price', '24.00')
+            ->has('transactions.data')
+            ->has('transactions.meta')
+            ->has('transactions.links')
+            ->has('transactions.filters')
             ->has('product.variant_inventories')
             ->has('product.variant_prices'));
+});
+
+test('platform can set percent discount and clear discount with none', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', 'uptown')->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.prices', [$branch, $product]), [
+            'selling_price' => 40,
+            'discount_type' => 'percent',
+            'discount_price' => 15,
+            'start_date' => '2026-09-01',
+            'end_date' => '2026-09-30',
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.show', [$branch, $product]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('product.price.discount_type', 'percent')
+            ->where('product.price.discount_price', '15.00')
+            ->where('product.price.start_date', '2026-09-01'));
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.prices', [$branch, $product]), [
+            'selling_price' => 40,
+            'discount_type' => 'none',
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.show', [$branch, $product]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('product.price.discount_type', 'none')
+            ->where('product.price.discount_price', null)
+            ->where('product.price.start_date', null)
+            ->where('product.price.end_date', null));
+});
+
+test('platform can filter inventory transactions by date range', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 5,
+            'minimum_stock' => 1,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.show', [
+            $branch,
+            $product,
+            'txn_from' => now()->toDateString(),
+            'txn_to' => now()->toDateString(),
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('transactions.meta.total', 1)
+            ->where('transactions.filters.from', now()->toDateString())
+            ->where('transactions.filters.to', now()->toDateString())
+            ->where('transactions.data.0.quantity', 5));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.show', [
+            $branch,
+            $product,
+            'txn_from' => now()->subDays(7)->toDateString(),
+            'txn_to' => now()->subDays(1)->toDateString(),
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('transactions.meta.total', 0));
 });
 
 test('platform can set variant stock and price on branch inventory show', function () {

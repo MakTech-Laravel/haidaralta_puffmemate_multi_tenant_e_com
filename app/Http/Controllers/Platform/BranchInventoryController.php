@@ -38,7 +38,7 @@ class BranchInventoryController extends Controller
         ]);
     }
 
-    public function show(Branch $branch, Product $product): Response
+    public function show(Request $request, Branch $branch, Product $product): Response
     {
         return Inertia::render('platform/branches/products/show', [
             'branch' => $branch->only(['id', 'name', 'slug']),
@@ -47,7 +47,9 @@ class BranchInventoryController extends Controller
                 $product,
                 $this->availability->isEnabled($branch, $product),
             ),
+            'transactions' => BranchProductShowPayload::transactions($branch, $product, $request),
             'transactionTypes' => BranchProductShowPayload::transactionTypes(),
+            'discountTypes' => BranchProductShowPayload::discountTypes(),
         ]);
     }
 

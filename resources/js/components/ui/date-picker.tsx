@@ -68,8 +68,10 @@ export function DatePicker({
                         variant="outline"
                         disabled={disabled}
                         aria-invalid={ariaInvalid}
+                        aria-expanded={open}
                         className={cn(
-                            'h-9 w-full min-w-0 justify-between gap-2 px-3 font-normal',
+                            'border-input h-9 w-full min-w-0 justify-between gap-2 bg-transparent px-3 font-normal shadow-xs',
+                            'hover:bg-transparent',
                             !selected && 'text-muted-foreground',
                         )}
                     >
@@ -78,12 +80,13 @@ export function DatePicker({
                                 ? format(selected, 'PPP')
                                 : placeholder}
                         </span>
-                        <CalendarIcon className="size-4 shrink-0 opacity-50" />
+                        <CalendarIcon className="text-muted-foreground size-4 shrink-0" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent
                     className="w-auto overflow-hidden p-0"
                     align="start"
+                    sideOffset={4}
                 >
                     <Calendar
                         mode="single"
@@ -93,12 +96,34 @@ export function DatePicker({
                         startMonth={new Date(2000, 0)}
                         endMonth={new Date(2100, 11)}
                         disabled={(date) => {
-                            if (minDate && date < minDate) {
-                                return true;
+                            const day = new Date(
+                                date.getFullYear(),
+                                date.getMonth(),
+                                date.getDate(),
+                            );
+
+                            if (minDate) {
+                                const minDay = new Date(
+                                    minDate.getFullYear(),
+                                    minDate.getMonth(),
+                                    minDate.getDate(),
+                                );
+
+                                if (day < minDay) {
+                                    return true;
+                                }
                             }
 
-                            if (maxDate && date > maxDate) {
-                                return true;
+                            if (maxDate) {
+                                const maxDay = new Date(
+                                    maxDate.getFullYear(),
+                                    maxDate.getMonth(),
+                                    maxDate.getDate(),
+                                );
+
+                                if (day > maxDay) {
+                                    return true;
+                                }
                             }
 
                             return false;

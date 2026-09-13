@@ -4,9 +4,9 @@ import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/B
 import {
     ProductInventoryPanel,
     type BranchInventorySnapshot,
-    type BranchInventoryTransaction,
     type BranchPriceSnapshot,
     type BranchProductVariantRow,
+    type TransactionsPage,
 } from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
@@ -37,17 +37,20 @@ type ProductShow = {
     price: BranchPriceSnapshot | null;
     variant_inventories: Record<string, BranchInventorySnapshot>;
     variant_prices: Record<string, BranchPriceSnapshot>;
-    transactions: BranchInventoryTransaction[];
 };
 
 export default function PlatformBranchProductShow({
     branch,
     product,
+    transactions,
     transactionTypes,
+    discountTypes,
 }: {
     branch: Branch;
     product: ProductShow;
+    transactions: TransactionsPage;
     transactionTypes: { value: string; label: string }[];
+    discountTypes: { value: string; label: string }[];
 }) {
     const [enabled, setEnabled] = useState(product.enabled);
 
@@ -98,8 +101,8 @@ export default function PlatformBranchProductShow({
                     </Button>
                 </div>
 
-                <Card className="border-border/80 shadow-sm">
-                    <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <Card className="gap-4 py-5 shadow-none">
+                    <CardHeader className="flex flex-col gap-4 px-5 sm:flex-row sm:items-start sm:justify-between">
                         <div className="space-y-1">
                             <CardTitle className="text-base">
                                 Branch availability
@@ -112,11 +115,12 @@ export default function PlatformBranchProductShow({
                             <Badge variant="destructive">Low stock</Badge>
                         ) : null}
                     </CardHeader>
-                    <CardContent className="space-y-5">
-                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                    <CardContent className="space-y-5 px-5">
+                        <div className="flex items-start gap-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
                             <Checkbox
                                 id="platform-branch-enabled"
                                 checked={enabled}
+                                className="mt-0.5"
                                 onCheckedChange={(checked) => {
                                     const next = checked === true;
                                     setEnabled(next);
@@ -172,8 +176,9 @@ export default function PlatformBranchProductShow({
                     price={product.price}
                     variantInventories={product.variant_inventories}
                     variantPrices={product.variant_prices}
-                    transactions={product.transactions}
+                    transactions={transactions}
                     transactionTypes={transactionTypes}
+                    discountTypes={discountTypes}
                     inventoryUrl={BranchInventoryController.adjustInventory.url(
                         {
                             branch: branch.slug,
@@ -181,6 +186,10 @@ export default function PlatformBranchProductShow({
                         },
                     )}
                     priceUrl={BranchInventoryController.upsertPrice.url({
+                        branch: branch.slug,
+                        product: product.slug,
+                    })}
+                    showUrl={BranchInventoryController.show.url({
                         branch: branch.slug,
                         product: product.slug,
                     })}

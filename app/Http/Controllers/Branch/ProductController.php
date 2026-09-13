@@ -112,7 +112,7 @@ class ProductController extends Controller
         return redirect()->route('branch.products.show', [$branch, $product]);
     }
 
-    public function show(string $branchSlug, Product $product): Response
+    public function show(Request $request, string $branchSlug, Product $product): Response
     {
         $branch = $this->currentBranch();
 
@@ -123,7 +123,9 @@ class ProductController extends Controller
                 $product,
                 $this->availability->isEnabled($branch, $product),
             ),
+            'transactions' => BranchProductShowPayload::transactions($branch, $product, $request),
             'transactionTypes' => BranchProductShowPayload::transactionTypes(),
+            'discountTypes' => BranchProductShowPayload::discountTypes(),
         ]);
     }
 
@@ -283,6 +285,7 @@ class ProductController extends Controller
         if (! empty($data['selling_price'])) {
             $this->pricing->upsert($branch, $product, [
                 'selling_price' => $data['selling_price'],
+                'discount_type' => ! empty($data['discount_price']) ? 'fixed' : 'none',
                 'discount_price' => $data['discount_price'] ?? null,
                 'status' => true,
             ]);

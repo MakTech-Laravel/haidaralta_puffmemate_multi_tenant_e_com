@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\DiscountType;
 use App\Enums\InventoryTransactionType;
 use App\Models\Branch;
 use App\Models\BranchProductPrice;
@@ -10,11 +11,13 @@ use App\Models\Inventory;
 use App\Models\InventoryTransaction;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 final class BranchProductShowPayload
 {
     /**
-     * Shared branch/platform inventory show product payload.
+     * Shared branch/platform inventory show product payload (no transactions).
      *
      * @return array<string, mixed>
      */
@@ -57,24 +60,6 @@ final class BranchProductShowPayload
             $variantPrices[(string) $price->variant_id] = self::mapPrice($price);
         }
 
-        $transactions = InventoryTransaction::query()
-            ->where('branch_id', $branch->id)
-            ->where('product_id', $product->id)
-            ->latest('created_at')
-            ->limit(25)
-            ->get()
-            ->map(fn (InventoryTransaction $txn): array => [
-                'id' => $txn->id,
-                'type' => $txn->type->value,
-                'quantity' => $txn->quantity,
-                'before_quantity' => $txn->before_quantity,
-                'after_quantity' => $txn->after_quantity,
-                'variant_id' => $txn->variant_id,
-                'created_at' => $txn->created_at?->toIso8601String(),
-            ])
-            ->values()
-            ->all();
-
         return [
             'id' => $product->id,
             'name' => $product->name,
@@ -105,7 +90,81 @@ final class BranchProductShowPayload
             'price' => $basePrice ? self::mapPrice($basePrice) : null,
             'variant_inventories' => $variantInventories,
             'variant_prices' => $variantPrices,
-            'transactions' => $transactions,
+        ];
+    }
+
+    /**
+     * Paginated inventory transactions for the product show page.
+     *
+     * Query params: txn_scope (base|{variant_id}), txn_from, txn_to, txn_page.
+     *
+     * @return array{
+     *     data: list<array<string, mixed>>,
+     *     meta: array{current_page: int, last_page: int, per_page: int, total: int, from: ?int, to: ?int},
+     *     links: list<array{url: ?string, label: string, active: bool}>,
+     *     filters: array{scope: string, from: ?string, to: ?string}
+     * }
+     */
+    public static function transactions(Branch $branch, Product $product, Request $request): array
+    {
+        $scope = $request->string('txn_scope')->toString() ?: 'base';
+        $from = $request->date('txn_from');
+        $to = $request->date('txn_to');
+
+        $query = InventoryTransaction::query()
+            ->where('branch_id', $branch->id)
+            ->where('product_id', $product->id)
+            ->latest('created_at')
+            ->latest('id');
+
+        if ($scope === 'base') {
+            $query->whereNull('variant_id');
+        } else {
+            $query->where('variant_id', (int) $scope);
+        }
+
+        if ($from !== null) {
+            $query->whereDate('created_at', '>=', $from);
+        }
+
+        if ($to !== null) {
+            $query->whereDate('created_at', '<=', $to);
+        }
+
+        /** @var LengthAwarePaginator<int, InventoryTransaction> $paginator */
+        $paginator = $query
+            ->paginate(15, ['*'], 'txn_page')
+            ->withQueryString()
+            ->through(fn (InventoryTransaction $txn): array => [
+                'id' => $txn->id,
+                'type' => $txn->type->value,
+                'quantity' => $txn->quantity,
+                'before_quantity' => $txn->before_quantity,
+                'after_quantity' => $txn->after_quantity,
+                'variant_id' => $txn->variant_id,
+                'created_at' => $txn->created_at?->toIso8601String(),
+            ]);
+
+        return [
+            'data' => array_values($paginator->items()),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+            ],
+            'links' => collect($paginator->toArray()['links'] ?? [])->map(fn (array $link): array => [
+                'url' => $link['url'] ?? null,
+                'label' => (string) ($link['label'] ?? ''),
+                'active' => (bool) ($link['active'] ?? false),
+            ])->values()->all(),
+            'filters' => [
+                'scope' => $scope,
+                'from' => $from?->toDateString(),
+                'to' => $to?->toDateString(),
+            ],
         ];
     }
 
@@ -121,6 +180,18 @@ final class BranchProductShowPayload
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    public static function discountTypes(): array
+    {
+        return [
+            ['value' => DiscountType::None->value, 'label' => 'None'],
+            ['value' => DiscountType::Fixed->value, 'label' => 'Fixed price'],
+            ['value' => DiscountType::Percent->value, 'label' => 'Percent'],
+        ];
     }
 
     /**
@@ -146,6 +217,7 @@ final class BranchProductShowPayload
     /**
      * @return array{
      *     selling_price: mixed,
+     *     discount_type: string,
      *     discount_price: mixed,
      *     start_date: ?string,
      *     end_date: ?string,
@@ -156,6 +228,7 @@ final class BranchProductShowPayload
     {
         return [
             'selling_price' => $price->selling_price,
+            'discount_type' => $price->discount_type?->value ?? DiscountType::None->value,
             'discount_price' => $price->discount_price,
             'start_date' => $price->start_date?->toDateString(),
             'end_date' => $price->end_date?->toDateString(),
