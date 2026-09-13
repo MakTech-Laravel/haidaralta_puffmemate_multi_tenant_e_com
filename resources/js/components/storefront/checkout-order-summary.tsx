@@ -144,7 +144,7 @@ export function CheckoutOrderSummary({
                 </Label>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-2">
+            {/* <div className="mt-5 grid grid-cols-2 gap-2">
                 {trustBadges.map((badge) => (
                     <div
                         key={badge}
@@ -153,9 +153,9 @@ export function CheckoutOrderSummary({
                         {badge}
                     </div>
                 ))}
-            </div>
+            </div> */}
 
-            <p className="border-primary/20 text-primary mt-5 rounded-md border px-3 py-2.5 text-[0.7rem] leading-relaxed">
+            <p className="text-primary bg-primary/5 mt-5 rounded-none px-3 py-2.5 text-[0.7rem] leading-relaxed">
                 {legalNote}
             </p>
         </aside>
