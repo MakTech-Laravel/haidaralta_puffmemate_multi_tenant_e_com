@@ -13,7 +13,7 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
             href={category.href}
             prefetch
             className={cn(
-                'group ring-ring relative block aspect-4/3 overflow-hidden rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                'group ring-ring relative block h-auto w-full max-h-[490px] aspect-4/3 overflow-hidden rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                 className,
             )}
         >
@@ -27,10 +27,10 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
                 aria-hidden
             />
             <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-                <h3 className="text-primary-foreground text-lg font-semibold sm:text-xl">
+                <h3 className="text-primary-foreground text-lg font-bold sm:text-2xl">
                     {category.name}
                 </h3>
-                <p className="text-primary-foreground/80 mt-1 text-sm">
+                <p className="text-primary-foreground mt-1 text-sm font-normal font-dm-sans">
                     {category.description}
                 </p>
             </div>

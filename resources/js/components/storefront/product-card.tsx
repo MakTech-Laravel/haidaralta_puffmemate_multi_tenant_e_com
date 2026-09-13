@@ -29,16 +29,16 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 />
             </div>
             <div className="flex flex-1 flex-col gap-1 p-4">
-                <h3 className="text-foreground text-sm font-semibold tracking-tight sm:text-base">
+                <h3 className="text-foreground text-base font-semibold sm:text-lg">
                     {product.name}
                 </h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-sm font-normal">
                     {product.description}
                 </p>
-                <p className="text-primary mt-2 text-sm font-semibold">
+                <p className="text-primary mt-2 text-lg font-semibold">
                     {product.price}
                 </p>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-muted-foreground text-sm font-normal">
                     Available stock: {product.stock} pcs
                 </p>
             </div>
