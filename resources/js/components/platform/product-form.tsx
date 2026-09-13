@@ -441,46 +441,44 @@ export function ProductForm({
                             />
                         </div>
 
-                        <div className="grid gap-5 sm:grid-cols-2">
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    value={data.name}
-                                    onChange={(event) =>
-                                        setData('name', event.target.value)
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="name">Name</Label>
+                            <Input
+                                id="name"
+                                value={data.name}
+                                onChange={(event) =>
+                                    setData('name', event.target.value)
+                                }
+                                onBlur={() => {
+                                    if (data.slug.trim() !== '') {
+                                        validate('slug');
                                     }
-                                    onBlur={() => {
-                                        if (data.slug.trim() !== '') {
-                                            validate('slug');
-                                        }
-                                    }}
-                                    required
-                                    placeholder="e.g. Air Pro Kit"
-                                    autoComplete="off"
-                                />
-                                <InputError message={errors.name} />
-                            </div>
+                                }}
+                                required
+                                placeholder="e.g. Air Pro Kit"
+                                autoComplete="off"
+                            />
+                            <InputError message={errors.name} />
+                        </div>
 
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="slug">Slug</Label>
-                                <Input
-                                    id="slug"
-                                    value={data.slug}
-                                    onChange={(event) => {
-                                        setSlugTouched(true);
-                                        setData('slug', event.target.value);
-                                    }}
-                                    onBlur={() => {
-                                        if (data.slug.trim() !== '') {
-                                            validate('slug');
-                                        }
-                                    }}
-                                    required
-                                    placeholder="e.g. air-pro-kit"
-                                />
-                                <InputError message={errors.slug} />
-                            </div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="slug">Slug</Label>
+                            <Input
+                                id="slug"
+                                value={data.slug}
+                                onChange={(event) => {
+                                    setSlugTouched(true);
+                                    setData('slug', event.target.value);
+                                }}
+                                onBlur={() => {
+                                    if (data.slug.trim() !== '') {
+                                        validate('slug');
+                                    }
+                                }}
+                                required
+                                placeholder="e.g. air-pro-kit"
+                            />
+                            <InputError message={errors.slug} />
                         </div>
 
                         {enableSuggestions && suggestions.length > 0 ? (
