@@ -179,19 +179,19 @@ export const storefrontNewArrivals: StorefrontProduct[] =
 export const storefrontFeatures: StorefrontFeature[] = [
     {
         title: 'Same-Day Delivery',
-        description: 'Order before cut-off for local same-day drop-off.',
+        description: 'Available in selected local zones',
     },
     {
         title: 'Cash on Delivery',
-        description: 'Pay in cash when your order arrives.',
+        description: 'Pay when your order arrives',
     },
     {
         title: 'EFTPOS on Delivery',
-        description: 'Card payments accepted at the door.',
+        description: 'Driver carries an EFTPOS machine',
     },
     {
         title: 'Discreet Service',
-        description: 'Plain packaging and private delivery handling.',
+        description: 'Private packaging and customer care',
     },
 ];
 

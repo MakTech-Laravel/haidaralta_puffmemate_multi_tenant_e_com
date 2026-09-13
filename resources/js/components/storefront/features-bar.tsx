@@ -8,18 +8,27 @@ type FeaturesBarProps = {
 
 export function FeaturesBar({ features, className }: FeaturesBarProps) {
     return (
-        <section className={cn('bg-muted/60 border-border border-y', className)}>
-            <div className="mx-auto grid container gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:gap-6 lg:py-12">
-                {features.map((feature) => (
-                    <div key={feature.title} className="flex flex-col gap-1.5">
-                        <h3 className="text-foreground text-sm font-semibold tracking-tight">
-                            {feature.title}
-                        </h3>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                            {feature.description}
-                        </p>
-                    </div>
-                ))}
+        <section className={cn('', className)}>
+            <div className="mx-auto container px-4 sm:px-6">
+                <ul className="grid sm:grid-cols-2 lg:grid-cols-4">
+                    {features.map((feature, index) => (
+                        <li
+                            key={feature.title}
+                            className={cn(
+                                'relative flex flex-col items-center justify-center gap-1 px-6 py-10 text-center sm:py-12',
+                                index > 0 &&
+                                    'before:bg-border before:absolute before:top-1/2 before:left-0 before:hidden before:h-12 before:w-px before:-translate-y-1/2 lg:before:block',
+                            )}
+                        >
+                            <h3 className="text-foreground text-base font-bold tracking-tight">
+                                {feature.title}
+                            </h3>
+                            <p className="text-muted-foreground text-sm leading-snug">
+                                {feature.description}
+                            </p>
+                        </li>
+                    ))}
+                </ul>
             </div>
         </section>
     );

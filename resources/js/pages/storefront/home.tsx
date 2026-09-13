@@ -47,12 +47,12 @@ export default function StorefrontHome() {
                     </Link>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 sm:[&>:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-3 lg:[&>:last-child:nth-child(odd)]:col-span-1">
                     {topCategories.map((category) => (
                         <CategoryCard key={category.id} category={category} />
                     ))}
                 </div>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:[&>:last-child:nth-child(odd)]:col-span-2">
                     {wideCategories.map((category) => (
                         <CategoryCard key={category.id} category={category} />
                     ))}
@@ -79,7 +79,7 @@ export default function StorefrontHome() {
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                     {storefrontFeaturedProducts.map((product) => (
                         <ProductCard key={product.id} product={product} />
                     ))}
@@ -106,7 +106,7 @@ export default function StorefrontHome() {
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                     {storefrontNewArrivals.map((product) => (
                         <ProductCard key={product.id} product={product} />
                     ))}
