@@ -159,7 +159,7 @@ export default function PlatformBranchProductShow({
                                     branch.slug,
                                 )}
                             >
-                                Back
+                                {branch.name} products
                             </Link>
                         </Button>
                     </div>
