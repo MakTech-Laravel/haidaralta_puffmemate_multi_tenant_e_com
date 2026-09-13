@@ -6,6 +6,7 @@ paths:
   - app/DataTables/DatabaseBackupZipDataTable.php
   - app/DataTables/BranchProductListingDataTable.php
   - app/DataTables/BranchCategoryDataTable.php
+  - app/DataTables/ProductBranchInventoryDataTable.php
 ---
 
 # Data Tables
@@ -29,6 +30,9 @@ Backup zip listing is filesystem metadata, not Eloquent. Use DatabaseBackupZipDa
 
 ## Branch listing makeForBranch + filters
 Use BranchProductListingDataTable::makeForBranch (not make) — child signature cannot override AbstractDataTable::make. Filters: enabled (branch_products.status) and low_stock (product-level inventory available <= minimum).
+
+## Product → branches inventory DataTable
+Platform catalog Manage branches uses ProductBranchInventoryDataTable::makeForProduct (Scout free-text on Branch; SQL filters enabled / low_stock / missing_price; paginate+sort). Pair with ProductBranchInventoryPayload::product + ::summary for header cards (summary is product-wide, not the current page). Page: platform/catalog/products/branches.
 
 ## Branch categories DataTable no trash
 Branch category index uses BranchCategoryDataTable without AllowedFilter::trashed — soft-delete UI stays platform-only.

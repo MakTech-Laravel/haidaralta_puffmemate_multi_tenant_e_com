@@ -14,7 +14,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
 | resources/css/app.css | .ai/rules/css.md |
-| app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php, app/DataTables/BranchProductListingDataTable.php, app/DataTables/BranchCategoryDataTable.php | .ai/rules/data-tables.md |
+| app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php, app/DataTables/BranchProductListingDataTable.php, app/DataTables/BranchCategoryDataTable.php, app/DataTables/ProductBranchInventoryDataTable.php | .ai/rules/data-tables.md |
 | resources/js/components/{ui/date-picker,branch/product-inventory-panel}.tsx | .ai/rules/date-pickerbranch.md |
 | docker/**, docker/nginx.conf | .ai/rules/docker.md |
 | Dockerfile | .ai/rules/dockerfile.md |
@@ -30,7 +30,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |
 | resources/js/components/platform/product-form.tsx, resources/js/components/platform/category-form.tsx, resources/js/components/platform/{category,product}-form.tsx | .ai/rules/platform.md |
 | resources/js/components/{platform,admin}/*-form.tsx | .ai/rules/platformadmin.md |
-| resources/js/pages/platform/catalog/products/show.tsx | .ai/rules/products.md |
+| resources/js/pages/platform/catalog/products/show.tsx, resources/js/pages/platform/catalog/products/** | .ai/rules/products.md |
 | app/Http/Requests/{Platform,Branch}/*Product*Request.php | .ai/rules/requests-platform-branch.md |
 | app/Http/Requests/Platform/*Category*Request.php | .ai/rules/requests-platform.md |
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |

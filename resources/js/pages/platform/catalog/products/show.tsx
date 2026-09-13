@@ -1,8 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Network, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import ProductVariantController from '@/actions/App/Http/Controllers/Platform/ProductVariantController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -228,11 +229,23 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="default" asChild>
+                        <Button variant="outline" asChild>
                             <Link href={ProductController.index.url()}>
                                 Back
                             </Link>
                         </Button>
+                        {can('manage-branch-inventories') ? (
+                            <Button variant="outline" asChild>
+                                <Link
+                                    href={BranchInventoryController.forProduct.url(
+                                        product.slug,
+                                    )}
+                                >
+                                    <Network className="size-4" />
+                                    Manage branches
+                                </Link>
+                            </Button>
+                        ) : null}
                         {can('manage-catalog') ? (
                             <Button asChild>
                                 <Link
@@ -249,8 +262,27 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
 
                 <Alert>
                     <AlertTitle>Branch availability</AlertTitle>
-                    <AlertDescription>
-                        Disabled for all branches — enable from branch inventory.
+                    <AlertDescription className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <span>
+                            Catalog products stay disabled per branch until you
+                            enable them and set stock or price.
+                        </span>
+                        {can('manage-branch-inventories') ? (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-fit shrink-0"
+                                asChild
+                            >
+                                <Link
+                                    href={BranchInventoryController.forProduct.url(
+                                        product.slug,
+                                    )}
+                                >
+                                    Open branch list
+                                </Link>
+                            </Button>
+                        ) : null}
                     </AlertDescription>
                 </Alert>
 

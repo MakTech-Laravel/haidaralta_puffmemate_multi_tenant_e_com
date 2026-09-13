@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Platform;
 
 use App\DataTables\BranchProductListingDataTable;
+use App\DataTables\ProductBranchInventoryDataTable;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\AdjustBranchInventoryRequest;
@@ -15,6 +16,7 @@ use App\Services\Inventory\BranchPricingService;
 use App\Services\Inventory\BranchProductAvailabilityService;
 use App\Services\Inventory\InventoryService;
 use App\Support\BranchProductShowPayload;
+use App\Support\ProductBranchInventoryPayload;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +37,15 @@ class BranchInventoryController extends Controller
         return Inertia::render('platform/branches/products/index', [
             'branch' => $branch->only(['id', 'name', 'slug']),
             'table' => BranchProductListingDataTable::makeForBranch($request, $branch),
+        ]);
+    }
+
+    public function forProduct(Request $request, Product $product): Response
+    {
+        return Inertia::render('platform/catalog/products/branches', [
+            'product' => ProductBranchInventoryPayload::product($product),
+            'summary' => ProductBranchInventoryPayload::summary($product),
+            'table' => ProductBranchInventoryDataTable::makeForProduct($request, $product),
         ]);
     }
 

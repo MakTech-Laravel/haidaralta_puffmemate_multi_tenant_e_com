@@ -19,6 +19,11 @@ class Branch extends Model
     /**
      * @var list<string>
      */
+    public static array $dataTableSearchable = ['name', 'slug', 'code'];
+
+    /**
+     * @var list<string>
+     */
     public static array $dataTableSortable = ['name', 'slug', 'code', 'status', 'created_at', 'users_count'];
 
     /**
@@ -66,6 +71,14 @@ class Branch extends Model
     public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class);
+    }
+
+    /**
+     * @return HasMany<BranchProductPrice, $this>
+     */
+    public function productPrices(): HasMany
+    {
+        return $this->hasMany(BranchProductPrice::class);
     }
 
     /**
