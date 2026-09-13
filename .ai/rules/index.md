@@ -9,12 +9,12 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/Backup/**, config/backup.php, config/scout.php | .ai/rules/backup.md |
 | app/Models/{Category,Product,ProductVariant,BranchProduct,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php | .ai/rules/branch.md |
 | resources/js/components/color-picker/** | .ai/rules/color-picker.md |
-| resources/js/components/branch/** | .ai/rules/components-branch.md |
+| resources/js/components/branch/**, resources/js/components/branch/nav.ts | .ai/rules/components-branch.md |
 | resources/js/components/file-upload.tsx | .ai/rules/components.md |
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
 | resources/css/app.css | .ai/rules/css.md |
-| app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php, app/DataTables/BranchProductListingDataTable.php | .ai/rules/data-tables.md |
+| app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php, app/DataTables/BranchProductListingDataTable.php, app/DataTables/BranchCategoryDataTable.php | .ai/rules/data-tables.md |
 | docker/**, docker/nginx.conf | .ai/rules/docker.md |
 | Dockerfile | .ai/rules/dockerfile.md |
 | app/Events/** | .ai/rules/events.md |
@@ -24,6 +24,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/lib/fcm.ts, resources/js/lib/color-picker.ts | .ai/rules/lib.md |
 | database/migrations/** | .ai/rules/migrations.md |
 | app/Models/{User,Branch}.php, app/Models/OtpRecord.php | .ai/rules/models.md |
+| resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |
 | resources/js/components/platform/product-form.tsx, resources/js/components/platform/category-form.tsx | .ai/rules/platform.md |

@@ -5,6 +5,7 @@ paths:
   - 'resources/js/pages/**/index.tsx'
   - app/DataTables/DatabaseBackupZipDataTable.php
   - app/DataTables/BranchProductListingDataTable.php
+  - app/DataTables/BranchCategoryDataTable.php
 ---
 
 # Data Tables
@@ -28,3 +29,6 @@ Backup zip listing is filesystem metadata, not Eloquent. Use DatabaseBackupZipDa
 
 ## Branch listing makeForBranch + filters
 Use BranchProductListingDataTable::makeForBranch (not make) — child signature cannot override AbstractDataTable::make. Filters: enabled (branch_products.status) and low_stock (product-level inventory available <= minimum).
+
+## Branch categories DataTable no trash
+Branch category index uses BranchCategoryDataTable without AllowedFilter::trashed — soft-delete UI stays platform-only.

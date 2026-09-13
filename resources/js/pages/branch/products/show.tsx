@@ -68,7 +68,7 @@ export default function BranchProductShow({
         <>
             <Head title={product.name} />
 
-            <div className="mx-auto flex max-w-4xl flex-col gap-8 p-2">
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title={product.name}
@@ -77,11 +77,23 @@ export default function BranchProductShow({
                             'Branch inventory and pricing'
                         }
                     />
-                    <Button variant="outline" asChild>
-                        <Link href={ProductController.index.url(branch.slug)}>
-                            Back
-                        </Link>
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="outline" asChild>
+                            <Link href={ProductController.index.url(branch.slug)}>
+                                Back
+                            </Link>
+                        </Button>
+                        <Button asChild>
+                            <Link
+                                href={ProductController.edit.url({
+                                    branch: branch.slug,
+                                    product: product.slug,
+                                })}
+                            >
+                                Edit
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">

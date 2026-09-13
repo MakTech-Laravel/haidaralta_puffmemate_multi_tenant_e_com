@@ -92,6 +92,11 @@ test('platform product suggestions match existing catalog items', function () {
         'slug' => 'air-pro-disposable',
         'sku' => 'POM-AIR-PRO',
     ]);
+    $mesh = Product::factory()->create([
+        'name' => 'Air Pro Mesh Coils',
+        'slug' => 'air-pro-mesh-coils',
+        'sku' => 'POM-AIR-MESH',
+    ]);
     $other = Product::factory()->create([
         'name' => 'Berry Mist Pod',
         'slug' => 'berry-mist-pod',
@@ -100,7 +105,15 @@ test('platform product suggestions match existing catalog items', function () {
     $this->actingAs($admin, 'platform')
         ->getJson(route('platform.products.suggestions', ['q' => 'Air']))
         ->assertOk()
-        ->assertJsonPath('suggestions.0.id', $match->id)
+        ->assertJsonFragment(['id' => $match->id])
+        ->assertJsonFragment(['id' => $mesh->id])
+        ->assertJsonMissing(['id' => $other->id]);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.products.suggestions', ['q' => 'air pro']))
+        ->assertOk()
+        ->assertJsonFragment(['id' => $match->id])
+        ->assertJsonFragment(['id' => $mesh->id])
         ->assertJsonMissing(['id' => $other->id]);
 
     $this->actingAs($admin, 'platform')
@@ -109,7 +122,8 @@ test('platform product suggestions match existing catalog items', function () {
             'exclude' => $match->id,
         ]))
         ->assertOk()
-        ->assertJsonPath('suggestions', []);
+        ->assertJsonMissing(['id' => $match->id])
+        ->assertJsonFragment(['id' => $mesh->id]);
 });
 
 test('platform categories data table filters sorts and paginates', function () {

@@ -9,6 +9,7 @@ use App\Http\Requests\Branch\AdjustBranchInventoryRequest;
 use App\Http\Requests\Branch\ReuseBranchProductRequest;
 use App\Http\Requests\Branch\StoreBranchProductRequest;
 use App\Http\Requests\Branch\ToggleBranchProductRequest;
+use App\Http\Requests\Branch\UpdateBranchProductRequest;
 use App\Http\Requests\Branch\UpsertBranchProductPriceRequest;
 use App\Models\Branch;
 use App\Models\Category;
@@ -122,6 +123,55 @@ class ProductController extends Controller
             ),
             'transactionTypes' => BranchProductShowPayload::transactionTypes(),
         ]);
+    }
+
+    public function edit(string $branchSlug, Product $product): Response
+    {
+        $branch = $this->currentBranch();
+        $product->load(['categories:id,name,slug']);
+
+        return Inertia::render('branch/products/edit', [
+            'branch' => $branch->only(['id', 'name', 'slug']),
+            'product' => [
+                'id' => $product->id,
+                'category_ids' => $product->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'sku' => $product->sku,
+                'description' => $product->description,
+                'image' => $product->image,
+                'image_url' => $product->imageUrl(),
+                'color_code' => $product->color_code,
+                'status' => (bool) $product->status,
+            ],
+            'categoryOptions' => Category::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug'])
+                ->map(fn (Category $category): array => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                ])
+                ->all(),
+        ]);
+    }
+
+    public function update(UpdateBranchProductRequest $request, string $branchSlug, Product $product): RedirectResponse
+    {
+        $branch = $this->currentBranch();
+        $data = $request->safe()->except(['image']);
+        $data['status'] = $request->boolean('status', true);
+        $data['remove_image'] = $request->boolean('remove_image');
+
+        $product = $this->products->update(
+            $product,
+            $data,
+            $request->file('image'),
+        );
+
+        Toast::success('Product updated.');
+
+        return redirect()->route('branch.products.show', [$branch, $product]);
     }
 
     public function toggle(ToggleBranchProductRequest $request, string $branchSlug, Product $product): RedirectResponse

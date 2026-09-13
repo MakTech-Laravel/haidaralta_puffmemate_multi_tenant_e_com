@@ -3,6 +3,7 @@
 namespace App\Services\Catalog;
 
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Throwable;
 
@@ -19,13 +20,31 @@ class ProductSuggestionService
             return collect();
         }
 
-        $fromScout = $this->suggestViaScout($query, $limit, $excludeProductId);
+        $tokens = $this->tokens($query);
 
-        if ($fromScout->isNotEmpty()) {
-            return $fromScout;
+        if ($tokens === []) {
+            return collect();
         }
 
-        return $this->suggestViaDatabase($query, $limit, $excludeProductId);
+        $fromScout = $this->suggestViaScout($query, $limit * 2, $excludeProductId);
+        $fromDatabase = $this->suggestViaDatabase($tokens, $limit * 2, $excludeProductId);
+
+        return $fromScout
+            ->concat($fromDatabase)
+            ->unique('id')
+            ->take($limit)
+            ->values();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function tokens(string $query): array
+    {
+        return array_values(array_filter(
+            preg_split('/\s+/u', $query) ?: [],
+            fn (string $token): bool => $token !== '',
+        ));
     }
 
     /**
@@ -34,7 +53,7 @@ class ProductSuggestionService
     private function suggestViaScout(string $query, int $limit, ?int $excludeProductId): Collection
     {
         try {
-            $builder = Product::search($query)->take($limit * 2);
+            $builder = Product::search($query)->take($limit);
 
             return $builder
                 ->get()
@@ -53,22 +72,27 @@ class ProductSuggestionService
     }
 
     /**
+     * @param  list<string>  $tokens
      * @return Collection<int, array{id: int, name: string, slug: string, sku: ?string, image_url: ?string}>
      */
-    private function suggestViaDatabase(string $query, int $limit, ?int $excludeProductId): Collection
+    private function suggestViaDatabase(array $tokens, int $limit, ?int $excludeProductId): Collection
     {
-        $like = '%'.$query.'%';
-
         return Product::query()
             ->when(
                 $excludeProductId !== null,
-                fn ($builder) => $builder->whereKeyNot($excludeProductId),
+                fn (Builder $builder) => $builder->whereKeyNot($excludeProductId),
             )
-            ->where(function ($builder) use ($like): void {
-                $builder
-                    ->where('name', 'like', $like)
-                    ->orWhere('slug', 'like', $like)
-                    ->orWhere('sku', 'like', $like);
+            ->where(function (Builder $builder) use ($tokens): void {
+                foreach ($tokens as $token) {
+                    $like = '%'.$token.'%';
+
+                    $builder->where(function (Builder $tokenBuilder) use ($like): void {
+                        $tokenBuilder
+                            ->where('name', 'like', $like)
+                            ->orWhere('slug', 'like', $like)
+                            ->orWhere('sku', 'like', $like);
+                    });
+                }
             })
             ->orderBy('name')
             ->limit($limit)

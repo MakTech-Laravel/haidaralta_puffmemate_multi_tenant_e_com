@@ -1,5 +1,6 @@
 export { SidebarNav } from './sidebar-nav';
 export { NavNodeItem } from './nav-node';
+export { navGroup, navLink } from './nav-builders';
 export {
     filterNavNodes,
     isNodeActive,

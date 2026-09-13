@@ -34,11 +34,22 @@ export interface NavNodeClassNames {
 }
 
 /**
- * A single navigation entry.
+ * A single sidebar navigation entry (complete portal nav contract).
  *
- * A node is either a **link** (has `href`) or a **group** (has `items`), or
- * both — a group whose own row also navigates somewhere. Groups may nest to
- * any depth; the renderer recurses.
+ * Prefer {@link navLink} / {@link navGroup} from `nav-builders` when defining
+ * portal trees (`platform/nav.ts`, `branch/nav.ts`, etc.). Do not fork portal
+ * sidebars via legacy `AppSidebar` / `NavMain`.
+ *
+ * Supported options:
+ * - **Leaf link** — `title` + `href` (+ optional icon, badge, exact, external, disabled)
+ * - **Group / dropdown** — `items` (collapsible; icon-rail flyout when collapsed)
+ * - **Group + landing href** — parent may also have `href`
+ * - **Nested groups** — `items` recurse to any depth
+ * - **Permissions** — `permissions` show when user has ANY; omit = always visible
+ * - **classNames** — per-row slot overrides (defaults via `SidebarNav`)
+ *
+ * Section labels live on the layout (`groupLabel` / `PortalShellLayout`), not
+ * on individual nodes.
  */
 export interface NavNode {
     /** Visible label. */
@@ -62,6 +73,7 @@ export interface NavNode {
     /**
      * Permission gate — the node is shown when the user has ANY of these.
      * Omit to always show (subject to children visibility for groups).
+     * `filterNavNodes` also drops empty groups that have no own `href`.
      */
     permissions?: PermissionKey[];
     /** Nested children. Presence of items makes this a group. */
