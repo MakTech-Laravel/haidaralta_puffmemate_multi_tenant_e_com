@@ -10,6 +10,7 @@ test('public storefront pages render', function (string $route, string $componen
     'home' => ['home', 'storefront/home'],
     'shop' => ['shop', 'storefront/shop'],
     'about' => ['about', 'storefront/about'],
+    'faqs' => ['faqs', 'storefront/faq'],
     'contact' => ['contact', 'storefront/contact'],
 ]);
 

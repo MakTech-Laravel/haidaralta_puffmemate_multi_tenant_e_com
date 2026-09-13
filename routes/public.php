@@ -17,4 +17,5 @@ Route::get('/products/{product}', [ProductController::class, 'show'])->name('pro
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 Route::inertia('/about', 'storefront/about')->name('about');
+Route::inertia('/faqs', 'storefront/faq')->name('faqs');
 Route::inertia('/contact', 'storefront/contact')->name('contact');
