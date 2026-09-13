@@ -1043,13 +1043,15 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     const room = Math.max(0, maxFiles - used);
 
                     if (valid.length > room) {
-                        valid.slice(room).forEach((file) =>
-                            rejected.push({
-                                file,
-                                reason: 'count',
-                                message: `Maximum ${maxFiles} files allowed — "${file.name}" was skipped.`,
-                            }),
-                        );
+                        const skipped = valid.slice(room);
+                        rejected.push({
+                            file: skipped[0],
+                            reason: 'count',
+                            message:
+                                skipped.length === 1
+                                    ? `Maximum ${maxFiles} files allowed — "${skipped[0].name}" was skipped.`
+                                    : `Maximum ${maxFiles} files allowed — ${skipped.length} files were skipped.`,
+                        });
                         valid = valid.slice(0, room);
                     }
                 }
@@ -1376,7 +1378,12 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
         );
 
         const RejectionsEl = showRejections && rejections.length > 0 && (
-            <div className={cn('space-y-1', mergedClassNames.error)}>
+            <div
+                className={cn(
+                    'max-h-28 space-y-1 overflow-y-auto',
+                    mergedClassNames.error,
+                )}
+            >
                 {rejections.map((r, i) => (
                     <p
                         key={`${r.file.name}-${i}`}

@@ -543,6 +543,7 @@ export function ProductForm({
                     className={cn(
                         'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
                         'sm:p-6',
+                        'xl:sticky xl:top-4 xl:max-h-[calc(100dvh-7.5rem)] xl:overflow-y-auto',
                     )}
                 >
                     <div className="mb-5 space-y-1">
@@ -555,82 +556,84 @@ export function ProductForm({
                         </p>
                     </div>
 
-                    <div className="space-y-8">
-                        <ColorPicker
-                            mode="dialog"
-                            enabledModes={[...CATALOG_COLOR_PICKER_MODES]}
-                            defaultMode="transparent"
-                            value={data.color_code}
-                            onChange={(color_code) =>
-                                setData('color_code', color_code)
-                            }
-                            label="Image background"
-                            description="Soft fill behind product and category imagery"
-                            dialogTitle="Image background"
-                            dialogDescription="Choose none, a solid fill, or a two-tone gradient for catalog imagery."
-                            error={
-                                errors.color_code ??
-                                errors['color_code.mode'] ??
-                                errors['color_code.color'] ??
-                                errors['color_code.from'] ??
-                                errors['color_code.to']
-                            }
-                        />
-
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between gap-3">
-                                <Label>Primary image</Label>
-                                <span className="text-muted-foreground text-xs">
-                                    Shown on product cards
-                                </span>
-                            </div>
-                            <div
-                                className={cn(
-                                    'rounded-xl border border-dashed border-border/80 p-4',
-                                    imageTileTransparent && 'bg-muted/20',
-                                )}
-                                style={
-                                    imageTileTransparent
-                                        ? undefined
-                                        : imageTileStyle
+                    <div className="space-y-6">
+                        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start">
+                            <ColorPicker
+                                mode="dialog"
+                                enabledModes={[...CATALOG_COLOR_PICKER_MODES]}
+                                defaultMode="transparent"
+                                value={data.color_code}
+                                onChange={(color_code) =>
+                                    setData('color_code', color_code)
                                 }
-                            >
-                                <FileUploadAvatar
-                                    value={data.image}
-                                    onChange={(file) => {
-                                        const next = Array.isArray(file)
-                                            ? (file[0] ?? null)
-                                            : file;
-                                        setData((current) => ({
-                                            ...current,
-                                            image: next,
-                                            remove_image: next
-                                                ? false
-                                                : current.remove_image,
-                                        }));
-                                    }}
-                                    existingUrl={
-                                        data.image || data.remove_image
-                                            ? null
-                                            : existingImageUrl
+                                label="Image background"
+                                description="Soft fill behind product and category imagery"
+                                dialogTitle="Image background"
+                                dialogDescription="Choose none, a solid fill, or a two-tone gradient for catalog imagery."
+                                error={
+                                    errors.color_code ??
+                                    errors['color_code.mode'] ??
+                                    errors['color_code.color'] ??
+                                    errors['color_code.from'] ??
+                                    errors['color_code.to']
+                                }
+                            />
+
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <Label>Primary image</Label>
+                                    <span className="text-muted-foreground text-xs">
+                                        Shown on cards
+                                    </span>
+                                </div>
+                                <div
+                                    className={cn(
+                                        'rounded-xl border border-dashed border-border/80 p-3',
+                                        imageTileTransparent && 'bg-muted/20',
+                                    )}
+                                    style={
+                                        imageTileTransparent
+                                            ? undefined
+                                            : imageTileStyle
                                     }
-                                    onClearExisting={() => {
-                                        setExistingImageUrl(null);
-                                        setData((current) => ({
-                                            ...current,
-                                            image: null,
-                                            remove_image: true,
-                                        }));
-                                    }}
-                                    accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
-                                    maxSize={2}
-                                    error={errors.image}
-                                    hint="PNG, JPG, or WebP up to 2MB"
-                                    placeholder="Primary image"
-                                    avatarSize={144}
-                                />
+                                >
+                                    <FileUploadAvatar
+                                        value={data.image}
+                                        onChange={(file) => {
+                                            const next = Array.isArray(file)
+                                                ? (file[0] ?? null)
+                                                : file;
+                                            setData((current) => ({
+                                                ...current,
+                                                image: next,
+                                                remove_image: next
+                                                    ? false
+                                                    : current.remove_image,
+                                            }));
+                                        }}
+                                        existingUrl={
+                                            data.image || data.remove_image
+                                                ? null
+                                                : existingImageUrl
+                                        }
+                                        onClearExisting={() => {
+                                            setExistingImageUrl(null);
+                                            setData((current) => ({
+                                                ...current,
+                                                image: null,
+                                                remove_image: true,
+                                            }));
+                                        }}
+                                        accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                                        maxSize={2}
+                                        error={errors.image}
+                                        hint="PNG, JPG, or WebP up to 2MB"
+                                        placeholder="Primary image"
+                                        avatarSize={120}
+                                    />
+                                </div>
+                                <InputError message={errors.image} />
                             </div>
-                            <InputError message={errors.image} />
                         </div>
 
                         <div className="space-y-3">
@@ -677,7 +680,7 @@ export function ProductForm({
                                 placeholder="Drop gallery images here"
                                 hint="Additional product photos for the detail page"
                                 classNames={{
-                                    grid: 'max-h-72 overflow-y-auto pr-1 sm:max-h-80',
+                                    grid: 'max-h-56 overflow-y-auto pr-1 sm:max-h-64',
                                 }}
                                 error={
                                     errors.gallery ??
