@@ -90,7 +90,11 @@ export function StorefrontHeader() {
     const url = page.url;
     const [mobileOpen, setMobileOpen] = useState(false);
     const accountHref = auth.user ? dashboard() : login();
-    const cartActive = url === '/cart' || url.startsWith('/cart?');
+    const cartActive =
+        url === '/cart' ||
+        url.startsWith('/cart?') ||
+        url === '/checkout' ||
+        url.startsWith('/checkout?');
 
     return (
         <div className="sticky top-0 z-40">

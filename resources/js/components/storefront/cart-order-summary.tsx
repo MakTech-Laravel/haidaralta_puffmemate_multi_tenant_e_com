@@ -1,7 +1,9 @@
+import { Link } from '@inertiajs/react';
 import { Check, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatMoney, type CartSummary } from '@/lib/storefront-cart';
 import { cn } from '@/lib/utils';
+import { checkout } from '@/routes';
 
 type CartOrderSummaryProps = {
     summary: CartSummary;
@@ -65,11 +67,13 @@ export function CartOrderSummary({ summary, className }: CartOrderSummaryProps) 
             </div>
 
             <Button
-                type="button"
+                asChild
                 size="lg"
                 className="mt-5 h-12 w-full rounded-none text-sm font-bold tracking-wide"
             >
-                Checkout →
+                <Link href={checkout()} prefetch>
+                    Checkout →
+                </Link>
             </Button>
 
             <p className="text-muted-foreground mt-3 flex items-center justify-center gap-1.5 text-xs">

@@ -58,3 +58,16 @@ test('storefront cart page renders', function () {
             ->has('branches')
             ->where('stockReserved', true));
 });
+
+test('storefront checkout page renders', function () {
+    $this->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout')
+            ->has('items')
+            ->has('summary')
+            ->has('deliveryMethods')
+            ->has('paymentMethods')
+            ->has('timeSlots')
+            ->where('itemCount', 2));
+});

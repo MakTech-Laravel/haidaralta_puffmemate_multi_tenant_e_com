@@ -460,4 +460,91 @@ class DemoCatalog
             ],
         ];
     }
+
+    /**
+     * @return array{
+     *     itemCount: int,
+     *     items: list<array{id: string, name: string, image: string, quantity: int, unitPrice: float}>,
+     *     summary: array{subtotal: float, deliveryLabel: string, deliveryAmount: float|null, total: float},
+     *     deliveryMethods: list<array{id: string, title: string, description: string, meta: string}>,
+     *     paymentMethods: list<array{id: string, title: string, description: string, badge: string}>,
+     *     timeSlots: list<array{id: string, label: string}>,
+     *     trustBadges: list<string>,
+     *     deliveryAlert: string,
+     *     legalNote: string
+     * }
+     */
+    public static function checkout(): array
+    {
+        $products = self::products();
+        $first = $products[0];
+        $vape = $products[3];
+
+        return [
+            'itemCount' => 2,
+            'items' => [
+                [
+                    'id' => 'co1',
+                    'name' => 'L&M Blue Label',
+                    'image' => $first['image'],
+                    'quantity' => 1,
+                    'unitPrice' => 29.95,
+                ],
+                [
+                    'id' => 'co2',
+                    'name' => 'Vuse GO Berry',
+                    'image' => $vape['image'],
+                    'quantity' => 1,
+                    'unitPrice' => 39.95,
+                ],
+            ],
+            'summary' => [
+                'subtotal' => 69.90,
+                'deliveryLabel' => 'FREE',
+                'deliveryAmount' => null,
+                'total' => 69.90,
+            ],
+            'deliveryMethods' => [
+                [
+                    'id' => 'same-day',
+                    'title' => 'Same-day local delivery',
+                    'description' => 'Fast local delivery in selected areas.',
+                    'meta' => 'Usually within hours',
+                ],
+                [
+                    'id' => 'australia-wide',
+                    'title' => 'Australia-wide shipping',
+                    'description' => 'Shipping available for eligible orders.',
+                    'meta' => '2–5 business days',
+                ],
+            ],
+            'paymentMethods' => [
+                [
+                    'id' => 'cash',
+                    'title' => 'Cash on delivery',
+                    'description' => 'Pay the driver in cash',
+                    'badge' => '$',
+                ],
+                [
+                    'id' => 'card',
+                    'title' => 'Card on delivery',
+                    'description' => 'Driver carries an EFTPOS machine',
+                    'badge' => 'EFT',
+                ],
+            ],
+            'timeSlots' => [
+                ['id' => 'morning', 'label' => '9:00 AM – 12:00 PM'],
+                ['id' => 'afternoon', 'label' => '12:00 PM – 3:00 PM'],
+                ['id' => 'evening', 'label' => '3:00 PM – 6:00 PM'],
+            ],
+            'trustBadges' => [
+                'Private packaging',
+                'Discreet delivery',
+                'EFTPOS available',
+                'WhatsApp support',
+            ],
+            'deliveryAlert' => 'Local delivery covers selected metro zones near your branch. Outside those areas, choose Australia-wide shipping.',
+            'legalNote' => 'Age-restricted products. You must be 18+ with valid photo ID. Orders may be refused if ID cannot be verified on delivery.',
+        ];
+    }
 }
