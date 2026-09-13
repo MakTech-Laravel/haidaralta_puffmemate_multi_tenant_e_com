@@ -1,4 +1,4 @@
-import { KeyRound, LayoutGrid, ScrollText, Shield, Users } from 'lucide-react';
+import { KeyRound, LayoutGrid, Package, ScrollText, Shield, Users } from 'lucide-react';
 import type { NavNode } from '@/components/navigation/types';
 
 export function buildBranchNav(slug: string): NavNode[] {
@@ -8,6 +8,12 @@ export function buildBranchNav(slug: string): NavNode[] {
             href: `/branch/${slug}/dashboard`,
             icon: LayoutGrid,
             permissions: ['view-branch-dashboard'],
+        },
+        {
+            title: 'Products',
+            href: `/branch/${slug}/products`,
+            icon: Package,
+            permissions: ['manage-branch-products'],
         },
         {
             title: 'Activity log',

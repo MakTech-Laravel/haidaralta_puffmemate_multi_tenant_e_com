@@ -42,6 +42,22 @@ class Branch extends Model
     }
 
     /**
+     * @return HasMany<BranchProduct, $this>
+     */
+    public function branchProducts(): HasMany
+    {
+        return $this->hasMany(BranchProduct::class);
+    }
+
+    /**
+     * @return HasMany<Inventory, $this>
+     */
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(Inventory::class);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toSearchableArray(): array

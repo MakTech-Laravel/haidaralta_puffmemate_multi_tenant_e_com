@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Http\Requests\Platform;
+
+use App\Models\Product;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class UpdateProductRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        /** @var Product $product */
+        $product = $this->route('product');
+
+        return [
+            'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->whereNull('deleted_at')],
+            'name' => ['required', 'string', 'max:255'],
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'alpha_dash',
+                Rule::unique('products', 'slug')->ignore($product->id),
+            ],
+            'sku' => [
+                'nullable',
+                'string',
+                'max:100',
+                Rule::unique('products', 'sku')->ignore($product->id),
+            ],
+            'description' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_image' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'boolean'],
+        ];
+    }
+}

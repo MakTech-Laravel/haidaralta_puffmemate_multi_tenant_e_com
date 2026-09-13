@@ -2,13 +2,17 @@
 
 use App\Http\Controllers\Platform\ActivityLogController as PlatformActivityLogController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
+use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInventoryController;
 use App\Http\Controllers\Platform\BranchScopedStaffController as PlatformBranchScopedStaffController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
+use App\Http\Controllers\Platform\CategoryController as PlatformCategoryController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
+use App\Http\Controllers\Platform\ProductController as PlatformProductController;
+use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
 use App\Http\Controllers\Platform\StaffController as PlatformStaffController;
@@ -84,6 +88,44 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
 
     Route::middleware(['permission:delete-branches'])->group(function () {
         Route::delete('branches/{branch}', [PlatformBranchController::class, 'destroy'])->name('platform.branches.destroy');
+    });
+
+    Route::middleware(['permission:manage-branch-inventories'])->group(function () {
+        Route::get('branches/{branch}/products', [PlatformBranchInventoryController::class, 'index'])
+            ->name('platform.branches.products.index');
+        Route::get('branches/{branch}/products/{product}', [PlatformBranchInventoryController::class, 'show'])
+            ->name('platform.branches.products.show');
+        Route::put('branches/{branch}/products/{product}/enable', [PlatformBranchInventoryController::class, 'toggle'])
+            ->name('platform.branches.products.enable');
+        Route::post('branches/{branch}/products/{product}/inventory', [PlatformBranchInventoryController::class, 'adjustInventory'])
+            ->name('platform.branches.products.inventory');
+        Route::put('branches/{branch}/products/{product}/prices', [PlatformBranchInventoryController::class, 'upsertPrice'])
+            ->name('platform.branches.products.prices');
+    });
+
+    Route::middleware(['permission:manage-catalog'])->group(function () {
+        Route::resource('categories', PlatformCategoryController::class)
+            ->names('platform.categories')
+            ->middlewareFor(['store', 'update'], 'precognitive');
+        Route::post('categories/{category}/restore', [PlatformCategoryController::class, 'restore'])
+            ->name('platform.categories.restore')
+            ->withTrashed();
+
+        Route::resource('products', PlatformProductController::class)
+            ->names('platform.products')
+            ->middlewareFor(['store', 'update'], 'precognitive');
+        Route::post('products/{product}/restore', [PlatformProductController::class, 'restore'])
+            ->name('platform.products.restore')
+            ->withTrashed();
+
+        Route::post('products/{product}/variants', [PlatformProductVariantController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.products.variants.store');
+        Route::put('products/{product}/variants/{variant}', [PlatformProductVariantController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.products.variants.update');
+        Route::delete('products/{product}/variants/{variant}', [PlatformProductVariantController::class, 'destroy'])
+            ->name('platform.products.variants.destroy');
     });
 
     Route::middleware(['permission:view-activity-logs'])->group(function () {

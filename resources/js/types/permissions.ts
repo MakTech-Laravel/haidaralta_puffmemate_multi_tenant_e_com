@@ -18,4 +18,6 @@ export type PermissionKey =
     | 'view-branches'
     | 'create-branches'
     | 'edit-branches'
-    | 'delete-branches';
+    | 'delete-branches'
+    | 'manage-catalog'
+    | 'manage-branch-inventories';

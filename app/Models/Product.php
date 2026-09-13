@@ -1,0 +1,128 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Concerns\AuditsChanges;
+use App\Support\SearchableTimestamp;
+use Database\Factories\ProductFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
+use Laravel\Scout\Searchable;
+
+class Product extends Model
+{
+    /** @use HasFactory<ProductFactory> */
+    use AuditsChanges, HasFactory, Searchable, SoftDeletes;
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'category_id',
+        'name',
+        'slug',
+        'sku',
+        'description',
+        'image',
+        'status',
+        'created_by',
+    ];
+
+    /**
+     * @return BelongsTo<Category, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * @return HasMany<ProductVariant, $this>
+     */
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    /**
+     * @return HasMany<BranchProduct, $this>
+     */
+    public function branchProducts(): HasMany
+    {
+        return $this->hasMany(BranchProduct::class);
+    }
+
+    /**
+     * @return HasMany<Inventory, $this>
+     */
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(Inventory::class);
+    }
+
+    /**
+     * @return HasMany<BranchProductPrice, $this>
+     */
+    public function branchPrices(): HasMany
+    {
+        return $this->hasMany(BranchProductPrice::class);
+    }
+
+    public function imageUrl(): ?string
+    {
+        return $this->image
+            ? Storage::disk('public')->url($this->image)
+            : null;
+    }
+
+    public function isEnabledForBranch(int $branchId): bool
+    {
+        return $this->branchProducts()
+            ->where('branch_id', $branchId)
+            ->where('status', true)
+            ->exists();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => (int) $this->id,
+            'category_id' => (int) $this->category_id,
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'sku' => $this->sku,
+            'status' => (bool) $this->status,
+            'created_at' => SearchableTimestamp::from($this->created_at),
+        ];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'status' => 'boolean',
+        ];
+    }
+}

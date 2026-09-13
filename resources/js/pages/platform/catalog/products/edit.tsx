@@ -1,0 +1,78 @@
+import { Head } from '@inertiajs/react';
+import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import { ProductForm } from '@/components/platform/product-form';
+import Heading from '@/components/heading';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+type CategoryOption = {
+    id: number;
+    name: string;
+};
+
+type Product = {
+    id: number;
+    category_id: number;
+    name: string;
+    slug: string;
+    sku: string | null;
+    description: string | null;
+    image: string | null;
+    image_url: string | null;
+    status: boolean;
+};
+
+export default function PlatformProductsEdit({
+    product,
+    categoryOptions,
+}: {
+    product: Product;
+    categoryOptions: CategoryOption[];
+}) {
+    return (
+        <>
+            <Head title={`Edit ${product.name}`} />
+
+            <div className="mx-auto flex max-w-2xl flex-col gap-6 p-2">
+                <Heading
+                    title={`Edit ${product.name}`}
+                    description="Update product details"
+                />
+
+                {!product.status ? (
+                    <Alert>
+                        <AlertTitle>Product inactive</AlertTitle>
+                        <AlertDescription>
+                            Inactive products are hidden from storefront
+                            browsing.
+                        </AlertDescription>
+                    </Alert>
+                ) : null}
+
+                <ProductForm
+                    action={ProductController.update.form(product.slug)}
+                    categoryOptions={categoryOptions}
+                    isEdit
+                    defaults={{
+                        category_id: product.category_id,
+                        name: product.name,
+                        slug: product.slug,
+                        sku: product.sku,
+                        description: product.description,
+                        image: product.image,
+                        image_url: product.image_url,
+                        status: product.status,
+                    }}
+                    cancelHref={ProductController.show.url(product.slug)}
+                />
+            </div>
+        </>
+    );
+}
+
+PlatformProductsEdit.layout = {
+    breadcrumbs: [
+        { title: 'Dashboard', href: '/platform/dashboard' },
+        { title: 'Products', href: '/platform/products' },
+        { title: 'Edit', href: '#' },
+    ],
+};

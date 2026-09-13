@@ -18,6 +18,8 @@ enum PermissionEnum: string
     case CREATE_BRANCHES = 'create-branches';
     case EDIT_BRANCHES = 'edit-branches';
     case DELETE_BRANCHES = 'delete-branches';
+    case MANAGE_CATALOG = 'manage-catalog';
+    case MANAGE_BRANCH_INVENTORIES = 'manage-branch-inventories';
 
     case VIEW_BRANCH_DASHBOARD = 'view-branch-dashboard';
     case MANAGE_BRANCH_PRODUCTS = 'manage-branch-products';
@@ -45,7 +47,9 @@ enum PermissionEnum: string
             self::CREATE_BRANCHES,
             self::EDIT_BRANCHES,
             self::DELETE_BRANCHES,
-            self::MANAGE_BRANCHES => 'platform',
+            self::MANAGE_BRANCHES,
+            self::MANAGE_CATALOG,
+            self::MANAGE_BRANCH_INVENTORIES => 'platform',
 
             self::VIEW_BRANCH_DASHBOARD,
             self::MANAGE_BRANCH_PRODUCTS,
@@ -78,7 +82,9 @@ enum PermissionEnum: string
             self::EDIT_BRANCHES,
             self::DELETE_BRANCHES => 'Branches',
 
-            self::MANAGE_BRANCH_PRODUCTS => 'Products',
+            self::MANAGE_BRANCH_PRODUCTS,
+            self::MANAGE_CATALOG,
+            self::MANAGE_BRANCH_INVENTORIES => 'Products',
             self::MANAGE_BRANCH_ORDERS => 'Orders',
             self::MANAGE_REPORTS => 'Reports',
             self::VIEW_ACTIVITY_LOGS,
@@ -109,6 +115,8 @@ enum PermissionEnum: string
             self::CREATE_BRANCHES => 'Create branches',
             self::EDIT_BRANCHES => 'Edit branches',
             self::DELETE_BRANCHES => 'Delete branches',
+            self::MANAGE_CATALOG => 'Manage catalog',
+            self::MANAGE_BRANCH_INVENTORIES => 'Manage branch inventories',
             self::VIEW_BRANCH_DASHBOARD => 'View branch dashboard',
             self::MANAGE_BRANCH_PRODUCTS => 'Manage branch products',
             self::MANAGE_BRANCH_ORDERS => 'Manage branch orders',
