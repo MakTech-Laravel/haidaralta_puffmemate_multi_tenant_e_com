@@ -47,3 +47,14 @@ test('storefront product details page returns not found for unknown product', fu
     $this->get(route('products.show', ['product' => 'missing-product']))
         ->assertNotFound();
 });
+
+test('storefront cart page renders', function () {
+    $this->get(route('cart'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/cart')
+            ->has('groups')
+            ->has('summary')
+            ->has('branches')
+            ->where('stockReserved', true));
+});

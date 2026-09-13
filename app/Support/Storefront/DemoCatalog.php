@@ -333,4 +333,131 @@ class DemoCatalog
             ],
         ];
     }
+
+    /**
+     * @return array{
+     *     itemCount: int,
+     *     stockReserved: bool,
+     *     groups: list<array{
+     *         id: string,
+     *         branchName: string,
+     *         selected: bool,
+     *         items: list<array{
+     *             id: string,
+     *             productId: string,
+     *             name: string,
+     *             category: string,
+     *             description: string,
+     *             image: string,
+     *             unitPrice: float,
+     *             quantity: int,
+     *             available: int|null,
+     *             unavailable: bool,
+     *             branchId: string,
+     *             branchName: string,
+     *             selected: bool
+     *         }>
+     *     }>,
+     *     summary: array{
+     *         lines: list<array{label: string, amount: float, tone: string}>,
+     *         total: float
+     *     },
+     *     branches: list<array{id: string, name: string}>
+     * }
+     */
+    public static function cart(): array
+    {
+        $products = self::products();
+        $marlboro = $products[0];
+        $winfield = $products[1];
+        $iqos = $products[2];
+
+        $groups = [
+            [
+                'id' => 'g1',
+                'branchName' => 'Williamsburg Branch',
+                'selected' => true,
+                'items' => [
+                    [
+                        'id' => 'ci1',
+                        'productId' => $marlboro['id'],
+                        'name' => 'L&M Blue Label',
+                        'category' => 'Cigarettes',
+                        'description' => 'King size · 20 cigarettes',
+                        'image' => $marlboro['image'],
+                        'unitPrice' => 12.00,
+                        'quantity' => 2,
+                        'available' => 6,
+                        'unavailable' => false,
+                        'branchId' => 'williamsburg',
+                        'branchName' => 'Williamsburg Branch',
+                        'selected' => true,
+                    ],
+                    [
+                        'id' => 'ci2',
+                        'productId' => $winfield['id'],
+                        'name' => $winfield['name'],
+                        'category' => $winfield['category'],
+                        'description' => $winfield['description'],
+                        'image' => $winfield['image'],
+                        'unitPrice' => 13.50,
+                        'quantity' => 1,
+                        'available' => null,
+                        'unavailable' => true,
+                        'branchId' => 'williamsburg',
+                        'branchName' => 'Williamsburg Branch',
+                        'selected' => true,
+                    ],
+                ],
+            ],
+            [
+                'id' => 'g2',
+                'branchName' => 'Pacific Coast Tobacco – Brisbane Branch',
+                'selected' => true,
+                'items' => [
+                    [
+                        'id' => 'ci3',
+                        'productId' => $iqos['id'],
+                        'name' => $iqos['name'],
+                        'category' => $iqos['category'],
+                        'description' => $iqos['description'],
+                        'image' => $iqos['image'],
+                        'unitPrice' => 20.00,
+                        'quantity' => 1,
+                        'available' => 4,
+                        'unavailable' => false,
+                        'branchId' => 'brisbane',
+                        'branchName' => 'Pacific Coast Tobacco – Brisbane Branch',
+                        'selected' => true,
+                    ],
+                ],
+            ],
+        ];
+
+        $itemCount = 0;
+
+        foreach ($groups as $group) {
+            $itemCount += count($group['items']);
+        }
+
+        return [
+            'itemCount' => $itemCount,
+            'stockReserved' => true,
+            'groups' => $groups,
+            'summary' => [
+                'lines' => [
+                    ['label' => 'Subtotal', 'amount' => 44.00, 'tone' => 'default'],
+                    ['label' => 'Delivery fee', 'amount' => 3.50, 'tone' => 'default'],
+                    ['label' => 'First delivery discount', 'amount' => -3.50, 'tone' => 'discount'],
+                ],
+                'total' => 44.00,
+            ],
+            'branches' => [
+                ['id' => 'williamsburg', 'name' => 'Williamsburg Branch'],
+                ['id' => 'brisbane', 'name' => 'Pacific Coast Tobacco – Brisbane Branch'],
+                ['id' => 'westside', 'name' => 'West Village Branch'],
+                ['id' => 'downtown', 'name' => 'Downtown'],
+            ],
+        ];
+    }
 }
