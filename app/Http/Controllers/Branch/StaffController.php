@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Branch;
 
+use App\DataTables\BranchStaffDataTable;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\StoreBranchStaffRequest;
 use App\Http\Requests\Branch\UpdateBranchStaffRequest;
@@ -24,18 +25,10 @@ class StaffController extends Controller
     public function index(Request $request): Response
     {
         $branch = $this->currentBranch();
-        $search = $request->string('search')->trim()->toString();
 
         return Inertia::render('branch/staff/index', [
-            'staff' => $this->branchStaffService->paginateForBranch(
-                $branch,
-                includeBranch: false,
-                search: $search !== '' ? $search : null,
-            ),
             'branch' => $branch->only(['id', 'name', 'slug']),
-            'filters' => [
-                'search' => $search,
-            ],
+            'table' => BranchStaffDataTable::forBranch($request, $branch),
         ]);
     }
 

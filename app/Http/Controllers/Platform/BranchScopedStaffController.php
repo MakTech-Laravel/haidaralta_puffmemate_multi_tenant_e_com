@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\DataTables\BranchStaffDataTable;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreScopedPlatformBranchStaffRequest;
 use App\Http\Requests\Platform\UpdatePlatformBranchStaffRequest;
@@ -23,17 +24,9 @@ class BranchScopedStaffController extends Controller
      */
     public function index(Request $request, Branch $branch): Response
     {
-        $search = $request->string('search')->trim()->toString();
-
         return Inertia::render('platform/branches/staff/index', [
             'branch' => $branch->only(['id', 'name', 'slug', 'code']),
-            'staff' => $this->branchStaffService->paginateForBranch(
-                $branch,
-                search: $search !== '' ? $search : null,
-            ),
-            'filters' => [
-                'search' => $search,
-            ],
+            'table' => BranchStaffDataTable::forBranch($request, $branch),
         ]);
     }
 

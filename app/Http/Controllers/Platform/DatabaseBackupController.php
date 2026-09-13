@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\DataTables\DatabaseBackupHistoryDataTable;
+use App\DataTables\DatabaseBackupZipDataTable;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\DeleteDatabaseBackupRequest;
 use App\Http\Requests\Platform\RestoreDatabaseBackupRequest;
@@ -21,11 +23,13 @@ class DatabaseBackupController extends Controller
     /**
      * List Spatie backup zips and operator history.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $zips = $this->backups->list();
+
         return Inertia::render('platform/database-backups/index', [
-            'backups' => $this->backups->list(),
-            'histories' => $this->backups->paginateHistory(),
+            'archives' => DatabaseBackupZipDataTable::make($request, $zips),
+            'table' => DatabaseBackupHistoryDataTable::make($request),
             'connection' => (string) config('database.default'),
             'cleanup_policy' => $this->backups->cleanupPolicy(),
         ]);

@@ -211,12 +211,14 @@ test('platform can filter branches by inactive status and still open inactive br
     (new RolesAndPermissionsSeeder)->seedBranchRolesForBranch($inactive);
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.branches.index', ['status' => 'inactive']))
+        ->get(route('platform.branches.index', [
+            'filter' => ['status' => 'inactive'],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branches/index')
-            ->where('filters.status', 'inactive')
-            ->where('branches.data', fn ($rows) => collect($rows)->contains(
+            ->where('table.filters.status', 'inactive')
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
                 fn ($row) => $row['slug'] === 'closed-store',
             ))
         );

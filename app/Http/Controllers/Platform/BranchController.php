@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\DataTables\BranchDataTable;
 use App\Exceptions\BranchAlreadyHasSuperAdminException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreBranchRequest;
@@ -24,50 +25,8 @@ class BranchController extends Controller
      */
     public function index(Request $request): Response
     {
-        $search = $request->string('search')->trim()->toString();
-        $statusFilter = $request->string('status')->trim()->toString();
-
-        if (! in_array($statusFilter, ['active', 'inactive'], true)) {
-            $statusFilter = 'all';
-        }
-
-        $statusValue = match ($statusFilter) {
-            'active' => true,
-            'inactive' => false,
-            default => null,
-        };
-
-        $branches = $search !== ''
-            ? Branch::search($search)
-                ->when(
-                    $statusValue !== null,
-                    fn ($builder) => $builder->where('status', $statusValue),
-                )
-                ->orderBy('name')
-                ->paginate(15)
-            : Branch::query()
-                ->withCount('users')
-                ->when(
-                    $statusValue !== null,
-                    fn ($query) => $query->where('status', $statusValue),
-                )
-                ->orderBy('name')
-                ->paginate(15);
-
-        if ($search !== '') {
-            $branches->getCollection()->loadCount('users');
-        }
-
-        $branches = $branches
-            ->withQueryString()
-            ->through(fn (Branch $branch): array => $this->mapBranchRow($branch));
-
         return Inertia::render('platform/branches/index', [
-            'branches' => $branches,
-            'filters' => [
-                'search' => $search,
-                'status' => $statusFilter,
-            ],
+            'table' => BranchDataTable::make($request),
         ]);
     }
 

@@ -2,6 +2,7 @@
 paths:
   - 'app/Services/Backup/**'
   - config/backup.php
+  - config/scout.php
 ---
 
 # Backup

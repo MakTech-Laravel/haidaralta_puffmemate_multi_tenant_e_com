@@ -142,6 +142,8 @@ export interface FileUploadClassNames {
     card?: string;
     /** Thumbnail area of a card */
     cardMedia?: string;
+    /** `<img>` / `<video>` inside the thumbnail */
+    cardImage?: string;
     /** Filename + size text row */
     cardInfo?: string;
     /** Remove (×) button */
@@ -567,7 +569,12 @@ interface FileCardProps {
     fixedSize?: number;
     classNames?: Pick<
         FileUploadClassNames,
-        'card' | 'cardMedia' | 'cardInfo' | 'removeButton' | 'progressOverlay'
+        | 'card'
+        | 'cardMedia'
+        | 'cardImage'
+        | 'cardInfo'
+        | 'removeButton'
+        | 'progressOverlay'
     >;
 }
 
@@ -641,8 +648,9 @@ function FileCard({
                             draggable={false}
                             onClick={onPreview}
                             className={cn(
-                                'h-full w-full object-cover',
+                                'h-full w-full object-cover object-center',
                                 onPreview ? 'cursor-zoom-in' : 'cursor-default',
+                                classNames.cardImage,
                             )}
                         />
                     ) : type === 'video' && preview ? (
@@ -651,8 +659,9 @@ function FileCard({
                             preload="metadata"
                             onClick={onPreview}
                             className={cn(
-                                'h-full w-full object-cover',
+                                'h-full w-full object-cover object-center',
                                 onPreview ? 'cursor-pointer' : 'cursor-default',
+                                classNames.cardImage,
                             )}
                         />
                     ) : (
@@ -866,13 +875,16 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
         useEffect(() => {
             previewsRef.current = filePreviews;
         }, [filePreviews]);
-        useEffect(
-            () => () => {
+        useEffect(() => {
+            // Strict Mode runs effect cleanup once on mount in development.
+            // Re-arm so the first real selection still creates previews.
+            alive.current = true;
+
+            return () => {
                 alive.current = false;
                 previewsRef.current.forEach(revokePreview);
-            },
-            [],
-        );
+            };
+        }, []);
 
         // ── Imperative handle ────────────────────────────────────────────────────
         useImperativeHandle(
@@ -892,22 +904,31 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
             [onChange],
         );
 
-        // ── Sync when value is cleared externally (form.reset() etc.) ────────────
-        // Render-time reconciliation — React's recommended alternative to an
-        // effect for "adjust state when a prop changes". When the controlled
-        // value drops to empty we release the object URLs and clear the cards.
-        // The follow-up setState re-renders before commit, so the revoked URLs
-        // are never painted.
-        const [prevValue, setPrevValue] = useState(value);
+        // ── Keep local Object-URL previews aligned with the controlled value ─────
+        // Empty array must count as cleared (ProductForm uses `gallery: []`).
+        // Rebuild when the parent has files but local previews were lost (Strict
+        // Mode remount, external setData, etc.).
+        useEffect(() => {
+            const files = Array.isArray(value)
+                ? value
+                : value
+                  ? [value]
+                  : [];
 
-        if (value !== prevValue) {
-            setPrevValue(value);
+            setFilePreviews((prev) => {
+                const same =
+                    prev.length === files.length &&
+                    prev.every((preview, index) => preview.file === files[index]);
 
-            if (!value && filePreviews.length) {
-                filePreviews.forEach(revokePreview);
-                setFilePreviews([]);
-            }
-        }
+                if (same) {
+                    return prev;
+                }
+
+                prev.forEach(revokePreview);
+
+                return files.map(buildPreview);
+            });
+        }, [value]);
 
         // ── Lightbox slides (built only when lightbox=true) ───────────────────────
         const lightboxSlides = lightbox
@@ -1031,13 +1052,15 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     const room = Math.max(0, maxFiles - used);
 
                     if (valid.length > room) {
-                        valid.slice(room).forEach((file) =>
-                            rejected.push({
-                                file,
-                                reason: 'count',
-                                message: `Maximum ${maxFiles} files allowed — "${file.name}" was skipped.`,
-                            }),
-                        );
+                        const skipped = valid.slice(room);
+                        rejected.push({
+                            file: skipped[0],
+                            reason: 'count',
+                            message:
+                                skipped.length === 1
+                                    ? `Maximum ${maxFiles} files allowed — "${skipped[0].name}" was skipped.`
+                                    : `Maximum ${maxFiles} files allowed — ${skipped.length} files were skipped.`,
+                        });
                         valid = valid.slice(0, room);
                     }
                 }
@@ -1364,7 +1387,12 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
         );
 
         const RejectionsEl = showRejections && rejections.length > 0 && (
-            <div className={cn('space-y-1', mergedClassNames.error)}>
+            <div
+                className={cn(
+                    'max-h-28 space-y-1 overflow-y-auto',
+                    mergedClassNames.error,
+                )}
+            >
                 {rejections.map((r, i) => (
                     <p
                         key={`${r.file.name}-${i}`}
@@ -1395,7 +1423,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
             return (
                 <div
                     className={cn(
-                        isAvatar ? mergedClassNames.wrapper : 'w-full',
+                        isAvatar ? mergedClassNames.wrapper : 'h-full w-full',
                         className,
                         !isAvatar && mergedClassNames.wrapper,
                     )}
@@ -1403,11 +1431,15 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     {LightboxEl}
                     <div
                         className={cn(
-                            isAvatar ? 'flex items-center gap-4' : undefined,
+                            isAvatar
+                                ? 'flex items-center gap-4'
+                                : 'flex h-full w-full items-center justify-center',
                         )}
                     >
                         <div
-                            className={cn(isAvatar && 'relative shrink-0')}
+                            className={cn(
+                                isAvatar ? 'relative shrink-0' : 'w-full',
+                            )}
                             style={
                                 isAvatar
                                     ? { width: avatarSize, height: avatarSize }
@@ -1472,6 +1504,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                             {error}
                         </p>
                     )}
+                    {RejectionsEl}
                 </div>
             );
         }
@@ -1487,7 +1520,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     className={cn(
                         isAvatar
                             ? cn(mergedClassNames.wrapper, 'space-y-2')
-                            : 'w-full space-y-2',
+                            : 'h-full w-full space-y-2',
                         className,
                         !isAvatar && mergedClassNames.wrapper,
                     )}
@@ -1495,11 +1528,15 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                     {LightboxEl}
                     <div
                         className={cn(
-                            isAvatar ? 'flex items-center gap-4' : undefined,
+                            isAvatar
+                                ? 'flex items-center gap-4'
+                                : 'flex h-full w-full items-center justify-center',
                         )}
                     >
                         <div
-                            className={cn(isAvatar && 'relative shrink-0')}
+                            className={cn(
+                                isAvatar ? 'relative shrink-0' : 'w-full',
+                            )}
                             style={
                                 isAvatar
                                     ? { width: avatarSize, height: avatarSize }

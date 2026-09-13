@@ -6,9 +6,11 @@ import {
     Gauge,
     KeyRound,
     LayoutGrid,
+    Package,
     Radio,
     ScrollText,
     Shield,
+    Tags,
     UserCog,
     Users,
 } from 'lucide-react';
@@ -26,6 +28,26 @@ export const platformNav: NavNode[] = [
         href: '/platform/branches',
         icon: Building2,
         permissions: ['view-branches'],
+    },
+    {
+        title: 'Catalog',
+        href: '/platform/categories',
+        icon: Package,
+        permissions: ['manage-catalog'],
+        items: [
+            {
+                title: 'Categories',
+                href: '/platform/categories',
+                icon: Tags,
+                permissions: ['manage-catalog'],
+            },
+            {
+                title: 'Products',
+                href: '/platform/products',
+                icon: Package,
+                permissions: ['manage-catalog'],
+            },
+        ],
     },
     {
         title: 'Activity log',

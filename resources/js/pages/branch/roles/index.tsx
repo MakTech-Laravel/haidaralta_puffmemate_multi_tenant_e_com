@@ -1,12 +1,21 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { Download } from 'lucide-react';
-import { useState } from 'react';
+import { type ColumnDef } from '@tanstack/react-table';
+import { Download, Eye, Pencil, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import RoleController from '@/actions/App/Http/Controllers/Branch/RoleController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import {
+    buildDataTableQuery,
+    DataTable,
+    DataTableColumnHeader,
+    DataTableRowActions,
+    DataTableToolbar,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
-import { SimplePagination } from '@/components/simple-pagination';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -14,14 +23,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 
 type RoleRow = {
     id: number;
@@ -31,43 +32,15 @@ type RoleRow = {
     is_super_admin: boolean;
 };
 
-type PaginatedRoles = {
-    data: RoleRow[];
-    links: {
-        url: string | null;
-        label: string;
-        active: boolean;
-    }[];
-};
-
-type RoleFilters = {
-    search: string;
-    kind: string;
-    users: string;
-    permissions: string;
-};
-
-type Branch = {
-    id: number;
-    name: string;
-    slug: string;
-};
+type Branch = { id: number; name: string; slug: string };
 
 export default function BranchRolesIndex({
     branch,
-    roles,
-    filters,
+    table: tablePayload,
 }: {
     branch: Branch;
-    roles: PaginatedRoles;
-    filters: RoleFilters;
+    table: DataTablePayload<RoleRow>;
 }) {
-    const [search, setSearch] = useState(filters.search);
-    const [kind, setKind] = useState(filters.kind || 'any');
-    const [users, setUsers] = useState(filters.users || 'any');
-    const [permissions, setPermissions] = useState(
-        filters.permissions || 'any',
-    );
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
 
@@ -84,31 +57,116 @@ export default function BranchRolesIndex({
         ],
     });
 
-    const queryPayload = () => ({
-        search: search || undefined,
-        kind: kind === 'any' ? undefined : kind,
-        users: users === 'any' ? undefined : users,
-        permissions: permissions === 'any' ? undefined : permissions,
+    const query = useDataTableQuery({
+        indexUrl: RoleController.index.url(branch.slug),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
+                kind: tablePayload.filters.kind ?? 'all',
+                users: tablePayload.filters.users ?? 'all',
+                permissions: tablePayload.filters.permissions ?? 'all',
+            },
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
     });
-
-    const applyFilters = (event?: React.FormEvent) => {
-        event?.preventDefault();
-        router.get(
-            RoleController.index.url(branch.slug, { query: queryPayload() }),
-            {},
-            { preserveState: true, preserveScroll: true },
-        );
-    };
 
     const exportUrl = RoleController.export.url(branch.slug, {
-        query: queryPayload(),
+        query: buildDataTableQuery({
+            filter: query.filters,
+            sort: query.sort,
+            per_page: query.perPage,
+        }),
     });
+
+    const columns = useMemo<ColumnDef<RoleRow>[]>(
+        () => [
+            {
+                accessorKey: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Name"
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'permissions_count',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Permissions"
+                        sortable
+                        sortKey="permissions_count"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'users_count',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Users"
+                        sortable
+                        sortKey="users_count"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                id: 'actions',
+                header: 'Actions',
+                cell: ({ row }) => {
+                    const role = row.original;
+                    const items = [
+                        {
+                            label: 'View',
+                            icon: Eye,
+                            href: RoleController.show.url({
+                                branch: branch.slug,
+                                role: role.id,
+                            }),
+                        },
+                        {
+                            label: 'Edit',
+                            icon: Pencil,
+                            href: RoleController.edit.url({
+                                branch: branch.slug,
+                                role: role.id,
+                            }),
+                        },
+                        ...(!role.is_super_admin
+                            ? [
+                                  {
+                                      label: 'Delete',
+                                      icon: Trash2,
+                                      destructive: true,
+                                      separatorBefore: true,
+                                      onSelect: () => setDeletingId(role.id),
+                                  },
+                              ]
+                            : []),
+                    ];
+
+                    return <DataTableRowActions items={items} />;
+                },
+            },
+        ],
+        [branch.slug, query.sort, query.toggleSort],
+    );
 
     return (
         <>
             <Head title="Roles" />
 
-            <div className="space-y-6 p-2">
+            <div className="space-y-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Roles"
@@ -129,142 +187,122 @@ export default function BranchRolesIndex({
                     </div>
                 </div>
 
-                <form
-                    className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"
-                    onSubmit={applyFilters}
-                >
-                    <Input
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Search roles"
-                    />
-                    <Select value={kind} onValueChange={setKind}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Role type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="any">Any type</SelectItem>
-                            <SelectItem value="system">System</SelectItem>
-                            <SelectItem value="custom">Custom</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select value={users} onValueChange={setUsers}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Users" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="any">Any users</SelectItem>
-                            <SelectItem value="with">With users</SelectItem>
-                            <SelectItem value="without">
-                                Without users
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select value={permissions} onValueChange={setPermissions}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Permissions" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="any">Any permissions</SelectItem>
-                            <SelectItem value="none">None</SelectItem>
-                            <SelectItem value="some">Some</SelectItem>
-                            <SelectItem value="many">Many</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Button type="submit" variant="secondary">
-                        Apply filters
-                    </Button>
-                </form>
-
-                <div className="rounded-xl border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Permissions</TableHead>
-                                <TableHead>Users</TableHead>
-                                <TableHead className="text-right">
-                                    Actions
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {roles.data.length === 0 ? (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={4}
-                                        className="text-muted-foreground py-10 text-center"
-                                    >
-                                        No roles match the current filters.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                roles.data.map((role) => (
-                                    <TableRow key={role.id}>
-                                        <TableCell className="font-medium">
-                                            {role.name}
-                                        </TableCell>
-                                        <TableCell>
-                                            {role.permissions_count}
-                                        </TableCell>
-                                        <TableCell>
-                                            {role.users_count}
-                                        </TableCell>
-                                        <TableCell className="space-x-2 text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={RoleController.show.url(
-                                                        {
-                                                            branch: branch.slug,
-                                                            role: role.id,
-                                                        },
-                                                    )}
-                                                >
-                                                    View
-                                                </Link>
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={RoleController.edit.url(
-                                                        {
-                                                            branch: branch.slug,
-                                                            role: role.id,
-                                                        },
-                                                    )}
-                                                >
-                                                    Edit
-                                                </Link>
-                                            </Button>
-                                            {!role.is_super_admin && (
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-destructive"
-                                                    onClick={() =>
-                                                        setDeletingId(role.id)
-                                                    }
-                                                >
-                                                    Delete
-                                                </Button>
+                <DataTable
+                    columns={columns}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
+                    emptyMessage="No roles match the current filters."
+                    toolbar={
+                        <DataTableToolbar
+                            search={query.search}
+                            onSearchChange={query.setSearch}
+                            searchPlaceholder="Search roles…"
+                            onClear={query.clearFilters}
+                            filters={
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label>Type</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.kind ?? 'all',
                                             )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-
-                <SimplePagination links={roles.links} />
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'kind',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    Any type
+                                                </SelectItem>
+                                                <SelectItem value="system">
+                                                    System
+                                                </SelectItem>
+                                                <SelectItem value="custom">
+                                                    Custom
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Users</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.users ?? 'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'users',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Users" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    Any users
+                                                </SelectItem>
+                                                <SelectItem value="with">
+                                                    With users
+                                                </SelectItem>
+                                                <SelectItem value="without">
+                                                    Without users
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Permissions</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.permissions ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'permissions',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Permissions" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    Any permissions
+                                                </SelectItem>
+                                                <SelectItem value="none">
+                                                    None
+                                                </SelectItem>
+                                                <SelectItem value="some">
+                                                    Some
+                                                </SelectItem>
+                                                <SelectItem value="many">
+                                                    Many
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
+                            }
+                        />
+                    }
+                />
             </div>
 
             <ConfirmDeleteDialog
@@ -288,7 +326,6 @@ export default function BranchRolesIndex({
                             role: deletingId,
                         }),
                         {
-                            preserveScroll: true,
                             onFinish: () => {
                                 setProcessing(false);
                                 setDeletingId(null);

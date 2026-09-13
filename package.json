@@ -13,6 +13,7 @@
         "generate:icon-catalog": "node scripts/generate-icon-catalog.mjs"
     },
     "dependencies": {
+        "@base-ui/react": "^1.8.0",
         "@inertiajs/react": "^3.0.0",
         "@inertiajs/vite": "^3.0.0",
         "@laravel/passkeys": "^0.2.0",
@@ -33,11 +34,13 @@
         "@radix-ui/react-toggle-group": "^1.1.2",
         "@radix-ui/react-tooltip": "^1.1.8",
         "@tailwindcss/vite": "^4.1.11",
+        "@tanstack/react-table": "^8.21.3",
         "@types/react": "^19.2.0",
         "@types/react-dom": "^19.2.0",
         "@vitejs/plugin-react": "^6.1.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "cmdk": "^1.1.1",
         "cn": "^0.2.6",
         "concurrently": "^10.0.3",
         "firebase": "^12.18.0",

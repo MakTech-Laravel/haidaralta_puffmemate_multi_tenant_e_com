@@ -1,30 +1,29 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import {
+    DataTable,
+    DataTableColumnHeader,
+    DataTableRowActions,
+    DataTableToolbar,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
-import { SimplePagination } from '@/components/simple-pagination';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
-    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { usePermission } from '@/hooks/use-permissions';
 
 type BranchRow = {
@@ -38,54 +37,168 @@ type BranchRow = {
     users_count: number;
 };
 
-type PaginatedBranches = {
-    data: BranchRow[];
-    links: {
-        url: string | null;
-        label: string;
-        active: boolean;
-    }[];
-};
-
-type StatusFilter = 'all' | 'active' | 'inactive';
+function initials(name: string): string {
+    return name.slice(0, 2).toUpperCase();
+}
 
 export default function PlatformBranchesIndex({
-    branches,
-    filters,
+    table: tablePayload,
 }: {
-    branches: PaginatedBranches;
-    filters: { search: string; status: StatusFilter };
+    table: DataTablePayload<BranchRow>;
 }) {
     const { can } = usePermission();
-    const [search, setSearch] = useState(filters.search);
-    const [status, setStatus] = useState<StatusFilter>(filters.status);
     const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
 
-    const applyFilters = (next: {
-        search?: string;
-        status?: StatusFilter;
-    }) => {
-        const nextSearch = next.search ?? search;
-        const nextStatus = next.status ?? status;
+    const query = useDataTableQuery({
+        indexUrl: BranchController.index.url(),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
+                status: tablePayload.filters.status ?? 'all',
+            },
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
+    });
 
-        router.get(
-            BranchController.index.url({
-                query: {
-                    search: nextSearch || undefined,
-                    status: nextStatus === 'all' ? undefined : nextStatus,
+    const columns = useMemo<ColumnDef<BranchRow>[]>(
+        () => [
+            {
+                id: 'logo',
+                header: 'Logo',
+                cell: ({ row }) => (
+                    <Avatar className="size-10 rounded-md">
+                        <AvatarImage
+                            src={row.original.logo_url ?? undefined}
+                            alt={row.original.name}
+                        />
+                        <AvatarFallback className="rounded-md">
+                            {initials(row.original.name)}
+                        </AvatarFallback>
+                    </Avatar>
+                ),
+            },
+            {
+                accessorKey: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Name"
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'code',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Code"
+                        sortable
+                        sortKey="code"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'slug',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Slug"
+                        sortable
+                        sortKey="slug"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'users_count',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Staff"
+                        sortable
+                        sortKey="users_count"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+            },
+            {
+                accessorKey: 'status',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Status"
+                        sortable
+                        sortKey="status"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Badge
+                        variant={row.original.status ? 'default' : 'secondary'}
+                    >
+                        {row.original.status ? 'Active' : 'Inactive'}
+                    </Badge>
+                ),
+            },
+            {
+                id: 'actions',
+                header: 'Actions',
+                cell: ({ row }) => {
+                    const branch = row.original;
+                    const items = [
+                        {
+                            label: 'View',
+                            icon: Eye,
+                            href: BranchController.show.url(branch.slug),
+                        },
+                        ...(can('edit-branches')
+                            ? [
+                                  {
+                                      label: 'Edit',
+                                      icon: Pencil,
+                                      href: BranchController.edit.url(
+                                          branch.slug,
+                                      ),
+                                  },
+                              ]
+                            : []),
+                        ...(can('delete-branches')
+                            ? [
+                                  {
+                                      label: 'Delete',
+                                      icon: Trash2,
+                                      destructive: true,
+                                      separatorBefore: true,
+                                      onSelect: () =>
+                                          setDeletingSlug(branch.slug),
+                                  },
+                              ]
+                            : []),
+                    ];
+
+                    return <DataTableRowActions items={items} />;
                 },
-            }),
-            {},
-            { preserveState: true },
-        );
-    };
+            },
+        ],
+        [can, query.sort, query.toggleSort],
+    );
 
     return (
         <>
             <Head title="Branches" />
 
-            <div className="flex flex-col gap-6 p-2">
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Branches"
@@ -100,183 +213,52 @@ export default function PlatformBranchesIndex({
                     ) : null}
                 </div>
 
-                <div className="flex flex-wrap items-end gap-3">
-                    <form
-                        className="flex max-w-md flex-1 gap-2"
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            applyFilters({ search });
-                        }}
-                    >
-                        <Input
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Search branches"
-                        />
-                        <Button type="submit" variant="secondary">
-                            Search
-                        </Button>
-                    </form>
-
-                    <div className="w-44">
-                        <Select
-                            value={status}
-                            onValueChange={(value) => {
-                                const next = value as StatusFilter;
-                                setStatus(next);
-                                applyFilters({ status: next });
-                            }}
-                        >
-                            <SelectTrigger aria-label="Filter by status">
-                                <SelectValue placeholder="Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectItem value="all">
-                                        All statuses
-                                    </SelectItem>
-                                    <SelectItem value="active">
-                                        Active
-                                    </SelectItem>
-                                    <SelectItem value="inactive">
-                                        Inactive
-                                    </SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                <div className="overflow-hidden rounded-xl border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Code</TableHead>
-                                <TableHead>Slug</TableHead>
-                                <TableHead>Logo</TableHead>
-                                <TableHead>Staff</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">
-                                    Actions
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {branches.data.length === 0 ? (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={7}
-                                        className="text-muted-foreground py-10 text-center"
+                <DataTable
+                    columns={columns}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
+                    emptyMessage="No branches found."
+                    toolbar={
+                        <DataTableToolbar
+                            search={query.search}
+                            onSearchChange={query.setSearch}
+                            searchPlaceholder="Search name, code, or slug…"
+                            onClear={query.clearFilters}
+                            filters={
+                                <div className="grid gap-2">
+                                    <Label>Status</Label>
+                                    <Select
+                                        value={String(
+                                            query.filters.status ?? 'all',
+                                        )}
+                                        onValueChange={(value) =>
+                                            query.setFilter(
+                                                'status',
+                                                value === 'all' ? null : value,
+                                            )
+                                        }
                                     >
-                                        No branches found.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                branches.data.map((branch) => (
-                                    <TableRow key={branch.id}>
-                                        <TableCell className="font-medium">
-                                            {branch.name}
-                                        </TableCell>
-                                        <TableCell>{branch.code}</TableCell>
-                                        <TableCell>{branch.slug}</TableCell>
-                                        <TableCell>
-                                            <Avatar className="size-8 rounded-md">
-                                                {branch.logo_url ? (
-                                                    <AvatarImage
-                                                        src={branch.logo_url}
-                                                        alt=""
-                                                    />
-                                                ) : null}
-                                                <AvatarFallback className="rounded-md text-xs">
-                                                    {branch.name
-                                                        .slice(0, 2)
-                                                        .toUpperCase()}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                        </TableCell>
-                                        <TableCell>
-                                            {branch.users_count}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                variant={
-                                                    branch.status
-                                                        ? 'default'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {branch.status
-                                                    ? 'Active'
-                                                    : 'Inactive'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={BranchController.show.url(
-                                                            branch.slug,
-                                                        )}
-                                                        aria-label={`View ${branch.name}`}
-                                                    >
-                                                        <Eye className="size-4" />
-                                                        <span className="sr-only">
-                                                            View
-                                                        </span>
-                                                    </Link>
-                                                </Button>
-                                                {can('edit-branches') ? (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        asChild
-                                                    >
-                                                        <Link
-                                                            href={BranchController.edit.url(
-                                                                branch.slug,
-                                                            )}
-                                                            aria-label={`Edit ${branch.name}`}
-                                                        >
-                                                            <Pencil className="size-4" />
-                                                            <span className="sr-only">
-                                                                Edit
-                                                            </span>
-                                                        </Link>
-                                                    </Button>
-                                                ) : null}
-                                                {can('delete-branches') ? (
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        aria-label={`Delete ${branch.name}`}
-                                                        onClick={() =>
-                                                            setDeletingSlug(
-                                                                branch.slug,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Trash2 className="text-destructive size-4" />
-                                                        <span className="sr-only">
-                                                            Delete
-                                                        </span>
-                                                    </Button>
-                                                ) : null}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-
-                <SimplePagination links={branches.links} />
+                                        <SelectTrigger className="w-[10rem]">
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All statuses
+                                            </SelectItem>
+                                            <SelectItem value="active">
+                                                Active
+                                            </SelectItem>
+                                            <SelectItem value="inactive">
+                                                Inactive
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            }
+                        />
+                    }
+                />
             </div>
 
             <ConfirmDeleteDialog
@@ -295,7 +277,6 @@ export default function PlatformBranchesIndex({
 
                     setProcessing(true);
                     router.delete(BranchController.destroy.url(deletingSlug), {
-                        preserveScroll: true,
                         onFinish: () => {
                             setProcessing(false);
                             setDeletingSlug(null);
