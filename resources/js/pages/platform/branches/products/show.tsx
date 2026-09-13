@@ -1,6 +1,7 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
+import { BranchProductSummary } from '@/components/branch/branch-product-summary';
 import {
     ProductInventoryPanel,
     type BranchInventorySnapshot,
@@ -9,17 +10,9 @@ import {
     type TransactionsPage,
 } from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -28,6 +21,7 @@ type ProductShow = {
     name: string;
     slug: string;
     sku: string | null;
+    description?: string | null;
     status: boolean;
     image_url: string | null;
     category_name: string;
@@ -76,20 +70,57 @@ export default function PlatformBranchProductShow({
         ],
     });
 
+    const toggleEnabled = (next: boolean) => {
+        setEnabled(next);
+        router.put(
+            BranchInventoryController.toggle.url({
+                branch: branch.slug,
+                product: product.slug,
+            }),
+            { status: next },
+            { preserveScroll: true },
+        );
+    };
+
     return (
         <>
             <Head title={`${product.name} · ${branch.name}`} />
 
             <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <Heading
-                        title={product.name}
-                        description={`Inventory for ${branch.name}${
-                            product.category_name
-                                ? ` · ${product.category_name}`
-                                : ''
-                        }`}
-                    />
+                    <div className="flex items-start gap-4">
+                        <Avatar className="size-14 rounded-xl border border-border/70">
+                            {product.image_url ? (
+                                <AvatarImage
+                                    src={product.image_url}
+                                    alt={product.name}
+                                />
+                            ) : null}
+                            <AvatarFallback className="rounded-xl text-base">
+                                {product.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col gap-2">
+                            <Heading
+                                title={product.name}
+                                description={`Inventory for ${branch.name}`}
+                            />
+                            <div className="flex flex-wrap gap-2">
+                                <Badge
+                                    variant={
+                                        enabled ? 'default' : 'secondary'
+                                    }
+                                >
+                                    {enabled ? 'Enabled' : 'Disabled'}
+                                </Badge>
+                                {product.inventory?.is_low_stock ? (
+                                    <Badge variant="destructive">
+                                        Low stock
+                                    </Badge>
+                                ) : null}
+                            </div>
+                        </div>
+                    </div>
                     <Button variant="outline" asChild>
                         <Link
                             href={BranchInventoryController.index.url(
@@ -101,74 +132,17 @@ export default function PlatformBranchProductShow({
                     </Button>
                 </div>
 
-                <Card className="gap-4 py-5 shadow-none">
-                    <CardHeader className="flex flex-col gap-4 px-5 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="space-y-1">
-                            <CardTitle className="text-base">
-                                Branch availability
-                            </CardTitle>
-                            <CardDescription>
-                                Enablement and catalog details for this branch.
-                            </CardDescription>
-                        </div>
-                        {product.inventory?.is_low_stock ? (
-                            <Badge variant="destructive">Low stock</Badge>
-                        ) : null}
-                    </CardHeader>
-                    <CardContent className="space-y-5 px-5">
-                        <div className="flex items-start gap-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-                            <Checkbox
-                                id="platform-branch-enabled"
-                                checked={enabled}
-                                className="mt-0.5"
-                                onCheckedChange={(checked) => {
-                                    const next = checked === true;
-                                    setEnabled(next);
-                                    router.put(
-                                        BranchInventoryController.toggle.url({
-                                            branch: branch.slug,
-                                            product: product.slug,
-                                        }),
-                                        { status: next },
-                                        { preserveScroll: true },
-                                    );
-                                }}
-                            />
-                            <div className="space-y-0.5">
-                                <Label
-                                    htmlFor="platform-branch-enabled"
-                                    className="font-medium"
-                                >
-                                    {enabled ? 'Enabled' : 'Disabled'} at this
-                                    branch
-                                </Label>
-                                <p className="text-muted-foreground text-xs">
-                                    Disabled products stay in catalog but are
-                                    unavailable here.
-                                </p>
-                            </div>
-                        </div>
-
-                        <dl className="grid gap-4 sm:grid-cols-2">
-                            <div className="space-y-1">
-                                <dt className="text-muted-foreground text-sm">
-                                    SKU
-                                </dt>
-                                <dd className="text-sm font-medium">
-                                    {product.sku ?? '—'}
-                                </dd>
-                            </div>
-                            <div className="space-y-1">
-                                <dt className="text-muted-foreground text-sm">
-                                    Categories
-                                </dt>
-                                <dd className="text-sm font-medium">
-                                    {product.category_name || '—'}
-                                </dd>
-                            </div>
-                        </dl>
-                    </CardContent>
-                </Card>
+                <BranchProductSummary
+                    name={product.name}
+                    sku={product.sku}
+                    description={product.description}
+                    categoryName={product.category_name}
+                    imageUrl={product.image_url}
+                    enabled={enabled}
+                    lowStock={Boolean(product.inventory?.is_low_stock)}
+                    onEnabledChange={toggleEnabled}
+                    enabledLabel="Enabled at this branch"
+                />
 
                 <ProductInventoryPanel
                     variants={product.variants}
