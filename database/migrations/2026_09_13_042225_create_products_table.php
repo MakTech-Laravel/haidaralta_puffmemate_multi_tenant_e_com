@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('sku')->nullable()->unique();
             $table->text('description')->nullable();
             $table->string('image')->nullable();
+            $table->json('color_code')->nullable();
             $table->boolean('status')->default(true);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

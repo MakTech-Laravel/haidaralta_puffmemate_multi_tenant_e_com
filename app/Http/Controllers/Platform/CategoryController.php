@@ -130,6 +130,7 @@ class CategoryController extends Controller
                 : null,
             'image' => $category->image,
             'image_url' => $category->imageUrl(),
+            'color_code' => $category->color_code,
             'status' => (bool) $category->status,
             'created_at' => $category->created_at?->toIso8601String(),
         ];

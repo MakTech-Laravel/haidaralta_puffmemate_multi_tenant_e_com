@@ -16,6 +16,7 @@ type Category = {
     parent_id: number | null;
     image: string | null;
     image_url: string | null;
+    color_code?: import('@/lib/catalog-background').CatalogColorCode | null;
     status: boolean;
 };
 
@@ -56,6 +57,7 @@ export default function PlatformCategoriesEdit({
                         parent_id: category.parent_id,
                         image: category.image,
                         image_url: category.image_url,
+                        color_code: category.color_code,
                         status: category.status,
                     }}
                     cancelHref={CategoryController.show.url(category.slug)}

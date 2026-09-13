@@ -155,6 +155,7 @@ class ProductController extends Controller
                 'description' => $product->description,
                 'status' => (bool) $product->status,
                 'image_url' => $product->imageUrl(),
+                'color_code' => $product->color_code,
                 'category_ids' => $product->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
                 'categories' => $product->categories
                     ->map(fn (Category $category): array => [

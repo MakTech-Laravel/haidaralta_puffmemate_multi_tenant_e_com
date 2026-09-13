@@ -187,6 +187,7 @@ class BranchProductListingDataTable extends AbstractDataTable
                 ]
                 : null,
             'status' => (bool) $model->status,
+            'color_code' => $model->color_code,
             'enabled' => (bool) ($this->enabledMap[$model->id] ?? false),
             'quantity' => $inventory?->quantity ?? 0,
             'available_quantity' => $inventory?->available_quantity ?? 0,

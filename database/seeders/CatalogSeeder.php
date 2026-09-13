@@ -22,12 +22,19 @@ class CatalogSeeder extends Seeder
             'name' => 'Disposables',
             'slug' => 'disposables',
             'parent_id' => null,
+            'color_code' => ['mode' => 'solid', 'color' => '#E8F0FE'],
         ]);
 
         $podSystems = $this->category([
             'name' => 'Pod Systems',
             'slug' => 'pod-systems',
             'parent_id' => null,
+            'color_code' => [
+                'mode' => 'gradient',
+                'from' => '#F3E8FF',
+                'to' => '#FFFFFF',
+                'angle' => 135,
+            ],
         ]);
 
         $eLiquids = $this->category([
@@ -65,6 +72,7 @@ class CatalogSeeder extends Seeder
             'slug' => 'puffonmate-pulse-5000',
             'sku' => 'POM-PULSE-5000',
             'description' => 'Rechargeable disposable with ~5000 puffs, mesh coil, and USB-C charging. Ideal everyday device for customers who want flavour without refilling.',
+            'color_code' => ['mode' => 'solid', 'color' => '#DBEAFE'],
             'variants' => [
                 ['name' => 'Iced Mango', 'sku' => 'POM-PULSE-5000-MANGO', 'attributes' => ['flavor' => 'Iced Mango', 'nicotine' => '20mg']],
                 ['name' => 'Blue Razz Ice', 'sku' => 'POM-PULSE-5000-BRAZZ', 'attributes' => ['flavor' => 'Blue Razz Ice', 'nicotine' => '20mg']],
@@ -197,6 +205,14 @@ class CatalogSeeder extends Seeder
     /**
      * @param  array{name: string, slug: string, parent_id: int|null}  $data
      */
+    /**
+     * @param  array{
+     *     name: string,
+     *     slug: string,
+     *     parent_id: int|null,
+     *     color_code?: array<string, mixed>|null
+     * }  $data
+     */
     private function category(array $data): Category
     {
         return Category::query()->firstOrCreate(
@@ -205,6 +221,7 @@ class CatalogSeeder extends Seeder
                 'name' => $data['name'],
                 'parent_id' => $data['parent_id'],
                 'image' => null,
+                'color_code' => $data['color_code'] ?? null,
                 'status' => true,
             ],
         );
@@ -216,6 +233,7 @@ class CatalogSeeder extends Seeder
      *     slug: string,
      *     sku: string,
      *     description: string,
+     *     color_code?: array<string, mixed>|null,
      *     variants: list<array{name: string, sku: string, attributes: array<string, string>}>
      * }  $data
      */
@@ -228,6 +246,7 @@ class CatalogSeeder extends Seeder
                 'sku' => $data['sku'],
                 'description' => $data['description'],
                 'image' => null,
+                'color_code' => $data['color_code'] ?? null,
                 'status' => true,
                 'created_by' => $creator?->id,
             ],

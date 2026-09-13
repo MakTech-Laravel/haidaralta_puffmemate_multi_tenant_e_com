@@ -26,6 +26,7 @@ class ProductFactory extends Factory
             'sku' => strtoupper(fake()->unique()->bothify('SKU-####??')),
             'description' => fake()->optional()->paragraph(),
             'image' => null,
+            'color_code' => null,
             'status' => true,
             'created_by' => null,
         ];

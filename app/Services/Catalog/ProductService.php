@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\User;
 use App\Services\Inventory\BranchProductAvailabilityService;
+use App\Support\CatalogBackgroundColor;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -24,7 +25,8 @@ class ProductService
      *     slug: string,
      *     sku?: string|null,
      *     description?: string|null,
-     *     status?: bool
+     *     status?: bool,
+     *     color_code?: array<string, mixed>|null
      * }  $data
      * @param  list<UploadedFile>  $galleryImages
      */
@@ -46,7 +48,8 @@ class ProductService
      *     slug: string,
      *     sku?: string|null,
      *     description?: string|null,
-     *     status?: bool
+     *     status?: bool,
+     *     color_code?: array<string, mixed>|null
      * }  $data
      * @param  list<UploadedFile>  $galleryImages
      */
@@ -70,6 +73,7 @@ class ProductService
      *     sku?: string|null,
      *     description?: string|null,
      *     status?: bool,
+     *     color_code?: array<string, mixed>|null,
      *     remove_image?: bool,
      *     remove_gallery_ids?: list<int>
      * }  $data
@@ -99,6 +103,12 @@ class ProductService
             /** @var list<int>|null $categoryIds */
             $categoryIds = $data['category_ids'] ?? null;
             unset($data['remove_image'], $data['remove_gallery_ids'], $data['category_ids']);
+
+            if (array_key_exists('color_code', $data)) {
+                $data['color_code'] = CatalogBackgroundColor::normalize(
+                    is_array($data['color_code']) ? $data['color_code'] : null,
+                );
+            }
 
             if ($removeGalleryIds !== []) {
                 $this->deleteGalleryImages($product, $removeGalleryIds);
@@ -138,7 +148,8 @@ class ProductService
      *     slug: string,
      *     sku?: string|null,
      *     description?: string|null,
-     *     status?: bool
+     *     status?: bool,
+     *     color_code?: array<string, mixed>|null
      * }  $data
      * @param  list<UploadedFile>  $galleryImages
      */
@@ -164,6 +175,7 @@ class ProductService
             'sku' => $data['sku'] ?? null,
             'description' => $data['description'] ?? null,
             'image' => $primaryPath,
+            'color_code' => CatalogBackgroundColor::normalize($data['color_code'] ?? null),
             'status' => $data['status'] ?? true,
             'created_by' => $actor?->id,
         ]);

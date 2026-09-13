@@ -2,14 +2,22 @@
 
 namespace App\Http\Requests\Branch;
 
+use App\Http\Requests\Concerns\ValidatesCatalogColorCode;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreBranchProductRequest extends FormRequest
 {
+    use ValidatesCatalogColorCode;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->decodeColorCodeInput();
     }
 
     /**
@@ -30,6 +38,7 @@ class StoreBranchProductRequest extends FormRequest
             'discount_price' => ['nullable', 'numeric', 'min:0'],
             'quantity' => ['nullable', 'integer'],
             'minimum_stock' => ['nullable', 'integer', 'min:0'],
+            ...$this->colorCodeRules(),
         ];
     }
 }

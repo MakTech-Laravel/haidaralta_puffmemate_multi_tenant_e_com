@@ -2,15 +2,23 @@
 
 namespace App\Http\Requests\Platform;
 
+use App\Http\Requests\Concerns\ValidatesCatalogColorCode;
 use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateCategoryRequest extends FormRequest
 {
+    use ValidatesCatalogColorCode;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->decodeColorCodeInput();
     }
 
     /**
@@ -39,6 +47,7 @@ class UpdateCategoryRequest extends FormRequest
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_image' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'boolean'],
+            ...$this->colorCodeRules(),
         ];
     }
 }

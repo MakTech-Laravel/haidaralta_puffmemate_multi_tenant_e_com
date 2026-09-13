@@ -25,6 +25,11 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { usePermission } from '@/hooks/use-permissions';
+import {
+    catalogBackgroundStyle,
+    isTransparentCatalogColor,
+    type CatalogColorCode,
+} from '@/lib/catalog-background';
 
 type ProductRow = {
     id: number;
@@ -35,6 +40,7 @@ type ProductRow = {
     category_name: string;
     image: string | null;
     image_url: string | null;
+    color_code?: CatalogColorCode | null;
     status: boolean;
     variants_count: number;
     deleted_at: string | null;
@@ -83,12 +89,21 @@ export default function PlatformProductsIndex({
                 id: 'image',
                 header: 'Image',
                 cell: ({ row }) => (
-                    <Avatar className="size-10">
+                    <Avatar
+                        className="size-10"
+                        style={
+                            isTransparentCatalogColor(row.original.color_code)
+                                ? undefined
+                                : catalogBackgroundStyle(
+                                      row.original.color_code,
+                                  )
+                        }
+                    >
                         <AvatarImage
                             src={row.original.image_url ?? undefined}
                             alt={row.original.name}
                         />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-transparent">
                             {initials(row.original.name)}
                         </AvatarFallback>
                     </Avatar>

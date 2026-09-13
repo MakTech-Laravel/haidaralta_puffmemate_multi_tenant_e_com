@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { FileUploadAvatar } from '@/components/file-upload-avatar';
 import InputError from '@/components/input-error';
+import { CatalogBackgroundColorField } from '@/components/platform/catalog-background-color-field';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -23,6 +24,13 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import {
+    catalogBackgroundStyle,
+    isTransparentCatalogColor,
+    normalizeCatalogColorCode,
+    type CatalogColorCode,
+} from '@/lib/catalog-background';
+import { cn } from '@/lib/utils';
 
 type FormAction = {
     action: string;
@@ -40,6 +48,7 @@ interface CategoryFormDefaults {
     parent_id?: number | null;
     image?: string | null;
     image_url?: string | null;
+    color_code?: CatalogColorCode | null;
     status?: boolean;
 }
 
@@ -92,9 +101,13 @@ export function CategoryForm({
         parent_id: defaults?.parent_id ?? null,
         image: null as File | null,
         remove_image: false,
+        color_code: normalizeCatalogColorCode(defaults?.color_code),
         status: defaults?.status ?? true,
         ...(isEdit ? { _method: 'put' } : {}),
     });
+
+    const imageTileStyle = catalogBackgroundStyle(data.color_code);
+    const imageTileTransparent = isTransparentCatalogColor(data.color_code);
 
     useEffect(() => {
         setValidationTimeout(500);
@@ -116,10 +129,13 @@ export function CategoryForm({
         event.preventDefault();
 
         transform((form) => {
-            const { image, remove_image, ...rest } = form;
+            const { image, remove_image, color_code, ...rest } = form;
 
             return {
                 ...rest,
+                color_code: JSON.stringify(
+                    normalizeCatalogColorCode(color_code),
+                ),
                 ...(image ? { image } : {}),
                 ...(remove_image ? { remove_image: true } : {}),
             };
@@ -142,41 +158,67 @@ export function CategoryForm({
                 <CardContent className="flex flex-col gap-6">
                     <div className="flex flex-col gap-2">
                         <Label>Category image</Label>
-                        <FileUploadAvatar
-                            value={data.image}
-                            onChange={(file) => {
-                                const next = Array.isArray(file)
-                                    ? (file[0] ?? null)
-                                    : file;
-                                setData((current) => ({
-                                    ...current,
-                                    image: next,
-                                    remove_image: next
-                                        ? false
-                                        : current.remove_image,
-                                }));
-                            }}
-                            existingUrl={
-                                data.image || data.remove_image
-                                    ? null
-                                    : existingImageUrl
+                        <div
+                            className={cn(
+                                'rounded-xl border border-dashed border-border/80 p-4',
+                                imageTileTransparent && 'bg-muted/20',
+                            )}
+                            style={
+                                imageTileTransparent
+                                    ? undefined
+                                    : imageTileStyle
                             }
-                            onClearExisting={() => {
-                                setExistingImageUrl(null);
-                                setData((current) => ({
-                                    ...current,
-                                    image: null,
-                                    remove_image: true,
-                                }));
-                            }}
-                            accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
-                            maxSize={2}
-                            error={errors.image}
-                            hint="PNG, JPG, or WebP up to 2MB"
-                            placeholder="Category image"
-                        />
+                        >
+                            <FileUploadAvatar
+                                value={data.image}
+                                onChange={(file) => {
+                                    const next = Array.isArray(file)
+                                        ? (file[0] ?? null)
+                                        : file;
+                                    setData((current) => ({
+                                        ...current,
+                                        image: next,
+                                        remove_image: next
+                                            ? false
+                                            : current.remove_image,
+                                    }));
+                                }}
+                                existingUrl={
+                                    data.image || data.remove_image
+                                        ? null
+                                        : existingImageUrl
+                                }
+                                onClearExisting={() => {
+                                    setExistingImageUrl(null);
+                                    setData((current) => ({
+                                        ...current,
+                                        image: null,
+                                        remove_image: true,
+                                    }));
+                                }}
+                                accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                                maxSize={2}
+                                error={errors.image}
+                                hint="PNG, JPG, or WebP up to 2MB"
+                                placeholder="Category image"
+                            />
+                        </div>
                         <InputError message={errors.image} />
                     </div>
+
+                    <CatalogBackgroundColorField
+                        value={data.color_code}
+                        onChange={(color_code) =>
+                            setData('color_code', color_code)
+                        }
+                        error={
+                            errors.color_code ??
+                            errors['color_code.mode'] ??
+                            errors['color_code.color'] ??
+                            errors['color_code.from'] ??
+                            errors['color_code.to']
+                        }
+                    />
 
                     <div className="grid gap-5 sm:grid-cols-2">
                         <div className="flex flex-col gap-2">

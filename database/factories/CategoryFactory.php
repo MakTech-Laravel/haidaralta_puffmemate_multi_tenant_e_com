@@ -23,6 +23,7 @@ class CategoryFactory extends Factory
             'name' => Str::title($name),
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
             'image' => null,
+            'color_code' => null,
             'status' => true,
         ];
     }

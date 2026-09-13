@@ -17,3 +17,6 @@ products.image is the primary listing image. product_images holds gallery photos
 
 ## Products belong to many categories via category_product
 Products↔categories are belongsToMany through category_product (not products.category_id). Forms/API use category_ids (required min 1). List filters keep filter[category_id] meaning “has this category”. Scout filterable attribute is category_ids (array). Display uses categoryNamesLabel() / joined category_name.
+
+## Catalog color_code JSON background modes
+categories.color_code and products.color_code are nullable JSON: transparent | solid(+color) | gradient(+from,to,angle). Normalize via CatalogBackgroundColor; forms use CatalogBackgroundColorField + catalogBackgroundStyle. No new color npm package unless approved.

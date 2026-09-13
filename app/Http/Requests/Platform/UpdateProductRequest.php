@@ -2,15 +2,23 @@
 
 namespace App\Http\Requests\Platform;
 
+use App\Http\Requests\Concerns\ValidatesCatalogColorCode;
 use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateProductRequest extends FormRequest
 {
+    use ValidatesCatalogColorCode;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->decodeColorCodeInput();
     }
 
     /**
@@ -49,6 +57,7 @@ class UpdateProductRequest extends FormRequest
                 Rule::exists('product_images', 'id')->where('product_id', $product->id),
             ],
             'status' => ['sometimes', 'boolean'],
+            ...$this->colorCodeRules(),
         ];
     }
 }

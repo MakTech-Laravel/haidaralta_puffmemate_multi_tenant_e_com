@@ -13,6 +13,11 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { usePermission } from '@/hooks/use-permissions';
+import {
+    catalogBackgroundStyle,
+    isTransparentCatalogColor,
+    type CatalogColorCode,
+} from '@/lib/catalog-background';
 
 type Category = {
     id: number;
@@ -21,6 +26,7 @@ type Category = {
     parent_name: string | null;
     image: string | null;
     image_url: string | null;
+    color_code?: CatalogColorCode | null;
     status: boolean;
     products_count: number;
     children_count: number;
@@ -55,14 +61,23 @@ export default function PlatformCategoriesShow({
             <div className="flex flex-col gap-6 p-2">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
-                        <Avatar className="size-14 rounded-xl">
+                        <Avatar
+                            className="size-14 rounded-xl"
+                            style={
+                                isTransparentCatalogColor(category.color_code)
+                                    ? undefined
+                                    : catalogBackgroundStyle(
+                                          category.color_code,
+                                      )
+                            }
+                        >
                             {category.image_url ? (
                                 <AvatarImage
                                     src={category.image_url}
                                     alt={category.name}
                                 />
                             ) : null}
-                            <AvatarFallback className="rounded-xl text-base">
+                            <AvatarFallback className="rounded-xl bg-transparent text-base">
                                 {category.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>

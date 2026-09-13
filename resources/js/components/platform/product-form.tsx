@@ -6,6 +6,7 @@ import ProductController from '@/actions/App/Http/Controllers/Platform/ProductCo
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import { FileUploadAvatar } from '@/components/file-upload-avatar';
 import InputError from '@/components/input-error';
+import { CatalogBackgroundColorField } from '@/components/platform/catalog-background-color-field';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,12 @@ import {
 } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    catalogBackgroundStyle,
+    isTransparentCatalogColor,
+    normalizeCatalogColorCode,
+    type CatalogColorCode,
+} from '@/lib/catalog-background';
 import { cn } from '@/lib/utils';
 
 type FormAction = {
@@ -64,6 +71,7 @@ interface ProductFormDefaults {
     image?: string | null;
     image_url?: string | null;
     gallery?: ProductGalleryImage[];
+    color_code?: CatalogColorCode | null;
     status?: boolean;
 }
 
@@ -142,6 +150,7 @@ export function ProductForm({
         gallery: [] as File[],
         remove_image: false,
         remove_gallery_ids: [] as number[],
+        color_code: normalizeCatalogColorCode(defaults?.color_code),
         status: defaults?.status ?? true,
         ...(isEdit ? { _method: 'put' } : {}),
     });
@@ -153,6 +162,9 @@ export function ProductForm({
             ),
         [categoryOptions, data.category_ids],
     );
+
+    const imageTileStyle = catalogBackgroundStyle(data.color_code);
+    const imageTileTransparent = isTransparentCatalogColor(data.color_code);
 
     const toggleCategory = (categoryId: number) => {
         const next = data.category_ids.includes(categoryId)
@@ -225,11 +237,15 @@ export function ProductForm({
                 gallery,
                 remove_image,
                 remove_gallery_ids,
+                color_code,
                 ...rest
             } = form;
 
             return {
                 ...rest,
+                color_code: JSON.stringify(
+                    normalizeCatalogColorCode(color_code),
+                ),
                 ...(image ? { image } : {}),
                 ...(gallery.length > 0 ? { gallery } : {}),
                 ...(remove_image ? { remove_image: true } : {}),
@@ -539,6 +555,20 @@ export function ProductForm({
                     </div>
 
                     <div className="space-y-8">
+                        <CatalogBackgroundColorField
+                            value={data.color_code}
+                            onChange={(color_code) =>
+                                setData('color_code', color_code)
+                            }
+                            error={
+                                errors.color_code ??
+                                errors['color_code.mode'] ??
+                                errors['color_code.color'] ??
+                                errors['color_code.from'] ??
+                                errors['color_code.to']
+                            }
+                        />
+
                         <div className="space-y-3">
                             <div className="flex items-center justify-between gap-3">
                                 <Label>Primary image</Label>
@@ -546,7 +576,17 @@ export function ProductForm({
                                     Shown on product cards
                                 </span>
                             </div>
-                            <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 p-4">
+                            <div
+                                className={cn(
+                                    'rounded-xl border border-dashed border-border/80 p-4',
+                                    imageTileTransparent && 'bg-muted/20',
+                                )}
+                                style={
+                                    imageTileTransparent
+                                        ? undefined
+                                        : imageTileStyle
+                                }
+                            >
                                 <FileUploadAvatar
                                     value={data.image}
                                     onChange={(file) => {

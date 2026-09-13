@@ -3,6 +3,7 @@
 namespace App\Services\Catalog;
 
 use App\Models\Category;
+use App\Support\CatalogBackgroundColor;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -14,7 +15,8 @@ class CategoryService
      *     parent_id?: int|null,
      *     name: string,
      *     slug: string,
-     *     status?: bool
+     *     status?: bool,
+     *     color_code?: array<string, mixed>|null
      * }  $data
      */
     public function create(array $data, ?UploadedFile $image = null): Category
@@ -25,6 +27,7 @@ class CategoryService
                 'name' => $data['name'],
                 'slug' => $data['slug'],
                 'image' => $image?->store('categories', 'public'),
+                'color_code' => CatalogBackgroundColor::normalize($data['color_code'] ?? null),
                 'status' => $data['status'] ?? true,
             ]);
         });
@@ -36,6 +39,7 @@ class CategoryService
      *     name?: string,
      *     slug?: string,
      *     status?: bool,
+     *     color_code?: array<string, mixed>|null,
      *     remove_image?: bool
      * }  $data
      */
@@ -55,6 +59,13 @@ class CategoryService
             }
 
             unset($data['remove_image']);
+
+            if (array_key_exists('color_code', $data)) {
+                $data['color_code'] = CatalogBackgroundColor::normalize(
+                    is_array($data['color_code']) ? $data['color_code'] : null,
+                );
+            }
+
             $category->fill($data);
             $category->save();
 

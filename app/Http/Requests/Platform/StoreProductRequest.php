@@ -2,14 +2,22 @@
 
 namespace App\Http\Requests\Platform;
 
+use App\Http\Requests\Concerns\ValidatesCatalogColorCode;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
+    use ValidatesCatalogColorCode;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->decodeColorCodeInput();
     }
 
     /**
@@ -28,6 +36,7 @@ class StoreProductRequest extends FormRequest
             'gallery' => ['nullable', 'array', 'max:12'],
             'gallery.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'status' => ['sometimes', 'boolean'],
+            ...$this->colorCodeRules(),
         ];
     }
 }

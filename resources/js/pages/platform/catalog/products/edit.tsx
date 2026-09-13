@@ -27,6 +27,7 @@ type Product = {
     image: string | null;
     image_url: string | null;
     gallery: GalleryImage[];
+    color_code?: import('@/lib/catalog-background').CatalogColorCode | null;
     status: boolean;
 };
 
@@ -72,6 +73,7 @@ export default function PlatformProductsEdit({
                         image: product.image,
                         image_url: product.image_url,
                         gallery: product.gallery,
+                        color_code: product.color_code,
                         status: product.status,
                     }}
                     cancelHref={ProductController.show.url(product.slug)}

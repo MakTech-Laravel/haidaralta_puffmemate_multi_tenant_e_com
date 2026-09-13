@@ -32,6 +32,11 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { usePermission } from '@/hooks/use-permissions';
+import {
+    catalogBackgroundStyle,
+    isTransparentCatalogColor,
+    type CatalogColorCode,
+} from '@/lib/catalog-background';
 
 type ProductVariant = {
     id: number;
@@ -50,6 +55,7 @@ type Product = {
     category_name: string;
     image: string | null;
     image_url: string | null;
+    color_code?: CatalogColorCode | null;
     gallery: {
         id: number;
         path: string;
@@ -187,14 +193,21 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
             <div className="flex w-full flex-col gap-6 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
-                        <Avatar className="size-14 rounded-xl">
+                        <Avatar
+                            className="size-14 rounded-xl"
+                            style={
+                                isTransparentCatalogColor(product.color_code)
+                                    ? undefined
+                                    : catalogBackgroundStyle(product.color_code)
+                            }
+                        >
                             {product.image_url ? (
                                 <AvatarImage
                                     src={product.image_url}
                                     alt={product.name}
                                 />
                             ) : null}
-                            <AvatarFallback className="rounded-xl text-base">
+                            <AvatarFallback className="rounded-xl bg-transparent text-base">
                                 {product.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>

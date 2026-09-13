@@ -99,6 +99,7 @@ class CategoryDataTable extends AbstractDataTable
             'parent_name' => $model->parent?->name,
             'image' => $model->image,
             'image_url' => $model->imageUrl(),
+            'color_code' => $model->color_code,
             'status' => (bool) $model->status,
             'products_count' => (int) ($model->products_count ?? 0),
             'deleted_at' => $model->deleted_at?->toIso8601String(),

@@ -124,6 +124,7 @@ class ProductDataTable extends AbstractDataTable
             'sku' => $model->sku,
             'image' => $model->image,
             'image_url' => $model->imageUrl(),
+            'color_code' => $model->color_code,
             'status' => (bool) $model->status,
             'variants_count' => (int) ($model->variants_count ?? 0),
             'deleted_at' => $model->deleted_at?->toIso8601String(),

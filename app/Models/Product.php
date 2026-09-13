@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
+use App\Support\CatalogBackgroundColor;
 use App\Support\SearchableTimestamp;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -44,6 +45,7 @@ class Product extends Model
         'sku',
         'description',
         'image',
+        'color_code',
         'status',
         'created_by',
     ];
@@ -162,6 +164,12 @@ class Product extends Model
     {
         return [
             'status' => 'boolean',
+            'color_code' => 'array',
         ];
+    }
+
+    public function backgroundStyle(): ?string
+    {
+        return CatalogBackgroundColor::cssBackground($this->color_code);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
+use App\Support\CatalogBackgroundColor;
 use App\Support\SearchableTimestamp;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -43,6 +44,7 @@ class Category extends Model
         'name',
         'slug',
         'image',
+        'color_code',
         'status',
     ];
 
@@ -104,6 +106,12 @@ class Category extends Model
     {
         return [
             'status' => 'boolean',
+            'color_code' => 'array',
         ];
+    }
+
+    public function backgroundStyle(): ?string
+    {
+        return CatalogBackgroundColor::cssBackground($this->color_code);
     }
 }

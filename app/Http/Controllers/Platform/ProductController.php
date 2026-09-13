@@ -187,6 +187,7 @@ class ProductController extends Controller
             'description' => $product->description,
             'image' => $product->image,
             'image_url' => $product->imageUrl(),
+            'color_code' => $product->color_code,
             'status' => (bool) $product->status,
             'created_at' => $product->created_at?->toIso8601String(),
             'gallery' => $product->relationLoaded('images')
