@@ -39,7 +39,6 @@ export const storefrontFooterCustomer: StorefrontChromeItem[] = [
 export const storefrontFooterBrand: StorefrontChromeItem[] = [
     { label: 'About Us', route: 'about' },
     { label: 'Wholesale', categorySlug: 'wholesale' },
-    { label: 'Price Beat' },
     { label: 'Privacy' },
 ];
 
