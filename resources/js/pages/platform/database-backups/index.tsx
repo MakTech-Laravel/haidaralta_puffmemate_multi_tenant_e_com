@@ -1,5 +1,6 @@
 import { Head, router, usePoll } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
+import { Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import DatabaseBackupController from '@/actions/App/Http/Controllers/Platform/DatabaseBackupController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -8,6 +9,8 @@ import {
     DataTableColumnHeader,
     DataTableRowActions,
     DataTableToolbar,
+    buildArchivesDataTableQuery,
+    buildDataTableQuery,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
@@ -16,14 +19,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { useDatabaseBackupRealtime } from '@/hooks/use-database-backup-realtime';
 import {
     backupStatusBadgeVariant,
@@ -79,12 +74,12 @@ function formatWhen(value: string | null): string {
 }
 
 export default function PlatformDatabaseBackupsIndex({
-    backups,
+    archives,
     table: historyTable,
     connection,
     cleanup_policy,
 }: {
-    backups: BackupZip[];
+    archives: DataTablePayload<BackupZip>;
     table: DataTablePayload<HistoryRow>;
     connection: string;
     cleanup_policy: CleanupPolicy;
@@ -110,6 +105,39 @@ export default function PlatformDatabaseBackupsIndex({
             sort: historyTable.sort,
             per_page: historyTable.per_page,
         },
+        extraQuery: () =>
+            buildArchivesDataTableQuery({
+                filter: {
+                    search: archives.filters.search ?? null,
+                },
+                sort: archives.sort,
+                per_page: archives.per_page,
+                page: archives.meta.current_page,
+            }),
+    });
+
+    const archivesQuery = useDataTableQuery({
+        indexUrl: DatabaseBackupController.index.url(),
+        initial: {
+            filter: {
+                search: archives.filters.search ?? '',
+            },
+            sort: archives.sort,
+            per_page: archives.per_page,
+            page: archives.meta.current_page,
+        },
+        buildQuery: buildArchivesDataTableQuery,
+        extraQuery: () =>
+            buildDataTableQuery({
+                filter: {
+                    search: historyTable.filters.search ?? null,
+                    type: historyTable.filters.type ?? null,
+                    status: historyTable.filters.status ?? null,
+                },
+                sort: historyTable.sort,
+                per_page: historyTable.per_page,
+                page: historyTable.meta.current_page,
+            }),
     });
 
     const hasActiveRestore = useMemo(
@@ -127,9 +155,107 @@ export default function PlatformDatabaseBackupsIndex({
         () =>
             historyTable.data.some(
                 (history) =>
-                    history.status === 'pending' || history.status === 'running',
+                    history.status === 'pending' ||
+                    history.status === 'running',
             ),
         [historyTable.data],
+    );
+
+    const archiveColumns = useMemo<ColumnDef<BackupZip>[]>(
+        () => [
+            {
+                accessorKey: 'filename',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="File"
+                        sortable
+                        sortKey="filename"
+                        currentSort={archivesQuery.sort}
+                        onSort={archivesQuery.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <div>
+                        <div className="font-medium">
+                            {row.original.filename}
+                        </div>
+                        <div className="text-muted-foreground mt-0.5 text-xs md:hidden">
+                            {formatWhen(row.original.date)}
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'date',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Created"
+                        sortable
+                        sortKey="date"
+                        currentSort={archivesQuery.sort}
+                        onSort={archivesQuery.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-muted-foreground hidden whitespace-nowrap md:inline">
+                        {formatWhen(row.original.date)}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'size_bytes',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Size"
+                        sortable
+                        sortKey="size_bytes"
+                        currentSort={archivesQuery.sort}
+                        onSort={archivesQuery.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => formatBytes(row.original.size_bytes),
+            },
+            {
+                id: 'actions',
+                header: () => <span className="sr-only">Actions</span>,
+                cell: ({ row }) => (
+                    <div className="flex justify-end">
+                        <DataTableRowActions
+                            items={[
+                                {
+                                    label: 'Download',
+                                    href: DatabaseBackupController.download.url(
+                                        {
+                                            query: {
+                                                path: row.original.path,
+                                            },
+                                        },
+                                    ),
+                                },
+                                {
+                                    label: 'Restore DB',
+                                    onSelect: () => {
+                                        setConfirmedRestore(false);
+                                        setRestorePath(row.original.path);
+                                    },
+                                },
+                                {
+                                    label: 'Delete zip',
+                                    destructive: true,
+                                    separatorBefore: true,
+                                    onSelect: () =>
+                                        setDeletePath(row.original.path),
+                                },
+                            ]}
+                        />
+                    </div>
+                ),
+            },
+        ],
+        [archivesQuery.sort, archivesQuery.toggleSort],
     );
 
     const historyColumns = useMemo<ColumnDef<HistoryRow>[]>(
@@ -205,7 +331,7 @@ export default function PlatformDatabaseBackupsIndex({
     const { start: startPoll, stop: stopPoll } = usePoll(
         3000,
         {
-            only: ['backups', 'histories'],
+            only: ['archives', 'table'],
         },
         { autoStart: false },
     );
@@ -285,7 +411,8 @@ export default function PlatformDatabaseBackupsIndex({
                     {cleanup_policy.max_storage_mb
                         ? `, then trims oldest if storage exceeds ${cleanup_policy.max_storage_mb} MB`
                         : ''}
-                    . Use the trash icon to remove a zip inside the keep window.
+                    . Use Delete zip in the row menu to remove a zip inside the
+                    keep window.
                 </p>
 
                 {hasActiveRestore ? (
@@ -300,90 +427,21 @@ export default function PlatformDatabaseBackupsIndex({
                     <h2 className="text-foreground text-sm font-semibold">
                         Backup archives
                     </h2>
-                    <div className="border-border bg-card rounded-xl border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>File</TableHead>
-                                    <TableHead className="min-w-[11rem]">
-                                        Created
-                                    </TableHead>
-                                    <TableHead>Size</TableHead>
-                                    <TableHead className="text-right">
-                                        Actions
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {backups.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={4}
-                                            className="text-muted-foreground py-10 text-center"
-                                        >
-                                            No backup zips yet. Run a backup to
-                                            create one.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    backups.map((backup) => (
-                                        <TableRow key={backup.path}>
-                                            <TableCell>
-                                                <div className="font-medium">
-                                                    {backup.filename}
-                                                </div>
-                                                <div className="text-muted-foreground mt-0.5 text-xs md:hidden">
-                                                    {formatWhen(backup.date)}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground hidden whitespace-nowrap md:table-cell">
-                                                {formatWhen(backup.date)}
-                                            </TableCell>
-                                            <TableCell>
-                                                {formatBytes(backup.size_bytes)}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <DataTableRowActions
-                                                    items={[
-                                                        {
-                                                            label: 'Download',
-                                                            href: DatabaseBackupController.download.url(
-                                                                {
-                                                                    query: {
-                                                                        path: backup.path,
-                                                                    },
-                                                                },
-                                                            ),
-                                                        },
-                                                        {
-                                                            label: 'Restore DB',
-                                                            onSelect: () => {
-                                                                setConfirmedRestore(
-                                                                    false,
-                                                                );
-                                                                setRestorePath(
-                                                                    backup.path,
-                                                                );
-                                                            },
-                                                        },
-                                                        {
-                                                            label: 'Delete zip',
-                                                            destructive: true,
-                                                            separatorBefore: true,
-                                                            onSelect: () =>
-                                                                setDeletePath(
-                                                                    backup.path,
-                                                                ),
-                                                        },
-                                                    ]}
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <DataTable
+                        columns={archiveColumns}
+                        payload={archives}
+                        perPage={archivesQuery.perPage}
+                        onPerPageChange={archivesQuery.changePerPage}
+                        emptyMessage="No backup zips yet. Run a backup to create one."
+                        toolbar={
+                            <DataTableToolbar
+                                search={archivesQuery.search}
+                                onSearchChange={archivesQuery.setSearch}
+                                searchPlaceholder="Search zip filename…"
+                                onClear={archivesQuery.clearFilters}
+                            />
+                        }
+                    />
                 </div>
 
                 <div className="space-y-3">

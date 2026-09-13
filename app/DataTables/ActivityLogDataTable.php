@@ -42,6 +42,14 @@ class ActivityLogDataTable extends AbstractDataTable
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public static function forCauser(Request $request, User $user): array
+    {
+        return (new static($request, null, $user->id))->toArray();
+    }
+
+    /**
      * @return class-string<Activity>
      */
     protected function modelClass(): string

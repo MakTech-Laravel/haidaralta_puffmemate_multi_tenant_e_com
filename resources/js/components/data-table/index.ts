@@ -5,6 +5,7 @@ export { DataTableRowActions } from '@/components/data-table/data-table-row-acti
 export type { DataTableActionItem } from '@/components/data-table/data-table-row-actions';
 export { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
 export {
+    buildArchivesDataTableQuery,
     buildDataTableQuery,
     useDataTableQuery,
 } from '@/components/data-table/use-data-table-query';
@@ -14,3 +15,4 @@ export type {
     DataTablePayload,
     DataTableQueryState,
 } from '@/components/data-table/types';
+export { toClientDataTablePayload } from '@/components/data-table/types';

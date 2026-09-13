@@ -10,6 +10,12 @@ type UseDataTableQueryOptions = {
     initial: DataTableQueryState;
     searchKey?: string;
     debounceMs?: number;
+    /** Merge sibling-table (or other) query keys so dual lists on one page keep state. */
+    extraQuery?:
+        | Record<string, unknown>
+        | (() => Record<string, unknown>);
+    /** Override default Spatie-style query serialization. */
+    buildQuery?: (state: DataTableQueryState) => Record<string, unknown>;
 };
 
 export function buildDataTableQuery(
@@ -33,11 +39,33 @@ export function buildDataTableQuery(
     };
 }
 
+/** Query keys for filesystem backup zip list (coexists with history DataTable). */
+export function buildArchivesDataTableQuery(
+    state: DataTableQueryState,
+): Record<string, unknown> {
+    const search = state.filter.search;
+
+    return {
+        ...(search !== null &&
+        search !== undefined &&
+        search !== ''
+            ? { archives_search: String(search) }
+            : {}),
+        ...(state.sort ? { archives_sort: state.sort } : {}),
+        archives_per_page: state.per_page,
+        ...(state.page && state.page > 1
+            ? { archives_page: state.page }
+            : {}),
+    };
+}
+
 export function useDataTableQuery({
     indexUrl,
     initial,
     searchKey = 'search',
     debounceMs = 300,
+    extraQuery,
+    buildQuery = buildDataTableQuery,
 }: UseDataTableQueryOptions) {
     const [search, setSearch] = useState(
         String(initial.filter[searchKey] ?? ''),
@@ -46,14 +74,31 @@ export function useDataTableQuery({
     const [sort, setSort] = useState<string | null>(initial.sort);
     const [perPage, setPerPage] = useState(initial.per_page);
     const skipNextSearchEffect = useRef(true);
+    const extraQueryRef = useRef(extraQuery);
+    const buildQueryRef = useRef(buildQuery);
+
+    extraQueryRef.current = extraQuery;
+    buildQueryRef.current = buildQuery;
 
     const visit = useCallback(
         (next: DataTableQueryState) => {
-            router.get(indexUrl, buildDataTableQuery(next), {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
+            const extra =
+                typeof extraQueryRef.current === 'function'
+                    ? extraQueryRef.current()
+                    : (extraQueryRef.current ?? {});
+
+            router.get(
+                indexUrl,
+                {
+                    ...extra,
+                    ...buildQueryRef.current(next),
+                },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                },
+            );
         },
         [indexUrl],
     );

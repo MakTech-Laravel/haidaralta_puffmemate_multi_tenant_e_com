@@ -194,15 +194,19 @@ test('driver only sees own causer activities and guests are redirected', functio
     Activity::query()->delete();
 
     activity()->causedBy($driver)->event('login')->log('driver-own-login');
+    activity()->causedBy($driver)->event('updated')->log('driver-own-updated');
     activity()->causedBy($other)->event('login')->log('driver-other-login');
 
     $this->actingAs($driver, 'driver')
-        ->get(route('driver.activity.index'))
+        ->get(route('driver.activity.index', [
+            'filter' => ['event' => 'login'],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('driver/activity/index')
-            ->has('activities.data', 1)
-            ->where('activities.data.0.description', 'driver-own-login')
+            ->has('table.data', 1)
+            ->where('table.data.0.description', 'driver-own-login')
+            ->where('table.filters.event', 'login')
         );
 
     auth()->guard('driver')->logout();
@@ -216,12 +220,21 @@ test('customer can open my activity', function () {
     Activity::query()->delete();
 
     activity()->causedBy($customer)->event('login')->log('customer-login');
+    activity()->causedBy($customer)->event('updated')->log('customer-updated');
 
     $this->actingAs($customer, 'customer')
-        ->get(route('customer.activity.index'))
+        ->get(route('customer.activity.index', [
+            'filter' => [
+                'search' => 'customer-login',
+                'event' => 'login',
+            ],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('customer/activity/index')
-            ->has('activities.data', 1)
+            ->has('table.data', 1)
+            ->where('table.data.0.description', 'customer-login')
+            ->where('table.filters.search', 'customer-login')
+            ->where('table.filters.event', 'login')
         );
 });

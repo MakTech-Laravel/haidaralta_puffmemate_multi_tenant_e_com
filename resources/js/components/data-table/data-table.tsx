@@ -23,6 +23,8 @@ type DataTableProps<TData> = {
     perPage: number;
     onPerPageChange: (value: number) => void;
     emptyMessage?: string;
+    /** Hide footer when rendering an in-memory / nested page list. */
+    showPagination?: boolean;
 };
 
 export function DataTable<TData>({
@@ -32,6 +34,7 @@ export function DataTable<TData>({
     perPage,
     onPerPageChange,
     emptyMessage = 'No results found.',
+    showPagination = true,
 }: DataTableProps<TData>) {
     const table = useReactTable({
         data: payload.data,
@@ -93,12 +96,14 @@ export function DataTable<TData>({
                     </TableBody>
                 </Table>
             </div>
-            <DataTablePagination
-                meta={payload.meta}
-                links={payload.links}
-                perPage={perPage}
-                onPerPageChange={onPerPageChange}
-            />
+            {showPagination ? (
+                <DataTablePagination
+                    meta={payload.meta}
+                    links={payload.links}
+                    perPage={perPage}
+                    onPerPageChange={onPerPageChange}
+                />
+            ) : null}
         </div>
     );
 }

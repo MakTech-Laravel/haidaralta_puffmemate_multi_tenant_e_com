@@ -1,10 +1,16 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { type ColumnDef } from '@tanstack/react-table';
+import { Plus } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import ProductVariantController from '@/actions/App/Http/Controllers/Platform/ProductVariantController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import {
+    DataTable,
+    DataTableRowActions,
+    toClientDataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
 import { VariantForm } from '@/components/platform/variant-form';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -25,14 +31,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { usePermission } from '@/hooks/use-permissions';
 
 type ProductVariant = {
@@ -102,6 +100,83 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
         setVariantDialogOpen(false);
         setEditingVariant(null);
     };
+
+    const canManageCatalog = can('manage-catalog');
+
+    const variantColumns = useMemo<ColumnDef<ProductVariant>[]>(() => {
+        const columns: ColumnDef<ProductVariant>[] = [
+            {
+                accessorKey: 'name',
+                header: 'Name',
+                cell: ({ row }) => (
+                    <span className="font-medium">{row.original.name}</span>
+                ),
+            },
+            {
+                accessorKey: 'sku',
+                header: 'SKU',
+                cell: ({ row }) => row.original.sku ?? '—',
+            },
+            {
+                accessorKey: 'attributes',
+                header: 'Attributes',
+                cell: ({ row }) => (
+                    <span className="max-w-xs truncate font-mono text-xs">
+                        {row.original.attributes
+                            ? JSON.stringify(row.original.attributes)
+                            : '—'}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'status',
+                header: 'Status',
+                cell: ({ row }) => (
+                    <Badge
+                        variant={
+                            row.original.status ? 'default' : 'secondary'
+                        }
+                    >
+                        {row.original.status ? 'Active' : 'Inactive'}
+                    </Badge>
+                ),
+            },
+        ];
+
+        if (canManageCatalog) {
+            columns.push({
+                id: 'actions',
+                header: () => <span className="sr-only">Actions</span>,
+                cell: ({ row }) => (
+                    <div className="flex justify-end">
+                        <DataTableRowActions
+                            items={[
+                                {
+                                    label: 'Edit',
+                                    onSelect: () =>
+                                        openEditVariant(row.original),
+                                },
+                                {
+                                    label: 'Delete',
+                                    destructive: true,
+                                    separatorBefore: true,
+                                    onSelect: () =>
+                                        setDeletingVariantId(row.original.id),
+                                },
+                            ]}
+                        />
+                    </div>
+                ),
+            });
+        }
+
+        return columns;
+    }, [canManageCatalog]);
+
+    const variantsPayload = useMemo(
+        () => toClientDataTablePayload(product.variants),
+        [product.variants],
+    );
 
     return (
         <>
@@ -230,7 +305,7 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                                 SKUs and attribute combinations for this product
                             </CardDescription>
                         </div>
-                        {can('manage-catalog') ? (
+                        {canManageCatalog ? (
                             <Button size="sm" onClick={openCreateVariant}>
                                 <Plus className="size-4" />
                                 Add variant
@@ -238,100 +313,14 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                         ) : null}
                     </CardHeader>
                     <CardContent>
-                        {product.variants.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
-                                No variants yet. Add one to define purchasable
-                                SKUs.
-                            </p>
-                        ) : (
-                            <div className="overflow-hidden rounded-lg border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Name</TableHead>
-                                            <TableHead>SKU</TableHead>
-                                            <TableHead>Attributes</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            {can('manage-catalog') ? (
-                                                <TableHead className="text-right">
-                                                    Actions
-                                                </TableHead>
-                                            ) : null}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {product.variants.map((variant) => (
-                                            <TableRow key={variant.id}>
-                                                <TableCell className="font-medium">
-                                                    {variant.name}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {variant.sku ?? '—'}
-                                                </TableCell>
-                                                <TableCell className="max-w-xs truncate font-mono text-xs">
-                                                    {variant.attributes
-                                                        ? JSON.stringify(
-                                                              variant.attributes,
-                                                          )
-                                                        : '—'}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge
-                                                        variant={
-                                                            variant.status
-                                                                ? 'default'
-                                                                : 'secondary'
-                                                        }
-                                                    >
-                                                        {variant.status
-                                                            ? 'Active'
-                                                            : 'Inactive'}
-                                                    </Badge>
-                                                </TableCell>
-                                                {can('manage-catalog') ? (
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-1">
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                aria-label={`Edit ${variant.name}`}
-                                                                onClick={() =>
-                                                                    openEditVariant(
-                                                                        variant,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Pencil className="size-4" />
-                                                                <span className="sr-only">
-                                                                    Edit
-                                                                </span>
-                                                            </Button>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                aria-label={`Delete ${variant.name}`}
-                                                                onClick={() =>
-                                                                    setDeletingVariantId(
-                                                                        variant.id,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="text-destructive size-4" />
-                                                                <span className="sr-only">
-                                                                    Delete
-                                                                </span>
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                ) : null}
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        )}
+                        <DataTable
+                            columns={variantColumns}
+                            payload={variantsPayload}
+                            perPage={variantsPayload.per_page}
+                            onPerPageChange={() => undefined}
+                            showPagination={false}
+                            emptyMessage="No variants yet. Add one to define purchasable SKUs."
+                        />
                     </CardContent>
                 </Card>
             </div>

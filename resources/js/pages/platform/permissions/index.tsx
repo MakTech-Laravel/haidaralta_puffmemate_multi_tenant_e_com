@@ -1,56 +1,18 @@
 import { Head } from '@inertiajs/react';
 import { Download } from 'lucide-react';
-import { useMemo, useState } from 'react';
 import PermissionController from '@/actions/App/Http/Controllers/Platform/PermissionController';
-import { DataTableToolbar } from '@/components/data-table';
-import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-
-type PermissionGroup = {
-    group: string;
-    permissions: {
-        value: string;
-        label: string;
-        roles_count: number;
-    }[];
-};
+    PermissionGroupsTable,
+    type PermissionGroup,
+} from '@/components/admin/permission-groups-table';
+import Heading from '@/components/heading';
+import { Button } from '@/components/ui/button';
 
 export default function PlatformPermissionsIndex({
     permissionGroups,
 }: {
     permissionGroups: PermissionGroup[];
 }) {
-    const [search, setSearch] = useState('');
-
-    const filteredGroups = useMemo(() => {
-        const q = search.trim().toLowerCase();
-
-        if (q === '') {
-            return permissionGroups;
-        }
-
-        return permissionGroups
-            .map((group) => ({
-                ...group,
-                permissions: group.permissions.filter(
-                    (permission) =>
-                        permission.label.toLowerCase().includes(q) ||
-                        permission.value.toLowerCase().includes(q) ||
-                        group.group.toLowerCase().includes(q),
-                ),
-            }))
-            .filter((group) => group.permissions.length > 0);
-    }, [permissionGroups, search]);
-
     return (
         <>
             <Head title="Permissions" />
@@ -69,54 +31,7 @@ export default function PlatformPermissionsIndex({
                     </Button>
                 </div>
 
-                <DataTableToolbar
-                    search={search}
-                    onSearchChange={setSearch}
-                    searchPlaceholder="Search permissions…"
-                    onClear={() => setSearch('')}
-                />
-
-                {filteredGroups.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">
-                        No permissions match “{search}”.
-                    </p>
-                ) : (
-                    filteredGroups.map((group) => (
-                        <section key={group.group} className="space-y-3">
-                            <h2 className="text-sm font-medium">
-                                {group.group}
-                            </h2>
-                            <div className="rounded-xl border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Permission</TableHead>
-                                            <TableHead>Key</TableHead>
-                                            <TableHead>Roles</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {group.permissions.map((permission) => (
-                                            <TableRow key={permission.value}>
-                                                <TableCell>
-                                                    {permission.label}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline">
-                                                        {permission.value}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {permission.roles_count}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </section>
-                    ))
-                )}
+                <PermissionGroupsTable permissionGroups={permissionGroups} />
             </div>
         </>
     );
