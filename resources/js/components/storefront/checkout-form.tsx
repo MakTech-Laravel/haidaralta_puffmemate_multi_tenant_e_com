@@ -53,8 +53,8 @@ export function CheckoutForm({
     return (
         <div className={cn('flex flex-col gap-4', className)}>
             <Card className="bg-accent gap-4 p-5 shadow-none rounded-none border-none">
-                <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 px-5">
-                    <CardTitle className="text-foreground text-2xl font-extrabold">
+                <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 space-y-0 px-0 sm:gap-3 sm:px-5">
+                    <CardTitle className="text-foreground text-lg font-extrabold sm:text-xl md:text-2xl">
                         1. Your details
                     </CardTitle>
                     <SectionBadge>Required</SectionBadge>
@@ -122,8 +122,8 @@ export function CheckoutForm({
             </Card>
 
             <Card className="bg-accent gap-4 p-5 shadow-none rounded-none border-none">
-                <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 px-5">
-                    <CardTitle className="text-foreground text-2xl font-extrabold">
+                <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 space-y-0 px-0 sm:gap-3 sm:px-5">
+                    <CardTitle className="text-foreground text-lg font-extrabold sm:text-xl md:text-2xl">
                         2. Where should we deliver?
                     </CardTitle>
                     <SectionBadge>Required</SectionBadge>
@@ -150,8 +150,8 @@ export function CheckoutForm({
             </Card>
 
             <Card className="bg-accent gap-4 p-5 shadow-none rounded-none border-none">
-                <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 px-5">
-                    <CardTitle className="text-foreground text-2xl font-extrabold">
+                <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 space-y-0 px-0 sm:gap-3 sm:px-5">
+                    <CardTitle className="text-foreground text-lg font-extrabold sm:text-xl md:text-2xl">
                         3. Delivery method
                     </CardTitle>
                     <SectionBadge>Choose one</SectionBadge>
@@ -286,8 +286,8 @@ export function CheckoutForm({
             </Card>
 
             <Card className="bg-accent gap-4 p-5 shadow-none rounded-none border-none">
-                <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 px-5">
-                    <CardTitle className="text-foreground text-2xl font-extrabold">
+                <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 space-y-0 px-0 sm:gap-3 sm:px-5">
+                    <CardTitle className="text-foreground text-lg font-extrabold sm:text-xl md:text-2xl">
                         5. Payment at delivery
                     </CardTitle>
                     <SectionBadge>No online card entry</SectionBadge>
