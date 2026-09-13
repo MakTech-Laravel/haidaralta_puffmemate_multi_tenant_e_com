@@ -2,6 +2,14 @@ import { Check, Droplets, Layers2, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,7 +20,10 @@ import {
 import {
     CATALOG_COLOR_PRESETS,
     CATALOG_GRADIENT_ANGLES,
+    CATALOG_GRADIENT_QUICK_SELECT,
+    CATALOG_QUICK_SELECT,
     catalogBackgroundStyle,
+    isLightCatalogHex,
     isTransparentCatalogColor,
     normalizeCatalogColorCode,
     type CatalogColorCode,
@@ -59,6 +70,18 @@ const CHECKERBOARD =
 
 function isValidHex(value: string): boolean {
     return /^#[0-9A-F]{6}$/.test(value);
+}
+
+function modeSummary(value: CatalogColorCode): string {
+    if (value.mode === 'transparent') {
+        return 'Transparent';
+    }
+
+    if (value.mode === 'solid') {
+        return `Solid · ${value.color}`;
+    }
+
+    return `Gradient · ${value.angle}°`;
 }
 
 function ColorSwatchPicker({
@@ -126,7 +149,7 @@ function ColorSwatchPicker({
 
                 <PopoverContent
                     align="start"
-                    className="w-[min(100vw-2rem,20rem)] overflow-hidden rounded-2xl border-border/80 p-0 shadow-lg"
+                    className="z-60 w-[min(100vw-2rem,20rem)] overflow-hidden rounded-2xl border-border/80 p-0 shadow-lg"
                 >
                     <div
                         className={cn('relative h-28', CHECKERBOARD)}
@@ -200,7 +223,7 @@ function ColorSwatchPicker({
                                                 setOpen(false);
                                             }}
                                             className={cn(
-                                                'relative aspect-square rounded-lg border border-black/5 shadow-xs transition-transform hover:scale-105',
+                                                'relative aspect-square rounded-lg border border-black/10 shadow-xs transition-transform hover:scale-105',
                                                 selected &&
                                                     'ring-foreground/80 ring-2 ring-offset-2',
                                             )}
@@ -210,25 +233,9 @@ function ColorSwatchPicker({
                                                 <Check
                                                     className={cn(
                                                         'absolute inset-0 m-auto size-3.5 drop-shadow',
-                                                        preset === '#FFFFFF' ||
-                                                            preset ===
-                                                                '#FEF9C3' ||
-                                                            preset ===
-                                                                '#E5E7EB' ||
-                                                            preset ===
-                                                                '#E8F0FE' ||
-                                                            preset ===
-                                                                '#DBEAFE' ||
-                                                            preset ===
-                                                                '#DCFCE7' ||
-                                                            preset ===
-                                                                '#CCFBF1' ||
-                                                            preset ===
-                                                                '#FFEDD5' ||
-                                                            preset ===
-                                                                '#F3E8FF' ||
-                                                            preset ===
-                                                                '#FCE7F3'
+                                                        isLightCatalogHex(
+                                                            preset,
+                                                        )
                                                             ? 'text-foreground'
                                                             : 'text-white',
                                                     )}
@@ -246,6 +253,128 @@ function ColorSwatchPicker({
     );
 }
 
+function SolidQuickSelect({
+    selectedHex,
+    onSelect,
+}: {
+    selectedHex?: string;
+    onSelect: (color: string) => void;
+}) {
+    return (
+        <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                    Solid quick select
+                </span>
+                <span className="text-muted-foreground text-[11px]">
+                    White · gray · black · red
+                </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+                {CATALOG_QUICK_SELECT.map((preset) => {
+                    const selected = selectedHex === preset.color;
+
+                    return (
+                        <button
+                            key={preset.color}
+                            type="button"
+                            title={preset.label}
+                            aria-label={preset.label}
+                            aria-pressed={selected}
+                            onClick={() => onSelect(preset.color)}
+                            className={cn(
+                                'relative size-8 overflow-hidden rounded-full border border-black/10 shadow-xs transition-transform hover:scale-105',
+                                selected &&
+                                    'ring-foreground/80 ring-2 ring-offset-2',
+                            )}
+                            style={{ background: preset.color }}
+                        >
+                            {selected ? (
+                                <Check
+                                    className={cn(
+                                        'absolute inset-0 m-auto size-3.5 drop-shadow',
+                                        isLightCatalogHex(preset.color)
+                                            ? 'text-foreground'
+                                            : 'text-white',
+                                    )}
+                                />
+                            ) : null}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+function GradientQuickSelect({
+    selected,
+    onSelect,
+}: {
+    selected?: { from: string; to: string; angle: number };
+    onSelect: (preset: {
+        from: string;
+        to: string;
+        angle: number;
+    }) => void;
+}) {
+    return (
+        <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                    Gradient quick select
+                </span>
+                <span className="text-muted-foreground text-[11px]">
+                    White · gray · black · red
+                </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {CATALOG_GRADIENT_QUICK_SELECT.map((preset) => {
+                    const isSelected =
+                        selected?.from === preset.from &&
+                        selected?.to === preset.to &&
+                        selected?.angle === preset.angle;
+
+                    return (
+                        <button
+                            key={preset.label}
+                            type="button"
+                            title={preset.label}
+                            aria-label={preset.label}
+                            aria-pressed={isSelected}
+                            onClick={() =>
+                                onSelect({
+                                    from: preset.from,
+                                    to: preset.to,
+                                    angle: preset.angle,
+                                })
+                            }
+                            className={cn(
+                                'group relative overflow-hidden rounded-xl border border-border/70 p-2 text-left shadow-xs transition-all hover:border-border',
+                                isSelected &&
+                                    'ring-foreground/80 border-transparent ring-2 ring-offset-2',
+                            )}
+                        >
+                            <span
+                                className="mb-2 block h-8 rounded-lg border border-black/5"
+                                style={{
+                                    backgroundImage: `linear-gradient(${preset.angle}deg, ${preset.from}, ${preset.to})`,
+                                }}
+                            />
+                            <span className="text-muted-foreground block truncate text-[10px] font-medium">
+                                {preset.label}
+                            </span>
+                            {isSelected ? (
+                                <Check className="text-foreground absolute top-2 right-2 size-3.5 drop-shadow" />
+                            ) : null}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
 export function CatalogBackgroundColorField({
     id = 'color_code',
     value,
@@ -253,220 +382,340 @@ export function CatalogBackgroundColorField({
     error,
     className,
 }: CatalogBackgroundColorFieldProps) {
+    const [open, setOpen] = useState(false);
+    const [draft, setDraft] = useState<CatalogColorCode>(() =>
+        normalizeCatalogColorCode(value),
+    );
+
     const normalized = useMemo(
         () => normalizeCatalogColorCode(value),
         [value],
     );
     const previewStyle = catalogBackgroundStyle(normalized);
     const transparent = isTransparentCatalogColor(normalized);
+    const draftPreviewStyle = catalogBackgroundStyle(draft);
+    const draftTransparent = isTransparentCatalogColor(draft);
+
+    const openDialog = () => {
+        setDraft(normalizeCatalogColorCode(value));
+        setOpen(true);
+    };
+
+    const applyDraft = () => {
+        onChange(normalizeCatalogColorCode(draft));
+        setOpen(false);
+    };
 
     const setMode = (mode: CatalogColorMode) => {
         if (mode === 'transparent') {
-            onChange({ mode: 'transparent' });
+            setDraft({ mode: 'transparent' });
             return;
         }
 
         if (mode === 'solid') {
-            onChange({
+            setDraft({
                 mode: 'solid',
                 color:
-                    normalized.mode === 'solid'
-                        ? normalized.color
-                        : normalized.mode === 'gradient'
-                          ? normalized.from
+                    draft.mode === 'solid'
+                        ? draft.color
+                        : draft.mode === 'gradient'
+                          ? draft.from
                           : '#E5E7EB',
             });
             return;
         }
 
-        onChange({
+        setDraft({
             mode: 'gradient',
             from:
-                normalized.mode === 'gradient'
-                    ? normalized.from
-                    : normalized.mode === 'solid'
-                      ? normalized.color
+                draft.mode === 'gradient'
+                    ? draft.from
+                    : draft.mode === 'solid'
+                      ? draft.color
                       : '#E5E7EB',
-            to: normalized.mode === 'gradient' ? normalized.to : '#FFFFFF',
-            angle: normalized.mode === 'gradient' ? normalized.angle : 135,
+            to: draft.mode === 'gradient' ? draft.to : '#FFFFFF',
+            angle: draft.mode === 'gradient' ? draft.angle : 135,
+        });
+    };
+
+    const applyQuickSolid = (color: string) => {
+        setDraft({ mode: 'solid', color });
+    };
+
+    const applyQuickGradient = (preset: {
+        from: string;
+        to: string;
+        angle: number;
+    }) => {
+        setDraft({
+            mode: 'gradient',
+            from: preset.from,
+            to: preset.to,
+            angle: preset.angle,
         });
     };
 
     return (
-        <div
-            className={cn(
-                'border-border/80 bg-card/60 overflow-hidden rounded-2xl border shadow-sm',
-                className,
-            )}
-        >
-            <div className="border-border/60 flex items-start justify-between gap-3 border-b px-4 py-3.5">
-                <div className="space-y-0.5">
-                    <Label htmlFor={id} className="text-sm font-semibold">
-                        Image background
-                    </Label>
-                    <p className="text-muted-foreground text-xs">
-                        Soft fill behind product and category imagery
-                    </p>
+        <div className={cn('space-y-2', className)}>
+            <div className="border-border/80 bg-card/60 overflow-hidden rounded-2xl border shadow-sm">
+                <div className="border-border/60 flex items-start justify-between gap-3 border-b px-4 py-3.5">
+                    <div className="space-y-0.5">
+                        <Label htmlFor={id} className="text-sm font-semibold">
+                            Image background
+                        </Label>
+                        <p className="text-muted-foreground text-xs">
+                            Soft fill behind product and category imagery
+                        </p>
+                    </div>
+                    <Button
+                        id={id}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 rounded-lg"
+                        onClick={openDialog}
+                    >
+                        Customize
+                    </Button>
+                </div>
+
+                <div className="flex items-center gap-3 p-4">
+                    <div
+                        className={cn(
+                            'relative size-14 shrink-0 overflow-hidden rounded-xl border border-border/70 shadow-inner',
+                            transparent ? CHECKERBOARD : null,
+                        )}
+                        style={transparent ? undefined : previewStyle}
+                        aria-hidden
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                            {modeSummary(normalized)}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                            Open the studio to change mode, palette, or
+                            gradient.
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <div className="space-y-5 p-4">
-                <div
-                    className={cn(
-                        'relative overflow-hidden rounded-2xl border border-border/70 shadow-inner',
-                        transparent ? CHECKERBOARD : null,
-                    )}
-                    style={transparent ? undefined : previewStyle}
-                >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/5" />
-                    <div className="relative flex aspect-[16/9] items-center justify-center p-6 sm:aspect-[2/1]">
-                        <div className="border-border/50 bg-background/80 flex size-20 items-center justify-center rounded-2xl border border-dashed shadow-sm backdrop-blur-md sm:size-24">
-                            <div className="bg-muted/80 size-10 rounded-xl sm:size-12" />
-                        </div>
-                    </div>
-                    <div className="absolute right-3 bottom-3 rounded-full border border-border/60 bg-background/85 px-2.5 py-1 text-[11px] font-medium tracking-wide shadow-xs backdrop-blur-sm">
-                        {normalized.mode === 'transparent'
-                            ? 'Transparent'
-                            : normalized.mode === 'solid'
-                              ? 'Solid fill'
-                              : `${normalized.angle}° gradient`}
-                    </div>
-                </div>
+            <InputError message={error} />
 
-                <div
-                    id={id}
-                    role="radiogroup"
-                    aria-label="Background mode"
-                    className="grid grid-cols-3 gap-2"
-                >
-                    {MODE_OPTIONS.map((option) => {
-                        const Icon = option.icon;
-                        const active = normalized.mode === option.value;
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="max-h-[min(92vh,760px)] gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-xl">
+                    <DialogHeader className="border-border/60 space-y-1 border-b px-5 py-4 text-left">
+                        <DialogTitle>Image background</DialogTitle>
+                        <DialogDescription>
+                            Choose none, a solid fill, or a two-tone gradient
+                            for catalog imagery.
+                        </DialogDescription>
+                    </DialogHeader>
 
-                        return (
-                            <button
-                                key={option.value}
-                                type="button"
-                                role="radio"
-                                aria-checked={active}
-                                onClick={() => setMode(option.value)}
-                                className={cn(
-                                    'rounded-xl border px-2.5 py-3 text-left transition-all',
-                                    active
-                                        ? 'border-foreground/15 bg-foreground text-background shadow-sm'
-                                        : 'border-border/70 bg-background/80 text-foreground hover:border-border hover:bg-muted/40',
-                                )}
-                            >
-                                <Icon
-                                    className={cn(
-                                        'mb-2 size-4',
-                                        active
-                                            ? 'opacity-90'
-                                            : 'text-muted-foreground',
-                                    )}
-                                />
-                                <span className="block text-xs font-semibold">
-                                    {option.label}
-                                </span>
-                                <span
-                                    className={cn(
-                                        'mt-0.5 block text-[10px] leading-snug',
-                                        active
-                                            ? 'text-background/70'
-                                            : 'text-muted-foreground',
-                                    )}
-                                >
-                                    {option.description}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {normalized.mode === 'solid' ? (
-                    <ColorSwatchPicker
-                        label="Fill"
-                        value={normalized.color}
-                        onChange={(color) => onChange({ mode: 'solid', color })}
-                    />
-                ) : null}
-
-                {normalized.mode === 'gradient' ? (
-                    <div className="space-y-4">
+                    <div className="max-h-[min(70vh,560px)] space-y-5 overflow-y-auto px-5 py-4">
                         <div
-                            className="h-3 overflow-hidden rounded-full border border-border/60 shadow-inner"
-                            style={{
-                                backgroundImage: `linear-gradient(${normalized.angle}deg, ${normalized.from}, ${normalized.to})`,
-                            }}
-                        />
-
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <ColorSwatchPicker
-                                label="Start"
-                                value={normalized.from}
-                                onChange={(from) =>
-                                    onChange({ ...normalized, from })
-                                }
-                            />
-                            <ColorSwatchPicker
-                                label="End"
-                                value={normalized.to}
-                                onChange={(to) =>
-                                    onChange({ ...normalized, to })
-                                }
-                            />
+                            className={cn(
+                                'relative overflow-hidden rounded-2xl border border-border/70 shadow-inner',
+                                draftTransparent ? CHECKERBOARD : null,
+                            )}
+                            style={
+                                draftTransparent ? undefined : draftPreviewStyle
+                            }
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/5" />
+                            <div className="relative flex aspect-[16/9] items-center justify-center p-6 sm:aspect-[2/1]">
+                                <div className="border-border/50 bg-background/80 flex size-20 items-center justify-center rounded-2xl border border-dashed shadow-sm backdrop-blur-md sm:size-24">
+                                    <div className="bg-muted/80 size-10 rounded-xl sm:size-12" />
+                                </div>
+                            </div>
+                            <div className="absolute right-3 bottom-3 rounded-full border border-border/60 bg-background/85 px-2.5 py-1 text-[11px] font-medium tracking-wide shadow-xs backdrop-blur-sm">
+                                {modeSummary(draft)}
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                                    Direction
-                                </span>
-                                <span className="text-muted-foreground font-mono text-[11px]">
-                                    {normalized.angle}°
-                                </span>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                                {CATALOG_GRADIENT_ANGLES.map((angle) => {
-                                    const active = normalized.angle === angle;
+                        <div
+                            role="radiogroup"
+                            aria-label="Background mode"
+                            className="grid grid-cols-3 gap-2"
+                        >
+                            {MODE_OPTIONS.map((option) => {
+                                const Icon = option.icon;
+                                const active = draft.mode === option.value;
 
-                                    return (
-                                        <Button
-                                            key={angle}
-                                            type="button"
-                                            size="sm"
-                                            variant={
-                                                active ? 'default' : 'outline'
-                                            }
+                                return (
+                                    <button
+                                        key={option.value}
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={active}
+                                        onClick={() => setMode(option.value)}
+                                        className={cn(
+                                            'rounded-xl border px-2.5 py-3 text-left transition-all',
+                                            active
+                                                ? 'border-foreground/15 bg-foreground text-background shadow-sm'
+                                                : 'border-border/70 bg-background/80 text-foreground hover:border-border hover:bg-muted/40',
+                                        )}
+                                    >
+                                        <Icon
                                             className={cn(
-                                                'h-8 min-w-12 rounded-lg px-2.5 font-mono text-xs',
-                                                !active && 'bg-background',
+                                                'mb-2 size-4',
+                                                active
+                                                    ? 'opacity-90'
+                                                    : 'text-muted-foreground',
                                             )}
-                                            onClick={() =>
-                                                onChange({
-                                                    ...normalized,
-                                                    angle,
-                                                })
-                                            }
+                                        />
+                                        <span className="block text-xs font-semibold">
+                                            {option.label}
+                                        </span>
+                                        <span
+                                            className={cn(
+                                                'mt-0.5 block text-[10px] leading-snug',
+                                                active
+                                                    ? 'text-background/70'
+                                                    : 'text-muted-foreground',
+                                            )}
                                         >
-                                            {angle}°
-                                        </Button>
-                                    );
-                                })}
-                            </div>
+                                            {option.description}
+                                        </span>
+                                    </button>
+                                );
+                            })}
                         </div>
+
+                        {draft.mode === 'solid' ? (
+                            <SolidQuickSelect
+                                selectedHex={draft.color}
+                                onSelect={applyQuickSolid}
+                            />
+                        ) : null}
+
+                        {draft.mode === 'gradient' ? (
+                            <GradientQuickSelect
+                                selected={{
+                                    from: draft.from,
+                                    to: draft.to,
+                                    angle: draft.angle,
+                                }}
+                                onSelect={applyQuickGradient}
+                            />
+                        ) : null}
+
+                        {draft.mode === 'solid' ? (
+                            <ColorSwatchPicker
+                                label="Fill"
+                                value={draft.color}
+                                onChange={(color) =>
+                                    setDraft({ mode: 'solid', color })
+                                }
+                            />
+                        ) : null}
+
+                        {draft.mode === 'gradient' ? (
+                            <div className="space-y-4">
+                                <div
+                                    className="h-3 overflow-hidden rounded-full border border-border/60 shadow-inner"
+                                    style={{
+                                        backgroundImage: `linear-gradient(${draft.angle}deg, ${draft.from}, ${draft.to})`,
+                                    }}
+                                />
+
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <ColorSwatchPicker
+                                        label="Start"
+                                        value={draft.from}
+                                        onChange={(from) =>
+                                            setDraft({ ...draft, from })
+                                        }
+                                    />
+                                    <ColorSwatchPicker
+                                        label="End"
+                                        value={draft.to}
+                                        onChange={(to) =>
+                                            setDraft({ ...draft, to })
+                                        }
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                                            Direction
+                                        </span>
+                                        <span className="text-muted-foreground font-mono text-[11px]">
+                                            {draft.angle}°
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {CATALOG_GRADIENT_ANGLES.map(
+                                            (angle) => {
+                                                const active =
+                                                    draft.angle === angle;
+
+                                                return (
+                                                    <Button
+                                                        key={angle}
+                                                        type="button"
+                                                        size="sm"
+                                                        variant={
+                                                            active
+                                                                ? 'default'
+                                                                : 'outline'
+                                                        }
+                                                        className={cn(
+                                                            'h-8 min-w-12 rounded-lg px-2.5 font-mono text-xs',
+                                                            !active &&
+                                                                'bg-background',
+                                                        )}
+                                                        onClick={() =>
+                                                            setDraft({
+                                                                ...draft,
+                                                                angle,
+                                                            })
+                                                        }
+                                                    >
+                                                        {angle}°
+                                                    </Button>
+                                                );
+                                            },
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {draft.mode === 'transparent' ? (
+                            <p className="text-muted-foreground rounded-xl border border-dashed border-border/70 bg-muted/20 px-3 py-2.5 text-xs leading-relaxed">
+                                No custom fill — listings keep the default muted
+                                surface behind images.
+                            </p>
+                        ) : null}
                     </div>
-                ) : null}
 
-                {normalized.mode === 'transparent' ? (
-                    <p className="text-muted-foreground rounded-xl border border-dashed border-border/70 bg-muted/20 px-3 py-2.5 text-xs leading-relaxed">
-                        No custom fill — listings keep the default muted
-                        surface behind images.
-                    </p>
-                ) : null}
-
-                <InputError message={error} />
-            </div>
+                    <DialogFooter className="border-border/60 border-t px-5 py-4 sm:justify-between">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => setDraft({ mode: 'transparent' })}
+                        >
+                            Reset
+                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="button" onClick={applyDraft}>
+                                Apply
+                            </Button>
+                        </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

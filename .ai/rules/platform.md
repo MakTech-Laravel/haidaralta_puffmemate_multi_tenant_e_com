@@ -16,4 +16,4 @@ ProductForm categories field is multi-select Popover+Command combobox posting ca
 Selected categories render as wrapping secondary Badge chips (keyword style) on the combobox trigger — never a count summary like “N categories selected”.
 
 ## Premium catalog color studio UI
-CatalogBackgroundColorField is a card studio: large preview canvas, segmented mode cards (None/Solid/Gradient), swatch rows that open a polished popover (hero swatch + hex + palette), gradient bar + angle chips. Keep this premium layout; do not regress to plain Select + tiny swatch.
+CatalogBackgroundColorField shows a compact summary card + Customize button. Full studio opens in a Dialog (preview, mode cards, mode-specific quick select, swatch popovers). Solid mode: solid white/gray/black/red chips. Gradient mode: gradient pair presets (from+to+angle), never solid-only start chips. Apply commits draft; Cancel discards.
