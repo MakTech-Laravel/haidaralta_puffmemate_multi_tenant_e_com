@@ -38,11 +38,11 @@ class UserSeeder extends Seeder
     public const CUSTOMER_PHONE = '+61499999999';
 
     /** @deprecated Prefer *_PHONE constants for login. Kept for display/email lookups. */
-    public const PLATFORM_SUPER_ADMIN = 'ava.mitchell@puffonmate.dev';
+    public const PLATFORM_SUPER_ADMIN = 'ava.mitchell@puffmemate.dev';
 
-    public const PLATFORM_ADMIN = 'noah.patel@puffonmate.dev';
+    public const PLATFORM_ADMIN = 'noah.patel@puffmemate.dev';
 
-    public const PLATFORM_MANAGER = 'mia.reynolds@puffonmate.dev';
+    public const PLATFORM_MANAGER = 'mia.reynolds@puffmemate.dev';
 
     public const BRANCH_1_SUPER_ADMIN = 'alex.chen@sydney-cbd.dev';
 
@@ -60,7 +60,7 @@ class UserSeeder extends Seeder
 
     public const BRANCH_2_STAFF = 'liam.brooks@melbourne-collins.dev';
 
-    public const DRIVER = 'daniel.foster@puffonmate.dev';
+    public const DRIVER = 'daniel.foster@puffmemate.dev';
 
     public const CUSTOMER = 'emma.walker@example.com';
 

@@ -1,4 +1,11 @@
 import { Head, Link } from '@inertiajs/react';
+import {
+    Clock,
+    Mail,
+    MapPin,
+    Phone,
+    Users,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
@@ -16,6 +23,7 @@ import {
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { usePermission } from '@/hooks/use-permissions';
+import { cn } from '@/lib/utils';
 
 type SuperAdmin = {
     id: number;
@@ -48,76 +56,128 @@ type Branch = {
 function DetailItem({
     label,
     value,
+    icon,
 }: {
     label: string;
     value: ReactNode;
+    icon?: ReactNode;
 }) {
     return (
-        <div className="flex flex-col gap-1">
-            <dt className="text-muted-foreground text-sm">{label}</dt>
-            <dd className="text-sm font-medium">{value}</dd>
+        <div className="flex gap-3">
+            {icon ? (
+                <div className="bg-muted text-muted-foreground mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg">
+                    {icon}
+                </div>
+            ) : null}
+            <div className="flex min-w-0 flex-col gap-1">
+                <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                    {label}
+                </dt>
+                <dd className="text-sm font-medium wrap-break-word">{value}</dd>
+            </div>
         </div>
     );
 }
 
+function formatCoord(value: string | number | null): string | null {
+    if (value === null || value === '') {
+        return null;
+    }
+
+    const numeric = typeof value === 'number' ? value : Number(value);
+
+    if (Number.isFinite(numeric)) {
+        return numeric.toFixed(7);
+    }
+
+    return String(value);
+}
+
 export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
     const { can } = usePermission();
+    const latitude = formatCoord(branch.latitude);
+    const longitude = formatCoord(branch.longitude);
+    const hasPin = latitude !== null && longitude !== null;
+    const hours =
+        branch.opening_time || branch.closing_time
+            ? `${branch.opening_time ?? '—'} – ${branch.closing_time ?? '—'}`
+            : null;
 
     return (
         <>
             <Head title={branch.name} />
 
-            <div className="flex flex-col gap-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                        <Avatar className="size-14 rounded-xl">
+                    <div className="flex min-w-0 items-start gap-4">
+                        <Avatar className="size-16 rounded-2xl border shadow-sm">
                             {branch.logo_url ? (
                                 <AvatarImage
                                     src={branch.logo_url}
                                     alt={branch.name}
+                                    className="object-cover"
                                 />
                             ) : null}
-                            <AvatarFallback className="rounded-xl text-base">
+                            <AvatarFallback className="rounded-2xl text-base font-semibold">
                                 {branch.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col gap-2">
+                        <div className="flex min-w-0 flex-col gap-2">
                             <Heading
                                 title={branch.name}
-                                description={`/${branch.slug} · ${branch.code}`}
+                                description={`/${branch.slug}`}
                             />
-                            <Badge
-                                variant={
-                                    branch.status ? 'default' : 'secondary'
-                                }
-                            >
-                                {branch.status ? 'Active' : 'Inactive'}
-                            </Badge>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Badge
+                                    variant={
+                                        branch.status ? 'default' : 'secondary'
+                                    }
+                                >
+                                    {branch.status ? 'Active' : 'Inactive'}
+                                </Badge>
+                                <Badge variant="outline">{branch.code}</Badge>
+                                <Badge variant="outline" className="gap-1">
+                                    <Users className="size-3" />
+                                    {branch.users_count} staff
+                                </Badge>
+                            </div>
                         </div>
                     </div>
+
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="default" asChild>
+                        <Button variant="secondary" asChild>
                             <Link href={BranchController.index.url()}>
                                 Back
                             </Link>
                         </Button>
+                        {can('edit-branches') ? (
+                            <Button asChild>
+                                <Link
+                                    href={BranchController.edit.url(
+                                        branch.slug,
+                                    )}
+                                >
+                                    Edit
+                                </Link>
+                            </Button>
+                        ) : null}
                         {can('manage-branch-users') ? (
-                            <Button variant="default" asChild>
+                            <Button variant="outline" asChild>
                                 <Link
                                     href={BranchScopedStaffController.index.url(
                                         branch.slug,
                                     )}
                                 >
-                                    Staff management
+                                    Staff
                                 </Link>
                             </Button>
                         ) : null}
                         {can('manage-branch-inventories') ? (
-                            <Button variant="default" asChild>
+                            <Button variant="outline" asChild>
                                 <Link
                                     href={`/platform/branches/${branch.slug}/products`}
                                 >
-                                    Product management
+                                    Products
                                 </Link>
                             </Button>
                         ) : null}
@@ -135,12 +195,12 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                 ) : null}
 
                 {branch.needs_super_admin ? (
-                    <Alert>
-                        <AlertTitle>Super-admin missing</AlertTitle>
+                    <Alert variant="destructive">
+                        <AlertTitle>Branch admin required</AlertTitle>
                         <AlertDescription className="flex flex-col gap-3">
                             <p>
-                                This branch has no super-admin yet. Add one to
-                                finish setup.
+                                This branch cannot be managed until a branch
+                                admin exists. Create one now to finish setup.
                             </p>
                             {can('create-branches') ? (
                                 <Button size="sm" className="w-fit" asChild>
@@ -149,7 +209,7 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                                             branch.slug,
                                         )}
                                     >
-                                        Add super-admin
+                                        Add branch admin
                                     </Link>
                                 </Button>
                             ) : null}
@@ -157,58 +217,106 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                     </Alert>
                 ) : null}
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Details</CardTitle>
-                        <CardDescription>
-                            Contact, hours, and location for this branch
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <dl className="grid gap-5 sm:grid-cols-2">
-                            <DetailItem label="Code" value={branch.code} />
-                            <DetailItem
-                                label="Staff"
-                                value={branch.users_count}
-                            />
-                            <DetailItem
-                                label="Phone"
-                                value={branch.phone ?? '—'}
-                            />
-                            <DetailItem
-                                label="Email"
-                                value={branch.email ?? '—'}
-                            />
+                <div className="grid items-start gap-4 xl:grid-cols-2">
+                    <Card className="shadow-sm">
+                        <CardHeader>
+                            <CardTitle>Contact</CardTitle>
+                            <CardDescription>
+                                How customers and staff reach this location
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <dl className="grid gap-5">
+                                <DetailItem
+                                    label="Phone"
+                                    icon={<Phone className="size-4" />}
+                                    value={branch.phone ?? '—'}
+                                />
+                                <DetailItem
+                                    label="Email"
+                                    icon={<Mail className="size-4" />}
+                                    value={branch.email ?? '—'}
+                                />
+                                <DetailItem
+                                    label="Hours"
+                                    icon={<Clock className="size-4" />}
+                                    value={hours ?? '—'}
+                                />
+                            </dl>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm">
+                        <CardHeader>
+                            <CardTitle>Map location</CardTitle>
+                            <CardDescription>
+                                Address and coordinates for this branch
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-5">
                             <DetailItem
                                 label="Address"
+                                icon={<MapPin className="size-4" />}
                                 value={branch.address ?? '—'}
                             />
-                            <DetailItem
-                                label="Hours"
-                                value={
-                                    branch.opening_time || branch.closing_time
-                                        ? `${branch.opening_time ?? '—'} – ${branch.closing_time ?? '—'}`
-                                        : '—'
-                                }
-                            />
-                            <DetailItem
-                                label="Latitude"
-                                value={branch.latitude ?? '—'}
-                            />
-                            <DetailItem
-                                label="Longitude"
-                                value={branch.longitude ?? '—'}
-                            />
-                        </dl>
-                    </CardContent>
-                </Card>
 
-                <Card>
-                    <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-col gap-1.5">
-                            <CardTitle>Super-admins</CardTitle>
+                            <div
+                                className={cn(
+                                    'border-border/70 bg-muted/30 flex min-h-36 flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-8 text-center',
+                                )}
+                            >
+                                <MapPin
+                                    className="text-muted-foreground size-7 opacity-70"
+                                    aria-hidden
+                                />
+                                {hasPin ? (
+                                    <>
+                                        <p className="text-sm font-medium">
+                                            Pin set
+                                        </p>
+                                        <p className="text-muted-foreground text-xs tabular-nums">
+                                            {latitude}, {longitude}
+                                        </p>
+                                        <p className="text-muted-foreground max-w-xs text-xs">
+                                            A live map preview will appear here
+                                            when Mapbox or Google Maps is
+                                            connected.
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-sm font-medium">
+                                            No pin yet
+                                        </p>
+                                        <p className="text-muted-foreground max-w-xs text-xs">
+                                            Add coordinates from Edit → Map
+                                            location when you are ready.
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+
+                            <dl className="grid gap-4 sm:grid-cols-2">
+                                <DetailItem
+                                    label="Latitude"
+                                    value={latitude ?? '—'}
+                                />
+                                <DetailItem
+                                    label="Longitude"
+                                    value={longitude ?? '—'}
+                                />
+                            </dl>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <Card className="shadow-sm">
+                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-1.5">
+                            <CardTitle>Branch admins</CardTitle>
                             <CardDescription>
-                                Portal admins for this branch
+                                People who can sign in and manage this branch
+                                portal
                             </CardDescription>
                         </div>
                         {branch.needs_super_admin && can('create-branches') ? (
@@ -218,7 +326,17 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                                         branch.slug,
                                     )}
                                 >
-                                    Add super-admin
+                                    Add branch admin
+                                </Link>
+                            </Button>
+                        ) : can('manage-branch-users') ? (
+                            <Button size="sm" variant="outline" asChild>
+                                <Link
+                                    href={BranchScopedStaffController.index.url(
+                                        branch.slug,
+                                    )}
+                                >
+                                    Manage staff
                                 </Link>
                             </Button>
                         ) : null}
@@ -226,26 +344,35 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                     <CardContent>
                         {branch.super_admins.length === 0 ? (
                             <p className="text-muted-foreground text-sm">
-                                No super-admins found for this branch.
+                                No branch admins yet.
                             </p>
                         ) : (
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col">
                                 {branch.super_admins.map((admin, index) => (
                                     <div key={admin.id}>
                                         {index > 0 ? (
-                                            <Separator className="mb-3" />
+                                            <Separator className="my-4" />
                                         ) : null}
-                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                            <div className="flex flex-col gap-0.5">
-                                                <p className="text-sm font-medium">
-                                                    {admin.name}
-                                                </p>
-                                                <p className="text-muted-foreground text-sm">
-                                                    {admin.phone}
-                                                    {admin.email
-                                                        ? ` · ${admin.email}`
-                                                        : null}
-                                                </p>
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                <Avatar className="size-10">
+                                                    <AvatarFallback>
+                                                        {admin.name
+                                                            .slice(0, 2)
+                                                            .toUpperCase()}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-medium">
+                                                        {admin.name}
+                                                    </p>
+                                                    <p className="text-muted-foreground truncate text-sm">
+                                                        {admin.phone}
+                                                        {admin.email
+                                                            ? ` · ${admin.email}`
+                                                            : null}
+                                                    </p>
+                                                </div>
                                             </div>
                                             <Badge
                                                 variant={

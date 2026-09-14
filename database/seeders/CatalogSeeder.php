@@ -320,10 +320,10 @@ class CatalogSeeder extends Seeder
         ]);
 
         $this->product([$vapes], $creator, [
-            'name' => 'PuffOnMate Pulse 5000',
-            'slug' => 'puffonmate-pulse-5000',
+            'name' => 'PuffMeMate Pulse 5000',
+            'slug' => 'puffmemate-pulse-5000',
             'sku' => 'POM-PULSE-5000',
-            'brand' => 'PuffOnMate',
+            'brand' => 'PuffMeMate',
             'tags' => ['new_arrival', 'popular'],
             'specifications' => [
                 ['label' => 'Pack Format', 'value' => 'Disposable'],
@@ -342,8 +342,8 @@ class CatalogSeeder extends Seeder
         ]);
 
         $this->product([$vapes], $creator, [
-            'name' => 'PuffOnMate Mini Bar 1200',
-            'slug' => 'puffonmate-mini-bar-1200',
+            'name' => 'PuffMeMate Mini Bar 1200',
+            'slug' => 'puffmemate-mini-bar-1200',
             'sku' => 'POM-MINI-1200',
             'description' => 'Compact disposable bar with ~1200 puffs. Pocket-friendly starter option for adult nicotine consumers.',
             'image_url' => 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80',
@@ -355,8 +355,8 @@ class CatalogSeeder extends Seeder
         ]);
 
         $this->product([$vapes], $creator, [
-            'name' => 'PuffOnMate Core Kit',
-            'slug' => 'puffonmate-core-kit',
+            'name' => 'PuffMeMate Core Kit',
+            'slug' => 'puffmemate-core-kit',
             'sku' => 'POM-CORE-KIT',
             'description' => 'Closed-pod starter kit with 1000mAh battery, draw activation, and magnetic pod connection. Includes USB-C cable.',
             'image_url' => 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80',
@@ -368,8 +368,8 @@ class CatalogSeeder extends Seeder
         ]);
 
         $this->product([$vapes], $creator, [
-            'name' => 'PuffOnMate Air Pro',
-            'slug' => 'puffonmate-air-pro',
+            'name' => 'PuffMeMate Air Pro',
+            'slug' => 'puffmemate-air-pro',
             'sku' => 'POM-AIR-PRO',
             'description' => 'Slim open-pod system with adjustable airflow and 2ml refillable cartridge for customers who prefer mixing their own liquids.',
             'image_url' => 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
@@ -463,7 +463,7 @@ class CatalogSeeder extends Seeder
             'name' => 'Core Closed Pods (2-pack)',
             'slug' => 'core-closed-pods-2-pack',
             'sku' => 'POM-CORE-POD-2PK',
-            'description' => 'Replacement closed pods for the PuffOnMate Core Kit. Mesh coil, 2ml capacity, sold as a twin pack.',
+            'description' => 'Replacement closed pods for the PuffMeMate Core Kit. Mesh coil, 2ml capacity, sold as a twin pack.',
             'image_url' => 'https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&w=800&q=80',
             'variants' => [
                 ['name' => 'Iced Mango', 'sku' => 'POM-CORE-POD-MANGO', 'attributes' => ['flavor' => 'Iced Mango', 'resistance' => '1.0Ω']],
@@ -511,7 +511,7 @@ class CatalogSeeder extends Seeder
             'name' => 'USB-C Charge Cable 1m',
             'slug' => 'usb-c-charge-cable-1m',
             'sku' => 'ACC-USBC-1M',
-            'description' => '1 metre USB-C charging cable compatible with PuffOnMate rechargeable disposables, Core Kit, Air Pro, and IQOS pocket chargers.',
+            'description' => '1 metre USB-C charging cable compatible with PuffMeMate rechargeable disposables, Core Kit, Air Pro, and IQOS pocket chargers.',
             'image_url' => 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=800&q=80',
             'variants' => [],
         ]);
@@ -723,7 +723,7 @@ class CatalogSeeder extends Seeder
 
         try {
             $response = Http::timeout(20)
-                ->withHeaders(['User-Agent' => 'PuffOnMateCatalogSeeder/1.0'])
+                ->withHeaders(['User-Agent' => 'PuffMeMateCatalogSeeder/1.0'])
                 ->get($url);
 
             if (! $response->successful()) {

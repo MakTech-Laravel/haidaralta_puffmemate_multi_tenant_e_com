@@ -20,27 +20,44 @@ beforeEach(function () {
     $this->seed(UserSeeder::class);
 });
 
-test('platform super admin can create a branch then add super admin in step two', function () {
+/**
+ * @return array<string, mixed>
+ */
+function branchCreatePayload(array $overrides = []): array
+{
+    return [
+        'name' => 'Midtown',
+        'slug' => 'midtown',
+        'code' => 'MID-001',
+        'phone' => '0298765432',
+        'email' => 'midtown@test.com',
+        'address' => '789 Center St',
+        'opening_time' => '09:00',
+        'closing_time' => '21:00',
+        'status' => true,
+        'super_admin' => [
+            'name' => 'Midtown Super Admin',
+            'phone' => '0412000099',
+            'email' => 'midtown.superadmin@test.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ],
+        ...$overrides,
+    ];
+}
+
+test('platform super admin can create a branch with its first super admin atomically', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $logo = UploadedFile::fake()->image('midtown.png', 120, 120);
 
     $this->actingAs($admin, 'platform')
-        ->post(route('platform.branches.store'), [
-            'name' => 'Midtown',
-            'slug' => 'midtown',
-            'code' => 'MID-001',
+        ->post(route('platform.branches.store'), branchCreatePayload([
             'logo' => $logo,
-            'phone' => '0298765432',
-            'email' => 'midtown@test.com',
-            'address' => '789 Center St',
-            'opening_time' => '09:00',
-            'closing_time' => '21:00',
-            'status' => true,
-        ])
-        ->assertRedirect(route('platform.branches.super-admin.create', 'midtown'))
+        ]))
+        ->assertRedirect(route('platform.branches.show', 'midtown'))
         ->assertInertiaFlash('toast', [
             'type' => 'success',
-            'message' => 'Branch created. Add a super-admin to finish setup.',
+            'message' => 'Branch created with super-admin.',
         ]);
 
     $branch = Branch::query()->where('slug', 'midtown')->firstOrFail();
@@ -52,27 +69,6 @@ test('platform super admin can create a branch then add super admin in step two'
         ->and($branch->logo)->not->toBeNull();
 
     Storage::disk('public')->assertExists($branch->logo);
-
-    $this->actingAs($admin, 'platform')
-        ->get(route('platform.branches.super-admin.create', 'midtown'))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('platform/branches/create-super-admin')
-            ->where('branch.slug', 'midtown'));
-
-    $this->actingAs($admin, 'platform')
-        ->post(route('platform.branches.super-admin.store', 'midtown'), [
-            'name' => 'Midtown Super Admin',
-            'phone' => '0412000099',
-            'email' => 'midtown.superadmin@test.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ])
-        ->assertRedirect(route('platform.branches.show', 'midtown'))
-        ->assertInertiaFlash('toast', [
-            'type' => 'success',
-            'message' => 'Branch super-admin created.',
-        ]);
 
     $superAdmin = User::query()->where('phone', '+61412000099')->firstOrFail();
 
@@ -96,6 +92,94 @@ test('platform super admin can create a branch then add super admin in step two'
             ->where('branch.super_admins.0.phone', '+61412000099'));
 });
 
+test('creating a branch without a super admin payload is rejected and creates no branch', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $before = Branch::query()->count();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.store'), [
+            'name' => 'No Admin',
+            'slug' => 'no-admin',
+            'code' => 'NOA-001',
+            'status' => true,
+        ])
+        ->assertSessionHasErrors(['super_admin']);
+
+    expect(Branch::query()->count())->toBe($before)
+        ->and(Branch::query()->where('slug', 'no-admin')->exists())->toBeFalse();
+});
+
+test('invalid super admin payload rolls back and creates no branch', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $before = Branch::query()->count();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.store'), branchCreatePayload([
+            'slug' => 'rollback-branch',
+            'code' => 'ROL-001',
+            'super_admin' => [
+                'name' => 'Bad Admin',
+                'phone' => 'not-a-phone',
+                'email' => 'bad.admin@test.com',
+                'password' => 'password',
+                'password_confirmation' => 'password',
+            ],
+        ]))
+        ->assertSessionHasErrors(['super_admin.phone']);
+
+    expect(Branch::query()->count())->toBe($before)
+        ->and(Branch::query()->where('slug', 'rollback-branch')->exists())->toBeFalse()
+        ->and(User::query()->where('email', 'bad.admin@test.com')->exists())->toBeFalse();
+});
+
+test('recovery can add a super admin when a branch has none', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $branch = Branch::factory()->create([
+        'name' => 'Orphan Store',
+        'slug' => 'orphan-store',
+        'code' => 'ORN-001',
+        'status' => true,
+    ]);
+
+    (new RolesAndPermissionsSeeder)->seedBranchRolesForBranch($branch);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.show', $branch))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('branch.needs_super_admin', true));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.super-admin.create', $branch))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/create-super-admin')
+            ->where('branch.slug', 'orphan-store'));
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.super-admin.store', $branch), [
+            'name' => 'Orphan Super Admin',
+            'phone' => '0412000088',
+            'email' => 'orphan.superadmin@test.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])
+        ->assertRedirect(route('platform.branches.show', 'orphan-store'))
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Branch super-admin created.',
+        ]);
+
+    $superAdmin = User::query()->where('phone', '+61412000088')->firstOrFail();
+
+    expect($superAdmin->branch_id)->toBe($branch->id);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
+    expect($superAdmin->hasRole(RoleEnum::SUPER_ADMIN->value))->toBeTrue();
+    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+});
+
 test('cannot create a second branch super admin', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -116,6 +200,7 @@ test('cannot create a second branch super admin', function () {
 
     expect(User::query()->where('phone', '+61412000098')->exists())->toBeFalse();
 });
+
 test('platform staff without create branches cannot create a branch', function () {
     $user = User::factory()->create([
         'user_type' => UserType::PLATFORM,
@@ -126,11 +211,11 @@ test('platform staff without create branches cannot create a branch', function (
     $user->assignRole(RoleEnum::STAFF->value);
 
     $this->actingAs($user, 'platform')
-        ->post(route('platform.branches.store'), [
+        ->post(route('platform.branches.store'), branchCreatePayload([
             'name' => 'Blocked',
             'slug' => 'blocked',
             'code' => 'BLK-001',
-        ])
+        ]))
         ->assertForbidden();
 });
 
@@ -188,13 +273,13 @@ test('invalid branch contact phone is rejected', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
-        ->post(route('platform.branches.store'), [
+        ->post(route('platform.branches.store'), branchCreatePayload([
             'name' => 'Bad Phone',
             'slug' => 'bad-phone',
             'code' => 'BAD-001',
             'phone' => 'not-a-phone',
             'status' => true,
-        ])
+        ]))
         ->assertSessionHasErrors('phone');
 });
 
