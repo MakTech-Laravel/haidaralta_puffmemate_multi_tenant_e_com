@@ -12,15 +12,15 @@ export default function PlatformBranchesCreate() {
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Add branch"
-                    description="Create the branch and its first portal super-admin together"
+                    description="Set up the location and the first person who will manage it"
                 />
 
                 <Alert>
-                    <AlertTitle>Complete setup in one step</AlertTitle>
+                    <AlertTitle>One form, ready to go</AlertTitle>
                     <AlertDescription>
-                        Branch details and the first super-admin are required.
-                        Promote additional staff later from the branch staff
-                        screen.
+                        Fill in the branch details and create the first admin
+                        account. You can add more staff later from the branch
+                        staff screen.
                     </AlertDescription>
                 </Alert>
 

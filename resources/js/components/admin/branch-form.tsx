@@ -179,10 +179,10 @@ export function BranchForm({
             >
                 <div className="mb-5 space-y-1">
                     <h2 className="text-base font-semibold tracking-tight">
-                        {isEdit ? 'Branch details' : 'Branch information'}
+                        Branch details
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                        Location identity, contact, and trading hours.
+                        Name, contact details, hours, and logo for this location.
                     </p>
                 </div>
 
@@ -231,8 +231,8 @@ export function BranchForm({
                                     onCancel={
                                         processing ? cancel : undefined
                                     }
-                                    placeholder="Branch logo"
-                                    hint="PNG, JPG, or WebP · Max 2MB"
+                                    placeholder="Add a logo"
+                                    hint="PNG, JPG, or WebP · up to 2MB"
                                     error={errors.logo}
                                     classNames={{
                                         wrapper:
@@ -262,7 +262,7 @@ export function BranchForm({
                                         setData('name', event.target.value)
                                     }
                                     required
-                                    placeholder="e.g. PuffOnMate Sydney CBD"
+                                    placeholder="PuffOnMate Sydney CBD"
                                     autoComplete="off"
                                 />
                                 <InputError message={errors.name} />
@@ -270,7 +270,7 @@ export function BranchForm({
 
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="slug">Slug</Label>
+                                    <Label htmlFor="slug">URL name</Label>
                                     <Input
                                         id="slug"
                                         value={data.slug}
@@ -283,13 +283,13 @@ export function BranchForm({
                                         }}
                                         onBlur={() => validate('slug')}
                                         required
-                                        placeholder="e.g. sydney-cbd"
+                                        placeholder="sydney-cbd"
                                     />
                                     <InputError message={errors.slug} />
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="code">Code</Label>
+                                    <Label htmlFor="code">Short code</Label>
                                     <Input
                                         id="code"
                                         value={data.code}
@@ -301,7 +301,7 @@ export function BranchForm({
                                         }
                                         onBlur={() => validate('code')}
                                         required
-                                        placeholder="e.g. DTN"
+                                        placeholder="SYD"
                                     />
                                     <InputError message={errors.code} />
                                 </div>
@@ -325,13 +325,18 @@ export function BranchForm({
                                                 validate('phone');
                                             }
                                         }}
-                                        placeholder="04XX XXX XXX or +61…"
+                                        placeholder="02 9876 5432"
                                     />
                                     <InputError message={errors.phone} />
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="email">
+                                        Email{' '}
+                                        <span className="text-muted-foreground font-normal">
+                                            (optional)
+                                        </span>
+                                    </Label>
                                     <Input
                                         id="email"
                                         type="email"
@@ -347,7 +352,7 @@ export function BranchForm({
                                                 validate('email');
                                             }
                                         }}
-                                        placeholder="branch@example.com"
+                                        placeholder="sydney@puffonmate.com"
                                     />
                                     <InputError message={errors.email} />
                                 </div>
@@ -363,7 +368,7 @@ export function BranchForm({
                             onChange={(event) =>
                                 setData('address', event.target.value)
                             }
-                            placeholder="Street, city, area"
+                            placeholder="Street, suburb, city"
                             rows={3}
                         />
                         <InputError message={errors.address} />
@@ -371,7 +376,12 @@ export function BranchForm({
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="latitude">Latitude</Label>
+                            <Label htmlFor="latitude">
+                                Latitude{' '}
+                                <span className="text-muted-foreground font-normal">
+                                    (optional)
+                                </span>
+                            </Label>
                             <Input
                                 id="latitude"
                                 type="number"
@@ -380,13 +390,18 @@ export function BranchForm({
                                 onChange={(event) =>
                                     setData('latitude', event.target.value)
                                 }
-                                placeholder="e.g. -33.8688"
+                                placeholder="-33.8688"
                             />
                             <InputError message={errors.latitude} />
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="longitude">Longitude</Label>
+                            <Label htmlFor="longitude">
+                                Longitude{' '}
+                                <span className="text-muted-foreground font-normal">
+                                    (optional)
+                                </span>
+                            </Label>
                             <Input
                                 id="longitude"
                                 type="number"
@@ -395,7 +410,7 @@ export function BranchForm({
                                 onChange={(event) =>
                                     setData('longitude', event.target.value)
                                 }
-                                placeholder="e.g. 151.2093"
+                                placeholder="151.2093"
                             />
                             <InputError message={errors.longitude} />
                         </div>
@@ -403,28 +418,28 @@ export function BranchForm({
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="opening_time">Opening time</Label>
+                            <Label htmlFor="opening_time">Opens</Label>
                             <TimeSelect
                                 id="opening_time"
                                 value={data.opening_time}
                                 onChange={(value) =>
                                     setData('opening_time', value)
                                 }
-                                placeholder="Select opening time"
+                                placeholder="Opening time"
                                 aria-invalid={Boolean(errors.opening_time)}
                             />
                             <InputError message={errors.opening_time} />
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="closing_time">Closing time</Label>
+                            <Label htmlFor="closing_time">Closes</Label>
                             <TimeSelect
                                 id="closing_time"
                                 value={data.closing_time}
                                 onChange={(value) =>
                                     setData('closing_time', value)
                                 }
-                                placeholder="Select closing time"
+                                placeholder="Closing time"
                                 aria-invalid={Boolean(errors.closing_time)}
                             />
                             <InputError message={errors.closing_time} />
@@ -440,7 +455,7 @@ export function BranchForm({
                             }
                         />
                         <Label htmlFor="status" className="font-normal">
-                            Active
+                            Branch is active
                         </Label>
                         <InputError message={errors.status} />
                     </div>
@@ -456,18 +471,20 @@ export function BranchForm({
                 >
                     <div className="mb-5 space-y-1">
                         <h2 className="text-base font-semibold tracking-tight">
-                            First super-admin
+                            Branch admin
                         </h2>
                         <p className="text-muted-foreground text-sm">
-                            This person can sign into the branch portal as
-                            super-admin. Required to finish creating the branch.
+                            Create the first person who can sign in and manage
+                            this branch.
                         </p>
                     </div>
 
                     <div className="flex flex-col gap-5">
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="super_admin_name">Name</Label>
+                                <Label htmlFor="super_admin_name">
+                                    Full name
+                                </Label>
                                 <Input
                                     id="super_admin_name"
                                     value={data.super_admin.name}
@@ -478,7 +495,7 @@ export function BranchForm({
                                         })
                                     }
                                     required
-                                    placeholder="Full name"
+                                    placeholder="Alex Morgan"
                                     autoComplete="off"
                                 />
                                 <InputError
@@ -491,7 +508,7 @@ export function BranchForm({
 
                             <div className="flex flex-col gap-2">
                                 <Label htmlFor="super_admin_phone">
-                                    Phone number
+                                    Mobile number
                                 </Label>
                                 <Input
                                     id="super_admin_phone"
@@ -507,7 +524,7 @@ export function BranchForm({
                                         validate('super_admin.phone')
                                     }
                                     required
-                                    placeholder="04XX XXX XXX"
+                                    placeholder="0412 345 678"
                                 />
                                 <InputError
                                     message={fieldError(
@@ -520,7 +537,10 @@ export function BranchForm({
 
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="super_admin_email">
-                                Email (optional)
+                                Email{' '}
+                                <span className="text-muted-foreground font-normal">
+                                    (optional)
+                                </span>
                             </Label>
                             <Input
                                 id="super_admin_email"
@@ -537,7 +557,7 @@ export function BranchForm({
                                         validate('super_admin.email');
                                     }
                                 }}
-                                placeholder="admin@example.com"
+                                placeholder="alex@puffonmate.com"
                             />
                             <InputError
                                 message={fieldError(
@@ -563,7 +583,7 @@ export function BranchForm({
                                     }
                                     required
                                     autoComplete="new-password"
-                                    placeholder="Enter password"
+                                    placeholder="Choose a password"
                                 />
                                 <InputError
                                     message={fieldError(
@@ -591,7 +611,7 @@ export function BranchForm({
                                     }
                                     required
                                     autoComplete="new-password"
-                                    placeholder="Confirm password"
+                                    placeholder="Type password again"
                                 />
                             </div>
                         </div>

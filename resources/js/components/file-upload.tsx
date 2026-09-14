@@ -1058,8 +1058,8 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                             reason: 'count',
                             message:
                                 skipped.length === 1
-                                    ? `Maximum ${maxFiles} files allowed — "${skipped[0].name}" was skipped.`
-                                    : `Maximum ${maxFiles} files allowed — ${skipped.length} files were skipped.`,
+                                    ? `Maximum ${maxFiles} ${maxFiles === 1 ? 'file' : 'files'} allowed — "${skipped[0].name}" was skipped.`
+                                    : `Maximum ${maxFiles} ${maxFiles === 1 ? 'file' : 'files'} allowed — ${skipped.length} files were skipped.`,
                         });
                         valid = valid.slice(0, room);
                     }
@@ -1350,11 +1350,14 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 <p className="text-muted-foreground max-w-full px-2 text-center text-xs wrap-break-word">
                                     {hint}
                                 </p>
-                            ) : null}
-                            <p className="text-muted-foreground max-w-full px-2 text-center text-xs">
-                                Max {maxSize} MB per file
-                                {maxFiles ? ` · up to ${maxFiles} files` : null}
-                            </p>
+                            ) : (
+                                <p className="text-muted-foreground max-w-full px-2 text-center text-xs">
+                                    Max {maxSize} MB per file
+                                    {maxFiles
+                                        ? ` · up to ${maxFiles} ${maxFiles === 1 ? 'file' : 'files'}`
+                                        : null}
+                                </p>
+                            )}
                         </>
                     ) : null}
                 </div>
