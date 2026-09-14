@@ -142,7 +142,7 @@ class StorefrontCatalog
     /**
      * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
      */
-    public static function productsForCategory(string $slug, ?Branch $branch = null, ?string $search = null): array
+    public static function productsForCategory(string $slug, ?Branch $branch = null, ?string $search = null, ?string $sort = null): array
     {
         $category = Category::query()
             ->where('status', true)
@@ -156,8 +156,13 @@ class StorefrontCatalog
         $query = Product::query()
             ->where('status', true)
             ->whereHas('categories', fn ($builder) => $builder->where('categories.id', $category->id))
-            ->with(['categories:id,name,slug', 'images'])
-            ->orderBy('name');
+            ->with(['categories:id,name,slug', 'images']);
+
+        match ($sort) {
+            'name_desc' => $query->orderByDesc('name'),
+            'newest' => $query->orderByDesc('created_at'),
+            default => $query->orderBy('name'),
+        };
 
         if (is_string($search) && $search !== '') {
             $query->where(function ($builder) use ($search): void {

@@ -4,6 +4,7 @@ import { FeaturesBar } from '@/components/storefront/features-bar';
 import { ProductCard } from '@/components/storefront/product-card';
 import { StorefrontBranchSelect } from '@/components/storefront/storefront-branch-select';
 import { StorefrontSearchBar } from '@/components/storefront/storefront-search-bar';
+import { StorefrontSortSelect } from '@/components/storefront/storefront-sort-select';
 import { storefrontFeatures } from '@/lib/storefront-demo';
 import type { StorefrontProduct } from '@/lib/storefront-demo';
 import { category as shopCategory } from '@/routes/shop';
@@ -19,6 +20,7 @@ type CategoryPageProps = {
     filters: {
         search: string;
         branchId: string | null;
+        sort: string | null;
     };
 };
 
@@ -30,16 +32,22 @@ export default function StorefrontCategory({
 }: CategoryPageProps) {
     const [search, setSearch] = useState(filters.search);
 
-    const visit = (next: { search?: string; branchId?: string | null }) => {
+    const visit = (next: {
+        search?: string;
+        branchId?: string | null;
+        sort?: string | null;
+    }) => {
         const nextSearch = next.search ?? search;
         const nextBranch =
             next.branchId !== undefined ? next.branchId : filters.branchId;
+        const nextSort = next.sort !== undefined ? next.sort : filters.sort;
 
         router.get(
             shopCategory.url(category.slug),
             {
                 ...(nextSearch ? { search: nextSearch } : {}),
                 ...(nextBranch ? { branch: nextBranch } : {}),
+                ...(nextSort ? { sort: nextSort } : {}),
             },
             { preserveState: true, replace: true },
         );
@@ -55,17 +63,22 @@ export default function StorefrontCategory({
                         value={search}
                         onChange={setSearch}
                         onSubmit={() => visit({ search })}
-                        className="lg:flex-2"
+                        className="lg:min-w-0 lg:flex-[1.4]"
                     />
                     <StorefrontBranchSelect
                         branches={branches}
                         value={filters.branchId}
                         onChange={(branchId) => visit({ branchId })}
-                        className="lg:flex-1"
+                        className="lg:min-w-0 lg:flex-1"
+                    />
+                    <StorefrontSortSelect
+                        value={filters.sort}
+                        onChange={(sort) => visit({ sort })}
+                        className="lg:min-w-0 lg:flex-1"
                     />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                     {products.map((product) => (
                         <ProductCard key={product.id} product={product} />
                     ))}

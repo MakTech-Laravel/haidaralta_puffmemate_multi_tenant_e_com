@@ -244,7 +244,7 @@ class CatalogSeeder extends Seeder
                 ['label' => 'Age Requirement', 'value' => '18+'],
             ],
             'description' => 'Menthol-style pack of 20 for adult smokers who prefer a cooler finish. Age-restricted product — 18+ only.',
-            'image_url' => 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80',
+            'image' => 'images/storefront/product-winfield-blue.jpg',
             'color_code' => ['mode' => 'solid', 'color' => '#D1FAE5'],
             'variants' => [
                 ['name' => 'Single pack', 'sku' => 'CIG-PJ-MENTH-20-PK', 'attributes' => ['pack_size' => '20', 'format' => 'Soft pack']],
@@ -331,7 +331,7 @@ class CatalogSeeder extends Seeder
                 ['label' => 'Age Requirement', 'value' => '18+'],
             ],
             'description' => 'House-brand rechargeable disposable with ~5000 puffs, mesh coil, and USB-C charging. Everyday device for customers who want flavour without refilling.',
-            'image_url' => 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?auto=format&fit=crop&w=800&q=80',
+            'image' => 'images/storefront/907b72737ecd36dbee5ac6c27fa0b02b906a44ee.jpg',
             'color_code' => ['mode' => 'solid', 'color' => '#DBEAFE'],
             'variants' => [
                 ['name' => 'Iced Mango', 'sku' => 'POM-PULSE-5000-MANGO', 'attributes' => ['flavor' => 'Iced Mango', 'nicotine' => '20mg']],
@@ -372,7 +372,7 @@ class CatalogSeeder extends Seeder
             'slug' => 'puffmemate-air-pro',
             'sku' => 'POM-AIR-PRO',
             'description' => 'Slim open-pod system with adjustable airflow and 2ml refillable cartridge for customers who prefer mixing their own liquids.',
-            'image_url' => 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
+            'image' => 'images/storefront/b4343f447a376e4db4da6328e10eddefc632ddeb.jpg',
             'variants' => [
                 ['name' => 'Graphite', 'sku' => 'POM-AIR-PRO-GPH', 'attributes' => ['color' => 'Graphite']],
                 ['name' => 'Silver', 'sku' => 'POM-AIR-PRO-SLV', 'attributes' => ['color' => 'Silver']],
@@ -437,7 +437,7 @@ class CatalogSeeder extends Seeder
             'slug' => 'nordic-mint-pouches',
             'sku' => 'POUCH-NORDIC-MINT',
             'description' => 'Tobacco-free nicotine pouches with a clean mint profile. Slim format tin of 20 pouches. Age-restricted — 18+ only.',
-            'image_url' => 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80',
+            'image' => 'images/storefront/product-marlboro-gold.jpg',
             'color_code' => ['mode' => 'solid', 'color' => '#ECFDF5'],
             'variants' => [
                 ['name' => '6mg', 'sku' => 'POUCH-NORDIC-6', 'attributes' => ['strength' => '6mg', 'count' => '20']],
@@ -490,7 +490,7 @@ class CatalogSeeder extends Seeder
             'slug' => 'clipper-classic-lighter',
             'sku' => 'ACC-CLIPPER',
             'description' => 'Refillable flint lighter with fixed flame. Reliable counter-side staple for cigarette and cigarillo customers.',
-            'image_url' => 'https://images.unsplash.com/photo-1616423640778-28d1b53229bd?auto=format&fit=crop&w=800&q=80',
+            'image' => 'images/storefront/product-marlboro-gold.jpg',
             'variants' => [
                 ['name' => 'Black', 'sku' => 'ACC-CLIPPER-BLK', 'attributes' => ['color' => 'Black']],
                 ['name' => 'Red', 'sku' => 'ACC-CLIPPER-RED', 'attributes' => ['color' => 'Red']],
