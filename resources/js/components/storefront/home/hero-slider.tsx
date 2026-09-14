@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import type { StorefrontHeroSlide } from '@/lib/storefront-demo';
 import { cn } from '@/lib/utils';
 
-type HeroSliderProps = {
+type HomeHeroSliderProps = {
     slides: StorefrontHeroSlide[];
     className?: string;
 };
 
-export function HeroSlider({ slides, className }: HeroSliderProps) {
+export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
     const [index, setIndex] = useState(0);
 
     if (slides.length === 0) {
