@@ -33,13 +33,6 @@ export function ProductReviews({
                         who own it.
                     </p>
                 </div>
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none"
-                >
-                    Write a Review
-                </Button>
             </div>
 
             <div>
