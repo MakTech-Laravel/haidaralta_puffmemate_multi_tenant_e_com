@@ -135,12 +135,13 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                 ) : null}
 
                 {branch.needs_super_admin ? (
-                    <Alert>
-                        <AlertTitle>Super-admin missing</AlertTitle>
+                    <Alert variant="destructive">
+                        <AlertTitle>Super-admin required</AlertTitle>
                         <AlertDescription className="flex flex-col gap-3">
                             <p>
-                                This branch has no super-admin yet. Add one to
-                                finish setup.
+                                This branch cannot be managed until a
+                                super-admin exists. Create one now to finish
+                                setup.
                             </p>
                             {can('create-branches') ? (
                                 <Button size="sm" className="w-fit" asChild>

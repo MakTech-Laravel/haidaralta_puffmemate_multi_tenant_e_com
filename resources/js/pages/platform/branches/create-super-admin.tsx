@@ -8,16 +8,10 @@ import PasswordInput from '@/components/password-input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 
 type Branch = {
     id: number;
@@ -60,17 +54,11 @@ export default function PlatformBranchesCreateSuperAdmin({
         <>
             <Head title={`Super-admin · ${branch.name}`} />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
-                <div className="flex flex-col gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Badge>Step 2 of 2</Badge>
-                        <Badge variant="outline">Super-admin</Badge>
-                    </div>
-                    <Heading
-                        title="Add branch super-admin"
-                        description={`Create the portal admin for ${branch.name}`}
-                    />
-                </div>
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
+                <Heading
+                    title="Add branch super-admin"
+                    description={`Create the portal admin for ${branch.name}`}
+                />
 
                 <Alert>
                     <AlertTitle>
@@ -80,17 +68,29 @@ export default function PlatformBranchesCreateSuperAdmin({
                         </Badge>
                     </AlertTitle>
                     <AlertDescription>
-                        This account gets the branch Super Admin role and can
-                        manage the branch portal.
+                        This branch is missing a super-admin. Create one so
+                        staff can manage the branch portal. Additional admins
+                        can be promoted later from staff management.
                     </AlertDescription>
                 </Alert>
 
-                <form onSubmit={handleSubmit}>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Account details</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex flex-col gap-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <section
+                        className={cn(
+                            'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                            'sm:p-6',
+                        )}
+                    >
+                        <div className="mb-5 space-y-1">
+                            <h2 className="text-base font-semibold tracking-tight">
+                                Account details
+                            </h2>
+                            <p className="text-muted-foreground text-sm">
+                                This account gets the branch Super Admin role.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col gap-5">
                             <div className="grid gap-5 sm:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="name">Name</Label>
@@ -182,23 +182,22 @@ export default function PlatformBranchesCreateSuperAdmin({
                                     />
                                 </div>
                             </div>
-                        </CardContent>
-                        <CardFooter className="flex items-center gap-3 border-t pt-6">
-                            <Button type="submit" disabled={processing}>
-                                {processing ? <Spinner /> : null}
-                                Create super-admin
-                            </Button>
-                            <Button variant="secondary" asChild>
-                                <Link
-                                    href={BranchController.show.url(
-                                        branch.slug,
-                                    )}
-                                >
-                                    Skip for now
-                                </Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
+                        </div>
+                    </section>
+
+                    <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                        <Button variant="secondary" asChild>
+                            <Link
+                                href={BranchController.show.url(branch.slug)}
+                            >
+                                Cancel
+                            </Link>
+                        </Button>
+                        <Button type="submit" disabled={processing}>
+                            {processing ? <Spinner /> : null}
+                            Create super-admin
+                        </Button>
+                    </div>
                 </form>
             </div>
         </>

@@ -19,25 +19,46 @@ class BranchService
     public function create(array $data, ?UploadedFile $logo = null): Branch
     {
         return DB::transaction(function () use ($data, $logo): Branch {
-            $branch = Branch::query()->create([
-                'name' => $data['name'],
-                'slug' => $data['slug'],
-                'code' => $data['code'],
-                'logo' => $this->storeLogo($logo),
-                'phone' => $data['phone'] ?? null,
-                'email' => $data['email'] ?? null,
-                'address' => $data['address'] ?? null,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
-                'opening_time' => $data['opening_time'] ?? null,
-                'closing_time' => $data['closing_time'] ?? null,
-                'status' => $data['status'] ?? true,
-            ]);
+            return $this->createBranchRecord($data, $logo);
+        });
+    }
 
-            app(RolesAndPermissionsSeeder::class)->seedBranchRolesForBranch($branch);
+    /**
+     * Create a branch with its first super-admin in a single transaction.
+     *
+     * @param  array{name: string, phone: string, email?: string|null, password: string}  $adminData
+     */
+    public function createWithSuperAdmin(array $data, array $adminData, ?UploadedFile $logo = null): Branch
+    {
+        return DB::transaction(function () use ($data, $adminData, $logo): Branch {
+            $branch = $this->createBranchRecord($data, $logo);
+
+            $this->createSuperAdmin($branch, $adminData);
 
             return $branch;
         });
+    }
+
+    private function createBranchRecord(array $data, ?UploadedFile $logo = null): Branch
+    {
+        $branch = Branch::query()->create([
+            'name' => $data['name'],
+            'slug' => $data['slug'],
+            'code' => $data['code'],
+            'logo' => $this->storeLogo($logo),
+            'phone' => $data['phone'] ?? null,
+            'email' => $data['email'] ?? null,
+            'address' => $data['address'] ?? null,
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
+            'opening_time' => $data['opening_time'] ?? null,
+            'closing_time' => $data['closing_time'] ?? null,
+            'status' => $data['status'] ?? true,
+        ]);
+
+        app(RolesAndPermissionsSeeder::class)->seedBranchRolesForBranch($branch);
+
+        return $branch;
     }
 
     public function update(Branch $branch, array $data, ?UploadedFile $logo = null, bool $removeLogo = false): Branch
