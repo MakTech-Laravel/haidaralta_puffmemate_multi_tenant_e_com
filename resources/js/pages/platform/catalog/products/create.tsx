@@ -17,7 +17,7 @@ export default function PlatformProductsCreate({
         <>
             <Head title="Add product" />
 
-            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+            <div className="flex w-full flex-col p-2 md:p-4">
                 <Heading
                     title="Add product"
                     description="Create a global catalog product with primary image and gallery"

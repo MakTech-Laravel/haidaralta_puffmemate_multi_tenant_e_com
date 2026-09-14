@@ -1041,7 +1041,7 @@ export function ProductForm({
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="space-y-1">
                                 <Label>Specifications</Label>
@@ -1061,80 +1061,91 @@ export function ProductForm({
                                 Add row
                             </Button>
                         </div>
-                        <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
-                            {data.specifications.map((row, index) => (
-                                <div
-                                    key={`specification-${index}`}
-                                    className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)_auto] items-start gap-2"
-                                >
-                                    <div className="flex flex-col gap-1">
-                                        <Label
-                                            htmlFor={`specification-label-${index}`}
-                                            className="sr-only"
-                                        >
-                                            Label
-                                        </Label>
-                                        <Input
-                                            id={`specification-label-${index}`}
-                                            value={row.label}
-                                            onChange={(event) =>
-                                                updateSpecification(
-                                                    index,
-                                                    'label',
-                                                    event.target.value,
-                                                )
-                                            }
-                                            placeholder="Label"
-                                        />
-                                        <InputError
-                                            message={
-                                                errors[
-                                                    `specifications.${index}.label`
-                                                ]
-                                            }
-                                        />
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <Label
-                                            htmlFor={`specification-value-${index}`}
-                                            className="sr-only"
-                                        >
-                                            Value
-                                        </Label>
-                                        <Input
-                                            id={`specification-value-${index}`}
-                                            value={row.value}
-                                            onChange={(event) =>
-                                                updateSpecification(
-                                                    index,
-                                                    'value',
-                                                    event.target.value,
-                                                )
-                                            }
-                                            placeholder="Value"
-                                        />
-                                        <InputError
-                                            message={
-                                                errors[
-                                                    `specifications.${index}.value`
-                                                ]
-                                            }
-                                        />
-                                    </div>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="size-9 shrink-0"
-                                        onClick={() =>
-                                            removeSpecification(index)
-                                        }
-                                        aria-label="Remove specification row"
+                        <div className="space-y-0.5">
+                            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-center gap-2 px-0.5">
+                                <span className="text-muted-foreground text-xs font-medium">
+                                    Label
+                                </span>
+                                <span className="text-muted-foreground text-xs font-medium">
+                                    Value
+                                </span>
+                                <span className="size-9" aria-hidden />
+                            </div>
+                            <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                                {data.specifications.map((row, index) => (
+                                    <div
+                                        key={`specification-${index}`}
+                                        className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-start gap-2"
                                     >
-                                        <Trash2 className="size-4" />
-                                    </Button>
-                                </div>
-                            ))}
+                                        <div className="flex flex-col gap-1">
+                                            <Label
+                                                htmlFor={`specification-label-${index}`}
+                                                className="sr-only"
+                                            >
+                                                Label
+                                            </Label>
+                                            <Input
+                                                id={`specification-label-${index}`}
+                                                value={row.label}
+                                                onChange={(event) =>
+                                                    updateSpecification(
+                                                        index,
+                                                        'label',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                placeholder="e.g. Pack Format"
+                                            />
+                                            <InputError
+                                                message={
+                                                    errors[
+                                                        `specifications.${index}.label`
+                                                    ]
+                                                }
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <Label
+                                                htmlFor={`specification-value-${index}`}
+                                                className="sr-only"
+                                            >
+                                                Value
+                                            </Label>
+                                            <Input
+                                                id={`specification-value-${index}`}
+                                                value={row.value}
+                                                onChange={(event) =>
+                                                    updateSpecification(
+                                                        index,
+                                                        'value',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                placeholder="e.g. Soft Pack"
+                                            />
+                                            <InputError
+                                                message={
+                                                    errors[
+                                                        `specifications.${index}.value`
+                                                    ]
+                                                }
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="size-9 shrink-0"
+                                            onClick={() =>
+                                                removeSpecification(index)
+                                            }
+                                            aria-label="Remove specification row"
+                                        >
+                                            <Trash2 className="size-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                         <InputError message={errors.specifications} />
                     </div>
