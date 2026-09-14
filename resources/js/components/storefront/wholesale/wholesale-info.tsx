@@ -43,10 +43,10 @@ export function WholesaleInfo({ className }: WholesaleInfoProps) {
             )}
         >
             <div className="relative z-10">
-                <h2 className="text-xl font-bold tracking-tight uppercase sm:text-2xl">
+                <h2 className="text-xl font-semibold tracking-tight uppercase sm:text-2xl">
                     {wholesaleInquiry.title}
                 </h2>
-                <p className="mt-3 text-sm leading-relaxed text-white/70">
+                <p className="mt-3 text-base leading-relaxed text-white font-inter font-normal">
                     {wholesaleInquiry.subtitle}
                 </p>
 

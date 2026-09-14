@@ -11,7 +11,7 @@ type WholesaleFormProps = {
 };
 
 const boxedFieldClass =
-    'border-border h-10 rounded-md bg-transparent shadow-none';
+    'border-border h-10  rounded-none bg-transparent shadow-none';
 
 function RequiredMark() {
     return <span className="text-primary">*</span>;
@@ -147,7 +147,7 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                         onChange={(event) => setMessage(event.target.value)}
                         placeholder={wholesaleFormCopy.messagePlaceholder}
                         rows={4}
-                        className="border-border min-h-24 resize-none rounded-md bg-transparent shadow-none"
+                        className="border-border min-h-24 resize-none rounded-none bg-transparent shadow-none"
                     />
                 </div>
 
