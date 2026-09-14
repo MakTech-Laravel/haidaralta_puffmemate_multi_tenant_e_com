@@ -33,6 +33,9 @@ type Category = {
     color_code?: ColorPickerValue | null;
     status: boolean;
     featured: boolean;
+    slogan?: string | null;
+    show_in_nav?: boolean;
+    nav_sort?: number | null;
     products_count: number;
     children_count: number;
 };
@@ -107,6 +110,11 @@ export default function BranchCategoriesShow({
                                     Featured
                                 </Badge>
                             ) : null}
+                            {category.show_in_nav ? (
+                                <Badge variant="outline" className="w-fit">
+                                    In nav
+                                </Badge>
+                            ) : null}
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -161,6 +169,24 @@ export default function BranchCategoriesShow({
                                 <DetailItem
                                     label="Featured"
                                     value={category.featured ? 'Yes' : 'No'}
+                                />
+                                <DetailItem
+                                    label="Slogan"
+                                    value={category.slogan?.trim() || '—'}
+                                />
+                                <DetailItem
+                                    label="In navigation"
+                                    value={
+                                        category.show_in_nav ? 'Yes' : 'No'
+                                    }
+                                />
+                                <DetailItem
+                                    label="Nav order"
+                                    value={
+                                        category.show_in_nav
+                                            ? (category.nav_sort ?? '—')
+                                            : '—'
+                                    }
                                 />
                                 <DetailItem
                                     label="Slug"

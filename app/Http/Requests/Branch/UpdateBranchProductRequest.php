@@ -4,6 +4,7 @@ namespace App\Http\Requests\Branch;
 
 use App\Http\Requests\Concerns\ValidatesCatalogColorCode;
 use App\Http\Requests\Concerns\ValidatesCatalogProductImages;
+use App\Http\Requests\Concerns\ValidatesProductCatalogMeta;
 use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -12,6 +13,7 @@ class UpdateBranchProductRequest extends FormRequest
 {
     use ValidatesCatalogColorCode;
     use ValidatesCatalogProductImages;
+    use ValidatesProductCatalogMeta;
 
     public function authorize(): bool
     {
@@ -21,6 +23,7 @@ class UpdateBranchProductRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->decodeColorCodeInput();
+        $this->prepareProductCatalogMeta();
     }
 
     /**
@@ -60,6 +63,7 @@ class UpdateBranchProductRequest extends FormRequest
             ],
             'status' => ['sometimes', 'boolean'],
             ...$this->colorCodeRules(),
+            ...$this->productCatalogMetaRules(),
         ];
     }
 }

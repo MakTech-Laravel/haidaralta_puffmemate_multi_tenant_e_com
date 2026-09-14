@@ -13,6 +13,7 @@ import {
     toClientDataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { PRODUCT_TAG_OPTIONS } from '@/components/platform/product-form';
 import { VariantForm } from '@/components/platform/variant-form';
 import { ProductGallery } from '@/components/product-gallery';
 import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
@@ -50,12 +51,20 @@ type ProductVariant = {
     status: boolean;
 };
 
+type ProductSpecificationRow = {
+    label: string;
+    value: string;
+};
+
 type Product = {
     id: number;
     name: string;
     slug: string;
     sku: string | null;
+    brand: string | null;
     description: string | null;
+    tags: string[];
+    specifications: ProductSpecificationRow[];
     category_name: string;
     image: string | null;
     image_url: string | null;
@@ -69,6 +78,13 @@ type Product = {
     status: boolean;
     variants: ProductVariant[];
 };
+
+function tagLabel(value: string): string {
+    return (
+        PRODUCT_TAG_OPTIONS.find((option) => option.value === value)?.label ??
+        value
+    );
+}
 
 function DetailItem({
     label,
@@ -310,13 +326,62 @@ export default function PlatformProductsShow({ product }: { product: Product }) 
                                 value={product.sku ?? '—'}
                             />
                             <DetailItem
+                                label="Brand"
+                                value={product.brand ?? '—'}
+                            />
+                            <DetailItem
                                 label="Slug"
                                 value={product.slug}
+                            />
+                            <DetailItem
+                                label="Tags"
+                                value={
+                                    product.tags.length > 0 ? (
+                                        <span className="flex flex-wrap gap-1.5">
+                                            {product.tags.map((tag) => (
+                                                <Badge
+                                                    key={tag}
+                                                    variant="secondary"
+                                                >
+                                                    {tagLabel(tag)}
+                                                </Badge>
+                                            ))}
+                                        </span>
+                                    ) : (
+                                        '—'
+                                    )
+                                }
                             />
                             <DetailItem
                                 label="Description"
                                 value={product.description ?? '—'}
                             />
+                            {product.specifications.length > 0 ? (
+                                <div className="flex flex-col gap-2 sm:col-span-2">
+                                    <dt className="text-muted-foreground text-sm">
+                                        Specifications
+                                    </dt>
+                                    <dd>
+                                        <dl className="divide-border divide-y rounded-xl border">
+                                            {product.specifications.map(
+                                                (row) => (
+                                                    <div
+                                                        key={`${row.label}-${row.value}`}
+                                                        className="grid gap-1 px-4 py-3 sm:grid-cols-2"
+                                                    >
+                                                        <dt className="text-muted-foreground text-sm">
+                                                            {row.label}
+                                                        </dt>
+                                                        <dd className="text-sm font-medium">
+                                                            {row.value}
+                                                        </dd>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </dl>
+                                    </dd>
+                                </div>
+                            ) : null}
                         </dl>
                     </CardContent>
                 </Card>

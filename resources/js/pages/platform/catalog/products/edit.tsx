@@ -1,7 +1,11 @@
 import { Head } from '@inertiajs/react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import Heading from '@/components/heading';
-import { ProductForm } from '@/components/platform/product-form';
+import {
+    ProductForm,
+    type ProductSpecificationRow,
+    type ProductTagValue,
+} from '@/components/platform/product-form';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type CategoryOption = {
@@ -23,7 +27,10 @@ type Product = {
     name: string;
     slug: string;
     sku: string | null;
+    brand: string | null;
     description: string | null;
+    tags: ProductTagValue[];
+    specifications: ProductSpecificationRow[];
     image: string | null;
     image_url: string | null;
     gallery: GalleryImage[];
@@ -69,7 +76,10 @@ export default function PlatformProductsEdit({
                         name: product.name,
                         slug: product.slug,
                         sku: product.sku,
+                        brand: product.brand,
                         description: product.description,
+                        tags: product.tags,
+                        specifications: product.specifications,
                         image: product.image,
                         image_url: product.image_url,
                         gallery: product.gallery,

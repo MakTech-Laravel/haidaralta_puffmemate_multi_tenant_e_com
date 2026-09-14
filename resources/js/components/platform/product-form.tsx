@@ -1,5 +1,5 @@
 import { Link, useForm } from '@inertiajs/react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Trash2 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
@@ -62,17 +62,44 @@ type ProductSuggestion = {
     image_url: string | null;
 };
 
+export type ProductSpecificationRow = {
+    label: string;
+    value: string;
+};
+
+export const PRODUCT_TAG_OPTIONS = [
+    { value: 'new_arrival', label: 'New arrival' },
+    { value: 'best_selling', label: 'Best selling' },
+    { value: 'popular', label: 'Popular' },
+    { value: 'on_offer', label: 'On offer' },
+] as const;
+
+export type ProductTagValue = (typeof PRODUCT_TAG_OPTIONS)[number]['value'];
+
 interface ProductFormDefaults {
     category_ids?: number[];
     name?: string;
     slug?: string;
     sku?: string | null;
+    brand?: string | null;
     description?: string | null;
+    tags?: ProductTagValue[];
+    specifications?: ProductSpecificationRow[];
     image?: string | null;
     image_url?: string | null;
     gallery?: ProductGalleryImage[];
     color_code?: ColorPickerValue | null;
     status?: boolean;
+}
+
+function initialSpecifications(
+    specifications: ProductSpecificationRow[] | undefined,
+): ProductSpecificationRow[] {
+    if (specifications && specifications.length > 0) {
+        return specifications;
+    }
+
+    return [{ label: '', value: '' }];
 }
 
 interface ProductFormProps {
@@ -168,7 +195,10 @@ export function ProductForm({
         name: defaults?.name ?? '',
         slug: defaults?.slug ?? '',
         sku: defaults?.sku ?? '',
+        brand: defaults?.brand ?? '',
         description: defaults?.description ?? '',
+        tags: defaults?.tags ?? ([] as ProductTagValue[]),
+        specifications: initialSpecifications(defaults?.specifications),
         image: null as File | null,
         gallery: [] as File[],
         remove_image: false,
@@ -202,6 +232,46 @@ export function ProductForm({
             : [...data.category_ids, categoryId];
 
         setData('category_ids', next);
+    };
+
+    const toggleTag = (tag: ProductTagValue) => {
+        const next = data.tags.includes(tag)
+            ? data.tags.filter((value) => value !== tag)
+            : [...data.tags, tag];
+
+        setData('tags', next);
+    };
+
+    const updateSpecification = (
+        index: number,
+        field: keyof ProductSpecificationRow,
+        value: string,
+    ) => {
+        const next = data.specifications.map((row, rowIndex) =>
+            rowIndex === index ? { ...row, [field]: value } : row,
+        );
+
+        setData('specifications', next);
+    };
+
+    const addSpecification = () => {
+        setData('specifications', [
+            ...data.specifications,
+            { label: '', value: '' },
+        ]);
+    };
+
+    const removeSpecification = (index: number) => {
+        if (data.specifications.length <= 1) {
+            setData('specifications', [{ label: '', value: '' }]);
+
+            return;
+        }
+
+        setData(
+            'specifications',
+            data.specifications.filter((_, rowIndex) => rowIndex !== index),
+        );
     };
 
     useEffect(() => {
@@ -273,6 +343,8 @@ export function ProductForm({
                 remove_image,
                 remove_gallery_ids,
                 color_code,
+                brand,
+                specifications,
                 selling_price,
                 quantity,
                 minimum_stock,
@@ -283,8 +355,14 @@ export function ProductForm({
                 minimum_stock?: number;
             };
 
+            const filteredSpecifications = specifications.filter(
+                (row) => row.label.trim() !== '' || row.value.trim() !== '',
+            );
+
             return {
                 ...rest,
+                brand: brand.trim() === '' ? null : brand,
+                specifications: JSON.stringify(filteredSpecifications),
                 color_code: JSON.stringify(
                     normalizeCatalogColorPickerValue(color_code),
                 ),
@@ -562,6 +640,19 @@ export function ProductForm({
                         </div>
 
                         <div className="flex flex-col gap-2">
+                            <Label htmlFor="brand">Brand</Label>
+                            <Input
+                                id="brand"
+                                value={data.brand}
+                                onChange={(event) =>
+                                    setData('brand', event.target.value)
+                                }
+                                placeholder="e.g. PuffonMate"
+                            />
+                            <InputError message={errors.brand} />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
                             <Label htmlFor="description">Description</Label>
                             <Textarea
                                 id="description"
@@ -577,6 +668,142 @@ export function ProductForm({
                                 className="min-h-40 resize-y"
                             />
                             <InputError message={errors.description} />
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <div className="space-y-1">
+                                <Label>Tags</Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Highlight this product in storefront
+                                    collections.
+                                </p>
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                {PRODUCT_TAG_OPTIONS.map((option) => {
+                                    const checked = data.tags.includes(
+                                        option.value,
+                                    );
+
+                                    return (
+                                        <div
+                                            key={option.value}
+                                            className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3"
+                                        >
+                                            <Checkbox
+                                                id={`tag-${option.value}`}
+                                                checked={checked}
+                                                onCheckedChange={() =>
+                                                    toggleTag(option.value)
+                                                }
+                                            />
+                                            <Label
+                                                htmlFor={`tag-${option.value}`}
+                                                className="font-normal"
+                                            >
+                                                {option.label}
+                                            </Label>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <InputError message={errors.tags} />
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="space-y-1">
+                                    <Label>Specifications</Label>
+                                    <p className="text-muted-foreground text-xs">
+                                        Label and value pairs shown on the
+                                        product page.
+                                    </p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={addSpecification}
+                                >
+                                    <Plus className="size-4" />
+                                    Add row
+                                </Button>
+                            </div>
+                            <div className="space-y-3">
+                                {data.specifications.map((row, index) => (
+                                    <div
+                                        key={`specification-${index}`}
+                                        className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                                    >
+                                        <div className="flex flex-col gap-2">
+                                            <Label
+                                                htmlFor={`specification-label-${index}`}
+                                                className="sr-only"
+                                            >
+                                                Label
+                                            </Label>
+                                            <Input
+                                                id={`specification-label-${index}`}
+                                                value={row.label}
+                                                onChange={(event) =>
+                                                    updateSpecification(
+                                                        index,
+                                                        'label',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                placeholder="Label"
+                                            />
+                                            <InputError
+                                                message={
+                                                    errors[
+                                                        `specifications.${index}.label`
+                                                    ]
+                                                }
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <Label
+                                                htmlFor={`specification-value-${index}`}
+                                                className="sr-only"
+                                            >
+                                                Value
+                                            </Label>
+                                            <Input
+                                                id={`specification-value-${index}`}
+                                                value={row.value}
+                                                onChange={(event) =>
+                                                    updateSpecification(
+                                                        index,
+                                                        'value',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                placeholder="Value"
+                                            />
+                                            <InputError
+                                                message={
+                                                    errors[
+                                                        `specifications.${index}.value`
+                                                    ]
+                                                }
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="self-start"
+                                            onClick={() =>
+                                                removeSpecification(index)
+                                            }
+                                            aria-label="Remove specification row"
+                                        >
+                                            <Trash2 className="size-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                            <InputError message={errors.specifications} />
                         </div>
 
                         <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">

@@ -4,14 +4,17 @@ namespace App\Http\Requests\Branch;
 
 use App\Http\Requests\Concerns\ValidatesCatalogColorCode;
 use App\Http\Requests\Concerns\ValidatesCatalogProductImages;
+use App\Http\Requests\Concerns\ValidatesCategoryLimits;
 use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateCategoryRequest extends FormRequest
 {
     use ValidatesCatalogColorCode;
     use ValidatesCatalogProductImages;
+    use ValidatesCategoryLimits;
 
     public function authorize(): bool
     {
@@ -46,11 +49,22 @@ class UpdateCategoryRequest extends FormRequest
                 'alpha_dash',
                 Rule::unique('categories', 'slug')->ignore($category->id),
             ],
+            'slogan' => ['nullable', 'string', 'max:120'],
             'image' => $this->catalogImageFileRules(),
             'remove_image' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'boolean'],
             'featured' => ['sometimes', 'boolean'],
+            'show_in_nav' => ['sometimes', 'boolean'],
+            'nav_sort' => ['nullable', 'integer', 'min:0', 'max:65535'],
             ...$this->colorCodeRules(),
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        /** @var Category $category */
+        $category = $this->route('category');
+
+        $this->validateCategoryLimits($validator, $category->id);
     }
 }

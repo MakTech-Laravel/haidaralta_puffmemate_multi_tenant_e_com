@@ -1,6 +1,9 @@
 import { Head } from '@inertiajs/react';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
-import { CategoryForm } from '@/components/platform/category-form';
+import {
+    CategoryForm,
+    type CategoryLimits,
+} from '@/components/platform/category-form';
 import Heading from '@/components/heading';
 
 type ParentOption = {
@@ -10,8 +13,10 @@ type ParentOption = {
 
 export default function PlatformCategoriesCreate({
     parentOptions,
+    limits,
 }: {
     parentOptions: ParentOption[];
+    limits: CategoryLimits;
 }) {
     return (
         <>
@@ -26,6 +31,7 @@ export default function PlatformCategoriesCreate({
                 <CategoryForm
                     action={CategoryController.store.form()}
                     parentOptions={parentOptions}
+                    limits={limits}
                     cancelHref={CategoryController.index.url()}
                     enableSuggestions
                     suggestionsUrl={CategoryController.suggestions.url()}

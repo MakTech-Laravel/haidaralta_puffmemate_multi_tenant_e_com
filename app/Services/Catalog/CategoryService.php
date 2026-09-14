@@ -15,8 +15,11 @@ class CategoryService
      *     parent_id?: int|null,
      *     name: string,
      *     slug: string,
+     *     slogan?: string|null,
      *     status?: bool,
      *     featured?: bool,
+     *     show_in_nav?: bool,
+     *     nav_sort?: int|null,
      *     color_code?: array<string, mixed>|null
      * }  $data
      */
@@ -27,10 +30,13 @@ class CategoryService
                 'parent_id' => $data['parent_id'] ?? null,
                 'name' => $data['name'],
                 'slug' => $data['slug'],
+                'slogan' => $data['slogan'] ?? null,
                 'image' => $image?->store('categories', 'public'),
                 'color_code' => CatalogBackgroundColor::normalize($data['color_code'] ?? null),
                 'status' => $data['status'] ?? true,
                 'featured' => $data['featured'] ?? false,
+                'show_in_nav' => $data['show_in_nav'] ?? false,
+                'nav_sort' => $data['nav_sort'] ?? null,
             ]);
         });
     }
@@ -40,8 +46,11 @@ class CategoryService
      *     parent_id?: int|null,
      *     name?: string,
      *     slug?: string,
+     *     slogan?: string|null,
      *     status?: bool,
      *     featured?: bool,
+     *     show_in_nav?: bool,
+     *     nav_sort?: int|null,
      *     color_code?: array<string, mixed>|null,
      *     remove_image?: bool
      * }  $data
@@ -86,5 +95,26 @@ class CategoryService
         $category->restore();
 
         return $category->refresh();
+    }
+
+    /**
+     * @return array{featured_max: int, nav_max: int, featured_count: int, nav_count: int}
+     */
+    public function limits(?int $excludeCategoryId = null): array
+    {
+        $featuredQuery = Category::query()->where('featured', true);
+        $navQuery = Category::query()->where('show_in_nav', true);
+
+        if ($excludeCategoryId !== null) {
+            $featuredQuery->whereKeyNot($excludeCategoryId);
+            $navQuery->whereKeyNot($excludeCategoryId);
+        }
+
+        return [
+            'featured_max' => (int) config('catalog.featured_categories_max'),
+            'nav_max' => (int) config('catalog.nav_categories_max'),
+            'featured_count' => $featuredQuery->count(),
+            'nav_count' => $navQuery->count(),
+        ];
     }
 }

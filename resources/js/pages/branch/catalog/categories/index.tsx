@@ -42,6 +42,7 @@ type CategoryRow = {
     color_code?: ColorPickerValue | null;
     status: boolean;
     featured: boolean;
+    show_in_nav: boolean;
     products_count: number;
 };
 
@@ -84,6 +85,7 @@ export default function BranchCategoriesIndex({
                 search: tablePayload.filters.search ?? '',
                 status: tablePayload.filters.status ?? 'all',
                 featured: tablePayload.filters.featured ?? 'all',
+                show_in_nav: tablePayload.filters.show_in_nav ?? 'all',
                 parent_id: tablePayload.filters.parent_id ?? 'all',
             },
             sort: tablePayload.sort,
@@ -217,6 +219,28 @@ export default function BranchCategoriesIndex({
                 ),
             },
             {
+                accessorKey: 'show_in_nav',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="In nav"
+                        sortable
+                        sortKey="show_in_nav"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Badge
+                        variant={
+                            row.original.show_in_nav ? 'default' : 'secondary'
+                        }
+                    >
+                        {row.original.show_in_nav ? 'In nav' : 'Hidden'}
+                    </Badge>
+                ),
+            },
+            {
                 id: 'actions',
                 header: 'Actions',
                 cell: ({ row }) => (
@@ -337,6 +361,38 @@ export default function BranchCategoriesIndex({
                                                 </SelectItem>
                                                 <SelectItem value="0">
                                                     Standard
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>In nav</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.show_in_nav ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'show_in_nav',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="In nav" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All nav
+                                                </SelectItem>
+                                                <SelectItem value="1">
+                                                    In nav
+                                                </SelectItem>
+                                                <SelectItem value="0">
+                                                    Hidden
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
