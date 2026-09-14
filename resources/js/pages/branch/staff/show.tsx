@@ -48,7 +48,7 @@ export default function BranchStaffShow({
         <>
             <Head title={staffMember.name} />
 
-            <div className="space-y-6 p-2">
+            <div className="space-y-4 p-2">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title={staffMember.name}

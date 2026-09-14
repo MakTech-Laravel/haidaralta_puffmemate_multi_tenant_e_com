@@ -34,6 +34,7 @@ class CategoryController extends Controller
     {
         return Inertia::render('platform/catalog/categories/create', [
             'parentOptions' => $this->parentOptions(),
+            'limits' => $this->categories->limits(),
         ]);
     }
 
@@ -55,6 +56,7 @@ class CategoryController extends Controller
         $data = $request->safe()->except(['image']);
         $data['status'] = $request->boolean('status', true);
         $data['featured'] = $request->boolean('featured');
+        $data['show_in_nav'] = $request->boolean('show_in_nav');
 
         $category = $this->categories->create($data, $request->file('image'));
 
@@ -78,6 +80,7 @@ class CategoryController extends Controller
         return Inertia::render('platform/catalog/categories/edit', [
             'category' => $this->mapCategory($category),
             'parentOptions' => $this->parentOptions($category->id),
+            'limits' => $this->categories->limits($category->id),
         ]);
     }
 
@@ -86,6 +89,7 @@ class CategoryController extends Controller
         $data = $request->safe()->except(['image']);
         $data['status'] = $request->boolean('status', true);
         $data['featured'] = $request->boolean('featured');
+        $data['show_in_nav'] = $request->boolean('show_in_nav');
         $data['remove_image'] = $request->boolean('remove_image');
 
         $category = $this->categories->update($category, $data, $request->file('image'));
@@ -152,9 +156,12 @@ class CategoryController extends Controller
                 : null,
             'image' => $category->image,
             'image_url' => $category->imageUrl(),
+            'slogan' => $category->slogan,
             'color_code' => $category->color_code,
             'status' => (bool) $category->status,
             'featured' => (bool) $category->featured,
+            'show_in_nav' => (bool) $category->show_in_nav,
+            'nav_sort' => $category->nav_sort,
             'created_at' => $category->created_at?->toIso8601String(),
         ];
 

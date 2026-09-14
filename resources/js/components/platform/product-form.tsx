@@ -1,5 +1,5 @@
 import { Link, useForm } from '@inertiajs/react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Trash2 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
@@ -62,17 +62,44 @@ type ProductSuggestion = {
     image_url: string | null;
 };
 
+export type ProductSpecificationRow = {
+    label: string;
+    value: string;
+};
+
+export const PRODUCT_TAG_OPTIONS = [
+    { value: 'new_arrival', label: 'New arrival' },
+    { value: 'best_selling', label: 'Best selling' },
+    { value: 'popular', label: 'Popular' },
+    { value: 'on_offer', label: 'On offer' },
+] as const;
+
+export type ProductTagValue = (typeof PRODUCT_TAG_OPTIONS)[number]['value'];
+
 interface ProductFormDefaults {
     category_ids?: number[];
     name?: string;
     slug?: string;
     sku?: string | null;
+    brand?: string | null;
     description?: string | null;
+    tags?: ProductTagValue[];
+    specifications?: ProductSpecificationRow[];
     image?: string | null;
     image_url?: string | null;
     gallery?: ProductGalleryImage[];
     color_code?: ColorPickerValue | null;
     status?: boolean;
+}
+
+function initialSpecifications(
+    specifications: ProductSpecificationRow[] | undefined,
+): ProductSpecificationRow[] {
+    if (specifications && specifications.length > 0) {
+        return specifications;
+    }
+
+    return [{ label: '', value: '' }];
 }
 
 interface ProductFormProps {
@@ -168,7 +195,10 @@ export function ProductForm({
         name: defaults?.name ?? '',
         slug: defaults?.slug ?? '',
         sku: defaults?.sku ?? '',
+        brand: defaults?.brand ?? '',
         description: defaults?.description ?? '',
+        tags: defaults?.tags ?? ([] as ProductTagValue[]),
+        specifications: initialSpecifications(defaults?.specifications),
         image: null as File | null,
         gallery: [] as File[],
         remove_image: false,
@@ -202,6 +232,46 @@ export function ProductForm({
             : [...data.category_ids, categoryId];
 
         setData('category_ids', next);
+    };
+
+    const toggleTag = (tag: ProductTagValue) => {
+        const next = data.tags.includes(tag)
+            ? data.tags.filter((value) => value !== tag)
+            : [...data.tags, tag];
+
+        setData('tags', next);
+    };
+
+    const updateSpecification = (
+        index: number,
+        field: keyof ProductSpecificationRow,
+        value: string,
+    ) => {
+        const next = data.specifications.map((row, rowIndex) =>
+            rowIndex === index ? { ...row, [field]: value } : row,
+        );
+
+        setData('specifications', next);
+    };
+
+    const addSpecification = () => {
+        setData('specifications', [
+            ...data.specifications,
+            { label: '', value: '' },
+        ]);
+    };
+
+    const removeSpecification = (index: number) => {
+        if (data.specifications.length <= 1) {
+            setData('specifications', [{ label: '', value: '' }]);
+
+            return;
+        }
+
+        setData(
+            'specifications',
+            data.specifications.filter((_, rowIndex) => rowIndex !== index),
+        );
     };
 
     useEffect(() => {
@@ -273,6 +343,8 @@ export function ProductForm({
                 remove_image,
                 remove_gallery_ids,
                 color_code,
+                brand,
+                specifications,
                 selling_price,
                 quantity,
                 minimum_stock,
@@ -283,8 +355,14 @@ export function ProductForm({
                 minimum_stock?: number;
             };
 
+            const filteredSpecifications = specifications.filter(
+                (row) => row.label.trim() !== '' || row.value.trim() !== '',
+            );
+
             return {
                 ...rest,
+                brand: brand.trim() === '' ? null : brand,
+                specifications: JSON.stringify(filteredSpecifications),
                 color_code: JSON.stringify(
                     normalizeCatalogColorPickerValue(color_code),
                 ),
@@ -325,7 +403,8 @@ export function ProductForm({
                 </Alert>
             ) : null}
 
-            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
+            <div className="space-y-6">
+            <div className="grid items-start gap-6 xl:grid-cols-2">
                 <section
                     className={cn(
                         'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
@@ -461,24 +540,44 @@ export function ProductForm({
                             <InputError message={errors.name} />
                         </div>
 
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="slug">Slug</Label>
-                            <Input
-                                id="slug"
-                                value={data.slug}
-                                onChange={(event) => {
-                                    setSlugTouched(true);
-                                    setData('slug', event.target.value);
-                                }}
-                                onBlur={() => {
-                                    if (data.slug.trim() !== '') {
-                                        validate('slug');
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="slug">Slug</Label>
+                                <Input
+                                    id="slug"
+                                    value={data.slug}
+                                    onChange={(event) => {
+                                        setSlugTouched(true);
+                                        setData('slug', event.target.value);
+                                    }}
+                                    onBlur={() => {
+                                        if (data.slug.trim() !== '') {
+                                            validate('slug');
+                                        }
+                                    }}
+                                    required
+                                    placeholder="e.g. air-pro-kit"
+                                />
+                                <InputError message={errors.slug} />
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="sku">SKU</Label>
+                                <Input
+                                    id="sku"
+                                    value={data.sku}
+                                    onChange={(event) =>
+                                        setData('sku', event.target.value)
                                     }
-                                }}
-                                required
-                                placeholder="e.g. air-pro-kit"
-                            />
-                            <InputError message={errors.slug} />
+                                    onBlur={() => {
+                                        if (data.sku.trim() !== '') {
+                                            validate('sku');
+                                        }
+                                    }}
+                                    placeholder="e.g. POM-AIR-PRO"
+                                />
+                                <InputError message={errors.sku} />
+                            </div>
                         </div>
 
                         {enableSuggestions && suggestions.length > 0 ? (
@@ -544,21 +643,16 @@ export function ProductForm({
                         ) : null}
 
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="sku">SKU</Label>
+                            <Label htmlFor="brand">Brand</Label>
                             <Input
-                                id="sku"
-                                value={data.sku}
+                                id="brand"
+                                value={data.brand}
                                 onChange={(event) =>
-                                    setData('sku', event.target.value)
+                                    setData('brand', event.target.value)
                                 }
-                                onBlur={() => {
-                                    if (data.sku.trim() !== '') {
-                                        validate('sku');
-                                    }
-                                }}
-                                placeholder="e.g. POM-AIR-PRO"
+                                placeholder="e.g. PuffonMate"
                             />
-                            <InputError message={errors.sku} />
+                            <InputError message={errors.brand} />
                         </div>
 
                         <div className="flex flex-col gap-2">
@@ -573,32 +667,10 @@ export function ProductForm({
                                     )
                                 }
                                 placeholder="Tell customers what makes this product stand out"
-                                rows={7}
-                                className="min-h-40 resize-y"
+                                rows={4}
+                                className="min-h-28 resize-y"
                             />
                             <InputError message={errors.description} />
-                        </div>
-
-                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-                            <Checkbox
-                                id="status"
-                                checked={data.status}
-                                onCheckedChange={(value) =>
-                                    setData('status', value === true)
-                                }
-                            />
-                            <div className="space-y-0.5">
-                                <Label
-                                    htmlFor="status"
-                                    className="font-medium"
-                                >
-                                    Active in catalog
-                                </Label>
-                                <p className="text-muted-foreground text-xs">
-                                    Inactive products stay hidden from browsing.
-                                </p>
-                            </div>
-                            <InputError message={errors.status} />
                         </div>
 
                         {branchOpsFields ? (
@@ -884,6 +956,201 @@ export function ProductForm({
                         ) : null}
                     </div>
                 </section>
+            </div>
+
+            <section
+                className={cn(
+                    'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                    'sm:p-6',
+                )}
+            >
+                <div className="mb-5 space-y-1">
+                    <h2 className="text-base font-semibold tracking-tight">
+                        Storefront merchandising
+                    </h2>
+                    <p className="text-muted-foreground text-sm">
+                        Tags drive home collections; specifications appear on
+                        the product page table.
+                    </p>
+                </div>
+
+                <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                    <div className="flex flex-col gap-5">
+                        <div className="flex flex-col gap-3">
+                            <div className="space-y-1">
+                                <Label>Tags</Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Highlight this product in storefront
+                                    collections.
+                                </p>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                                {PRODUCT_TAG_OPTIONS.map((option) => {
+                                    const checked = data.tags.includes(
+                                        option.value,
+                                    );
+
+                                    return (
+                                        <label
+                                            key={option.value}
+                                            htmlFor={`tag-${option.value}`}
+                                            className={cn(
+                                                'inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors',
+                                                checked
+                                                    ? 'border-primary/40 bg-primary/5'
+                                                    : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                            )}
+                                        >
+                                            <Checkbox
+                                                id={`tag-${option.value}`}
+                                                checked={checked}
+                                                onCheckedChange={() =>
+                                                    toggleTag(option.value)
+                                                }
+                                            />
+                                            <span className="font-normal">
+                                                {option.label}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                            <InputError message={errors.tags} />
+                        </div>
+
+                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                            <Checkbox
+                                id="status"
+                                checked={data.status}
+                                onCheckedChange={(value) =>
+                                    setData('status', value === true)
+                                }
+                            />
+                            <div className="space-y-0.5">
+                                <Label
+                                    htmlFor="status"
+                                    className="font-medium"
+                                >
+                                    Active in catalog
+                                </Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Inactive products stay hidden from browsing.
+                                </p>
+                            </div>
+                            <InputError message={errors.status} />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="space-y-1">
+                                <Label>Specifications</Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Label and value pairs for the product page.
+                                    Brand is added automatically from the brand
+                                    field on the storefront.
+                                </p>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={addSpecification}
+                            >
+                                <Plus className="size-4" />
+                                Add row
+                            </Button>
+                        </div>
+                        <div className="space-y-0.5">
+                            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-center gap-2 px-0.5">
+                                <span className="text-muted-foreground text-xs font-medium">
+                                    Label
+                                </span>
+                                <span className="text-muted-foreground text-xs font-medium">
+                                    Value
+                                </span>
+                                <span className="size-9" aria-hidden />
+                            </div>
+                            <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                                {data.specifications.map((row, index) => (
+                                    <div
+                                        key={`specification-${index}`}
+                                        className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-start gap-2"
+                                    >
+                                        <div className="flex flex-col gap-1">
+                                            <Label
+                                                htmlFor={`specification-label-${index}`}
+                                                className="sr-only"
+                                            >
+                                                Label
+                                            </Label>
+                                            <Input
+                                                id={`specification-label-${index}`}
+                                                value={row.label}
+                                                onChange={(event) =>
+                                                    updateSpecification(
+                                                        index,
+                                                        'label',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                placeholder="e.g. Pack Format"
+                                            />
+                                            <InputError
+                                                message={
+                                                    errors[
+                                                        `specifications.${index}.label`
+                                                    ]
+                                                }
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <Label
+                                                htmlFor={`specification-value-${index}`}
+                                                className="sr-only"
+                                            >
+                                                Value
+                                            </Label>
+                                            <Input
+                                                id={`specification-value-${index}`}
+                                                value={row.value}
+                                                onChange={(event) =>
+                                                    updateSpecification(
+                                                        index,
+                                                        'value',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                placeholder="e.g. Soft Pack"
+                                            />
+                                            <InputError
+                                                message={
+                                                    errors[
+                                                        `specifications.${index}.value`
+                                                    ]
+                                                }
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="size-9 shrink-0"
+                                            onClick={() =>
+                                                removeSpecification(index)
+                                            }
+                                            aria-label="Remove specification row"
+                                        >
+                                            <Trash2 className="size-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <InputError message={errors.specifications} />
+                    </div>
+                </div>
+            </section>
             </div>
 
             <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">

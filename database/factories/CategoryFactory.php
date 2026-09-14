@@ -23,9 +23,12 @@ class CategoryFactory extends Factory
             'name' => Str::title($name),
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
             'image' => null,
+            'slogan' => null,
             'color_code' => null,
             'status' => true,
             'featured' => false,
+            'show_in_nav' => false,
+            'nav_sort' => null,
         ];
     }
 
@@ -37,5 +40,13 @@ class CategoryFactory extends Factory
     public function featured(): static
     {
         return $this->state(fn (): array => ['featured' => true]);
+    }
+
+    public function inNav(?int $sort = null): static
+    {
+        return $this->state(fn (): array => [
+            'show_in_nav' => true,
+            'nav_sort' => $sort,
+        ]);
     }
 }

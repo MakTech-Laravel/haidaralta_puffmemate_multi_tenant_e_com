@@ -167,7 +167,7 @@ test('branch can adjust inventory and price for a variant', function () {
         ->get(route('branch.products.show', [$branch, $product]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('branch/products/show')
+            ->component('branch/catalog/products/show')
             ->has('product.variant_inventories.'.$variant->id)
             ->where('product.variant_inventories.'.$variant->id.'.quantity', 7)
             ->has('product.variant_prices.'.$variant->id)
@@ -197,7 +197,7 @@ test('branch product index filters by enabled and low stock', function () {
         ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('branch/products/index')
+            ->component('branch/catalog/products/index')
             ->has('table.data')
             ->where('table.data', fn ($rows) => collect($rows)->contains(fn ($row) => $row['slug'] === 'enabled-filter-pack')
                 && collect($rows)->contains(fn ($row) => $row['slug'] === 'low-stock-filter-pack')
@@ -210,7 +210,7 @@ test('branch product index filters by enabled and low stock', function () {
         ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('branch/products/index')
+            ->component('branch/catalog/products/index')
             ->where('table.data', fn ($rows) => collect($rows)->contains(fn ($row) => $row['slug'] === 'low-stock-filter-pack')
                 && ! collect($rows)->contains(fn ($row) => $row['slug'] === 'enabled-filter-pack')));
 });

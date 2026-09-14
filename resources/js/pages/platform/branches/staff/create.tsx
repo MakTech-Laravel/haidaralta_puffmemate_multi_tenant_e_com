@@ -33,7 +33,7 @@ export default function PlatformBranchScopedStaffCreate({
         <>
             <Head title={`Add staff · ${branch.name}`} />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-6 p-2">
+            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
                 <Heading
                     title="Add staff"
                     description={`Create a staff account for ${branch.name}`}

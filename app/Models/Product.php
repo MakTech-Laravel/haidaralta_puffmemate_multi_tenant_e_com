@@ -44,7 +44,10 @@ class Product extends Model
         'slug',
         'sku',
         'description',
+        'brand',
         'image',
+        'tags',
+        'specifications',
         'color_code',
         'status',
         'created_by',
@@ -145,6 +148,8 @@ class Product extends Model
             'name' => $this->name,
             'slug' => $this->slug,
             'sku' => $this->sku,
+            'brand' => $this->brand,
+            'tags' => $this->tags ?? [],
             'status' => (bool) $this->status,
             'created_at' => SearchableTimestamp::from($this->created_at),
         ];
@@ -162,6 +167,8 @@ class Product extends Model
     {
         return [
             'status' => 'boolean',
+            'tags' => 'array',
+            'specifications' => 'array',
             'color_code' => 'array',
         ];
     }

@@ -58,7 +58,17 @@ interface CategoryFormDefaults {
     color_code?: ColorPickerValue | null;
     status?: boolean;
     featured?: boolean;
+    slogan?: string | null;
+    show_in_nav?: boolean;
+    nav_sort?: number | null;
 }
+
+export type CategoryLimits = {
+    featured_max: number;
+    nav_max: number;
+    featured_count: number;
+    nav_count: number;
+};
 
 interface CategoryFormProps {
     action: FormAction;
@@ -67,6 +77,7 @@ interface CategoryFormProps {
     isEdit?: boolean;
     cancelHref: string;
     submitLabel?: string;
+    limits?: CategoryLimits;
     /** When set with suggestionsUrl, fetch similar categories while typing the name. */
     enableSuggestions?: boolean;
     suggestionsUrl?: string;
@@ -92,6 +103,7 @@ export function CategoryForm({
     isEdit = false,
     cancelHref,
     submitLabel,
+    limits,
     enableSuggestions = false,
     suggestionsUrl,
     suggestionShowHref,
@@ -140,11 +152,26 @@ export function CategoryForm({
         color_code: normalizeCatalogColorPickerValue(defaults?.color_code),
         status: defaults?.status ?? true,
         featured: defaults?.featured ?? false,
+        slogan: defaults?.slogan ?? '',
+        show_in_nav: defaults?.show_in_nav ?? false,
+        nav_sort: defaults?.nav_sort ?? null,
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
     const imageTileStyle = colorPickerStyle(data.color_code);
     const imageTileTransparent = isTransparentColorPickerValue(data.color_code);
+    const featuredAtLimit =
+        limits !== undefined &&
+        limits.featured_count >= limits.featured_max &&
+        !defaults?.featured;
+    const featuredRemaining =
+        limits !== undefined
+            ? Math.max(0, limits.featured_max - limits.featured_count)
+            : null;
+    const navRemaining =
+        limits !== undefined
+            ? Math.max(0, limits.nav_max - limits.nav_count)
+            : null;
     const selectedParent = useMemo(
         () =>
             data.parent_id === null
@@ -449,6 +476,27 @@ export function CategoryForm({
                             <InputError message={errors.parent_id} />
                         </div>
 
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="slogan">Slogan / short description</Label>
+                            <Input
+                                id="slogan"
+                                value={data.slogan}
+                                onChange={(event) =>
+                                    setData('slogan', event.target.value)
+                                }
+                                maxLength={120}
+                                placeholder="e.g. Ready to vape, no fuss"
+                                autoComplete="off"
+                            />
+                            <p className="text-muted-foreground text-xs">
+                                Shown on homepage category cards
+                                {data.slogan.length > 0
+                                    ? ` · ${data.slogan.length}/120`
+                                    : ''}
+                            </p>
+                            <InputError message={errors.slogan} />
+                        </div>
+
                         <div className="mt-auto grid gap-3 sm:grid-cols-2">
                             <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
                                 <Checkbox
@@ -477,6 +525,7 @@ export function CategoryForm({
                                 <Checkbox
                                     id="featured"
                                     checked={data.featured}
+                                    disabled={featuredAtLimit}
                                     onCheckedChange={(value) =>
                                         setData('featured', value === true)
                                     }
@@ -491,9 +540,73 @@ export function CategoryForm({
                                     <p className="text-muted-foreground text-xs">
                                         Highlight this category in featured
                                         storefront sections.
+                                        {featuredRemaining !== null
+                                            ? ` ${featuredRemaining} of ${limits?.featured_max} slots remaining.`
+                                            : null}
+                                        {featuredAtLimit
+                                            ? ' Limit reached.'
+                                            : null}
                                     </p>
                                 </div>
                                 <InputError message={errors.featured} />
+                            </div>
+
+                            <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                                <Checkbox
+                                    id="show_in_nav"
+                                    checked={data.show_in_nav}
+                                    onCheckedChange={(value) =>
+                                        setData(
+                                            'show_in_nav',
+                                            value === true,
+                                        )
+                                    }
+                                />
+                                <div className="space-y-0.5">
+                                    <Label
+                                        htmlFor="show_in_nav"
+                                        className="font-medium"
+                                    >
+                                        Show in header navigation
+                                    </Label>
+                                    <p className="text-muted-foreground text-xs">
+                                        {limits
+                                            ? `Up to ${limits.nav_max} categories in the header${navRemaining !== null ? ` · ${navRemaining} remaining` : ''}.`
+                                            : 'Include this category in the storefront header.'}
+                                    </p>
+                                </div>
+                                <InputError message={errors.show_in_nav} />
+                            </div>
+
+                            <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                                <Label htmlFor="nav_sort">Nav order</Label>
+                                <Input
+                                    id="nav_sort"
+                                    type="number"
+                                    min={0}
+                                    disabled={!data.show_in_nav}
+                                    value={
+                                        data.nav_sort === null ||
+                                        data.nav_sort === undefined
+                                            ? ''
+                                            : data.nav_sort
+                                    }
+                                    onChange={(event) => {
+                                        const raw = event.target.value;
+                                        setData(
+                                            'nav_sort',
+                                            raw === ''
+                                                ? null
+                                                : Number(raw),
+                                        );
+                                    }}
+                                    placeholder="0"
+                                />
+                                <p className="text-muted-foreground text-xs">
+                                    Lower numbers appear first when shown in
+                                    navigation.
+                                </p>
+                                <InputError message={errors.nav_sort} />
                             </div>
                         </div>
                     </div>

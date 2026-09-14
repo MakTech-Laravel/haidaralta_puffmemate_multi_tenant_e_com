@@ -164,7 +164,7 @@ export default function PlatformBranchProductsIndex({
         <>
             <Head title={`${branch.name} products`} />
 
-            <div className="space-y-6 p-2 md:p-4">
+            <div className="space-y-4 p-2 md:p-4">
                 <Heading
                     title={`${branch.name} products`}
                     description="Enablement, stock, and pricing for this branch"

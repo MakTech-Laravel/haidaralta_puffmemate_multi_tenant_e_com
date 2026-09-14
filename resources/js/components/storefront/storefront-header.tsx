@@ -86,7 +86,11 @@ function NavLabel({
 
 export function StorefrontHeader() {
     const page = usePage();
-    const { auth, name } = page.props;
+    const { auth, name, storefront } = page.props as typeof page.props & {
+        storefront?: {
+            navCategories?: Array<{ label: string; categorySlug: string }>;
+        };
+    };
     const url = page.url;
     const [mobileOpen, setMobileOpen] = useState(false);
     const accountHref = auth.user ? dashboard() : login();
@@ -95,6 +99,16 @@ export function StorefrontHeader() {
         url.startsWith('/cart?') ||
         url === '/checkout' ||
         url.startsWith('/checkout?');
+
+    const navItems: StorefrontChromeItem[] = [
+        { label: 'Home', route: 'home' },
+        ...(storefront?.navCategories ?? []).map((category) => ({
+            label: category.label,
+            categorySlug: category.categorySlug,
+        })),
+    ];
+
+    const items = navItems.length > 1 ? navItems : storefrontNavItems;
 
     return (
         <div className="sticky top-0 z-40">
@@ -119,7 +133,7 @@ export function StorefrontHeader() {
                     </Link>
 
                     <nav className="ml-4 hidden flex-1 items-center justify-center gap-5 lg:flex xl:gap-7">
-                        {storefrontNavItems.map((item) => (
+                        {items.map((item) => (
                             <NavLabel key={item.label} item={item} url={url} />
                         ))}
                     </nav>
@@ -167,7 +181,7 @@ export function StorefrontHeader() {
                                     <SheetTitle>Menu</SheetTitle>
                                 </SheetHeader>
                                 <nav className="mt-6 flex flex-col gap-4 px-1">
-                                    {storefrontNavItems.map((item) => (
+                                    {items.map((item) => (
                                         <NavLabel
                                             key={item.label}
                                             item={item}

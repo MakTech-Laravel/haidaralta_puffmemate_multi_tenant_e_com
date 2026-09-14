@@ -60,7 +60,7 @@ export default function PlatformBranchesCreateSuperAdmin({
         <>
             <Head title={`Super-admin · ${branch.name}`} />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-6 p-2">
+            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
                 <div className="flex flex-col gap-3">
                     <div className="flex flex-wrap items-center gap-2">
                         <Badge>Step 2 of 2</Badge>

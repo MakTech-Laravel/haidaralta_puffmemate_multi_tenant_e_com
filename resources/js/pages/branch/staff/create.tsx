@@ -36,7 +36,7 @@ export default function BranchStaffCreate({
         <>
             <Head title="Add staff" />
 
-            <div className="mx-auto max-w-2xl space-y-6 p-2">
+            <div className="mx-auto max-w-2xl space-y-4 p-2">
                 <Heading
                     title="Add staff"
                     description={`Create a staff member for ${branch.name}`}

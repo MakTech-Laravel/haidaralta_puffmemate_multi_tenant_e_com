@@ -1,7 +1,6 @@
 ---
 paths:
-  - 'app/Models/{User,Branch}.php'
-  - app/Models/OtpRecord.php
+  - 'app/Models/**.php'
 ---
 
 # Models

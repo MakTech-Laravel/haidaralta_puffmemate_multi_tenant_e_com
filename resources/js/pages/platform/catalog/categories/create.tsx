@@ -1,6 +1,9 @@
 import { Head } from '@inertiajs/react';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
-import { CategoryForm } from '@/components/platform/category-form';
+import {
+    CategoryForm,
+    type CategoryLimits,
+} from '@/components/platform/category-form';
 import Heading from '@/components/heading';
 
 type ParentOption = {
@@ -10,14 +13,16 @@ type ParentOption = {
 
 export default function PlatformCategoriesCreate({
     parentOptions,
+    limits,
 }: {
     parentOptions: ParentOption[];
+    limits: CategoryLimits;
 }) {
     return (
         <>
             <Head title="Add category" />
 
-            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Add category"
                     description="Create a catalog category with listing image and background"
@@ -26,6 +31,7 @@ export default function PlatformCategoriesCreate({
                 <CategoryForm
                     action={CategoryController.store.form()}
                     parentOptions={parentOptions}
+                    limits={limits}
                     cancelHref={CategoryController.index.url()}
                     enableSuggestions
                     suggestionsUrl={CategoryController.suggestions.url()}

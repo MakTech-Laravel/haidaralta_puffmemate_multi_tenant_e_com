@@ -38,7 +38,7 @@ export default function PlatformBranchStaffEdit({
         <>
             <Head title={`Edit ${staffMember.name}`} />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-6 p-2">
+            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
                 <Heading
                     title={`Edit ${staffMember.name}`}
                     description="Update branch staff details and roles"

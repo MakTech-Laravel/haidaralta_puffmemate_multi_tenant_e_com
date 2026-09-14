@@ -1,7 +1,6 @@
 ---
 paths:
   - 'database/migrations/**'
-  - database/migrations/2026_09_13_042224_create_categories_table.php
 ---
 
 # Migrations
@@ -17,3 +16,7 @@ Pre-handover: put new columns on the original create_* migration (e.g. branch_pr
 
 ## Category featured on create migration
 Pre-handover: categories.featured boolean (default false) belongs on the original create_categories migration — never a separate Schema::table + backfill migration.
+
+## Category slogan / nav columns on create migration
+Pre-handover: categories.slogan, show_in_nav, nav_sort (and products.brand, tags, specifications) belong on the original create_* migrations — never Schema::table greenfield mods.
+

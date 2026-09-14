@@ -1,6 +1,9 @@
 import { Head } from '@inertiajs/react';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
-import { CategoryForm } from '@/components/platform/category-form';
+import {
+    CategoryForm,
+    type CategoryLimits,
+} from '@/components/platform/category-form';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { ColorPickerValue } from '@/lib/color-picker';
@@ -20,20 +23,25 @@ type Category = {
     color_code?: ColorPickerValue | null;
     status: boolean;
     featured: boolean;
+    slogan?: string | null;
+    show_in_nav?: boolean;
+    nav_sort?: number | null;
 };
 
 export default function PlatformCategoriesEdit({
     category,
     parentOptions,
+    limits,
 }: {
     category: Category;
     parentOptions: ParentOption[];
+    limits: CategoryLimits;
 }) {
     return (
         <>
             <Head title={`Edit ${category.name}`} />
 
-            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${category.name}`}
                     description="Update category details and media"
@@ -52,6 +60,7 @@ export default function PlatformCategoriesEdit({
                 <CategoryForm
                     action={CategoryController.update.form(category.slug)}
                     parentOptions={parentOptions}
+                    limits={limits}
                     isEdit
                     enableSuggestions
                     suggestionsUrl={CategoryController.suggestions.url()}
@@ -68,6 +77,9 @@ export default function PlatformCategoriesEdit({
                         color_code: category.color_code,
                         status: category.status,
                         featured: category.featured,
+                        slogan: category.slogan,
+                        show_in_nav: category.show_in_nav,
+                        nav_sort: category.nav_sort,
                     }}
                     cancelHref={CategoryController.show.url(category.slug)}
                 />
