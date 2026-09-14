@@ -673,28 +673,6 @@ export function ProductForm({
                             <InputError message={errors.description} />
                         </div>
 
-                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-                            <Checkbox
-                                id="status"
-                                checked={data.status}
-                                onCheckedChange={(value) =>
-                                    setData('status', value === true)
-                                }
-                            />
-                            <div className="space-y-0.5">
-                                <Label
-                                    htmlFor="status"
-                                    className="font-medium"
-                                >
-                                    Active in catalog
-                                </Label>
-                                <p className="text-muted-foreground text-xs">
-                                    Inactive products stay hidden from browsing.
-                                </p>
-                            </div>
-                            <InputError message={errors.status} />
-                        </div>
-
                         {branchOpsFields ? (
                             <div className="grid gap-5 sm:grid-cols-3">
                                 <div className="flex flex-col gap-2">
@@ -996,44 +974,71 @@ export function ProductForm({
                     </p>
                 </div>
 
-                <div className="grid items-start gap-8 lg:grid-cols-2">
-                    <div className="flex flex-col gap-3">
-                        <div className="space-y-1">
-                            <Label>Tags</Label>
-                            <p className="text-muted-foreground text-xs">
-                                Highlight this product in storefront
-                                collections.
-                            </p>
-                        </div>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            {PRODUCT_TAG_OPTIONS.map((option) => {
-                                const checked = data.tags.includes(
-                                    option.value,
-                                );
+                <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                    <div className="flex flex-col gap-5">
+                        <div className="flex flex-col gap-3">
+                            <div className="space-y-1">
+                                <Label>Tags</Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Highlight this product in storefront
+                                    collections.
+                                </p>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                                {PRODUCT_TAG_OPTIONS.map((option) => {
+                                    const checked = data.tags.includes(
+                                        option.value,
+                                    );
 
-                                return (
-                                    <div
-                                        key={option.value}
-                                        className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3"
-                                    >
-                                        <Checkbox
-                                            id={`tag-${option.value}`}
-                                            checked={checked}
-                                            onCheckedChange={() =>
-                                                toggleTag(option.value)
-                                            }
-                                        />
-                                        <Label
+                                    return (
+                                        <label
+                                            key={option.value}
                                             htmlFor={`tag-${option.value}`}
-                                            className="font-normal"
+                                            className={cn(
+                                                'inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors',
+                                                checked
+                                                    ? 'border-primary/40 bg-primary/5'
+                                                    : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                            )}
                                         >
-                                            {option.label}
-                                        </Label>
-                                    </div>
-                                );
-                            })}
+                                            <Checkbox
+                                                id={`tag-${option.value}`}
+                                                checked={checked}
+                                                onCheckedChange={() =>
+                                                    toggleTag(option.value)
+                                                }
+                                            />
+                                            <span className="font-normal">
+                                                {option.label}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                            <InputError message={errors.tags} />
                         </div>
-                        <InputError message={errors.tags} />
+
+                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                            <Checkbox
+                                id="status"
+                                checked={data.status}
+                                onCheckedChange={(value) =>
+                                    setData('status', value === true)
+                                }
+                            />
+                            <div className="space-y-0.5">
+                                <Label
+                                    htmlFor="status"
+                                    className="font-medium"
+                                >
+                                    Active in catalog
+                                </Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Inactive products stay hidden from browsing.
+                                </p>
+                            </div>
+                            <InputError message={errors.status} />
+                        </div>
                     </div>
 
                     <div className="flex flex-col gap-3">
@@ -1041,9 +1046,9 @@ export function ProductForm({
                             <div className="space-y-1">
                                 <Label>Specifications</Label>
                                 <p className="text-muted-foreground text-xs">
-                                    Label and value pairs shown on the product
-                                    page. Brand is filled from the brand field
-                                    automatically on the storefront.
+                                    Label and value pairs for the product page.
+                                    Brand is added automatically from the brand
+                                    field on the storefront.
                                 </p>
                             </div>
                             <Button
@@ -1056,13 +1061,13 @@ export function ProductForm({
                                 Add row
                             </Button>
                         </div>
-                        <div className="space-y-3">
+                        <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
                             {data.specifications.map((row, index) => (
                                 <div
                                     key={`specification-${index}`}
-                                    className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                                    className="grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)_auto] items-start gap-2"
                                 >
-                                    <div className="flex flex-col gap-2">
+                                    <div className="flex flex-col gap-1">
                                         <Label
                                             htmlFor={`specification-label-${index}`}
                                             className="sr-only"
@@ -1089,7 +1094,7 @@ export function ProductForm({
                                             }
                                         />
                                     </div>
-                                    <div className="flex flex-col gap-2">
+                                    <div className="flex flex-col gap-1">
                                         <Label
                                             htmlFor={`specification-value-${index}`}
                                             className="sr-only"
@@ -1120,7 +1125,7 @@ export function ProductForm({
                                         type="button"
                                         variant="outline"
                                         size="icon"
-                                        className="self-start"
+                                        className="size-9 shrink-0"
                                         onClick={() =>
                                             removeSpecification(index)
                                         }
