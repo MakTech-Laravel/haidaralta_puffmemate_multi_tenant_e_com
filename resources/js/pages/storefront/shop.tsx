@@ -21,14 +21,14 @@ export default function StorefrontShop({
         <>
             <Head title="Shop" />
 
-            <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+            <div className="mx-auto container px-4 py-12 sm:px-6">
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <h1 className="mb-2 text-2xl font-semibold tracking-tight">
                             Shop
                         </h1>
                         <p className="text-muted-foreground text-sm">
-                            Live catalog from your selected branch.
+                            Browse the catalog.
                         </p>
                     </div>
                     <StorefrontBranchSelect

@@ -14,7 +14,7 @@ export function ProductGallery({ images, alt, className }: ProductGalleryProps) 
 
     return (
         <div className={cn('flex flex-col gap-3', className)}>
-            <div className="bg-muted relative aspect-square overflow-hidden rounded-xl">
+            <div className="bg-muted relative aspect-square overflow-hidden">
                 <div
                     className="absolute inset-0 bg-cover bg-center"
                     style={{ backgroundImage: `url(${activeImage})` }}

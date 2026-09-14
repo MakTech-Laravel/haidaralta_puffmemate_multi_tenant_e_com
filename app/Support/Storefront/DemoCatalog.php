@@ -65,6 +65,52 @@ class DemoCatalog
     }
 
     /**
+     * @return list<array{id: string, name: string, description: string, image: string, href: string, wide?: bool}>
+     */
+    public static function featuredCategories(): array
+    {
+        return [
+            [
+                'id' => 'cigarettes',
+                'name' => 'Cigarettes',
+                'description' => 'Top brands & everyday packs',
+                'image' => '/images/storefront/category-cigarettes.png',
+                'href' => route('shop.category', ['category' => 'cigarettes'], false),
+            ],
+            [
+                'id' => 'vapes',
+                'name' => 'Vapes',
+                'description' => 'Devices, pods & disposables',
+                'image' => '/images/storefront/category-vapes.png',
+                'href' => route('shop.category', ['category' => 'vapes'], false),
+            ],
+            [
+                'id' => 'tobacco',
+                'name' => 'Tobacco',
+                'description' => 'Rolling & pipe tobacco',
+                'image' => '/images/storefront/category-tobacco.png',
+                'href' => route('shop.category', ['category' => 'tobacco'], false),
+            ],
+            [
+                'id' => 'nicotine-pouches',
+                'name' => 'Nicotine Pouches',
+                'description' => 'Smoke-free nicotine options',
+                'image' => '/images/storefront/category-pouches.png',
+                'href' => route('shop.category', ['category' => 'nicotine-pouches'], false),
+                'wide' => true,
+            ],
+            [
+                'id' => 'accessories',
+                'name' => 'Accessories',
+                'description' => 'Lighters, cases & more',
+                'image' => '/images/storefront/category-accessories.png',
+                'href' => route('shop.category', ['category' => 'accessories'], false),
+                'wide' => true,
+            ],
+        ];
+    }
+
+    /**
      * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
      */
     public static function products(): array
@@ -182,6 +228,22 @@ class DemoCatalog
     }
 
     /**
+     * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
+     */
+    public static function bestSellingProducts(): array
+    {
+        return array_values(array_slice(self::products(), 0, 4));
+    }
+
+    /**
+     * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
+     */
+    public static function newArrivalProducts(): array
+    {
+        return array_values(array_slice(self::products(), 4, 4));
+    }
+
+    /**
      * @return array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}
      */
     public static function findProduct(string $id): array
@@ -282,7 +344,12 @@ class DemoCatalog
             'category' => $product['category'],
             'categorySlug' => self::categorySlugForName($product['category']),
             'badges' => [$product['category'], 'Popular'],
-            'images' => [$image, $image, $image],
+            // 'images' => [$image, $image, $image],
+            'images' => [
+                '/images/storefront/category-cigarettes.png',
+                '/images/storefront/b4343f447a376e4db4da6328e10eddefc632ddeb.jpg',
+                '/images/storefront/907b72737ecd36dbee5ac6c27fa0b02b906a44ee.jpg',
+            ],
             'price' => '$14.50',
             'compareAtPrice' => '$15.50',
             'availability' => 'Available',

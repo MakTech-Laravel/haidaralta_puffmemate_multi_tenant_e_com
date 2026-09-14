@@ -49,7 +49,7 @@ export const storefrontHeroSlides: StorefrontHeroSlide[] = [
         title: 'Premium picks. Local stock.',
         description:
             'Browse featured packs and new arrivals from nearby branches — ready when you are.',
-        image: '/images/storefront/hero-2.jpg',
+        image: '/images/storefront/hero2.jpg',
         primaryCta: { label: 'Shop Products', href: '/shop' },
         secondaryCta: { label: 'Explore Deals', href: '/shop' },
     },
