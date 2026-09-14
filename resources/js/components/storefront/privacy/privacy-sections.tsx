@@ -1,4 +1,4 @@
-import { PrivacySection } from '@/components/storefront/privacy-section';
+import { PrivacySection } from '@/components/storefront/privacy/privacy-section';
 import { privacySections } from '@/lib/storefront-privacy';
 import { cn } from '@/lib/utils';
 

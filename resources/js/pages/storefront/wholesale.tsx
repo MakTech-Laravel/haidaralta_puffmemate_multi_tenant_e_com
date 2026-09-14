@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
-import { WholesaleForm } from '@/components/storefront/wholesale-form';
-import { WholesaleInfo } from '@/components/storefront/wholesale-info';
-import { WholesaleIntro } from '@/components/storefront/wholesale-intro';
+import { WholesaleForm } from '@/components/storefront/wholesale/wholesale-form';
+import { WholesaleInfo } from '@/components/storefront/wholesale/wholesale-info';
+import { WholesaleIntro } from '@/components/storefront/wholesale/wholesale-intro';
 
 export default function StorefrontWholesale() {
     return (
