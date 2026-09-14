@@ -19,8 +19,8 @@ beforeEach(function () {
 });
 
 test('branch can create and update a global category', function () {
-    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($staff, 'branch')
         ->post(route('branch.categories.store', $branch), [
@@ -57,8 +57,8 @@ test('branch can create and update a global category', function () {
 });
 
 test('branch can update a global product without destroy routes', function () {
-    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $category = Category::factory()->create();
     $product = Product::factory()->create([
         'name' => 'Editable Air Pro',
@@ -84,7 +84,7 @@ test('branch can update a global product without destroy routes', function () {
 });
 
 test('branch catalog mutations require manage-branch-products', function () {
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $user = User::factory()->create([
         'user_type' => UserType::BRANCH,
         'branch_id' => $branch->id,
@@ -104,8 +104,8 @@ test('branch catalog mutations require manage-branch-products', function () {
 });
 
 test('branch category suggestions match existing catalog items', function () {
-    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $match = Category::factory()->create([
         'name' => 'Pro Coils',
         'slug' => 'pro-coils',
@@ -118,8 +118,8 @@ test('branch category suggestions match existing catalog items', function () {
 });
 
 test('precognitive branch category store returns 422 for a taken slug', function () {
-    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $existing = Category::factory()->create(['slug' => 'branch-taken-slug']);
     $before = Category::query()->count();
 
@@ -140,8 +140,8 @@ test('precognitive branch category store returns 422 for a taken slug', function
 });
 
 test('precognitive branch product store returns 422 for a taken slug', function () {
-    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $existing = Product::factory()->create(['slug' => 'branch-taken-product']);
     $before = Product::query()->count();
 

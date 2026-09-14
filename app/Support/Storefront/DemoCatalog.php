@@ -57,10 +57,10 @@ class DemoCatalog
     public static function branches(): array
     {
         return [
-            ['id' => 'downtown', 'name' => 'Downtown'],
-            ['id' => 'airport', 'name' => 'Airport'],
-            ['id' => 'harbour', 'name' => 'Harbour'],
-            ['id' => 'westside', 'name' => 'West Village Branch'],
+            ['id' => 'sydney-cbd', 'name' => 'PuffOnMate Sydney CBD'],
+            ['id' => 'melbourne-collins', 'name' => 'PuffOnMate Melbourne Collins'],
+            ['id' => 'brisbane-queen', 'name' => 'PuffOnMate Brisbane Queen St'],
+            ['id' => 'perth-hay', 'name' => 'PuffOnMate Perth Hay St'],
         ];
     }
 
@@ -453,10 +453,10 @@ class DemoCatalog
                 'total' => 44.00,
             ],
             'branches' => [
-                ['id' => 'williamsburg', 'name' => 'Williamsburg Branch'],
-                ['id' => 'brisbane', 'name' => 'Pacific Coast Tobacco – Brisbane Branch'],
-                ['id' => 'westside', 'name' => 'West Village Branch'],
-                ['id' => 'downtown', 'name' => 'Downtown'],
+                ['id' => 'sydney-cbd', 'name' => 'PuffOnMate Sydney CBD'],
+                ['id' => 'melbourne-collins', 'name' => 'PuffOnMate Melbourne Collins'],
+                ['id' => 'brisbane-queen', 'name' => 'PuffOnMate Brisbane Queen St'],
+                ['id' => 'perth-hay', 'name' => 'PuffOnMate Perth Hay St'],
             ],
         ];
     }

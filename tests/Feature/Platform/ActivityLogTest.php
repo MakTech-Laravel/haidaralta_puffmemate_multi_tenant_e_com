@@ -149,8 +149,8 @@ test('activity log index filters by event', function () {
 });
 
 test('branch portal sees only its branch activities', function () {
-    $branchA = Branch::query()->where('slug', 'downtown')->firstOrFail();
-    $branchB = Branch::query()->where('slug', 'uptown')->firstOrFail();
+    $branchA = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $branchB = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
     $staffA = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
 
     Activity::query()->delete();

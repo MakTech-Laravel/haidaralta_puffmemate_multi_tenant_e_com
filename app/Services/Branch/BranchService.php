@@ -7,6 +7,7 @@ use App\Enums\UserType;
 use App\Exceptions\BranchAlreadyHasSuperAdminException;
 use App\Models\Branch;
 use App\Models\User;
+use App\Support\MediaUrl;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -153,11 +154,7 @@ class BranchService
 
     public function logoUrl(?string $path): ?string
     {
-        if ($path === null || $path === '' || ! str_contains($path, '/')) {
-            return null;
-        }
-
-        return Storage::disk('public')->url($path);
+        return MediaUrl::resolve($path, fallback: null);
     }
 
     private function storeLogo(?UploadedFile $file): ?string

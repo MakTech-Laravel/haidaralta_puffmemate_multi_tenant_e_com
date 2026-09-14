@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
 import {
     Clock,
     Package,
@@ -82,6 +82,15 @@ export default function BranchDashboard() {
     const { hasRole, roles } = usePermission();
     const user = auth.user;
     const initials = useInitials();
+
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Dashboard',
+                href: `/branch/${branch.slug}/dashboard`,
+            },
+        ],
+    });
 
     return (
         <>
@@ -263,11 +272,3 @@ export default function BranchDashboard() {
     );
 }
 
-BranchDashboard.layout = {
-    breadcrumbs: [
-        {
-            title: 'Dashboard',
-            href: '/branch/downtown/dashboard',
-        },
-    ],
-};

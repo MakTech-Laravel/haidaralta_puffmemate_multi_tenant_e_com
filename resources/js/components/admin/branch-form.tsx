@@ -196,7 +196,7 @@ export function BranchForm({
                                     setData('name', event.target.value)
                                 }
                                 required
-                                placeholder="e.g. Downtown Store"
+                                placeholder="e.g. PuffOnMate Sydney CBD"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -212,7 +212,7 @@ export function BranchForm({
                                 }}
                                 onBlur={() => validate('slug')}
                                 required
-                                placeholder="e.g. downtown-store"
+                                placeholder="e.g. sydney-cbd"
                             />
                             <InputError message={errors.slug} />
                         </div>

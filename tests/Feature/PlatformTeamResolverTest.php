@@ -30,14 +30,14 @@ test('platform super admin role is scoped to team id zero', function () {
 });
 
 test('platform user has super admin role without explicit team context', function () {
-    $platformUser = User::query()->where('email', 'superadmin@dev.com')->first();
+    $platformUser = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->first();
 
     expect($platformUser)->not->toBeNull()
         ->and($platformUser->hasRole(RoleEnum::SUPER_ADMIN->value))->toBeTrue();
 });
 
 test('branch user has super admin role when branch team context is set', function () {
-    $branchUser = User::query()->where('email', 'branch1.superadmin@dev.com')->first();
+    $branchUser = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->first();
     $branchId = $branchUser->branch_id;
 
     app(PermissionRegistrar::class)->setPermissionsTeamId($branchId);
@@ -53,7 +53,7 @@ test('duplicate platform super admin role is rejected', function () {
 });
 
 test('branch roles are scoped to their branch team id', function () {
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     expect(Role::query()
         ->where('name', RoleEnum::SUPER_ADMIN->value)

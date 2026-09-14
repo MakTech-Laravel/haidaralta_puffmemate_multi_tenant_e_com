@@ -17,16 +17,16 @@ beforeEach(function () {
 
 test('platform admin can view branch staff across branches and filter by branch', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
-    $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $uptown = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
 
     $seededBranchStaffCount = User::query()
         ->where('user_type', UserType::BRANCH)
         ->count();
 
     $uptownStaff = User::factory()->create([
-        'name' => 'Uptown Staff',
-        'email' => 'uptown-staff@test.com',
+        'name' => 'Melbourne Floor Staff',
+        'email' => 'melbourne-staff@test.com',
         'user_type' => UserType::BRANCH,
         'branch_id' => $uptown->id,
         'email_verified_at' => now(),
@@ -67,14 +67,14 @@ test('platform admin can view branch staff across branches and filter by branch'
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branch-staff/show')
-            ->where('staffMember.email', 'uptown-staff@test.com')
-            ->where('staffMember.branch.slug', 'uptown')
+            ->where('staffMember.email', 'melbourne-staff@test.com')
+            ->where('staffMember.branch.slug', BranchSeeder::MELBOURNE_COLLINS)
         );
 });
 
 test('platform branch staff index can search by name', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
+    $uptown = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
 
     $match = User::factory()->create([
         'name' => 'Zelda Branch Finder',

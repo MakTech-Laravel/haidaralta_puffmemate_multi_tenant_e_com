@@ -38,7 +38,7 @@ test('branch user is redirected to their branch dashboard after login', function
         'password' => UserSeeder::DEFAULT_PASSWORD,
     ]);
 
-    $response->assertRedirect('/branch/downtown/dashboard');
+    $response->assertRedirect('/branch/sydney-cbd/dashboard');
     $this->assertAuthenticated('branch');
 });
 

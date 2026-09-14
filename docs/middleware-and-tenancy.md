@@ -105,7 +105,7 @@ already resolved to the branch guard) and before any controller logic or `Gate`/
 
 ```mermaid
 flowchart TD
-    Request["Request to /branch/downtown/dashboard"] --> EnsureGuard["ensure.guard:branch"]
+    Request["Request to /branch/sydney-cbd/dashboard"] --> EnsureGuard["ensure.guard:branch"]
     EnsureGuard -->|"not authenticated on branch guard"| Login["302 to /login"]
     EnsureGuard -->|"authenticated"| ResolveBranch["resolve.branch"]
     ResolveBranch -->|"branch not found or inactive"| NotFound["404"]

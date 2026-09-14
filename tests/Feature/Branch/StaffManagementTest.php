@@ -17,13 +17,13 @@ beforeEach(function () {
 
 test('branch admin can create and update staff in their own branch', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'branch')
         ->post(route('branch.staff.store', $downtown), [
-            'name' => 'Downtown Clerk',
+            'name' => 'Sydney Floor Clerk',
             'phone' => '0412000002',
-            'email' => 'downtown-clerk@test.com',
+            'email' => 'sydney-clerk@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',
             'roles' => [RoleEnum::STAFF->value],
@@ -31,14 +31,14 @@ test('branch admin can create and update staff in their own branch', function ()
         ])
         ->assertRedirect(route('branch.staff.show', [
             $downtown,
-            User::query()->where('email', 'downtown-clerk@test.com')->firstOrFail(),
+            User::query()->where('email', 'sydney-clerk@test.com')->firstOrFail(),
         ]))
         ->assertInertiaFlash('toast', [
             'type' => 'success',
             'message' => 'Staff member created.',
         ]);
 
-    $clerk = User::query()->where('email', 'downtown-clerk@test.com')->firstOrFail();
+    $clerk = User::query()->where('email', 'sydney-clerk@test.com')->firstOrFail();
 
     expect($clerk->user_type)->toBe(UserType::BRANCH)
         ->and($clerk->branch_id)->toBe($downtown->id);
@@ -48,9 +48,9 @@ test('branch admin can create and update staff in their own branch', function ()
 
     $this->actingAs($admin, 'branch')
         ->put(route('branch.staff.update', [$downtown, $clerk]), [
-            'name' => 'Downtown Manager',
+            'name' => 'Sydney Shift Lead',
             'phone' => '0412000002',
-            'email' => 'downtown-clerk@test.com',
+            'email' => 'sydney-clerk@test.com',
             'roles' => [RoleEnum::MANAGER->value],
             'is_active' => true,
         ])
@@ -61,14 +61,14 @@ test('branch admin can create and update staff in their own branch', function ()
     app(PermissionRegistrar::class)->setPermissionsTeamId($downtown->id);
     $clerk->unsetRelation('roles');
 
-    expect($clerk->name)->toBe('Downtown Manager')
+    expect($clerk->name)->toBe('Sydney Shift Lead')
         ->and($clerk->hasRole(RoleEnum::MANAGER->value))->toBeTrue();
 });
 
 test('branch admin cannot manage staff from another branch by url', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
-    $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $uptown = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
 
     $uptownStaff = User::factory()->create([
         'email' => 'uptown-only@test.com',
@@ -102,7 +102,7 @@ test('branch admin cannot manage staff from another branch by url', function () 
 
 test('deleting the last branch super admin is blocked', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'branch')
         ->delete(route('branch.staff.destroy', [$downtown, $admin]))
@@ -117,7 +117,7 @@ test('deleting the last branch super admin is blocked', function () {
 
 test('deactivating the last branch super admin is blocked', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'branch')
         ->put(route('branch.staff.update', [$downtown, $admin]), [
@@ -138,7 +138,7 @@ test('deactivating the last branch super admin is blocked', function () {
 
 test('branch staff show page includes effective permissions', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'branch')
         ->get(route('branch.staff.show', [$downtown, $admin]))
@@ -150,7 +150,7 @@ test('branch staff show page includes effective permissions', function () {
 
 test('branch staff index can search by phone', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $clerk = User::factory()->create([
         'name' => 'Searchable Clerk',

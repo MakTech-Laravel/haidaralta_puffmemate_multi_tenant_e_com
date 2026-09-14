@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
 use App\Support\CatalogBackgroundColor;
+use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 use Laravel\Scout\Searchable;
 
 class Product extends Model
@@ -108,9 +108,7 @@ class Product extends Model
 
     public function imageUrl(): ?string
     {
-        return $this->image
-            ? Storage::disk('public')->url($this->image)
-            : null;
+        return MediaUrl::resolve($this->image, fallback: null);
     }
 
     public function isEnabledForBranch(int $branchId): bool

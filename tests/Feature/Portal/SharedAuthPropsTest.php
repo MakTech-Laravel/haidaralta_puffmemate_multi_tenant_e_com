@@ -14,7 +14,7 @@ beforeEach(function () {
 });
 
 test('platform dashboard shares platform scoped auth props', function () {
-    $user = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
+    $user = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($user, 'platform')
         ->get('/platform/dashboard')
@@ -29,15 +29,15 @@ test('platform dashboard shares platform scoped auth props', function () {
 });
 
 test('branch dashboard shares branch scoped auth props', function () {
-    $user = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
+    $user = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($user, 'branch')
-        ->get('/branch/downtown/dashboard')
+        ->get('/branch/sydney-cbd/dashboard')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('portal', 'branch')
             ->where('branch.id', $user->branch_id)
-            ->where('branch.slug', 'downtown')
+            ->where('branch.slug', BranchSeeder::SYDNEY_CBD)
             ->where('auth.user.is_super_admin', true)
         );
 });

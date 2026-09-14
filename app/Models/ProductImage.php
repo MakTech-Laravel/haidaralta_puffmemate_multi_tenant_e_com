@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use App\Models\Concerns\AuditsChanges;
+use App\Support\MediaUrl;
 use Database\Factories\ProductImageFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class ProductImage extends Model
 {
@@ -33,7 +33,7 @@ class ProductImage extends Model
 
     public function url(): string
     {
-        return Storage::disk('public')->url($this->path);
+        return MediaUrl::resolve($this->path) ?? MediaUrl::DEFAULT_FALLBACK;
     }
 
     /**
