@@ -35,7 +35,7 @@ export default function PlatformObservabilityIndex({
         <>
             <Head title="Observability" />
 
-            <div className="flex flex-col gap-6 p-2">
+            <div className="flex flex-col gap-4 p-2">
                 <Heading
                     title="Observability"
                     description="Open Laravel Horizon for queues and Laravel Pulse for application metrics. These are the official package dashboards."

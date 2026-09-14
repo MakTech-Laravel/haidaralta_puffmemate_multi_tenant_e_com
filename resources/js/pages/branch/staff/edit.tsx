@@ -49,7 +49,7 @@ export default function BranchStaffEdit({
         <>
             <Head title={`Edit ${staffMember.name}`} />
 
-            <div className="mx-auto max-w-2xl space-y-6 p-2">
+            <div className="mx-auto max-w-2xl space-y-4 p-2">
                 <Heading
                     title={`Edit ${staffMember.name}`}
                     description={`Update staff for ${branch.name}`}

@@ -26,7 +26,7 @@ export default function PlatformBranchesEdit({ branch }: { branch: Branch }) {
         <>
             <Head title={`Edit ${branch.name}`} />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-6 p-2">
+            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
                 <Heading
                     title={`Edit ${branch.name}`}
                     description="Update branch details"

@@ -39,7 +39,7 @@ export default function PlatformActivityLogsIndex({
         <>
             <Head title="Activity log" />
 
-            <div className="space-y-6 p-2 md:p-4">
+            <div className="space-y-4 p-2 md:p-4">
                 <Heading
                     title="Activity log"
                     description="Site-wide audit trail across all portals"

@@ -35,7 +35,7 @@ export default function BranchRolesCreate({
         <>
             <Head title="Create role" />
 
-            <div className="mx-auto max-w-3xl space-y-6 p-2">
+            <div className="mx-auto max-w-3xl space-y-4 p-2">
                 <Heading
                     title="Create role"
                     description={`Define a role for ${branch.name}`}

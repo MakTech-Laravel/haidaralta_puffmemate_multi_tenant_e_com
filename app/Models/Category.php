@@ -24,17 +24,26 @@ class Category extends Model
     /**
      * @var list<string>
      */
-    public static array $dataTableSearchable = ['name', 'slug'];
+    public static array $dataTableSearchable = ['name', 'slug', 'slogan'];
 
     /**
      * @var list<string>
      */
-    public static array $dataTableSortable = ['name', 'slug', 'status', 'featured', 'created_at', 'products_count'];
+    public static array $dataTableSortable = [
+        'name',
+        'slug',
+        'status',
+        'featured',
+        'show_in_nav',
+        'nav_sort',
+        'created_at',
+        'products_count',
+    ];
 
     /**
      * @var list<string>
      */
-    public static array $dataTableFilterable = ['parent_id', 'status', 'featured'];
+    public static array $dataTableFilterable = ['parent_id', 'status', 'featured', 'show_in_nav'];
 
     /**
      * @var list<string>
@@ -43,10 +52,13 @@ class Category extends Model
         'parent_id',
         'name',
         'slug',
+        'slogan',
         'image',
         'color_code',
         'status',
         'featured',
+        'show_in_nav',
+        'nav_sort',
     ];
 
     /**
@@ -87,9 +99,12 @@ class Category extends Model
             'id' => (int) $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            'slogan' => $this->slogan,
             'parent_id' => $this->parent_id,
             'status' => (bool) $this->status,
             'featured' => (bool) $this->featured,
+            'show_in_nav' => (bool) $this->show_in_nav,
+            'nav_sort' => $this->nav_sort,
             'created_at' => SearchableTimestamp::from($this->created_at),
         ];
     }
@@ -107,6 +122,8 @@ class Category extends Model
         return [
             'status' => 'boolean',
             'featured' => 'boolean',
+            'show_in_nav' => 'boolean',
+            'nav_sort' => 'integer',
             'color_code' => 'array',
         ];
     }

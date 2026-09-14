@@ -8,6 +8,7 @@ use App\Models\ProductImage;
 use App\Models\User;
 use App\Services\Inventory\BranchProductAvailabilityService;
 use App\Support\CatalogBackgroundColor;
+use App\Support\ProductSpecifications;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -110,6 +111,14 @@ class ProductService
                 );
             }
 
+            if (array_key_exists('specifications', $data)) {
+                $data['specifications'] = ProductSpecifications::normalize($data['specifications']);
+            }
+
+            if (array_key_exists('tags', $data) && is_array($data['tags'])) {
+                $data['tags'] = array_values(array_unique(array_map('strval', $data['tags'])));
+            }
+
             if ($removeGalleryIds !== []) {
                 $this->deleteGalleryImages($product, $removeGalleryIds);
             }
@@ -174,6 +183,12 @@ class ProductService
             'slug' => $data['slug'],
             'sku' => $data['sku'] ?? null,
             'description' => $data['description'] ?? null,
+            'brand' => $data['brand'] ?? null,
+            'tags' => array_values(array_unique(array_map(
+                'strval',
+                is_array($data['tags'] ?? null) ? $data['tags'] : [],
+            ))),
+            'specifications' => ProductSpecifications::normalize($data['specifications'] ?? []),
             'image' => $primaryPath,
             'color_code' => CatalogBackgroundColor::normalize($data['color_code'] ?? null),
             'status' => $data['status'] ?? true,

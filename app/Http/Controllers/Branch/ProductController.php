@@ -45,7 +45,7 @@ class ProductController extends Controller
     {
         $branch = $this->currentBranch();
 
-        return Inertia::render('branch/products/index', [
+        return Inertia::render('branch/catalog/products/index', [
             'branch' => $branch->only(['id', 'name', 'slug']),
             'table' => BranchProductListingDataTable::makeForBranch($request, $branch, includeImage: true),
         ]);
@@ -55,7 +55,7 @@ class ProductController extends Controller
     {
         $branch = $this->currentBranch();
 
-        return Inertia::render('branch/products/create', [
+        return Inertia::render('branch/catalog/products/create', [
             'branch' => $branch->only(['id', 'name', 'slug']),
             'categoryOptions' => Category::query()
                 ->orderBy('name')
@@ -116,7 +116,7 @@ class ProductController extends Controller
     {
         $branch = $this->currentBranch();
 
-        return Inertia::render('branch/products/show', [
+        return Inertia::render('branch/catalog/products/show', [
             'branch' => $branch->only(['id', 'name', 'slug']),
             'product' => BranchProductShowPayload::product(
                 $branch,
@@ -134,7 +134,7 @@ class ProductController extends Controller
         $branch = $this->currentBranch();
         $product->load(['categories:id,name,slug', 'images']);
 
-        return Inertia::render('branch/products/edit', [
+        return Inertia::render('branch/catalog/products/edit', [
             'branch' => $branch->only(['id', 'name', 'slug']),
             'product' => [
                 'id' => $product->id,
@@ -143,6 +143,9 @@ class ProductController extends Controller
                 'slug' => $product->slug,
                 'sku' => $product->sku,
                 'description' => $product->description,
+                'brand' => $product->brand,
+                'tags' => $product->tags ?? [],
+                'specifications' => $product->specifications ?? [],
                 'image' => $product->image,
                 'image_url' => $product->imageUrl(),
                 'color_code' => $product->color_code,

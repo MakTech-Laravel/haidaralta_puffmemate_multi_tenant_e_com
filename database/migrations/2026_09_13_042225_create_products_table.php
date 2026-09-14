@@ -14,7 +14,10 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('sku')->nullable()->unique();
             $table->text('description')->nullable();
+            $table->string('brand')->nullable();
             $table->string('image')->nullable();
+            $table->json('tags')->nullable();
+            $table->json('specifications')->nullable();
             $table->json('color_code')->nullable();
             $table->boolean('status')->default(true);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -22,6 +25,7 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index('status');
+            $table->index('brand');
         });
     }
 

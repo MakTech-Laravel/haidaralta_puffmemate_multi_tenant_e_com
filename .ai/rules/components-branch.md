@@ -11,7 +11,7 @@ paths:
 Branch/platform product show uses ProductInventoryPanel: base + variant scope selector, posts existing inventory/price routes with variant_id. Never edit global catalog metadata from branch. UI uses Card sections + shared `DatePicker` (`@/components/ui/date-picker`, Calendar popover, `yyyy-MM-dd`) — prefer over native `input type="date"`.
 
 ## Branch Catalog nav children
-Branch Catalog sidebar group (manage-branch-products) lists Categories + Products. Categories routes have no destroy/restore.
+Branch Catalog sidebar group (manage-branch-products) lists Categories + Products. Inertia pages live under `resources/js/pages/branch/catalog/{categories,products}` (same shape as platform catalog). Categories routes have no destroy/restore.
 
 ## Inventory panel matches dashboard cards
 Inventory manage UI matches branch dashboard: DemoStatCard metrics, single split Card for inventory+pricing (equal-height footers), shadow-none cards, tables without nested bordered wrappers.

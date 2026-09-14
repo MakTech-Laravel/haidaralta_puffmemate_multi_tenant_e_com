@@ -6,6 +6,7 @@ use App\Enums\RoleEnum;
 use App\Models\Branch;
 use App\Models\User;
 use App\Support\PortalAuth;
+use App\Support\Storefront\StorefrontCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
@@ -49,6 +50,10 @@ class HandleInertiaRequests extends Middleware
             'portal' => $portal,
             'branch' => $branch,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'storefront' => [
+                'navCategories' => StorefrontCatalog::navCategories(),
+                'selectedBranchId' => $request->session()->get(StorefrontCatalog::BRANCH_SESSION_KEY),
+            ],
         ];
     }
 

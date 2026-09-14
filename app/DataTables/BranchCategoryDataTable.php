@@ -41,6 +41,7 @@ class BranchCategoryDataTable extends AbstractDataTable
             AllowedFilter::exact('parent_id'),
             StatusBooleanFilter::make('status'),
             StatusBooleanFilter::make('featured'),
+            StatusBooleanFilter::make('show_in_nav'),
             $this->searchFilter(),
         ];
     }
@@ -55,6 +56,8 @@ class BranchCategoryDataTable extends AbstractDataTable
             'slug',
             'status',
             'featured',
+            'show_in_nav',
+            'nav_sort',
             'created_at',
             'products_count',
             AllowedSort::callback('parent_name', function (Builder $query, bool $descending): void {
@@ -103,9 +106,12 @@ class BranchCategoryDataTable extends AbstractDataTable
             'parent_name' => $model->parent?->name,
             'image' => $model->image,
             'image_url' => $model->imageUrl(),
+            'slogan' => $model->slogan,
             'color_code' => $model->color_code,
             'status' => (bool) $model->status,
             'featured' => (bool) $model->featured,
+            'show_in_nav' => (bool) $model->show_in_nav,
+            'nav_sort' => $model->nav_sort,
             'products_count' => (int) ($model->products_count ?? 0),
             'created_at' => $model->created_at?->toIso8601String(),
         ];

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 type StorefrontSearchBarProps = {
     value: string;
     onChange: (value: string) => void;
+    onSubmit?: () => void;
     className?: string;
     placeholder?: string;
 };
@@ -12,6 +13,7 @@ type StorefrontSearchBarProps = {
 export function StorefrontSearchBar({
     value,
     onChange,
+    onSubmit,
     className,
     placeholder = 'Enter your favourite choice........',
 }: StorefrontSearchBarProps) {
@@ -30,6 +32,12 @@ export function StorefrontSearchBar({
                 type="search"
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        onSubmit?.();
+                    }
+                }}
                 placeholder={placeholder}
                 className="h-full rounded-none border-0 bg-transparent pr-3 pl-10 shadow-none focus-visible:ring-0"
                 aria-label="Search products"

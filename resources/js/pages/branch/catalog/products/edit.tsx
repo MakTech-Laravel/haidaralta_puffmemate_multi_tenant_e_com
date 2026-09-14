@@ -1,7 +1,11 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import Heading from '@/components/heading';
-import { ProductForm } from '@/components/platform/product-form';
+import {
+    ProductForm,
+    type ProductSpecificationRow,
+    type ProductTagValue,
+} from '@/components/platform/product-form';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { ColorPickerValue } from '@/lib/color-picker';
 
@@ -18,7 +22,10 @@ type Product = {
     name: string;
     slug: string;
     sku: string | null;
+    brand: string | null;
     description: string | null;
+    tags: ProductTagValue[];
+    specifications: ProductSpecificationRow[];
     image: string | null;
     image_url: string | null;
     gallery: GalleryImage[];
@@ -74,7 +81,7 @@ export default function BranchProductsEdit({
         <>
             <Head title={`Edit ${product.name}`} />
 
-            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${product.name}`}
                     description="Update global catalog details for this product"
@@ -113,7 +120,10 @@ export default function BranchProductsEdit({
                         name: product.name,
                         slug: product.slug,
                         sku: product.sku,
+                        brand: product.brand,
                         description: product.description,
+                        tags: product.tags,
+                        specifications: product.specifications,
                         image: product.image,
                         image_url: product.image_url,
                         gallery: product.gallery,

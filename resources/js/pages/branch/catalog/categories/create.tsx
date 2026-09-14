@@ -1,7 +1,10 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import Heading from '@/components/heading';
-import { CategoryForm } from '@/components/platform/category-form';
+import {
+    CategoryForm,
+    type CategoryLimits,
+} from '@/components/platform/category-form';
 
 type Branch = { id: number; name: string; slug: string };
 type ParentOption = { id: number; name: string };
@@ -9,9 +12,11 @@ type ParentOption = { id: number; name: string };
 export default function BranchCategoriesCreate({
     branch,
     parentOptions,
+    limits,
 }: {
     branch: Branch;
     parentOptions: ParentOption[];
+    limits: CategoryLimits;
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -34,7 +39,7 @@ export default function BranchCategoriesCreate({
         <>
             <Head title="Add category" />
 
-            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Add category"
                     description="Create a global catalog category available to every branch"
@@ -43,6 +48,7 @@ export default function BranchCategoriesCreate({
                 <CategoryForm
                     action={CategoryController.store.form(branch.slug)}
                     parentOptions={parentOptions}
+                    limits={limits}
                     cancelHref={CategoryController.index.url(branch.slug)}
                     enableSuggestions
                     suggestionsUrl={CategoryController.suggestions.url(
