@@ -6,6 +6,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | resources/js/actions/** | .ai/rules/actions.md |
 | app/Services/ActivityLog/** | .ai/rules/activity-log.md |
+| resources/js/components/admin/branch-form.tsx | .ai/rules/admin.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php | .ai/rules/backup.md |
 | app/Models/{Category,Product,ProductVariant,BranchProduct,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php | .ai/rules/branch.md |
 | resources/js/components/color-picker/** | .ai/rules/color-picker.md |
@@ -23,8 +24,8 @@ Before planning or editing, find the row whose globs match the file's path and r
 | package.json, vite.config.ts | .ai/rules/general.md |
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
 | resources/js/lib/fcm.ts, resources/js/lib/color-picker.ts | .ai/rules/lib.md |
-| database/migrations/**, database/migrations/2026_09_13_042224_create_categories_table.php | .ai/rules/migrations.md |
-| app/Models/{User,Branch}.php, app/Models/OtpRecord.php | .ai/rules/models.md |
+| database/migrations/** | .ai/rules/migrations.md |
+| app/Models/**.php | .ai/rules/models.md |
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | app/Http/Controllers/{Platform,Branch}/** | .ai/rules/platform-branch.md |

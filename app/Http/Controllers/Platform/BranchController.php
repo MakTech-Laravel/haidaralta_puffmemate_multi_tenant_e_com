@@ -39,27 +39,30 @@ class BranchController extends Controller
     }
 
     /**
-     * Store a newly created branch, then continue to super-admin setup.
+     * Store a newly created branch with its first super-admin.
      */
     public function store(StoreBranchRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $adminData = $validated['super_admin'];
+        unset($validated['super_admin']);
 
-        $branch = $this->branches->create(
+        $branch = $this->branches->createWithSuperAdmin(
             [
                 ...$validated,
                 'status' => $request->boolean('status', true),
             ],
+            $adminData,
             $request->file('logo'),
         );
 
-        Toast::success('Branch created. Add a super-admin to finish setup.');
+        Toast::success('Branch created with super-admin.');
 
-        return redirect()->route('platform.branches.super-admin.create', $branch);
+        return redirect()->route('platform.branches.show', $branch);
     }
 
     /**
-     * Show the form for creating the branch super-admin.
+     * Recovery: show the form when a branch is missing its first super-admin.
      */
     public function createSuperAdmin(Branch $branch): Response|RedirectResponse
     {
@@ -80,7 +83,7 @@ class BranchController extends Controller
     }
 
     /**
-     * Store the branch super-admin.
+     * Recovery: store the first branch super-admin when none exists.
      */
     public function storeSuperAdmin(StoreBranchSuperAdminRequest $request, Branch $branch): RedirectResponse
     {

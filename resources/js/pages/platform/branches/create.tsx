@@ -3,38 +3,32 @@ import BranchController from '@/actions/App/Http/Controllers/Platform/BranchCont
 import { BranchForm } from '@/components/admin/branch-form';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 
 export default function PlatformBranchesCreate() {
     return (
         <>
             <Head title="Add branch" />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
-                <div className="flex flex-col gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Badge>Step 1 of 2</Badge>
-                        <Badge variant="outline">Branch details</Badge>
-                    </div>
-                    <Heading
-                        title="Add branch"
-                        description="Enter branch details, then create a super-admin"
-                    />
-                </div>
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
+                <Heading
+                    title="Add branch"
+                    description="Set up the location and the first person who will manage it"
+                />
 
                 <Alert>
-                    <AlertTitle>Next step</AlertTitle>
+                    <AlertTitle>One form, ready to go</AlertTitle>
                     <AlertDescription>
-                        Saving creates the branch and opens the super-admin
-                        form. You can skip super-admin and finish later from the
-                        branch page.
+                        Fill in the branch details and create the first admin
+                        account. You can add more staff later from the branch
+                        staff screen.
                     </AlertDescription>
                 </Alert>
 
                 <BranchForm
                     action={BranchController.store.form()}
                     cancelHref={BranchController.index.url()}
-                    submitLabel="Next"
+                    includeSuperAdmin
+                    submitLabel="Create branch"
                 />
             </div>
         </>

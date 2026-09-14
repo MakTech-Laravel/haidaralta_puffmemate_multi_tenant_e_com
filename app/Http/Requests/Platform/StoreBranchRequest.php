@@ -5,6 +5,7 @@ namespace App\Http\Requests\Platform;
 use App\Support\Phone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Throwable;
 
 class StoreBranchRequest extends FormRequest
@@ -18,21 +19,39 @@ class StoreBranchRequest extends FormRequest
     {
         if ($this->input('phone') === '' || $this->input('phone') === null) {
             $this->merge(['phone' => null]);
+        } else {
+            $raw = $this->input('phone');
 
+            if (is_string($raw)) {
+                try {
+                    $this->merge(['phone' => Phone::toE164($raw)]);
+                } catch (Throwable) {
+                    // Leave raw value for the phone validation rule.
+                }
+            }
+        }
+
+        $superAdmin = $this->input('super_admin');
+
+        if (! is_array($superAdmin)) {
             return;
         }
 
-        $raw = $this->input('phone');
-
-        if (! is_string($raw)) {
-            return;
+        if (($superAdmin['email'] ?? null) === '') {
+            $superAdmin['email'] = null;
         }
 
-        try {
-            $this->merge(['phone' => Phone::toE164($raw)]);
-        } catch (Throwable) {
-            // Leave raw value for the phone validation rule.
+        $adminPhone = $superAdmin['phone'] ?? null;
+
+        if (is_string($adminPhone) && $adminPhone !== '') {
+            try {
+                $superAdmin['phone'] = Phone::toE164($adminPhone);
+            } catch (Throwable) {
+                // Leave raw value for the phone validation rule.
+            }
         }
+
+        $this->merge(['super_admin' => $superAdmin]);
     }
 
     /**
@@ -53,6 +72,24 @@ class StoreBranchRequest extends FormRequest
             'opening_time' => ['nullable', 'date_format:H:i'],
             'closing_time' => ['nullable', 'date_format:H:i'],
             'status' => ['sometimes', 'boolean'],
+            'super_admin' => ['required', 'array'],
+            'super_admin.name' => ['required', 'string', 'max:255'],
+            'super_admin.phone' => ['required', 'string', ...Phone::validationRule(), Rule::unique('users', 'phone')],
+            'super_admin.email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
+            'super_admin.password' => ['required', 'confirmed', Password::defaults()],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'super_admin.name' => 'super-admin name',
+            'super_admin.phone' => 'super-admin phone',
+            'super_admin.email' => 'super-admin email',
+            'super_admin.password' => 'super-admin password',
         ];
     }
 }
