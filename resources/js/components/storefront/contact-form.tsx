@@ -33,7 +33,7 @@ export function ContactForm({ className }: ContactFormProps) {
         >
             <form
                 onSubmit={onSubmit}
-                className="relative z-10 flex flex-1 flex-col gap-6"
+                className="relative z-10 flex flex-1 flex-col gap-6 pb-16"
             >
                 <div className="grid gap-6 sm:grid-cols-2">
                     <div className="space-y-2">
@@ -114,12 +114,12 @@ export function ContactForm({ className }: ContactFormProps) {
                 </div>
             </form>
 
-            <img
+            {/* <img
                 src="/images/storefront/contact-paper-plane.png"
                 alt=""
                 aria-hidden
-                className="pointer-events-none absolute right-2 bottom-2 z-0 h-auto w-40 -rotate-6 object-contain invert mix-blend-multiply sm:right-4 sm:bottom-4 sm:w-52 sm:-rotate-40"
-            />
+                className="pb-16 pointer-events-none absolute right-2 bottom-2 z-0 h-auto w-40 -rotate-6 object-contain invert mix-blend-multiply sm:right-4 sm:bottom-4 sm:w-52 sm:-rotate-40"
+            /> */}
         </div>
     );
 }

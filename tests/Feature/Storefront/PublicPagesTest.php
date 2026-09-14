@@ -12,6 +12,7 @@ test('public storefront pages render', function (string $route, string $componen
     'about' => ['about', 'storefront/about'],
     'faqs' => ['faqs', 'storefront/faq'],
     'contact' => ['contact', 'storefront/contact'],
+    'wholesale' => ['wholesale', 'storefront/wholesale'],
 ]);
 
 test('storefront category page renders products for a valid slug', function () {

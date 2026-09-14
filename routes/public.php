@@ -19,3 +19,4 @@ Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 Route::inertia('/about', 'storefront/about')->name('about');
 Route::inertia('/faqs', 'storefront/faq')->name('faqs');
 Route::inertia('/contact', 'storefront/contact')->name('contact');
+Route::inertia('/wholesale', 'storefront/wholesale')->name('wholesale');

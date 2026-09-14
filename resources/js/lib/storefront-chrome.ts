@@ -7,7 +7,7 @@ export const storefrontLogoSrc = '/images/storefront/logo.png';
 export type StorefrontChromeItem = {
     label: string;
     /** Named route when it exists; otherwise links fall back to shop. */
-    route?: 'home' | 'shop' | 'about' | 'faqs' | 'contact';
+    route?: 'home' | 'shop' | 'about' | 'faqs' | 'contact' | 'wholesale';
     /** Category slug for /shop/{category} links. */
     categorySlug?: string;
 };
@@ -19,7 +19,7 @@ export const storefrontNavItems: StorefrontChromeItem[] = [
     { label: 'Vapes', categorySlug: 'vapes' },
     { label: 'Nicotine Pouches', categorySlug: 'nicotine-pouches' },
     { label: 'Packs & Saves', categorySlug: 'packs-saves' },
-    { label: 'Wholesale', categorySlug: 'wholesale' },
+    { label: 'Wholesale', route: 'wholesale' },
 ];
 
 export const storefrontFooterShop: StorefrontChromeItem[] = [
@@ -37,7 +37,7 @@ export const storefrontFooterCustomer: StorefrontChromeItem[] = [
 
 export const storefrontFooterBrand: StorefrontChromeItem[] = [
     { label: 'About Us', route: 'about' },
-    { label: 'Wholesale', categorySlug: 'wholesale' },
+    { label: 'Wholesale', route: 'wholesale' },
     { label: 'Privacy' },
 ];
 
