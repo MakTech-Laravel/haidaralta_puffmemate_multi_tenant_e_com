@@ -153,7 +153,7 @@ export default function PlatformBranchScopedStaffIndex({
         <>
             <Head title={`Staff · ${branch.name}`} />
 
-            <div className="flex flex-col gap-6 p-2 md:p-4">
+            <div className="flex flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title={`${branch.name} staff`}

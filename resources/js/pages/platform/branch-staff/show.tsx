@@ -30,7 +30,7 @@ export default function PlatformBranchStaffShow({
         <>
             <Head title={staffMember.name} />
 
-            <div className="flex flex-col gap-6 p-2">
+            <div className="flex flex-col gap-4 p-2">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title={staffMember.name}

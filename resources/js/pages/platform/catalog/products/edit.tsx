@@ -49,7 +49,7 @@ export default function PlatformProductsEdit({
         <>
             <Head title={`Edit ${product.name}`} />
 
-            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${product.name}`}
                     description="Update catalog details, primary image, and gallery"
