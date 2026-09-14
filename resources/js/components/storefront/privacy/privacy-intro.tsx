@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { BadgeCheck, Home } from 'lucide-react';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -18,86 +19,88 @@ type PrivacyIntroProps = {
 export function PrivacyIntro({ className }: PrivacyIntroProps) {
     return (
         <section className={cn('bg-background pt-8 pb-6 sm:pt-10', className)}>
-            <div className="mx-auto container max-w-4xl px-4 sm:px-6">
+            <div className="mx-auto container max-w-3xl px-4 sm:px-6">
                 <Breadcrumb>
-                    <BreadcrumbList>
+                    <BreadcrumbList className="text-muted-foreground gap-1.5 text-xs sm:text-sm">
                         <BreadcrumbItem>
                             <BreadcrumbLink asChild>
                                 <Link
                                     href={home()}
                                     prefetch
-                                    className="hover:text-primary"
+                                    className="hover:text-primary inline-flex items-center gap-1.5"
                                 >
+                                    <Home className="size-3.5" aria-hidden />
                                     Home
                                 </Link>
                             </BreadcrumbLink>
                         </BreadcrumbItem>
-                        <BreadcrumbSeparator />
+                        <BreadcrumbSeparator>/</BreadcrumbSeparator>
                         <BreadcrumbItem>
-                            <span className="text-muted-foreground">
-                                Information
-                            </span>
+                            <span>Legal & Governance</span>
                         </BreadcrumbItem>
-                        <BreadcrumbSeparator />
+                        <BreadcrumbSeparator>/</BreadcrumbSeparator>
                         <BreadcrumbItem>
-                            <BreadcrumbPage className="text-primary font-medium">
+                            <BreadcrumbPage className="text-primary font-semibold">
                                 {privacyPage.title}
                             </BreadcrumbPage>
                         </BreadcrumbItem>
                     </BreadcrumbList>
                 </Breadcrumb>
 
-                <h1 className="text-foreground mt-6 text-3xl font-bold tracking-tight sm:text-4xl">
+                <p className="text-primary mt-8 text-[0.7rem] font-bold tracking-[0.12em] uppercase sm:text-xs">
+                    {privacyPage.eyebrow}
+                </p>
+
+                <h1 className="text-foreground mt-3 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
                     {privacyPage.title}
                 </h1>
 
-                <div className="text-muted-foreground mt-5 space-y-4 text-sm leading-relaxed sm:text-base">
-                    {privacyPage.intro.map((paragraph) => (
-                        <p key={paragraph}>{paragraph}</p>
-                    ))}
+                <p className="text-muted-foreground mt-5 max-w-2xl text-sm leading-relaxed sm:text-base">
+                    {privacyPage.intro}
+                </p>
+
+                <div className="text-muted-foreground mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm">
+                    <span className="inline-flex items-center gap-1.5">
+                        <BadgeCheck
+                            className="text-primary size-4 shrink-0"
+                            aria-hidden
+                        />
+                        <span className="text-foreground/80">
+                            {privacyPage.versionLabel}
+                        </span>
+                    </span>
+                    <span className="text-muted-foreground/80">
+                        {privacyPage.updatedAt}
+                    </span>
                 </div>
 
-                <div className="mt-8">
-                    <h2 className="text-foreground text-sm font-bold tracking-wide uppercase">
-                        {privacyPage.quickLinksLabel}
-                    </h2>
-                    <ul className="mt-3 space-y-2">
-                        {privacyPage.quickLinks.map((link) => (
-                            <li key={link.id} className="flex items-start gap-2">
-                                <span
-                                    className="bg-primary mt-2 size-1.5 shrink-0 rounded-full"
-                                    aria-hidden
-                                />
+                <p className="text-muted-foreground mt-2 text-xs sm:text-sm">
+                    {privacyPage.applicableEntity}
+                </p>
+
+                <hr className="border-border mt-8" />
+
+                <ul className="mt-8 space-y-6">
+                    {privacyPage.summaryPoints.map((point) => (
+                        <li key={point.title} className="flex items-start gap-2.5">
+                            <span
+                                className="bg-primary mt-2 size-1.5 shrink-0 rounded-full"
+                                aria-hidden
+                            />
+                            <div className="min-w-0">
                                 <a
-                                    href={`#${link.id}`}
-                                    className="text-foreground hover:text-primary text-sm font-medium transition-colors"
+                                    href={`#${point.id}`}
+                                    className="text-primary hover:text-primary/80 text-sm font-bold transition-colors sm:text-base"
                                 >
-                                    {link.label}
+                                    {point.title}
                                 </a>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                <div className="bg-primary/5 border-primary/10 mt-8 rounded-xl border px-5 py-5 sm:px-6">
-                    <h2 className="text-foreground text-sm font-bold tracking-wide uppercase">
-                        {privacyPage.summaryTitle}
-                    </h2>
-                    <ul className="mt-3 space-y-2.5">
-                        {privacyPage.summary.map((item) => (
-                            <li
-                                key={item}
-                                className="text-muted-foreground flex items-start gap-2 text-sm leading-relaxed"
-                            >
-                                <span
-                                    className="bg-primary mt-2 size-1.5 shrink-0 rounded-full"
-                                    aria-hidden
-                                />
-                                <span>{item}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+                                <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                                    {point.body}
+                                </p>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
             </div>
         </section>
     );

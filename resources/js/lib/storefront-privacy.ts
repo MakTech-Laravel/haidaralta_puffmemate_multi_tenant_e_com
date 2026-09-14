@@ -1,4 +1,5 @@
 export type PrivacyBlock =
+    | { type: 'subheading'; text: string }
     | { type: 'paragraph'; text: string }
     | { type: 'list'; items: string[] };
 
@@ -11,40 +12,38 @@ export type PrivacySection = {
 
 export const privacyPage = {
     title: 'Privacy Policy',
+    eyebrow: 'Legal & Discretion Protocol · Australian Compliance',
     breadcrumbs: [
         { label: 'Home', href: 'home' as const },
-        { label: 'Information', href: null },
+        { label: 'Legal & Governance', href: null },
         { label: 'Privacy Policy', href: 'current' as const },
     ],
-    intro: [
-        'This Privacy Policy explains how PuffMeMate (“we”, “us”, or “our”) collects, uses, stores, and shares personal information when you browse our storefront, create an account, place an order, request wholesale supply, or contact support.',
-        'We operate a multi-branch online tobacconist experience across Australia. Because we sell age-restricted products, we also process information needed for identity checks, delivery handover, and legal compliance.',
-        'Please read this policy carefully. By using our websites, apps, or services, you acknowledge the practices described here. If you do not agree, please do not use our services.',
+    intro: 'At PuffMeMate, we respect your privacy and are committed to handling your personal information responsibly. Learn how we collect, use, store, disclose and protect personal information across our website, PWA, branch dispatch, and courier logistics network.',
+    versionLabel: 'Version 2.4 · APP & Privacy Act 1988',
+    updatedAt: 'Last Updated: October 2024',
+    applicableEntity: 'Applicable Entity: PuffMeMate Australia',
+    summaryPoints: [
+        {
+            title: 'What We Collect',
+            body: 'Account credentials, order records, delivery coordinates, age verification hashes, and minimal telemetry required for dispatch.',
+            id: 'information-we-collect',
+        },
+        {
+            title: 'Why We Collect It',
+            body: 'Immediate local order fulfillment, branch stock routing, customer support, and statutory Australian age compliance.',
+            id: 'why-we-use',
+        },
+        {
+            title: 'Who Receives It',
+            body: 'Assigned localized branch staff, vetted delivery partners under VoIP masking, and PCI-DSS Tier 1 payment processors.',
+            id: 'who-may-receive',
+        },
+        {
+            title: 'Your Privacy Rights',
+            body: 'Full rights of access, correction, erasure requests, and Australian Information Commissioner (OAIC) escalation mechanisms.',
+            id: 'your-privacy-rights',
+        },
     ],
-    quickLinksLabel: 'Quick Links',
-    quickLinks: [
-        { label: 'What We Collect', id: 'information-we-collect' },
-        { label: 'How We Collect', id: 'how-we-collect' },
-        { label: 'Why We Use Information', id: 'why-we-use' },
-        { label: 'Cookies', id: 'cookies' },
-        { label: 'Orders & Delivery', id: 'branch-order-delivery' },
-        { label: 'Age Verification', id: 'age-verification' },
-        { label: 'Your Rights', id: 'your-rights' },
-        { label: 'Contact Us', id: 'contact-us' },
-    ],
-    summaryTitle: 'Policy summary',
-    summary: [
-        'We collect account, order, delivery, device, and support information to run our storefront.',
-        'Age-restricted retail requires identity and handover checks where applicable.',
-        'We share data with trusted service providers (payments, delivery, hosting, messaging) under contracts.',
-        'You can request access, correction, deletion, or marketing opt-out subject to law.',
-        'Contact us anytime with privacy questions or complaints.',
-    ],
-    cta: {
-        body: 'Need help understanding how we handle your data, or want to exercise a privacy request? Our team is ready to assist.',
-        primaryLabel: 'Contact Us',
-        secondaryLabel: 'FAQs',
-    },
 };
 
 export const privacySections: PrivacySection[] = [
@@ -70,19 +69,47 @@ export const privacySections: PrivacySection[] = [
         blocks: [
             {
                 type: 'paragraph',
-                text: 'Depending on how you use our services, we may collect:',
+                text: 'Depending on how you use our services, we may collect the following categories of information:',
             },
             {
-                type: 'list',
-                items: [
-                    'Identity and contact details (name, phone, email, delivery address, alias if provided).',
-                    'Account credentials and security settings (including multi-factor preferences where enabled).',
-                    'Order, cart, branch selection, fulfilment, and delivery status information.',
-                    'Payment-related metadata from our processors (we do not store full card numbers on our servers).',
-                    'Age-verification and handover records (for example OTP confirmation or ID check outcomes).',
-                    'Device, browser, IP address, approximate location, and usage analytics.',
-                    'Support messages, wholesale enquiry details, and feedback you send us.',
-                ],
+                type: 'subheading',
+                text: 'A. Account Information',
+            },
+            {
+                type: 'paragraph',
+                text: 'Name, phone, email, delivery address, alias (if provided), account credentials, and security settings including multi-factor preferences where enabled.',
+            },
+            {
+                type: 'subheading',
+                text: 'B. Order Information',
+            },
+            {
+                type: 'paragraph',
+                text: 'Cart contents, selected branch, fulfilment method, delivery slot, order status, and communications about your purchase.',
+            },
+            {
+                type: 'subheading',
+                text: 'C. Billing Information',
+            },
+            {
+                type: 'paragraph',
+                text: 'Payment status and limited transaction metadata from our processors. We do not store full card numbers on PuffMeMate servers.',
+            },
+            {
+                type: 'subheading',
+                text: 'D. Age Verification & Restricted Retail',
+            },
+            {
+                type: 'paragraph',
+                text: 'Outcomes of age checks and handover confirmation required for age-restricted products (for example OTP confirmation or ID check results).',
+            },
+            {
+                type: 'subheading',
+                text: 'E. Device & Usage Information',
+            },
+            {
+                type: 'paragraph',
+                text: 'Device, browser, IP address, approximate location, cookies, analytics events, support messages, wholesale enquiry details, and feedback you send us.',
             },
         ],
     },
@@ -93,18 +120,22 @@ export const privacySections: PrivacySection[] = [
         blocks: [
             {
                 type: 'paragraph',
-                text: 'We collect information directly from you when you register, check out, message support, or submit wholesale forms. We also collect information automatically through cookies, logs, and similar technologies when you use the site.',
+                text: 'We collect information in the following ways:',
             },
             {
-                type: 'paragraph',
-                text: 'In some cases we receive information from service providers such as payment gateways, delivery partners, fraud-prevention tools, and analytics platforms acting on our behalf.',
+                type: 'list',
+                items: [
+                    'Directly from you when you register, check out, message support, or submit wholesale forms.',
+                    'Automatically through cookies, logs, and similar technologies when you use the site.',
+                    'From service providers such as payment gateways, delivery partners, fraud-prevention tools, and analytics platforms acting on our behalf.',
+                ],
             },
         ],
     },
     {
         id: 'why-we-use',
         number: '04',
-        title: 'Why We Collect And Use Information',
+        title: 'Why We Use Your Information',
         blocks: [
             {
                 type: 'paragraph',
@@ -126,24 +157,39 @@ export const privacySections: PrivacySection[] = [
         ],
     },
     {
-        id: 'legal-bases',
+        id: 'order-delivery',
         number: '05',
-        title: 'Legal Bases For Processing',
+        title: 'Order & Delivery Information',
         blocks: [
             {
                 type: 'paragraph',
-                text: 'Where applicable privacy laws require a legal basis, we rely on one or more of the following: performance of a contract (fulfilling your order), legitimate interests (securing and improving our services), consent (certain cookies or marketing), and legal obligation (age-restricted retail and tax/compliance records).',
+                text: 'Because fulfilment is branch-aware, order records may include the selected branch, stock reservation status, delivery method, scheduled slot, courier assignment, and live tracking events.',
             },
             {
                 type: 'paragraph',
-                text: 'You may withdraw consent where processing is consent-based, without affecting the lawfulness of processing before withdrawal.',
+                text: 'Drivers and branch staff only receive the information needed to prepare, dispatch, and deliver your order. Tracking updates may be shown in your account or messaging channels.',
+            },
+        ],
+    },
+    {
+        id: 'location',
+        number: '06',
+        title: 'Location Information',
+        blocks: [
+            {
+                type: 'paragraph',
+                text: 'We may use approximate location derived from your IP address, delivery address, or device permissions to suggest nearby branches, estimate delivery windows, and improve logistics.',
+            },
+            {
+                type: 'paragraph',
+                text: 'Precise device location is only used where you grant permission or where it is reasonably necessary to complete delivery.',
             },
         ],
     },
     {
         id: 'cookies',
-        number: '06',
-        title: 'Cookies And Similar Technologies',
+        number: '07',
+        title: 'Cookies & Similar Technologies',
         blocks: [
             {
                 type: 'paragraph',
@@ -165,54 +211,24 @@ export const privacySections: PrivacySection[] = [
         ],
     },
     {
-        id: 'branch-order-delivery',
-        number: '07',
-        title: 'Branch, Order And Delivery Data',
-        blocks: [
-            {
-                type: 'paragraph',
-                text: 'Because fulfilment is branch-aware, order records may include the selected branch, stock reservation status, delivery method, scheduled slot, courier assignment, and live tracking events.',
-            },
-            {
-                type: 'paragraph',
-                text: 'Drivers and branch staff only receive the information needed to prepare, dispatch, and deliver your order. Tracking updates may be shown in your account or messaging channels.',
-            },
-        ],
-    },
-    {
-        id: 'age-verification',
+        id: 'hold-protect',
         number: '08',
-        title: 'Age Verification And Restricted Products',
+        title: 'How We Hold & Protect Your Information',
         blocks: [
             {
                 type: 'paragraph',
-                text: 'We sell age-restricted products. We may request evidence that you (or an authorised adult recipient) are 18+ before completing sale or handover. This can include OTP confirmation at delivery and/or sighting of government photo ID by the courier or branch.',
+                text: 'We use administrative, technical, and organisational measures designed to protect personal information against unauthorised access, loss, misuse, or alteration. These may include access controls, encryption in transit, monitoring, and staff confidentiality obligations.',
             },
             {
                 type: 'paragraph',
-                text: 'If verification fails, we may refuse or cancel the order. We retain verification outcomes as needed for compliance and dispute handling.',
+                text: 'No method of transmission or storage is completely secure. Please protect your account credentials and notify us promptly of any suspected unauthorised access.',
             },
         ],
     },
     {
-        id: 'payments',
+        id: 'who-may-receive',
         number: '09',
-        title: 'Payments And Transaction Records',
-        blocks: [
-            {
-                type: 'paragraph',
-                text: 'Payments are processed by third-party providers. We receive confirmation of payment status, limited card metadata (such as last four digits or wallet type where applicable), and transaction IDs needed for receipts, refunds, and audits.',
-            },
-            {
-                type: 'paragraph',
-                text: 'We do not store full payment card primary account numbers on PuffMeMate application servers.',
-            },
-        ],
-    },
-    {
-        id: 'sharing',
-        number: '10',
-        title: 'Sharing With Service Providers',
+        title: 'Who May Receive Your Information',
         blocks: [
             {
                 type: 'paragraph',
@@ -236,9 +252,9 @@ export const privacySections: PrivacySection[] = [
         ],
     },
     {
-        id: 'international-transfers',
-        number: '11',
-        title: 'International Transfers',
+        id: 'overseas-disclosure',
+        number: '10',
+        title: 'Overseas Disclosure',
         blocks: [
             {
                 type: 'paragraph',
@@ -248,8 +264,8 @@ export const privacySections: PrivacySection[] = [
     },
     {
         id: 'retention',
-        number: '12',
-        title: 'How Long We Keep Information',
+        number: '11',
+        title: 'How Long We Keep Your Information',
         blocks: [
             {
                 type: 'paragraph',
@@ -262,24 +278,31 @@ export const privacySections: PrivacySection[] = [
         ],
     },
     {
-        id: 'security',
-        number: '13',
-        title: 'Security Measures',
+        id: 'accessing',
+        number: '12',
+        title: 'Accessing Your Information',
         blocks: [
             {
                 type: 'paragraph',
-                text: 'We use administrative, technical, and organisational measures designed to protect personal information against unauthorised access, loss, misuse, or alteration. These may include access controls, encryption in transit, monitoring, and staff confidentiality obligations.',
-            },
-            {
-                type: 'paragraph',
-                text: 'No method of transmission or storage is completely secure. Please protect your account credentials and notify us promptly of any suspected unauthorised access.',
+                text: 'You may request access to the personal information we hold about you. Email privacy@puffmemate.demo or use the Contact page. We may need to verify your identity before releasing records.',
             },
         ],
     },
     {
-        id: 'your-rights',
+        id: 'correcting',
+        number: '13',
+        title: 'Correcting Your Information',
+        blocks: [
+            {
+                type: 'paragraph',
+                text: 'If your account or order details are inaccurate or incomplete, you can update them in your account where available, or contact us at privacy@puffmemate.demo so we can correct the information.',
+            },
+        ],
+    },
+    {
+        id: 'your-privacy-rights',
         number: '14',
-        title: 'Your Rights',
+        title: 'Your Privacy Rights',
         blocks: [
             {
                 type: 'paragraph',
@@ -298,36 +321,36 @@ export const privacySections: PrivacySection[] = [
             },
             {
                 type: 'paragraph',
-                text: 'We may need to verify your identity before completing a request. Some requests may be refused where the law allows (for example, where deletion would break mandatory records).',
+                text: 'Some requests may be refused where the law allows (for example, where deletion would break mandatory records).',
             },
         ],
     },
     {
-        id: 'marketing',
+        id: 'privacy-complaints',
         number: '15',
-        title: 'Marketing Preferences',
+        title: 'Privacy Complaints',
         blocks: [
             {
                 type: 'paragraph',
-                text: 'With your permission or as otherwise allowed by law, we may send product updates, offers, or wholesale news. You can opt out of marketing emails using the unsubscribe link or by contacting us. Transactional messages about orders, delivery, and account security will continue as needed.',
+                text: 'If you have a privacy concern, please contact us first at privacy@puffmemate.demo so we can investigate and respond. If you remain unsatisfied, you may contact the Office of the Australian Information Commissioner (OAIC) or another relevant regulator.',
             },
         ],
     },
     {
-        id: 'children',
+        id: 'account-security',
         number: '16',
-        title: 'Children’s Privacy',
+        title: 'Account Security',
         blocks: [
             {
                 type: 'paragraph',
-                text: 'Our products and services are intended for adults aged 18 and over. We do not knowingly collect personal information from children. If you believe a minor has provided information, contact us and we will take appropriate steps to delete it.',
+                text: 'You are responsible for keeping your login credentials confidential and for activity under your account. Enable available security features and contact us immediately if you suspect unauthorised access.',
             },
         ],
     },
     {
-        id: 'third-party-links',
+        id: 'third-party-services',
         number: '17',
-        title: 'Third-Party Links',
+        title: 'Third-Party Services',
         blocks: [
             {
                 type: 'paragraph',
@@ -336,24 +359,24 @@ export const privacySections: PrivacySection[] = [
         ],
     },
     {
-        id: 'changes',
+        id: 'children',
         number: '18',
-        title: 'Changes To This Policy',
+        title: 'Children And Other Protected Persons',
         blocks: [
             {
                 type: 'paragraph',
-                text: 'We may update this Privacy Policy from time to time to reflect product, legal, or operational changes. The updated version will be posted on this page with a revised effective date. Continued use of our services after changes means you acknowledge the updated policy.',
+                text: 'Our products and services are intended for adults aged 18 and over. We do not knowingly collect personal information from children. If you believe a minor has provided information, contact privacy@puffmemate.demo and we will take appropriate steps to delete it.',
             },
         ],
     },
     {
-        id: 'complaints',
+        id: 'changes',
         number: '19',
-        title: 'Complaints',
+        title: 'Changes To This Privacy Policy',
         blocks: [
             {
                 type: 'paragraph',
-                text: 'If you have a privacy concern, please contact us first so we can investigate and respond. If you remain unsatisfied, you may contact the Office of the Australian Information Commissioner (OAIC) or another relevant regulator.',
+                text: 'We may update this Privacy Policy from time to time to reflect product, legal, or operational changes. The updated version will be posted on this page with a revised effective date. Continued use of our services after changes means you acknowledge the updated policy.',
             },
         ],
     },
