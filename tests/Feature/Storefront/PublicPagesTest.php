@@ -60,7 +60,8 @@ test('storefront category page renders products for a valid slug', function () {
             ->has('products')
             ->has('branches')
             ->where('filters.search', '')
-            ->where('filters.branchId', null));
+            ->where('filters.branchId', null)
+            ->where('filters.sort', null));
 });
 
 test('storefront category page returns not found for unknown slug', function () {
