@@ -66,12 +66,20 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
                                         size="lg"
                                         className="h-10 px-4 text-sm sm:h-11 sm:px-8 sm:text-base"
                                     >
-                                        <Link
-                                            href={slide.primaryCta.href}
-                                            prefetch
-                                        >
-                                            {slide.primaryCta.label}
-                                        </Link>
+                                        {slide.primaryCta.href.startsWith(
+                                            '#',
+                                        ) ? (
+                                            <a href={slide.primaryCta.href}>
+                                                {slide.primaryCta.label}
+                                            </a>
+                                        ) : (
+                                            <Link
+                                                href={slide.primaryCta.href}
+                                                prefetch
+                                            >
+                                                {slide.primaryCta.label}
+                                            </Link>
+                                        )}
                                     </Button>
                                     <Button
                                         asChild
@@ -79,12 +87,20 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
                                         variant="outline"
                                         className="border-primary-foreground/40 bg-foreground/30 text-primary-foreground hover:bg-foreground/50 hover:text-primary-foreground h-10 px-4 text-sm sm:h-11 sm:px-8 sm:text-base"
                                     >
-                                        <Link
-                                            href={slide.secondaryCta.href}
-                                            prefetch
-                                        >
-                                            {slide.secondaryCta.label}
-                                        </Link>
+                                        {slide.secondaryCta.href.startsWith(
+                                            '#',
+                                        ) ? (
+                                            <a href={slide.secondaryCta.href}>
+                                                {slide.secondaryCta.label}
+                                            </a>
+                                        ) : (
+                                            <Link
+                                                href={slide.secondaryCta.href}
+                                                prefetch
+                                            >
+                                                {slide.secondaryCta.label}
+                                            </Link>
+                                        )}
                                     </Button>
                                 </div>
                             </div>

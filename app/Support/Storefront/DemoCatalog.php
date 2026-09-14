@@ -141,7 +141,7 @@ class DemoCatalog
                 'price' => 'Start from $89.00',
                 'stock' => 12,
                 'category' => 'Vapes',
-                'image' => '/images/storefront/product-iqos.png',
+                'image' => '/images/storefront/product-marlboro-gold.jpg',
             ],
             [
                 'id' => '4',
@@ -150,7 +150,7 @@ class DemoCatalog
                 'price' => 'Start from $18.00',
                 'stock' => 56,
                 'category' => 'Vapes',
-                'image' => '/images/storefront/product-vuse.png',
+                'image' => '/images/storefront/product-winfield-blue.jpg',
             ],
             [
                 'id' => '5',
@@ -159,7 +159,7 @@ class DemoCatalog
                 'price' => 'Start from $13.00',
                 'stock' => 31,
                 'category' => 'Cigarettes',
-                'image' => '/images/storefront/product-marlboro-gold.jpg',
+                'image' => '/images/storefront/b4343f447a376e4db4da6328e10eddefc632ddeb.jpg',
             ],
             [
                 'id' => '6',
@@ -168,7 +168,7 @@ class DemoCatalog
                 'price' => 'Start from $12.50',
                 'stock' => 19,
                 'category' => 'Cigarettes',
-                'image' => '/images/storefront/product-winfield-blue.jpg',
+                'image' => '/images/storefront/907b72737ecd36dbee5ac6c27fa0b02b906a44ee.jpg',
             ],
             [
                 'id' => '7',
@@ -177,7 +177,7 @@ class DemoCatalog
                 'price' => 'Start from $9.90',
                 'stock' => 64,
                 'category' => 'Nicotine Pouches',
-                'image' => '/images/storefront/product-iqos.png',
+                'image' => '/images/storefront/product-marlboro-gold.jpg',
             ],
             [
                 'id' => '8',
@@ -186,7 +186,7 @@ class DemoCatalog
                 'price' => 'Start from $4.00',
                 'stock' => 120,
                 'category' => 'Accessories',
-                'image' => '/images/storefront/product-vuse.png',
+                'image' => '/images/storefront/product-winfield-blue.jpg',
             ],
             [
                 'id' => '9',
@@ -213,7 +213,7 @@ class DemoCatalog
                 'price' => 'Start from $13.80',
                 'stock' => 27,
                 'category' => 'Cigarettes',
-                'image' => '/images/storefront/product-marlboro-gold.jpg',
+                'image' => '/images/storefront/b4343f447a376e4db4da6328e10eddefc632ddeb.jpg',
             ],
             [
                 'id' => '12',
@@ -222,7 +222,7 @@ class DemoCatalog
                 'price' => 'Start from $13.20',
                 'stock' => 30,
                 'category' => 'Cigarettes',
-                'image' => '/images/storefront/product-winfield-blue.jpg',
+                'image' => '/images/storefront/907b72737ecd36dbee5ac6c27fa0b02b906a44ee.jpg',
             ],
         ];
     }
@@ -344,9 +344,8 @@ class DemoCatalog
             'category' => $product['category'],
             'categorySlug' => self::categorySlugForName($product['category']),
             'badges' => [$product['category'], 'Popular'],
-            // 'images' => [$image, $image, $image],
             'images' => [
-                '/images/storefront/category-cigarettes.png',
+                $image,
                 '/images/storefront/b4343f447a376e4db4da6328e10eddefc632ddeb.jpg',
                 '/images/storefront/907b72737ecd36dbee5ac6c27fa0b02b906a44ee.jpg',
             ],

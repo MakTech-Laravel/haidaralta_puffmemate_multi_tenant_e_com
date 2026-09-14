@@ -53,6 +53,10 @@ function isActive(url: string, item: StorefrontChromeItem): boolean {
         return false;
     }
 
+    if (item.route === 'shop') {
+        return url === '/shop' || url.startsWith('/shop?');
+    }
+
     return href === '/' ? url === '/' : url.startsWith(href);
 }
 
