@@ -1,6 +1,7 @@
 ---
 paths:
   - 'database/migrations/**'
+  - database/migrations/2026_09_13_042224_create_categories_table.php
 ---
 
 # Migrations
@@ -13,3 +14,6 @@ Development / pre-handover: prefer editing the original create_* migration when 
 
 ## Discount type belongs on create migration
 Pre-handover: put new columns on the original create_* migration (e.g. branch_product_prices.discount_type). Do not ship a separate Schema::table + data backfill migration for greenfield schema.
+
+## Category featured on create migration
+Pre-handover: categories.featured boolean (default false) belongs on the original create_categories migration — never a separate Schema::table + backfill migration.

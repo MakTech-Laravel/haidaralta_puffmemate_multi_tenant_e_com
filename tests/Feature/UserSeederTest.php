@@ -36,6 +36,10 @@ test('user seeder creates platform, branch, driver, and customer accounts', func
         ->not->toBeNull()
         ->user_type->toBe(UserType::BRANCH);
 
+    expect(User::query()->where('email', UserSeeder::BRANCH_3_SUPER_ADMIN)->first())
+        ->not->toBeNull()
+        ->user_type->toBe(UserType::BRANCH);
+
     expect(User::query()->where('email', UserSeeder::DRIVER)->first())
         ->not->toBeNull()
         ->user_type->toBe(UserType::DRIVER);
@@ -45,10 +49,10 @@ test('user seeder creates platform, branch, driver, and customer accounts', func
         ->user_type->toBe(UserType::CUSTOMER);
 });
 
-test('seeded account passwords match their email addresses', function (string $email) {
+test('seeded account passwords use the shared default password', function (string $email) {
     $user = User::query()->where('email', $email)->firstOrFail();
 
-    expect(Hash::check($email, $user->password))->toBeTrue();
+    expect(Hash::check(UserSeeder::DEFAULT_PASSWORD, $user->password))->toBeTrue();
 })->with([
     UserSeeder::PLATFORM_SUPER_ADMIN,
     UserSeeder::PLATFORM_ADMIN,
@@ -57,6 +61,8 @@ test('seeded account passwords match their email addresses', function (string $e
     UserSeeder::BRANCH_1_ADMIN,
     UserSeeder::BRANCH_2_SUPER_ADMIN,
     UserSeeder::BRANCH_2_ADMIN,
+    UserSeeder::BRANCH_3_SUPER_ADMIN,
+    UserSeeder::BRANCH_3_ADMIN,
     UserSeeder::DRIVER,
     UserSeeder::CUSTOMER,
 ]);

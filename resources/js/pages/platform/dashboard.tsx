@@ -31,18 +31,17 @@ import { usePermission } from '@/hooks/use-permissions';
 import type { Auth } from '@/types';
 
 const branches = [
-    { name: 'Downtown', orders: '142', staff: '18', status: 'Healthy' },
-    { name: 'Uptown', orders: '96', staff: '12', status: 'Healthy' },
-    { name: 'Harbor', orders: '61', staff: '9', status: 'Watch' },
-    { name: 'Westside', orders: '38', staff: '7', status: 'Healthy' },
+    { name: 'Sydney CBD', orders: '142', staff: '18', status: 'Healthy' },
+    { name: 'Melbourne Collins', orders: '96', staff: '12', status: 'Healthy' },
+    { name: 'Brisbane Queen St', orders: '61', staff: '9', status: 'Watch' },
 ];
 
 const activity = [
     {
         time: '09:14',
-        actor: 'Platform Super Admin',
+        actor: 'Ava Mitchell',
         event: 'Updated branch hours',
-        target: 'Harbor',
+        target: 'Brisbane Queen St',
     },
     {
         time: '08:52',
@@ -52,9 +51,9 @@ const activity = [
     },
     {
         time: '08:31',
-        actor: 'Maya Chen',
+        actor: 'Alex Chen',
         event: 'Created staff account',
-        target: 'Downtown',
+        target: 'Sydney CBD',
     },
     {
         time: '07:58',

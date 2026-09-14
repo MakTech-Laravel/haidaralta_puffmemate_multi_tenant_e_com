@@ -83,7 +83,7 @@ test('precognitive branch store returns 422 for a taken slug without creating a 
     $this->actingAs($admin, 'platform')
         ->withHeaders(precognitionHeaders('slug'))
         ->post(route('platform.branches.store'), [
-            'slug' => 'downtown',
+            'slug' => BranchSeeder::SYDNEY_CBD,
         ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['slug'])
@@ -109,7 +109,7 @@ test('precognitive branch store returns 204 for an available code without creati
 
 test('precognitive branch update ignores the current branch slug and code', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->withHeaders(precognitionHeaders('slug,code'))

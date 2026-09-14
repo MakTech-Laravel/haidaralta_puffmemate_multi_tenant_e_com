@@ -57,6 +57,7 @@ interface CategoryFormDefaults {
     image_url?: string | null;
     color_code?: ColorPickerValue | null;
     status?: boolean;
+    featured?: boolean;
 }
 
 interface CategoryFormProps {
@@ -138,6 +139,7 @@ export function CategoryForm({
         remove_image: false,
         color_code: normalizeCatalogColorPickerValue(defaults?.color_code),
         status: defaults?.status ?? true,
+        featured: defaults?.featured ?? false,
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
@@ -447,27 +449,52 @@ export function CategoryForm({
                             <InputError message={errors.parent_id} />
                         </div>
 
-                        <div className="mt-auto flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-                            <Checkbox
-                                id="status"
-                                checked={data.status}
-                                onCheckedChange={(value) =>
-                                    setData('status', value === true)
-                                }
-                            />
-                            <div className="space-y-0.5">
-                                <Label
-                                    htmlFor="status"
-                                    className="font-medium"
-                                >
-                                    Active in catalog
-                                </Label>
-                                <p className="text-muted-foreground text-xs">
-                                    Inactive categories stay hidden from
-                                    browsing.
-                                </p>
+                        <div className="mt-auto grid gap-3 sm:grid-cols-2">
+                            <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                                <Checkbox
+                                    id="status"
+                                    checked={data.status}
+                                    onCheckedChange={(value) =>
+                                        setData('status', value === true)
+                                    }
+                                />
+                                <div className="space-y-0.5">
+                                    <Label
+                                        htmlFor="status"
+                                        className="font-medium"
+                                    >
+                                        Active in catalog
+                                    </Label>
+                                    <p className="text-muted-foreground text-xs">
+                                        Inactive categories stay hidden from
+                                        browsing.
+                                    </p>
+                                </div>
+                                <InputError message={errors.status} />
                             </div>
-                            <InputError message={errors.status} />
+
+                            <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                                <Checkbox
+                                    id="featured"
+                                    checked={data.featured}
+                                    onCheckedChange={(value) =>
+                                        setData('featured', value === true)
+                                    }
+                                />
+                                <div className="space-y-0.5">
+                                    <Label
+                                        htmlFor="featured"
+                                        className="font-medium"
+                                    >
+                                        Featured category
+                                    </Label>
+                                    <p className="text-muted-foreground text-xs">
+                                        Highlight this category in featured
+                                        storefront sections.
+                                    </p>
+                                </div>
+                                <InputError message={errors.featured} />
+                            </div>
                         </div>
                     </div>
                 </section>

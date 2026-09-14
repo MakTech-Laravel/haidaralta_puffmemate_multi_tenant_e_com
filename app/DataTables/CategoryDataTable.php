@@ -37,6 +37,7 @@ class CategoryDataTable extends AbstractDataTable
         return [
             AllowedFilter::exact('parent_id'),
             StatusBooleanFilter::make('status'),
+            StatusBooleanFilter::make('featured'),
             $this->searchFilter(),
             AllowedFilter::trashed(),
         ];
@@ -51,6 +52,7 @@ class CategoryDataTable extends AbstractDataTable
             'name',
             'slug',
             'status',
+            'featured',
             'created_at',
             'products_count',
             AllowedSort::callback('parent_name', function (Builder $query, bool $descending): void {
@@ -101,6 +103,7 @@ class CategoryDataTable extends AbstractDataTable
             'image_url' => $model->imageUrl(),
             'color_code' => $model->color_code,
             'status' => (bool) $model->status,
+            'featured' => (bool) $model->featured,
             'products_count' => (int) ($model->products_count ?? 0),
             'deleted_at' => $model->deleted_at?->toIso8601String(),
             'created_at' => $model->created_at?->toIso8601String(),

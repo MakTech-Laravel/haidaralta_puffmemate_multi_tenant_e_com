@@ -23,25 +23,25 @@ beforeEach(function () {
 });
 
 test('branch create enables only the creating branch', function () {
-    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $branchA = Branch::query()->where('slug', 'downtown')->firstOrFail();
-    $branchB = Branch::query()->where('slug', 'uptown')->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branchA = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $branchB = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
     $category = Category::factory()->create();
 
     $this->actingAs($staff, 'branch')
         ->post(route('branch.products.store', $branchA), [
             'category_ids' => [$category->id],
-            'name' => 'Downtown Exclusive',
-            'slug' => 'downtown-exclusive',
-            'sku' => 'SKU-DT-1',
+            'name' => 'Sydney CBD Exclusive',
+            'slug' => 'sydney-cbd-exclusive',
+            'sku' => 'SKU-SYD-1',
             'status' => true,
             'selling_price' => 19.99,
             'quantity' => 5,
             'minimum_stock' => 2,
         ])
-        ->assertRedirect(route('branch.products.show', [$branchA, 'downtown-exclusive']));
+        ->assertRedirect(route('branch.products.show', [$branchA, 'sydney-cbd-exclusive']));
 
-    $product = Product::query()->where('slug', 'downtown-exclusive')->firstOrFail();
+    $product = Product::query()->where('slug', 'sydney-cbd-exclusive')->firstOrFail();
 
     expect($product->isEnabledForBranch($branchA->id))->toBeTrue()
         ->and($product->isEnabledForBranch($branchB->id))->toBeFalse()
@@ -68,8 +68,8 @@ test('branch create enables only the creating branch', function () {
 });
 
 test('branch create persists gallery images', function () {
-    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $category = Category::factory()->create();
 
     $this->actingAs($staff, 'branch')
@@ -93,9 +93,9 @@ test('branch create persists gallery images', function () {
 });
 
 test('disabling a product at branch A does not affect branch B', function () {
-    $staffA = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $branchA = Branch::query()->where('slug', 'downtown')->firstOrFail();
-    $branchB = Branch::query()->where('slug', 'uptown')->firstOrFail();
+    $staffA = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branchA = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $branchB = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
     $product = Product::factory()->create();
     $availability = app(BranchProductAvailabilityService::class);
 
@@ -113,8 +113,8 @@ test('disabling a product at branch A does not affect branch B', function () {
 });
 
 test('branch can reuse a product with initial stock and price', function () {
-    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $product = Product::factory()->create(['slug' => 'reuse-me']);
 
     $this->actingAs($staff, 'branch')
@@ -140,8 +140,8 @@ test('branch can reuse a product with initial stock and price', function () {
 });
 
 test('branch can adjust inventory and price for a variant', function () {
-    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $product = Product::factory()->create();
     $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
     app(BranchProductAvailabilityService::class)->setEnabled($branch, $product, true);
@@ -175,8 +175,8 @@ test('branch can adjust inventory and price for a variant', function () {
 });
 
 test('branch product index filters by enabled and low stock', function () {
-    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $availability = app(BranchProductAvailabilityService::class);
     $inventory = app(InventoryService::class);
 

@@ -33,6 +33,7 @@ class StoreCategoryRequest extends FormRequest
             'slug' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('categories', 'slug')],
             'image' => $this->catalogImageFileRules(),
             'status' => ['sometimes', 'boolean'],
+            'featured' => ['sometimes', 'boolean'],
             ...$this->colorCodeRules(),
         ];
     }

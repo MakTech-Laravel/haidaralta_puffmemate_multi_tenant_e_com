@@ -22,7 +22,7 @@ beforeEach(function () {
 
 test('platform can enable a platform-created product for a specific branch', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $product = app(ProductService::class)->createFromPlatform([
         'category_ids' => [Category::factory()->create()->id],
         'name' => 'Platform Pack',
@@ -43,7 +43,7 @@ test('platform can enable a platform-created product for a specific branch', fun
 
 test('platform can set stock and price for any branch', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $branch = Branch::query()->where('slug', 'uptown')->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
     $product = Product::factory()->create();
 
     $this->actingAs($admin, 'platform')
@@ -81,7 +81,7 @@ test('platform can set stock and price for any branch', function () {
 
 test('platform can set percent discount and clear discount with none', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $branch = Branch::query()->where('slug', 'uptown')->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
     $product = Product::factory()->create();
 
     $this->actingAs($admin, 'platform')
@@ -121,7 +121,7 @@ test('platform can set percent discount and clear discount with none', function 
 
 test('platform can filter inventory transactions by date range', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $product = Product::factory()->create();
 
     $this->actingAs($admin, 'platform')
@@ -160,7 +160,7 @@ test('platform can filter inventory transactions by date range', function () {
 
 test('platform can set variant stock and price on branch inventory show', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $branch = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $product = Product::factory()->create();
     $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
 
@@ -194,7 +194,7 @@ test('platform can open product branch inventory overview', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $product = Product::factory()->create(['slug' => 'branch-overview-pack']);
     $branchCount = Branch::query()->count();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.branches.products.enable', [$downtown, $product]), [
@@ -219,8 +219,8 @@ test('platform can open product branch inventory overview', function () {
 test('platform can search and filter product branch inventory table', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $product = Product::factory()->create(['slug' => 'branch-filter-pack']);
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
-    $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $uptown = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.branches.products.enable', [$downtown, $product]), [
@@ -239,12 +239,12 @@ test('platform can search and filter product branch inventory table', function (
     $this->actingAs($admin, 'platform')
         ->get(route('platform.products.branches', [
             'product' => $product,
-            'filter' => ['search' => 'Downtown'],
+            'filter' => ['search' => 'Sydney'],
         ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->has('table.data', 1)
-            ->where('table.data.0.slug', 'downtown'));
+            ->where('table.data.0.slug', BranchSeeder::SYDNEY_CBD));
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.products.branches', [
@@ -254,7 +254,7 @@ test('platform can search and filter product branch inventory table', function (
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->has('table.data', 1)
-            ->where('table.data.0.slug', 'downtown'));
+            ->where('table.data.0.slug', BranchSeeder::SYDNEY_CBD));
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.products.branches', [
@@ -264,7 +264,7 @@ test('platform can search and filter product branch inventory table', function (
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('table.data', fn ($rows) => collect($rows)->contains(
-                fn ($row) => $row['slug'] === 'downtown' && $row['is_low_stock'] === true,
+                fn ($row) => $row['slug'] === BranchSeeder::SYDNEY_CBD && $row['is_low_stock'] === true,
             )));
 
     $this->actingAs($admin, 'platform')
@@ -298,7 +298,7 @@ test('platform staff without manage-branch-inventories cannot open product branc
 
 test('branch user still cannot soft-delete catalog products after platform inventory ops', function () {
     $product = Product::factory()->create(['slug' => 'still-protected']);
-    $staff = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($staff, 'branch')
         ->delete(route('platform.products.destroy', $product))

@@ -23,7 +23,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | package.json, vite.config.ts | .ai/rules/general.md |
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
 | resources/js/lib/fcm.ts, resources/js/lib/color-picker.ts | .ai/rules/lib.md |
-| database/migrations/** | .ai/rules/migrations.md |
+| database/migrations/**, database/migrations/2026_09_13_042224_create_categories_table.php | .ai/rules/migrations.md |
 | app/Models/{User,Branch}.php, app/Models/OtpRecord.php | .ai/rules/models.md |
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |

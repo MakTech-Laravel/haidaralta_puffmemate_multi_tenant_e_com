@@ -26,8 +26,8 @@ test('logging out ends the active guard session and blocks dashboard access', fu
 
     $this->get($dashboardUrl)->assertRedirect(route('login'));
 })->with([
-    'platform' => ['superadmin@dev.com', 'platform', '/platform/dashboard'],
-    'branch' => ['branch1.superadmin@dev.com', 'branch', '/branch/downtown/dashboard'],
-    'driver' => ['driver@dev.com', 'driver', '/driver/dashboard'],
-    'customer' => ['user@dev.com', 'customer', '/dashboard'],
+    'platform' => [UserSeeder::PLATFORM_SUPER_ADMIN, 'platform', '/platform/dashboard'],
+    'branch' => [UserSeeder::BRANCH_1_SUPER_ADMIN, 'branch', '/branch/sydney-cbd/dashboard'],
+    'driver' => [UserSeeder::DRIVER, 'driver', '/driver/dashboard'],
+    'customer' => [UserSeeder::CUSTOMER, 'customer', '/dashboard'],
 ]);

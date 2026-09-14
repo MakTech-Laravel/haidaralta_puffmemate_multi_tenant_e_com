@@ -17,6 +17,7 @@ type Category = {
     image_url: string | null;
     color_code?: ColorPickerValue | null;
     status: boolean;
+    featured: boolean;
 };
 
 export default function BranchCategoriesEdit({
@@ -101,6 +102,7 @@ export default function BranchCategoriesEdit({
                         image_url: category.image_url,
                         color_code: category.color_code,
                         status: category.status,
+                        featured: category.featured,
                     }}
                     cancelHref={CategoryController.show.url({
                         branch: branch.slug,

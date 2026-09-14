@@ -25,28 +25,44 @@ class UserSeeder extends Seeder
 
     public const BRANCH_2_ADMIN_PHONE = '+61477777777';
 
+    public const BRANCH_3_SUPER_ADMIN_PHONE = '+61410101010';
+
+    public const BRANCH_3_ADMIN_PHONE = '+61412121212';
+
+    public const BRANCH_1_STAFF_PHONE = '+61413131313';
+
+    public const BRANCH_2_STAFF_PHONE = '+61414141414';
+
     public const DRIVER_PHONE = '+61488888888';
 
     public const CUSTOMER_PHONE = '+61499999999';
 
     /** @deprecated Prefer *_PHONE constants for login. Kept for display/email lookups. */
-    public const PLATFORM_SUPER_ADMIN = 'superadmin@dev.com';
+    public const PLATFORM_SUPER_ADMIN = 'ava.mitchell@puffonmate.dev';
 
-    public const PLATFORM_ADMIN = 'admin@dev.com';
+    public const PLATFORM_ADMIN = 'noah.patel@puffonmate.dev';
 
-    public const PLATFORM_MANAGER = 'manage@dev.com';
+    public const PLATFORM_MANAGER = 'mia.reynolds@puffonmate.dev';
 
-    public const BRANCH_1_SUPER_ADMIN = 'branch1.superadmin@dev.com';
+    public const BRANCH_1_SUPER_ADMIN = 'alex.chen@sydney-cbd.dev';
 
-    public const BRANCH_1_ADMIN = 'branch1.admin@dev.com';
+    public const BRANCH_1_ADMIN = 'sam.okonkwo@sydney-cbd.dev';
 
-    public const BRANCH_2_SUPER_ADMIN = 'branch2.superadmin@dev.com';
+    public const BRANCH_2_SUPER_ADMIN = 'jordan.blake@melbourne-collins.dev';
 
-    public const BRANCH_2_ADMIN = 'branch2.admin@dev.com';
+    public const BRANCH_2_ADMIN = 'riley.nguyen@melbourne-collins.dev';
 
-    public const DRIVER = 'driver@dev.com';
+    public const BRANCH_3_SUPER_ADMIN = 'casey.martin@brisbane-queen.dev';
 
-    public const CUSTOMER = 'user@dev.com';
+    public const BRANCH_3_ADMIN = 'chris.wong@brisbane-queen.dev';
+
+    public const BRANCH_1_STAFF = 'priya.nair@sydney-cbd.dev';
+
+    public const BRANCH_2_STAFF = 'liam.brooks@melbourne-collins.dev';
+
+    public const DRIVER = 'daniel.foster@puffonmate.dev';
+
+    public const CUSTOMER = 'emma.walker@example.com';
 
     public const DEFAULT_PASSWORD = 'password';
 
@@ -55,35 +71,62 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
-        $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
+        $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+        $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+        $brisbane = Branch::query()->where('slug', BranchSeeder::BRISBANE_QUEEN)->firstOrFail();
 
         $this->seedPlatformUsers();
-        $this->seedBranchUsers($downtown, [
+        $this->seedBranchUsers($sydney, [
             [
                 'phone' => self::BRANCH_1_SUPER_ADMIN_PHONE,
                 'email' => self::BRANCH_1_SUPER_ADMIN,
-                'name' => 'Branch 1 Super Admin',
+                'name' => 'Alex Chen',
                 'role' => RoleEnum::SUPER_ADMIN,
             ],
             [
                 'phone' => self::BRANCH_1_ADMIN_PHONE,
                 'email' => self::BRANCH_1_ADMIN,
-                'name' => 'Branch 1 Admin',
+                'name' => 'Sam Okonkwo',
                 'role' => RoleEnum::ADMIN,
             ],
+            [
+                'phone' => self::BRANCH_1_STAFF_PHONE,
+                'email' => self::BRANCH_1_STAFF,
+                'name' => 'Priya Nair',
+                'role' => RoleEnum::STAFF,
+            ],
         ]);
-        $this->seedBranchUsers($uptown, [
+        $this->seedBranchUsers($melbourne, [
             [
                 'phone' => self::BRANCH_2_SUPER_ADMIN_PHONE,
                 'email' => self::BRANCH_2_SUPER_ADMIN,
-                'name' => 'Branch 2 Super Admin',
+                'name' => 'Jordan Blake',
                 'role' => RoleEnum::SUPER_ADMIN,
             ],
             [
                 'phone' => self::BRANCH_2_ADMIN_PHONE,
                 'email' => self::BRANCH_2_ADMIN,
-                'name' => 'Branch 2 Admin',
+                'name' => 'Riley Nguyen',
+                'role' => RoleEnum::ADMIN,
+            ],
+            [
+                'phone' => self::BRANCH_2_STAFF_PHONE,
+                'email' => self::BRANCH_2_STAFF,
+                'name' => 'Liam Brooks',
+                'role' => RoleEnum::STAFF,
+            ],
+        ]);
+        $this->seedBranchUsers($brisbane, [
+            [
+                'phone' => self::BRANCH_3_SUPER_ADMIN_PHONE,
+                'email' => self::BRANCH_3_SUPER_ADMIN,
+                'name' => 'Casey Martin',
+                'role' => RoleEnum::SUPER_ADMIN,
+            ],
+            [
+                'phone' => self::BRANCH_3_ADMIN_PHONE,
+                'email' => self::BRANCH_3_ADMIN,
+                'name' => 'Chris Wong',
                 'role' => RoleEnum::ADMIN,
             ],
         ]);
@@ -91,14 +134,14 @@ class UserSeeder extends Seeder
         $this->seedPortalUser(
             phone: self::DRIVER_PHONE,
             email: self::DRIVER,
-            name: 'Driver',
+            name: 'Daniel Foster',
             userType: UserType::DRIVER,
         );
 
         $this->seedPortalUser(
             phone: self::CUSTOMER_PHONE,
             email: self::CUSTOMER,
-            name: 'Customer',
+            name: 'Emma Walker',
             userType: UserType::CUSTOMER,
         );
 
@@ -113,19 +156,19 @@ class UserSeeder extends Seeder
             [
                 'phone' => self::PLATFORM_SUPER_ADMIN_PHONE,
                 'email' => self::PLATFORM_SUPER_ADMIN,
-                'name' => 'Platform Super Admin',
+                'name' => 'Ava Mitchell',
                 'role' => RoleEnum::SUPER_ADMIN,
             ],
             [
                 'phone' => self::PLATFORM_ADMIN_PHONE,
                 'email' => self::PLATFORM_ADMIN,
-                'name' => 'Platform Admin',
+                'name' => 'Noah Patel',
                 'role' => RoleEnum::ADMIN,
             ],
             [
                 'phone' => self::PLATFORM_MANAGER_PHONE,
                 'email' => self::PLATFORM_MANAGER,
-                'name' => 'Platform Manager',
+                'name' => 'Mia Reynolds',
                 'role' => RoleEnum::MANAGER,
             ],
         ] as $account) {
@@ -181,5 +224,4 @@ class UserSeeder extends Seeder
             ],
         );
     }
-
 }

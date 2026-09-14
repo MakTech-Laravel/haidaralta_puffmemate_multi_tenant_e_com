@@ -128,7 +128,7 @@ export default function DriverDashboard() {
                     <CardHeader className="px-5">
                         <CardTitle>Today&apos;s route</CardTitle>
                         <CardDescription>
-                            Placeholder sequence from the Downtown depot.
+                            Placeholder sequence from the Sydney CBD depot.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3 px-5">

@@ -21,7 +21,7 @@ test('telescope routes are unavailable in the testing environment', function () 
 });
 
 test('platform super admin is allowed to view telescope in local environment', function () {
-    $admin = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     app()->detectEnvironment(fn (): string => 'local');
 
@@ -29,9 +29,9 @@ test('platform super admin is allowed to view telescope in local environment', f
 });
 
 test('non platform users cannot view telescope even in local environment', function () {
-    $branch = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
-    $driver = User::query()->where('email', 'driver@dev.com')->firstOrFail();
-    $customer = User::query()->where('email', 'user@dev.com')->firstOrFail();
+    $branch = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $customer = User::query()->where('email', UserSeeder::CUSTOMER)->firstOrFail();
 
     app()->detectEnvironment(fn (): string => 'local');
 
@@ -55,7 +55,7 @@ test('platform staff without super admin cannot view telescope', function () {
 });
 
 test('telescope access is denied outside local and staging', function () {
-    $admin = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     app()->detectEnvironment(fn (): string => 'production');
 

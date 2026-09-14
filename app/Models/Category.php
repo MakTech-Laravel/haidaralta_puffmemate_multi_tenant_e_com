@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
 use App\Support\CatalogBackgroundColor;
+use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 use Laravel\Scout\Searchable;
 
 class Category extends Model
@@ -29,12 +29,12 @@ class Category extends Model
     /**
      * @var list<string>
      */
-    public static array $dataTableSortable = ['name', 'slug', 'status', 'created_at', 'products_count'];
+    public static array $dataTableSortable = ['name', 'slug', 'status', 'featured', 'created_at', 'products_count'];
 
     /**
      * @var list<string>
      */
-    public static array $dataTableFilterable = ['parent_id', 'status'];
+    public static array $dataTableFilterable = ['parent_id', 'status', 'featured'];
 
     /**
      * @var list<string>
@@ -46,6 +46,7 @@ class Category extends Model
         'image',
         'color_code',
         'status',
+        'featured',
     ];
 
     /**
@@ -74,9 +75,7 @@ class Category extends Model
 
     public function imageUrl(): ?string
     {
-        return $this->image
-            ? Storage::disk('public')->url($this->image)
-            : null;
+        return MediaUrl::resolve($this->image, fallback: null);
     }
 
     /**
@@ -90,6 +89,7 @@ class Category extends Model
             'slug' => $this->slug,
             'parent_id' => $this->parent_id,
             'status' => (bool) $this->status,
+            'featured' => (bool) $this->featured,
             'created_at' => SearchableTimestamp::from($this->created_at),
         ];
     }
@@ -106,6 +106,7 @@ class Category extends Model
     {
         return [
             'status' => 'boolean',
+            'featured' => 'boolean',
             'color_code' => 'array',
         ];
     }
