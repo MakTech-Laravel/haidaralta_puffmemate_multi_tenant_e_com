@@ -650,7 +650,7 @@ export function ProductForm({
                                 onChange={(event) =>
                                     setData('brand', event.target.value)
                                 }
-                                placeholder="e.g. PuffonMate"
+                                placeholder="e.g. PuffMeMate"
                             />
                             <InputError message={errors.brand} />
                         </div>
