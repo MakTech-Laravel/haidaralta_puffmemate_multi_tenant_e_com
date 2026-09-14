@@ -31,6 +31,7 @@ type Category = {
     image_url: string | null;
     color_code?: ColorPickerValue | null;
     status: boolean;
+    featured: boolean;
     products_count: number;
     children_count: number;
 };
@@ -70,12 +71,21 @@ export default function PlatformCategoriesShow({
                             title={category.name}
                             description={`/${category.slug}`}
                         />
-                        <Badge
-                            variant={category.status ? 'default' : 'secondary'}
-                            className="w-fit"
-                        >
-                            {category.status ? 'Active' : 'Inactive'}
-                        </Badge>
+                        <div className="flex flex-wrap gap-2">
+                            <Badge
+                                variant={
+                                    category.status ? 'default' : 'secondary'
+                                }
+                                className="w-fit"
+                            >
+                                {category.status ? 'Active' : 'Inactive'}
+                            </Badge>
+                            {category.featured ? (
+                                <Badge variant="outline" className="w-fit">
+                                    Featured
+                                </Badge>
+                            ) : null}
+                        </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <Button variant="default" asChild>
@@ -118,6 +128,16 @@ export default function PlatformCategoriesShow({
                                 <DetailItem
                                     label="Subcategories"
                                     value={category.children_count}
+                                />
+                                <DetailItem
+                                    label="Status"
+                                    value={
+                                        category.status ? 'Active' : 'Inactive'
+                                    }
+                                />
+                                <DetailItem
+                                    label="Featured"
+                                    value={category.featured ? 'Yes' : 'No'}
                                 />
                                 <DetailItem
                                     label="Slug"

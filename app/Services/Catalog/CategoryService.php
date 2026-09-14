@@ -16,6 +16,7 @@ class CategoryService
      *     name: string,
      *     slug: string,
      *     status?: bool,
+     *     featured?: bool,
      *     color_code?: array<string, mixed>|null
      * }  $data
      */
@@ -29,6 +30,7 @@ class CategoryService
                 'image' => $image?->store('categories', 'public'),
                 'color_code' => CatalogBackgroundColor::normalize($data['color_code'] ?? null),
                 'status' => $data['status'] ?? true,
+                'featured' => $data['featured'] ?? false,
             ]);
         });
     }
@@ -39,6 +41,7 @@ class CategoryService
      *     name?: string,
      *     slug?: string,
      *     status?: bool,
+     *     featured?: bool,
      *     color_code?: array<string, mixed>|null,
      *     remove_image?: bool
      * }  $data

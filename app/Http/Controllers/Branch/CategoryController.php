@@ -62,6 +62,7 @@ class CategoryController extends Controller
         $branch = $this->currentBranch();
         $data = $request->safe()->except(['image']);
         $data['status'] = $request->boolean('status', true);
+        $data['featured'] = $request->boolean('featured');
 
         $category = $this->categories->create($data, $request->file('image'));
 
@@ -99,6 +100,7 @@ class CategoryController extends Controller
         $branch = $this->currentBranch();
         $data = $request->safe()->except(['image']);
         $data['status'] = $request->boolean('status', true);
+        $data['featured'] = $request->boolean('featured');
         $data['remove_image'] = $request->boolean('remove_image');
 
         $category = $this->categories->update($category, $data, $request->file('image'));
@@ -147,6 +149,7 @@ class CategoryController extends Controller
             'image_url' => $category->imageUrl(),
             'color_code' => $category->color_code,
             'status' => (bool) $category->status,
+            'featured' => (bool) $category->featured,
             'created_at' => $category->created_at?->toIso8601String(),
         ];
 

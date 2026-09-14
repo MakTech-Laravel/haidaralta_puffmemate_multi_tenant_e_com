@@ -29,12 +29,12 @@ class Category extends Model
     /**
      * @var list<string>
      */
-    public static array $dataTableSortable = ['name', 'slug', 'status', 'created_at', 'products_count'];
+    public static array $dataTableSortable = ['name', 'slug', 'status', 'featured', 'created_at', 'products_count'];
 
     /**
      * @var list<string>
      */
-    public static array $dataTableFilterable = ['parent_id', 'status'];
+    public static array $dataTableFilterable = ['parent_id', 'status', 'featured'];
 
     /**
      * @var list<string>
@@ -46,6 +46,7 @@ class Category extends Model
         'image',
         'color_code',
         'status',
+        'featured',
     ];
 
     /**
@@ -90,6 +91,7 @@ class Category extends Model
             'slug' => $this->slug,
             'parent_id' => $this->parent_id,
             'status' => (bool) $this->status,
+            'featured' => (bool) $this->featured,
             'created_at' => SearchableTimestamp::from($this->created_at),
         ];
     }
@@ -106,6 +108,7 @@ class Category extends Model
     {
         return [
             'status' => 'boolean',
+            'featured' => 'boolean',
             'color_code' => 'array',
         ];
     }

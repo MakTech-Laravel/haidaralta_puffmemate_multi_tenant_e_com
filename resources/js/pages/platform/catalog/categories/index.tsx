@@ -41,6 +41,7 @@ type CategoryRow = {
     image_url: string | null;
     color_code?: ColorPickerValue | null;
     status: boolean;
+    featured: boolean;
     products_count: number;
     deleted_at: string | null;
 };
@@ -72,6 +73,7 @@ export default function PlatformCategoriesIndex({
             filter: {
                 search: tablePayload.filters.search ?? '',
                 status: tablePayload.filters.status ?? 'all',
+                featured: tablePayload.filters.featured ?? 'all',
                 parent_id: tablePayload.filters.parent_id ?? 'all',
                 trashed: tablePayload.filters.trashed ?? 'active',
             },
@@ -186,6 +188,28 @@ export default function PlatformCategoriesIndex({
                             <Badge variant="destructive">Trashed</Badge>
                         ) : null}
                     </div>
+                ),
+            },
+            {
+                accessorKey: 'featured',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Featured"
+                        sortable
+                        sortKey="featured"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Badge
+                        variant={
+                            row.original.featured ? 'default' : 'secondary'
+                        }
+                    >
+                        {row.original.featured ? 'Featured' : 'Standard'}
+                    </Badge>
                 ),
             },
             {
@@ -306,6 +330,37 @@ export default function PlatformCategoriesIndex({
                                                 </SelectItem>
                                                 <SelectItem value="inactive">
                                                     Inactive
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Featured</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.featured ?? 'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'featured',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Featured" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All featured
+                                                </SelectItem>
+                                                <SelectItem value="1">
+                                                    Featured
+                                                </SelectItem>
+                                                <SelectItem value="0">
+                                                    Standard
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>

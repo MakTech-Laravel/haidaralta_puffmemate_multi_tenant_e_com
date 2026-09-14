@@ -27,22 +27,33 @@ test('branch can create and update a global category', function () {
             'name' => 'Branch Coils',
             'slug' => 'branch-coils',
             'status' => true,
+            'featured' => true,
         ])
         ->assertRedirect(route('branch.categories.show', [$branch, 'branch-coils']));
 
     $category = Category::query()->where('slug', 'branch-coils')->firstOrFail();
 
-    expect($category->name)->toBe('Branch Coils');
+    expect($category->name)->toBe('Branch Coils')
+        ->and($category->featured)->toBeTrue();
 
     $this->actingAs($staff, 'branch')
         ->put(route('branch.categories.update', [$branch, $category]), [
             'name' => 'Branch Coils Updated',
             'slug' => 'branch-coils',
             'status' => true,
+            'featured' => false,
         ])
         ->assertRedirect(route('branch.categories.show', [$branch, 'branch-coils']));
 
-    expect($category->fresh()->name)->toBe('Branch Coils Updated');
+    expect($category->fresh()->name)->toBe('Branch Coils Updated')
+        ->and($category->fresh()->featured)->toBeFalse();
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.categories.show', [$branch, $category]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/categories/show')
+            ->where('category.featured', false));
 });
 
 test('branch can update a global product without destroy routes', function () {

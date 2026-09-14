@@ -49,6 +49,7 @@ class UpdateCategoryRequest extends FormRequest
             'image' => $this->catalogImageFileRules(),
             'remove_image' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'boolean'],
+            'featured' => ['sometimes', 'boolean'],
             ...$this->colorCodeRules(),
         ];
     }
