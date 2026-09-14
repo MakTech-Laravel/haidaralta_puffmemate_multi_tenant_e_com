@@ -44,8 +44,7 @@ interface BranchFormProps {
     includeSuperAdmin?: boolean;
 }
 
-const LOGO_ACCEPT =
-    'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
+const LOGO_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
 
 function slugify(value: string): string {
     return value
@@ -172,284 +171,281 @@ export function BranchForm({
 
     return (
         <form onSubmit={submit} className="space-y-6">
-            <div className="grid items-stretch gap-6 xl:grid-cols-2">
-                <section
-                    className={cn(
-                        'flex h-full flex-col rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
-                        'sm:p-6',
-                    )}
-                >
-                    <div className="mb-5 space-y-1">
-                        <h2 className="text-base font-semibold tracking-tight">
-                            {isEdit ? 'Branch details' : 'Branch information'}
-                        </h2>
-                        <p className="text-muted-foreground text-sm">
-                            Location identity, contact, and trading hours.
-                        </p>
+            <section
+                className={cn(
+                    'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                    'sm:p-6',
+                )}
+            >
+                <div className="mb-5 space-y-1">
+                    <h2 className="text-base font-semibold tracking-tight">
+                        {isEdit ? 'Branch details' : 'Branch information'}
+                    </h2>
+                    <p className="text-muted-foreground text-sm">
+                        Location identity, contact, and trading hours.
+                    </p>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-stretch gap-4">
+                        <div className="flex w-40 shrink-0 flex-col gap-1.5 self-stretch sm:w-44">
+                            <Label>Logo</Label>
+                            <div className="flex min-h-44 flex-1 flex-col">
+                                <FileUpload
+                                    value={data.logo}
+                                    onChange={(file) => {
+                                        const next = Array.isArray(file)
+                                            ? (file[0] ?? null)
+                                            : file;
+                                        setExistingLogo([]);
+                                        setData((current) => ({
+                                            ...current,
+                                            logo: next,
+                                            remove_logo: next
+                                                ? false
+                                                : current.remove_logo,
+                                        }));
+                                    }}
+                                    existingFiles={
+                                        data.logo || data.remove_logo
+                                            ? []
+                                            : existingLogo
+                                    }
+                                    onRemoveExisting={() => {
+                                        setExistingLogo([]);
+                                        setData((current) => ({
+                                            ...current,
+                                            logo: null,
+                                            remove_logo: true,
+                                        }));
+                                    }}
+                                    accept={LOGO_ACCEPT}
+                                    maxSize={2}
+                                    maxFiles={1}
+                                    multiple={false}
+                                    lightbox
+                                    isUploading={processing}
+                                    uploadProgress={
+                                        progress?.percentage ?? null
+                                    }
+                                    onCancel={
+                                        processing ? cancel : undefined
+                                    }
+                                    placeholder="Branch logo"
+                                    hint="PNG, JPG, or WebP · Max 2MB"
+                                    error={errors.logo}
+                                    classNames={{
+                                        wrapper:
+                                            'flex h-full min-h-44 w-full flex-1 flex-col',
+                                        dropzone:
+                                            'flex h-full min-h-44 w-full flex-1 border-dashed border-border/60 bg-muted/30 px-3 py-4',
+                                        dropzoneContent: 'gap-1.5',
+                                        card: 'flex h-full w-full flex-col overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
+                                        cardMedia:
+                                            'aspect-auto min-h-44 flex-1 bg-transparent',
+                                        cardImage:
+                                            'size-full object-cover object-center',
+                                        cardInfo:
+                                            'border-border/50 border-t bg-background/70',
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex min-w-0 flex-1 flex-col gap-3">
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="name">Branch name</Label>
+                                <Input
+                                    id="name"
+                                    value={data.name}
+                                    onChange={(event) =>
+                                        setData('name', event.target.value)
+                                    }
+                                    required
+                                    placeholder="e.g. PuffOnMate Sydney CBD"
+                                    autoComplete="off"
+                                />
+                                <InputError message={errors.name} />
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="slug">Slug</Label>
+                                    <Input
+                                        id="slug"
+                                        value={data.slug}
+                                        onChange={(event) => {
+                                            setSlugTouched(true);
+                                            setData(
+                                                'slug',
+                                                event.target.value,
+                                            );
+                                        }}
+                                        onBlur={() => validate('slug')}
+                                        required
+                                        placeholder="e.g. sydney-cbd"
+                                    />
+                                    <InputError message={errors.slug} />
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="code">Code</Label>
+                                    <Input
+                                        id="code"
+                                        value={data.code}
+                                        onChange={(event) =>
+                                            setData(
+                                                'code',
+                                                event.target.value,
+                                            )
+                                        }
+                                        onBlur={() => validate('code')}
+                                        required
+                                        placeholder="e.g. DTN"
+                                    />
+                                    <InputError message={errors.code} />
+                                </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="phone">Phone</Label>
+                                    <Input
+                                        id="phone"
+                                        type="tel"
+                                        value={data.phone}
+                                        onChange={(event) =>
+                                            setData(
+                                                'phone',
+                                                event.target.value,
+                                            )
+                                        }
+                                        onBlur={() => {
+                                            if (data.phone.trim() !== '') {
+                                                validate('phone');
+                                            }
+                                        }}
+                                        placeholder="04XX XXX XXX or +61…"
+                                    />
+                                    <InputError message={errors.phone} />
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        value={data.email}
+                                        onChange={(event) =>
+                                            setData(
+                                                'email',
+                                                event.target.value,
+                                            )
+                                        }
+                                        onBlur={() => {
+                                            if (data.email.trim() !== '') {
+                                                validate('email');
+                                            }
+                                        }}
+                                        placeholder="branch@example.com"
+                                    />
+                                    <InputError message={errors.email} />
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="flex flex-1 flex-col gap-5">
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="name">Branch name</Label>
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="address">Address</Label>
+                        <Textarea
+                            id="address"
+                            value={data.address}
+                            onChange={(event) =>
+                                setData('address', event.target.value)
+                            }
+                            placeholder="Street, city, area"
+                            rows={3}
+                        />
+                        <InputError message={errors.address} />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="flex flex-col gap-1.5">
+                            <Label htmlFor="latitude">Latitude</Label>
                             <Input
-                                id="name"
-                                value={data.name}
+                                id="latitude"
+                                type="number"
+                                step="any"
+                                value={data.latitude}
                                 onChange={(event) =>
-                                    setData('name', event.target.value)
+                                    setData('latitude', event.target.value)
                                 }
-                                required
-                                placeholder="e.g. PuffOnMate Sydney CBD"
-                                autoComplete="off"
+                                placeholder="e.g. -33.8688"
                             />
-                            <InputError message={errors.name} />
+                            <InputError message={errors.latitude} />
                         </div>
 
-                        <div className="grid gap-5 sm:grid-cols-2">
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="slug">Slug</Label>
-                                <Input
-                                    id="slug"
-                                    value={data.slug}
-                                    onChange={(event) => {
-                                        setSlugTouched(true);
-                                        setData('slug', event.target.value);
-                                    }}
-                                    onBlur={() => validate('slug')}
-                                    required
-                                    placeholder="e.g. sydney-cbd"
-                                />
-                                <InputError message={errors.slug} />
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="code">Code</Label>
-                                <Input
-                                    id="code"
-                                    value={data.code}
-                                    onChange={(event) =>
-                                        setData('code', event.target.value)
-                                    }
-                                    onBlur={() => validate('code')}
-                                    required
-                                    placeholder="e.g. DTN"
-                                />
-                                <InputError message={errors.code} />
-                            </div>
-                        </div>
-
-                        <div className="grid gap-5 sm:grid-cols-2">
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="phone">Phone</Label>
-                                <Input
-                                    id="phone"
-                                    type="tel"
-                                    value={data.phone}
-                                    onChange={(event) =>
-                                        setData('phone', event.target.value)
-                                    }
-                                    onBlur={() => {
-                                        if (data.phone.trim() !== '') {
-                                            validate('phone');
-                                        }
-                                    }}
-                                    placeholder="04XX XXX XXX or +61…"
-                                />
-                                <InputError message={errors.phone} />
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={data.email}
-                                    onChange={(event) =>
-                                        setData('email', event.target.value)
-                                    }
-                                    onBlur={() => {
-                                        if (data.email.trim() !== '') {
-                                            validate('email');
-                                        }
-                                    }}
-                                    placeholder="branch@example.com"
-                                />
-                                <InputError message={errors.email} />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="address">Address</Label>
-                            <Textarea
-                                id="address"
-                                value={data.address}
+                        <div className="flex flex-col gap-1.5">
+                            <Label htmlFor="longitude">Longitude</Label>
+                            <Input
+                                id="longitude"
+                                type="number"
+                                step="any"
+                                value={data.longitude}
                                 onChange={(event) =>
-                                    setData('address', event.target.value)
+                                    setData('longitude', event.target.value)
                                 }
-                                placeholder="Street, city, area"
-                                rows={3}
+                                placeholder="e.g. 151.2093"
                             />
-                            <InputError message={errors.address} />
-                        </div>
-
-                        <div className="grid gap-5 sm:grid-cols-2">
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="latitude">Latitude</Label>
-                                <Input
-                                    id="latitude"
-                                    type="number"
-                                    step="any"
-                                    value={data.latitude}
-                                    onChange={(event) =>
-                                        setData('latitude', event.target.value)
-                                    }
-                                    placeholder="e.g. -33.8688"
-                                />
-                                <InputError message={errors.latitude} />
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="longitude">Longitude</Label>
-                                <Input
-                                    id="longitude"
-                                    type="number"
-                                    step="any"
-                                    value={data.longitude}
-                                    onChange={(event) =>
-                                        setData(
-                                            'longitude',
-                                            event.target.value,
-                                        )
-                                    }
-                                    placeholder="e.g. 151.2093"
-                                />
-                                <InputError message={errors.longitude} />
-                            </div>
-                        </div>
-
-                        <div className="grid gap-5 sm:grid-cols-2">
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="opening_time">
-                                    Opening time
-                                </Label>
-                                <TimeSelect
-                                    id="opening_time"
-                                    value={data.opening_time}
-                                    onChange={(value) =>
-                                        setData('opening_time', value)
-                                    }
-                                    placeholder="Select opening time"
-                                    aria-invalid={Boolean(errors.opening_time)}
-                                />
-                                <InputError message={errors.opening_time} />
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="closing_time">
-                                    Closing time
-                                </Label>
-                                <TimeSelect
-                                    id="closing_time"
-                                    value={data.closing_time}
-                                    onChange={(value) =>
-                                        setData('closing_time', value)
-                                    }
-                                    placeholder="Select closing time"
-                                    aria-invalid={Boolean(errors.closing_time)}
-                                />
-                                <InputError message={errors.closing_time} />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 pt-1">
-                            <Checkbox
-                                id="status"
-                                checked={data.status}
-                                onCheckedChange={(value) =>
-                                    setData('status', value === true)
-                                }
-                            />
-                            <Label htmlFor="status" className="font-normal">
-                                Active
-                            </Label>
-                            <InputError message={errors.status} />
+                            <InputError message={errors.longitude} />
                         </div>
                     </div>
-                </section>
 
-                <section
-                    className={cn(
-                        'flex h-full flex-col rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
-                        'sm:p-6',
-                    )}
-                >
-                    <div className="mb-5 space-y-1">
-                        <h2 className="text-base font-semibold tracking-tight">
-                            Logo
-                        </h2>
-                        <p className="text-muted-foreground text-sm">
-                            Listing preview for branch directories and the
-                            portal header.
-                        </p>
-                    </div>
-
-                    <div className="border-border/80 flex flex-1 flex-col overflow-hidden rounded-2xl border shadow-sm">
-                        <div className="bg-muted/25 flex min-h-[14rem] flex-1 flex-col p-4 sm:min-h-[16rem]">
-                            <FileUpload
-                                value={data.logo}
-                                onChange={(file) => {
-                                    const next = Array.isArray(file)
-                                        ? (file[0] ?? null)
-                                        : file;
-                                    setExistingLogo([]);
-                                    setData((current) => ({
-                                        ...current,
-                                        logo: next,
-                                        remove_logo: next
-                                            ? false
-                                            : current.remove_logo,
-                                    }));
-                                }}
-                                existingFiles={
-                                    data.logo || data.remove_logo
-                                        ? []
-                                        : existingLogo
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="flex flex-col gap-1.5">
+                            <Label htmlFor="opening_time">Opening time</Label>
+                            <TimeSelect
+                                id="opening_time"
+                                value={data.opening_time}
+                                onChange={(value) =>
+                                    setData('opening_time', value)
                                 }
-                                onRemoveExisting={() => {
-                                    setExistingLogo([]);
-                                    setData((current) => ({
-                                        ...current,
-                                        logo: null,
-                                        remove_logo: true,
-                                    }));
-                                }}
-                                accept={LOGO_ACCEPT}
-                                maxSize={2}
-                                lightbox
-                                isUploading={processing}
-                                uploadProgress={progress?.percentage ?? null}
-                                onCancel={processing ? cancel : undefined}
-                                placeholder="Drop branch logo"
-                                hint="PNG, JPG, or WebP · Max 2MB"
-                                classNames={{
-                                    wrapper:
-                                        'flex h-full min-h-0 w-full flex-1 flex-col',
-                                    dropzone:
-                                        'flex h-full min-h-[11rem] w-full flex-1 border-dashed border-border/60 bg-background/75 px-4 py-8 backdrop-blur-sm',
-                                    dropzoneContent: 'gap-1.5',
-                                    card: 'flex h-full w-full flex-col overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
-                                    cardMedia:
-                                        'aspect-auto min-h-[12rem] flex-1 bg-transparent',
-                                    cardImage:
-                                        'mx-auto !h-auto !w-auto max-h-52 max-w-full object-contain object-center',
-                                    cardInfo:
-                                        'border-border/50 border-t bg-background/70',
-                                }}
-                                error={errors.logo}
+                                placeholder="Select opening time"
+                                aria-invalid={Boolean(errors.opening_time)}
                             />
+                            <InputError message={errors.opening_time} />
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                            <Label htmlFor="closing_time">Closing time</Label>
+                            <TimeSelect
+                                id="closing_time"
+                                value={data.closing_time}
+                                onChange={(value) =>
+                                    setData('closing_time', value)
+                                }
+                                placeholder="Select closing time"
+                                aria-invalid={Boolean(errors.closing_time)}
+                            />
+                            <InputError message={errors.closing_time} />
                         </div>
                     </div>
-                </section>
-            </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                        <Checkbox
+                            id="status"
+                            checked={data.status}
+                            onCheckedChange={(value) =>
+                                setData('status', value === true)
+                            }
+                        />
+                        <Label htmlFor="status" className="font-normal">
+                            Active
+                        </Label>
+                        <InputError message={errors.status} />
+                    </div>
+                </div>
+            </section>
 
             {includeSuperAdmin && 'super_admin' in data ? (
                 <section
