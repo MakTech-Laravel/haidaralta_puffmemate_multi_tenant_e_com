@@ -53,6 +53,10 @@ function isActive(url: string, item: StorefrontChromeItem): boolean {
         return false;
     }
 
+    if (item.route === 'shop') {
+        return url === '/shop' || url.startsWith('/shop?');
+    }
+
     return href === '/' ? url === '/' : url.startsWith(href);
 }
 
@@ -106,6 +110,7 @@ export function StorefrontHeader() {
 
     const navItems: StorefrontChromeItem[] = [
         { label: 'Home', route: 'home' },
+        { label: 'Shop', route: 'shop' },
         ...(storefront?.navCategories ?? []).map((category) => ({
             label: category.label,
             categorySlug: category.categorySlug,

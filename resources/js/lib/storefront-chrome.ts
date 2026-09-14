@@ -14,6 +14,7 @@ export type StorefrontChromeItem = {
 
 export const storefrontNavItems: StorefrontChromeItem[] = [
     { label: 'Home', route: 'home' },
+    { label: 'Shop', route: 'shop' },
     { label: 'Cigarettes', categorySlug: 'cigarettes' },
     { label: 'Tobacco', categorySlug: 'tobacco' },
     { label: 'Vapes', categorySlug: 'vapes' },

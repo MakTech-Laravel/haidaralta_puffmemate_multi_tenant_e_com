@@ -42,7 +42,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 <p className="text-primary mt-2 text-lg font-semibold">
                     {product.price}
                 </p>
-                <p className="text-muted-foreground text-sm font-normal">
+                <p className="text-tertiary text-sm font-normal">
                     Available stock: {product.stock} pcs
                 </p>
             </div>
