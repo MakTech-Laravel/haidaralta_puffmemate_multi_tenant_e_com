@@ -1,8 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { CartItems } from '@/components/storefront/cart-items';
-import { CartOrderSummary } from '@/components/storefront/cart-order-summary';
+import { CartItems } from '@/components/storefront/cart/cart-items';
+import { CartOrderSummary } from '@/components/storefront/cart/cart-order-summary';
 import type {
     CartBranchOption,
     CartGroup,
