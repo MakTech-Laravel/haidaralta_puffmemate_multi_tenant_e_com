@@ -1,9 +1,12 @@
 ---
 paths:
     - 'resources/js/{layouts,components,pages}/storefront/**'
+    - 'resources/js/lib/storefront*.ts'
 ---
 
 # Storefront
+
+These rules apply only to storefront paths above. Do not apply this folder layout to platform, branch, admin, or other app areas.
 
 ## Storefront UI is disposable
 

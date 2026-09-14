@@ -25,10 +25,10 @@ export function AboutHero({ className }: AboutHeroProps) {
 
             <div className="relative mx-auto flex min-h-[40vh] container flex-col justify-center px-4 py-16 sm:min-h-[48vh] sm:px-6 sm:py-20">
                 <div className="text-primary-foreground max-w-xl">
-                    <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+                    <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
                         {aboutHero.title}
                     </h1>
-                    <p className="mt-4 max-w-md text-sm leading-relaxed opacity-90 sm:text-base">
+                    <p className="mt-4 max-w-md text-sm leading-relaxed opacity-90 sm:text-base font-inter font-normal">
                         {aboutHero.subtitle}
                     </p>
                 </div>

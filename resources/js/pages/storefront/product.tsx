@@ -2,16 +2,16 @@ import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { ProductCard } from '@/components/storefront/product-card';
-import { ProductGallery } from '@/components/storefront/product-gallery';
-import { ProductResponsibleRetail } from '@/components/storefront/product-responsible-retail';
-import { ProductReviews } from '@/components/storefront/product-reviews';
+import { ProductGallery } from '@/components/storefront/product/product-gallery';
+import { ProductResponsibleRetail } from '@/components/storefront/product/product-responsible-retail';
+import { ProductReviews } from '@/components/storefront/product/product-reviews';
 import {
     ProductSectionTabs,
     type ProductSectionTabId,
-} from '@/components/storefront/product-section-tabs';
-import { ProductShipping } from '@/components/storefront/product-shipping';
-import { ProductSpecifications } from '@/components/storefront/product-specifications';
-import { ProductSummary } from '@/components/storefront/product-summary';
+} from '@/components/storefront/product/product-section-tabs';
+import { ProductShipping } from '@/components/storefront/product/product-shipping';
+import { ProductSpecifications } from '@/components/storefront/product/product-specifications';
+import { ProductSummary } from '@/components/storefront/product/product-summary';
 import type { StorefrontProduct } from '@/lib/storefront-demo';
 
 type ProductDetail = {

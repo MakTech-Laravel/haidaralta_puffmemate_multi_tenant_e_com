@@ -21,4 +21,3 @@ export function ProductResponsibleRetail({
         </section>
     );
 }
-// gp k 195B

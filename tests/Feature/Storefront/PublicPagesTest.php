@@ -25,6 +25,8 @@ test('public storefront pages render', function (string $route, string $componen
     'about' => ['about', 'storefront/about'],
     'faqs' => ['faqs', 'storefront/faq'],
     'contact' => ['contact', 'storefront/contact'],
+    'wholesale' => ['wholesale', 'storefront/wholesale'],
+    'privacy' => ['privacy', 'storefront/privacy'],
 ]);
 
 test('storefront home shares featured categories and tagged products', function () {

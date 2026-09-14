@@ -1,11 +1,11 @@
 import {
+    Check,
     Clock,
     MapPin,
     Minus,
     Plus,
     ShoppingCart,
     Star,
-    Truck,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -133,8 +133,8 @@ export function ProductSummary({
                 </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="border-border flex h-12 items-center rounded-none border">
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="border-border flex h-12 w-full items-center rounded-none border sm:w-auto">
                     <button
                         type="button"
                         className="text-foreground flex size-12 items-center justify-center"
@@ -145,7 +145,7 @@ export function ProductSummary({
                     >
                         <Minus className="size-4" />
                     </button>
-                    <span className="text-foreground min-w-10 text-center text-sm font-semibold">
+                    <span className="text-foreground min-w-10 flex-1 text-center text-sm font-semibold sm:flex-none">
                         {quantity}
                     </span>
                     <button
@@ -160,38 +160,34 @@ export function ProductSummary({
                 <Button
                     type="button"
                     size="lg"
-                    className="h-12 flex-1 rounded-none text-sm font-bold tracking-wide uppercase"
+                    className="h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase sm:flex-1"
                 >
                     <ShoppingCart className="size-4" />
                     Add to cart
                 </Button>
             </div>
 
-            <div className="text-foreground flex flex-wrap gap-8 text-xs">
-                <div className="">
-                    <div className="">
-                        <span className="inline-flex items-center gap-1.5 text-base font-bold font-inter">
-                            <Clock className="size-4 text-primary" />
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-x-10">
+                <div className="flex items-start gap-2.5">
+                    <Clock className="text-primary mt-0.5 size-4 shrink-0" />
+                    <div>
+                        <p className="text-foreground font-inter text-base font-bold leading-snug">
                             Fast delivery from West Village
-                        </span>
-                    </div>
-                    <div className="">
-                        <span className="text-muted-foreground text-xs font-normal font-inter">
+                        </p>
+                        <p className="text-muted-foreground font-inter mt-0.5 text-xs font-normal">
                             20–28 min delivery estimate
-                        </span>
+                        </p>
                     </div>
                 </div>
-                <div className="">
-                    <div className="">
-                        <span className="inline-flex items-center gap-1.5 text-base font-bold font-inter">
-                            <Clock className="size-4 text-primary" />
+                <div className="flex items-start gap-2.5">
+                    <Check className="text-primary mt-0.5 size-4 shrink-0" />
+                    <div>
+                        <p className="text-foreground font-inter text-base font-bold leading-snug">
                             Branch-accurate pricing
-                        </span>
-                    </div>
-                    <div className="">
-                        <span className="text-muted-foreground text-xs font-normal font-inter">
-                        Stock and price checked before checkout
-                        </span>
+                        </p>
+                        <p className="text-muted-foreground font-inter mt-0.5 text-xs font-normal">
+                            Stock and price checked before checkout
+                        </p>
                     </div>
                 </div>
             </div>

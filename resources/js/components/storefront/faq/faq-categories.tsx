@@ -28,7 +28,7 @@ function FaqQuestion({ item }: { item: FaqItem }) {
                         className="bg-primary mt-2 size-1.5 shrink-0 rounded-full"
                         aria-hidden
                     />
-                    <span className="text-foreground min-w-0 flex-1 text-sm font-bold sm:text-base">
+                    <span className="text-foreground min-w-0 flex-1 text-sm font-bold sm:text-lg font-inter">
                         {item.question}
                     </span>
                     <ChevronDown
@@ -40,7 +40,7 @@ function FaqQuestion({ item }: { item: FaqItem }) {
                     />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                    <p className="text-muted-foreground border-border border-t px-4 pt-3 pb-4 pl-[1.625rem] text-sm leading-relaxed">
+                    <p className="text-muted-foreground border-border border-t px-4 pt-3 pb-4 pl-[1.625rem] text-base leading-relaxed font-inter font-normal">
                         {item.answer}
                     </p>
                 </CollapsibleContent>
@@ -67,7 +67,7 @@ export function FaqCategories({ className }: FaqCategoriesProps) {
                                             aria-hidden
                                         />
                                     </span>
-                                    <h2 className="text-foreground text-lg font-bold tracking-tight sm:text-xl">
+                                    <h2 className="text-foreground text-lg font-bold tracking-tight sm:text-2xl">
                                         {category.title}
                                     </h2>
                                 </div>

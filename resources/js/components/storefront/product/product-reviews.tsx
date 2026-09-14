@@ -33,13 +33,6 @@ export function ProductReviews({
                         who own it.
                     </p>
                 </div>
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none"
-                >
-                    Write a Review
-                </Button>
             </div>
 
             <div>
@@ -49,7 +42,7 @@ export function ProductReviews({
                             <Star
                                 key={index}
                                 className={cn(
-                                    "size-7",
+                                    "size-6",
                                     index < rating
                                         ? "fill-review-star text-review-star"
                                         : "text-muted-foreground",

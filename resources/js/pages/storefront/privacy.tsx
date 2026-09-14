@@ -1,0 +1,16 @@
+import { Head } from '@inertiajs/react';
+import { PrivacyCopyright } from '@/components/storefront/privacy/privacy-copyright';
+import { PrivacyIntro } from '@/components/storefront/privacy/privacy-intro';
+import { PrivacySections } from '@/components/storefront/privacy/privacy-sections';
+
+export default function StorefrontPrivacy() {
+    return (
+        <>
+            <Head title="Privacy Policy" />
+
+            <PrivacyIntro />
+            <PrivacySections />
+            <PrivacyCopyright />
+        </>
+    );
+}

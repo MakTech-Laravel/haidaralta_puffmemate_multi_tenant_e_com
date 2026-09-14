@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
-import { CheckoutForm } from '@/components/storefront/checkout-form';
-import { CheckoutOrderSummary } from '@/components/storefront/checkout-order-summary';
+import { CheckoutForm } from '@/components/storefront/checkout/checkout-form';
+import { CheckoutOrderSummary } from '@/components/storefront/checkout/checkout-order-summary';
 import type {
     CheckoutDeliveryMethod,
     CheckoutDetails,
@@ -59,12 +59,12 @@ export default function StorefrontCheckout({
             <Head title="Checkout" />
 
             <div className="flex-1">
-                <div className="mx-auto container px-4 py-8 sm:px-6 sm:py-10">
+                <div className="mx-auto container px-4 py-6 sm:px-6 sm:py-10">
                     <div className="max-w-2xl">
                         <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl">
                             Complete your order.
                         </h1>
-                        <p className="text-muted-foreground mt-2 text-xl font-normal sm:text-base">
+                        <p className="text-muted-foreground mt-2 text-base font-normal sm:text-base">
                             Everything you need, in one simple checkout.
                         </p>
                     </div>

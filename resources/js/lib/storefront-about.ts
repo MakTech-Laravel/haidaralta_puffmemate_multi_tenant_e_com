@@ -23,7 +23,9 @@ export const aboutWhoWeAre = {
     heading: 'More Than An Online Store',
     body: 'PuffMeMate connects you with trusted local branches for cigarettes, tobacco, vapes and more — with instant delivery, clear stock, and a simple checkout.',
     mediaImage: '/images/storefront/about.jpg',
+    mediaTitle: 'Connected Platform',
     mediaCaption: 'Download App Now. Shopping, Branches, Delivery.',
+
     features: [
         {
             title: 'Online Shopping',
@@ -122,7 +124,7 @@ export const aboutMultiBranch = {
     heading: 'Your Order. The Right Branch. The Right Stock.',
     body: 'We weight distance, delivery location and live inventory so every order routes to a branch that can fulfil it — not a generic warehouse promise.',
     promise:
-        'PROMISE: Product availability, everything you need, delivered.',
+        'Product availability and pricing can vary by branch.',
     factors: [
         {
             number: '01',
