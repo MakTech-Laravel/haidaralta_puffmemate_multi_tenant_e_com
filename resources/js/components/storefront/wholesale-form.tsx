@@ -161,12 +161,12 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                 </div>
             </form>
 
-            <img
+            {/* <img
                 src="/images/storefront/contact-paper-plane.png"
                 alt=""
                 aria-hidden
                 className="pointer-events-none absolute right-2 bottom-2 z-0 h-auto w-40 -rotate-6 object-contain invert mix-blend-multiply sm:right-4 sm:bottom-4 sm:w-52 sm:-rotate-3"
-            />
+            /> */}
         </div>
     );
 }
