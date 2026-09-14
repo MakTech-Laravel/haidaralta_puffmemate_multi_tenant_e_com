@@ -65,7 +65,7 @@ export function CartItems({
                         {group.items.map((item) => (
                             <li
                                 key={item.id}
-                                className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center"
+                                className="flex flex-col gap-4 p-4 xl:flex-row xl:items-center xl:gap-6"
                             >
                                 <div className="flex min-w-0 flex-1 gap-3">
                                     <Checkbox
@@ -124,8 +124,8 @@ export function CartItems({
                                     </div>
                                 </div>
 
-                                <div className="flex flex-wrap items-end gap-3 lg:ml-auto lg:justify-end">
-                                    <div className="w-44 shrink-0">
+                                <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-end xl:w-auto xl:shrink-0 xl:flex-nowrap">
+                                    <div className="w-full shrink-0 sm:w-44">
                                         <p className="text-muted-foreground mb-1 text-xs font-extrabold uppercase leading-none">
                                             Branches
                                         </p>
@@ -139,7 +139,7 @@ export function CartItems({
                                                 )
                                             }
                                         >
-                                            <SelectTrigger className="border-primary/50 h-9 w-full text-sm font-semibold shadow-none">
+                                            <SelectTrigger className="border-primary/50 h-9 w-full rounded-none text-sm font-semibold shadow-none">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
