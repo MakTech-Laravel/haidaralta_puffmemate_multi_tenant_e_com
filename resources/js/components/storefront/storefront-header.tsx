@@ -110,6 +110,7 @@ export function StorefrontHeader() {
 
     const navItems: StorefrontChromeItem[] = [
         { label: 'Home', route: 'home' },
+        { label: 'Shop', route: 'shop' },
         ...(storefront?.navCategories ?? []).map((category) => ({
             label: category.label,
             categorySlug: category.categorySlug,
