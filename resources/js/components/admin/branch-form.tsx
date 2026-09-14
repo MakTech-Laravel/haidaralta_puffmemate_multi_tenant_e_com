@@ -1,6 +1,11 @@
 import { Link, useForm } from '@inertiajs/react';
+import { MapPin } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
+import {
+    BranchLocationPicker,
+    type BranchLocationCoords,
+} from '@/components/admin/branch-location-picker';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -69,6 +74,7 @@ export function BranchForm({
     includeSuperAdmin = false,
 }: BranchFormProps) {
     const [slugTouched, setSlugTouched] = useState(isEdit);
+    const [mapPickerOpen, setMapPickerOpen] = useState(false);
     const [existingLogo, setExistingLogo] = useState<ExistingFile[]>(() =>
         defaults?.logo && defaults?.logo_url
             ? [
@@ -374,47 +380,105 @@ export function BranchForm({
                         <InputError message={errors.address} />
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="latitude">
-                                Latitude{' '}
-                                <span className="text-muted-foreground font-normal">
-                                    (optional)
-                                </span>
-                            </Label>
-                            <Input
-                                id="latitude"
-                                type="number"
-                                step="any"
-                                value={data.latitude}
-                                onChange={(event) =>
-                                    setData('latitude', event.target.value)
-                                }
-                                placeholder="-33.8688"
-                            />
-                            <InputError message={errors.latitude} />
+                    <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="space-y-1">
+                                <p className="text-sm font-medium leading-none">
+                                    Map location
+                                </p>
+                                <p className="text-muted-foreground text-sm">
+                                    Optional. Pick a pin on the map, or enter
+                                    coordinates manually.
+                                </p>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full shrink-0 sm:w-auto"
+                                onClick={() => setMapPickerOpen(true)}
+                            >
+                                <MapPin className="size-4" />
+                                Set on map
+                            </Button>
                         </div>
 
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="longitude">
-                                Longitude{' '}
-                                <span className="text-muted-foreground font-normal">
-                                    (optional)
-                                </span>
-                            </Label>
-                            <Input
-                                id="longitude"
-                                type="number"
-                                step="any"
-                                value={data.longitude}
-                                onChange={(event) =>
-                                    setData('longitude', event.target.value)
-                                }
-                                placeholder="151.2093"
-                            />
-                            <InputError message={errors.longitude} />
+                        {data.latitude.trim() !== '' &&
+                        data.longitude.trim() !== '' ? (
+                            <p className="text-muted-foreground text-xs tabular-nums">
+                                Pin set · {data.latitude}, {data.longitude}
+                            </p>
+                        ) : null}
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="latitude">
+                                    Latitude{' '}
+                                    <span className="text-muted-foreground font-normal">
+                                        (optional)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="latitude"
+                                    type="number"
+                                    step="any"
+                                    value={data.latitude}
+                                    onChange={(event) =>
+                                        setData(
+                                            'latitude',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="-33.8688"
+                                />
+                                <InputError message={errors.latitude} />
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="longitude">
+                                    Longitude{' '}
+                                    <span className="text-muted-foreground font-normal">
+                                        (optional)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="longitude"
+                                    type="number"
+                                    step="any"
+                                    value={data.longitude}
+                                    onChange={(event) =>
+                                        setData(
+                                            'longitude',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="151.2093"
+                                />
+                                <InputError message={errors.longitude} />
+                            </div>
                         </div>
                     </div>
+
+                    <BranchLocationPicker
+                        open={mapPickerOpen}
+                        onOpenChange={setMapPickerOpen}
+                        address={data.address}
+                        initial={
+                            data.latitude.trim() !== '' &&
+                            data.longitude.trim() !== ''
+                                ? {
+                                      latitude: data.latitude,
+                                      longitude: data.longitude,
+                                  }
+                                : null
+                        }
+                        onConfirm={(coords: BranchLocationCoords) => {
+                            setData((current) => ({
+                                ...current,
+                                latitude: coords.latitude,
+                                longitude: coords.longitude,
+                            }));
+                        }}
+                    />
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="flex flex-col gap-1.5">

@@ -18,3 +18,6 @@ branches.status stays boolean (Active checkbox). Branch contact phone is optiona
 
 ## Atomic branch create with first super-admin
 Platform branch create is atomic: StoreBranchRequest requires nested super_admin (name/phone/password; email optional) and BranchService::createWithSuperAdmin runs branch + roles + first super-admin in one DB transaction, then redirects to show. Edit is details-only (full-width BranchForm). create-super-admin is recovery-only when needs_super_admin (create-new, no Skip). Promote/assign more admins via staff screens, not the create form.
+
+## Branch coords via map dialog picker
+Branch create/edit coords: Address then Map location with Set on map (BranchLocationPicker dialog) plus optional manual Latitude|Longitude. No inline live map on the form. Future Mapbox/Google only inside the dialog body; onConfirm writes latitude/longitude. Phase 1 confirm stays disabled until a provider can set a pin.
