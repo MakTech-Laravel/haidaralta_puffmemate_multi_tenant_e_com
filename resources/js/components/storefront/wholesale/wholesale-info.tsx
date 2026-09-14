@@ -1,12 +1,16 @@
 import { Mail, MapPin, Phone } from 'lucide-react';
-import { contactInfo } from '@/lib/storefront-contact';
+import { wholesaleInquiry } from '@/lib/storefront-wholesale';
 import { cn } from '@/lib/utils';
 
-type ContactInfoProps = {
+type WholesaleInfoProps = {
     className?: string;
 };
 
-function SocialGlyph({ id }: { id: (typeof contactInfo.socials)[number]['id'] }) {
+function SocialGlyph({
+    id,
+}: {
+    id: (typeof wholesaleInquiry.socials)[number]['id'];
+}) {
     if (id === 'twitter') {
         return (
             <svg viewBox="0 0 24 24" className="size-3.5 fill-current" aria-hidden>
@@ -30,7 +34,7 @@ function SocialGlyph({ id }: { id: (typeof contactInfo.socials)[number]['id'] })
     );
 }
 
-export function ContactInfo({ className }: ContactInfoProps) {
+export function WholesaleInfo({ className }: WholesaleInfoProps) {
     return (
         <aside
             className={cn(
@@ -39,41 +43,43 @@ export function ContactInfo({ className }: ContactInfoProps) {
             )}
         >
             <div className="relative z-10">
-                <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-                    {contactInfo.title}
+                <h2 className="text-xl font-semibold tracking-tight uppercase sm:text-2xl">
+                    {wholesaleInquiry.title}
                 </h2>
-                <p className="mt-2 text-sm text-white/70">
-                    {contactInfo.subtitle}
+                <p className="mt-3 text-base leading-relaxed text-white font-inter font-normal">
+                    {wholesaleInquiry.subtitle}
                 </p>
 
                 <ul className="mt-10 space-y-6 text-sm sm:text-base">
                     <li className="flex items-start gap-3">
                         <Phone className="mt-0.5 size-4 shrink-0" aria-hidden />
                         <a
-                            href={`tel:${contactInfo.phone.replace(/\s+/g, '')}`}
+                            href={`tel:${wholesaleInquiry.phone.replace(/\s+/g, '')}`}
                             className="hover:underline"
                         >
-                            {contactInfo.phone}
+                            {wholesaleInquiry.phone}
                         </a>
                     </li>
                     <li className="flex items-start gap-3">
                         <Mail className="mt-0.5 size-4 shrink-0" aria-hidden />
                         <a
-                            href={`mailto:${contactInfo.email}`}
+                            href={`mailto:${wholesaleInquiry.email}`}
                             className="hover:underline"
                         >
-                            {contactInfo.email}
+                            {wholesaleInquiry.email}
                         </a>
                     </li>
                     <li className="flex items-start gap-3">
                         <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden />
-                        <span className="leading-relaxed">{contactInfo.address}</span>
+                        <span className="leading-relaxed">
+                            {wholesaleInquiry.address}
+                        </span>
                     </li>
                 </ul>
             </div>
 
             <div className="relative z-10 mt-auto flex gap-3 pt-12">
-                {contactInfo.socials.map((social) => (
+                {wholesaleInquiry.socials.map((social) => (
                     <a
                         key={social.id}
                         href={social.href}

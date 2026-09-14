@@ -2,7 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
 import { CategoryCard } from '@/components/storefront/category-card';
 import { FeaturesBar } from '@/components/storefront/features-bar';
-import { HeroSlider } from '@/components/storefront/hero-slider';
+import { HomeHeroSlider } from '@/components/storefront/home/hero-slider';
 import { ProductCard } from '@/components/storefront/product-card';
 import {
     storefrontFeatures,
@@ -30,7 +30,7 @@ export default function StorefrontHome({
         <>
             <Head title="Home" />
 
-            <HeroSlider slides={storefrontHeroSlides} />
+            <HomeHeroSlider slides={storefrontHeroSlides} />
 
             <section className="mx-auto container px-4 py-14 sm:px-6 sm:py-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -68,33 +68,6 @@ export default function StorefrontHome({
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
                         <p className="text-muted-foreground font-inter mb-1 text-sm font-normal  uppercase">
-                            Hand-picked for you
-                        </p>
-                        <h2 className="text-foreground text-2xl font-medium tracking-tight sm:text-[40px] uppercase">
-                            Best selling products
-                        </h2>
-                    </div>
-                    <Link
-                        href={shop()}
-                        prefetch
-                        className="text-primary hover:text-foreground inline-flex items-center gap-1 text-base font-semibold transition"
-                    >
-                        View All
-                        <ArrowRight className="size-4" />
-                    </Link>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-                    {bestSellingProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
-            </section>
-
-            <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">
-                <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal  uppercase">
                             Just landed
                         </p>
                         <h2 className="text-foreground text-2xl font-medium tracking-tight sm:text-[40px] uppercase">
@@ -113,6 +86,33 @@ export default function StorefrontHome({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                     {newArrivalProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
+                </div>
+            </section>
+
+            <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">
+                <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal  uppercase">
+                            Hand-picked for you
+                        </p>
+                        <h2 className="text-foreground text-2xl font-medium tracking-tight sm:text-[40px] uppercase">
+                            Best selling products
+                        </h2>
+                    </div>
+                    <Link
+                        href={shop()}
+                        prefetch
+                        className="text-primary hover:text-foreground inline-flex items-center gap-1 text-base font-semibold transition"
+                    >
+                        View All
+                        <ArrowRight className="size-4" />
+                    </Link>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+                    {bestSellingProducts.map((product) => (
                         <ProductCard key={product.id} product={product} />
                     ))}
                 </div>

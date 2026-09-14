@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
-import { ContactForm } from '@/components/storefront/contact-form';
-import { ContactHero } from '@/components/storefront/contact-hero';
-import { ContactInfo } from '@/components/storefront/contact-info';
+import { ContactForm } from '@/components/storefront/contact/contact-form';
+import { ContactHero } from '@/components/storefront/contact/contact-hero';
+import { ContactInfo } from '@/components/storefront/contact/contact-info';
 
 export default function StorefrontContact() {
     return (

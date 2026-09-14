@@ -10,13 +10,13 @@ export function AboutHowItWorks({ className }: AboutHowItWorksProps) {
         <section className={cn('bg-muted/40 py-16 sm:py-20', className)}>
             <div className="mx-auto container px-4 sm:px-6">
                 <div className="mx-auto max-w-2xl text-center">
-                    <p className="text-primary text-xs font-extrabold tracking-[0.14em] uppercase">
+                    <p className="text-primary text-xs font-semibold tracking-[0.14em] uppercase">
                         {aboutHowItWorks.eyebrow}
                     </p>
-                    <h2 className="text-foreground mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+                    <h2 className="text-foreground mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
                         {aboutHowItWorks.heading}
                     </h2>
-                    <p className="text-muted-foreground mt-4 text-sm leading-relaxed sm:text-base">
+                    <p className="text-muted-foreground mt-4 text-sm leading-relaxed sm:text-lg font-inter font-normal">
                         {aboutHowItWorks.body}
                     </p>
                 </div>
@@ -28,23 +28,23 @@ export function AboutHowItWorks({ className }: AboutHowItWorksProps) {
                         return (
                             <li
                                 key={step.number}
-                                className="border-border bg-background relative overflow-hidden rounded-xl border p-5"
+                                className="border-border bg-background relative overflow-hidden rounded-2xl border p-5"
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <span className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-full">
-                                        <Icon className="size-5" aria-hidden />
+                                        <Icon className="size-6" aria-hidden />
                                     </span>
                                     <span
-                                        className="text-muted-foreground/25 text-4xl font-bold tabular-nums"
+                                        className="text-muted-foreground/25 text-3xl font-extrabold tabular-nums"
                                         aria-hidden
                                     >
                                         {step.number}
                                     </span>
                                 </div>
-                                <h3 className="text-foreground mt-4 text-base font-bold">
-                                    {step.number} {step.title}
+                                <h3 className="text-foreground mt-4 text-lg font-bold font-inter">
+                                     {step.title}
                                 </h3>
-                                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                                <p className="text-muted-foreground mt-2 text-sm leading-relaxed font-inter font-normal">
                                     {step.description}
                                 </p>
                             </li>

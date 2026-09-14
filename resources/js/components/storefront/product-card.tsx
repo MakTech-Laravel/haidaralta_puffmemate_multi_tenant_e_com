@@ -18,7 +18,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 className,
             )}
         >
-            <div className="bg-muted relative aspect-square">
+            <div className="bg-muted relative aspect-[4/3]">
                 <span className="bg-background/80 text-foreground absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
                     {product.category}
                 </span>
