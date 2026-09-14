@@ -20,4 +20,4 @@ Seed brand, tags (`new_arrival`, `best_selling`, `popular`, `on_offer`), and spe
 Seed media lives under `public/images` (committed storefront + `public/images/catalog/...` assets). DB stores `/images/...` paths — never raw remote URLs and never copies into `storage/app/public`. Keep catalog/storefront images committed for staging/production. Runtime admin uploads still use the public disk; resolve all media through `App\Support\MediaUrl`.
 
 ## Seeded branches are AU retail locations
-Branch 1 = sydney-cbd (PuffOnMate Sydney CBD), branch 2 = melbourne-collins, branch 3 = brisbane-queen. Use BranchSeeder::SYDNEY_CBD / MELBOURNE_COLLINS / BRISBANE_QUEEN constants — never downtown/uptown. User emails are realistic *@puffonmate.dev / *@sydney-cbd.dev style; login remains phone + UserSeeder::DEFAULT_PASSWORD (password).
+Branch 1 = sydney-cbd (PuffMeMate Sydney CBD), branch 2 = melbourne-collins, branch 3 = brisbane-queen. Use BranchSeeder::SYDNEY_CBD / MELBOURNE_COLLINS / BRISBANE_QUEEN constants — never downtown/uptown. User emails are realistic *@puffmemate.dev / *@sydney-cbd.dev style; login remains phone + UserSeeder::DEFAULT_PASSWORD (password).

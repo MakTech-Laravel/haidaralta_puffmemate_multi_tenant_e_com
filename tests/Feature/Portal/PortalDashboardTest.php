@@ -48,7 +48,7 @@ test('branch user lands on branch dashboard with branch context', function () {
             ->where('auth.user.roles', fn ($roles) => collect($roles)->contains('super-admin'))
             ->where('portal', 'branch')
             ->where('branch.slug', BranchSeeder::SYDNEY_CBD)
-            ->where('branch.name', 'PuffOnMate Sydney CBD')
+            ->where('branch.name', 'PuffMeMate Sydney CBD')
         );
 });
 

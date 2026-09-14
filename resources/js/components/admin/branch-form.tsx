@@ -268,7 +268,7 @@ export function BranchForm({
                                         setData('name', event.target.value)
                                     }
                                     required
-                                    placeholder="PuffOnMate Sydney CBD"
+                                    placeholder="PuffMeMate Sydney CBD"
                                     autoComplete="off"
                                 />
                                 <InputError message={errors.name} />
@@ -358,7 +358,7 @@ export function BranchForm({
                                                 validate('email');
                                             }
                                         }}
-                                        placeholder="sydney@puffonmate.com"
+                                        placeholder="sydney@puffmemate.com"
                                     />
                                     <InputError message={errors.email} />
                                 </div>
@@ -621,7 +621,7 @@ export function BranchForm({
                                         validate('super_admin.email');
                                     }
                                 }}
-                                placeholder="alex@puffonmate.com"
+                                placeholder="alex@puffmemate.com"
                             />
                             <InputError
                                 message={fieldError(
