@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
-import { CheckoutForm } from '@/components/storefront/checkout-form';
-import { CheckoutOrderSummary } from '@/components/storefront/checkout-order-summary';
+import { CheckoutForm } from '@/components/storefront/checkout/checkout-form';
+import { CheckoutOrderSummary } from '@/components/storefront/checkout/checkout-order-summary';
 import type {
     CheckoutDeliveryMethod,
     CheckoutDetails,
