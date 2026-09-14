@@ -40,7 +40,7 @@ export default function BranchActivityLogsIndex({
         <>
             <Head title="Branch activity" />
 
-            <div className="space-y-6 p-2 md:p-4">
+            <div className="space-y-4 p-2 md:p-4">
                 <Heading
                     title="Activity log"
                     description={`Audit trail for ${branch.name}`}

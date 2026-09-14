@@ -166,7 +166,7 @@ export default function BranchRolesIndex({
         <>
             <Head title="Roles" />
 
-            <div className="space-y-6 p-2 md:p-4">
+            <div className="space-y-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Roles"

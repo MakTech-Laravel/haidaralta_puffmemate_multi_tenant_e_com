@@ -5,21 +5,26 @@ import { FeaturesBar } from '@/components/storefront/features-bar';
 import { HomeHeroSlider } from '@/components/storefront/home/hero-slider';
 import { ProductCard } from '@/components/storefront/product-card';
 import {
-    storefrontCategoryItems,
-    storefrontFeaturedProducts,
     storefrontFeatures,
     storefrontHeroSlides,
-    storefrontNewArrivals,
+    type StorefrontCategoryItem,
+    type StorefrontProduct,
 } from '@/lib/storefront-demo';
 import { shop } from '@/routes';
 
-export default function StorefrontHome() {
-    const topCategories = storefrontCategoryItems.filter(
-        (category) => !category.wide,
-    );
-    const wideCategories = storefrontCategoryItems.filter(
-        (category) => category.wide,
-    );
+type HomePageProps = {
+    featuredCategories: StorefrontCategoryItem[];
+    bestSellingProducts: StorefrontProduct[];
+    newArrivalProducts: StorefrontProduct[];
+};
+
+export default function StorefrontHome({
+    featuredCategories,
+    bestSellingProducts,
+    newArrivalProducts,
+}: HomePageProps) {
+    const topCategories = featuredCategories.filter((category) => !category.wide);
+    const wideCategories = featuredCategories.filter((category) => category.wide);
 
     return (
         <>
@@ -80,7 +85,7 @@ export default function StorefrontHome() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-                    {storefrontNewArrivals.map((product) => (
+                    {newArrivalProducts.map((product) => (
                         <ProductCard key={product.id} product={product} />
                     ))}
                 </div>

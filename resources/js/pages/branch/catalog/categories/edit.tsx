@@ -1,7 +1,10 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import Heading from '@/components/heading';
-import { CategoryForm } from '@/components/platform/category-form';
+import {
+    CategoryForm,
+    type CategoryLimits,
+} from '@/components/platform/category-form';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { ColorPickerValue } from '@/lib/color-picker';
 
@@ -18,16 +21,21 @@ type Category = {
     color_code?: ColorPickerValue | null;
     status: boolean;
     featured: boolean;
+    slogan?: string | null;
+    show_in_nav?: boolean;
+    nav_sort?: number | null;
 };
 
 export default function BranchCategoriesEdit({
     branch,
     category,
     parentOptions,
+    limits,
 }: {
     branch: Branch;
     category: Category;
     parentOptions: ParentOption[];
+    limits: CategoryLimits;
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -60,7 +68,7 @@ export default function BranchCategoriesEdit({
         <>
             <Head title={`Edit ${category.name}`} />
 
-            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${category.name}`}
                     description="Update global category details and media"
@@ -82,6 +90,7 @@ export default function BranchCategoriesEdit({
                         category: category.slug,
                     })}
                     parentOptions={parentOptions}
+                    limits={limits}
                     isEdit
                     enableSuggestions
                     suggestionsUrl={CategoryController.suggestions.url(
@@ -103,6 +112,9 @@ export default function BranchCategoriesEdit({
                         color_code: category.color_code,
                         status: category.status,
                         featured: category.featured,
+                        slogan: category.slogan,
+                        show_in_nav: category.show_in_nav,
+                        nav_sort: category.nav_sort,
                     }}
                     cancelHref={CategoryController.show.url({
                         branch: branch.slug,

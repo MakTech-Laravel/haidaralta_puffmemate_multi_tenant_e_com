@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { FeaturesBar } from '@/components/storefront/features-bar';
 import { ProductCard } from '@/components/storefront/product-card';
@@ -6,11 +6,13 @@ import { StorefrontBranchSelect } from '@/components/storefront/storefront-branc
 import { StorefrontSearchBar } from '@/components/storefront/storefront-search-bar';
 import { storefrontFeatures } from '@/lib/storefront-demo';
 import type { StorefrontProduct } from '@/lib/storefront-demo';
+import { category as shopCategory } from '@/routes/shop';
 
 type CategoryPageProps = {
     category: {
         slug: string;
         name: string;
+        slogan?: string | null;
     };
     products: StorefrontProduct[];
     branches: Array<{ id: string; name: string }>;
@@ -27,7 +29,21 @@ export default function StorefrontCategory({
     filters,
 }: CategoryPageProps) {
     const [search, setSearch] = useState(filters.search);
-    const [branchId, setBranchId] = useState<string | null>(filters.branchId);
+
+    const visit = (next: { search?: string; branchId?: string | null }) => {
+        const nextSearch = next.search ?? search;
+        const nextBranch =
+            next.branchId !== undefined ? next.branchId : filters.branchId;
+
+        router.get(
+            shopCategory.url(category.slug),
+            {
+                ...(nextSearch ? { search: nextSearch } : {}),
+                ...(nextBranch ? { branch: nextBranch } : {}),
+            },
+            { preserveState: true, replace: true },
+        );
+    };
 
     return (
         <>
@@ -38,12 +54,13 @@ export default function StorefrontCategory({
                     <StorefrontSearchBar
                         value={search}
                         onChange={setSearch}
+                        onSubmit={() => visit({ search })}
                         className="lg:flex-2"
                     />
                     <StorefrontBranchSelect
                         branches={branches}
-                        value={branchId}
-                        onChange={setBranchId}
+                        value={filters.branchId}
+                        onChange={(branchId) => visit({ branchId })}
                         className="lg:flex-1"
                     />
                 </div>
@@ -52,15 +69,6 @@ export default function StorefrontCategory({
                     {products.map((product) => (
                         <ProductCard key={product.id} product={product} />
                     ))}
-                </div>
-
-                <div className="mt-10 flex flex-col items-center gap-2">
-                    <div className="flex items-center gap-1.5" aria-hidden>
-                        <span className="bg-primary size-2 rounded-full" />
-                        <span className="bg-primary size-2 rounded-full opacity-70" />
-                        <span className="bg-primary/30 size-2 rounded-full" />
-                    </div>
-                    <p className="text-foreground text-sm font-medium">Loading</p>
                 </div>
             </div>
 

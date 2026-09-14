@@ -4,6 +4,7 @@ namespace App\Http\Requests\Platform;
 
 use App\Http\Requests\Concerns\ValidatesCatalogColorCode;
 use App\Http\Requests\Concerns\ValidatesCatalogProductImages;
+use App\Http\Requests\Concerns\ValidatesProductCatalogMeta;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -11,6 +12,7 @@ class StoreProductRequest extends FormRequest
 {
     use ValidatesCatalogColorCode;
     use ValidatesCatalogProductImages;
+    use ValidatesProductCatalogMeta;
 
     public function authorize(): bool
     {
@@ -20,6 +22,7 @@ class StoreProductRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->decodeColorCodeInput();
+        $this->prepareProductCatalogMeta();
     }
 
     /**
@@ -39,6 +42,7 @@ class StoreProductRequest extends FormRequest
             'gallery.*' => $this->catalogImageFileRules(required: true),
             'status' => ['sometimes', 'boolean'],
             ...$this->colorCodeRules(),
+            ...$this->productCatalogMetaRules(),
         ];
     }
 }

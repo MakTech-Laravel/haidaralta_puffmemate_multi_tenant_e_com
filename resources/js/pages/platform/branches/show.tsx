@@ -67,7 +67,7 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
         <>
             <Head title={branch.name} />
 
-            <div className="flex flex-col gap-6 p-2">
+            <div className="flex flex-col gap-4 p-2">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <Avatar className="size-14 rounded-xl">
