@@ -39,14 +39,14 @@ export function ContactInfo({ className }: ContactInfoProps) {
             )}
         >
             <div className="relative z-10">
-                <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+                <h2 className="text-xl font-semibold tracking-tight sm:text-[28px] font-inter">
                     {contactInfo.title}
                 </h2>
-                <p className="mt-2 text-sm text-white/70">
+                <p className="mt-2  text-white/70 font-inter font-normal text-lg">
                     {contactInfo.subtitle}
                 </p>
 
-                <ul className="mt-10 space-y-6 text-sm sm:text-base">
+                <ul className="mt-10 space-y-6 text-sm sm:text-base font-inter font-normal">
                     <li className="flex items-start gap-3">
                         <Phone className="mt-0.5 size-4 shrink-0" aria-hidden />
                         <a

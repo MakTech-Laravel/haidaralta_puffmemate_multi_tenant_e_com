@@ -33,10 +33,10 @@ export function ContactHero({ className }: ContactHeroProps) {
 
             <div className="relative mx-auto flex min-h-[36vh] container items-center justify-between gap-8 px-4 py-14 sm:min-h-[42vh] sm:px-6 sm:py-16">
                 <div className="text-primary-foreground max-w-xl">
-                    <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+                    <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
                         {contactHero.title}
                     </h1>
-                    <p className="mt-4 max-w-md text-sm leading-relaxed opacity-90 sm:text-base">
+                    <p className="mt-4 max-w-md text-sm leading-relaxed opacity-90 sm:text-base font-normal font-inter">
                         {contactHero.subtitle}
                     </p>
                 </div>

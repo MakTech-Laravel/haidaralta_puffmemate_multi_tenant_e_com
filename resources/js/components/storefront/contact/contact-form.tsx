@@ -33,7 +33,7 @@ export function ContactForm({ className }: ContactFormProps) {
         >
             <form
                 onSubmit={onSubmit}
-                className="relative z-10 flex flex-1 flex-col gap-6 pb-16"
+                className="relative z-10 flex flex-1 flex-col gap-6 "
             >
                 <div className="grid gap-6 sm:grid-cols-2">
                     <div className="space-y-2">
@@ -104,7 +104,7 @@ export function ContactForm({ className }: ContactFormProps) {
                     />
                 </div>
 
-                <div className="mt-auto flex justify-end pt-8 pb-16 sm:pb-20">
+                <div className="mt-auto flex justify-end pt-8 pb-10 sm:pb-20">
                     <Button
                         type="submit"
                         className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-md px-6 font-semibold"
