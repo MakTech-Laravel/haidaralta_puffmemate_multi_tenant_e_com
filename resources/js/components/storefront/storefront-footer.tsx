@@ -1,13 +1,14 @@
-import { Link } from '@inertiajs/react';
+import { Link } from "@inertiajs/react";
 import {
     storefrontFooterBlurb,
     storefrontFooterBrand,
     storefrontFooterCustomer,
     storefrontFooterShop,
+    storefrontLogoSrc,
     type StorefrontChromeItem,
-} from '@/lib/storefront-chrome';
-import { about, contact, faqs, home, privacy, shop, wholesale } from '@/routes';
-import { category as shopCategory } from '@/routes/shop';
+} from "@/lib/storefront-chrome";
+import { about, contact, faqs, home, privacy, shop, wholesale } from "@/routes";
+import { category as shopCategory } from "@/routes/shop";
 
 function resolveHref(item: StorefrontChromeItem): string {
     if (item.categorySlug) {
@@ -15,19 +16,19 @@ function resolveHref(item: StorefrontChromeItem): string {
     }
 
     switch (item.route) {
-        case 'home':
+        case "home":
             return home.url();
-        case 'shop':
+        case "shop":
             return shop.url();
-        case 'about':
+        case "about":
             return about.url();
-        case 'faqs':
+        case "faqs":
             return faqs.url();
-        case 'contact':
+        case "contact":
             return contact.url();
-        case 'wholesale':
+        case "wholesale":
             return wholesale.url();
-        case 'privacy':
+        case "privacy":
             return privacy.url();
         default:
             return shop.url();
@@ -77,10 +78,13 @@ export function StorefrontFooter() {
                     <Link
                         href={home()}
                         prefetch
-                        className="text-foreground text-2xl font-extrabold tracking-tight uppercase"
+                        className="flex shrink-0 items-center"
                     >
-                        <span>PUFF</span>
-                        <span className="text-primary">MEMATE</span>
+                        <img
+                            src={storefrontLogoSrc}
+                            alt="PuffMeMate"
+                            className="h-9 w-auto object-contain sm:h-11"
+                        />
                     </Link>
                     <p className="text-muted-foreground max-w-xs text-sm leading-relaxed font-normal">
                         {storefrontFooterBlurb}
@@ -88,8 +92,14 @@ export function StorefrontFooter() {
                 </div>
 
                 <FooterColumn title="Shop" items={storefrontFooterShop} />
-                <FooterColumn title="Customer" items={storefrontFooterCustomer} />
-                <FooterColumn title="PuffMeMate" items={storefrontFooterBrand} />
+                <FooterColumn
+                    title="Customer"
+                    items={storefrontFooterCustomer}
+                />
+                <FooterColumn
+                    title="PuffMeMate"
+                    items={storefrontFooterBrand}
+                />
             </div>
         </footer>
     );
