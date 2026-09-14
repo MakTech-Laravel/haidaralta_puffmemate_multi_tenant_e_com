@@ -42,7 +42,7 @@ export function ProductReviews({
                             <Star
                                 key={index}
                                 className={cn(
-                                    "size-7",
+                                    "size-6",
                                     index < rating
                                         ? "fill-review-star text-review-star"
                                         : "text-muted-foreground",
