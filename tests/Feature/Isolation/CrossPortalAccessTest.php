@@ -15,7 +15,7 @@ test('guests are redirected to login from all portal dashboards', function (stri
     $this->get($url)->assertRedirect(route('login'));
 })->with([
     'platform' => ['/platform/dashboard'],
-    'branch' => ['/branch/downtown/dashboard'],
+    'branch' => ['/branch/sydney-cbd/dashboard'],
     'driver' => ['/driver/dashboard'],
     'customer' => ['/dashboard'],
 ]);
@@ -31,10 +31,10 @@ test('authenticated users can access their own portal dashboard', function (
         ->get($dashboardUrl)
         ->assertOk();
 })->with([
-    'platform' => ['superadmin@dev.com', 'platform', '/platform/dashboard'],
-    'branch' => ['branch1.superadmin@dev.com', 'branch', '/branch/downtown/dashboard'],
-    'driver' => ['driver@dev.com', 'driver', '/driver/dashboard'],
-    'customer' => ['user@dev.com', 'customer', '/dashboard'],
+    'platform' => [UserSeeder::PLATFORM_SUPER_ADMIN, 'platform', '/platform/dashboard'],
+    'branch' => [UserSeeder::BRANCH_1_SUPER_ADMIN, 'branch', '/branch/sydney-cbd/dashboard'],
+    'driver' => [UserSeeder::DRIVER, 'driver', '/driver/dashboard'],
+    'customer' => [UserSeeder::CUSTOMER, 'customer', '/dashboard'],
 ]);
 
 test('authenticated users cannot access other portal dashboards', function (
@@ -53,25 +53,25 @@ test('authenticated users cannot access other portal dashboards', function (
         $response->assertStatus($expectedStatus);
     }
 })->with([
-    'platform to branch downtown' => ['superadmin@dev.com', 'platform', '/branch/downtown/dashboard', 302],
-    'platform to driver' => ['superadmin@dev.com', 'platform', '/driver/dashboard', 302],
-    'platform to customer' => ['superadmin@dev.com', 'platform', '/dashboard', 302],
-    'branch to platform' => ['branch1.superadmin@dev.com', 'branch', '/platform/dashboard', 302],
-    'branch to driver' => ['branch1.superadmin@dev.com', 'branch', '/driver/dashboard', 302],
-    'branch to customer' => ['branch1.superadmin@dev.com', 'branch', '/dashboard', 302],
-    'driver to platform' => ['driver@dev.com', 'driver', '/platform/dashboard', 302],
-    'driver to branch downtown' => ['driver@dev.com', 'driver', '/branch/downtown/dashboard', 302],
-    'driver to customer' => ['driver@dev.com', 'driver', '/dashboard', 302],
-    'customer to platform' => ['user@dev.com', 'customer', '/platform/dashboard', 302],
-    'customer to branch downtown' => ['user@dev.com', 'customer', '/branch/downtown/dashboard', 302],
-    'customer to driver' => ['user@dev.com', 'customer', '/driver/dashboard', 302],
+    'platform to branch sydney-cbd' => [UserSeeder::PLATFORM_SUPER_ADMIN, 'platform', '/branch/sydney-cbd/dashboard', 302],
+    'platform to driver' => [UserSeeder::PLATFORM_SUPER_ADMIN, 'platform', '/driver/dashboard', 302],
+    'platform to customer' => [UserSeeder::PLATFORM_SUPER_ADMIN, 'platform', '/dashboard', 302],
+    'branch to platform' => [UserSeeder::BRANCH_1_SUPER_ADMIN, 'branch', '/platform/dashboard', 302],
+    'branch to driver' => [UserSeeder::BRANCH_1_SUPER_ADMIN, 'branch', '/driver/dashboard', 302],
+    'branch to customer' => [UserSeeder::BRANCH_1_SUPER_ADMIN, 'branch', '/dashboard', 302],
+    'driver to platform' => [UserSeeder::DRIVER, 'driver', '/platform/dashboard', 302],
+    'driver to branch sydney-cbd' => [UserSeeder::DRIVER, 'driver', '/branch/sydney-cbd/dashboard', 302],
+    'driver to customer' => [UserSeeder::DRIVER, 'driver', '/dashboard', 302],
+    'customer to platform' => [UserSeeder::CUSTOMER, 'customer', '/platform/dashboard', 302],
+    'customer to branch sydney-cbd' => [UserSeeder::CUSTOMER, 'customer', '/branch/sydney-cbd/dashboard', 302],
+    'customer to driver' => [UserSeeder::CUSTOMER, 'customer', '/driver/dashboard', 302],
 ]);
 
 test('branch user receives forbidden when visiting another branch dashboard', function () {
-    $user = User::query()->where('email', 'branch1.superadmin@dev.com')->firstOrFail();
+    $user = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($user, 'branch')
-        ->get('/branch/uptown/dashboard')
+        ->get('/branch/melbourne-collins/dashboard')
         ->assertForbidden();
 });
 
@@ -82,16 +82,16 @@ test('non branch users are redirected to login from alternate branch slugs', fun
     $user = User::query()->where('email', $email)->firstOrFail();
 
     $this->actingAs($user, $guard)
-        ->get('/branch/uptown/dashboard')
+        ->get('/branch/melbourne-collins/dashboard')
         ->assertRedirect(route('login'));
 })->with([
-    'platform' => ['superadmin@dev.com', 'platform'],
-    'driver' => ['driver@dev.com', 'driver'],
-    'customer' => ['user@dev.com', 'customer'],
+    'platform' => [UserSeeder::PLATFORM_SUPER_ADMIN, 'platform'],
+    'driver' => [UserSeeder::DRIVER, 'driver'],
+    'customer' => [UserSeeder::CUSTOMER, 'customer'],
 ]);
 
 test('inactive portal user is logged out and redirected to login', function () {
-    $user = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
+    $user = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $user->update(['is_active' => false]);
 
     $response = $this->actingAs($user, 'platform')->get('/platform/dashboard');

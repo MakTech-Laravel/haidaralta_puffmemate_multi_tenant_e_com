@@ -40,6 +40,7 @@ class BranchCategoryDataTable extends AbstractDataTable
         return [
             AllowedFilter::exact('parent_id'),
             StatusBooleanFilter::make('status'),
+            StatusBooleanFilter::make('featured'),
             $this->searchFilter(),
         ];
     }
@@ -53,6 +54,7 @@ class BranchCategoryDataTable extends AbstractDataTable
             'name',
             'slug',
             'status',
+            'featured',
             'created_at',
             'products_count',
             AllowedSort::callback('parent_name', function (Builder $query, bool $descending): void {
@@ -103,6 +105,7 @@ class BranchCategoryDataTable extends AbstractDataTable
             'image_url' => $model->imageUrl(),
             'color_code' => $model->color_code,
             'status' => (bool) $model->status,
+            'featured' => (bool) $model->featured,
             'products_count' => (int) ($model->products_count ?? 0),
             'created_at' => $model->created_at?->toIso8601String(),
         ];

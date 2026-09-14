@@ -24,6 +24,7 @@ test('platform admin can create a category and product without enabling branches
             'name' => 'Devices',
             'slug' => 'devices',
             'status' => true,
+            'featured' => true,
         ])
         ->assertRedirect(route('platform.categories.show', 'devices'))
         ->assertInertiaFlash('toast', [
@@ -32,6 +33,15 @@ test('platform admin can create a category and product without enabling branches
         ]);
 
     $category = Category::query()->where('slug', 'devices')->firstOrFail();
+
+    expect($category->featured)->toBeTrue();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.categories.show', $category))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/catalog/categories/show')
+            ->where('category.featured', true));
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.products.store'), [
@@ -52,6 +62,36 @@ test('platform admin can create a category and product without enabling branches
     expect($product->isEnabledForBranch($branch->id))->toBeFalse()
         ->and(BranchProduct::query()->where('product_id', $product->id)->count())->toBe(0)
         ->and($product->categories()->pluck('categories.id')->all())->toBe([$category->id]);
+});
+
+test('platform can toggle category featured on update', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create([
+        'slug' => 'featured-toggle',
+        'featured' => false,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.categories.update', $category), [
+            'name' => $category->name,
+            'slug' => $category->slug,
+            'status' => true,
+            'featured' => true,
+        ])
+        ->assertRedirect(route('platform.categories.show', $category));
+
+    expect($category->fresh()->featured)->toBeTrue();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.categories.update', $category), [
+            'name' => $category->name,
+            'slug' => $category->slug,
+            'status' => true,
+            'featured' => false,
+        ])
+        ->assertRedirect(route('platform.categories.show', $category));
+
+    expect($category->fresh()->featured)->toBeFalse();
 });
 
 test('platform soft delete hides product from default index', function () {

@@ -16,11 +16,13 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->json('color_code')->nullable();
             $table->boolean('status')->default(true);
+            $table->boolean('featured')->default(false);
             $table->timestamps();
             $table->softDeletes();
 
             $table->index('parent_id');
             $table->index('status');
+            $table->index('featured');
         });
     }
 

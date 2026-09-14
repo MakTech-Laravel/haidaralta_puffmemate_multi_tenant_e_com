@@ -98,7 +98,7 @@ test('platform super admin can create a branch then add super admin in step two'
 
 test('cannot create a second branch super admin', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.super-admin.store', $downtown), [
@@ -136,7 +136,7 @@ test('platform staff without create branches cannot create a branch', function (
 
 test('cannot delete a branch that still has staff', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->delete(route('platform.branches.destroy', $downtown))

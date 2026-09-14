@@ -20,7 +20,7 @@ beforeEach(function () {
 
 test('platform super admin can create update and delete branch staff', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branch-staff.store'), [
@@ -80,7 +80,7 @@ test('platform super admin can create update and delete branch staff', function 
 
 test('platform admin with manage-branch-users can create branch staff', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branch-staff.store'), [
@@ -126,7 +126,7 @@ test('platform staff without manage-branch-users cannot access branch staff rout
 });
 
 test('granting manage-branch-users to a custom platform role unlocks branch staff management', function () {
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
 
@@ -170,7 +170,7 @@ test('granting manage-branch-users to a custom platform role unlocks branch staf
 
 test('only platform super admin can assign branch super-admin role', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branch-staff.store'), [

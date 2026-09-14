@@ -32,7 +32,7 @@ const orders = [
     },
     {
         id: '#1790',
-        placed: 'Tue · Downtown',
+        placed: 'Tue · Sydney CBD',
         total: '$18.40',
         status: 'Delivered',
         items: 'Classic tin',
@@ -93,8 +93,8 @@ export default function CustomerDashboard() {
                                 Free pickup over $25
                             </CardTitle>
                             <CardDescription>
-                                Placeholder promo for Downtown. No code required
-                                on demo orders.
+                                Placeholder promo for Sydney CBD. No code
+                                required on demo orders.
                             </CardDescription>
                         </CardHeader>
                         <CardFooter className="px-6">
@@ -110,8 +110,8 @@ export default function CustomerDashboard() {
                                 Order #1842 is packed
                             </CardTitle>
                             <CardDescription>
-                                Pickup counter · Downtown · show this screen at
-                                the desk.
+                                Pickup counter · Sydney CBD · show this screen
+                                at the desk.
                             </CardDescription>
                         </CardHeader>
                         <CardFooter className="px-6">

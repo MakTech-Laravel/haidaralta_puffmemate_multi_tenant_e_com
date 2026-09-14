@@ -74,7 +74,7 @@ test('portal users can reset password via otp and log in with the new password',
     $this->assertAuthenticated($guard);
 })->with([
     'platform' => [UserSeeder::PLATFORM_SUPER_ADMIN_PHONE, 'platform', '/platform/dashboard'],
-    'branch' => [UserSeeder::BRANCH_1_SUPER_ADMIN_PHONE, 'branch', '/branch/downtown/dashboard'],
+    'branch' => [UserSeeder::BRANCH_1_SUPER_ADMIN_PHONE, 'branch', '/branch/sydney-cbd/dashboard'],
     'driver' => [UserSeeder::DRIVER_PHONE, 'driver', '/driver/dashboard'],
     'customer' => [UserSeeder::CUSTOMER_PHONE, 'customer', '/dashboard'],
 ]);

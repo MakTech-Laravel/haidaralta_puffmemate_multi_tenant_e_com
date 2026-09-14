@@ -15,19 +15,22 @@ test('the production container runs only the required application processes', fu
     expect($supervisor)
         ->toContain('[program:php-fpm]')
         ->toContain('[program:nginx]')
-        ->toContain('[program:laravel-queue-worker]')
+        ->toContain('[program:laravel-horizon]')
+        ->toContain('[program:laravel-pulse-check]')
         ->toContain('[program:laravel-scheduler]')
-        ->not->toMatch('/^\[program:laravel-(?:horizon|reverb)\]$/m')
-        ->not->toMatch('/^command=.*(?:horizon|reverb:start).*$/m');
+        ->toContain('; [program:laravel-queue-worker]')
+        ->not->toMatch('/^\[program:laravel-queue-worker\]$/m')
+        ->not->toMatch('/^\[program:laravel-reverb\]$/m')
+        ->not->toMatch('/^command=.*reverb:start.*$/m');
 });
 
-test('optional horizon and reverb programs remain disabled references', function () {
+test('queue worker stays disabled while horizon and reverb references stay optional', function () {
     $supervisor = deploymentFile('docker/supervisord.conf');
 
     expect($supervisor)
-        ->toContain('; [program:laravel-horizon]')
-        ->toContain('; command=/usr/local/bin/php /var/www/artisan horizon')
-        ->toContain('disable laravel-queue-worker first')
+        ->toContain('Horizon is the sole Redis queue consumer')
+        ->toContain('; [program:laravel-queue-worker]')
+        ->toContain('command=/usr/local/bin/php /var/www/artisan horizon')
         ->toContain('; [program:laravel-reverb]')
         ->toContain('; command=/usr/local/bin/php /var/www/artisan reverb:start')
         ->toContain('; autostart=false');

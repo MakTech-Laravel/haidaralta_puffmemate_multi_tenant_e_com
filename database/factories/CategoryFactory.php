@@ -25,11 +25,17 @@ class CategoryFactory extends Factory
             'image' => null,
             'color_code' => null,
             'status' => true,
+            'featured' => false,
         ];
     }
 
     public function inactive(): static
     {
         return $this->state(fn (): array => ['status' => false]);
+    }
+
+    public function featured(): static
+    {
+        return $this->state(fn (): array => ['featured' => true]);
     }
 }

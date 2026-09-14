@@ -19,7 +19,7 @@ beforeEach(function () {
 
 test('branch super admin can create a branch role with permissions', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'branch')
         ->post(route('branch.roles.store', $downtown), [
@@ -50,7 +50,7 @@ test('branch super admin can create a branch role with permissions', function ()
 
 test('branch role cannot be deleted when users are assigned', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'branch')
         ->post(route('branch.roles.store', $downtown), [
@@ -73,7 +73,7 @@ test('branch role cannot be deleted when users are assigned', function () {
 });
 
 test('branch staff without manage branch roles cannot access role routes', function () {
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $user = User::factory()->create([
         'user_type' => UserType::BRANCH,
         'branch_id' => $downtown->id,
@@ -90,7 +90,7 @@ test('branch staff without manage branch roles cannot access role routes', funct
 
 test('branch permissions catalog is readable by branch super admin', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'branch')
         ->get(route('branch.permissions.index', $downtown))

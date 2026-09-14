@@ -17,7 +17,7 @@ class RolesAndPermissionsSeeder extends Seeder
     public const BRANCH_GUARD = 'branch';
 
     /**
-     * Seed permissions and platform-scoped roles.
+     * Seed platform permissions/roles, then branch teams get roles via BranchSeeder.
      */
     public function run(): void
     {

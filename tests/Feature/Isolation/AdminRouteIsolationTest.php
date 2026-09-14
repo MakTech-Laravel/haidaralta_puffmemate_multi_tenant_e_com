@@ -34,14 +34,14 @@ test('non platform sessions cannot access platform admin routes', function (
         ->get(route('platform.branch-staff.index'))
         ->assertRedirect(route('login'));
 })->with([
-    'branch' => ['branch1.superadmin@dev.com', 'branch'],
-    'driver' => ['driver@dev.com', 'driver'],
-    'customer' => ['user@dev.com', 'customer'],
+    'branch' => [UserSeeder::BRANCH_1_SUPER_ADMIN, 'branch'],
+    'driver' => [UserSeeder::DRIVER, 'driver'],
+    'customer' => [UserSeeder::CUSTOMER, 'customer'],
 ]);
 
 test('platform session cannot access branch staff or role routes', function () {
-    $platform = User::query()->where('email', 'superadmin@dev.com')->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $platform = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($platform, 'platform')
         ->get(route('branch.staff.index', $downtown))

@@ -183,6 +183,7 @@ return [
                     'id',
                     'parent_id',
                     'status',
+                    'featured',
                     'slug',
                 ],
                 'sortableAttributes' => [

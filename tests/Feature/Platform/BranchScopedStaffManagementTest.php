@@ -18,14 +18,14 @@ beforeEach(function () {
 
 test('platform super admin can list and create staff for a nested branch', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branches.staff.index', $downtown))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branches/staff/index')
-            ->where('branch.slug', 'downtown')
+            ->where('branch.slug', BranchSeeder::SYDNEY_CBD)
         );
 
     $this->actingAs($admin, 'platform')
@@ -52,8 +52,8 @@ test('platform super admin can list and create staff for a nested branch', funct
 
 test('nested branch staff routes return 404 for staff of another branch', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
-    $uptown = Branch::query()->where('slug', 'uptown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $uptown = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
 
     $uptownStaff = User::factory()->create([
         'email' => 'uptown-scoped@test.com',
@@ -95,7 +95,7 @@ test('platform user without manage-branch-users cannot access nested branch staf
     $user->assignRole(RoleEnum::STAFF->value);
     app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $this->actingAs($user, 'platform')
         ->get(route('platform.branches.staff.index', $downtown))
@@ -104,7 +104,7 @@ test('platform user without manage-branch-users cannot access nested branch staf
 
 test('platform admin can update and delete nested branch staff', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $clerk = User::factory()->create([
         'name' => 'Nested Clerk',
@@ -146,7 +146,7 @@ test('platform admin can update and delete nested branch staff', function () {
 
 test('nested branch staff index can search by name', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $downtown = Branch::query()->where('slug', 'downtown')->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $match = User::factory()->create([
         'name' => 'Nested Zelda Clerk',
