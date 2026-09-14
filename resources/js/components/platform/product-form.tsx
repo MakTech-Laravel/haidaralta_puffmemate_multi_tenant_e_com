@@ -403,7 +403,8 @@ export function ProductForm({
                 </Alert>
             ) : null}
 
-            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
+            <div className="space-y-6">
+            <div className="grid items-start gap-6 xl:grid-cols-2">
                 <section
                     className={cn(
                         'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
@@ -539,24 +540,44 @@ export function ProductForm({
                             <InputError message={errors.name} />
                         </div>
 
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="slug">Slug</Label>
-                            <Input
-                                id="slug"
-                                value={data.slug}
-                                onChange={(event) => {
-                                    setSlugTouched(true);
-                                    setData('slug', event.target.value);
-                                }}
-                                onBlur={() => {
-                                    if (data.slug.trim() !== '') {
-                                        validate('slug');
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="slug">Slug</Label>
+                                <Input
+                                    id="slug"
+                                    value={data.slug}
+                                    onChange={(event) => {
+                                        setSlugTouched(true);
+                                        setData('slug', event.target.value);
+                                    }}
+                                    onBlur={() => {
+                                        if (data.slug.trim() !== '') {
+                                            validate('slug');
+                                        }
+                                    }}
+                                    required
+                                    placeholder="e.g. air-pro-kit"
+                                />
+                                <InputError message={errors.slug} />
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="sku">SKU</Label>
+                                <Input
+                                    id="sku"
+                                    value={data.sku}
+                                    onChange={(event) =>
+                                        setData('sku', event.target.value)
                                     }
-                                }}
-                                required
-                                placeholder="e.g. air-pro-kit"
-                            />
-                            <InputError message={errors.slug} />
+                                    onBlur={() => {
+                                        if (data.sku.trim() !== '') {
+                                            validate('sku');
+                                        }
+                                    }}
+                                    placeholder="e.g. POM-AIR-PRO"
+                                />
+                                <InputError message={errors.sku} />
+                            </div>
                         </div>
 
                         {enableSuggestions && suggestions.length > 0 ? (
@@ -622,24 +643,6 @@ export function ProductForm({
                         ) : null}
 
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="sku">SKU</Label>
-                            <Input
-                                id="sku"
-                                value={data.sku}
-                                onChange={(event) =>
-                                    setData('sku', event.target.value)
-                                }
-                                onBlur={() => {
-                                    if (data.sku.trim() !== '') {
-                                        validate('sku');
-                                    }
-                                }}
-                                placeholder="e.g. POM-AIR-PRO"
-                            />
-                            <InputError message={errors.sku} />
-                        </div>
-
-                        <div className="flex flex-col gap-2">
                             <Label htmlFor="brand">Brand</Label>
                             <Input
                                 id="brand"
@@ -664,146 +667,10 @@ export function ProductForm({
                                     )
                                 }
                                 placeholder="Tell customers what makes this product stand out"
-                                rows={7}
-                                className="min-h-40 resize-y"
+                                rows={4}
+                                className="min-h-28 resize-y"
                             />
                             <InputError message={errors.description} />
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            <div className="space-y-1">
-                                <Label>Tags</Label>
-                                <p className="text-muted-foreground text-xs">
-                                    Highlight this product in storefront
-                                    collections.
-                                </p>
-                            </div>
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                {PRODUCT_TAG_OPTIONS.map((option) => {
-                                    const checked = data.tags.includes(
-                                        option.value,
-                                    );
-
-                                    return (
-                                        <div
-                                            key={option.value}
-                                            className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3"
-                                        >
-                                            <Checkbox
-                                                id={`tag-${option.value}`}
-                                                checked={checked}
-                                                onCheckedChange={() =>
-                                                    toggleTag(option.value)
-                                                }
-                                            />
-                                            <Label
-                                                htmlFor={`tag-${option.value}`}
-                                                className="font-normal"
-                                            >
-                                                {option.label}
-                                            </Label>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            <InputError message={errors.tags} />
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                <div className="space-y-1">
-                                    <Label>Specifications</Label>
-                                    <p className="text-muted-foreground text-xs">
-                                        Label and value pairs shown on the
-                                        product page.
-                                    </p>
-                                </div>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={addSpecification}
-                                >
-                                    <Plus className="size-4" />
-                                    Add row
-                                </Button>
-                            </div>
-                            <div className="space-y-3">
-                                {data.specifications.map((row, index) => (
-                                    <div
-                                        key={`specification-${index}`}
-                                        className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
-                                    >
-                                        <div className="flex flex-col gap-2">
-                                            <Label
-                                                htmlFor={`specification-label-${index}`}
-                                                className="sr-only"
-                                            >
-                                                Label
-                                            </Label>
-                                            <Input
-                                                id={`specification-label-${index}`}
-                                                value={row.label}
-                                                onChange={(event) =>
-                                                    updateSpecification(
-                                                        index,
-                                                        'label',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                placeholder="Label"
-                                            />
-                                            <InputError
-                                                message={
-                                                    errors[
-                                                        `specifications.${index}.label`
-                                                    ]
-                                                }
-                                            />
-                                        </div>
-                                        <div className="flex flex-col gap-2">
-                                            <Label
-                                                htmlFor={`specification-value-${index}`}
-                                                className="sr-only"
-                                            >
-                                                Value
-                                            </Label>
-                                            <Input
-                                                id={`specification-value-${index}`}
-                                                value={row.value}
-                                                onChange={(event) =>
-                                                    updateSpecification(
-                                                        index,
-                                                        'value',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                placeholder="Value"
-                                            />
-                                            <InputError
-                                                message={
-                                                    errors[
-                                                        `specifications.${index}.value`
-                                                    ]
-                                                }
-                                            />
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            className="self-start"
-                                            onClick={() =>
-                                                removeSpecification(index)
-                                            }
-                                            aria-label="Remove specification row"
-                                        >
-                                            <Trash2 className="size-4" />
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                            <InputError message={errors.specifications} />
                         </div>
 
                         <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
@@ -1111,6 +978,163 @@ export function ProductForm({
                         ) : null}
                     </div>
                 </section>
+            </div>
+
+            <section
+                className={cn(
+                    'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                    'sm:p-6',
+                )}
+            >
+                <div className="mb-5 space-y-1">
+                    <h2 className="text-base font-semibold tracking-tight">
+                        Storefront merchandising
+                    </h2>
+                    <p className="text-muted-foreground text-sm">
+                        Tags drive home collections; specifications appear on
+                        the product page table.
+                    </p>
+                </div>
+
+                <div className="grid items-start gap-8 lg:grid-cols-2">
+                    <div className="flex flex-col gap-3">
+                        <div className="space-y-1">
+                            <Label>Tags</Label>
+                            <p className="text-muted-foreground text-xs">
+                                Highlight this product in storefront
+                                collections.
+                            </p>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            {PRODUCT_TAG_OPTIONS.map((option) => {
+                                const checked = data.tags.includes(
+                                    option.value,
+                                );
+
+                                return (
+                                    <div
+                                        key={option.value}
+                                        className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3"
+                                    >
+                                        <Checkbox
+                                            id={`tag-${option.value}`}
+                                            checked={checked}
+                                            onCheckedChange={() =>
+                                                toggleTag(option.value)
+                                            }
+                                        />
+                                        <Label
+                                            htmlFor={`tag-${option.value}`}
+                                            className="font-normal"
+                                        >
+                                            {option.label}
+                                        </Label>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <InputError message={errors.tags} />
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="space-y-1">
+                                <Label>Specifications</Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Label and value pairs shown on the product
+                                    page. Brand is filled from the brand field
+                                    automatically on the storefront.
+                                </p>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={addSpecification}
+                            >
+                                <Plus className="size-4" />
+                                Add row
+                            </Button>
+                        </div>
+                        <div className="space-y-3">
+                            {data.specifications.map((row, index) => (
+                                <div
+                                    key={`specification-${index}`}
+                                    className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                                >
+                                    <div className="flex flex-col gap-2">
+                                        <Label
+                                            htmlFor={`specification-label-${index}`}
+                                            className="sr-only"
+                                        >
+                                            Label
+                                        </Label>
+                                        <Input
+                                            id={`specification-label-${index}`}
+                                            value={row.label}
+                                            onChange={(event) =>
+                                                updateSpecification(
+                                                    index,
+                                                    'label',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            placeholder="Label"
+                                        />
+                                        <InputError
+                                            message={
+                                                errors[
+                                                    `specifications.${index}.label`
+                                                ]
+                                            }
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <Label
+                                            htmlFor={`specification-value-${index}`}
+                                            className="sr-only"
+                                        >
+                                            Value
+                                        </Label>
+                                        <Input
+                                            id={`specification-value-${index}`}
+                                            value={row.value}
+                                            onChange={(event) =>
+                                                updateSpecification(
+                                                    index,
+                                                    'value',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            placeholder="Value"
+                                        />
+                                        <InputError
+                                            message={
+                                                errors[
+                                                    `specifications.${index}.value`
+                                                ]
+                                            }
+                                        />
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        className="self-start"
+                                        onClick={() =>
+                                            removeSpecification(index)
+                                        }
+                                        aria-label="Remove specification row"
+                                    >
+                                        <Trash2 className="size-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                        <InputError message={errors.specifications} />
+                    </div>
+                </div>
+            </section>
             </div>
 
             <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
