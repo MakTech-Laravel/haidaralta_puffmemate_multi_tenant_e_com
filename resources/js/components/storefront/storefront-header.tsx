@@ -94,11 +94,7 @@ function NavLabel({
 
 export function StorefrontHeader() {
     const page = usePage();
-    const { auth, name, storefront } = page.props as typeof page.props & {
-        storefront?: {
-            navCategories?: Array<{ label: string; categorySlug: string }>;
-        };
-    };
+    const { auth, name } = page.props;
     const url = page.url;
     const [mobileOpen, setMobileOpen] = useState(false);
     const accountHref = auth.user ? dashboard() : login();
@@ -107,17 +103,7 @@ export function StorefrontHeader() {
         url.startsWith('/cart?') ||
         url === '/checkout' ||
         url.startsWith('/checkout?');
-
-    const navItems: StorefrontChromeItem[] = [
-        { label: 'Home', route: 'home' },
-        { label: 'Shop', route: 'shop' },
-        ...(storefront?.navCategories ?? []).map((category) => ({
-            label: category.label,
-            categorySlug: category.categorySlug,
-        })),
-    ];
-
-    const items = navItems.length > 1 ? navItems : storefrontNavItems;
+    const items = storefrontNavItems;
 
     return (
         <div className="sticky top-0 z-40">
