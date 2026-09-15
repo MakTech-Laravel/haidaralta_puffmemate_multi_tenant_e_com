@@ -83,7 +83,7 @@ export default function StorefrontProduct({
         <>
             <Head title={product.name} />
 
-            <div className="mx-auto container max-w-full px-4 py-8 sm:px-6 sm:py-10">
+            <div className="mx-auto container px-4 py-8 sm:px-6 sm:py-10">
                 <Link
                     href={backHref}
                     prefetch
@@ -117,8 +117,9 @@ export default function StorefrontProduct({
                     />
                 </div>
 
-                <div className="mt-12 flex flex-col gap-10">
+                <div className="mt-12 flex min-w-0 flex-col gap-10">
                     <ProductSectionTabs
+                        className="min-w-0"
                         active={activeTab}
                         onChange={setActiveTab}
                         reviewCount={product.reviews.length}
