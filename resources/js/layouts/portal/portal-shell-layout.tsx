@@ -9,6 +9,7 @@ import type {
     NavSection,
 } from '@/components/navigation/types';
 import { NavUser } from '@/components/nav-user';
+import { PortalAccountHeader } from '@/components/portal/portal-account-header';
 import { PortalBrand } from '@/components/portal/portal-brand';
 import { PortalSidebarHeader } from '@/components/portal/portal-sidebar-header';
 import {
@@ -46,6 +47,7 @@ export type PortalShellLayoutProps = {
     sidebarBanner?: ReactNode;
     sidebarClassName?: string;
     sidebarCollapsible?: 'offcanvas' | 'icon' | 'none';
+    sidebarContentClassName?: string;
     sidebarFooterClassName?: string;
     sidebarFooterExtra?: ReactNode;
     sidebarHeaderClassName?: string;
@@ -74,12 +76,22 @@ export function PortalShellLayout({
     sidebarBanner,
     sidebarClassName,
     sidebarCollapsible = 'icon',
+    sidebarContentClassName = 'scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
     sidebarFooterClassName,
     sidebarFooterExtra,
     sidebarHeaderClassName,
     sidebarVariant,
     sidebarWidth = '16rem',
 }: PortalShellLayoutProps) {
+    const showAccountChrome = portal === 'platform' || portal === 'branch';
+    const headerRight =
+        headerAccessory || showAccountChrome ? (
+            <>
+                {headerAccessory}
+                {showAccountChrome ? <PortalAccountHeader /> : null}
+            </>
+        ) : undefined;
+
     return (
         <AppShell variant="sidebar" portal={portal} sidebarWidth={sidebarWidth}>
             <Sidebar
@@ -120,7 +132,11 @@ export function PortalShellLayout({
 
                 {sidebarBanner}
 
-                <SidebarContent>
+                <SidebarContent
+                    {...(sidebarContentClassName
+                        ? { className: sidebarContentClassName }
+                        : {})}
+                >
                     {(
                         sections ?? [
                             {
@@ -156,15 +172,26 @@ export function PortalShellLayout({
                 </SidebarFooter>
             </Sidebar>
 
-            <AppContent variant="sidebar" className="min-w-0 overflow-x-clip">
+            <AppContent
+                variant="sidebar"
+                className={cn(
+                    'min-w-0 overflow-hidden',
+                    sidebarVariant === 'inset'
+                        ? 'max-h-svh md:max-h-[calc(100svh-1rem)]'
+                        : 'h-svh',
+                )}
+            >
                 <PortalSidebarHeader
                     breadcrumbs={breadcrumbs}
                     density={headerDensity}
                     accent={headerAccent}
-                    {...(headerAccessory ? { accessory: headerAccessory } : {})}
+                    sticky={showAccountChrome}
+                    {...(headerRight ? { accessory: headerRight } : {})}
                     {...(headerBanner ? { banner: headerBanner } : {})}
                 />
-                {children}
+                <div className="min-h-0 flex-1 overflow-x-clip overflow-y-auto">
+                    {children}
+                </div>
             </AppContent>
         </AppShell>
     );

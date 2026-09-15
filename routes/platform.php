@@ -11,6 +11,7 @@ use App\Http\Controllers\Platform\DashboardController as PlatformDashboardContro
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
+use App\Http\Controllers\Platform\NotificationController as PlatformNotificationController;
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function () {
     Route::get('dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
+    Route::get('notifications', [PlatformNotificationController::class, 'index'])->name('platform.notifications.index');
 
     Route::middleware(['permission:view-horizon|view-pulse'])->group(function () {
         Route::get('observability', [PlatformObservabilityController::class, 'index'])

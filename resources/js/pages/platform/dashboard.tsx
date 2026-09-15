@@ -6,7 +6,6 @@ import {
     Server,
     TriangleAlert,
 } from 'lucide-react';
-import { DemoDataBadge } from '@/components/portal/demo-data-badge';
 import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -81,8 +80,7 @@ export default function PlatformDashboard() {
                             Welcome, {user?.name}
                         </h1>
                         <p className="text-muted-foreground text-sm">
-                            Command center for branches, queues, and system
-                            health.
+                            Overview of branches, orders, and system health.
                         </p>
                         {hasRole('super-admin') && (
                             <p className="text-muted-foreground text-sm">
@@ -90,7 +88,6 @@ export default function PlatformDashboard() {
                             </p>
                         )}
                     </div>
-                    <DemoDataBadge />
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

@@ -1,4 +1,5 @@
 import {
+    Bell,
     Boxes,
     CalendarClock,
     ChartColumn,
@@ -189,7 +190,10 @@ export function buildBranchNav(slug: string): NavSection[] {
             navGroup({
                 title: 'Settings',
                 icon: Settings2,
-                permissions: ['view-branch-activity-logs'],
+                permissions: [
+                    'view-branch-activity-logs',
+                    'view-branch-dashboard',
+                ],
                 items: [
                     navSoon({
                         title: 'General',
@@ -200,6 +204,12 @@ export function buildBranchNav(slug: string): NavSection[] {
                         title: 'Hours',
                         icon: Clock,
                         permissions: ['view-branch-activity-logs'],
+                    }),
+                    navLink({
+                        title: 'Notifications',
+                        href: `/branch/${slug}/notifications`,
+                        icon: Bell,
+                        permissions: ['view-branch-dashboard'],
                     }),
                     navLink({
                         title: 'Audit logs',
