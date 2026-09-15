@@ -41,3 +41,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/OtpService.php | .ai/rules/services.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts | .ai/rules/storefront.md |
 | app/Support/OpsDashboardAccess.php, config/cache.php | .ai/rules/support.md |
+| resources/js/components/ui/{time-picker,wheel-picker}.tsx | .ai/rules/ui.md |

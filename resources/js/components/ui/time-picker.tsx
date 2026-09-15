@@ -1,12 +1,25 @@
 import { Clock, XIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+    WheelPicker,
+    WheelPickerWrapper,
+    type WheelPickerOption,
+} from '@/components/ui/wheel-picker';
 import { cn } from '@/lib/utils';
+
+type Period = 'AM' | 'PM';
+
+type TimeDraft = {
+    hour: number;
+    minute: number;
+    period: Period;
+};
 
 type TimePickerProps = {
     id?: string;
@@ -20,6 +33,44 @@ type TimePickerProps = {
     className?: string;
     'aria-invalid'?: boolean;
 };
+
+const DEFAULT_DRAFT: TimeDraft = {
+    hour: 8,
+    minute: 0,
+    period: 'AM',
+};
+
+const HOUR_OPTIONS: WheelPickerOption<number>[] = Array.from(
+    { length: 12 },
+    (_, index) => {
+        const hour = index + 1;
+
+        return {
+            value: hour,
+            label: String(hour),
+        };
+    },
+);
+
+const PERIOD_OPTIONS: WheelPickerOption<Period>[] = [
+    { value: 'AM', label: 'AM' },
+    { value: 'PM', label: 'PM' },
+];
+
+function clampStep(stepMinutes: number): number {
+    return Math.max(1, Math.min(60, stepMinutes));
+}
+
+function snapMinute(minute: number, stepMinutes: number): number {
+    const step = clampStep(stepMinutes);
+    const snapped = Math.round(minute / step) * step;
+
+    if (snapped >= 60) {
+        return 60 - step;
+    }
+
+    return snapped;
+}
 
 function normalizeTime(value: string | null | undefined): string {
     if (!value) {
@@ -35,7 +86,14 @@ function normalizeTime(value: string | null | undefined): string {
     return `${match[1]}:${match[2]}`;
 }
 
-function formatDisplay(value: string): string {
+function parseTime(
+    value: string,
+    stepMinutes: number,
+): TimeDraft | null {
+    if (!value) {
+        return null;
+    }
+
     const [hourPart, minutePart] = value.split(':');
     const hour24 = Number(hourPart);
     const minute = Number(minutePart);
@@ -48,25 +106,51 @@ function formatDisplay(value: string): string {
         minute < 0 ||
         minute > 59
     ) {
+        return null;
+    }
+
+    return {
+        hour: hour24 % 12 === 0 ? 12 : hour24 % 12,
+        minute: snapMinute(minute, stepMinutes),
+        period: hour24 >= 12 ? 'PM' : 'AM',
+    };
+}
+
+function toHHmm(draft: TimeDraft): string {
+    let hour24 = draft.hour % 12;
+
+    if (draft.period === 'PM') {
+        hour24 += 12;
+    }
+
+    return `${String(hour24).padStart(2, '0')}:${String(draft.minute).padStart(2, '0')}`;
+}
+
+function formatDisplay(value: string): string {
+    const draft = parseTime(value, 1);
+
+    if (!draft) {
         return value;
     }
 
-    const period = hour24 >= 12 ? 'PM' : 'AM';
-    const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
-
-    return `${hour12}:${String(minute).padStart(2, '0')} ${period}`;
+    return `${draft.hour}:${String(draft.minute).padStart(2, '0')} ${draft.period}`;
 }
 
-function buildOptions(stepMinutes: number): string[] {
-    const step = Math.max(1, Math.min(60, stepMinutes));
-    const options: string[] = [];
+function formatDraft(draft: TimeDraft): string {
+    return `${draft.hour}:${String(draft.minute).padStart(2, '0')} ${draft.period}`;
+}
 
-    for (let minutes = 0; minutes < 24 * 60; minutes += step) {
-        const hour = Math.floor(minutes / 60);
-        const minute = minutes % 60;
-        options.push(
-            `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
-        );
+function buildMinuteOptions(
+    stepMinutes: number,
+): WheelPickerOption<number>[] {
+    const step = clampStep(stepMinutes);
+    const options: WheelPickerOption<number>[] = [];
+
+    for (let minute = 0; minute < 60; minute += step) {
+        options.push({
+            value: minute,
+            label: String(minute).padStart(2, '0'),
+        });
     }
 
     return options;
@@ -84,15 +168,56 @@ export function TimePicker({
     'aria-invalid': ariaInvalid,
 }: TimePickerProps) {
     const [open, setOpen] = useState(false);
+    const [draft, setDraft] = useState<TimeDraft>(DEFAULT_DRAFT);
+    const draftRef = useRef(draft);
+    const skipCommitRef = useRef(false);
+    const seedHHmmRef = useRef(toHHmm(DEFAULT_DRAFT));
     const selected = normalizeTime(value);
-    const options = useMemo(
-        () => buildOptions(stepMinutes),
+    const minuteOptions = useMemo(
+        () => buildMinuteOptions(stepMinutes),
         [stepMinutes],
     );
 
+    draftRef.current = draft;
+
+    function commitDraft(patch: Partial<TimeDraft>): void {
+        const next = { ...draftRef.current, ...patch };
+
+        draftRef.current = next;
+        setDraft(next);
+
+        const hhmm = toHHmm(next);
+
+        if (skipCommitRef.current) {
+            if (hhmm === seedHHmmRef.current) {
+                return;
+            }
+
+            skipCommitRef.current = false;
+        }
+
+        if (hhmm !== selected) {
+            onChange(hhmm);
+        }
+    }
+
+    function handleOpenChange(nextOpen: boolean): void {
+        if (nextOpen) {
+            const parsed = parseTime(selected, stepMinutes);
+            const nextDraft = parsed ?? DEFAULT_DRAFT;
+
+            draftRef.current = nextDraft;
+            seedHHmmRef.current = toHHmm(nextDraft);
+            skipCommitRef.current = parsed === null;
+            setDraft(nextDraft);
+        }
+
+        setOpen(nextOpen);
+    }
+
     return (
         <div className={cn('flex w-full items-center gap-1.5', className)}>
-            <Popover open={open} onOpenChange={setOpen}>
+            <Popover open={open} onOpenChange={handleOpenChange}>
                 <PopoverTrigger asChild>
                     <Button
                         id={id}
@@ -114,33 +239,40 @@ export function TimePicker({
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent
-                    className="w-56 overflow-hidden p-0"
+                    className="w-[18rem] overflow-hidden p-0"
                     align="start"
                     sideOffset={4}
+                    onWheel={(event) => event.stopPropagation()}
                 >
-                    <div className="max-h-64 overflow-y-auto p-1">
-                        {options.map((option) => {
-                            const isSelected = option === selected;
-
-                            return (
-                                <button
-                                    key={option}
-                                    type="button"
-                                    className={cn(
-                                        'hover:bg-accent hover:text-accent-foreground flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm',
-                                        isSelected &&
-                                            'bg-accent text-accent-foreground font-medium',
-                                    )}
-                                    onClick={() => {
-                                        onChange(option);
-                                        setOpen(false);
-                                    }}
-                                >
-                                    {formatDisplay(option)}
-                                </button>
-                            );
-                        })}
+                    <div className="flex items-center justify-between border-b px-4 py-2.5">
+                        <span className="text-sm font-medium">Time</span>
+                        <span className="bg-muted rounded-full px-2.5 py-0.5 text-sm font-medium tabular-nums">
+                            {formatDraft(draft)}
+                        </span>
                     </div>
+                    <WheelPickerWrapper>
+                        <WheelPicker
+                            infinite
+                            options={HOUR_OPTIONS}
+                            value={draft.hour}
+                            onValueChange={(hour) => commitDraft({ hour })}
+                        />
+                        <WheelPicker
+                            infinite
+                            options={minuteOptions}
+                            value={draft.minute}
+                            onValueChange={(minute) =>
+                                commitDraft({ minute })
+                            }
+                        />
+                        <WheelPicker
+                            options={PERIOD_OPTIONS}
+                            value={draft.period}
+                            onValueChange={(period) =>
+                                commitDraft({ period })
+                            }
+                        />
+                    </WheelPickerWrapper>
                 </PopoverContent>
             </Popover>
             {clearable && selected ? (
