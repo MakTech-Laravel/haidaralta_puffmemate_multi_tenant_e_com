@@ -31,9 +31,10 @@ return [
     | Branch category create
     |--------------------------------------------------------------------------
     |
-    | When false, branch portals can still view and edit global categories
-    | but create/store abort 404 and the Add category button is hidden.
-    | Flip to true to restore branch category creation.
+    | When false, branch create/store abort 404 and the Add category
+    | button is hidden. The list itself is gated separately by
+    | branch_can_view_categories. Flip to true to restore branch
+    | category creation (the list flag must also be true).
     |
     */
 

@@ -137,6 +137,8 @@ test('platform cannot update nav sort when the category is not in nav', function
 });
 
 test('branch can toggle category featured from the list', function () {
+    config(['catalog.branch_can_view_categories' => true]);
+
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $category = Category::factory()->create(['featured' => false]);
@@ -161,5 +163,6 @@ test('platform shares catalog kill-switches on the category index', function () 
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('catalog.branch_can_create_categories', false)
+            ->where('catalog.branch_can_view_categories', false)
             ->where('catalog.show_parent_category', false));
 });

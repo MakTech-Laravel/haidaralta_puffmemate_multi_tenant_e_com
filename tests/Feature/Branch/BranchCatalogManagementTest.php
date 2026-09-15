@@ -75,6 +75,58 @@ test('branch category store is not found while branch create is disabled', funct
     expect(Category::query()->count())->toBe($before);
 });
 
+test('branch category list is not found while viewing is disabled', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.categories.index', $branch))
+        ->assertNotFound();
+});
+
+test('branch category show is not found while viewing is disabled', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.categories.show', [$branch, $category]))
+        ->assertNotFound();
+});
+
+test('branch category update is not found while viewing is disabled', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $category = Category::factory()->create([
+        'name' => 'Hidden Coils',
+        'slug' => 'hidden-coils',
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->put(route('branch.categories.update', [$branch, $category]), [
+            'name' => 'Hidden Coils Updated',
+            'slug' => 'hidden-coils',
+            'status' => true,
+        ])
+        ->assertNotFound();
+
+    expect($category->fresh()->name)->toBe('Hidden Coils');
+});
+
+test('branch can open the category list when viewing is enabled', function () {
+    config(['catalog.branch_can_view_categories' => true]);
+
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.categories.index', $branch))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/categories/index')
+            ->where('catalog.branch_can_view_categories', true));
+});
+
 test('branch can update a global product without destroy routes', function () {
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
