@@ -41,7 +41,7 @@ export const storefrontHeroSlides: StorefrontHeroSlide[] = [
         description:
             'A cleaner, premium shopping experience for cigarettes, vapes, tobacco, nicotine products and accessories.',
         image: '/images/storefront/hero-1.jpg',
-        primaryCta: { label: 'Shop Products', href: '/shop' },
+        primaryCta: { label: 'Shop', href: '/shop' },
         secondaryCta: { label: 'Explore Deals', href: '#home-deals' },
     },
     {
@@ -51,7 +51,7 @@ export const storefrontHeroSlides: StorefrontHeroSlide[] = [
         description:
             'Browse featured packs and new arrivals from nearby branches — ready when you are.',
         image: '/images/storefront/hero2.jpg',
-        primaryCta: { label: 'Shop Products', href: '/shop' },
+        primaryCta: { label: 'Shop', href: '/shop' },
         secondaryCta: { label: 'Explore Deals', href: '#home-deals' },
     },
 ];
