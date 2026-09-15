@@ -2,10 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Enums\DriverAssignmentStatus;
+use App\Enums\DriverAvailabilityStatus;
+use App\Enums\DriverVehicleType;
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Models\Branch;
+use App\Models\DriverProfile;
 use App\Models\User;
+use App\Services\Driver\DriverService;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -131,12 +136,14 @@ class UserSeeder extends Seeder
             ],
         ]);
 
-        $this->seedPortalUser(
+        $driver = $this->seedPortalUser(
             phone: self::DRIVER_PHONE,
             email: self::DRIVER,
             name: 'Daniel Foster',
             userType: UserType::DRIVER,
         );
+
+        $this->seedDriverProfile($driver, $sydney, $melbourne);
 
         $this->seedPortalUser(
             phone: self::CUSTOMER_PHONE,
@@ -201,6 +208,22 @@ class UserSeeder extends Seeder
 
             $user->syncRoles([$account['role']->value]);
         }
+    }
+
+    private function seedDriverProfile(User $driver, Branch $sydney, Branch $melbourne): void
+    {
+        DriverProfile::query()->updateOrCreate(
+            ['user_id' => $driver->id],
+            [
+                'license_number' => 'DL-DF-001',
+                'vehicle_type' => DriverVehicleType::Motorcycle,
+                'availability_status' => DriverAvailabilityStatus::Available,
+            ],
+        );
+
+        $driverService = app(DriverService::class);
+        $driverService->assignToBranch($driver, $sydney, status: DriverAssignmentStatus::Active);
+        $driverService->assignToBranch($driver, $melbourne, status: DriverAssignmentStatus::Active);
     }
 
     private function seedPortalUser(

@@ -19,18 +19,20 @@ class ResolveBranchContext
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $slug = $request->route('branch');
+        $branchParam = $request->route('branch');
 
-        if (! is_string($slug)) {
+        if ($branchParam instanceof Branch) {
+            $branch = $branchParam;
+        } elseif (is_string($branchParam)) {
+            $branch = Branch::query()
+                ->where('slug', $branchParam)
+                ->where('status', true)
+                ->first();
+        } else {
             abort(404);
         }
 
-        $branch = Branch::query()
-            ->where('slug', $slug)
-            ->where('status', true)
-            ->first();
-
-        if ($branch === null) {
+        if ($branch === null || ! $branch->status) {
             abort(404);
         }
 

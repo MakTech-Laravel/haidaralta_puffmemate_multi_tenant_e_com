@@ -3,12 +3,13 @@ paths:
   - resources/js/components/platform/product-form.tsx
   - resources/js/components/platform/category-form.tsx
   - 'resources/js/components/platform/{category,product}-form.tsx'
+  - resources/js/components/platform/category-profile.tsx
 ---
 
 # Platform
 
 ## Platform product form layout and suggestions
-Platform create/edit ProductForm: top row details | media (`xl:grid-cols-2`, items-start, no sticky Media). Media top row: ColorPicker + primary FileUpload side-by-side with items-stretch (equal card height); primary is full-width rectangular drop/preview on color tile (not avatar). Gallery grid max-h scroll. Tags + specifications live in a full-width “Storefront merchandising” card below the top row (`lg` side-by-side): left = tags (2-col) + Active in catalog; right = specs with compact label/value rows and max-h scroll. Do not leave Active only in the details column. Slug/SKU share a 2-col row. Over-limit gallery picks collapse to one count rejection message. enableSuggestions fetches suggestionsUrl (default platform.products.suggestions) while typing name. Branch edit can pass branch suggestions URL; branch create keeps its own reuse search above ProductForm.
+Platform create/edit ProductForm uses a media rail, not equal columns: `xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]`, items-start, no sticky Media. DOM order is details → media (`xl:row-span-2`) → merchandising so fields sit under details instead of leaving a hole beside a tall gallery. Compact square primary (no min-h-96, no filename bar) + ColorPicker triggerVariant=button. Gallery uses FileUpload dropzoneVisibility=empty (dashed zone only when empty; add tile when filled) and compactCards 3-col thumbs. Tags + specifications stay in Storefront merchandising under details. Slug/SKU share a 2-col row. Over-limit gallery picks collapse to one count rejection. enableSuggestions fetches suggestionsUrl while typing name.
 
 ## Catalog slug unique via Precognition
 CategoryForm and ProductForm live-validate `slug` uniqueness with Inertia useForm Precognition (blur on name after auto-slug sync, and blur on slug). Store/update routes must keep `precognitive` middleware. validationTimeout 500.
@@ -22,16 +23,16 @@ ProductForm categories field is multi-select Popover+Command combobox posting ca
 Selected categories render as wrapping secondary Badge chips (keyword style) on the combobox trigger — never a count summary like “N categories selected”.
 
 ## Catalog color_code uses ColorPicker dialog
-Product/category forms use ColorPicker mode=dialog with enabledModes transparent|solid|gradient and defaultMode=transparent. Post JSON.stringify(color_code). Display tiles via colorPickerStyle. Do not enable radial until PHP CatalogBackgroundMode supports it.
+Product/category forms use ColorPicker mode=dialog with enabledModes transparent|solid|gradient. Create defaultMode=solid with value solid #EF4444; edit keeps the stored value. Post JSON.stringify(color_code). Display tiles via colorPickerStyle. Do not enable radial until PHP CatalogBackgroundMode supports it.
 
 ## Product primary and gallery image types
 ProductForm primary + gallery accept PNG, JPG/JPEG, SVG, WebP (max 2MB). Backend ValidatesCatalogProductImages uses image:allow_svg + mimes; serve SVG as img src only.
 
 ## Category form matches product media layout
-Platform CategoryForm mirrors ProductForm: details left / Media right, items-start (no sticky Media scroll). Media row: ColorPicker + rectangular FileUpload side-by-side with items-stretch on color tile (not avatar). Create/edit pages use full width p-2 md:p-4. Image accept PNG/JPG/SVG/WebP via ValidatesCatalogProductImages.
+Platform CategoryForm mirrors ProductForm media rail: details left / compact Media right (`xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]`, items-start, no sticky). Square listing photo on the color tile + ColorPicker triggerVariant=button in the footer (no gallery). Create/edit pages use full width p-2 md:p-4. Image accept PNG/JPG/SVG/WebP via ValidatesCatalogProductImages.
 
 ## Category media is a listing preview card
-CategoryForm Media is one listing-preview card: full-width image upload on the color tile, compact ColorPicker triggerVariant=button in a footer row. Do not side-by-side stretch field ColorPicker with FileUpload (leaves empty space without a gallery). Equal-height xl:grid-cols-2 details | preview.
+CategoryForm Media is a compact rail card: square FileUpload on the color tile (object-contain, compactCards, no filename bar), ColorPicker triggerVariant=button in the footer. Do not equal-column stretch (`xl:grid-cols-2` + min-h) — that leaves blank space beside details.
 
 ## Parent category uses searchable combobox
 CategoryForm parent_id is a single-select Popover+Command combobox (searchable), with a No parent option that clears parent_id. Match ProductForm combobox styling; close on select.
@@ -47,3 +48,9 @@ Branch create/edit use ProductForm with gallery enabled (same as platform). bran
 
 ## Catalog forms suggestions + slug Precognition
 CategoryForm and ProductForm: enableSuggestions with portal-specific suggestionsUrl; slug uniqueness via Precognition on name/slug blur. Routes need precognitive middleware.
+
+## Product form listing preview and solid red default
+ProductForm create defaults color_code to solid #EF4444 with defaultMode=solid. Edit keeps the stored value (null → transparent). Media is a narrow rail (not a second equal column): square primary on the color tile, compact ColorPicker in the footer, gallery thumbs with dropzoneVisibility=empty. Do not use min-h-96 or a persistent full-width gallery dropzone — that creates blank space beside details.
+
+## Category show is a merchandising profile
+Platform and branch category show use CategoryProfile: ProductGallery layout=hero (not Avatar), listing details (slug/parent/nav/background), DemoStatCard snapshots (products/children/media), subcategory chips, catalog timestamps. Pass updated_at from mapCategory. Do not use equal-column details|preview with min-h stretch.

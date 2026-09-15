@@ -1,6 +1,7 @@
 ---
 paths:
-    - 'app/Http/Controllers/{Platform,Branch}/**'
+  - 'app/Http/Controllers/{Platform,Branch}/**'
+  - 'app/Http/Controllers/{Platform,Branch}/*Driver*.php'
 ---
 
 # Platform Branch
@@ -21,3 +22,6 @@ Platform branch create is atomic: StoreBranchRequest requires nested super_admin
 
 ## Branch coords via map dialog picker
 Branch create/edit coords: Address then Map location with Set on map (BranchLocationPicker dialog) plus optional manual Latitude|Longitude. No inline live map on the form. Future Mapbox/Google only inside the dialog body; onConfirm writes latitude/longitude. Phase 1 confirm stays disabled until a provider can set a pin.
+
+## Driver CRUD surfaces
+Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids). Nested platform.branches.drivers and branch.drivers auto-assign the current branch on create and can assign existing drivers. Rosters require an active assignment for that branch. Overlap is per driver: date ranges overlap AND weekdays intersect AND times overlap. Roster forms use start/end dates + Mon–Sun day chips. No parcel/GPS/chat yet.

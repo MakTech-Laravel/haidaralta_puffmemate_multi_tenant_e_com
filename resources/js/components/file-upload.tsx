@@ -31,6 +31,7 @@ import {
     FileImage,
     FileText,
     FileVideo,
+    Plus,
     Upload,
     X,
 } from 'lucide-react';
@@ -146,6 +147,8 @@ export interface FileUploadClassNames {
     cardImage?: string;
     /** Filename + size text row */
     cardInfo?: string;
+    /** Compact “add more” tile shown when `dropzoneVisibility="empty"` */
+    addTile?: string;
     /** Remove (×) button */
     removeButton?: string;
     /** Semi-transparent progress overlay on a card */
@@ -231,12 +234,21 @@ export interface FileUploadProps {
     // ── Display ───────────────────────────────────────────────────────────────
     placeholder?: string;
     hint?: string;
+    /** When false, hide the title/hint column beside an avatar dropzone. Default: true. */
+    showCaption?: boolean;
     /** Circular avatar picker — compact preview, no full-width card grid. */
     variant?: FileUploadVariant;
     /** Diameter in pixels when `variant="avatar"`. Default: `112`. */
     avatarSize?: number;
     /** Shown inside the empty avatar ring before a file is selected. */
     avatarFallback?: React.ReactNode;
+    /**
+     * `empty` hides the dashed dropzone once files exist and shows a compact
+     * add tile in the grid instead. Default `always` keeps the large dropzone.
+     */
+    dropzoneVisibility?: 'always' | 'empty';
+    /** Hide filename/size on cards (square thumbs). Default false. */
+    compactCards?: boolean;
 
     // ── Styling ───────────────────────────────────────────────────────────────
     /** Alias for `classNames.wrapper`. */
@@ -847,9 +859,12 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
             lightbox = false, // ← default OFF
             placeholder = 'Drag & drop or click to browse',
             hint,
+            showCaption = true,
             variant = 'default',
             avatarSize = 112,
             avatarFallback,
+            dropzoneVisibility = 'always',
+            compactCards = false,
             className,
             classNames = {},
             error,
@@ -1257,7 +1272,11 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
             />
         ) : null;
 
-        const DropZoneEl = canAddMore && (
+        const showLargeDropzone =
+            canAddMore &&
+            !(dropzoneVisibility === 'empty' && totalFiles > 0);
+
+        const DropZoneEl = showLargeDropzone && (
             <div
                 role="button"
                 tabIndex={disabled ? -1 : 0}
@@ -1378,6 +1397,56 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                 />
             ) : null;
 
+        const AddTileEl =
+            dropzoneVisibility === 'empty' &&
+            canAddMore &&
+            totalFiles > 0 &&
+            !isAvatar ? (
+                <div
+                    role="button"
+                    tabIndex={disabled ? -1 : 0}
+                    aria-label="Add more files"
+                    onDragOver={handleDragOver}
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onKeyDown={(e) => {
+                        if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+                            e.preventDefault();
+                            inputRef.current?.click();
+                        }
+                    }}
+                    className={cn(
+                        'relative flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed transition-colors select-none',
+                        'hover:border-primary hover:bg-primary/5',
+                        isDragging
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border',
+                        disabled &&
+                            'pointer-events-none cursor-not-allowed opacity-50',
+                        mergedClassNames.addTile,
+                    )}
+                >
+                    <input
+                        ref={inputRef}
+                        type="file"
+                        multiple={multiple}
+                        accept={accept}
+                        disabled={disabled}
+                        onChange={handleChange}
+                        className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                        aria-label="Add files"
+                    />
+                    <Plus
+                        className="text-muted-foreground size-5"
+                        aria-hidden="true"
+                    />
+                    <span className="text-muted-foreground text-[11px] font-medium">
+                        Add
+                    </span>
+                </div>
+            ) : null;
+
         const showAggregateRow = isUploading && !hasPerFile && totalFiles > 0;
         const AggregateRow = showAggregateRow && (
             <AggregateProgressRow
@@ -1454,7 +1523,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 preview={f.url}
                                 type={ft}
                                 mime={f.mime_type}
-                                compact={isAvatar}
+                                compact={isAvatar || compactCards}
                                 fixedSize={isAvatar ? avatarSize : undefined}
                                 onRemove={
                                     !isAvatar &&
@@ -1486,7 +1555,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 </Button>
                             ) : null}
                         </div>
-                        {isAvatar ? (
+                        {isAvatar && showCaption ? (
                             <AvatarUploadCaption
                                 title={placeholder}
                                 description={
@@ -1551,7 +1620,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 preview={p.preview}
                                 type={p.type}
                                 mime={p.file.type}
-                                compact={isAvatar}
+                                compact={isAvatar || compactCards}
                                 fixedSize={isAvatar ? avatarSize : undefined}
                                 onRemove={
                                     !isAvatar && !isUploading
@@ -1584,7 +1653,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 </Button>
                             ) : null}
                         </div>
-                        {isAvatar ? (
+                        {isAvatar && showCaption ? (
                             <AvatarUploadCaption
                                 title={placeholder}
                                 description={
@@ -1623,7 +1692,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
             >
                 {LightboxEl}
 
-                {isAvatar ? (
+                {isAvatar && showCaption ? (
                     <div className="flex flex-wrap items-start gap-4">
                         {DropZoneEl}
                         <AvatarUploadCaption
@@ -1666,6 +1735,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                     preview={f.url}
                                     type={ft}
                                     mime={f.mime_type}
+                                    compact={compactCards}
                                     onRemove={
                                         onRemoveExisting && !isUploading
                                             ? () => onRemoveExisting(f.id)
@@ -1695,6 +1765,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                     preview={p.preview}
                                     type={p.type}
                                     mime={p.file.type}
+                                    compact={compactCards}
                                     onRemove={
                                         !isUploading
                                             ? () => handleRemoveNew(idx)
@@ -1712,6 +1783,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 />
                             );
                         })}
+                        {AddTileEl}
                     </div>
                 )}
 

@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\Platform\ActivityLogController as PlatformActivityLogController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
+use App\Http\Controllers\Platform\BranchDriverController as PlatformBranchDriverController;
 use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInventoryController;
 use App\Http\Controllers\Platform\BranchScopedStaffController as PlatformBranchScopedStaffController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
 use App\Http\Controllers\Platform\CategoryController as PlatformCategoryController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
+use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
@@ -60,6 +62,41 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->parameters(['staff' => 'user'])
             ->names('platform.branches.staff')
             ->middlewareFor(['store', 'update'], 'precognitive');
+    });
+
+    Route::middleware(['permission:manage-drivers'])->group(function () {
+        Route::resource('drivers', PlatformDriverController::class)
+            ->parameters(['drivers' => 'user'])
+            ->names('platform.drivers')
+            ->middlewareFor(['store', 'update'], 'precognitive');
+
+        Route::get('drivers-branch-options', [PlatformDriverController::class, 'branchOptions'])
+            ->name('platform.drivers.branch-options');
+        Route::put('drivers/{user}/branches', [PlatformDriverController::class, 'syncBranches'])
+            ->name('platform.drivers.branches.sync');
+        Route::post('drivers/{user}/rosters', [PlatformDriverController::class, 'storeRoster'])
+            ->name('platform.drivers.rosters.store');
+        Route::put('drivers/{user}/rosters/{roster}', [PlatformDriverController::class, 'updateRoster'])
+            ->name('platform.drivers.rosters.update');
+        Route::delete('drivers/{user}/rosters/{roster}', [PlatformDriverController::class, 'destroyRoster'])
+            ->name('platform.drivers.rosters.destroy');
+
+        Route::get('branches/{branch}/drivers', [PlatformBranchDriverController::class, 'index'])
+            ->name('platform.branches.drivers.index');
+        Route::get('branches/{branch}/drivers/create', [PlatformBranchDriverController::class, 'create'])
+            ->name('platform.branches.drivers.create');
+        Route::post('branches/{branch}/drivers', [PlatformBranchDriverController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.branches.drivers.store');
+        Route::post('branches/{branch}/drivers/assign', [PlatformBranchDriverController::class, 'assign'])
+            ->name('platform.branches.drivers.assign');
+        Route::get('branches/{branch}/drivers/{user}', [PlatformBranchDriverController::class, 'show'])
+            ->name('platform.branches.drivers.show');
+        Route::get('branches/{branch}/drivers/{user}/edit', [PlatformBranchDriverController::class, 'edit'])
+            ->name('platform.branches.drivers.edit');
+        Route::put('branches/{branch}/drivers/{user}', [PlatformBranchDriverController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.branches.drivers.update');
     });
 
     Route::middleware(['permission:create-branches'])->group(function () {

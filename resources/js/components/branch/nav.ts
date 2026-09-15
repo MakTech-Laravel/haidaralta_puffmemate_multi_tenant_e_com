@@ -5,6 +5,7 @@ import {
     ScrollText,
     Shield,
     Tags,
+    Truck,
     Users,
 } from 'lucide-react';
 import { navGroup, navLink } from '@/components/navigation/nav-builders';
@@ -61,6 +62,12 @@ export function buildBranchNav(slug: string): NavNode[] {
             href: `/branch/${slug}/staff`,
             icon: Users,
             permissions: ['manage-branch-staff'],
+        }),
+        navLink({
+            title: 'Drivers',
+            href: `/branch/${slug}/drivers`,
+            icon: Truck,
+            permissions: ['manage-branch-drivers'],
         }),
     ];
 }

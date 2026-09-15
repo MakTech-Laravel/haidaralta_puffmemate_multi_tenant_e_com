@@ -6,6 +6,7 @@ import ProductController from '@/actions/App/Http/Controllers/Platform/ProductCo
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import { ColorPicker } from '@/components/color-picker';
+import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ import {
     colorPickerStyle,
     isTransparentColorPickerValue,
     normalizeCatalogColorPickerValue,
+    catalogFormColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
 import { cn } from '@/lib/utils';
@@ -203,7 +205,10 @@ export function ProductForm({
         gallery: [] as File[],
         remove_image: false,
         remove_gallery_ids: [] as number[],
-        color_code: normalizeCatalogColorPickerValue(defaults?.color_code),
+        color_code: catalogFormColorPickerValue(
+            defaults?.color_code,
+            isEdit,
+        ),
         status: defaults?.status ?? true,
         ...(branchOpsFields
             ? {
@@ -403,8 +408,7 @@ export function ProductForm({
                 </Alert>
             ) : null}
 
-            <div className="space-y-6">
-            <div className="grid items-start gap-6 xl:grid-cols-2">
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]">
                 <section
                     className={cn(
                         'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
@@ -761,183 +765,195 @@ export function ProductForm({
                     </div>
                 </section>
 
-                <section
-                    className={cn(
-                        'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
-                        'sm:p-6',
-                    )}
-                >
-                    <div className="mb-5 space-y-1">
-                        <h2 className="text-base font-semibold tracking-tight">
-                            Media
-                        </h2>
-                        <p className="text-muted-foreground text-sm">
-                            {showGallery
-                                ? 'Set a primary image for listings, then add gallery shots for the product page.'
-                                : 'Set a primary image for listings. Gallery images can be added from the platform catalog.'}
-                        </p>
-                    </div>
+                <aside className="flex min-w-0 flex-col xl:row-span-2">
+                    <section
+                        className={cn(
+                            'rounded-2xl border border-border/80 bg-card p-4 shadow-sm',
+                            'sm:p-5',
+                        )}
+                    >
+                        <div className="mb-3 space-y-0.5">
+                            <h2 className="text-base font-semibold tracking-tight">
+                                Media
+                            </h2>
+                            <p className="text-muted-foreground text-xs">
+                                Listing photo, background, and gallery thumbs
+                            </p>
+                        </div>
 
-                    <div className="space-y-5">
-                        <div className="grid gap-4 sm:grid-cols-2 sm:items-stretch">
-                            <ColorPicker
-                                mode="dialog"
-                                enabledModes={[...CATALOG_COLOR_PICKER_MODES]}
-                                defaultMode="transparent"
-                                value={data.color_code}
-                                onChange={(color_code) =>
-                                    setData('color_code', color_code)
+                    <div className="space-y-4">
+                        <div className="overflow-hidden rounded-xl border border-border/80">
+                            <div
+                                className={cn(
+                                    'aspect-square p-3',
+                                    imageTileTransparent &&
+                                        cn(
+                                            'bg-muted/25',
+                                            COLOR_PICKER_CHECKERBOARD,
+                                        ),
+                                )}
+                                style={
+                                    imageTileTransparent
+                                        ? undefined
+                                        : imageTileStyle
                                 }
-                                label="Image background"
-                                description="Soft fill behind product imagery"
-                                dialogTitle="Image background"
-                                dialogDescription="Choose none, a solid fill, or a two-tone gradient for catalog imagery."
-                                classNames={{
-                                    wrapper: 'h-full',
-                                    shell: 'h-full',
-                                    trigger: 'h-full',
-                                }}
-                                error={
-                                    errors.color_code ??
-                                    errors['color_code.mode'] ??
-                                    errors['color_code.color'] ??
-                                    errors['color_code.from'] ??
-                                    errors['color_code.to']
-                                }
-                            />
-
-                            <div className="border-border/80 bg-card/60 flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border shadow-sm">
-                                <div className="border-border/60 shrink-0 border-b px-4 py-3">
-                                    <Label className="text-sm font-semibold">
-                                        Primary image
-                                    </Label>
-                                    <p className="text-muted-foreground text-xs">
-                                        Shown on product cards · Max 2MB
-                                    </p>
-                                </div>
-
-                                <div
-                                    className={cn(
-                                        'flex min-h-0 flex-1 flex-col p-3.5',
-                                        imageTileTransparent && 'bg-muted/20',
-                                    )}
-                                    style={
-                                        imageTileTransparent
-                                            ? undefined
-                                            : imageTileStyle
+                            >
+                                <FileUpload
+                                    value={data.image}
+                                    onChange={(file) => {
+                                        const next = Array.isArray(file)
+                                            ? (file[0] ?? null)
+                                            : file;
+                                        setExistingPrimary([]);
+                                        setData((current) => ({
+                                            ...current,
+                                            image: next,
+                                            remove_image: next
+                                                ? false
+                                                : current.remove_image,
+                                        }));
+                                    }}
+                                    existingFiles={
+                                        data.image || data.remove_image
+                                            ? []
+                                            : existingPrimary
                                     }
-                                >
-                                    <FileUpload
-                                        value={data.image}
-                                        onChange={(file) => {
-                                            const next = Array.isArray(file)
-                                                ? (file[0] ?? null)
-                                                : file;
-                                            setExistingPrimary([]);
-                                            setData((current) => ({
-                                                ...current,
-                                                image: next,
-                                                remove_image: next
-                                                    ? false
-                                                    : current.remove_image,
-                                            }));
-                                        }}
-                                        existingFiles={
-                                            data.image || data.remove_image
-                                                ? []
-                                                : existingPrimary
-                                        }
-                                        onRemoveExisting={() => {
-                                            setExistingPrimary([]);
-                                            setData((current) => ({
-                                                ...current,
-                                                image: null,
-                                                remove_image: true,
-                                            }));
-                                        }}
-                                        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
-                                        maxSize={2}
-                                        lightbox
-                                        isUploading={processing}
-                                        uploadProgress={
-                                            progress?.percentage ?? null
-                                        }
-                                        onCancel={
-                                            processing ? cancel : undefined
-                                        }
-                                        placeholder="Drop image or click to browse"
-                                        hint="PNG, JPG, SVG, or WebP"
-                                        classNames={{
-                                            wrapper:
-                                                'flex h-full min-h-0 w-full flex-1 flex-col',
-                                            dropzone:
-                                                'flex h-full min-h-[8.5rem] w-full flex-1 border-border/70 bg-background/80 px-4 py-5 backdrop-blur-sm',
-                                            dropzoneContent: 'gap-1',
-                                            card: 'w-full overflow-hidden border-border/70 bg-background/90 shadow-xs backdrop-blur-sm',
-                                            cardMedia:
-                                                'aspect-video max-h-40 bg-muted/20 [&_img]:object-contain',
-                                            cardInfo: '[&_p]:truncate',
-                                        }}
-                                        error={errors.image}
-                                    />
-                                </div>
+                                    onRemoveExisting={() => {
+                                        setExistingPrimary([]);
+                                        setData((current) => ({
+                                            ...current,
+                                            image: null,
+                                            remove_image: true,
+                                        }));
+                                    }}
+                                    accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
+                                    maxSize={2}
+                                    lightbox
+                                    isUploading={processing}
+                                    uploadProgress={
+                                        progress?.percentage ?? null
+                                    }
+                                    onCancel={
+                                        processing ? cancel : undefined
+                                    }
+                                    placeholder="Drop or click"
+                                    hint="PNG, JPG, SVG, or WebP · Max 2MB"
+                                    compactCards
+                                    classNames={{
+                                        wrapper:
+                                            'flex h-full min-h-0 w-full flex-col',
+                                        dropzone:
+                                            'h-full min-h-0 border-dashed border-border/60 bg-background/75 px-3 py-6',
+                                        dropzoneContent: 'gap-1',
+                                        card: 'h-full overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
+                                        cardMedia: 'h-full bg-transparent',
+                                        cardImage:
+                                            '!h-auto !w-auto max-h-full max-w-full object-contain object-center',
+                                    }}
+                                    error={errors.image}
+                                />
+                            </div>
+
+                            <div className="border-border/60 bg-card flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2">
+                                <p className="text-sm font-medium">
+                                    Background
+                                </p>
+                                <ColorPicker
+                                    mode="dialog"
+                                    triggerVariant="button"
+                                    enabledModes={[
+                                        ...CATALOG_COLOR_PICKER_MODES,
+                                    ]}
+                                    defaultMode="solid"
+                                    value={data.color_code}
+                                    onChange={(color_code) =>
+                                        setData('color_code', color_code)
+                                    }
+                                    label="Image background"
+                                    description="Fill behind product imagery"
+                                    dialogTitle="Image background"
+                                    dialogDescription="Solid red is the default. Switch to none or a two-tone gradient if needed."
+                                    error={
+                                        errors.color_code ??
+                                        errors['color_code.mode'] ??
+                                        errors['color_code.color'] ??
+                                        errors['color_code.from'] ??
+                                        errors['color_code.to']
+                                    }
+                                />
                             </div>
                         </div>
 
                         {showGallery ? (
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between gap-3">
-                                <Label>Image gallery</Label>
-                                <span className="text-muted-foreground text-xs">
-                                    Up to 12 images
-                                </span>
-                            </div>
-                            <FileUpload
-                                multiple
-                                value={data.gallery}
-                                onChange={(files) => {
-                                    const next = Array.isArray(files)
-                                        ? files
-                                        : files
-                                          ? [files]
-                                          : [];
-                                    setData('gallery', next);
-                                }}
-                                existingFiles={existingGallery}
-                                onRemoveExisting={(id) => {
-                                    const numericId = Number(id);
-                                    setExistingGallery((current) =>
-                                        current.filter(
-                                            (file) => file.id !== id,
-                                        ),
-                                    );
-                                    setRemoveGalleryIds((current) => {
-                                        const next = current.includes(numericId)
-                                            ? current
-                                            : [...current, numericId];
-                                        setData('remove_gallery_ids', next);
-                                        return next;
-                                    });
-                                }}
-                                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
-                                maxSize={2}
-                                maxFiles={12}
-                                lightbox
-                                isUploading={processing}
-                                uploadProgress={progress?.percentage ?? null}
-                                onCancel={processing ? cancel : undefined}
-                                placeholder="Drop gallery images here"
-                                hint="PNG, JPG, SVG, or WebP · up to 12 images"
-                                classNames={{
-                                    dropzone: 'py-6',
-                                    grid: 'max-h-48 overflow-y-auto pr-1',
-                                }}
-                                error={
-                                    errors.gallery ??
-                                    errors['gallery.0'] ??
-                                    errors['gallery.1']
-                                }
-                            />
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-3">
+                                    <Label>Gallery</Label>
+                                    <span className="text-muted-foreground text-xs">
+                                        {existingGallery.length +
+                                            data.gallery.length}
+                                        /12
+                                    </span>
+                                </div>
+                                <FileUpload
+                                    multiple
+                                    dropzoneVisibility="empty"
+                                    compactCards
+                                    value={data.gallery}
+                                    onChange={(files) => {
+                                        const next = Array.isArray(files)
+                                            ? files
+                                            : files
+                                              ? [files]
+                                              : [];
+                                        setData('gallery', next);
+                                    }}
+                                    existingFiles={existingGallery}
+                                    onRemoveExisting={(id) => {
+                                        const numericId = Number(id);
+                                        setExistingGallery((current) =>
+                                            current.filter(
+                                                (file) => file.id !== id,
+                                            ),
+                                        );
+                                        setRemoveGalleryIds((current) => {
+                                            const next = current.includes(
+                                                numericId,
+                                            )
+                                                ? current
+                                                : [...current, numericId];
+                                            setData(
+                                                'remove_gallery_ids',
+                                                next,
+                                            );
+                                            return next;
+                                        });
+                                    }}
+                                    accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
+                                    maxSize={2}
+                                    maxFiles={12}
+                                    lightbox
+                                    isUploading={processing}
+                                    uploadProgress={
+                                        progress?.percentage ?? null
+                                    }
+                                    onCancel={
+                                        processing ? cancel : undefined
+                                    }
+                                    placeholder="Add gallery images"
+                                    hint="Up to 12 · PNG, JPG, SVG, or WebP"
+                                    classNames={{
+                                        dropzone: 'py-5',
+                                        grid: 'grid-cols-3 gap-2 sm:grid-cols-3 lg:grid-cols-3',
+                                        card: 'aspect-square overflow-hidden',
+                                        cardMedia: 'h-full bg-muted/20',
+                                        cardImage: 'object-contain p-1',
+                                    }}
+                                    error={
+                                        errors.gallery ??
+                                        errors['gallery.0'] ??
+                                        errors['gallery.1']
+                                    }
+                                />
                             <InputError
                                 message={
                                     errors.gallery ??
@@ -955,8 +971,8 @@ export function ProductForm({
                         </div>
                         ) : null}
                     </div>
-                </section>
-            </div>
+                    </section>
+                </aside>
 
             <section
                 className={cn(
