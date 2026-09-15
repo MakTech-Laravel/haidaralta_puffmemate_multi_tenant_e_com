@@ -408,8 +408,7 @@ export function ProductForm({
                 </Alert>
             ) : null}
 
-            <div className="space-y-6">
-            <div className="grid items-start gap-6 xl:grid-cols-2">
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]">
                 <section
                     className={cn(
                         'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
@@ -766,28 +765,27 @@ export function ProductForm({
                     </div>
                 </section>
 
-                <section
-                    className={cn(
-                        'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
-                        'sm:p-6',
-                    )}
-                >
-                    <div className="mb-5 space-y-1">
-                        <h2 className="text-base font-semibold tracking-tight">
-                            Listing preview
-                        </h2>
-                        <p className="text-muted-foreground text-sm">
-                            {showGallery
-                                ? 'Primary photo on the image background, then extra gallery shots for the product page.'
-                                : 'Primary photo on the image background. Gallery images can be added from the platform catalog.'}
-                        </p>
-                    </div>
+                <aside className="flex min-w-0 flex-col xl:row-span-2">
+                    <section
+                        className={cn(
+                            'rounded-2xl border border-border/80 bg-card p-4 shadow-sm',
+                            'sm:p-5',
+                        )}
+                    >
+                        <div className="mb-3 space-y-0.5">
+                            <h2 className="text-base font-semibold tracking-tight">
+                                Media
+                            </h2>
+                            <p className="text-muted-foreground text-xs">
+                                Listing photo, background, and gallery thumbs
+                            </p>
+                        </div>
 
-                    <div className="space-y-5">
-                        <div className="border-border/80 flex flex-col overflow-hidden rounded-2xl border shadow-sm">
+                    <div className="space-y-4">
+                        <div className="overflow-hidden rounded-xl border border-border/80">
                             <div
                                 className={cn(
-                                    'flex min-h-72 flex-col p-4 sm:min-h-96',
+                                    'aspect-square p-3',
                                     imageTileTransparent &&
                                         cn(
                                             'bg-muted/25',
@@ -838,37 +836,28 @@ export function ProductForm({
                                     onCancel={
                                         processing ? cancel : undefined
                                     }
-                                    placeholder="Drop primary image or click to browse"
+                                    placeholder="Drop or click"
                                     hint="PNG, JPG, SVG, or WebP · Max 2MB"
+                                    compactCards
                                     classNames={{
                                         wrapper:
-                                            'flex h-full min-h-0 w-full flex-1 flex-col',
+                                            'flex h-full min-h-0 w-full flex-col',
                                         dropzone:
-                                            'flex h-full min-h-[11rem] w-full flex-1 border-dashed border-border/60 bg-background/75 px-4 py-8 backdrop-blur-sm',
-                                        dropzoneContent: 'gap-1.5',
-                                        card: 'flex h-full w-full flex-col overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
-                                        cardMedia:
-                                            'aspect-auto min-h-[12rem] flex-1 bg-transparent',
+                                            'h-full min-h-0 border-dashed border-border/60 bg-background/75 px-3 py-6',
+                                        dropzoneContent: 'gap-1',
+                                        card: 'h-full overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
+                                        cardMedia: 'h-full bg-transparent',
                                         cardImage:
-                                            'mx-auto !h-auto !w-auto max-h-80 max-w-full object-contain object-center sm:max-h-96',
-                                        cardInfo:
-                                            'border-border/50 border-t bg-background/70',
+                                            '!h-auto !w-auto max-h-full max-w-full object-contain object-center',
                                     }}
                                     error={errors.image}
                                 />
                             </div>
 
-                            <div className="border-border/60 bg-card flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
-                                <div className="min-w-0 space-y-0.5">
-                                    <p className="text-sm font-medium">
-                                        Image background
-                                    </p>
-                                    <p className="text-muted-foreground text-xs">
-                                        {isEdit
-                                            ? 'Fill behind the listing photo'
-                                            : 'Solid red by default — change if you need none or a gradient'}
-                                    </p>
-                                </div>
+                            <div className="border-border/60 bg-card flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2">
+                                <p className="text-sm font-medium">
+                                    Background
+                                </p>
                                 <ColorPicker
                                     mode="dialog"
                                     triggerVariant="button"
@@ -896,16 +885,20 @@ export function ProductForm({
                         </div>
 
                         {showGallery ? (
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between gap-3">
-                                <Label>Image gallery</Label>
-                                <span className="text-muted-foreground text-xs">
-                                    Up to 12 images
-                                </span>
-                            </div>
-                            <FileUpload
-                                multiple
-                                value={data.gallery}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-3">
+                                    <Label>Gallery</Label>
+                                    <span className="text-muted-foreground text-xs">
+                                        {existingGallery.length +
+                                            data.gallery.length}
+                                        /12
+                                    </span>
+                                </div>
+                                <FileUpload
+                                    multiple
+                                    dropzoneVisibility="empty"
+                                    compactCards
+                                    value={data.gallery}
                                 onChange={(files) => {
                                     const next = Array.isArray(files)
                                         ? files
@@ -937,12 +930,15 @@ export function ProductForm({
                                 isUploading={processing}
                                 uploadProgress={progress?.percentage ?? null}
                                 onCancel={processing ? cancel : undefined}
-                                placeholder="Drop gallery images here"
-                                hint="PNG, JPG, SVG, or WebP · up to 12 images"
-                                classNames={{
-                                    dropzone: 'py-6',
-                                    grid: 'max-h-48 overflow-y-auto pr-1',
-                                }}
+                                    placeholder="Add gallery images"
+                                    hint="Up to 12 · PNG, JPG, SVG, or WebP"
+                                    classNames={{
+                                        dropzone: 'py-5',
+                                        grid: 'grid-cols-3 gap-2',
+                                        card: 'aspect-square overflow-hidden',
+                                        cardMedia: 'h-full bg-muted/20',
+                                        cardImage: 'object-contain p-1',
+                                    }}
                                 error={
                                     errors.gallery ??
                                     errors['gallery.0'] ??
@@ -966,8 +962,8 @@ export function ProductForm({
                         </div>
                         ) : null}
                     </div>
-                </section>
-            </div>
+                    </section>
+                </aside>
 
             <section
                 className={cn(
