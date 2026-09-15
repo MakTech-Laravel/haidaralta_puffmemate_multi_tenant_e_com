@@ -81,6 +81,13 @@ export const DEFAULT_SOLID_QUICK_SELECT: readonly SolidQuickSelectOption[] = [
     { label: 'Deep red', color: '#991B1B' },
 ] as const;
 
+/** Product create form default — matches the ColorPicker “Red” quick select. */
+export const DEFAULT_CATALOG_SOLID_COLOR = '#EF4444';
+
+export function defaultCatalogColorPickerValue(): ColorPickerValue {
+    return { mode: 'solid', color: DEFAULT_CATALOG_SOLID_COLOR };
+}
+
 export const DEFAULT_GRADIENT_QUICK_SELECT: readonly GradientQuickSelectOption[] =
     [
         {
@@ -342,7 +349,10 @@ export const CATALOG_COLOR_PICKER_MODES: readonly ColorPickerMode[] = [
     'gradient',
 ] as const;
 
-/** Catalog forms: transparent default, no radial. */
+/**
+ * Display / stored values: empty → transparent (do not invent a fill).
+ * Product *create* uses defaultCatalogColorPickerValue() instead.
+ */
 export function normalizeCatalogColorPickerValue(
     value?: ColorPickerValue | null,
 ): ColorPickerValue {
@@ -350,6 +360,17 @@ export function normalizeCatalogColorPickerValue(
         enabledModes: [...CATALOG_COLOR_PICKER_MODES],
         defaultMode: 'transparent',
     });
+}
+
+export function productFormColorPickerValue(
+    stored?: ColorPickerValue | null,
+    isEdit = false,
+): ColorPickerValue {
+    if (isEdit || stored) {
+        return normalizeCatalogColorPickerValue(stored);
+    }
+
+    return defaultCatalogColorPickerValue();
 }
 
 export function isLightHex(hex: string): boolean {

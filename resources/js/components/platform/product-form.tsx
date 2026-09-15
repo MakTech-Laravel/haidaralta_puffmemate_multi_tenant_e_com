@@ -6,6 +6,7 @@ import ProductController from '@/actions/App/Http/Controllers/Platform/ProductCo
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import { ColorPicker } from '@/components/color-picker';
+import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ import {
     colorPickerStyle,
     isTransparentColorPickerValue,
     normalizeCatalogColorPickerValue,
+    productFormColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
 import { cn } from '@/lib/utils';
@@ -203,7 +205,10 @@ export function ProductForm({
         gallery: [] as File[],
         remove_image: false,
         remove_gallery_ids: [] as number[],
-        color_code: normalizeCatalogColorPickerValue(defaults?.color_code),
+        color_code: productFormColorPickerValue(
+            defaults?.color_code,
+            isEdit,
+        ),
         status: defaults?.status ?? true,
         ...(branchOpsFields
             ? {
@@ -769,118 +774,124 @@ export function ProductForm({
                 >
                     <div className="mb-5 space-y-1">
                         <h2 className="text-base font-semibold tracking-tight">
-                            Media
+                            Listing preview
                         </h2>
                         <p className="text-muted-foreground text-sm">
                             {showGallery
-                                ? 'Set a primary image for listings, then add gallery shots for the product page.'
-                                : 'Set a primary image for listings. Gallery images can be added from the platform catalog.'}
+                                ? 'Primary photo on the image background, then extra gallery shots for the product page.'
+                                : 'Primary photo on the image background. Gallery images can be added from the platform catalog.'}
                         </p>
                     </div>
 
                     <div className="space-y-5">
-                        <div className="grid gap-4 sm:grid-cols-2 sm:items-stretch">
-                            <ColorPicker
-                                mode="dialog"
-                                enabledModes={[...CATALOG_COLOR_PICKER_MODES]}
-                                defaultMode="transparent"
-                                value={data.color_code}
-                                onChange={(color_code) =>
-                                    setData('color_code', color_code)
+                        <div className="border-border/80 flex flex-col overflow-hidden rounded-2xl border shadow-sm">
+                            <div
+                                className={cn(
+                                    'flex min-h-72 flex-col p-4 sm:min-h-96',
+                                    imageTileTransparent &&
+                                        cn(
+                                            'bg-muted/25',
+                                            COLOR_PICKER_CHECKERBOARD,
+                                        ),
+                                )}
+                                style={
+                                    imageTileTransparent
+                                        ? undefined
+                                        : imageTileStyle
                                 }
-                                label="Image background"
-                                description="Soft fill behind product imagery"
-                                dialogTitle="Image background"
-                                dialogDescription="Choose none, a solid fill, or a two-tone gradient for catalog imagery."
-                                classNames={{
-                                    wrapper: 'h-full',
-                                    shell: 'h-full',
-                                    trigger: 'h-full',
-                                }}
-                                error={
-                                    errors.color_code ??
-                                    errors['color_code.mode'] ??
-                                    errors['color_code.color'] ??
-                                    errors['color_code.from'] ??
-                                    errors['color_code.to']
-                                }
-                            />
+                            >
+                                <FileUpload
+                                    value={data.image}
+                                    onChange={(file) => {
+                                        const next = Array.isArray(file)
+                                            ? (file[0] ?? null)
+                                            : file;
+                                        setExistingPrimary([]);
+                                        setData((current) => ({
+                                            ...current,
+                                            image: next,
+                                            remove_image: next
+                                                ? false
+                                                : current.remove_image,
+                                        }));
+                                    }}
+                                    existingFiles={
+                                        data.image || data.remove_image
+                                            ? []
+                                            : existingPrimary
+                                    }
+                                    onRemoveExisting={() => {
+                                        setExistingPrimary([]);
+                                        setData((current) => ({
+                                            ...current,
+                                            image: null,
+                                            remove_image: true,
+                                        }));
+                                    }}
+                                    accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
+                                    maxSize={2}
+                                    lightbox
+                                    isUploading={processing}
+                                    uploadProgress={
+                                        progress?.percentage ?? null
+                                    }
+                                    onCancel={
+                                        processing ? cancel : undefined
+                                    }
+                                    placeholder="Drop primary image or click to browse"
+                                    hint="PNG, JPG, SVG, or WebP · Max 2MB"
+                                    classNames={{
+                                        wrapper:
+                                            'flex h-full min-h-0 w-full flex-1 flex-col',
+                                        dropzone:
+                                            'flex h-full min-h-[11rem] w-full flex-1 border-dashed border-border/60 bg-background/75 px-4 py-8 backdrop-blur-sm',
+                                        dropzoneContent: 'gap-1.5',
+                                        card: 'flex h-full w-full flex-col overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
+                                        cardMedia:
+                                            'aspect-auto min-h-[12rem] flex-1 bg-transparent',
+                                        cardImage:
+                                            'mx-auto !h-auto !w-auto max-h-80 max-w-full object-contain object-center sm:max-h-96',
+                                        cardInfo:
+                                            'border-border/50 border-t bg-background/70',
+                                    }}
+                                    error={errors.image}
+                                />
+                            </div>
 
-                            <div className="border-border/80 bg-card/60 flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border shadow-sm">
-                                <div className="border-border/60 shrink-0 border-b px-4 py-3">
-                                    <Label className="text-sm font-semibold">
-                                        Primary image
-                                    </Label>
+                            <div className="border-border/60 bg-card flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
+                                <div className="min-w-0 space-y-0.5">
+                                    <p className="text-sm font-medium">
+                                        Image background
+                                    </p>
                                     <p className="text-muted-foreground text-xs">
-                                        Shown on product cards · Max 2MB
+                                        {isEdit
+                                            ? 'Fill behind the listing photo'
+                                            : 'Solid red by default — change if you need none or a gradient'}
                                     </p>
                                 </div>
-
-                                <div
-                                    className={cn(
-                                        'flex min-h-0 flex-1 flex-col p-3.5',
-                                        imageTileTransparent && 'bg-muted/20',
-                                    )}
-                                    style={
-                                        imageTileTransparent
-                                            ? undefined
-                                            : imageTileStyle
+                                <ColorPicker
+                                    mode="dialog"
+                                    triggerVariant="button"
+                                    enabledModes={[
+                                        ...CATALOG_COLOR_PICKER_MODES,
+                                    ]}
+                                    defaultMode="solid"
+                                    value={data.color_code}
+                                    onChange={(color_code) =>
+                                        setData('color_code', color_code)
                                     }
-                                >
-                                    <FileUpload
-                                        value={data.image}
-                                        onChange={(file) => {
-                                            const next = Array.isArray(file)
-                                                ? (file[0] ?? null)
-                                                : file;
-                                            setExistingPrimary([]);
-                                            setData((current) => ({
-                                                ...current,
-                                                image: next,
-                                                remove_image: next
-                                                    ? false
-                                                    : current.remove_image,
-                                            }));
-                                        }}
-                                        existingFiles={
-                                            data.image || data.remove_image
-                                                ? []
-                                                : existingPrimary
-                                        }
-                                        onRemoveExisting={() => {
-                                            setExistingPrimary([]);
-                                            setData((current) => ({
-                                                ...current,
-                                                image: null,
-                                                remove_image: true,
-                                            }));
-                                        }}
-                                        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
-                                        maxSize={2}
-                                        lightbox
-                                        isUploading={processing}
-                                        uploadProgress={
-                                            progress?.percentage ?? null
-                                        }
-                                        onCancel={
-                                            processing ? cancel : undefined
-                                        }
-                                        placeholder="Drop image or click to browse"
-                                        hint="PNG, JPG, SVG, or WebP"
-                                        classNames={{
-                                            wrapper:
-                                                'flex h-full min-h-0 w-full flex-1 flex-col',
-                                            dropzone:
-                                                'flex h-full min-h-[8.5rem] w-full flex-1 border-border/70 bg-background/80 px-4 py-5 backdrop-blur-sm',
-                                            dropzoneContent: 'gap-1',
-                                            card: 'w-full overflow-hidden border-border/70 bg-background/90 shadow-xs backdrop-blur-sm',
-                                            cardMedia:
-                                                'aspect-video max-h-40 bg-muted/20 [&_img]:object-contain',
-                                            cardInfo: '[&_p]:truncate',
-                                        }}
-                                        error={errors.image}
-                                    />
-                                </div>
+                                    label="Image background"
+                                    description="Fill behind product imagery"
+                                    dialogTitle="Image background"
+                                    dialogDescription="Solid red is the default. Switch to none or a two-tone gradient if needed."
+                                    error={
+                                        errors.color_code ??
+                                        errors['color_code.mode'] ??
+                                        errors['color_code.color'] ??
+                                        errors['color_code.from'] ??
+                                        errors['color_code.to']
+                                    }
+                                />
                             </div>
                         </div>
 
