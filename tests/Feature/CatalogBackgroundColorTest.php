@@ -121,6 +121,29 @@ test('platform can create a product with the catalog default solid red backgroun
     ]);
 });
 
+test('platform can create a category with the catalog default solid red background', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.categories.store'), [
+            'name' => 'Default Red Category',
+            'slug' => 'default-red-category',
+            'status' => true,
+            'color_code' => [
+                'mode' => 'solid',
+                'color' => '#EF4444',
+            ],
+        ])
+        ->assertRedirect(route('platform.categories.show', 'default-red-category'));
+
+    $category = Category::query()->where('slug', 'default-red-category')->firstOrFail();
+
+    expect($category->color_code)->toBe([
+        'mode' => 'solid',
+        'color' => '#EF4444',
+    ]);
+});
+
 test('solid color_code requires a hex color', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 

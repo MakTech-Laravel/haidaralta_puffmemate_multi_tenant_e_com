@@ -362,7 +362,7 @@ export function normalizeCatalogColorPickerValue(
     });
 }
 
-export function productFormColorPickerValue(
+export function catalogFormColorPickerValue(
     stored?: ColorPickerValue | null,
     isEdit = false,
 ): ColorPickerValue {

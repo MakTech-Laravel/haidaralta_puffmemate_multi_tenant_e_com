@@ -33,7 +33,7 @@ import {
     colorPickerStyle,
     isTransparentColorPickerValue,
     normalizeCatalogColorPickerValue,
-    productFormColorPickerValue,
+    catalogFormColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
 import { cn } from '@/lib/utils';
@@ -205,7 +205,7 @@ export function ProductForm({
         gallery: [] as File[],
         remove_image: false,
         remove_gallery_ids: [] as number[],
-        color_code: productFormColorPickerValue(
+        color_code: catalogFormColorPickerValue(
             defaults?.color_code,
             isEdit,
         ),

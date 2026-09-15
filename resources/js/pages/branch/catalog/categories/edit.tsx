@@ -71,7 +71,7 @@ export default function BranchCategoriesEdit({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${category.name}`}
-                    description="Update global category details and media"
+                    description="Update listing photo, image background, and catalog details"
                 />
 
                 {!category.status ? (
