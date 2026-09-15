@@ -15,10 +15,8 @@ export default function PlatformLayout({
         <PortalShellLayout
             portal="platform"
             breadcrumbs={breadcrumbs}
-            groupLabel="Command"
-            groupLabelClassName="text-[10px] tracking-[0.18em]"
             logoHref="/platform/dashboard"
-            nodes={platformNav}
+            sections={platformNav}
             sidebarVariant="sidebar"
             sidebarWidth="15rem"
             sidebarClassName="border-l-4 border-l-primary"
