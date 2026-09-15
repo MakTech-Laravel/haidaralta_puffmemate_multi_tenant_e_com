@@ -349,8 +349,11 @@ class DemoCatalog
             'badges' => [$product['category'], 'Popular'],
             'images' => [
                 $image,
+                '/images/storefront/product-marlboro-gold.jpg',
+                '/images/storefront/product-winfield-blue.jpg',
                 '/images/storefront/b4343f447a376e4db4da6328e10eddefc632ddeb.jpg',
                 '/images/storefront/907b72737ecd36dbee5ac6c27fa0b02b906a44ee.jpg',
+                '/images/storefront/category-vapes.png',
             ],
             'price' => '$14.50',
             'compareAtPrice' => '$15.50',

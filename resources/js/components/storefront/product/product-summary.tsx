@@ -53,7 +53,7 @@ export function ProductSummary({
                 ))}
             </div>
 
-            <div>
+            <div className="mt-5">
                 <h1 className="text-foreground text-3xl font-semibold sm:text-5xl font-inter">
                     {name}
                 </h1>
@@ -98,7 +98,7 @@ export function ProductSummary({
                 </span>
             </div>
 
-            <div className="border-primary/25 bg-accent/40 flex items-center justify-between gap-3 border px-4 py-3">
+            <div className="border-primary/25 bg-accent/40 flex items-center justify-between gap-3 border px-4 py-3 mt-5">
                 <div className="flex min-w-0 items-center gap-3">
                     <span className="bg-accent text-primary flex size-10 shrink-0 items-center justify-center rounded-full">
                         <MapPin
@@ -125,7 +125,7 @@ export function ProductSummary({
             </div>
 
             <div>
-                <h2 className="text-foreground text-base font-bold font-inter">
+                <h2 className="text-foreground text-base font-bold font-inter mt-10">
                     About this product
                 </h2>
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed font-normal font-inter">
@@ -167,7 +167,7 @@ export function ProductSummary({
                 </Button>
             </div>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-x-10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-x-10 mt-5">
                 <div className="flex items-start gap-2.5">
                     <Clock className="text-primary mt-0.5 size-4 shrink-0" />
                     <div>
