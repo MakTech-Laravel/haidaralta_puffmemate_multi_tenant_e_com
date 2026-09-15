@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { format, isValid, parseISO } from 'date-fns';
 import {
     Check,
@@ -134,6 +134,7 @@ export function CategoryProfile({
     parentHref?: string | null;
     childHref: (slug: string) => string;
 }) {
+    const { catalog } = usePage().props;
     const colorCode = normalizeCatalogColorPickerValue(category.color_code);
     const transparent = isTransparentColorPickerValue(colorCode);
     const children = category.children ?? [];
@@ -229,6 +230,7 @@ export function CategoryProfile({
                                     </span>
                                 }
                             />
+                            {catalog.show_parent_category ? (
                             <Fact
                                 label="Parent"
                                 value={
@@ -244,6 +246,7 @@ export function CategoryProfile({
                                     )
                                 }
                             />
+                            ) : null}
                             <Fact
                                 label="Nav order"
                                 value={
@@ -287,12 +290,14 @@ export function CategoryProfile({
                     value={String(category.products_count)}
                     hint="Assigned to this category"
                 />
+                {catalog.show_parent_category ? (
                 <DemoStatCard
                     icon={FolderTree}
                     label="Subcategories"
                     value={String(category.children_count)}
                     hint="Direct children"
                 />
+                ) : null}
                 <DemoStatCard
                     icon={ImageIcon}
                     label="Media"
@@ -306,6 +311,7 @@ export function CategoryProfile({
             </div>
 
             <div className="grid items-start gap-6 xl:grid-cols-2">
+                {catalog.show_parent_category ? (
                 <Card className="shadow-sm">
                     <CardHeader>
                         <CardTitle>Subcategories</CardTitle>
@@ -339,6 +345,7 @@ export function CategoryProfile({
                         )}
                     </CardContent>
                 </Card>
+                ) : null}
 
                 <Card className="shadow-sm">
                     <CardHeader>

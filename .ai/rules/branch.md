@@ -11,7 +11,7 @@ paths:
 # Catalog
 
 ## Soft-delete vs branch enablement
-Global catalog tables (categories, products, product_variants) are soft-deletable and only platform `manage-catalog` may delete/restore. Branches may **create and update** the same global category/product rows under `manage-branch-products`, but never destroy or restore them — they toggle `branch_products.status` for their own branch. Platform product create leaves all branches disabled; branch create enables only the creating branch. Stock/price mutations go through InventoryService / BranchPricingService scoped by `branch_id`.
+Global catalog tables (categories, products, product_variants) are soft-deletable and only platform `manage-catalog` may delete/restore. Branches may **update** the same global category/product rows under `manage-branch-products`, but never destroy or restore them — they toggle `branch_products.status` for their own branch. Branch **category create** is gated by `config('catalog.branch_can_create_categories')` (default false; abort 404 and hide Add category). Platform product create leaves all branches disabled; branch create enables only the creating branch. Stock/price mutations go through InventoryService / BranchPricingService scoped by `branch_id`.
 
 ## Primary image vs product_images gallery
 products.image is the primary listing image. product_images holds gallery photos (path + sort_order). Soft-deleting a product leaves gallery rows until cascade/hard cleanup; prefer deleting gallery files via ProductService when removing gallery ids.
@@ -21,3 +21,6 @@ Products↔categories are belongsToMany through category_product (not products.c
 
 ## Catalog color_code JSON background modes
 categories.color_code and products.color_code are nullable JSON: transparent | solid(+color) | gradient(+from,to,angle). Normalize via CatalogBackgroundColor (PHP) and ColorPicker / colorPickerStyle (TS). No radial persistence until enum extended. No new color npm package unless approved.
+
+## Catalog kill-switches live in config
+Category kill-switches (branch_can_create_categories, show_parent_category) live in config/catalog.php and are shared to Inertia as catalog. Controllers read config(); React reads usePage().props.catalog. Do not add CatalogFeatures or duplicate TS constants. Flip the config keys to restore hidden create/parent UI.

@@ -7,6 +7,7 @@ use App\Support\CatalogBackgroundColor;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class CategoryService
 {
@@ -116,5 +117,51 @@ class CategoryService
             'featured_count' => $featuredQuery->count(),
             'nav_count' => $navQuery->count(),
         ];
+    }
+
+    public function toggleStatus(Category $category): Category
+    {
+        return $this->update($category, ['status' => ! $category->status]);
+    }
+
+    public function toggleFeatured(Category $category): Category
+    {
+        if (! $category->featured) {
+            $limits = $this->limits($category->id);
+
+            if ($limits['featured_count'] >= $limits['featured_max']) {
+                throw ValidationException::withMessages([
+                    'featured' => "Only {$limits['featured_max']} categories can be featured at a time.",
+                ]);
+            }
+        }
+
+        return $this->update($category, ['featured' => ! $category->featured]);
+    }
+
+    public function toggleNav(Category $category): Category
+    {
+        if (! $category->show_in_nav) {
+            $limits = $this->limits($category->id);
+
+            if ($limits['nav_count'] >= $limits['nav_max']) {
+                throw ValidationException::withMessages([
+                    'show_in_nav' => "Only {$limits['nav_max']} categories can appear in the header navigation.",
+                ]);
+            }
+        }
+
+        return $this->update($category, ['show_in_nav' => ! $category->show_in_nav]);
+    }
+
+    public function updateNavSort(Category $category, int $navSort): Category
+    {
+        if (! $category->show_in_nav) {
+            throw ValidationException::withMessages([
+                'nav_sort' => 'Set the category as available on nav before choosing a position.',
+            ]);
+        }
+
+        return $this->update($category, ['nav_sort' => $navSort]);
     }
 }

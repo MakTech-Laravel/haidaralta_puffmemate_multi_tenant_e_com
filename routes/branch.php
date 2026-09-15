@@ -28,6 +28,14 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::put('categories/{category}', [BranchCategoryController::class, 'update'])
             ->middleware('precognitive')
             ->name('branch.categories.update');
+        Route::put('categories/{category}/status', [BranchCategoryController::class, 'toggleStatus'])
+            ->name('branch.categories.status');
+        Route::put('categories/{category}/featured', [BranchCategoryController::class, 'toggleFeatured'])
+            ->name('branch.categories.featured');
+        Route::put('categories/{category}/nav', [BranchCategoryController::class, 'toggleNav'])
+            ->name('branch.categories.nav');
+        Route::put('categories/{category}/nav-sort', [BranchCategoryController::class, 'updateNavSort'])
+            ->name('branch.categories.nav-sort');
 
         Route::get('products/suggestions', [BranchProductController::class, 'suggestions'])
             ->name('branch.products.suggestions');

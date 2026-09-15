@@ -1,7 +1,7 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, Pencil } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import {
     DataTable,
@@ -12,6 +12,8 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { categoryMerchandisingItems } from '@/components/platform/category-merchandising-actions';
+import { CategoryNavSortSheet } from '@/components/platform/category-nav-sort-sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -43,6 +45,7 @@ type CategoryRow = {
     status: boolean;
     featured: boolean;
     show_in_nav: boolean;
+    nav_sort: number | null;
     products_count: number;
 };
 
@@ -65,6 +68,10 @@ export default function BranchCategoriesIndex({
         filterOptions?: { parents?: ParentOption[] };
     };
 }) {
+    const { catalog } = usePage().props;
+    const [navSortCategory, setNavSortCategory] =
+        useState<CategoryRow | null>(null);
+
     setLayoutProps({
         breadcrumbs: [
             {
@@ -147,20 +154,25 @@ export default function BranchCategoriesIndex({
                     />
                 ),
             },
-            {
-                accessorKey: 'parent_name',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Parent"
-                        sortable
-                        sortKey="parent_name"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
-                ),
-                cell: ({ row }) => row.original.parent_name ?? '—',
-            },
+            ...(catalog.show_parent_category
+                ? [
+                      {
+                          accessorKey: 'parent_name',
+                          header: ({ column }) => (
+                              <DataTableColumnHeader
+                                  column={column}
+                                  title="Parent"
+                                  sortable
+                                  sortKey="parent_name"
+                                  currentSort={query.sort}
+                                  onSort={query.toggleSort}
+                              />
+                          ),
+                          cell: ({ row }) =>
+                              row.original.parent_name ?? '—',
+                      } satisfies ColumnDef<CategoryRow>,
+                  ]
+                : []),
             {
                 accessorKey: 'products_count',
                 header: ({ column }) => (
@@ -231,43 +243,78 @@ export default function BranchCategoriesIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <Badge
-                        variant={
-                            row.original.show_in_nav ? 'default' : 'secondary'
-                        }
-                    >
-                        {row.original.show_in_nav ? 'In nav' : 'Hidden'}
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge
+                            variant={
+                                row.original.show_in_nav
+                                    ? 'default'
+                                    : 'secondary'
+                            }
+                        >
+                            {row.original.show_in_nav ? 'In nav' : 'Hidden'}
+                        </Badge>
+                        {row.original.show_in_nav &&
+                        row.original.nav_sort !== null ? (
+                            <span className="text-muted-foreground text-xs">
+                                #{row.original.nav_sort}
+                            </span>
+                        ) : null}
+                    </div>
                 ),
             },
             {
                 id: 'actions',
                 header: 'Actions',
-                cell: ({ row }) => (
-                    <DataTableRowActions
-                        items={[
-                            {
-                                label: 'View',
-                                icon: Eye,
-                                href: CategoryController.show.url({
-                                    branch: branch.slug,
-                                    category: row.original.slug,
-                                }),
-                            },
-                            {
-                                label: 'Edit',
-                                icon: Pencil,
-                                href: CategoryController.edit.url({
-                                    branch: branch.slug,
-                                    category: row.original.slug,
-                                }),
-                            },
-                        ]}
-                    />
-                ),
+                cell: ({ row }) => {
+                    const category = row.original;
+                    const merchandising = categoryMerchandisingItems(
+                        category,
+                        {
+                            status: CategoryController.toggleStatus.url({
+                                branch: branch.slug,
+                                category: category.slug,
+                            }),
+                            featured: CategoryController.toggleFeatured.url({
+                                branch: branch.slug,
+                                category: category.slug,
+                            }),
+                            nav: CategoryController.toggleNav.url({
+                                branch: branch.slug,
+                                category: category.slug,
+                            }),
+                        },
+                        () => setNavSortCategory(category),
+                    );
+
+                    return (
+                        <DataTableRowActions
+                            contentClassName="w-56"
+                            items={[
+                                ...merchandising,
+                                {
+                                    label: 'View',
+                                    icon: Eye,
+                                    href: CategoryController.show.url({
+                                        branch: branch.slug,
+                                        category: category.slug,
+                                    }),
+                                    separatorBefore: merchandising.length > 0,
+                                },
+                                {
+                                    label: 'Edit',
+                                    icon: Pencil,
+                                    href: CategoryController.edit.url({
+                                        branch: branch.slug,
+                                        category: category.slug,
+                                    }),
+                                },
+                            ]}
+                        />
+                    );
+                },
             },
         ],
-        [branch.slug, query.sort, query.toggleSort],
+        [branch.slug, catalog.show_parent_category, query.sort, query.toggleSort],
     );
 
     return (
@@ -278,8 +325,9 @@ export default function BranchCategoriesIndex({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Categories"
-                        description="Create and edit global catalog categories for this branch"
+                        description="Edit global catalog categories for this branch"
                     />
+                    {catalog.branch_can_create_categories ? (
                     <Button asChild>
                         <Link
                             href={CategoryController.create.url(branch.slug)}
@@ -287,6 +335,7 @@ export default function BranchCategoriesIndex({
                             Add category
                         </Link>
                     </Button>
+                    ) : null}
                 </div>
 
                 <DataTable
@@ -397,6 +446,7 @@ export default function BranchCategoriesIndex({
                                             </SelectContent>
                                         </Select>
                                     </div>
+                                    {catalog.show_parent_category ? (
                                     <div className="grid gap-2">
                                         <Label>Parent</Label>
                                         <Select
@@ -433,12 +483,31 @@ export default function BranchCategoriesIndex({
                                             </SelectContent>
                                         </Select>
                                     </div>
+                                    ) : null}
                                 </>
                             }
                         />
                     }
                 />
             </div>
+
+            <CategoryNavSortSheet
+                open={navSortCategory !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setNavSortCategory(null);
+                    }
+                }}
+                category={navSortCategory}
+                actionUrl={
+                    navSortCategory
+                        ? CategoryController.updateNavSort.url({
+                              branch: branch.slug,
+                              category: navSortCategory.slug,
+                          })
+                        : null
+                }
+            />
         </>
     );
 }

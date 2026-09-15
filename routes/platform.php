@@ -153,6 +153,14 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('categories/{category}/restore', [PlatformCategoryController::class, 'restore'])
             ->name('platform.categories.restore')
             ->withTrashed();
+        Route::put('categories/{category}/status', [PlatformCategoryController::class, 'toggleStatus'])
+            ->name('platform.categories.status');
+        Route::put('categories/{category}/featured', [PlatformCategoryController::class, 'toggleFeatured'])
+            ->name('platform.categories.featured');
+        Route::put('categories/{category}/nav', [PlatformCategoryController::class, 'toggleNav'])
+            ->name('platform.categories.nav');
+        Route::put('categories/{category}/nav-sort', [PlatformCategoryController::class, 'updateNavSort'])
+            ->name('platform.categories.nav-sort');
 
         Route::get('products/suggestions', [PlatformProductController::class, 'suggestions'])
             ->name('platform.products.suggestions');

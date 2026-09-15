@@ -1,4 +1,4 @@
-import { Link, useForm } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
@@ -111,6 +111,7 @@ export function CategoryForm({
     suggestionShowHref,
     excludeCategoryId,
 }: CategoryFormProps) {
+    const { catalog } = usePage().props;
     const [slugTouched, setSlugTouched] = useState(isEdit);
     const [parentOpen, setParentOpen] = useState(false);
     const [suggestions, setSuggestions] = useState<CategorySuggestion[]>([]);
@@ -382,6 +383,7 @@ export function CategoryForm({
                             </div>
                         ) : null}
 
+                        {catalog.show_parent_category ? (
                         <div className="flex w-full min-w-0 flex-col gap-2">
                             <Label htmlFor="parent_id">Parent category</Label>
                             <Popover
@@ -480,6 +482,7 @@ export function CategoryForm({
                             </Popover>
                             <InputError message={errors.parent_id} />
                         </div>
+                        ) : null}
 
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="slogan">Slogan / short description</Label>

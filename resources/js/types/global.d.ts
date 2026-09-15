@@ -15,6 +15,10 @@ declare module '@inertiajs/core' {
             portal: Portal | null;
             branch: BranchContext | null;
             sidebarOpen: boolean;
+            catalog: {
+                branch_can_create_categories: boolean;
+                show_parent_category: boolean;
+            };
             [key: string]: unknown;
         };
     }

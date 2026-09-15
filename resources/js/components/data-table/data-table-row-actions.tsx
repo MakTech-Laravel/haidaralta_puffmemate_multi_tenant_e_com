@@ -86,9 +86,11 @@ function ActionItem({ item }: { item: DataTableActionItem }) {
 export function DataTableRowActions({
     items,
     label = 'Actions',
+    contentClassName = 'w-44',
 }: {
     items: DataTableActionItem[];
     label?: string;
+    contentClassName?: string;
 }) {
     return (
         <div className="flex justify-end">
@@ -103,7 +105,10 @@ export function DataTableRowActions({
                         <MoreHorizontal className="size-4" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuContent
+                    align="end"
+                    className={contentClassName}
+                >
                     <DropdownMenuLabel>{label}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {items.map((item) => (

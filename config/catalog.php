@@ -26,4 +26,30 @@ return [
 
     'nav_categories_max' => env('NAV_CATEGORIES_MAX', 6),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Branch category create
+    |--------------------------------------------------------------------------
+    |
+    | When false, branch portals can still view and edit global categories
+    | but create/store abort 404 and the Add category button is hidden.
+    | Flip to true to restore branch category creation.
+    |
+    */
+
+    'branch_can_create_categories' => false,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Parent / child category UI
+    |--------------------------------------------------------------------------
+    |
+    | When false, parent picker, list column/filter, and subcategory
+    | surfaces stay in the codebase but are not rendered. Flip to true
+    | to restore parent-category management.
+    |
+    */
+
+    'show_parent_category' => false,
+
 ];

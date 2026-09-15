@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Branch;
 
 use App\DataTables\BranchCategoryDataTable;
+use App\Http\Controllers\Concerns\ManagesCategoryMerchandising;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\StoreCategoryRequest;
 use App\Http\Requests\Branch\UpdateCategoryRequest;
+use App\Http\Requests\Catalog\UpdateCategoryNavSortRequest;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Services\Catalog\CategoryService;
@@ -19,6 +21,8 @@ use Inertia\Response;
 
 class CategoryController extends Controller
 {
+    use ManagesCategoryMerchandising;
+
     public function __construct(
         private CategoryService $categories,
         private CategorySuggestionService $suggestions,
@@ -36,6 +40,8 @@ class CategoryController extends Controller
 
     public function create(): Response
     {
+        abort_unless((bool) config('catalog.branch_can_create_categories'), 404);
+
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/catalog/categories/create', [
@@ -60,6 +66,8 @@ class CategoryController extends Controller
 
     public function store(StoreCategoryRequest $request): RedirectResponse
     {
+        abort_unless((bool) config('catalog.branch_can_create_categories'), 404);
+
         $branch = $this->currentBranch();
         $data = $request->safe()->except(['image']);
         $data['status'] = $request->boolean('status', true);
@@ -112,6 +120,26 @@ class CategoryController extends Controller
         Toast::success('Category updated.');
 
         return redirect()->route('branch.categories.show', [$branch, $category]);
+    }
+
+    public function toggleStatus(string $branchSlug, Category $category): RedirectResponse
+    {
+        return $this->merchandiseToggleStatus($category);
+    }
+
+    public function toggleFeatured(string $branchSlug, Category $category): RedirectResponse
+    {
+        return $this->merchandiseToggleFeatured($category);
+    }
+
+    public function toggleNav(string $branchSlug, Category $category): RedirectResponse
+    {
+        return $this->merchandiseToggleNav($category);
+    }
+
+    public function updateNavSort(UpdateCategoryNavSortRequest $request, string $branchSlug, Category $category): RedirectResponse
+    {
+        return $this->merchandiseUpdateNavSort($request, $category);
     }
 
     /**
