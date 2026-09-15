@@ -899,52 +899,61 @@ export function ProductForm({
                                     dropzoneVisibility="empty"
                                     compactCards
                                     value={data.gallery}
-                                onChange={(files) => {
-                                    const next = Array.isArray(files)
-                                        ? files
-                                        : files
-                                          ? [files]
-                                          : [];
-                                    setData('gallery', next);
-                                }}
-                                existingFiles={existingGallery}
-                                onRemoveExisting={(id) => {
-                                    const numericId = Number(id);
-                                    setExistingGallery((current) =>
-                                        current.filter(
-                                            (file) => file.id !== id,
-                                        ),
-                                    );
-                                    setRemoveGalleryIds((current) => {
-                                        const next = current.includes(numericId)
-                                            ? current
-                                            : [...current, numericId];
-                                        setData('remove_gallery_ids', next);
-                                        return next;
-                                    });
-                                }}
-                                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
-                                maxSize={2}
-                                maxFiles={12}
-                                lightbox
-                                isUploading={processing}
-                                uploadProgress={progress?.percentage ?? null}
-                                onCancel={processing ? cancel : undefined}
+                                    onChange={(files) => {
+                                        const next = Array.isArray(files)
+                                            ? files
+                                            : files
+                                              ? [files]
+                                              : [];
+                                        setData('gallery', next);
+                                    }}
+                                    existingFiles={existingGallery}
+                                    onRemoveExisting={(id) => {
+                                        const numericId = Number(id);
+                                        setExistingGallery((current) =>
+                                            current.filter(
+                                                (file) => file.id !== id,
+                                            ),
+                                        );
+                                        setRemoveGalleryIds((current) => {
+                                            const next = current.includes(
+                                                numericId,
+                                            )
+                                                ? current
+                                                : [...current, numericId];
+                                            setData(
+                                                'remove_gallery_ids',
+                                                next,
+                                            );
+                                            return next;
+                                        });
+                                    }}
+                                    accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
+                                    maxSize={2}
+                                    maxFiles={12}
+                                    lightbox
+                                    isUploading={processing}
+                                    uploadProgress={
+                                        progress?.percentage ?? null
+                                    }
+                                    onCancel={
+                                        processing ? cancel : undefined
+                                    }
                                     placeholder="Add gallery images"
                                     hint="Up to 12 · PNG, JPG, SVG, or WebP"
                                     classNames={{
                                         dropzone: 'py-5',
-                                        grid: 'grid-cols-3 gap-2',
+                                        grid: 'grid-cols-3 gap-2 sm:grid-cols-3 lg:grid-cols-3',
                                         card: 'aspect-square overflow-hidden',
                                         cardMedia: 'h-full bg-muted/20',
                                         cardImage: 'object-contain p-1',
                                     }}
-                                error={
-                                    errors.gallery ??
-                                    errors['gallery.0'] ??
-                                    errors['gallery.1']
-                                }
-                            />
+                                    error={
+                                        errors.gallery ??
+                                        errors['gallery.0'] ??
+                                        errors['gallery.1']
+                                    }
+                                />
                             <InputError
                                 message={
                                     errors.gallery ??

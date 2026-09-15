@@ -20,3 +20,6 @@ Product show gallery uses compact thumbnails (dense grid) + yet-another-react-li
 
 ## Gallery/primary use color_code tile
 Product primary + gallery thumbnails/lightbox use product.color_code via colorPickerStyle (object-contain). Transparent mode uses checkerboard. Apply on platform catalog show and branch/platform inventory show.
+
+## FileUpload empty dropzone uses add tile
+FileUpload dropzoneVisibility=empty hides the dashed dropzone once files exist and shows a compact Add tile in the grid (opacity-0 input overlay, not programmatic click). compactCards hides filename/size (square thumbs). Default dropzoneVisibility=always so other callers keep the large zone.
