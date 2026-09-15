@@ -159,7 +159,7 @@ class CatalogSeeder extends Seeder
             'slug' => 'wholesale',
             'parent_id' => null,
             'featured' => false,
-            'show_in_nav' => true,
+            'show_in_nav' => false,
             'nav_sort' => 6,
             'slogan' => 'Trade and bulk pricing',
         ]);
