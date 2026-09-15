@@ -2,6 +2,7 @@ import {
     Activity,
     BadgePercent,
     Banknote,
+    Bell,
     BellRing,
     Boxes,
     Building2,
@@ -283,6 +284,12 @@ export const platformNav: NavSection[] = [
                     title: 'General',
                     icon: Settings2,
                     permissions: ['manage-database-backups'],
+                }),
+                navLink({
+                    title: 'Notifications',
+                    href: '/platform/notifications',
+                    icon: Bell,
+                    permissions: ['view-dashboard'],
                 }),
                 navSoon({
                     title: 'Payments',
