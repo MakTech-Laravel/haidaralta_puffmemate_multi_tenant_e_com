@@ -3,7 +3,11 @@ import type { ReactNode } from 'react';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { SidebarNav } from '@/components/navigation/sidebar-nav';
-import type { NavNode, NavNodeClassNames } from '@/components/navigation/types';
+import type {
+    NavNode,
+    NavNodeClassNames,
+    NavSection,
+} from '@/components/navigation/types';
 import { NavUser } from '@/components/nav-user';
 import { PortalBrand } from '@/components/portal/portal-brand';
 import { PortalSidebarHeader } from '@/components/portal/portal-sidebar-header';
@@ -25,7 +29,7 @@ export type PortalShellLayoutProps = {
     brandTone?: 'default' | 'inverse';
     breadcrumbs?: BreadcrumbItem[];
     children: ReactNode;
-    groupLabel: string;
+    groupLabel?: string;
     groupLabelClassName?: string;
     headerAccessory?: ReactNode;
     headerAccent?: 'none' | 'primary-bar';
@@ -34,7 +38,10 @@ export type PortalShellLayoutProps = {
     logoHref: string;
     navClassName?: string;
     navClassNames?: NavNodeClassNames;
-    nodes: NavNode[];
+    /** Flat tree + optional heading. Used by the driver portal. */
+    nodes?: NavNode[];
+    /** Labeled blocks. Used by platform and branch. Takes precedence over `nodes`. */
+    sections?: NavSection[];
     portal: Portal;
     sidebarBanner?: ReactNode;
     sidebarClassName?: string;
@@ -62,6 +69,7 @@ export function PortalShellLayout({
     navClassName,
     navClassNames,
     nodes,
+    sections,
     portal,
     sidebarBanner,
     sidebarClassName,
@@ -113,17 +121,29 @@ export function PortalShellLayout({
                 {sidebarBanner}
 
                 <SidebarContent>
-                    <SidebarNav
-                        items={nodes}
-                        label={groupLabel}
-                        {...(navClassName ? { className: navClassName } : {})}
-                        {...(groupLabelClassName
-                            ? { labelClassName: groupLabelClassName }
-                            : {})}
-                        {...(navClassNames
-                            ? { classNames: navClassNames }
-                            : {})}
-                    />
+                    {(
+                        sections ?? [
+                            {
+                                label: groupLabel,
+                                items: nodes ?? [],
+                            },
+                        ]
+                    ).map((section, index) => (
+                        <SidebarNav
+                            key={section.label ?? `section-${index}`}
+                            items={section.items}
+                            {...(section.label ? { label: section.label } : {})}
+                            {...(navClassName
+                                ? { className: navClassName }
+                                : {})}
+                            {...(groupLabelClassName
+                                ? { labelClassName: groupLabelClassName }
+                                : {})}
+                            {...(navClassNames
+                                ? { classNames: navClassNames }
+                                : {})}
+                        />
+                    ))}
                 </SidebarContent>
 
                 <SidebarFooter

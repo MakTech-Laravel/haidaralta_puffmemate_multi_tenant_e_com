@@ -36,20 +36,21 @@ export interface NavNodeClassNames {
 /**
  * A single sidebar navigation entry (complete portal nav contract).
  *
- * Prefer {@link navLink} / {@link navGroup} from `nav-builders` when defining
- * portal trees (`platform/nav.ts`, `branch/nav.ts`, etc.). Do not fork portal
- * sidebars via legacy `AppSidebar` / `NavMain`.
+ * Prefer {@link navLink} / {@link navGroup} / {@link navSection} from
+ * `nav-builders` when defining portal trees (`platform/nav.ts`, `branch/nav.ts`).
+ * Do not fork portal sidebars via legacy `AppSidebar` / `NavMain`.
  *
  * Supported options:
  * - **Leaf link** — `title` + `href` (+ optional icon, badge, exact, external, disabled)
+ * - **Soon row** — `disabled` with no `href` (roadmap placeholders)
  * - **Group / dropdown** — `items` (collapsible; icon-rail flyout when collapsed)
  * - **Group + landing href** — parent may also have `href`
  * - **Nested groups** — `items` recurse to any depth
  * - **Permissions** — `permissions` show when user has ANY; omit = always visible
  * - **classNames** — per-row slot overrides (defaults via `SidebarNav`)
  *
- * Section labels live on the layout (`groupLabel` / `PortalShellLayout`), not
- * on individual nodes.
+ * Labeled blocks are {@link NavSection}s rendered as separate `SidebarNav`
+ * groups. Driver can still pass a flat `nodes` list + layout `groupLabel`.
  */
 export interface NavNode {
     /** Visible label. */
@@ -80,4 +81,13 @@ export interface NavNode {
     items?: NavNode[];
     /** Per-slot class overrides for this row. */
     classNames?: NavNodeClassNames;
+}
+
+/**
+ * A labeled sidebar block. `label` becomes `SidebarGroupLabel` (hidden in
+ * icon-collapsed mode). Omit `label` for an unlabeled overview cluster.
+ */
+export interface NavSection {
+    label?: string;
+    items: NavNode[];
 }

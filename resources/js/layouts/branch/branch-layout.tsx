@@ -24,9 +24,8 @@ export default function BranchLayout({
         <PortalShellLayout
             portal="branch"
             breadcrumbs={breadcrumbs}
-            groupLabel={branch?.name ?? 'Floor'}
             logoHref={slug ? `/branch/${slug}/dashboard` : '/login'}
-            nodes={slug ? buildBranchNav(slug) : []}
+            sections={slug ? buildBranchNav(slug) : []}
             sidebarVariant="inset"
             sidebarWidth="16.5rem"
             brandEyebrow="Branch"

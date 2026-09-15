@@ -1,18 +1,25 @@
 import type { InertiaLinkProps } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import type { PermissionKey } from '@/types/permissions';
-import type { NavNode, NavNodeClassNames } from './types';
+import type { NavNode, NavNodeClassNames, NavSection } from './types';
 
 type Href = NonNullable<InertiaLinkProps['href']>;
 
 type NavLinkOptions = {
     title: string;
-    href: Href;
+    href?: Href;
     icon?: LucideIcon;
     exact?: boolean;
     badge?: string | number;
     disabled?: boolean;
     external?: boolean;
+    permissions?: PermissionKey[];
+    classNames?: NavNodeClassNames;
+};
+
+type NavSoonOptions = {
+    title: string;
+    icon?: LucideIcon;
     permissions?: PermissionKey[];
     classNames?: NavNodeClassNames;
 };
@@ -63,4 +70,26 @@ export function navGroup(options: NavGroupOptions): NavNode {
         items: options.items,
         classNames: options.classNames,
     };
+}
+
+/**
+ * Disabled roadmap row. No href — must not visit a route. Badge defaults to Soon.
+ */
+export function navSoon(options: NavSoonOptions): NavNode {
+    return {
+        title: options.title,
+        icon: options.icon,
+        disabled: true,
+        badge: 'Soon',
+        permissions: options.permissions,
+        classNames: options.classNames,
+    };
+}
+
+/** Labeled (or unlabeled) sidebar section wrapping `navLink` / `navGroup` items. */
+export function navSection(
+    label: string | undefined,
+    items: NavNode[],
+): NavSection {
+    return { label, items };
 }

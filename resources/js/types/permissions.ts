@@ -20,4 +20,6 @@ export type PermissionKey =
     | 'edit-branches'
     | 'delete-branches'
     | 'manage-catalog'
-    | 'manage-branch-inventories';
+    | 'manage-branch-inventories'
+    | 'manage-drivers'
+    | 'manage-branch-drivers';
