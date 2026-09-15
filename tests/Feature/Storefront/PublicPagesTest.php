@@ -46,6 +46,8 @@ test('storefront shop page serves DemoCatalog products', function () {
             ->component('storefront/shop')
             ->where('products.0.id', '1')
             ->where('products.0.name', 'Marlboro Gold')
+            ->where('products.0.price', '$14.00')
+            ->where('products.0.compareAtPrice', '$20.00')
             ->has('branches')
             ->where('filters.search', '')
             ->where('filters.branchId', null)
