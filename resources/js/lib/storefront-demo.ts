@@ -22,6 +22,7 @@ export type StorefrontProduct = {
     name: string;
     description: string;
     price: string;
+    compareAtPrice?: string | null;
     stock: number;
     category: string;
     image: string;

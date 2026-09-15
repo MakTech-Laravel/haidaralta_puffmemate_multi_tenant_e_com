@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { ProductCard } from '@/components/storefront/product-card';
@@ -13,6 +13,8 @@ import { ProductShipping } from '@/components/storefront/product/product-shippin
 import { ProductSpecifications } from '@/components/storefront/product/product-specifications';
 import { ProductSummary } from '@/components/storefront/product/product-summary';
 import type { StorefrontProduct } from '@/lib/storefront-demo';
+import type { StorefrontBranchOption } from '@/components/storefront/storefront-branch-select';
+import { show as productShow } from '@/routes/products';
 
 type ProductDetail = {
     id: string;
@@ -47,30 +49,34 @@ type ProductDetail = {
 type ProductPageProps = {
     product: ProductDetail;
     similarProducts: StorefrontProduct[];
+    branches: StorefrontBranchOption[];
+    branchId: string | null;
     backHref: string;
 };
-
-function scrollToSection(tab: ProductSectionTabId): void {
-    const element = document.getElementById(`product-section-${tab}`);
-
-    if (!element) {
-        return;
-    }
-
-    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
 
 export default function StorefrontProduct({
     product,
     similarProducts,
+    branches,
+    branchId,
     backHref,
 }: ProductPageProps) {
     const [activeTab, setActiveTab] =
         useState<ProductSectionTabId>('specifications');
 
-    const handleTabChange = (tab: ProductSectionTabId) => {
-        setActiveTab(tab);
-        scrollToSection(tab);
+    const onBranchChange = (nextBranchId: string | null) => {
+        router.cancelAll();
+        router.get(
+            productShow.url(product.id),
+            {
+                ...(nextBranchId ? { branch: nextBranchId } : {}),
+            },
+            {
+                preserveState: true,
+                replace: true,
+                only: ['product', 'branches', 'branchId'],
+            },
+        );
     };
 
     return (
@@ -87,9 +93,14 @@ export default function StorefrontProduct({
                     Back to products
                 </Link>
 
-                <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-                    <ProductGallery images={product.images} alt={product.name} />
+                <div className="grid min-w-0 gap-8 lg:grid-cols-2 lg:gap-12">
+                    <ProductGallery
+                        className="min-w-0"
+                        images={product.images}
+                        alt={product.name}
+                    />
                     <ProductSummary
+                        className="min-w-0"
                         name={product.name}
                         description={product.description}
                         badges={product.badges}
@@ -100,43 +111,41 @@ export default function StorefrontProduct({
                         reviewCount={product.reviewCount}
                         about={product.about}
                         branch={product.branch}
+                        branches={branches}
+                        branchId={branchId}
+                        onBranchChange={onBranchChange}
                     />
                 </div>
 
-                <div className="mt-12 flex flex-col gap-10">
+                <div className="mt-12 flex min-w-0 flex-col gap-10">
                     <ProductSectionTabs
+                        className="min-w-0"
                         active={activeTab}
-                        onChange={handleTabChange}
+                        onChange={setActiveTab}
                         reviewCount={product.reviews.length}
                     />
 
-                    <div
-                        id="product-section-specifications"
-                        className="scroll-mt-36"
-                    >
+                    {activeTab === 'specifications' ? (
                         <ProductSpecifications rows={product.specifications} />
-                    </div>
+                    ) : null}
 
-                    <div id="product-section-shipping" className="scroll-mt-36">
+                    {activeTab === 'shipping' ? (
                         <ProductShipping points={product.shippingPoints} />
-                    </div>
+                    ) : null}
 
-                    <div
-                        id="product-section-responsible"
-                        className="scroll-mt-36"
-                    >
+                    {activeTab === 'responsible' ? (
                         <ProductResponsibleRetail
                             points={product.responsiblePoints}
                         />
-                    </div>
+                    ) : null}
 
-                    <div id="product-section-reviews" className="scroll-mt-36">
+                    {activeTab === 'reviews' ? (
                         <ProductReviews
                             rating={product.rating}
                             reviewCount={product.reviewCount}
                             reviews={product.reviews}
                         />
-                    </div>
+                    ) : null}
                 </div>
 
                 {similarProducts.length > 0 ? (

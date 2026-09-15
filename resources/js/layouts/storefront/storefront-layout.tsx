@@ -8,9 +8,9 @@ export default function StorefrontLayout({
     children: ReactNode;
 }) {
     return (
-        <div className="bg-background text-foreground flex min-h-svh flex-col">
+        <div className="bg-background text-foreground flex min-h-svh max-w-full flex-col overflow-x-clip">
             <StorefrontHeader />
-            <main className="flex-1">{children}</main>
+            <main className="min-w-0 flex-1">{children}</main>
             <StorefrontFooter />
         </div>
     );

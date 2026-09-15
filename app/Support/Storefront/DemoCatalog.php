@@ -111,7 +111,7 @@ class DemoCatalog
     }
 
     /**
-     * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice?: string, stock: int, category: string, image: string}>
      */
     public static function products(): array
     {
@@ -121,6 +121,7 @@ class DemoCatalog
                 'name' => 'Marlboro Gold',
                 'description' => 'Gold Pack • 20 Cigarettes',
                 'price' => '$14.00',
+                'compareAtPrice' => '$20.00',
                 'stock' => 40,
                 'category' => 'Cigarettes',
                 'image' => '/images/storefront/product-marlboro-gold.jpg',
@@ -139,6 +140,7 @@ class DemoCatalog
                 'name' => 'IQOS Iluma',
                 'description' => 'Device Kit • Heat-not-burn',
                 'price' => '$89.00',
+                'compareAtPrice' => '$99.00',
                 'stock' => 12,
                 'category' => 'Vapes',
                 'image' => '/images/storefront/product-marlboro-gold.jpg',
@@ -175,6 +177,7 @@ class DemoCatalog
                 'name' => 'ZYN Cool Mint',
                 'description' => 'Nicotine Pouches • 15 pcs',
                 'price' => '$9.90',
+                'compareAtPrice' => '$12.00',
                 'stock' => 64,
                 'category' => 'Nicotine Pouches',
                 'image' => '/images/storefront/product-marlboro-gold.jpg',
@@ -228,7 +231,7 @@ class DemoCatalog
     }
 
     /**
-     * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice?: string, stock: int, category: string, image: string}>
      */
     public static function bestSellingProducts(): array
     {
@@ -236,7 +239,7 @@ class DemoCatalog
     }
 
     /**
-     * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice?: string, stock: int, category: string, image: string}>
      */
     public static function newArrivalProducts(): array
     {
@@ -244,7 +247,7 @@ class DemoCatalog
     }
 
     /**
-     * @return array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}
+     * @return array{id: string, name: string, description: string, price: string, compareAtPrice?: string, stock: int, category: string, image: string}
      */
     public static function findProduct(string $id): array
     {
@@ -258,7 +261,7 @@ class DemoCatalog
     }
 
     /**
-     * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice?: string, stock: int, category: string, image: string}>
      */
     public static function productsForCategory(string $slug): array
     {
@@ -285,7 +288,7 @@ class DemoCatalog
     }
 
     /**
-     * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice?: string, stock: int, category: string, image: string}>
      */
     public static function similarProducts(string $id, int $limit = 4): array
     {
@@ -346,8 +349,11 @@ class DemoCatalog
             'badges' => [$product['category'], 'Popular'],
             'images' => [
                 $image,
+                '/images/storefront/product-marlboro-gold.jpg',
+                '/images/storefront/product-winfield-blue.jpg',
                 '/images/storefront/b4343f447a376e4db4da6328e10eddefc632ddeb.jpg',
                 '/images/storefront/907b72737ecd36dbee5ac6c27fa0b02b906a44ee.jpg',
+                '/images/storefront/category-vapes.png',
             ],
             'price' => '$14.50',
             'compareAtPrice' => '$15.50',
