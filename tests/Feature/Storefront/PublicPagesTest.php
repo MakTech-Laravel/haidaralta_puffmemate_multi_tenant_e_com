@@ -47,7 +47,20 @@ test('storefront shop page serves DemoCatalog products', function () {
             ->where('products.0.id', '1')
             ->where('products.0.name', 'Marlboro Gold')
             ->has('branches')
-            ->where('filters.branchId', null));
+            ->where('filters.search', '')
+            ->where('filters.branchId', null)
+            ->where('filters.sort', null));
+});
+
+test('storefront shop page filters products by search', function () {
+    $this->get(route('shop', ['search' => 'Marlboro']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/shop')
+            ->where('filters.search', 'Marlboro')
+            ->where('products.0.id', '1')
+            ->where('products.0.name', 'Marlboro Gold')
+            ->has('products', 1));
 });
 
 test('storefront category page renders products for a valid slug', function () {
