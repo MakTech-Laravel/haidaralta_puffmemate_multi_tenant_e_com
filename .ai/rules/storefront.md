@@ -14,5 +14,5 @@ Storefront UI under resources/js/{layouts,components,pages}/storefront and lib/s
 
 ## Catalog sources by surface
 
-Home, shop, and product detail use `DemoCatalog` so card ids (`"1"`, `"2"`, …) resolve. Category page still reads Eloquent via `App\Support\Storefront\StorefrontCatalog`. Nav categories and branch session (`storefront.branch_slug` from `?branch=`) stay on StorefrontCatalog. Cart/checkout may still use DemoCatalog until checkout is built. Shared Inertia prop `storefront.navCategories` drives the header.
+Home, shop, category, and product detail use `DemoCatalog` so card ids (`"1"`, `"2"`, …) resolve and prices show as plain `$…` (no “Start from”, no branch required). Header category tabs use static demo chrome `storefrontNavItems` in `storefront-chrome.ts` (not DB `navCategories`). Branch session (`storefront.branch_slug` from `?branch=`) stays on StorefrontCatalog. Cart/checkout may still use DemoCatalog until checkout is built. Shared Inertia prop `storefront.navCategories` may still be shared but does not drive the header.
 
