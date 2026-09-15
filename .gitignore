@@ -13,6 +13,7 @@
 /resources/js/routes
 /resources/js/wayfinder
 /vendor
+temp_auto_push.bat
 .DS_Store
 .env
 .env.backup
@@ -27,6 +28,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.nova
-/.vscode
 /.zed
-blake_lms_tenant/
+blake_lms_tenant/.gitignore
+branch_structure.json
