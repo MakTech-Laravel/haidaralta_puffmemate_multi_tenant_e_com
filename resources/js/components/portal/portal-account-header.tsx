@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import { NotificationsDialog } from '@/components/portal/notifications-dialog';
+import { NotificationsPopover } from '@/components/portal/notifications-popover';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -18,7 +18,7 @@ export function PortalAccountHeader() {
 
     return (
         <div className="flex items-center gap-1">
-            <NotificationsDialog />
+            <NotificationsPopover />
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button
