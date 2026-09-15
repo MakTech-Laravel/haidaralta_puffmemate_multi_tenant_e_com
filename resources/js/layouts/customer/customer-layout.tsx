@@ -1,57 +1,76 @@
-import { usePage } from '@inertiajs/react';
-import { Sparkles } from 'lucide-react';
-import { customerNav } from '@/components/customer/nav';
-import { Input } from '@/components/ui/input';
-import { PortalShellLayout } from '@/layouts/portal/portal-shell-layout';
-import type { Auth, BreadcrumbItem } from '@/types';
+import { Link } from '@inertiajs/react';
+import type { ReactNode } from 'react';
+import { AccountSidebar } from '@/components/customer/account-sidebar';
+import { StorefrontFooter } from '@/components/storefront/storefront-footer';
+import { StorefrontHeader } from '@/components/storefront/storefront-header';
+import { home } from '@/routes';
+import type { BreadcrumbItem } from '@/types';
 
 export default function CustomerLayout({
     breadcrumbs = [],
     children,
 }: {
     breadcrumbs?: BreadcrumbItem[];
-    children: React.ReactNode;
+    children: ReactNode;
 }) {
-    const { auth } = usePage<{ auth: Auth }>().props;
-    const firstName = auth.user?.name.split(/\s+/u)[0] ?? 'there';
+    const trail: BreadcrumbItem[] = [
+        { title: 'Home', href: home.url() },
+        ...(breadcrumbs.length > 0
+            ? breadcrumbs
+            : [{ title: 'Dashboard', href: '/dashboard' }]),
+    ];
 
     return (
-        <PortalShellLayout
-            portal="customer"
-            breadcrumbs={breadcrumbs}
-            groupLabel="Shop"
-            groupLabelClassName="text-sm font-medium"
-            logoHref="/dashboard"
-            nodes={customerNav}
-            sidebarVariant="inset"
-            sidebarWidth="18.5rem"
-            brandEyebrow="Account"
-            brandSubtitle={`Hi, ${firstName}`}
-            navClassNames={{
-                row: 'h-9',
-            }}
-            headerDensity="airy"
-            headerAccessory={
-                <Input
-                    readOnly
-                    placeholder="Search orders and products"
-                    aria-label="Search (placeholder)"
-                    className="bg-muted/60 hidden h-9 w-56 shadow-none md:flex"
-                />
-            }
-            sidebarBanner={
-                <div className="bg-accent mx-2 mb-2 rounded-xl p-3 group-data-[collapsible=icon]:hidden">
-                    <div className="flex items-center gap-2 text-xs font-medium">
-                        <Sparkles className="size-3.5" />
-                        Weekend pickup
+        <div className="bg-background text-foreground flex min-h-svh flex-col">
+            <StorefrontHeader />
+            <main className="flex-1">
+                <div className="mx-auto container px-4 py-8 sm:px-6 sm:py-10">
+                    <nav
+                        aria-label="Breadcrumb"
+                        className="text-muted-foreground mb-6 text-sm"
+                    >
+                        <ol className="flex flex-wrap items-center gap-1.5">
+                            {trail.map((item, index) => {
+                                const isLast = index === trail.length - 1;
+
+                                return (
+                                    <li
+                                        key={`${item.href}-${item.title}`}
+                                        className="flex items-center gap-1.5"
+                                    >
+                                        {index > 0 ? (
+                                            <span aria-hidden>›</span>
+                                        ) : null}
+                                        {isLast ? (
+                                            <span className="text-foreground">
+                                                {item.title}
+                                            </span>
+                                        ) : (
+                                            <Link
+                                                href={item.href}
+                                                prefetch
+                                                className="hover:text-foreground transition-colors"
+                                            >
+                                                {item.title}
+                                            </Link>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                    </nav>
+
+                    <h1 className="text-foreground mb-8 text-center text-3xl font-semibold tracking-tight sm:mb-10 sm:text-4xl">
+                        My Account
+                    </h1>
+
+                    <div className="grid gap-10 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-14">
+                        <AccountSidebar className="lg:pt-1" />
+                        <div className="min-w-0">{children}</div>
                     </div>
-                    <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                        Free on demo orders over $25. Placeholder offer.
-                    </p>
                 </div>
-            }
-        >
-            {children}
-        </PortalShellLayout>
+            </main>
+            <StorefrontFooter />
+        </div>
     );
 }
