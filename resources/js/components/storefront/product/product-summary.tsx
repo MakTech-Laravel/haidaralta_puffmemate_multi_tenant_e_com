@@ -1,3 +1,4 @@
+import { Link } from "@inertiajs/react";
 import {
     Check,
     Clock,
@@ -8,8 +9,16 @@ import {
     Star,
 } from "lucide-react";
 import { useState } from "react";
+import type { StorefrontBranchOption } from "@/components/storefront/storefront-branch-select";
 import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { cart } from "@/routes";
 
 type ProductSummaryProps = {
     name: string;
@@ -22,6 +31,9 @@ type ProductSummaryProps = {
     reviewCount: number;
     about: string;
     branch: string;
+    branches: StorefrontBranchOption[];
+    branchId: string | null;
+    onBranchChange: (branchId: string | null) => void;
     className?: string;
 };
 
@@ -36,13 +48,16 @@ export function ProductSummary({
     reviewCount,
     about,
     branch,
+    branches,
+    branchId,
+    onBranchChange,
     className,
 }: ProductSummaryProps) {
     const [quantity, setQuantity] = useState(1);
 
     return (
         <div className={cn("flex flex-col gap-5", className)}>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-5">
                 {badges.map((badge) => (
                     <span
                         key={badge}
@@ -116,12 +131,42 @@ export function ProductSummary({
                         </p>
                     </div>
                 </div>
-                <button
-                    type="button"
-                    className="text-primary shrink-0 text-base font-bold hover:underline font-inter"
-                >
-                    Change
-                </button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button
+                            type="button"
+                            className="text-primary shrink-0 text-base font-bold hover:underline font-inter"
+                        >
+                            Change
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-56">
+                        {branches.map((option) => {
+                            const isSelected = option.id === branchId;
+
+                            return (
+                                <DropdownMenuItem
+                                    key={option.id}
+                                    className={cn(
+                                        "font-inter",
+                                        isSelected && "font-semibold",
+                                    )}
+                                    onSelect={() => onBranchChange(option.id)}
+                                >
+                                    <span className="min-w-0 flex-1 truncate">
+                                        {option.name}
+                                    </span>
+                                    {isSelected ? (
+                                        <Check
+                                            className="text-primary size-4 shrink-0"
+                                            aria-hidden
+                                        />
+                                    ) : null}
+                                </DropdownMenuItem>
+                            );
+                        })}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
 
             <div>
@@ -158,12 +203,14 @@ export function ProductSummary({
                     </button>
                 </div>
                 <Button
-                    type="button"
+                    asChild
                     size="lg"
                     className="h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase sm:flex-1"
                 >
-                    <ShoppingCart className="size-4" />
-                    Add to cart
+                    <Link href={cart()} prefetch>
+                        <ShoppingCart className="size-4" />
+                        Add to cart
+                    </Link>
                 </Button>
             </div>
 

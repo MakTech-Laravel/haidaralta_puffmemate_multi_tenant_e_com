@@ -95,6 +95,8 @@ test('storefront product details page renders for a valid product', function () 
             ->where('product.name', 'Marlboro Gold')
             ->has('product.specifications')
             ->has('similarProducts')
+            ->has('branches')
+            ->has('branchId')
             ->has('backHref'));
 });
 
