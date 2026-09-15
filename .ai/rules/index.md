@@ -25,6 +25,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/Fcm/** | .ai/rules/fcm.md |
 | package.json, vite.config.ts | .ai/rules/general.md |
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
+| resources/js/layouts/{platform,branch}/** | .ai/rules/layoutsplatformbranch.md |
 | resources/js/lib/fcm.ts, resources/js/lib/color-picker.ts | .ai/rules/lib.md |
 | database/migrations/** | .ai/rules/migrations.md |
 | app/Models/**.php | .ai/rules/models.md |

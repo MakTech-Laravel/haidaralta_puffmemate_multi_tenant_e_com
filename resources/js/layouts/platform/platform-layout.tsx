@@ -15,8 +15,8 @@ export default function PlatformLayout({
             breadcrumbs={breadcrumbs}
             logoHref="/platform/dashboard"
             sections={platformNav}
-            sidebarVariant="sidebar"
-            sidebarWidth="16rem"
+            sidebarVariant="inset"
+            sidebarWidth="16.5rem"
             brandEyebrow="Platform"
             headerDensity="compact"
         >
