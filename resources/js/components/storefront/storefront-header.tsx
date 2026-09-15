@@ -92,12 +92,25 @@ function NavLabel({
     );
 }
 
+function isAccountArea(url: string): boolean {
+    return (
+        url === '/dashboard' ||
+        url.startsWith('/dashboard?') ||
+        url === '/activity' ||
+        url.startsWith('/activity?') ||
+        url.startsWith('/activity/') ||
+        url.startsWith('/settings')
+    );
+}
+
 export function StorefrontHeader() {
     const page = usePage();
     const { auth, name } = page.props;
     const url = page.url;
     const [mobileOpen, setMobileOpen] = useState(false);
     const accountHref = auth.user ? dashboard() : login();
+    const accountActive = Boolean(auth.user) && isAccountArea(url);
+    const avatarUrl = auth.user?.avatar;
     const cartActive =
         url === '/cart' ||
         url.startsWith('/cart?') ||
@@ -149,16 +162,28 @@ export function StorefrontHeader() {
                             <ShoppingCart className="size-8" strokeWidth={1.75} />
                         </Link>
 
-                        <Button
-                            asChild
-                            variant="ghost"
-                            size="icon"
-                            className="text-foreground size-10"
+                        <Link
+                            href={accountHref}
+                            prefetch
+                            className={cn(
+                                'relative inline-flex size-10 items-center justify-center rounded-md transition-colors',
+                                accountActive
+                                    ? 'text-primary after:bg-primary after:absolute after:inset-x-2 after:bottom-0.5 after:h-0.5'
+                                    : 'text-foreground',
+                            )}
+                            aria-label="Account"
+                            aria-current={accountActive ? 'page' : undefined}
                         >
-                            <Link href={accountHref} aria-label="Account">
+                            {avatarUrl ? (
+                                <img
+                                    src={avatarUrl}
+                                    alt=""
+                                    className="size-8 rounded-full object-cover"
+                                />
+                            ) : (
                                 <User className="size-8" strokeWidth={1.75} />
-                            </Link>
-                        </Button>
+                            )}
+                        </Link>
 
                         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                             <SheetTrigger asChild>
