@@ -1,8 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Package, Pencil, Trash2, Truck, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
+import BranchDriverController from '@/actions/App/Http/Controllers/Platform/BranchDriverController';
+import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
+import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import {
     DataTable,
@@ -162,6 +165,39 @@ export default function PlatformBranchesIndex({
                             icon: Eye,
                             href: BranchController.show.url(branch.slug),
                         },
+                        ...(can('manage-branch-users')
+                            ? [
+                                  {
+                                      label: 'Staff',
+                                      icon: Users,
+                                      href: BranchScopedStaffController.index.url(
+                                          branch.slug,
+                                      ),
+                                  },
+                              ]
+                            : []),
+                        ...(can('manage-branch-inventories')
+                            ? [
+                                  {
+                                      label: 'Products',
+                                      icon: Package,
+                                      href: BranchInventoryController.index.url(
+                                          branch.slug,
+                                      ),
+                                  },
+                              ]
+                            : []),
+                        ...(can('manage-drivers')
+                            ? [
+                                  {
+                                      label: 'Drivers',
+                                      icon: Truck,
+                                      href: BranchDriverController.index.url(
+                                          branch.slug,
+                                      ),
+                                  },
+                              ]
+                            : []),
                         ...(can('edit-branches')
                             ? [
                                   {

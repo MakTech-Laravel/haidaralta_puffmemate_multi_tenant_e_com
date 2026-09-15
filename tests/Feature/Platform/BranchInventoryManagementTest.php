@@ -190,6 +190,119 @@ test('platform can set variant stock and price on branch inventory show', functi
             ->where('product.variant_prices.'.$variant->id.'.selling_price', '9.99'));
 });
 
+test('platform can list filter and paginate branch products', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $category = Category::factory()->create(['name' => 'Filter Cat']);
+    $matched = Product::factory()->create([
+        'name' => 'Alpha Branch Filter Pack',
+        'slug' => 'alpha-branch-filter-pack',
+        'sku' => 'ABFP-1',
+        'status' => true,
+    ]);
+    $matched->categories()->sync([$category->id]);
+    $other = Product::factory()->create([
+        'name' => 'Zulu Other Pack',
+        'slug' => 'zulu-other-pack',
+        'status' => true,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.enable', [$branch, $matched]), [
+            'status' => true,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $matched]), [
+            'type' => 'stock_in',
+            'quantity' => 2,
+            'minimum_stock' => 5,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.index', $branch))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/products/index')
+            ->where('summary.enabled', fn ($value) => $value >= 1)
+            ->where('summary.low_stock', fn ($value) => $value >= 1)
+            ->where('summary.missing_price', fn ($value) => $value >= 1)
+            ->has('table.data')
+            ->has('table.filterOptions.categories')
+            ->has('table.meta'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.index', [
+            'branch' => $branch,
+            'filter' => ['search' => 'Alpha Branch'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['slug'] === $matched->slug,
+            )));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.index', [
+            'branch' => $branch,
+            'filter' => ['enabled' => '1'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.data', fn ($rows) => collect($rows)->every(
+                fn ($row) => $row['enabled'] === true,
+            )));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.index', [
+            'branch' => $branch,
+            'filter' => ['low_stock' => '1'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['slug'] === $matched->slug && $row['is_low_stock'] === true,
+            )));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.index', [
+            'branch' => $branch,
+            'filter' => ['category_id' => (string) $category->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['slug'] === $matched->slug,
+            ))
+            ->where('table.data', fn ($rows) => collect($rows)->every(
+                fn ($row) => $row['slug'] !== $other->slug,
+            )));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.index', [
+            'branch' => $branch,
+            'filter' => ['missing_price' => '1'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['slug'] === $matched->slug && $row['selling_price'] === null,
+            )));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.index', [
+            'branch' => $branch,
+            'per_page' => 15,
+            'page' => 1,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.per_page', 15)
+            ->where('table.meta.current_page', 1));
+});
+
 test('platform can open product branch inventory overview', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $product = Product::factory()->create(['slug' => 'branch-overview-pack']);

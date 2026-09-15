@@ -5,6 +5,7 @@ paths:
   - 'app/Services/Inventory/**'
   - app/Models/ProductImage.php
   - 'app/Models/{Category,Product}.php'
+  - 'app/Models/Driver*.php'
 ---
 
 # Catalog
