@@ -1,7 +1,7 @@
 import type { InertiaLinkProps } from '@inertiajs/react';
 import { toUrl } from '@/lib/utils';
 import type { PermissionKey } from '@/types/permissions';
-import type { NavNode } from './types';
+import type { NavNode, NavSection } from './types';
 
 type Href = NonNullable<InertiaLinkProps['href']>;
 
@@ -101,4 +101,19 @@ export function filterNavNodes(
     }
 
     return result;
+}
+
+/**
+ * Drop labeled sections whose items are all hidden by permissions.
+ */
+export function filterNavSections(
+    sections: NavSection[],
+    canAny: (permissions: PermissionKey[]) => boolean,
+): NavSection[] {
+    return sections
+        .map((section) => ({
+            ...section,
+            items: filterNavNodes(section.items, canAny),
+        }))
+        .filter((section) => section.items.length > 0);
 }
