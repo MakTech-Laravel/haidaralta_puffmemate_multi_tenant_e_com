@@ -34,6 +34,26 @@ test('platform can list and create drivers with branch assignments', function ()
             ->component('platform/drivers/index')
             ->has('table.data'));
 
+    $seededDriver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.drivers.create'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/drivers/create')
+            ->has('branches')
+            ->has('vehicleTypes')
+            ->has('availabilityStatuses')
+            ->has('rosterStatuses'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.drivers.edit', $seededDriver))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/drivers/edit')
+            ->has('driver')
+            ->has('rosterStatuses'));
+
     $this->actingAs($admin, 'platform')
         ->post(route('platform.drivers.store'), [
             'name' => 'Taylor Driver',

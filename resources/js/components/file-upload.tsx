@@ -231,6 +231,8 @@ export interface FileUploadProps {
     // ── Display ───────────────────────────────────────────────────────────────
     placeholder?: string;
     hint?: string;
+    /** When false, hide the title/hint column beside an avatar dropzone. Default: true. */
+    showCaption?: boolean;
     /** Circular avatar picker — compact preview, no full-width card grid. */
     variant?: FileUploadVariant;
     /** Diameter in pixels when `variant="avatar"`. Default: `112`. */
@@ -847,6 +849,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
             lightbox = false, // ← default OFF
             placeholder = 'Drag & drop or click to browse',
             hint,
+            showCaption = true,
             variant = 'default',
             avatarSize = 112,
             avatarFallback,
@@ -1486,7 +1489,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 </Button>
                             ) : null}
                         </div>
-                        {isAvatar ? (
+                        {isAvatar && showCaption ? (
                             <AvatarUploadCaption
                                 title={placeholder}
                                 description={
@@ -1584,7 +1587,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                                 </Button>
                             ) : null}
                         </div>
-                        {isAvatar ? (
+                        {isAvatar && showCaption ? (
                             <AvatarUploadCaption
                                 title={placeholder}
                                 description={
@@ -1623,7 +1626,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
             >
                 {LightboxEl}
 
-                {isAvatar ? (
+                {isAvatar && showCaption ? (
                     <div className="flex flex-wrap items-start gap-4">
                         {DropZoneEl}
                         <AvatarUploadCaption
