@@ -15,6 +15,8 @@ Platform catalog products expose Manage branches (permission manage-branch-inven
 ## Manage branches uses server DataTable
 Manage branches list is a server DataTable (filter[search|enabled|low_stock|missing_price], sort, per_page, page) via useDataTableQuery — not client-only filtering. Keep DemoStatCard summary from server summary prop.
 
+## Catalog product show is a merchandising profile
+Platform catalog product show is a PDP-style profile: large primary media stage (color_code tile, object-contain, lightbox), listing details (SKU/slug/brand/categories/tags/description/background), specs, catalog record timestamps, DemoStatCard snapshots (variants/media/branch enablement), and the existing in-memory variants table. Pass ProductBranchInventoryPayload::summary as branchSummary. Do not use a tiny Avatar for the primary image.
+
 ## Keep product variants until owner confirmation
 Do not remove `product_variants` / variant stock/price without explicit site-owner go-ahead. Owner checklist: (1) Do any products sell as pack and carton (or flavor SKUs) under one listing? → keep variants. (2) Is every listing exactly one barcode/SKU? → schedule variant removal later. (3) Confirm tag vocabulary and max nav count (default 6). Figma “Variant: Gold” is a marketing specs row, not necessarily a ProductVariant SKU.
-

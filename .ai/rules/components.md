@@ -16,7 +16,7 @@ When maxFiles is exceeded, emit one count rejection summarizing N skipped files 
 FileUpload dropzone never dumps raw accept MIME/extension lists into helper text (overflows). Show hint + Max N MB / up to N files only; keep accept for validation/input only.
 
 ## Compact gallery with lightbox
-Product show gallery uses compact thumbnails (dense grid) + yet-another-react-lightbox click-to-preview. BranchProductShowPayload includes gallery; branch/platform inventory show render ProductGallery.
+Product show gallery uses compact thumbnails (dense grid) + yet-another-react-lightbox click-to-preview. Platform catalog product show uses ProductGallery layout=hero (large primary stage + thumbs). BranchProductShowPayload includes gallery; branch/platform inventory show keep the compact grid.
 
 ## Gallery/primary use color_code tile
 Product primary + gallery thumbnails/lightbox use product.color_code via colorPickerStyle (object-contain). Transparent mode uses checkerboard. Apply on platform catalog show and branch/platform inventory show.
