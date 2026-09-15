@@ -1,18 +1,20 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Building2, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import DriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import { DriverBranchAssignSheet } from '@/components/admin/driver-branch-assign-sheet';
 import {
     DataTable,
-    DataTableColumnHeader,
     DataTableRowActions,
     DataTableToolbar,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -30,12 +32,25 @@ type DriverRow = {
     phone: string;
     email: string | null;
     is_active: boolean;
+    avatar_url: string | null;
     vehicle_type_label: string | null;
     availability_status_label: string | null;
+    effective_availability: string | null;
+    effective_availability_label: string | null;
+    branch_ids: number[];
     branches: { id: number; name: string; slug: string }[];
 };
 
 type BranchOption = { id: number; name: string; slug: string };
+
+function initials(name: string): string {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
+}
 
 export default function PlatformDriversIndex({
     table: tablePayload,
@@ -43,6 +58,9 @@ export default function PlatformDriversIndex({
     table: DataTablePayload<DriverRow>;
 }) {
     const [deactivatingId, setDeactivatingId] = useState<number | null>(null);
+    const [managingDriver, setManagingDriver] = useState<DriverRow | null>(
+        null,
+    );
     const [processing, setProcessing] = useState(false);
     const branches = (tablePayload.filterOptions?.branches ??
         []) as BranchOption[];
@@ -65,29 +83,28 @@ export default function PlatformDriversIndex({
     const columns = useMemo<ColumnDef<DriverRow>[]>(
         () => [
             {
-                accessorKey: 'name',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Name"
-                        sortable
-                        sortKey="name"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
-                ),
-            },
-            {
-                accessorKey: 'phone',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Phone"
-                        sortable
-                        sortKey="phone"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
+                id: 'avatar',
+                header: 'Driver',
+                cell: ({ row }) => (
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Avatar className="size-10">
+                            <AvatarImage
+                                src={row.original.avatar_url ?? undefined}
+                                alt={row.original.name}
+                            />
+                            <AvatarFallback>
+                                {initials(row.original.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                            <div className="truncate font-medium">
+                                {row.original.name}
+                            </div>
+                            <div className="text-muted-foreground truncate text-xs">
+                                {row.original.phone}
+                            </div>
+                        </div>
+                    </div>
                 ),
             },
             {
@@ -99,7 +116,7 @@ export default function PlatformDriversIndex({
                 id: 'availability',
                 header: 'Availability',
                 cell: ({ row }) =>
-                    row.original.availability_status_label ?? '—',
+                    row.original.effective_availability_label ?? '—',
             },
             {
                 id: 'branches',
@@ -112,8 +129,15 @@ export default function PlatformDriversIndex({
                             </span>
                         ) : (
                             row.original.branches.map((branch) => (
-                                <Badge key={branch.id} variant="secondary">
-                                    {branch.name}
+                                <Badge key={branch.id} variant="secondary" asChild>
+                                    <Link
+                                        href={BranchController.show.url(
+                                            branch.slug,
+                                        )}
+                                        className="hover:underline"
+                                    >
+                                        {branch.name}
+                                    </Link>
                                 </Badge>
                             ))
                         )}
@@ -154,6 +178,12 @@ export default function PlatformDriversIndex({
                                 ),
                             },
                             {
+                                label: 'Manage branches',
+                                icon: Building2,
+                                onSelect: () =>
+                                    setManagingDriver(row.original),
+                            },
+                            {
                                 label: 'Deactivate',
                                 icon: Trash2,
                                 destructive: true,
@@ -166,7 +196,7 @@ export default function PlatformDriversIndex({
                 ),
             },
         ],
-        [query.sort, query.toggleSort],
+        [],
     );
 
     return (
@@ -339,6 +369,17 @@ export default function PlatformDriversIndex({
                         },
                     });
                 }}
+            />
+
+            <DriverBranchAssignSheet
+                open={managingDriver !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setManagingDriver(null);
+                    }
+                }}
+                driverId={managingDriver?.id ?? null}
+                selectedIds={managingDriver?.branch_ids ?? []}
             />
         </>
     );

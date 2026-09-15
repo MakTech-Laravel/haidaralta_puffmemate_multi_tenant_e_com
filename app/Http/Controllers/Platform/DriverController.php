@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\Driver\DriverService;
 use App\Support\DriverPayload;
 use App\Support\Toast;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,20 +34,70 @@ class DriverController extends Controller
         ]);
     }
 
+    public function branchOptions(Request $request): JsonResponse
+    {
+        $search = trim((string) (
+            $request->input('filter.search')
+            ?? $request->query('search', '')
+        ));
+        $perPage = min(50, max(10, (int) $request->integer('per_page', 20)));
+        $status = $request->input('filter.status', $request->query('status', '1'));
+
+        $query = Branch::query()->orderBy('name');
+
+        if ($status === '1' || $status === 'true' || $status === true) {
+            $query->where('status', true);
+        } elseif ($status === '0' || $status === 'false' || $status === false) {
+            $query->where('status', false);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search): void {
+                $builder
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('slug', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        $paginator = $query->paginate($perPage)->appends($request->query());
+
+        return response()->json([
+            'data' => collect($paginator->items())->map(fn (Branch $branch): array => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'slug' => $branch->slug,
+                'code' => $branch->code,
+                'status' => (bool) $branch->status,
+            ])->values()->all(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
+    }
+
     public function create(): Response
     {
         return Inertia::render('platform/drivers/create', [
             'branches' => DriverPayload::branchOptions(),
             'vehicleTypes' => DriverPayload::vehicleTypeOptions(),
             'availabilityStatuses' => DriverPayload::availabilityOptions(),
+            'rosterStatuses' => DriverPayload::rosterStatusOptions(),
         ]);
     }
 
     public function store(StoreDriverRequest $request): RedirectResponse
     {
+        $data = $request->validated();
+
         $driver = $this->drivers->create(
-            $request->validated(),
+            $data,
             assignedBy: $request->user('platform'),
+            avatar: $request->file('avatar'),
+            vehicleImage: $request->file('vehicle_image'),
         );
 
         Toast::success('Driver created.');
@@ -76,6 +127,7 @@ class DriverController extends Controller
             'branches' => DriverPayload::branchOptions(),
             'vehicleTypes' => DriverPayload::vehicleTypeOptions(),
             'availabilityStatuses' => DriverPayload::availabilityOptions(),
+            'rosterStatuses' => DriverPayload::rosterStatusOptions(),
         ]);
     }
 
@@ -84,12 +136,17 @@ class DriverController extends Controller
         $driver = DriverPayload::resolveDriver($user);
         $data = $request->validated();
 
-        $this->drivers->update($driver, $data);
+        $this->drivers->update(
+            $driver,
+            $data,
+            avatar: $request->file('avatar'),
+            vehicleImage: $request->file('vehicle_image'),
+        );
 
         if (array_key_exists('branch_ids', $data)) {
             $this->drivers->syncBranchAssignments(
                 $driver,
-                array_map('intval', $data['branch_ids']),
+                array_map('intval', $data['branch_ids'] ?? []),
                 DriverAssignmentStatus::Active,
                 $request->user('platform'),
             );

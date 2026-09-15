@@ -15,7 +15,12 @@ type Driver = {
     vehicle_type: string | null;
     availability_status: string | null;
     notes: string | null;
+    address: string | null;
     is_active: boolean;
+    avatar_path: string | null;
+    avatar_url: string | null;
+    vehicle_image_path: string | null;
+    vehicle_image_url: string | null;
 };
 
 export default function PlatformBranchDriversEdit({
@@ -56,7 +61,7 @@ export default function PlatformBranchDriversEdit({
         <>
             <Head title={`Edit ${driver.name}`} />
 
-            <div className="mx-auto max-w-3xl space-y-4 p-2 md:p-4">
+            <div className="mx-auto max-w-4xl space-y-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${driver.name}`}
                     description="Update driver details for this branch"
@@ -79,7 +84,12 @@ export default function PlatformBranchDriversEdit({
                         availability_status:
                             driver.availability_status ?? undefined,
                         notes: driver.notes,
+                        address: driver.address,
                         is_active: driver.is_active,
+                        avatar: driver.avatar_path,
+                        avatar_url: driver.avatar_url,
+                        vehicle_image: driver.vehicle_image_path,
+                        vehicle_image_url: driver.vehicle_image_url,
                     }}
                     cancelHref={BranchDriverController.show.url({
                         branch: branch.slug,

@@ -51,6 +51,8 @@ class DriverController extends Controller
             $request->validated(),
             assignedBy: $request->user('branch'),
             autoAssignBranch: $branch,
+            avatar: $request->file('avatar'),
+            vehicleImage: $request->file('vehicle_image'),
         );
 
         Toast::success('Driver created and assigned to this branch.');
@@ -85,7 +87,12 @@ class DriverController extends Controller
     {
         $driver = $this->resolveAssignedDriver($branch, $user);
 
-        $this->drivers->update($driver, $request->validated());
+        $this->drivers->update(
+            $driver,
+            $request->validated(),
+            avatar: $request->file('avatar'),
+            vehicleImage: $request->file('vehicle_image'),
+        );
 
         Toast::success('Driver updated.');
 

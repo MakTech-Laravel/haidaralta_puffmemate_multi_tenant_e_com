@@ -25,6 +25,9 @@ class DriverProfileFactory extends Factory
             'vehicle_type' => fake()->randomElement(DriverVehicleType::cases()),
             'availability_status' => DriverAvailabilityStatus::Offline,
             'notes' => null,
+            'address' => null,
+            'avatar_path' => null,
+            'vehicle_image_path' => null,
         ];
     }
 

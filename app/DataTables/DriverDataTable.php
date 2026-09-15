@@ -3,9 +3,12 @@
 namespace App\DataTables;
 
 use App\DataTables\Filters\StatusBooleanFilter;
+use App\Enums\DriverRosterStatus;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\User;
+use App\Support\DriverAvailability;
+use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -25,9 +28,19 @@ class DriverDataTable extends AbstractDataTable
      */
     protected function baseQuery(): Builder
     {
+        $today = now()->toDateString();
+
         return User::query()
             ->where('user_type', UserType::DRIVER)
-            ->with(['driverProfile', 'driverBranchAssignments.branch:id,name,slug']);
+            ->with([
+                'driverProfile',
+                'driverBranchAssignments.branch:id,name,slug',
+                'driverRosters' => function ($query) use ($today): void {
+                    $query
+                        ->where('status', DriverRosterStatus::Scheduled->value)
+                        ->whereDate('date', $today);
+                },
+            ]);
     }
 
     /**
@@ -123,6 +136,7 @@ class DriverDataTable extends AbstractDataTable
     {
         /** @var User $model */
         $profile = $model->driverProfile;
+        $effective = DriverAvailability::effectivePayload($model);
 
         return [
             'id' => $model->id,
@@ -130,10 +144,19 @@ class DriverDataTable extends AbstractDataTable
             'phone' => $model->phone,
             'email' => $model->email,
             'is_active' => (bool) $model->is_active,
+            'avatar_url' => MediaUrl::resolve($profile?->avatar_path, fallback: null),
             'vehicle_type' => $profile?->vehicle_type?->value,
             'vehicle_type_label' => $profile?->vehicle_type?->label(),
             'availability_status' => $profile?->availability_status?->value,
             'availability_status_label' => $profile?->availability_status?->label(),
+            'effective_availability' => $effective['value'],
+            'effective_availability_label' => $effective['label'],
+            'branch_ids' => $model->driverBranchAssignments
+                ->filter(fn ($assignment) => $assignment->status?->value === 'active')
+                ->pluck('branch_id')
+                ->map(fn ($id): int => (int) $id)
+                ->values()
+                ->all(),
             'branches' => $model->driverBranchAssignments
                 ->filter(fn ($assignment) => $assignment->status?->value === 'active')
                 ->map(fn ($assignment): array => [

@@ -4,22 +4,24 @@ import { DriverForm } from '@/components/admin/driver-form';
 import Heading from '@/components/heading';
 
 type Option = { value: string; label: string };
-type BranchOption = { id: number; name: string; slug: string };
+type BranchOption = { id: number; name: string; slug: string; code?: string | null };
 
 export default function PlatformDriversCreate({
     branches,
     vehicleTypes,
     availabilityStatuses,
+    rosterStatuses,
 }: {
     branches: BranchOption[];
     vehicleTypes: Option[];
     availabilityStatuses: Option[];
+    rosterStatuses: Option[];
 }) {
     return (
         <>
             <Head title="Add driver" />
 
-            <div className="mx-auto max-w-3xl space-y-4 p-2 md:p-4">
+            <div className="mx-auto max-w-4xl space-y-4 p-2 md:p-4">
                 <Heading
                     title="Add driver"
                     description="Create a driver and assign at least one branch"
@@ -29,6 +31,7 @@ export default function PlatformDriversCreate({
                     action={DriverController.store.form()}
                     vehicleTypes={vehicleTypes}
                     availabilityStatuses={availabilityStatuses}
+                    rosterStatuses={rosterStatuses}
                     branches={branches}
                     requireBranches
                     cancelHref={DriverController.index.url()}

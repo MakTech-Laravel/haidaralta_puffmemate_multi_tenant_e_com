@@ -19,7 +19,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/{ui/date-picker,branch/product-inventory-panel}.tsx | .ai/rules/date-pickerbranch.md |
 | docker/**, docker/nginx.conf | .ai/rules/docker.md |
 | Dockerfile | .ai/rules/dockerfile.md |
-| app/Services/Driver/** | .ai/rules/driver.md |
+| app/Services/Driver/**, app/Models/Driver*.php, app/Http/Controllers/{Platform,Branch}/*Driver*.php, resources/js/pages/{platform,branch}/drivers/**, resources/js/pages/platform/branches/drivers/** | .ai/rules/driver.md |
 | app/Events/** | .ai/rules/events.md |
 | app/Services/Fcm/** | .ai/rules/fcm.md |
 | package.json, vite.config.ts | .ai/rules/general.md |

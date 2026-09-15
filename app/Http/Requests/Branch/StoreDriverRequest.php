@@ -39,6 +39,9 @@ class StoreDriverRequest extends FormRequest
             'vehicle_type' => ['required', Rule::enum(DriverVehicleType::class)],
             'availability_status' => ['nullable', Rule::enum(DriverAvailabilityStatus::class)],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'address' => ['nullable', 'string', 'max:2000'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'vehicle_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }

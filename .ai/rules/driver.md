@@ -14,3 +14,6 @@ driver_id columns always reference users.id (user_type=driver, branch_id null). 
 
 ## Driver CRUD surfaces
 Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids). Nested platform.branches.drivers and branch.drivers auto-assign the current branch on create and can assign existing drivers. Rosters require an active assignment for that branch; overlapping scheduled shifts for the same driver_id+date are rejected. No parcel/GPS/chat yet.
+
+## Driver UX: Sheet assigner, media, effective availability
+Platform driver assign UI is DriverBranchAssignSheet (right Sheet + server search/pagination via platform.drivers.branch-options). driver_profiles stores address/avatar_path/vehicle_image_path (MediaUrl). List/detail show effective_availability: on_break/busy overrides win, else scheduled roster covering now → available, else offline. Roster forms use DatePicker + TimePicker (HH:mm), not native date/time inputs.

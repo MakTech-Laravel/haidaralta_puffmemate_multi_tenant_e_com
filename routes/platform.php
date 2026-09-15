@@ -70,6 +70,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->names('platform.drivers')
             ->middlewareFor(['store', 'update'], 'precognitive');
 
+        Route::get('drivers-branch-options', [PlatformDriverController::class, 'branchOptions'])
+            ->name('platform.drivers.branch-options');
         Route::put('drivers/{user}/branches', [PlatformDriverController::class, 'syncBranches'])
             ->name('platform.drivers.branches.sync');
         Route::post('drivers/{user}/rosters', [PlatformDriverController::class, 'storeRoster'])

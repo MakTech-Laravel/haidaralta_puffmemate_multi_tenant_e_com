@@ -15,6 +15,9 @@ return new class extends Migration
             $table->string('vehicle_type');
             $table->string('availability_status')->default('offline');
             $table->text('notes')->nullable();
+            $table->text('address')->nullable();
+            $table->string('avatar_path')->nullable();
+            $table->string('vehicle_image_path')->nullable();
             $table->timestamps();
         });
     }

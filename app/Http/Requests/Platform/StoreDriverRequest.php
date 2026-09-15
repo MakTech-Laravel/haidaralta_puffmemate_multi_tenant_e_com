@@ -4,6 +4,7 @@ namespace App\Http\Requests\Platform;
 
 use App\Concerns\NormalizesPhoneInput;
 use App\Enums\DriverAvailabilityStatus;
+use App\Enums\DriverRosterStatus;
 use App\Enums\DriverVehicleType;
 use App\Support\Phone;
 use Illuminate\Foundation\Http\FormRequest;
@@ -23,6 +24,12 @@ class StoreDriverRequest extends FormRequest
     {
         $this->mergeNormalizedPhone();
         $this->normalizeBlankEmailToNull();
+
+        if ($this->has('branch_ids') && is_string($this->input('branch_ids'))) {
+            $this->merge([
+                'branch_ids' => array_filter(array_map('intval', explode(',', $this->input('branch_ids')))),
+            ]);
+        }
     }
 
     /**
@@ -39,9 +46,18 @@ class StoreDriverRequest extends FormRequest
             'vehicle_type' => ['required', Rule::enum(DriverVehicleType::class)],
             'availability_status' => ['nullable', Rule::enum(DriverAvailabilityStatus::class)],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'address' => ['nullable', 'string', 'max:2000'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'vehicle_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'is_active' => ['sometimes', 'boolean'],
             'branch_ids' => ['required', 'array', 'min:1'],
             'branch_ids.*' => ['integer', 'distinct', Rule::exists('branches', 'id')],
+            'rosters' => ['sometimes', 'array'],
+            'rosters.*.branch_id' => ['required_with:rosters', 'integer', Rule::exists('branches', 'id')],
+            'rosters.*.date' => ['required_with:rosters', 'date'],
+            'rosters.*.start_time' => ['required_with:rosters', 'date_format:H:i'],
+            'rosters.*.end_time' => ['required_with:rosters', 'date_format:H:i', 'after:rosters.*.start_time'],
+            'rosters.*.status' => ['nullable', Rule::enum(DriverRosterStatus::class)],
         ];
     }
 }

@@ -49,6 +49,11 @@ class UpdateDriverRequest extends FormRequest
             'vehicle_type' => ['required', Rule::enum(DriverVehicleType::class)],
             'availability_status' => ['required', Rule::enum(DriverAvailabilityStatus::class)],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'address' => ['nullable', 'string', 'max:2000'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'vehicle_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_avatar' => ['sometimes', 'boolean'],
+            'remove_vehicle_image' => ['sometimes', 'boolean'],
             'is_active' => ['required', 'boolean'],
         ];
     }

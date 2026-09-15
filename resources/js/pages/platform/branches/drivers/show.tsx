@@ -23,6 +23,9 @@ type Driver = {
     license_number: string | null;
     vehicle_type_label: string | null;
     availability_status_label: string | null;
+    effective_availability_label: string | null;
+    address: string | null;
+    avatar_url: string | null;
     assignments: {
         id: number;
         status_label: string | null;
@@ -131,7 +134,17 @@ export default function PlatformBranchDriversShow({
                                 Availability
                             </span>
                             <span>
-                                {driver.availability_status_label ?? '—'}
+                                {driver.effective_availability_label ??
+                                    driver.availability_status_label ??
+                                    '—'}
+                            </span>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                            <span className="text-muted-foreground">
+                                Address
+                            </span>
+                            <span className="text-right">
+                                {driver.address ?? '—'}
                             </span>
                         </div>
                         {driver.assignments[0] ? (

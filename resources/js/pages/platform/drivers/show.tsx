@@ -1,8 +1,12 @@
 import { Form, Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { useState } from 'react';
+import { Building2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import DriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
+import { DriverBranchAssignSheet } from '@/components/admin/driver-branch-assign-sheet';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +16,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -22,9 +26,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { TimePicker } from '@/components/ui/time-picker';
 
 type Option = { value: string; label: string };
-type BranchOption = { id: number; name: string; slug: string };
 
 type Driver = {
     id: number;
@@ -34,12 +38,20 @@ type Driver = {
     is_active: boolean;
     license_number: string | null;
     vehicle_type_label: string | null;
+    availability_status: string | null;
     availability_status_label: string | null;
+    effective_availability_label: string | null;
     notes: string | null;
+    address: string | null;
+    avatar_url: string | null;
+    vehicle_image_url: string | null;
+    branch_ids: number[];
     assignments: {
         id: number;
         branch_id: number;
         branch_name: string | null;
+        branch_slug: string | null;
+        status: string | null;
         status_label: string | null;
     }[];
     rosters: {
@@ -54,19 +66,39 @@ type Driver = {
     }[];
 };
 
+function initials(name: string): string {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
+}
+
 export default function PlatformDriversShow({
     driver,
-    branches,
     rosterStatuses,
 }: {
     driver: Driver;
-    branches: BranchOption[];
+    branches: { id: number; name: string; slug: string }[];
     rosterStatuses: Option[];
     assignmentStatuses: Option[];
 }) {
-    const [branchId, setBranchId] = useState(
-        String(branches[0]?.id ?? ''),
+    const activeAssignments = useMemo(
+        () =>
+            driver.assignments.filter(
+                (assignment) => assignment.status === 'active',
+            ),
+        [driver.assignments],
     );
+
+    const [branchSheetOpen, setBranchSheetOpen] = useState(false);
+    const [branchId, setBranchId] = useState(
+        String(activeAssignments[0]?.branch_id ?? ''),
+    );
+    const [date, setDate] = useState('');
+    const [startTime, setStartTime] = useState('');
+    const [endTime, setEndTime] = useState('');
     const [rosterStatus, setRosterStatus] = useState(
         rosterStatuses.find((item) => item.value === 'scheduled')?.value ??
             rosterStatuses[0]?.value ??
@@ -90,17 +122,62 @@ export default function PlatformDriversShow({
 
             <div className="mx-auto max-w-5xl space-y-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <Heading
-                        title={driver.name}
-                        description={`${driver.phone}${driver.email ? ` · ${driver.email}` : ''}`}
-                    />
-                    <div className="flex gap-2">
+                    <div className="flex min-w-0 items-start gap-4">
+                        <Avatar className="size-16">
+                            <AvatarImage
+                                src={driver.avatar_url ?? undefined}
+                                alt={driver.name}
+                            />
+                            <AvatarFallback className="text-lg">
+                                {initials(driver.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 space-y-2">
+                            <Heading
+                                title={driver.name}
+                                description={`${driver.phone}${driver.email ? ` · ${driver.email}` : ''}`}
+                            />
+                            <div className="flex flex-wrap gap-2">
+                                <Badge
+                                    variant={
+                                        driver.is_active
+                                            ? 'default'
+                                            : 'secondary'
+                                    }
+                                >
+                                    {driver.is_active ? 'Active' : 'Inactive'}
+                                </Badge>
+                                <Badge variant="outline">
+                                    {driver.effective_availability_label ??
+                                        'Offline'}
+                                </Badge>
+                                {driver.vehicle_type_label ? (
+                                    <Badge variant="secondary">
+                                        {driver.vehicle_type_label}
+                                    </Badge>
+                                ) : null}
+                            </div>
+                        </div>
+                        {driver.vehicle_image_url ? (
+                            <img
+                                src={driver.vehicle_image_url}
+                                alt={`${driver.name} vehicle`}
+                                className="border-border/60 ml-auto hidden h-20 w-28 rounded-lg border object-cover sm:block"
+                            />
+                        ) : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
                         <Button variant="outline" asChild>
-                            <Link
-                                href={DriverController.edit.url(driver.id)}
-                            >
+                            <Link href={DriverController.edit.url(driver.id)}>
                                 Edit
                             </Link>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setBranchSheetOpen(true)}
+                        >
+                            <Building2 className="size-4" />
+                            Manage branches
                         </Button>
                         <Button variant="outline" asChild>
                             <Link href={DriverController.index.url()}>
@@ -111,27 +188,27 @@ export default function PlatformDriversShow({
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
-                    <Card>
+                    <Card className="shadow-none">
                         <CardHeader>
                             <CardTitle>Profile</CardTitle>
                             <CardDescription>
-                                Account and vehicle details
+                                Address, license, and availability override
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-2 text-sm">
                             <div className="flex justify-between gap-4">
                                 <span className="text-muted-foreground">
-                                    Status
+                                    Address
                                 </span>
-                                <Badge
-                                    variant={
-                                        driver.is_active
-                                            ? 'default'
-                                            : 'secondary'
-                                    }
-                                >
-                                    {driver.is_active ? 'Active' : 'Inactive'}
-                                </Badge>
+                                <span className="text-right">
+                                    {driver.address ?? '—'}
+                                </span>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">
+                                    License
+                                </span>
+                                <span>{driver.license_number ?? '—'}</span>
                             </div>
                             <div className="flex justify-between gap-4">
                                 <span className="text-muted-foreground">
@@ -143,17 +220,11 @@ export default function PlatformDriversShow({
                             </div>
                             <div className="flex justify-between gap-4">
                                 <span className="text-muted-foreground">
-                                    Availability
+                                    Override status
                                 </span>
                                 <span>
                                     {driver.availability_status_label ?? '—'}
                                 </span>
-                            </div>
-                            <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                    License
-                                </span>
-                                <span>{driver.license_number ?? '—'}</span>
                             </div>
                             {driver.notes ? (
                                 <p className="text-muted-foreground pt-2">
@@ -163,7 +234,7 @@ export default function PlatformDriversShow({
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="shadow-none">
                         <CardHeader>
                             <CardTitle>Branch assignments</CardTitle>
                             <CardDescription>
@@ -181,10 +252,22 @@ export default function PlatformDriversShow({
                                         key={assignment.id}
                                         className="flex items-center justify-between gap-2 text-sm"
                                     >
-                                        <span>
-                                            {assignment.branch_name ??
-                                                'Unknown branch'}
-                                        </span>
+                                        {assignment.branch_slug ? (
+                                            <Link
+                                                href={BranchController.show.url(
+                                                    assignment.branch_slug,
+                                                )}
+                                                className="font-medium hover:underline"
+                                            >
+                                                {assignment.branch_name ??
+                                                    'Unknown branch'}
+                                            </Link>
+                                        ) : (
+                                            <span>
+                                                {assignment.branch_name ??
+                                                    'Unknown branch'}
+                                            </span>
+                                        )}
                                         <Badge variant="secondary">
                                             {assignment.status_label}
                                         </Badge>
@@ -195,7 +278,7 @@ export default function PlatformDriversShow({
                     </Card>
                 </div>
 
-                <Card>
+                <Card className="shadow-none">
                     <CardHeader>
                         <CardTitle>Rosters</CardTitle>
                         <CardDescription>
@@ -210,34 +293,63 @@ export default function PlatformDriversShow({
                             method="post"
                             className="grid gap-3 md:grid-cols-5"
                             options={{ preserveScroll: true }}
+                            onSuccess={() => {
+                                setDate('');
+                                setStartTime('');
+                                setEndTime('');
+                            }}
                         >
                             {({ errors, processing }) => (
                                 <>
+                                    <input
+                                        type="hidden"
+                                        name="branch_id"
+                                        value={branchId}
+                                    />
+                                    <input type="hidden" name="date" value={date} />
+                                    <input
+                                        type="hidden"
+                                        name="start_time"
+                                        value={startTime}
+                                    />
+                                    <input
+                                        type="hidden"
+                                        name="end_time"
+                                        value={endTime}
+                                    />
+                                    <input
+                                        type="hidden"
+                                        name="status"
+                                        value={rosterStatus}
+                                    />
+
                                     <div className="grid gap-2">
                                         <Label>Branch</Label>
-                                        <input
-                                            type="hidden"
-                                            name="branch_id"
-                                            value={branchId}
-                                        />
                                         <Select
                                             value={branchId}
                                             onValueChange={setBranchId}
+                                            disabled={
+                                                activeAssignments.length === 0
+                                            }
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Branch" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {branches.map((branch) => (
-                                                    <SelectItem
-                                                        key={branch.id}
-                                                        value={String(
-                                                            branch.id,
-                                                        )}
-                                                    >
-                                                        {branch.name}
-                                                    </SelectItem>
-                                                ))}
+                                                {activeAssignments.map(
+                                                    (assignment) => (
+                                                        <SelectItem
+                                                            key={
+                                                                assignment.branch_id
+                                                            }
+                                                            value={String(
+                                                                assignment.branch_id,
+                                                            )}
+                                                        >
+                                                            {assignment.branch_name}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
                                             </SelectContent>
                                         </Select>
                                         <InputError
@@ -245,36 +357,28 @@ export default function PlatformDriversShow({
                                         />
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="date">Date</Label>
-                                        <Input
-                                            id="date"
-                                            name="date"
-                                            type="date"
-                                            required
+                                        <Label>Date</Label>
+                                        <DatePicker
+                                            value={date}
+                                            onChange={setDate}
                                         />
                                         <InputError message={errors.date} />
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="start_time">
-                                            Start
-                                        </Label>
-                                        <Input
-                                            id="start_time"
-                                            name="start_time"
-                                            type="time"
-                                            required
+                                        <Label>Start</Label>
+                                        <TimePicker
+                                            value={startTime}
+                                            onChange={setStartTime}
                                         />
                                         <InputError
                                             message={errors.start_time}
                                         />
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="end_time">End</Label>
-                                        <Input
-                                            id="end_time"
-                                            name="end_time"
-                                            type="time"
-                                            required
+                                        <Label>End</Label>
+                                        <TimePicker
+                                            value={endTime}
+                                            onChange={setEndTime}
                                         />
                                         <InputError
                                             message={errors.end_time}
@@ -282,11 +386,6 @@ export default function PlatformDriversShow({
                                     </div>
                                     <div className="grid gap-2">
                                         <Label>Status</Label>
-                                        <input
-                                            type="hidden"
-                                            name="status"
-                                            value={rosterStatus}
-                                        />
                                         <div className="flex gap-2">
                                             <Select
                                                 value={rosterStatus}
@@ -314,7 +413,11 @@ export default function PlatformDriversShow({
                                             </Select>
                                             <Button
                                                 type="submit"
-                                                disabled={processing}
+                                                disabled={
+                                                    processing ||
+                                                    activeAssignments.length ===
+                                                        0
+                                                }
                                             >
                                                 {processing ? (
                                                     <Spinner />
@@ -374,6 +477,13 @@ export default function PlatformDriversShow({
                     </CardContent>
                 </Card>
             </div>
+
+            <DriverBranchAssignSheet
+                open={branchSheetOpen}
+                onOpenChange={setBranchSheetOpen}
+                driverId={driver.id}
+                selectedIds={driver.branch_ids}
+            />
         </>
     );
 }

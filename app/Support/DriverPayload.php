@@ -29,7 +29,7 @@ final class DriverPayload
     {
         $driver->loadMissing([
             'driverProfile',
-            'driverBranchAssignments.branch:id,name,slug',
+            'driverBranchAssignments.branch:id,name,slug,status',
             'driverRosters' => function ($query) use ($scopedBranch): void {
                 $query->with('branch:id,name,slug')->orderByDesc('date')->orderBy('start_time');
 
@@ -40,6 +40,7 @@ final class DriverPayload
         ]);
 
         $profile = $driver->driverProfile;
+        $effective = DriverAvailability::effectivePayload($driver);
 
         $assignments = $driver->driverBranchAssignments
             ->map(fn ($assignment): array => [
@@ -71,7 +72,14 @@ final class DriverPayload
             'vehicle_type_label' => $profile?->vehicle_type?->label(),
             'availability_status' => $profile?->availability_status?->value,
             'availability_status_label' => $profile?->availability_status?->label(),
+            'effective_availability' => $effective['value'],
+            'effective_availability_label' => $effective['label'],
             'notes' => $profile?->notes,
+            'address' => $profile?->address,
+            'avatar_path' => $profile?->avatar_path,
+            'avatar_url' => MediaUrl::resolve($profile?->avatar_path, fallback: null),
+            'vehicle_image_path' => $profile?->vehicle_image_path,
+            'vehicle_image_url' => MediaUrl::resolve($profile?->vehicle_image_path, fallback: null),
             'assignments' => $assignments,
             'branch_ids' => $driver->driverBranchAssignments
                 ->filter(fn ($assignment): bool => $assignment->status === DriverAssignmentStatus::Active)
@@ -152,18 +160,20 @@ final class DriverPayload
     }
 
     /**
-     * @return list<array{id: int, name: string, slug: string}>
+     * @return list<array{id: int, name: string, slug: string, code: ?string, status: bool}>
      */
     public static function branchOptions(): array
     {
         return Branch::query()
             ->where('status', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'slug'])
+            ->get(['id', 'name', 'slug', 'code', 'status'])
             ->map(fn (Branch $branch): array => [
                 'id' => $branch->id,
                 'name' => $branch->name,
                 'slug' => $branch->slug,
+                'code' => $branch->code,
+                'status' => (bool) $branch->status,
             ])
             ->all();
     }

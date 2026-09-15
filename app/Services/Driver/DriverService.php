@@ -11,16 +11,23 @@ use App\Models\DriverBranchAssignment;
 use App\Models\DriverProfile;
 use App\Models\DriverRoster;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 
 class DriverService
 {
     /**
-     * @param  array{name: string, phone: string, email?: string|null, password: string, license_number?: string|null, vehicle_type: string, availability_status?: string, notes?: string|null, branch_ids?: list<int>}  $data
+     * @param  array{name: string, phone: string, email?: string|null, password: string, license_number?: string|null, vehicle_type: string, availability_status?: string, notes?: string|null, address?: string|null, branch_ids?: list<int>, rosters?: list<array{branch_id: int, date: string, start_time: string, end_time: string, status?: string}>}  $data
      */
-    public function create(array $data, ?User $assignedBy = null, ?Branch $autoAssignBranch = null): User
-    {
+    public function create(
+        array $data,
+        ?User $assignedBy = null,
+        ?Branch $autoAssignBranch = null,
+        ?UploadedFile $avatar = null,
+        ?UploadedFile $vehicleImage = null,
+    ): User {
         $branchIds = $data['branch_ids'] ?? [];
 
         if ($branchIds === [] && $autoAssignBranch === null) {
@@ -31,7 +38,7 @@ class DriverService
             $branchIds = [$autoAssignBranch->id];
         }
 
-        return DB::transaction(function () use ($data, $assignedBy, $branchIds): User {
+        return DB::transaction(function () use ($data, $assignedBy, $branchIds, $avatar, $vehicleImage): User {
             $driver = User::query()->create([
                 'name' => $data['name'],
                 'phone' => $data['phone'],
@@ -49,22 +56,34 @@ class DriverService
                 'vehicle_type' => $data['vehicle_type'],
                 'availability_status' => $data['availability_status'] ?? DriverAvailabilityStatus::Offline->value,
                 'notes' => $data['notes'] ?? null,
+                'address' => $data['address'] ?? null,
+                'avatar_path' => $this->storeMedia($avatar, 'drivers/avatars'),
+                'vehicle_image_path' => $this->storeMedia($vehicleImage, 'drivers/vehicles'),
             ]);
 
             $this->syncBranchAssignments($driver, $branchIds, DriverAssignmentStatus::Active, $assignedBy);
+
+            foreach ($data['rosters'] ?? [] as $roster) {
+                $branch = Branch::query()->findOrFail((int) $roster['branch_id']);
+                $this->createRoster($driver, $branch, $roster);
+            }
 
             return $driver->refresh();
         });
     }
 
     /**
-     * @param  array{name?: string, phone?: string, email?: string|null, password?: string|null, is_active?: bool, license_number?: string|null, vehicle_type?: string, availability_status?: string, notes?: string|null}  $data
+     * @param  array{name?: string, phone?: string, email?: string|null, password?: string|null, is_active?: bool, license_number?: string|null, vehicle_type?: string, availability_status?: string, notes?: string|null, address?: string|null, remove_avatar?: bool, remove_vehicle_image?: bool}  $data
      */
-    public function update(User $driver, array $data): User
-    {
+    public function update(
+        User $driver,
+        array $data,
+        ?UploadedFile $avatar = null,
+        ?UploadedFile $vehicleImage = null,
+    ): User {
         $this->assertIsDriver($driver);
 
-        return DB::transaction(function () use ($driver, $data): User {
+        return DB::transaction(function () use ($driver, $data, $avatar, $vehicleImage): User {
             $userPayload = array_filter([
                 'name' => $data['name'] ?? null,
                 'phone' => $data['phone'] ?? null,
@@ -86,33 +105,43 @@ class DriverService
                 throw new InvalidArgumentException('Driver profile does not exist.');
             }
 
-            $profilePayload = array_filter([
-                'license_number' => $data['license_number'] ?? null,
-                'vehicle_type' => $data['vehicle_type'] ?? null,
-                'availability_status' => $data['availability_status'] ?? null,
-                'notes' => $data['notes'] ?? null,
-            ], fn (mixed $value): bool => $value !== null);
+            $avatarPath = $profile->avatar_path;
+            $vehiclePath = $profile->vehicle_image_path;
 
-            if (array_key_exists('license_number', $data) && $data['license_number'] === null) {
-                $profilePayload['license_number'] = null;
+            if (($data['remove_avatar'] ?? false) === true) {
+                $this->deleteMedia($avatarPath);
+                $avatarPath = null;
+            } elseif ($avatar !== null) {
+                $this->deleteMedia($avatarPath);
+                $avatarPath = $this->storeMedia($avatar, 'drivers/avatars');
             }
 
-            if (array_key_exists('notes', $data) && $data['notes'] === null) {
-                $profilePayload['notes'] = null;
+            if (($data['remove_vehicle_image'] ?? false) === true) {
+                $this->deleteMedia($vehiclePath);
+                $vehiclePath = null;
+            } elseif ($vehicleImage !== null) {
+                $this->deleteMedia($vehiclePath);
+                $vehiclePath = $this->storeMedia($vehicleImage, 'drivers/vehicles');
             }
 
-            if ($profilePayload !== []) {
-                $profile->update($profilePayload);
+            $profilePayload = [
+                'avatar_path' => $avatarPath,
+                'vehicle_image_path' => $vehiclePath,
+            ];
+
+            foreach (['license_number', 'vehicle_type', 'availability_status', 'notes', 'address'] as $field) {
+                if (array_key_exists($field, $data)) {
+                    $profilePayload[$field] = $data[$field];
+                }
             }
+
+            $profile->update($profilePayload);
 
             return $driver->refresh();
         });
     }
 
     /**
-     * Replace the driver's branch assignment set: upserts the given branch ids with the
-     * given status, and marks any existing assignment not in the list as inactive.
-     *
      * @param  list<int>  $branchIds
      */
     public function syncBranchAssignments(
@@ -133,7 +162,7 @@ class DriverService
 
             DriverBranchAssignment::query()
                 ->where('driver_id', $driver->id)
-                ->whereNotIn('branch_id', $branchIds)
+                ->whereNotIn('branch_id', $branchIds === [] ? [0] : $branchIds)
                 ->update(['status' => DriverAssignmentStatus::Inactive->value]);
         });
     }
@@ -222,6 +251,24 @@ class DriverService
         $roster->delete();
     }
 
+    private function storeMedia(?UploadedFile $file, string $directory): ?string
+    {
+        if ($file === null) {
+            return null;
+        }
+
+        return $file->store($directory, 'public');
+    }
+
+    private function deleteMedia(?string $path): void
+    {
+        if ($path === null || $path === '' || ! str_contains($path, '/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
+    }
+
     private function assertIsDriver(User $driver): void
     {
         if ($driver->user_type !== UserType::DRIVER) {
@@ -256,13 +303,16 @@ class DriverService
         string $endTime,
         ?int $exceptRosterId = null,
     ): void {
+        $normalizedStart = strlen($startTime) === 5 ? "{$startTime}:00" : $startTime;
+        $normalizedEnd = strlen($endTime) === 5 ? "{$endTime}:00" : $endTime;
+
         $overlaps = DriverRoster::query()
             ->where('driver_id', $driver->id)
             ->whereDate('date', $date)
             ->where('status', DriverRosterStatus::Scheduled->value)
             ->when($exceptRosterId !== null, fn ($query) => $query->whereKeyNot($exceptRosterId))
-            ->whereRaw('start_time < ?', [strlen($endTime) === 5 ? "{$endTime}:00" : $endTime])
-            ->whereRaw('end_time > ?', [strlen($startTime) === 5 ? "{$startTime}:00" : $startTime])
+            ->whereRaw('start_time < ?', [$normalizedEnd])
+            ->whereRaw('end_time > ?', [$normalizedStart])
             ->exists();
 
         if ($overlaps) {

@@ -9,9 +9,12 @@ use App\Models\DriverBranchAssignment;
 use App\Models\DriverProfile;
 use App\Models\DriverRoster;
 use App\Models\User;
+use App\Support\DriverAvailability;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -134,4 +137,123 @@ test('platform nested branch drivers index lists assigned drivers', function () 
             ->where('table.data', fn ($rows) => collect($rows)->contains(
                 fn ($row) => $row['phone'] === UserSeeder::DRIVER_PHONE,
             )));
+});
+
+test('platform can store driver with address and avatar and sync branches', function () {
+    Storage::fake('public');
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.drivers.store'), [
+            'name' => 'Ava Driver',
+            'phone' => '+61420000077',
+            'email' => 'ava.driver@puffmemate.dev',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'vehicle_type' => DriverVehicleType::Motorcycle->value,
+            'availability_status' => DriverAvailabilityStatus::Offline->value,
+            'address' => '12 Delivery Lane, Sydney',
+            'avatar' => UploadedFile::fake()->image('avatar.jpg'),
+            'branch_ids' => [$sydney->id],
+            'is_active' => true,
+        ])
+        ->assertRedirect();
+
+    $driver = User::query()->where('phone', '+61420000077')->firstOrFail();
+    $profile = $driver->driverProfile;
+
+    expect($profile?->address)->toBe('12 Delivery Lane, Sydney')
+        ->and($profile?->avatar_path)->not->toBeNull();
+
+    Storage::disk('public')->assertExists($profile->avatar_path);
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.drivers.branches.sync', $driver), [
+            'branch_ids' => [$sydney->id, $melbourne->id],
+        ])
+        ->assertRedirect();
+
+    expect(DriverBranchAssignment::query()
+        ->where('driver_id', $driver->id)
+        ->where('status', DriverAssignmentStatus::Active)
+        ->count())->toBe(2);
+});
+
+test('driver list payload includes branch slug and effective availability from roster', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $driver->driverProfile?->update([
+        'availability_status' => DriverAvailabilityStatus::Offline,
+    ]);
+
+    $now = now();
+
+    DriverRoster::query()->create([
+        'driver_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'date' => $now->toDateString(),
+        'start_time' => $now->copy()->subHour()->format('H:i'),
+        'end_time' => $now->copy()->addHour()->format('H:i'),
+        'status' => 'scheduled',
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.drivers.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/drivers/index')
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['id'] === $driver->id
+                    && $row['effective_availability'] === 'available'
+                    && collect($row['branches'])->contains(
+                        fn ($branch) => ($branch['slug'] ?? null) === BranchSeeder::SYDNEY_CBD,
+                    ),
+            )));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.drivers.show', $driver))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/drivers/show')
+            ->where('driver.effective_availability', 'available'));
+});
+
+test('platform branch options endpoint supports search pagination', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.drivers.branch-options', [
+            'filter' => ['search' => 'Sydney', 'status' => '1'],
+            'per_page' => 10,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('meta.per_page', 10)
+        ->assertJsonFragment(['slug' => BranchSeeder::SYDNEY_CBD]);
+});
+
+test('busy override wins over scheduled roster for effective availability', function () {
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $now = now();
+
+    $driver->driverProfile?->update([
+        'availability_status' => DriverAvailabilityStatus::Busy,
+    ]);
+
+    DriverRoster::query()->create([
+        'driver_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'date' => $now->toDateString(),
+        'start_time' => $now->copy()->subHour()->format('H:i'),
+        'end_time' => $now->copy()->addHour()->format('H:i'),
+        'status' => 'scheduled',
+    ]);
+
+    expect(DriverAvailability::effective($driver)->value)
+        ->toBe(DriverAvailabilityStatus::Busy->value);
 });
