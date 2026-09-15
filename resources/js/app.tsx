@@ -13,7 +13,7 @@ import BranchLayout from '@/layouts/branch/branch-layout';
 import CustomerLayout from '@/layouts/customer/customer-layout';
 import DriverLayout from '@/layouts/driver/driver-layout';
 import PlatformLayout from '@/layouts/platform/platform-layout';
-import SettingsLayout from '@/layouts/settings/layout';
+import SettingsPortalLayout from '@/layouts/settings/settings-portal-layout';
 import StorefrontLayout from '@/layouts/storefront/storefront-layout';
 import type { Auth } from '@/types/auth';
 
@@ -33,7 +33,7 @@ void createInertiaApp({
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
+                return SettingsPortalLayout;
             case name.startsWith('platform/'):
                 return PlatformLayout;
             case name.startsWith('branch/'):

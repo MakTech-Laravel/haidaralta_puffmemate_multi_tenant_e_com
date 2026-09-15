@@ -4,6 +4,7 @@ use App\Http\Controllers\Branch\ActivityLogController as BranchActivityLogContro
 use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
+use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{branch}')->group(function () {
     Route::get('dashboard', [BranchDashboardController::class, 'index'])->name('branch.dashboard');
+    Route::get('notifications', [BranchNotificationController::class, 'index'])->name('branch.notifications.index');
 
     Route::middleware(['permission:manage-branch-products'])->group(function () {
         Route::get('categories/suggestions', [BranchCategoryController::class, 'suggestions'])

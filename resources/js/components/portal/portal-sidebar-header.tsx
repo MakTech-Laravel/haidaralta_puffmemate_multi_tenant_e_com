@@ -10,17 +10,21 @@ export function PortalSidebarHeader({
     banner,
     breadcrumbs = [],
     density = 'default',
+    sticky = false,
 }: {
     accessory?: ReactNode;
     accent?: 'none' | 'primary-bar';
     banner?: ReactNode;
     breadcrumbs?: BreadcrumbItemType[];
     density?: 'compact' | 'default' | 'airy';
+    sticky?: boolean;
 }) {
     return (
         <header
             className={cn(
                 'border-sidebar-border/50 flex shrink-0 flex-col border-b transition-[width,height] ease-linear',
+                sticky &&
+                    'bg-background/95 supports-backdrop-filter:bg-background/80 sticky top-0 z-20 backdrop-blur',
                 density === 'compact' && 'min-h-12',
                 density === 'default' &&
                     'min-h-16 group-has-data-[collapsible=icon]/sidebar-wrapper:min-h-12',

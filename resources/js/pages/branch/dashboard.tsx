@@ -6,7 +6,6 @@ import {
     TriangleAlert,
     Users,
 } from 'lucide-react';
-import { DemoDataBadge } from '@/components/portal/demo-data-badge';
 import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -102,8 +101,7 @@ export default function BranchDashboard() {
                             Welcome, {user?.name}
                         </h1>
                         <p className="text-muted-foreground text-sm">
-                            Branch: {branch.name} ({branch.slug}) · today&apos;s
-                            floor board
+                            Branch: {branch.name} ({branch.slug})
                         </p>
                         {hasRole('super-admin') && (
                             <p className="text-muted-foreground text-sm">
@@ -111,7 +109,6 @@ export default function BranchDashboard() {
                             </p>
                         )}
                     </div>
-                    <DemoDataBadge />
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
