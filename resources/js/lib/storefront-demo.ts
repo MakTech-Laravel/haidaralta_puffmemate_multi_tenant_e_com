@@ -41,7 +41,7 @@ export const storefrontHeroSlides: StorefrontHeroSlide[] = [
             'A cleaner, premium shopping experience for cigarettes, vapes, tobacco, nicotine products and accessories.',
         image: '/images/storefront/hero-1.jpg',
         primaryCta: { label: 'Shop Products', href: '/shop' },
-        secondaryCta: { label: 'Explore Deals', href: '/shop' },
+        secondaryCta: { label: 'Explore Deals', href: '#home-deals' },
     },
     {
         id: '2',
@@ -49,9 +49,9 @@ export const storefrontHeroSlides: StorefrontHeroSlide[] = [
         title: 'Premium picks. Local stock.',
         description:
             'Browse featured packs and new arrivals from nearby branches — ready when you are.',
-        image: '/images/storefront/hero-2.jpg',
+        image: '/images/storefront/hero2.jpg',
         primaryCta: { label: 'Shop Products', href: '/shop' },
-        secondaryCta: { label: 'Explore Deals', href: '/shop' },
+        secondaryCta: { label: 'Explore Deals', href: '#home-deals' },
     },
 ];
 
@@ -121,7 +121,7 @@ export const storefrontProducts: StorefrontProduct[] = [
         price: 'Start from $89.00',
         stock: 12,
         category: 'Vapes',
-        image: '/images/storefront/product-iqos.png',
+        image: '/images/storefront/product-marlboro-gold.jpg',
     },
     {
         id: '4',
@@ -130,7 +130,7 @@ export const storefrontProducts: StorefrontProduct[] = [
         price: 'Start from $18.00',
         stock: 56,
         category: 'Vapes',
-        image: '/images/storefront/product-vuse.png',
+        image: '/images/storefront/product-winfield-blue.jpg',
     },
     {
         id: '5',
@@ -139,7 +139,7 @@ export const storefrontProducts: StorefrontProduct[] = [
         price: 'Start from $13.00',
         stock: 31,
         category: 'Cigarettes',
-        image: '/images/storefront/product-marlboro-gold.jpg',
+        image: '/images/storefront/b4343f447a376e4db4da6328e10eddefc632ddeb.jpg',
     },
     {
         id: '6',
@@ -148,7 +148,7 @@ export const storefrontProducts: StorefrontProduct[] = [
         price: 'Start from $12.50',
         stock: 19,
         category: 'Cigarettes',
-        image: '/images/storefront/product-winfield-blue.jpg',
+        image: '/images/storefront/907b72737ecd36dbee5ac6c27fa0b02b906a44ee.jpg',
     },
     {
         id: '7',
@@ -157,7 +157,7 @@ export const storefrontProducts: StorefrontProduct[] = [
         price: 'Start from $9.90',
         stock: 64,
         category: 'Nicotine Pouches',
-        image: '/images/storefront/product-iqos.png',
+        image: '/images/storefront/product-marlboro-gold.jpg',
     },
     {
         id: '8',
@@ -166,8 +166,8 @@ export const storefrontProducts: StorefrontProduct[] = [
         price: 'Start from $4.00',
         stock: 120,
         category: 'Accessories',
-        image: '/images/storefront/product-vuse.png',
-    }, 
+        image: '/images/storefront/product-winfield-blue.jpg',
+    },
 ];
 
 export const storefrontFeaturedProducts: StorefrontProduct[] =

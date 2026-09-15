@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Category;
-use App\Models\Product;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\CatalogSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -40,6 +39,17 @@ test('storefront home shares featured categories and tagged products', function 
             ->has('storefront.navCategories'));
 });
 
+test('storefront shop page serves DemoCatalog products', function () {
+    $this->get(route('shop'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/shop')
+            ->where('products.0.id', '1')
+            ->where('products.0.name', 'Marlboro Gold')
+            ->has('branches')
+            ->where('filters.branchId', null));
+});
+
 test('storefront category page renders products for a valid slug', function () {
     $this->get(route('shop.category', ['category' => 'cigarettes']))
         ->assertOk()
@@ -50,7 +60,8 @@ test('storefront category page renders products for a valid slug', function () {
             ->has('products')
             ->has('branches')
             ->where('filters.search', '')
-            ->where('filters.branchId', null));
+            ->where('filters.branchId', null)
+            ->where('filters.sort', null));
 });
 
 test('storefront category page returns not found for unknown slug', function () {
@@ -59,14 +70,12 @@ test('storefront category page returns not found for unknown slug', function () 
 });
 
 test('storefront product details page renders for a valid product', function () {
-    $product = Product::query()->where('slug', 'marlboro-gold-soft-pack-20s')->firstOrFail();
-
-    $this->get(route('products.show', ['product' => $product->slug]))
+    $this->get(route('products.show', ['product' => '1']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/product')
-            ->where('product.id', $product->slug)
-            ->where('product.name', $product->name)
+            ->where('product.id', '1')
+            ->where('product.name', 'Marlboro Gold')
             ->has('product.specifications')
             ->has('similarProducts')
             ->has('backHref'));

@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
 import { CategoryCard } from '@/components/storefront/category-card';
 import { FeaturesBar } from '@/components/storefront/features-bar';
+import { HomeDealsBanner } from '@/components/storefront/home/deals-banner';
 import { HomeHeroSlider } from '@/components/storefront/home/hero-slider';
 import { ProductCard } from '@/components/storefront/product-card';
 import {
@@ -89,6 +90,10 @@ export default function StorefrontHome({
                         <ProductCard key={product.id} product={product} />
                     ))}
                 </div>
+            </section>
+
+            <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">
+                <HomeDealsBanner />
             </section>
 
             <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">

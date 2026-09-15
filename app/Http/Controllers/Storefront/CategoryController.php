@@ -17,6 +17,8 @@ class CategoryController extends Controller
     {
         $branch = StorefrontCatalog::selectedBranch($request);
         $search = $request->string('search')->trim()->toString();
+        $sort = $request->string('sort')->trim()->toString();
+        $sort = $sort !== '' ? $sort : null;
 
         return Inertia::render('storefront/category', [
             'category' => StorefrontCatalog::resolveCategory($category),
@@ -24,11 +26,13 @@ class CategoryController extends Controller
                 $category,
                 $branch,
                 $search !== '' ? $search : null,
+                $sort,
             ),
             'branches' => StorefrontCatalog::branches(),
             'filters' => [
                 'search' => $search,
                 'branchId' => $branch?->slug,
+                'sort' => $sort,
             ],
         ]);
     }
