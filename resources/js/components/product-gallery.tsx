@@ -38,9 +38,11 @@ type ProductGalleryProps = {
     className?: string;
     /** When false, render only the grid (no Card chrome). Default true. */
     card?: boolean;
-    /** Large featured stage with primary + gallery thumbs. */
-    layout?: 'grid' | 'hero';
+    /** Large featured stage with primary + gallery thumbs. `tile` is a compact square preview. */
+    layout?: 'grid' | 'hero' | 'tile';
     primaryUrl?: string | null;
+    /** Applied to the wrapping Card when `card` is true. */
+    cardClassName?: string;
 };
 
 function useGalleryPresentation({
@@ -95,6 +97,7 @@ export function ProductGallery({
     card = true,
     layout = 'grid',
     primaryUrl = null,
+    cardClassName,
 }: ProductGalleryProps) {
     const [open, setOpen] = useState(false);
     const [index, setIndex] = useState(0);
@@ -140,7 +143,7 @@ export function ProductGallery({
 
     const empty = (
         <div
-            className="border-border/70 bg-muted/20 flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center"
+            className="border-border/70 bg-muted/20 flex min-h-64 flex-1 flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center"
             style={tileStyle}
         >
             <ImageIcon className="text-muted-foreground mb-3 size-8" />
@@ -153,14 +156,14 @@ export function ProductGallery({
     );
 
     const hero = (
-        <div className={cn('flex flex-col gap-3', className)}>
+        <div className={cn('flex min-h-0 flex-1 flex-col gap-3', className)}>
             {items.length === 0 ? (
                 empty
             ) : (
                 <>
                     <button
                         type="button"
-                        className="group relative flex min-h-72 w-full items-center justify-center overflow-hidden rounded-2xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:min-h-96"
+                        className="group relative flex min-h-72 w-full flex-1 items-center justify-center overflow-hidden rounded-2xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:min-h-96"
                         style={tileStyle}
                         onClick={() => openAt(activeIndex)}
                         aria-label={`Preview ${active?.label ?? productName}`}
@@ -211,6 +214,41 @@ export function ProductGallery({
         </div>
     );
 
+    const tileEmpty = (
+        <div
+            className="border-border/70 bg-muted/20 flex aspect-square w-full flex-col items-center justify-center rounded-xl border border-dashed px-3 text-center"
+            style={tileStyle}
+        >
+            <ImageIcon className="text-muted-foreground mb-2 size-6" />
+            <p className="text-muted-foreground text-xs">No listing photo</p>
+        </div>
+    );
+
+    const tile = (
+        <div className={cn('w-full', className)}>
+            {items.length === 0 ? (
+                tileEmpty
+            ) : (
+                <button
+                    type="button"
+                    className="group relative aspect-square w-full overflow-hidden rounded-xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    style={tileStyle}
+                    onClick={() => openAt(activeIndex)}
+                    aria-label={`Preview ${active?.label ?? productName}`}
+                >
+                    {active ? (
+                        <img
+                            src={active.url}
+                            alt={productName}
+                            className="size-full object-contain p-2.5 transition group-hover:scale-[1.02]"
+                        />
+                    ) : null}
+                </button>
+            )}
+            {lightbox}
+        </div>
+    );
+
     const grid = (
         <>
             {images.length === 0 ? (
@@ -247,7 +285,8 @@ export function ProductGallery({
         </>
     );
 
-    const body = layout === 'hero' ? hero : grid;
+    const body =
+        layout === 'hero' ? hero : layout === 'tile' ? tile : grid;
 
     if (!card) {
         return body;
@@ -256,7 +295,7 @@ export function ProductGallery({
     const mediaCount = items.length;
 
     return (
-        <Card className="gap-4 py-5 shadow-sm">
+        <Card className={cn('h-full gap-4 py-5 shadow-sm', cardClassName)}>
             <CardHeader className="px-5">
                 <CardTitle className="text-base">
                     {layout === 'hero' ? 'Media' : 'Gallery'}
@@ -269,7 +308,7 @@ export function ProductGallery({
                         : 'Extra images — click a thumbnail to preview'}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="px-5">{body}</CardContent>
+            <CardContent className="flex min-h-0 flex-1 flex-col px-5">{body}</CardContent>
         </Card>
     );
 }

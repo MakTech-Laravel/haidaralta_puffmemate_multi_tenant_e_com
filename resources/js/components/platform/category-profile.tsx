@@ -1,15 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { format, isValid, parseISO } from 'date-fns';
-import {
-    Check,
-    Copy,
-    FolderTree,
-    ImageIcon,
-    Package,
-    Pencil,
-} from 'lucide-react';
+import { Check, Copy, Pencil } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { ProductGallery } from '@/components/product-gallery';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -109,6 +101,19 @@ function CopyValueButton({ value, label }: { value: string; label: string }) {
     );
 }
 
+function CountJewel({ label, count }: { label: string; count: number }) {
+    return (
+        <span className="inline-flex items-center gap-1.5">
+            <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                {label}
+            </span>
+            <span className="bg-primary/10 text-primary inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-xs font-medium tabular-nums">
+                {count}
+            </span>
+        </span>
+    );
+}
+
 function formatTimestamp(value: string | null): string {
     if (!value) {
         return '—';
@@ -141,37 +146,18 @@ export function CategoryProfile({
     return (
         <div className="flex w-full flex-col gap-6 p-2 md:p-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0 space-y-3">
+                <div className="min-w-0 space-y-2">
                     <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                         Catalog category
                     </p>
-                    <div className="space-y-2">
-                        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                            {category.name}
-                        </h1>
-                        {category.slogan?.trim() ? (
-                            <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
-                                {category.slogan}
-                            </p>
-                        ) : null}
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            <Badge
-                                variant={
-                                    category.status ? 'default' : 'secondary'
-                                }
-                            >
-                                {category.status
-                                    ? 'Active in catalog'
-                                    : 'Inactive'}
-                            </Badge>
-                            {category.featured ? (
-                                <Badge variant="outline">Featured</Badge>
-                            ) : null}
-                            {category.show_in_nav ? (
-                                <Badge variant="outline">In navigation</Badge>
-                            ) : null}
-                        </div>
-                    </div>
+                    <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                        {category.name}
+                    </h1>
+                    {category.slogan?.trim() ? (
+                        <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
+                            {category.slogan}
+                        </p>
+                    ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Button variant="outline" asChild>
@@ -188,191 +174,176 @@ export function CategoryProfile({
                 </div>
             </div>
 
-            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-                <ProductGallery
-                    layout="hero"
-                    productName={category.name}
-                    primaryUrl={category.image_url}
-                    images={[]}
-                    colorCode={category.color_code}
-                />
-
-                <Card className="shadow-sm">
-                    <CardHeader>
+            <Card className="shadow-sm">
+                <CardHeader className="flex-row items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-1.5">
                         <CardTitle>Listing details</CardTitle>
                         <CardDescription>
                             How this category appears in the catalog and nav
                         </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-5">
-                        <dl className="grid gap-4 sm:grid-cols-2">
-                            <Fact
-                                label="Slug"
-                                value={
-                                    <span className="font-mono">
-                                        /{category.slug}
-                                    </span>
-                                }
-                                action={
-                                    <CopyValueButton
-                                        value={category.slug}
-                                        label="slug"
-                                    />
-                                }
-                            />
-                            <Fact
-                                label="Catalog ID"
-                                value={
-                                    <span className="font-mono">
-                                        #{category.id}
-                                    </span>
-                                }
-                            />
-                            {catalog.show_parent_category ? (
-                            <Fact
-                                label="Parent"
-                                value={
-                                    parent && parentHref ? (
-                                        <Link
-                                            href={parentHref}
-                                            className="hover:text-primary underline-offset-4 hover:underline"
-                                        >
-                                            {parent.name}
-                                        </Link>
-                                    ) : (
-                                        (category.parent_name ?? 'None')
-                                    )
-                                }
-                            />
-                            ) : null}
-                            <Fact
-                                label="Nav order"
-                                value={
-                                    category.show_in_nav
-                                        ? (category.nav_sort ?? '—')
-                                        : 'Not in nav'
-                                }
-                            />
-                        </dl>
+                    </div>
+                    <CountJewel
+                        label="Products"
+                        count={category.products_count}
+                    />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)]">
+                        <ProductGallery
+                            card={false}
+                            layout="tile"
+                            productName={category.name}
+                            primaryUrl={category.image_url}
+                            images={[]}
+                            colorCode={category.color_code}
+                        />
 
-                        <div className="flex items-center justify-between gap-3 rounded-xl border px-3 py-3">
-                            <div className="min-w-0">
-                                <p className="text-sm font-medium">
-                                    Image background
-                                </p>
-                                <p className="text-muted-foreground truncate text-xs">
-                                    {colorPickerSummary(colorCode)}
-                                </p>
-                            </div>
-                            <span
-                                className="size-10 shrink-0 rounded-lg border border-border/70 shadow-inner"
-                                style={
-                                    transparent
-                                        ? undefined
-                                        : colorPickerStyle(colorCode)
-                                }
-                                aria-hidden
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-                <DemoStatCard
-                    icon={Package}
-                    label="Products"
-                    value={String(category.products_count)}
-                    hint="Assigned to this category"
-                />
-                {catalog.show_parent_category ? (
-                <DemoStatCard
-                    icon={FolderTree}
-                    label="Subcategories"
-                    value={String(category.children_count)}
-                    hint="Direct children"
-                />
-                ) : null}
-                <DemoStatCard
-                    icon={ImageIcon}
-                    label="Media"
-                    value={category.image_url ? '1' : '0'}
-                    hint={
-                        category.image_url
-                            ? 'Listing photo set'
-                            : 'Listing photo missing'
-                    }
-                />
-            </div>
-
-            <div className="grid items-start gap-6 xl:grid-cols-2">
-                {catalog.show_parent_category ? (
-                <Card className="shadow-sm">
-                    <CardHeader>
-                        <CardTitle>Subcategories</CardTitle>
-                        <CardDescription>
-                            Direct children in this catalog tree
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {children.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
-                                {children.map((child) => (
-                                    <Badge
-                                        key={child.id}
-                                        variant={
-                                            child.status
-                                                ? 'secondary'
-                                                : 'outline'
+                        <div className="min-w-0 space-y-5">
+                            <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                <Fact
+                                    label="Slug"
+                                    value={
+                                        <span className="font-mono">
+                                            /{category.slug}
+                                        </span>
+                                    }
+                                    action={
+                                        <CopyValueButton
+                                            value={category.slug}
+                                            label="slug"
+                                        />
+                                    }
+                                />
+                                <Fact
+                                    label="Catalog ID"
+                                    value={
+                                        <span className="font-mono">
+                                            #{category.id}
+                                        </span>
+                                    }
+                                />
+                                {catalog.show_parent_category ? (
+                                    <Fact
+                                        label="Parent"
+                                        value={
+                                            parent && parentHref ? (
+                                                <Link
+                                                    href={parentHref}
+                                                    className="hover:text-primary underline-offset-4 hover:underline"
+                                                >
+                                                    {parent.name}
+                                                </Link>
+                                            ) : (
+                                                (category.parent_name ?? 'None')
+                                            )
                                         }
-                                        asChild
-                                    >
-                                        <Link href={childHref(child.slug)}>
-                                            {child.name}
-                                        </Link>
-                                    </Badge>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-muted-foreground text-sm">
-                                No subcategories yet.
-                            </p>
-                        )}
-                    </CardContent>
-                </Card>
-                ) : null}
+                                    />
+                                ) : null}
+                                <Fact
+                                    label="Nav order"
+                                    value={
+                                        category.show_in_nav
+                                            ? (category.nav_sort ?? '—')
+                                            : 'Not in nav'
+                                    }
+                                />
+                                <Fact
+                                    label="Featured"
+                                    value={
+                                        <Badge
+                                            variant={
+                                                category.featured
+                                                    ? 'outline'
+                                                    : 'secondary'
+                                            }
+                                        >
+                                            {category.featured ? 'Yes' : 'No'}
+                                        </Badge>
+                                    }
+                                />
+                                <Fact
+                                    label="Status"
+                                    value={
+                                        <Badge
+                                            variant={
+                                                category.status
+                                                    ? 'default'
+                                                    : 'secondary'
+                                            }
+                                        >
+                                            {category.status
+                                                ? 'Active'
+                                                : 'Inactive'}
+                                        </Badge>
+                                    }
+                                />
+                                <Fact
+                                    label="Created"
+                                    value={formatTimestamp(category.created_at)}
+                                />
+                                <Fact
+                                    label="Updated"
+                                    value={formatTimestamp(category.updated_at)}
+                                />
+                                <Fact
+                                    label="Image background"
+                                    value={
+                                        <span className="inline-flex items-center gap-2">
+                                            {transparent ? null : (
+                                                <span
+                                                    className="size-5 shrink-0 rounded-md border border-border/70"
+                                                    style={colorPickerStyle(
+                                                        colorCode,
+                                                    )}
+                                                    aria-hidden
+                                                />
+                                            )}
+                                            {colorPickerSummary(colorCode)}
+                                        </span>
+                                    }
+                                />
+                            </dl>
+                        </div>
+                    </div>
 
-                <Card className="shadow-sm">
-                    <CardHeader>
-                        <CardTitle>Catalog record</CardTitle>
-                        <CardDescription>
-                            Internal metadata for this category
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <dl className="grid gap-4 sm:grid-cols-2">
-                            <Fact
-                                label="Created"
-                                value={formatTimestamp(category.created_at)}
-                            />
-                            <Fact
-                                label="Updated"
-                                value={formatTimestamp(category.updated_at)}
-                            />
-                            <Fact
-                                label="Featured"
-                                value={category.featured ? 'Yes' : 'No'}
-                            />
-                            <Fact
-                                label="Status"
-                                value={
-                                    category.status ? 'Active' : 'Inactive'
-                                }
-                            />
-                        </dl>
-                    </CardContent>
-                </Card>
-            </div>
+                    {catalog.show_parent_category ? (
+                        <div className="space-y-3 border-t pt-5">
+                            <div className="flex items-center justify-between gap-3">
+                                <p className="text-sm font-medium">
+                                    Subcategories
+                                </p>
+                                <CountJewel
+                                    label="Children"
+                                    count={children.length}
+                                />
+                            </div>
+                            {children.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {children.map((child) => (
+                                        <Badge
+                                            key={child.id}
+                                            variant={
+                                                child.status
+                                                    ? 'secondary'
+                                                    : 'outline'
+                                            }
+                                            asChild
+                                        >
+                                            <Link href={childHref(child.slug)}>
+                                                {child.name}
+                                            </Link>
+                                        </Badge>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-muted-foreground text-sm">
+                                    No subcategories yet.
+                                </p>
+                            )}
+                        </div>
+                    ) : null}
+                </CardContent>
+            </Card>
         </div>
     );
 }

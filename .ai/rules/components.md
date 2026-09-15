@@ -23,3 +23,6 @@ Product primary + gallery thumbnails/lightbox use product.color_code via colorPi
 
 ## FileUpload empty dropzone uses add tile
 FileUpload dropzoneVisibility=empty hides the dashed dropzone once files exist and shows a compact Add tile in the grid (opacity-0 input overlay, not programmatic click). compactCards hides filename/size (square thumbs). Default dropzoneVisibility=always so other callers keep the large zone.
+
+## Gallery tile layout is compact square
+ProductGallery layout=tile is a compact square click-to-preview (no min-h-96, no Media card). Use it on category show. Product catalog show keeps layout=hero. Transparent color_code still inherits the parent surface.
