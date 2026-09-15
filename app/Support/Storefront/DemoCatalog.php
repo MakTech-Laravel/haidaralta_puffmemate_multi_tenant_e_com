@@ -431,7 +431,10 @@ class DemoCatalog
      *         }>
      *     }>,
      *     summary: array{
-     *         lines: list<array{label: string, amount: float, tone: string}>,
+     *         branches: list<array{
+     *             branchName: string,
+     *             lines: list<array{label: string, amount: float, tone: string}>
+     *         }>,
      *         total: float
      *     },
      *     branches: list<array{id: string, name: string}>
@@ -517,10 +520,23 @@ class DemoCatalog
             'stockReserved' => true,
             'groups' => $groups,
             'summary' => [
-                'lines' => [
-                    ['label' => 'Subtotal', 'amount' => 44.00, 'tone' => 'default'],
-                    ['label' => 'Delivery fee', 'amount' => 3.50, 'tone' => 'default'],
-                    ['label' => 'First delivery discount', 'amount' => -3.50, 'tone' => 'discount'],
+                'branches' => [
+                    [
+                        'branchName' => 'Williamsburg Branch',
+                        'lines' => [
+                            ['label' => 'Subtotal', 'amount' => 24.00, 'tone' => 'default'],
+                            ['label' => 'Delivery fee', 'amount' => 3.50, 'tone' => 'default'],
+                            ['label' => 'First delivery discount', 'amount' => -3.50, 'tone' => 'discount'],
+                        ],
+                    ],
+                    [
+                        'branchName' => 'Pacific Coast Tobacco – Brisbane Branch',
+                        'lines' => [
+                            ['label' => 'Subtotal', 'amount' => 20.00, 'tone' => 'default'],
+                            ['label' => 'Delivery fee', 'amount' => 3.50, 'tone' => 'default'],
+                            ['label' => 'First delivery discount', 'amount' => -3.50, 'tone' => 'discount'],
+                        ],
+                    ],
                 ],
                 'total' => 44.00,
             ],
@@ -529,6 +545,8 @@ class DemoCatalog
                 ['id' => 'melbourne-collins', 'name' => 'PuffOnMate Melbourne Collins'],
                 ['id' => 'brisbane-queen', 'name' => 'PuffOnMate Brisbane Queen St'],
                 ['id' => 'perth-hay', 'name' => 'PuffOnMate Perth Hay St'],
+                ['id' => 'williamsburg', 'name' => 'Williamsburg Branch'],
+                ['id' => 'brisbane', 'name' => 'Pacific Coast Tobacco – Brisbane Branch'],
             ],
         ];
     }

@@ -32,8 +32,13 @@ export type CartSummaryLine = {
     tone: 'default' | 'discount' | string;
 };
 
-export type CartSummary = {
+export type CartSummaryBranch = {
+    branchName: string;
     lines: CartSummaryLine[];
+};
+
+export type CartSummary = {
+    branches: CartSummaryBranch[];
     total: number;
 };
 
