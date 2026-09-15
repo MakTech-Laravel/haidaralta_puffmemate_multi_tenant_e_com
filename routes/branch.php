@@ -3,6 +3,7 @@
 use App\Http\Controllers\Branch\ActivityLogController as BranchActivityLogController;
 use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
+use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
@@ -69,5 +70,26 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->parameters(['staff' => 'user'])
             ->names('branch.staff')
             ->middlewareFor(['store', 'update'], 'precognitive');
+    });
+
+    Route::middleware(['permission:manage-branch-drivers'])->group(function () {
+        Route::get('drivers', [BranchDriverController::class, 'index'])->name('branch.drivers.index');
+        Route::get('drivers/create', [BranchDriverController::class, 'create'])->name('branch.drivers.create');
+        Route::post('drivers', [BranchDriverController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('branch.drivers.store');
+        Route::post('drivers/assign', [BranchDriverController::class, 'assign'])
+            ->name('branch.drivers.assign');
+        Route::get('drivers/{user}', [BranchDriverController::class, 'show'])->name('branch.drivers.show');
+        Route::get('drivers/{user}/edit', [BranchDriverController::class, 'edit'])->name('branch.drivers.edit');
+        Route::put('drivers/{user}', [BranchDriverController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('branch.drivers.update');
+        Route::post('drivers/{user}/rosters', [BranchDriverController::class, 'storeRoster'])
+            ->name('branch.drivers.rosters.store');
+        Route::put('drivers/{user}/rosters/{roster}', [BranchDriverController::class, 'updateRoster'])
+            ->name('branch.drivers.rosters.update');
+        Route::delete('drivers/{user}/rosters/{roster}', [BranchDriverController::class, 'destroyRoster'])
+            ->name('branch.drivers.rosters.destroy');
     });
 });

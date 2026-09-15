@@ -12,6 +12,7 @@ use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductSuggestionService;
+use App\Support\ProductBranchInventoryPayload;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -73,10 +74,11 @@ class ProductController extends Controller
 
     public function show(Product $product): Response
     {
-        $product->load(['categories:id,name,slug', 'variants', 'images']);
+        $product->load(['categories:id,name,slug', 'variants', 'images', 'creator:id,name']);
 
         return Inertia::render('platform/catalog/products/show', [
             'product' => $this->mapProduct($product, detailed: true),
+            'branchSummary' => ProductBranchInventoryPayload::summary($product),
         ]);
     }
 
@@ -193,6 +195,7 @@ class ProductController extends Controller
             'color_code' => $product->color_code,
             'status' => (bool) $product->status,
             'created_at' => $product->created_at?->toIso8601String(),
+            'updated_at' => $product->updated_at?->toIso8601String(),
             'gallery' => $product->relationLoaded('images')
                 ? $product->images
                     ->map(fn (ProductImage $image): array => [
@@ -208,6 +211,8 @@ class ProductController extends Controller
         ];
 
         if ($detailed) {
+            $product->loadMissing('creator:id,name');
+
             $payload['variants'] = $product->relationLoaded('variants')
                 ? $product->variants
                     ->map(fn (ProductVariant $variant): array => [
@@ -220,6 +225,7 @@ class ProductController extends Controller
                     ->values()
                     ->all()
                 : [];
+            $payload['created_by_name'] = $product->creator?->name;
             $payload['enablement_notice'] = 'Disabled for all branches until enabled from branch inventory.';
         }
 

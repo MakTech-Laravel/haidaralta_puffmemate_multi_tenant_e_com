@@ -21,3 +21,6 @@ Seed media lives under `public/images` (committed storefront + `public/images/ca
 
 ## Seeded branches are AU retail locations
 Branch 1 = sydney-cbd (PuffMeMate Sydney CBD), branch 2 = melbourne-collins, branch 3 = brisbane-queen. Use BranchSeeder::SYDNEY_CBD / MELBOURNE_COLLINS / BRISBANE_QUEEN constants — never downtown/uptown. User emails are realistic *@puffmemate.dev / *@sydney-cbd.dev style; login remains phone + UserSeeder::DEFAULT_PASSWORD (password).
+
+## Seeded driver uses users.id as driver_id
+Daniel Foster (UserSeeder::DRIVER) is user_type=driver with branch_id null, a driver_profiles row (user_id), and active driver_branch_assignments to Sydney CBD + Melbourne Collins keyed by driver_id = users.id.

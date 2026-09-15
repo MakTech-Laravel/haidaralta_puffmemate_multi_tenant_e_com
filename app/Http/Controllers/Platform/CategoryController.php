@@ -163,6 +163,7 @@ class CategoryController extends Controller
             'show_in_nav' => (bool) $category->show_in_nav,
             'nav_sort' => $category->nav_sort,
             'created_at' => $category->created_at?->toIso8601String(),
+            'updated_at' => $category->updated_at?->toIso8601String(),
         ];
 
         if ($detailed) {

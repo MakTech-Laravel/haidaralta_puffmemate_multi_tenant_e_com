@@ -82,6 +82,22 @@ class Branch extends Model
     }
 
     /**
+     * @return HasMany<DriverBranchAssignment, $this>
+     */
+    public function driverBranchAssignments(): HasMany
+    {
+        return $this->hasMany(DriverBranchAssignment::class);
+    }
+
+    /**
+     * @return HasMany<DriverRoster, $this>
+     */
+    public function driverRosters(): HasMany
+    {
+        return $this->hasMany(DriverRoster::class);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toSearchableArray(): array

@@ -12,3 +12,6 @@ token-subscribe-failed / missing OAuth on getToken usually means browser lost Fi
 
 ## color-picker lib parse vs normalize
 parseColorPickerValue is for display (any mode). normalizeColorPickerValue applies enabledModes/defaultMode for picker state. Catalog uses normalizeCatalogColorPickerValue (transparent default, no radial). colorPickerStyle/cssValue use parse, not solid-only defaults.
+
+## Catalog create default is solid red
+normalizeCatalogColorPickerValue still maps empty/invalid to transparent for display. Catalog create (product and category) uses catalogFormColorPickerValue() / DEFAULT_CATALOG_SOLID_COLOR (#EF4444). Do not change the display helper default to solid or existing null listings will gain a fill.

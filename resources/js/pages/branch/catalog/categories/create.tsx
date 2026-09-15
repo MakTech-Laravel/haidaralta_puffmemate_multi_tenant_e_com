@@ -42,7 +42,7 @@ export default function BranchCategoriesCreate({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Add category"
-                    description="Create a global catalog category available to every branch"
+                    description="Listing photo, image background, and catalog details shared across every branch"
                 />
 
                 <CategoryForm

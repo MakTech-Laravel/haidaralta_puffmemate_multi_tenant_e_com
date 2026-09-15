@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -53,6 +55,30 @@ class User extends Authenticatable implements PasskeyUser
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * @return HasOne<DriverProfile, $this>
+     */
+    public function driverProfile(): HasOne
+    {
+        return $this->hasOne(DriverProfile::class);
+    }
+
+    /**
+     * @return HasMany<DriverBranchAssignment, $this>
+     */
+    public function driverBranchAssignments(): HasMany
+    {
+        return $this->hasMany(DriverBranchAssignment::class, 'driver_id');
+    }
+
+    /**
+     * @return HasMany<DriverRoster, $this>
+     */
+    public function driverRosters(): HasMany
+    {
+        return $this->hasMany(DriverRoster::class, 'driver_id');
     }
 
     /**

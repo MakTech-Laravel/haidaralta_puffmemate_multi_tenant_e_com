@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import { ColorPicker } from '@/components/color-picker';
+import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -25,6 +26,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import {
     CATALOG_COLOR_PICKER_MODES,
+    catalogFormColorPickerValue,
     colorPickerStyle,
     isTransparentColorPickerValue,
     normalizeCatalogColorPickerValue,
@@ -149,7 +151,10 @@ export function CategoryForm({
         parent_id: defaults?.parent_id ?? null,
         image: null as File | null,
         remove_image: false,
-        color_code: normalizeCatalogColorPickerValue(defaults?.color_code),
+        color_code: catalogFormColorPickerValue(
+            defaults?.color_code,
+            isEdit,
+        ),
         status: defaults?.status ?? true,
         featured: defaults?.featured ?? false,
         slogan: defaults?.slogan ?? '',
@@ -269,10 +274,10 @@ export function CategoryForm({
 
     return (
         <form onSubmit={submit} className="space-y-6">
-            <div className="grid items-stretch gap-6 xl:grid-cols-2">
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]">
                 <section
                     className={cn(
-                        'flex h-full flex-col rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                        'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
                         'sm:p-6',
                     )}
                 >
@@ -287,7 +292,7 @@ export function CategoryForm({
                         </p>
                     </div>
 
-                    <div className="flex flex-1 flex-col gap-5">
+                    <div className="flex flex-col gap-5">
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="name">Name</Label>
                             <Input
@@ -497,7 +502,7 @@ export function CategoryForm({
                             <InputError message={errors.slogan} />
                         </div>
 
-                        <div className="mt-auto grid gap-3 sm:grid-cols-2">
+                        <div className="grid gap-3 sm:grid-cols-2">
                             <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
                                 <Checkbox
                                     id="status"
@@ -612,123 +617,125 @@ export function CategoryForm({
                     </div>
                 </section>
 
-                <section
-                    className={cn(
-                        'flex h-full flex-col rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
-                        'sm:p-6',
-                    )}
-                >
-                    <div className="mb-5 space-y-1">
-                        <h2 className="text-base font-semibold tracking-tight">
-                            Listing preview
-                        </h2>
-                        <p className="text-muted-foreground text-sm">
-                            Image and background as they appear on category
-                            cards.
-                        </p>
-                    </div>
-
-                    <div className="border-border/80 flex flex-1 flex-col overflow-hidden rounded-2xl border shadow-sm">
-                        <div
-                            className={cn(
-                                'flex min-h-[14rem] flex-1 flex-col p-4 sm:min-h-[16rem]',
-                                imageTileTransparent && 'bg-muted/25',
-                            )}
-                            style={
-                                imageTileTransparent
-                                    ? undefined
-                                    : imageTileStyle
-                            }
-                        >
-                            <FileUpload
-                                value={data.image}
-                                onChange={(file) => {
-                                    const next = Array.isArray(file)
-                                        ? (file[0] ?? null)
-                                        : file;
-                                    setExistingPrimary([]);
-                                    setData((current) => ({
-                                        ...current,
-                                        image: next,
-                                        remove_image: next
-                                            ? false
-                                            : current.remove_image,
-                                    }));
-                                }}
-                                existingFiles={
-                                    data.image || data.remove_image
-                                        ? []
-                                        : existingPrimary
-                                }
-                                onRemoveExisting={() => {
-                                    setExistingPrimary([]);
-                                    setData((current) => ({
-                                        ...current,
-                                        image: null,
-                                        remove_image: true,
-                                    }));
-                                }}
-                                accept={CATALOG_IMAGE_ACCEPT}
-                                maxSize={2}
-                                lightbox
-                                isUploading={processing}
-                                uploadProgress={
-                                    progress?.percentage ?? null
-                                }
-                                onCancel={processing ? cancel : undefined}
-                                placeholder="Drop category image"
-                                hint="PNG, JPG, SVG, or WebP · Max 2MB"
-                                classNames={{
-                                    wrapper:
-                                        'flex h-full min-h-0 w-full flex-1 flex-col',
-                                    dropzone:
-                                        'flex h-full min-h-[11rem] w-full flex-1 border-dashed border-border/60 bg-background/75 px-4 py-8 backdrop-blur-sm',
-                                    dropzoneContent: 'gap-1.5',
-                                    card: 'flex h-full w-full flex-col overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
-                                    cardMedia:
-                                        'aspect-auto min-h-[12rem] flex-1 bg-transparent',
-                                    cardImage:
-                                        'mx-auto !h-auto !w-auto max-h-52 max-w-full object-contain object-center',
-                                    cardInfo:
-                                        'border-border/50 border-t bg-background/70',
-                                }}
-                                error={errors.image}
-                            />
+                <aside className="flex min-w-0 flex-col">
+                    <section
+                        className={cn(
+                            'rounded-2xl border border-border/80 bg-card p-4 shadow-sm',
+                            'sm:p-5',
+                        )}
+                    >
+                        <div className="mb-3 space-y-0.5">
+                            <h2 className="text-base font-semibold tracking-tight">
+                                Media
+                            </h2>
+                            <p className="text-muted-foreground text-xs">
+                                Listing photo and image background
+                            </p>
                         </div>
 
-                        <div className="border-border/60 bg-card flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
-                            <div className="min-w-0 space-y-0.5">
-                                <p className="text-sm font-medium">
-                                    Image background
-                                </p>
-                                <p className="text-muted-foreground text-xs">
-                                    Soft fill behind the category image
-                                </p>
+                        <div className="overflow-hidden rounded-xl border border-border/80">
+                            <div
+                                className={cn(
+                                    'aspect-square p-3',
+                                    imageTileTransparent &&
+                                        cn(
+                                            'bg-muted/25',
+                                            COLOR_PICKER_CHECKERBOARD,
+                                        ),
+                                )}
+                                style={
+                                    imageTileTransparent
+                                        ? undefined
+                                        : imageTileStyle
+                                }
+                            >
+                                <FileUpload
+                                    value={data.image}
+                                    onChange={(file) => {
+                                        const next = Array.isArray(file)
+                                            ? (file[0] ?? null)
+                                            : file;
+                                        setExistingPrimary([]);
+                                        setData((current) => ({
+                                            ...current,
+                                            image: next,
+                                            remove_image: next
+                                                ? false
+                                                : current.remove_image,
+                                        }));
+                                    }}
+                                    existingFiles={
+                                        data.image || data.remove_image
+                                            ? []
+                                            : existingPrimary
+                                    }
+                                    onRemoveExisting={() => {
+                                        setExistingPrimary([]);
+                                        setData((current) => ({
+                                            ...current,
+                                            image: null,
+                                            remove_image: true,
+                                        }));
+                                    }}
+                                    accept={CATALOG_IMAGE_ACCEPT}
+                                    maxSize={2}
+                                    lightbox
+                                    compactCards
+                                    isUploading={processing}
+                                    uploadProgress={
+                                        progress?.percentage ?? null
+                                    }
+                                    onCancel={
+                                        processing ? cancel : undefined
+                                    }
+                                    placeholder="Drop or click"
+                                    hint="PNG, JPG, SVG, or WebP · Max 2MB"
+                                    classNames={{
+                                        wrapper:
+                                            'flex h-full min-h-0 w-full flex-col',
+                                        dropzone:
+                                            'h-full min-h-0 border-dashed border-border/60 bg-background/75 px-3 py-6',
+                                        dropzoneContent: 'gap-1',
+                                        card: 'h-full overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
+                                        cardMedia: 'h-full bg-transparent',
+                                        cardImage:
+                                            '!h-auto !w-auto max-h-full max-w-full object-contain object-center',
+                                    }}
+                                    error={errors.image}
+                                />
                             </div>
-                            <ColorPicker
-                                mode="dialog"
-                                triggerVariant="button"
-                                enabledModes={[...CATALOG_COLOR_PICKER_MODES]}
-                                defaultMode="transparent"
-                                value={data.color_code}
-                                onChange={(color_code) =>
-                                    setData('color_code', color_code)
-                                }
-                                label="Image background"
-                                description="Soft fill behind category imagery"
-                                dialogTitle="Image background"
-                                dialogDescription="Choose none, a solid fill, or a two-tone gradient for catalog imagery."
-                                error={
-                                    errors.color_code ??
-                                    errors['color_code.mode'] ??
-                                    errors['color_code.color'] ??
-                                    errors['color_code.from'] ??
-                                    errors['color_code.to']
-                                }
-                            />
+
+                            <div className="border-border/60 bg-card flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2">
+                                <p className="text-sm font-medium">
+                                    Background
+                                </p>
+                                <ColorPicker
+                                    mode="dialog"
+                                    triggerVariant="button"
+                                    enabledModes={[
+                                        ...CATALOG_COLOR_PICKER_MODES,
+                                    ]}
+                                    defaultMode="solid"
+                                    value={data.color_code}
+                                    onChange={(color_code) =>
+                                        setData('color_code', color_code)
+                                    }
+                                    label="Image background"
+                                    description="Fill behind category imagery"
+                                    dialogTitle="Image background"
+                                    dialogDescription="Solid red is the default. Switch to none or a two-tone gradient if needed."
+                                    error={
+                                        errors.color_code ??
+                                        errors['color_code.mode'] ??
+                                        errors['color_code.color'] ??
+                                        errors['color_code.from'] ??
+                                        errors['color_code.to']
+                                    }
+                                />
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                </aside>
             </div>
 
             <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">

@@ -29,7 +29,7 @@ Free-text search may use Scout/Meilisearch only on Searchable models when driver
 Backup zip listing is filesystem metadata, not Eloquent. Use DatabaseBackupZipDataTable + archives_* query keys (archives_search/sort/per_page/page) so it coexists with operator history DataTable on the same page. Frontend prop is archives. No Meilisearch.
 
 ## Branch listing makeForBranch + filters
-Use BranchProductListingDataTable::makeForBranch (not make) — child signature cannot override AbstractDataTable::make. Filters: enabled (branch_products.status) and low_stock (product-level inventory available <= minimum).
+Use BranchProductListingDataTable::makeForBranch (not make) — child signature cannot override AbstractDataTable::make. Filters: category_id, status (catalog), enabled (branch_products.status), low_stock (product-level inventory available <= minimum), missing_price (enabled for branch without active selling price). filterOptions include categories. Platform index passes includeImage true and BranchProductListingPayload::summary (products/enabled/low_stock/missing_price, branch-wide).
 
 ## Product → branches inventory DataTable
 Platform catalog Manage branches uses ProductBranchInventoryDataTable::makeForProduct (Scout free-text on Branch; SQL filters enabled / low_stock / missing_price; paginate+sort). Pair with ProductBranchInventoryPayload::product + ::summary for header cards (summary is product-wide, not the current page). Page: platform/catalog/products/branches.

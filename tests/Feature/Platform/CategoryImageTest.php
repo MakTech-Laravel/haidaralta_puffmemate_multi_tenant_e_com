@@ -74,5 +74,8 @@ test('platform category show includes media and hierarchy counts', function () {
             ->where('category.parent_name', 'Parent Show')
             ->where('category.children_count', 1)
             ->where('category.products_count', 0)
-            ->has('category.color_code'));
+            ->has('category.color_code')
+            ->has('category.updated_at')
+            ->has('category.parent')
+            ->has('category.children', 1));
 });

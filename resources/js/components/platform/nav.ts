@@ -13,6 +13,7 @@ import {
     Tags,
     UserCog,
     Users,
+    Truck,
 } from 'lucide-react';
 import { navGroup, navLink } from '@/components/navigation/nav-builders';
 import type { NavNode } from '@/components/navigation/types';
@@ -29,6 +30,12 @@ export const platformNav: NavNode[] = [
         href: '/platform/branches',
         icon: Building2,
         permissions: ['view-branches'],
+    }),
+    navLink({
+        title: 'Drivers',
+        href: '/platform/drivers',
+        icon: Truck,
+        permissions: ['manage-drivers'],
     }),
     navGroup({
         title: 'Catalog',

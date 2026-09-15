@@ -20,7 +20,7 @@ export default function PlatformProductsCreate({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Add product"
-                    description="Create a global catalog product with primary image and gallery"
+                    description="Listing photo, image background, and catalog details shared across every branch"
                 />
 
                 <ProductForm

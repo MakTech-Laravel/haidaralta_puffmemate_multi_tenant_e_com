@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
+import BranchDriverController from '@/actions/App/Http/Controllers/Platform/BranchDriverController';
+import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -175,9 +177,22 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                         {can('manage-branch-inventories') ? (
                             <Button variant="outline" asChild>
                                 <Link
-                                    href={`/platform/branches/${branch.slug}/products`}
+                                    href={BranchInventoryController.index.url(
+                                        branch.slug,
+                                    )}
                                 >
                                     Products
+                                </Link>
+                            </Button>
+                        ) : null}
+                        {can('manage-drivers') ? (
+                            <Button variant="outline" asChild>
+                                <Link
+                                    href={BranchDriverController.index.url(
+                                        branch.slug,
+                                    )}
+                                >
+                                    Drivers
                                 </Link>
                             </Button>
                         ) : null}

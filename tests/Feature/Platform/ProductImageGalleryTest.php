@@ -99,6 +99,8 @@ test('platform can create a product with primary image and gallery', function ()
         ->assertInertia(fn ($page) => $page
             ->component('platform/catalog/products/show')
             ->has('product.gallery', 2)
+            ->has('branchSummary')
+            ->has('product.updated_at')
             ->where('product.image_url', fn ($url) => is_string($url) && $url !== ''));
 });
 
