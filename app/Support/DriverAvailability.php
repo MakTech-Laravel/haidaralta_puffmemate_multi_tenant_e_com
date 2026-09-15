@@ -35,10 +35,10 @@ final class DriverAvailability
             $onDuty = DriverRoster::query()
                 ->where('driver_id', $driver->id)
                 ->where('status', DriverRosterStatus::Scheduled->value)
-                ->whereDate('date', $moment->toDateString())
-                ->where('start_time', '<=', $moment->format('H:i:s'))
-                ->where('end_time', '>', $moment->format('H:i:s'))
-                ->exists();
+                ->whereDate('start_date', '<=', $moment->toDateString())
+                ->whereDate('end_date', '>=', $moment->toDateString())
+                ->get()
+                ->contains(fn (DriverRoster $roster): bool => $roster->coversMoment($moment));
         }
 
         return $onDuty
@@ -51,24 +51,8 @@ final class DriverAvailability
      */
     public static function coversMoment(iterable $rosters, CarbonInterface $moment): bool
     {
-        $date = $moment->toDateString();
-        $time = $moment->format('H:i:s');
-
         foreach ($rosters as $roster) {
-            if ($roster->status !== DriverRosterStatus::Scheduled) {
-                continue;
-            }
-
-            $rosterDate = $roster->date?->format('Y-m-d');
-
-            if ($rosterDate !== $date) {
-                continue;
-            }
-
-            $start = $roster->start_time?->format('H:i:s');
-            $end = $roster->end_time?->format('H:i:s');
-
-            if ($start !== null && $end !== null && $start <= $time && $end > $time) {
+            if ($roster->coversMoment($moment)) {
                 return true;
             }
         }

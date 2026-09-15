@@ -42,18 +42,25 @@ class DriverController extends Controller
             'branch' => $branch->only(['id', 'name', 'slug']),
             'vehicleTypes' => DriverPayload::vehicleTypeOptions(),
             'availabilityStatuses' => DriverPayload::availabilityOptions(),
+            'rosterStatuses' => DriverPayload::rosterStatusOptions(),
         ]);
     }
 
     public function store(StoreDriverRequest $request, Branch $branch): RedirectResponse
     {
-        $driver = $this->drivers->create(
-            $request->validated(),
-            assignedBy: $request->user('branch'),
-            autoAssignBranch: $branch,
-            avatar: $request->file('avatar'),
-            vehicleImage: $request->file('vehicle_image'),
-        );
+        try {
+            $driver = $this->drivers->create(
+                $request->validated(),
+                assignedBy: $request->user('branch'),
+                autoAssignBranch: $branch,
+                avatar: $request->file('avatar'),
+                vehicleImage: $request->file('vehicle_image'),
+            );
+        } catch (InvalidArgumentException $exception) {
+            Toast::error($exception->getMessage());
+
+            return redirect()->back();
+        }
 
         Toast::success('Driver created and assigned to this branch.');
 
@@ -80,6 +87,7 @@ class DriverController extends Controller
             'driver' => DriverPayload::detail($driver, $branch),
             'vehicleTypes' => DriverPayload::vehicleTypeOptions(),
             'availabilityStatuses' => DriverPayload::availabilityOptions(),
+            'rosterStatuses' => DriverPayload::rosterStatusOptions(),
         ]);
     }
 
@@ -87,12 +95,18 @@ class DriverController extends Controller
     {
         $driver = $this->resolveAssignedDriver($branch, $user);
 
-        $this->drivers->update(
-            $driver,
-            $request->validated(),
-            avatar: $request->file('avatar'),
-            vehicleImage: $request->file('vehicle_image'),
-        );
+        try {
+            $this->drivers->update(
+                $driver,
+                $request->validated(),
+                avatar: $request->file('avatar'),
+                vehicleImage: $request->file('vehicle_image'),
+            );
+        } catch (InvalidArgumentException $exception) {
+            Toast::error($exception->getMessage());
+
+            return redirect()->back();
+        }
 
         Toast::success('Driver updated.');
 

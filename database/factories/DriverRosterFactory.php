@@ -19,12 +19,16 @@ class DriverRosterFactory extends Factory
      */
     public function definition(): array
     {
+        $startDate = fake()->dateTimeBetween('now', '+1 week')->format('Y-m-d');
+
         return [
             'driver_id' => User::factory()->state(['user_type' => UserType::DRIVER, 'branch_id' => null]),
             'branch_id' => Branch::factory(),
-            'date' => fake()->dateTimeBetween('now', '+2 weeks')->format('Y-m-d'),
+            'start_date' => $startDate,
+            'end_date' => $startDate,
             'start_time' => '09:00',
             'end_time' => '17:00',
+            'days_of_week' => DriverRoster::DAYS_ALL,
             'status' => DriverRosterStatus::Scheduled,
         ];
     }

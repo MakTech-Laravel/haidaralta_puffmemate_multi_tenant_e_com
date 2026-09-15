@@ -84,6 +84,43 @@ test('seeded driver has profile and multi branch assignments keyed by user id', 
         ->and(DriverBranchAssignment::query()->where('driver_id', $driver->id)->count())->toBe(2);
 });
 
+test('platform can create a driver with a nested duty period', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.drivers.store'), [
+            'name' => 'Period Driver',
+            'phone' => '+61420000011',
+            'email' => 'period.driver@puffmemate.dev',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'vehicle_type' => DriverVehicleType::Car->value,
+            'availability_status' => DriverAvailabilityStatus::Offline->value,
+            'branch_ids' => [$sydney->id],
+            'is_active' => true,
+            'rosters' => [[
+                'branch_id' => $sydney->id,
+                'start_date' => '2026-09-01',
+                'end_date' => '2026-10-15',
+                'start_time' => '08:00',
+                'end_time' => '17:00',
+                'days_of_week' => DriverRoster::DAYS_ALL,
+                'status' => 'scheduled',
+            ]],
+        ])
+        ->assertRedirect();
+
+    $driver = User::query()->where('phone', '+61420000011')->firstOrFail();
+    $roster = DriverRoster::query()->where('driver_id', $driver->id)->firstOrFail();
+
+    expect($roster->start_date?->toDateString())->toBe('2026-09-01')
+        ->and($roster->end_date?->toDateString())->toBe('2026-10-15')
+        ->and($roster->start_time?->format('H:i'))->toBe('08:00')
+        ->and($roster->end_time?->format('H:i'))->toBe('17:00')
+        ->and($roster->normalizedDaysOfWeek())->toBe(DriverRoster::DAYS_ALL);
+});
+
 test('platform can add roster for actively assigned branch and rejects overlap', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
@@ -92,9 +129,11 @@ test('platform can add roster for actively assigned branch and rejects overlap',
     $this->actingAs($admin, 'platform')
         ->post(route('platform.drivers.rosters.store', $driver), [
             'branch_id' => $sydney->id,
-            'date' => '2026-09-20',
-            'start_time' => '09:00',
-            'end_time' => '13:00',
+            'start_date' => '2026-09-01',
+            'end_date' => '2026-10-15',
+            'start_time' => '08:00',
+            'end_time' => '17:00',
+            'days_of_week' => DriverRoster::DAYS_ALL,
             'status' => 'scheduled',
         ])
         ->assertRedirect();
@@ -105,14 +144,48 @@ test('platform can add roster for actively assigned branch and rejects overlap',
         ->from(route('platform.drivers.show', $driver))
         ->post(route('platform.drivers.rosters.store', $driver), [
             'branch_id' => $sydney->id,
-            'date' => '2026-09-20',
-            'start_time' => '12:00',
-            'end_time' => '16:00',
+            'start_date' => '2026-09-10',
+            'end_date' => '2026-09-20',
+            'start_time' => '09:00',
+            'end_time' => '12:00',
+            'days_of_week' => DriverRoster::DAYS_ALL,
             'status' => 'scheduled',
         ])
         ->assertRedirect();
 
     expect(DriverRoster::query()->where('driver_id', $driver->id)->count())->toBe(1);
+});
+
+test('platform allows weekday and weekend periods that share dates', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.drivers.rosters.store', $driver), [
+            'branch_id' => $sydney->id,
+            'start_date' => '2026-09-01',
+            'end_date' => '2026-10-15',
+            'start_time' => '08:00',
+            'end_time' => '17:00',
+            'days_of_week' => DriverRoster::DAYS_WEEKDAYS,
+            'status' => 'scheduled',
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.drivers.rosters.store', $driver), [
+            'branch_id' => $sydney->id,
+            'start_date' => '2026-09-01',
+            'end_date' => '2026-10-15',
+            'start_time' => '08:00',
+            'end_time' => '17:00',
+            'days_of_week' => [6, 7],
+            'status' => 'scheduled',
+        ])
+        ->assertRedirect();
+
+    expect(DriverRoster::query()->where('driver_id', $driver->id)->count())->toBe(2);
 });
 
 test('branch can create driver auto assigned to current branch', function () {
@@ -122,6 +195,13 @@ test('branch can create driver auto assigned to current branch', function () {
     $this->actingAs($staff, 'branch')
         ->get(route('branch.drivers.index', $sydney))
         ->assertOk();
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.drivers.create', $sydney))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/drivers/create')
+            ->has('rosterStatuses'));
 
     $this->actingAs($staff, 'branch')
         ->post(route('branch.drivers.store', ['branch' => $sydney->slug]), [
@@ -157,6 +237,13 @@ test('platform nested branch drivers index lists assigned drivers', function () 
             ->where('table.data', fn ($rows) => collect($rows)->contains(
                 fn ($row) => $row['phone'] === UserSeeder::DRIVER_PHONE,
             )));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.drivers.create', $sydney))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/drivers/create')
+            ->has('rosterStatuses'));
 });
 
 test('platform can store driver with address and avatar and sync branches', function () {
@@ -207,20 +294,25 @@ test('driver list payload includes branch slug and effective availability from r
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
+    $this->travelTo('2026-09-16 10:00:00');
+
     $driver->driverProfile?->update([
         'availability_status' => DriverAvailabilityStatus::Offline,
     ]);
 
-    $now = now();
-
     DriverRoster::query()->create([
         'driver_id' => $driver->id,
         'branch_id' => $sydney->id,
-        'date' => $now->toDateString(),
-        'start_time' => $now->copy()->subHour()->format('H:i'),
-        'end_time' => $now->copy()->addHour()->format('H:i'),
+        'start_date' => '2026-09-01',
+        'end_date' => '2026-10-15',
+        'start_time' => '08:00',
+        'end_time' => '17:00',
+        'days_of_week' => DriverRoster::DAYS_WEEKDAYS,
         'status' => 'scheduled',
     ]);
+
+    expect(DriverAvailability::effective($driver->fresh())->value)
+        ->toBe(DriverAvailabilityStatus::Available->value);
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.drivers.index'))
@@ -240,7 +332,9 @@ test('driver list payload includes branch slug and effective availability from r
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/drivers/show')
-            ->where('driver.effective_availability', 'available'));
+            ->where('driver.effective_availability', 'available')
+            ->where('driver.rosters.0.period_label', '1 Sep 2026 – 15 Oct 2026')
+            ->where('driver.rosters.0.days_label', 'Mon–Fri'));
 });
 
 test('platform branch options endpoint supports search pagination', function () {
@@ -259,7 +353,6 @@ test('platform branch options endpoint supports search pagination', function () 
 test('busy override wins over scheduled roster for effective availability', function () {
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-    $now = now();
 
     $driver->driverProfile?->update([
         'availability_status' => DriverAvailabilityStatus::Busy,
@@ -268,9 +361,11 @@ test('busy override wins over scheduled roster for effective availability', func
     DriverRoster::query()->create([
         'driver_id' => $driver->id,
         'branch_id' => $sydney->id,
-        'date' => $now->toDateString(),
-        'start_time' => $now->copy()->subHour()->format('H:i'),
-        'end_time' => $now->copy()->addHour()->format('H:i'),
+        'start_date' => now()->toDateString(),
+        'end_date' => now()->toDateString(),
+        'start_time' => now()->copy()->subHour()->format('H:i'),
+        'end_time' => now()->copy()->addHour()->format('H:i'),
+        'days_of_week' => DriverRoster::DAYS_ALL,
         'status' => 'scheduled',
     ]);
 

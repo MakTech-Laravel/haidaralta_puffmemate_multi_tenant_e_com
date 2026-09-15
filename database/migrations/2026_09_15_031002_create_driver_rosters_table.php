@@ -12,14 +12,16 @@ return new class extends Migration
             $table->id();
             $table->foreignId('driver_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
-            $table->date('date');
+            $table->date('start_date');
+            $table->date('end_date');
             $table->time('start_time');
             $table->time('end_time');
+            $table->jsonb('days_of_week')->default('[1,2,3,4,5,6,7]');
             $table->string('status')->default('scheduled');
             $table->timestamps();
 
-            $table->index(['branch_id', 'date']);
-            $table->index(['driver_id', 'date']);
+            $table->index(['branch_id', 'start_date']);
+            $table->index(['driver_id', 'start_date']);
         });
     }
 

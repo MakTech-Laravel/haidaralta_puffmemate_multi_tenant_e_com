@@ -3,12 +3,16 @@ import { Building2, Plus, Trash2 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DriverBranchAssignSheet } from '@/components/admin/driver-branch-assign-sheet';
+import {
+    DriverRosterFields,
+    emptyRosterFields,
+    type DriverRosterFieldsValue,
+} from '@/components/admin/driver-roster-fields';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -20,7 +24,6 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { TimePicker } from '@/components/ui/time-picker';
 import { cn } from '@/lib/utils';
 
 type FormAction = {
@@ -31,13 +34,8 @@ type FormAction = {
 type Option = { value: string; label: string };
 type BranchOption = { id: number; name: string; slug: string; code?: string | null };
 
-type RosterDraft = {
+type RosterDraft = DriverRosterFieldsValue & {
     key: string;
-    branch_id: string;
-    date: string;
-    start_time: string;
-    end_time: string;
-    status: string;
 };
 
 interface DriverFormDefaults {
@@ -64,6 +62,7 @@ interface DriverFormProps {
     rosterStatuses?: Option[];
     branches?: BranchOption[];
     requireBranches?: boolean;
+    lockBranch?: boolean;
     defaults?: DriverFormDefaults;
     isEdit?: boolean;
     cancelHref: string;
@@ -142,6 +141,7 @@ export function DriverForm({
     rosterStatuses = [],
     branches = [],
     requireBranches = false,
+    lockBranch = false,
     defaults,
     isEdit = false,
     cancelHref,
@@ -225,9 +225,11 @@ export function DriverForm({
         remove_vehicle_image: false,
         rosters: [] as Array<{
             branch_id: number;
-            date: string;
+            start_date: string;
+            end_date: string;
             start_time: string;
             end_time: string;
+            days_of_week: number[];
             status: string;
         }>,
         ...(isEdit ? { _method: 'put' } : {}),
@@ -251,8 +253,10 @@ export function DriverForm({
         .map((id) => branchLookup.get(Number(id)))
         .filter((branch): branch is BranchOption => branch !== undefined);
 
+    const lockedBranch = lockBranch ? branches[0] : undefined;
+
     const addShift = (branchesForShift: BranchOption[] = assignedBranches): void => {
-        const firstBranch = branchesForShift[0];
+        const firstBranch = lockedBranch ?? branchesForShift[0];
 
         if (firstBranch === undefined) {
             return;
@@ -262,11 +266,10 @@ export function DriverForm({
             ...current,
             {
                 key: crypto.randomUUID(),
-                branch_id: String(firstBranch.id),
-                date: '',
-                start_time: '',
-                end_time: '',
-                status: defaultRosterStatus,
+                ...emptyRosterFields({
+                    branchId: String(firstBranch.id),
+                    status: defaultRosterStatus,
+                }),
             },
         ]);
     };
@@ -290,15 +293,19 @@ export function DriverForm({
                 .filter(
                     (row) =>
                         row.branch_id &&
-                        row.date &&
+                        row.start_date &&
+                        row.end_date &&
                         row.start_time &&
-                        row.end_time,
+                        row.end_time &&
+                        row.days_of_week.length > 0,
                 )
                 .map((row) => ({
                     branch_id: Number(row.branch_id),
-                    date: row.date,
+                    start_date: row.start_date,
+                    end_date: row.end_date,
                     start_time: row.start_time,
                     end_time: row.end_time,
+                    days_of_week: row.days_of_week,
                     status: row.status || defaultRosterStatus,
                 }));
 
@@ -724,7 +731,7 @@ export function DriverForm({
                     </section>
                 ) : null}
 
-                {requireBranches && rosterStatuses.length > 0 ? (
+                {rosterStatuses.length > 0 ? (
                     <section className={sectionClassName()}>
                         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                             <div className="space-y-1">
@@ -732,15 +739,19 @@ export function DriverForm({
                                     Duty shifts
                                 </h2>
                                 <p className="text-muted-foreground text-sm">
-                                    Optional initial roster rows for assigned
-                                    branches.
+                                    {isEdit
+                                        ? 'Optional new date periods. Existing shifts stay on the driver profile.'
+                                        : 'Optional date periods with the same hours on selected days.'}
                                 </p>
                             </div>
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => {
-                                    if (assignedBranches.length === 0) {
+                                    if (
+                                        !lockBranch &&
+                                        assignedBranches.length === 0
+                                    ) {
                                         pendingShiftRef.current = true;
                                         setBranchSheetOpen(true);
 
@@ -764,166 +775,48 @@ export function DriverForm({
                                 {rosters.map((row, index) => (
                                     <div
                                         key={row.key}
-                                        className="grid gap-3 rounded-xl border p-3 sm:grid-cols-2 xl:grid-cols-12"
+                                        className="rounded-xl border p-3"
                                     >
-                                        <div className="flex flex-col gap-1.5 sm:col-span-2 xl:col-span-3">
-                                            <Label>Branch</Label>
-                                            <Select
-                                                value={row.branch_id}
-                                                onValueChange={(value) =>
-                                                    setRosters((current) =>
-                                                        current.map((item) =>
-                                                            item.key === row.key
-                                                                ? {
-                                                                    ...item,
-                                                                    branch_id:
-                                                                        value,
-                                                                }
-                                                                : item,
-                                                        ),
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select branch" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {assignedBranches.map(
-                                                        (branch) => (
-                                                            <SelectItem
-                                                                key={branch.id}
-                                                                value={String(
-                                                                    branch.id,
-                                                                )}
-                                                            >
-                                                                {branch.name}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="flex flex-col gap-1.5 xl:col-span-2">
-                                            <Label>Date</Label>
-                                            <DatePicker
-                                                value={row.date}
-                                                placeholder="Select date"
-                                                onChange={(value) =>
-                                                    setRosters((current) =>
-                                                        current.map((item) =>
-                                                            item.key === row.key
-                                                                ? {
-                                                                    ...item,
-                                                                    date: value,
-                                                                }
-                                                                : item,
-                                                        ),
-                                                    )
-                                                }
-                                            />
-                                        </div>
-                                        <div className="flex flex-col gap-1.5 xl:col-span-2">
-                                            <Label>Start</Label>
-                                            <TimePicker
-                                                value={row.start_time}
-                                                placeholder="Start time"
-                                                onChange={(value) =>
-                                                    setRosters((current) =>
-                                                        current.map((item) =>
-                                                            item.key === row.key
-                                                                ? {
-                                                                    ...item,
-                                                                    start_time:
-                                                                        value,
-                                                                }
-                                                                : item,
-                                                        ),
-                                                    )
-                                                }
-                                            />
-                                        </div>
-                                        <div className="flex flex-col gap-1.5 xl:col-span-2">
-                                            <Label>End</Label>
-                                            <TimePicker
-                                                value={row.end_time}
-                                                placeholder="End time"
-                                                onChange={(value) =>
-                                                    setRosters((current) =>
-                                                        current.map((item) =>
-                                                            item.key === row.key
-                                                                ? {
-                                                                    ...item,
-                                                                    end_time:
-                                                                        value,
-                                                                }
-                                                                : item,
-                                                        ),
-                                                    )
-                                                }
-                                            />
-                                        </div>
-                                        <div className="flex items-end gap-2 sm:col-span-2 xl:col-span-3">
-                                            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                                                <Label>Status</Label>
-                                                <Select
-                                                    value={row.status}
-                                                    onValueChange={(value) =>
+                                        <DriverRosterFields
+                                            value={row}
+                                            branches={assignedBranches}
+                                            showBranch={!lockBranch}
+                                            rosterStatuses={rosterStatuses}
+                                            errors={errors}
+                                            errorPrefix={`rosters.${index}`}
+                                            onChange={(patch) =>
+                                                setRosters((current) =>
+                                                    current.map((item) =>
+                                                        item.key === row.key
+                                                            ? {
+                                                                  ...item,
+                                                                  ...patch,
+                                                              }
+                                                            : item,
+                                                    ),
+                                                )
+                                            }
+                                            statusTrailing={
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-destructive"
+                                                    aria-label={`Remove shift ${index + 1}`}
+                                                    onClick={() =>
                                                         setRosters((current) =>
-                                                            current.map(
+                                                            current.filter(
                                                                 (item) =>
-                                                                    item.key ===
-                                                                        row.key
-                                                                        ? {
-                                                                            ...item,
-                                                                            status: value,
-                                                                        }
-                                                                        : item,
+                                                                    item.key !==
+                                                                    row.key,
                                                             ),
                                                         )
                                                     }
                                                 >
-                                                    <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder="Select status" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {rosterStatuses.map(
-                                                            (status) => (
-                                                                <SelectItem
-                                                                    key={
-                                                                        status.value
-                                                                    }
-                                                                    value={
-                                                                        status.value
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        status.label
-                                                                    }
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-destructive"
-                                                aria-label={`Remove shift ${index + 1}`}
-                                                onClick={() =>
-                                                    setRosters((current) =>
-                                                        current.filter(
-                                                            (item) =>
-                                                                item.key !==
-                                                                row.key,
-                                                        ),
-                                                    )
-                                                }
-                                            >
-                                                <Trash2 className="size-4" />
-                                            </Button>
-                                        </div>
+                                                    <Trash2 className="size-4" />
+                                                </Button>
+                                            }
+                                        />
                                     </div>
                                 ))}
                             </div>

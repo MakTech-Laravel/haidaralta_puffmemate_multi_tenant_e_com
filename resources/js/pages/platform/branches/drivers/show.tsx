@@ -3,6 +3,7 @@ import { IdCard, Mail, MapPin, Phone } from 'lucide-react';
 import type { ReactNode } from 'react';
 import BranchDriverController from '@/actions/App/Http/Controllers/Platform/BranchDriverController';
 import PlatformDriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
+import { formatRosterPeriodLine } from '@/components/admin/driver-roster-fields';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -38,9 +39,12 @@ type Driver = {
     }[];
     rosters: {
         id: number;
-        date: string | null;
+        start_date: string | null;
+        end_date: string | null;
         start_time: string | null;
         end_time: string | null;
+        days_label: string | null;
+        period_label: string | null;
         status_label: string | null;
     }[];
 };
@@ -249,7 +253,8 @@ export default function PlatformBranchDriversShow({
                     <CardHeader>
                         <CardTitle>Recent rosters</CardTitle>
                         <CardDescription>
-                            Manage shifts from the full driver profile
+                            Shift duty times by date period. Manage shifts from
+                            the full driver profile.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -266,11 +271,9 @@ export default function PlatformBranchDriversShow({
                                         ) : null}
                                         <div>
                                             <p className="text-sm font-medium">
-                                                {roster.date}
+                                                {formatRosterPeriodLine(roster)}
                                             </p>
                                             <p className="text-muted-foreground text-sm">
-                                                {roster.start_time} –{' '}
-                                                {roster.end_time} ·{' '}
                                                 {roster.status_label}
                                             </p>
                                         </div>

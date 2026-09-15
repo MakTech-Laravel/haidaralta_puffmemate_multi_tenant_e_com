@@ -93,12 +93,18 @@ class DriverController extends Controller
     {
         $data = $request->validated();
 
-        $driver = $this->drivers->create(
-            $data,
-            assignedBy: $request->user('platform'),
-            avatar: $request->file('avatar'),
-            vehicleImage: $request->file('vehicle_image'),
-        );
+        try {
+            $driver = $this->drivers->create(
+                $data,
+                assignedBy: $request->user('platform'),
+                avatar: $request->file('avatar'),
+                vehicleImage: $request->file('vehicle_image'),
+            );
+        } catch (InvalidArgumentException $exception) {
+            Toast::error($exception->getMessage());
+
+            return redirect()->back();
+        }
 
         Toast::success('Driver created.');
 
@@ -136,13 +142,6 @@ class DriverController extends Controller
         $driver = DriverPayload::resolveDriver($user);
         $data = $request->validated();
 
-        $this->drivers->update(
-            $driver,
-            $data,
-            avatar: $request->file('avatar'),
-            vehicleImage: $request->file('vehicle_image'),
-        );
-
         if (array_key_exists('branch_ids', $data)) {
             $this->drivers->syncBranchAssignments(
                 $driver,
@@ -150,6 +149,19 @@ class DriverController extends Controller
                 DriverAssignmentStatus::Active,
                 $request->user('platform'),
             );
+        }
+
+        try {
+            $this->drivers->update(
+                $driver,
+                $data,
+                avatar: $request->file('avatar'),
+                vehicleImage: $request->file('vehicle_image'),
+            );
+        } catch (InvalidArgumentException $exception) {
+            Toast::error($exception->getMessage());
+
+            return redirect()->back();
         }
 
         Toast::success('Driver updated.');

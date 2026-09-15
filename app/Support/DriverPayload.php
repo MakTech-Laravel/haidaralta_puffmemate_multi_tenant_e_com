@@ -31,7 +31,7 @@ final class DriverPayload
             'driverProfile',
             'driverBranchAssignments.branch:id,name,slug,status',
             'driverRosters' => function ($query) use ($scopedBranch): void {
-                $query->with('branch:id,name,slug')->orderByDesc('date')->orderBy('start_time');
+                $query->with('branch:id,name,slug')->orderByDesc('start_date')->orderBy('start_time');
 
                 if ($scopedBranch !== null) {
                     $query->where('branch_id', $scopedBranch->id);
@@ -88,16 +88,29 @@ final class DriverPayload
                 ->values()
                 ->all(),
             'rosters' => $driver->driverRosters
-                ->map(fn (DriverRoster $roster): array => [
-                    'id' => $roster->id,
-                    'branch_id' => $roster->branch_id,
-                    'branch_name' => $roster->branch?->name,
-                    'date' => $roster->date?->format('Y-m-d'),
-                    'start_time' => $roster->start_time?->format('H:i'),
-                    'end_time' => $roster->end_time?->format('H:i'),
-                    'status' => $roster->status?->value,
-                    'status_label' => $roster->status?->label(),
-                ])
+                ->map(function (DriverRoster $roster): array {
+                    $startDate = $roster->start_date?->format('Y-m-d');
+                    $endDate = $roster->end_date?->format('Y-m-d');
+                    $days = $roster->normalizedDaysOfWeek();
+                    $periodLabel = $startDate === $endDate
+                        ? $roster->start_date?->format('j M Y')
+                        : $roster->start_date?->format('j M Y').' – '.$roster->end_date?->format('j M Y');
+
+                    return [
+                        'id' => $roster->id,
+                        'branch_id' => $roster->branch_id,
+                        'branch_name' => $roster->branch?->name,
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'start_time' => $roster->start_time?->format('H:i'),
+                        'end_time' => $roster->end_time?->format('H:i'),
+                        'days_of_week' => $days,
+                        'days_label' => DriverRoster::daysLabel($days),
+                        'period_label' => $periodLabel,
+                        'status' => $roster->status?->value,
+                        'status_label' => $roster->status?->label(),
+                    ];
+                })
                 ->values()
                 ->all(),
         ];

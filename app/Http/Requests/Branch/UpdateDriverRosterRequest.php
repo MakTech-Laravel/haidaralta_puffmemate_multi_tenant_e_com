@@ -2,15 +2,21 @@
 
 namespace App\Http\Requests\Branch;
 
-use App\Enums\DriverRosterStatus;
+use App\Concerns\ValidatesDriverRosterPeriod;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateDriverRosterRequest extends FormRequest
 {
+    use ValidatesDriverRosterPeriod;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizeDaysOfWeekInput();
     }
 
     /**
@@ -18,11 +24,6 @@ class UpdateDriverRosterRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'date' => ['required', 'date'],
-            'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
-            'status' => ['required', Rule::enum(DriverRosterStatus::class)],
-        ];
+        return $this->rosterPeriodRules(statusRequired: true);
     }
 }

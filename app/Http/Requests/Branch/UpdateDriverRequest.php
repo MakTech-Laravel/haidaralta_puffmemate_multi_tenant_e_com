@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Branch;
 
 use App\Concerns\NormalizesPhoneInput;
+use App\Concerns\ValidatesDriverRosterPeriod;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\DriverVehicleType;
 use App\Models\User;
@@ -14,6 +15,7 @@ use Illuminate\Validation\Rules\Password;
 class UpdateDriverRequest extends FormRequest
 {
     use NormalizesPhoneInput;
+    use ValidatesDriverRosterPeriod;
 
     public function authorize(): bool
     {
@@ -24,6 +26,7 @@ class UpdateDriverRequest extends FormRequest
     {
         $this->mergeNormalizedPhone();
         $this->normalizeBlankEmailToNull();
+        $this->stampNestedRosterBranchId();
     }
 
     /**
@@ -55,6 +58,7 @@ class UpdateDriverRequest extends FormRequest
             'remove_avatar' => ['sometimes', 'boolean'],
             'remove_vehicle_image' => ['sometimes', 'boolean'],
             'is_active' => ['required', 'boolean'],
+            ...$this->nestedRosterRules(),
         ];
     }
 }

@@ -3,8 +3,8 @@
 namespace App\Http\Requests\Platform;
 
 use App\Concerns\NormalizesPhoneInput;
+use App\Concerns\ValidatesDriverRosterPeriod;
 use App\Enums\DriverAvailabilityStatus;
-use App\Enums\DriverRosterStatus;
 use App\Enums\DriverVehicleType;
 use App\Support\Phone;
 use Illuminate\Foundation\Http\FormRequest;
@@ -14,6 +14,7 @@ use Illuminate\Validation\Rules\Password;
 class StoreDriverRequest extends FormRequest
 {
     use NormalizesPhoneInput;
+    use ValidatesDriverRosterPeriod;
 
     public function authorize(): bool
     {
@@ -52,12 +53,7 @@ class StoreDriverRequest extends FormRequest
             'is_active' => ['sometimes', 'boolean'],
             'branch_ids' => ['required', 'array', 'min:1'],
             'branch_ids.*' => ['integer', 'distinct', Rule::exists('branches', 'id')],
-            'rosters' => ['sometimes', 'array'],
-            'rosters.*.branch_id' => ['required_with:rosters', 'integer', Rule::exists('branches', 'id')],
-            'rosters.*.date' => ['required_with:rosters', 'date'],
-            'rosters.*.start_time' => ['required_with:rosters', 'date_format:H:i'],
-            'rosters.*.end_time' => ['required_with:rosters', 'date_format:H:i', 'after:rosters.*.start_time'],
-            'rosters.*.status' => ['nullable', Rule::enum(DriverRosterStatus::class)],
+            ...$this->nestedRosterRules(),
         ];
     }
 }

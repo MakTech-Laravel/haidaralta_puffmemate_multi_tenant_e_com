@@ -12,8 +12,12 @@ import { useMemo, useState } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import DriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
 import { DriverBranchAssignSheet } from '@/components/admin/driver-branch-assign-sheet';
+import {
+    DriverRosterFields,
+    emptyRosterFields,
+    formatRosterPeriodLine,
+} from '@/components/admin/driver-roster-fields';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,18 +28,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { DatePicker } from '@/components/ui/date-picker';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
-import { TimePicker } from '@/components/ui/time-picker';
 
 type Option = { value: string; label: string };
 
@@ -67,9 +61,12 @@ type Driver = {
         id: number;
         branch_id: number;
         branch_name: string | null;
-        date: string | null;
+        start_date: string | null;
+        end_date: string | null;
         start_time: string | null;
         end_time: string | null;
+        days_label: string | null;
+        period_label: string | null;
         status: string | null;
         status_label: string | null;
     }[];
@@ -128,16 +125,15 @@ export default function PlatformDriversShow({
     );
 
     const [branchSheetOpen, setBranchSheetOpen] = useState(false);
-    const [branchId, setBranchId] = useState(
-        String(activeAssignments[0]?.branch_id ?? ''),
-    );
-    const [date, setDate] = useState('');
-    const [startTime, setStartTime] = useState('');
-    const [endTime, setEndTime] = useState('');
-    const [rosterStatus, setRosterStatus] = useState(
+    const defaultRosterStatus =
         rosterStatuses.find((item) => item.value === 'scheduled')?.value ??
-            rosterStatuses[0]?.value ??
-            '',
+        rosterStatuses[0]?.value ??
+        'scheduled';
+    const [rosterDraft, setRosterDraft] = useState(() =>
+        emptyRosterFields({
+            branchId: String(activeAssignments[0]?.branch_id ?? ''),
+            status: defaultRosterStatus,
+        }),
     );
 
     return (
@@ -355,7 +351,7 @@ export default function PlatformDriversShow({
                     <CardHeader>
                         <CardTitle>Rosters</CardTitle>
                         <CardDescription>
-                            Shift duty times by branch and date
+                            Shift duty times by branch and date period
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -364,132 +360,48 @@ export default function PlatformDriversShow({
                                 driver.id,
                             )}
                             method="post"
-                            className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"
+                            className="space-y-3 rounded-xl border p-3"
                             options={{ preserveScroll: true }}
                             onSuccess={() => {
-                                setDate('');
-                                setStartTime('');
-                                setEndTime('');
+                                setRosterDraft(
+                                    emptyRosterFields({
+                                        branchId:
+                                            rosterDraft.branch_id ||
+                                            String(
+                                                activeAssignments[0]
+                                                    ?.branch_id ?? '',
+                                            ),
+                                        status: defaultRosterStatus,
+                                    }),
+                                );
                             }}
                         >
                             {({ errors, processing }) => (
                                 <>
-                                    <input
-                                        type="hidden"
-                                        name="branch_id"
-                                        value={branchId}
-                                    />
-                                    <input
-                                        type="hidden"
-                                        name="date"
-                                        value={date}
-                                    />
-                                    <input
-                                        type="hidden"
-                                        name="start_time"
-                                        value={startTime}
-                                    />
-                                    <input
-                                        type="hidden"
-                                        name="end_time"
-                                        value={endTime}
-                                    />
-                                    <input
-                                        type="hidden"
-                                        name="status"
-                                        value={rosterStatus}
-                                    />
-
-                                    <div className="grid gap-2">
-                                        <Label>Branch</Label>
-                                        <Select
-                                            value={branchId}
-                                            onValueChange={setBranchId}
-                                            disabled={
-                                                activeAssignments.length === 0
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Branch" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {activeAssignments.map(
-                                                    (assignment) => (
-                                                        <SelectItem
-                                                            key={
-                                                                assignment.branch_id
-                                                            }
-                                                            value={String(
-                                                                assignment.branch_id,
-                                                            )}
-                                                        >
-                                                            {
-                                                                assignment.branch_name
-                                                            }
-                                                        </SelectItem>
-                                                    ),
-                                                )}
-                                            </SelectContent>
-                                        </Select>
-                                        <InputError
-                                            message={errors.branch_id}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>Date</Label>
-                                        <DatePicker
-                                            value={date}
-                                            onChange={setDate}
-                                        />
-                                        <InputError message={errors.date} />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>Start</Label>
-                                        <TimePicker
-                                            value={startTime}
-                                            onChange={setStartTime}
-                                        />
-                                        <InputError
-                                            message={errors.start_time}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>End</Label>
-                                        <TimePicker
-                                            value={endTime}
-                                            onChange={setEndTime}
-                                        />
-                                        <InputError
-                                            message={errors.end_time}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>Status</Label>
-                                        <div className="flex gap-2">
-                                            <Select
-                                                value={rosterStatus}
-                                                onValueChange={setRosterStatus}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {rosterStatuses.map(
-                                                        (status) => (
-                                                            <SelectItem
-                                                                key={
-                                                                    status.value
-                                                                }
-                                                                value={
-                                                                    status.value
-                                                                }
-                                                            >
-                                                                {status.label}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
+                                    <DriverRosterFields
+                                        value={rosterDraft}
+                                        includeHiddenInputs
+                                        showBranch
+                                        rosterStatuses={rosterStatuses}
+                                        errors={errors}
+                                        branches={activeAssignments.map(
+                                            (assignment) => ({
+                                                id: assignment.branch_id,
+                                                name:
+                                                    assignment.branch_name ??
+                                                    'Unknown branch',
+                                                slug:
+                                                    assignment.branch_slug ??
+                                                    '',
+                                            }),
+                                        )}
+                                        onChange={(patch) =>
+                                            setRosterDraft((current) => ({
+                                                ...current,
+                                                ...patch,
+                                            }))
+                                        }
+                                        statusTrailing={
                                             <Button
                                                 type="submit"
                                                 disabled={
@@ -503,8 +415,8 @@ export default function PlatformDriversShow({
                                                 ) : null}
                                                 Add
                                             </Button>
-                                        </div>
-                                    </div>
+                                        }
+                                    />
                                 </>
                             )}
                         </Form>
@@ -524,11 +436,11 @@ export default function PlatformDriversShow({
                                             <div>
                                                 <p className="text-sm font-medium">
                                                     {roster.branch_name} ·{' '}
-                                                    {roster.date}
+                                                    {formatRosterPeriodLine(
+                                                        roster,
+                                                    )}
                                                 </p>
                                                 <p className="text-muted-foreground text-sm">
-                                                    {roster.start_time} –{' '}
-                                                    {roster.end_time} ·{' '}
                                                     {roster.status_label}
                                                 </p>
                                             </div>

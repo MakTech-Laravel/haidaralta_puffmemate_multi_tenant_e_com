@@ -38,7 +38,8 @@ class DriverDataTable extends AbstractDataTable
                 'driverRosters' => function ($query) use ($today): void {
                     $query
                         ->where('status', DriverRosterStatus::Scheduled->value)
-                        ->whereDate('date', $today);
+                        ->whereDate('start_date', '<=', $today)
+                        ->whereDate('end_date', '>=', $today);
                 },
             ]);
     }

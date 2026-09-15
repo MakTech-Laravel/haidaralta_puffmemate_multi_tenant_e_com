@@ -3,8 +3,12 @@ import { IdCard, Mail, MapPin, Phone } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import DriverController from '@/actions/App/Http/Controllers/Branch/DriverController';
+import {
+    DriverRosterFields,
+    emptyRosterFields,
+    formatRosterPeriodLine,
+} from '@/components/admin/driver-roster-fields';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,18 +19,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { DatePicker } from '@/components/ui/date-picker';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
-import { TimePicker } from '@/components/ui/time-picker';
 
 type Option = { value: string; label: string };
 type Branch = { id: number; name: string; slug: string };
@@ -52,9 +46,12 @@ type Driver = {
     }[];
     rosters: {
         id: number;
-        date: string | null;
+        start_date: string | null;
+        end_date: string | null;
         start_time: string | null;
         end_time: string | null;
+        days_label: string | null;
+        period_label: string | null;
         status_label: string | null;
     }[];
 };
@@ -103,13 +100,15 @@ export default function BranchDriversShow({
     driver: Driver;
     rosterStatuses: Option[];
 }) {
-    const [date, setDate] = useState('');
-    const [startTime, setStartTime] = useState('');
-    const [endTime, setEndTime] = useState('');
-    const [rosterStatus, setRosterStatus] = useState(
+    const defaultRosterStatus =
         rosterStatuses.find((item) => item.value === 'scheduled')?.value ??
-            rosterStatuses[0]?.value ??
-            '',
+        rosterStatuses[0]?.value ??
+        'scheduled';
+    const [rosterDraft, setRosterDraft] = useState(() =>
+        emptyRosterFields({
+            branchId: String(branch.id),
+            status: defaultRosterStatus,
+        }),
     );
 
     setLayoutProps({
@@ -263,7 +262,7 @@ export default function BranchDriversShow({
                     <CardHeader>
                         <CardTitle>Rosters at {branch.name}</CardTitle>
                         <CardDescription>
-                            Shift duty times for this branch
+                            Shift duty times by date period
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -273,104 +272,39 @@ export default function BranchDriversShow({
                                 user: driver.id,
                             })}
                             method="post"
-                            className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"
+                            className="space-y-3 rounded-xl border p-3"
                             options={{ preserveScroll: true }}
                             onSuccess={() => {
-                                setDate('');
-                                setStartTime('');
-                                setEndTime('');
+                                setRosterDraft(
+                                    emptyRosterFields({
+                                        branchId: String(branch.id),
+                                        status: defaultRosterStatus,
+                                    }),
+                                );
                             }}
                         >
                             {({ errors, processing }) => (
-                                <>
-                                    <input
-                                        type="hidden"
-                                        name="date"
-                                        value={date}
-                                    />
-                                    <input
-                                        type="hidden"
-                                        name="start_time"
-                                        value={startTime}
-                                    />
-                                    <input
-                                        type="hidden"
-                                        name="end_time"
-                                        value={endTime}
-                                    />
-                                    <input
-                                        type="hidden"
-                                        name="status"
-                                        value={rosterStatus}
-                                    />
-
-                                    <div className="grid gap-2">
-                                        <Label>Date</Label>
-                                        <DatePicker
-                                            value={date}
-                                            onChange={setDate}
-                                        />
-                                        <InputError message={errors.date} />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>Start</Label>
-                                        <TimePicker
-                                            value={startTime}
-                                            onChange={setStartTime}
-                                        />
-                                        <InputError
-                                            message={errors.start_time}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>End</Label>
-                                        <TimePicker
-                                            value={endTime}
-                                            onChange={setEndTime}
-                                        />
-                                        <InputError
-                                            message={errors.end_time}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>Status</Label>
-                                        <div className="flex gap-2">
-                                            <Select
-                                                value={rosterStatus}
-                                                onValueChange={setRosterStatus}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {rosterStatuses.map(
-                                                        (status) => (
-                                                            <SelectItem
-                                                                key={
-                                                                    status.value
-                                                                }
-                                                                value={
-                                                                    status.value
-                                                                }
-                                                            >
-                                                                {status.label}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            <Button
-                                                type="submit"
-                                                disabled={processing}
-                                            >
-                                                {processing ? (
-                                                    <Spinner />
-                                                ) : null}
-                                                Add
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </>
+                                <DriverRosterFields
+                                    value={rosterDraft}
+                                    includeHiddenInputs
+                                    rosterStatuses={rosterStatuses}
+                                    errors={errors}
+                                    onChange={(patch) =>
+                                        setRosterDraft((current) => ({
+                                            ...current,
+                                            ...patch,
+                                        }))
+                                    }
+                                    statusTrailing={
+                                        <Button
+                                            type="submit"
+                                            disabled={processing}
+                                        >
+                                            {processing ? <Spinner /> : null}
+                                            Add
+                                        </Button>
+                                    }
+                                />
                             )}
                         </Form>
 
@@ -388,11 +322,11 @@ export default function BranchDriversShow({
                                         <div className="flex flex-wrap items-center justify-between gap-3">
                                             <div>
                                                 <p className="text-sm font-medium">
-                                                    {roster.date}
+                                                    {formatRosterPeriodLine(
+                                                        roster,
+                                                    )}
                                                 </p>
                                                 <p className="text-muted-foreground text-sm">
-                                                    {roster.start_time} –{' '}
-                                                    {roster.end_time} ·{' '}
                                                     {roster.status_label}
                                                 </p>
                                             </div>
