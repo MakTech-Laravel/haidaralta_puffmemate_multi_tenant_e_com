@@ -22,31 +22,47 @@ const DELIVERY_FEE = 3.5;
 const FIRST_DELIVERY_DISCOUNT = -3.5;
 
 function buildSummary(groups: CartGroup[]): CartSummary {
-    const subtotal = groups.reduce((groupTotal, group) => {
-        return (
-            groupTotal +
-            group.items.reduce((itemTotal, item) => {
-                if (!item.selected || item.unavailable) {
-                    return itemTotal;
-                }
+    const branches = groups.flatMap((group) => {
+        const subtotal = group.items.reduce((itemTotal, item) => {
+            if (!item.selected || item.unavailable) {
+                return itemTotal;
+            }
 
-                return itemTotal + item.unitPrice * item.quantity;
-            }, 0)
+            return itemTotal + item.unitPrice * item.quantity;
+        }, 0);
+
+        if (subtotal <= 0) {
+            return [];
+        }
+
+        return [
+            {
+                branchName: group.branchName,
+                lines: [
+                    { label: 'Subtotal', amount: subtotal, tone: 'default' },
+                    {
+                        label: 'Delivery fee',
+                        amount: DELIVERY_FEE,
+                        tone: 'default',
+                    },
+                    {
+                        label: 'First delivery discount',
+                        amount: FIRST_DELIVERY_DISCOUNT,
+                        tone: 'discount',
+                    },
+                ],
+            },
+        ];
+    });
+
+    const total = branches.reduce((sum, branch) => {
+        return (
+            sum +
+            branch.lines.reduce((lineSum, line) => lineSum + line.amount, 0)
         );
     }, 0);
 
-    return {
-        lines: [
-            { label: 'Subtotal', amount: subtotal, tone: 'default' },
-            { label: 'Delivery fee', amount: DELIVERY_FEE, tone: 'default' },
-            {
-                label: 'First delivery discount',
-                amount: FIRST_DELIVERY_DISCOUNT,
-                tone: 'discount',
-            },
-        ],
-        total: subtotal + DELIVERY_FEE + FIRST_DELIVERY_DISCOUNT,
-    };
+    return { branches, total };
 }
 
 export default function StorefrontCart({
@@ -110,8 +126,9 @@ export default function StorefrontCart({
                         ) : null}
                     </div>
 
-                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+                    <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
                         <CartItems
+                            className="min-w-0"
                             groups={groups}
                             branches={branches}
                             onToggleGroup={(groupId, selected) => {
@@ -224,7 +241,7 @@ export default function StorefrontCart({
                             }}
                         />
 
-                        <CartOrderSummary summary={summary} />
+                        <CartOrderSummary className="min-w-0" summary={summary} />
                     </div>
                 </div>
             </div>
