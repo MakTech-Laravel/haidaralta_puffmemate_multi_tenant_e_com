@@ -159,7 +159,7 @@ export function StorefrontHeader() {
                             aria-label="Cart"
                             aria-current={cartActive ? 'page' : undefined}
                         >
-                            <ShoppingCart className="size-8" strokeWidth={1.75} />
+                            <ShoppingCart className="size-6 md:size-8" strokeWidth={1.75} />
                         </Link>
 
                         <Link
@@ -181,7 +181,7 @@ export function StorefrontHeader() {
                                     className="size-8 rounded-full object-cover"
                                 />
                             ) : (
-                                <User className="size-8" strokeWidth={1.75} />
+                                <User className="size-6 md:size-8" strokeWidth={1.75} />
                             )}
                         </Link>
 
