@@ -18,6 +18,8 @@ class UpdateCategoryRequest extends FormRequest
 
     public function authorize(): bool
     {
+        abort_unless((bool) config('catalog.branch_can_view_categories'), 404);
+
         return true;
     }
 

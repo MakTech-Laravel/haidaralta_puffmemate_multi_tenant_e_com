@@ -19,6 +19,8 @@ beforeEach(function () {
 });
 
 test('branch can update a global category', function () {
+    config(['catalog.branch_can_view_categories' => true]);
+
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $category = Category::factory()->create([
@@ -121,6 +123,8 @@ test('branch catalog mutations require manage-branch-products', function () {
 });
 
 test('branch category suggestions match existing catalog items', function () {
+    config(['catalog.branch_can_view_categories' => true]);
+
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $match = Category::factory()->create([

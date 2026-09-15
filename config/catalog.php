@@ -41,6 +41,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Branch category list
+    |--------------------------------------------------------------------------
+    |
+    | When false, branch portals cannot open category index/show/edit (or
+    | merchandising) — those routes abort 404 and the sidebar drops
+    | Categories so Products sits as a top-level item, not under Catalog.
+    | Flip to true to restore the branch category list.
+    |
+    */
+
+    'branch_can_view_categories' => env('BRANCH_CAN_VIEW_CATEGORIES', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Parent / child category UI
     |--------------------------------------------------------------------------
     |

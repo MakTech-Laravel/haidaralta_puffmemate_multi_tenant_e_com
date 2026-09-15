@@ -31,7 +31,35 @@ import {
 } from '@/components/navigation/nav-builders';
 import type { NavSection } from '@/components/navigation/types';
 
-export function buildBranchNav(slug: string): NavSection[] {
+export function buildBranchNav(
+    slug: string,
+    canViewCategories = false,
+): NavSection[] {
+    const productsLink = navLink({
+        title: 'Products',
+        href: `/branch/${slug}/products`,
+        icon: Package,
+        permissions: ['manage-branch-products'],
+    });
+
+    const catalogNav = canViewCategories
+        ? navGroup({
+              title: 'Catalog',
+              href: `/branch/${slug}/products`,
+              icon: Package,
+              permissions: ['manage-branch-products'],
+              items: [
+                  navLink({
+                      title: 'Categories',
+                      href: `/branch/${slug}/categories`,
+                      icon: Tags,
+                      permissions: ['manage-branch-products'],
+                  }),
+                  productsLink,
+              ],
+          })
+        : productsLink;
+
     return [
         navSection(undefined, [
             navLink({
@@ -65,26 +93,7 @@ export function buildBranchNav(slug: string): NavSection[] {
                     }),
                 ],
             }),
-            navGroup({
-                title: 'Catalog',
-                href: `/branch/${slug}/products`,
-                icon: Package,
-                permissions: ['manage-branch-products'],
-                items: [
-                    navLink({
-                        title: 'Categories',
-                        href: `/branch/${slug}/categories`,
-                        icon: Tags,
-                        permissions: ['manage-branch-products'],
-                    }),
-                    navLink({
-                        title: 'Products',
-                        href: `/branch/${slug}/products`,
-                        icon: Package,
-                        permissions: ['manage-branch-products'],
-                    }),
-                ],
-            }),
+            catalogNav,
             navGroup({
                 title: 'Orders',
                 icon: ShoppingBag,

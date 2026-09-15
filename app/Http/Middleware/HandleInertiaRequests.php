@@ -52,6 +52,7 @@ class HandleInertiaRequests extends Middleware
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'catalog' => [
                 'branch_can_create_categories' => (bool) config('catalog.branch_can_create_categories'),
+                'branch_can_view_categories' => (bool) config('catalog.branch_can_view_categories'),
                 'show_parent_category' => (bool) config('catalog.show_parent_category'),
             ],
             'storefront' => [

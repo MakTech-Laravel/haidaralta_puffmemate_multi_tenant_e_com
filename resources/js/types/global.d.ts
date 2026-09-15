@@ -17,6 +17,7 @@ declare module '@inertiajs/core' {
             sidebarOpen: boolean;
             catalog: {
                 branch_can_create_categories: boolean;
+                branch_can_view_categories: boolean;
                 show_parent_category: boolean;
             };
             [key: string]: unknown;
