@@ -245,7 +245,11 @@ export function DriverForm({
 
     return (
         <>
-            <form onSubmit={submit} className="space-y-6">
+            <form
+                onSubmit={submit}
+                className="w-full space-y-6"
+                autoComplete="off"
+            >
                 <section className={sectionClassName()}>
                     <div className="mb-5 space-y-1">
                         <h2 className="text-base font-semibold tracking-tight">
@@ -303,11 +307,12 @@ export function DriverForm({
                             <InputError message={errors.avatar} />
                         </div>
 
-                        <div className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2">
-                            <div className="grid gap-2 sm:col-span-2">
+                        <div className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <div className="grid gap-2 sm:col-span-2 xl:col-span-3">
                                 <Label htmlFor="name">Name</Label>
                                 <Input
                                     id="name"
+                                    autoComplete="off"
                                     value={data.name}
                                     onChange={(event) =>
                                         setData('name', event.target.value)
@@ -321,6 +326,7 @@ export function DriverForm({
                                 <Input
                                     id="phone"
                                     type="tel"
+                                    autoComplete="off"
                                     value={data.phone}
                                     onChange={(event) =>
                                         setData('phone', event.target.value)
@@ -356,6 +362,7 @@ export function DriverForm({
                                 </Label>
                                 <PasswordInput
                                     id="password"
+                                    autoComplete="new-password"
                                     value={data.password}
                                     onChange={(event) =>
                                         setData('password', event.target.value)
@@ -370,6 +377,7 @@ export function DriverForm({
                                 </Label>
                                 <PasswordInput
                                     id="password_confirmation"
+                                    autoComplete="new-password"
                                     value={data.password_confirmation}
                                     onChange={(event) =>
                                         setData(
@@ -395,7 +403,7 @@ export function DriverForm({
                         </p>
                     </div>
 
-                    <div className="grid gap-4 lg:grid-cols-[14rem_minmax(0,1fr)]">
+                    <div className="grid items-start gap-6 xl:grid-cols-[18rem_minmax(0,1fr)]">
                         <div className="grid gap-2">
                             <Label>Vehicle image</Label>
                             <FileUpload
@@ -447,7 +455,7 @@ export function DriverForm({
                             <InputError message={errors.vehicle_image} />
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             <div className="grid gap-2">
                                 <Label htmlFor="license_number">
                                     License number
@@ -526,7 +534,7 @@ export function DriverForm({
                                     Active account
                                 </Label>
                             </div>
-                            <div className="grid gap-2 sm:col-span-2">
+                            <div className="grid gap-2 sm:col-span-2 xl:col-span-3">
                                 <Label htmlFor="address">Address</Label>
                                 <Textarea
                                     id="address"
@@ -538,7 +546,7 @@ export function DriverForm({
                                 />
                                 <InputError message={errors.address} />
                             </div>
-                            <div className="grid gap-2 sm:col-span-2">
+                            <div className="grid gap-2 sm:col-span-2 xl:col-span-3">
                                 <Label htmlFor="notes">Notes</Label>
                                 <Textarea
                                     id="notes"

@@ -1,5 +1,13 @@
-import { Form, Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { Building2 } from 'lucide-react';
+import { Form, Head, Link, router } from '@inertiajs/react';
+import {
+    Building2,
+    IdCard,
+    Mail,
+    MapPin,
+    Phone,
+    StickyNote,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import DriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
@@ -25,6 +33,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { TimePicker } from '@/components/ui/time-picker';
 
@@ -75,6 +84,32 @@ function initials(name: string): string {
         .join('');
 }
 
+function DetailItem({
+    label,
+    value,
+    icon,
+}: {
+    label: string;
+    value: ReactNode;
+    icon?: ReactNode;
+}) {
+    return (
+        <div className="flex gap-3">
+            {icon ? (
+                <div className="bg-muted text-muted-foreground mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg">
+                    {icon}
+                </div>
+            ) : null}
+            <div className="flex min-w-0 flex-col gap-1">
+                <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                    {label}
+                </dt>
+                <dd className="text-sm font-medium wrap-break-word">{value}</dd>
+            </div>
+        </div>
+    );
+}
+
 export default function PlatformDriversShow({
     driver,
     rosterStatuses,
@@ -105,39 +140,31 @@ export default function PlatformDriversShow({
             '',
     );
 
-    setLayoutProps({
-        breadcrumbs: [
-            { title: 'Dashboard', href: '/platform/dashboard' },
-            { title: 'Drivers', href: DriverController.index.url() },
-            {
-                title: driver.name,
-                href: DriverController.show.url(driver.id),
-            },
-        ],
-    });
-
     return (
         <>
             <Head title={driver.name} />
 
-            <div className="mx-auto max-w-5xl space-y-4 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-4">
-                        <Avatar className="size-16">
-                            <AvatarImage
-                                src={driver.avatar_url ?? undefined}
-                                alt={driver.name}
-                            />
-                            <AvatarFallback className="text-lg">
+                        <Avatar className="size-16 rounded-2xl border shadow-sm">
+                            {driver.avatar_url ? (
+                                <AvatarImage
+                                    src={driver.avatar_url}
+                                    alt={driver.name}
+                                    className="object-cover"
+                                />
+                            ) : null}
+                            <AvatarFallback className="rounded-2xl text-base font-semibold">
                                 {initials(driver.name)}
                             </AvatarFallback>
                         </Avatar>
-                        <div className="min-w-0 space-y-2">
+                        <div className="flex min-w-0 flex-col gap-2">
                             <Heading
                                 title={driver.name}
                                 description={`${driver.phone}${driver.email ? ` · ${driver.email}` : ''}`}
                             />
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <Badge
                                     variant={
                                         driver.is_active
@@ -152,24 +179,18 @@ export default function PlatformDriversShow({
                                         'Offline'}
                                 </Badge>
                                 {driver.vehicle_type_label ? (
-                                    <Badge variant="secondary">
+                                    <Badge variant="outline">
                                         {driver.vehicle_type_label}
                                     </Badge>
                                 ) : null}
                             </div>
                         </div>
-                        {driver.vehicle_image_url ? (
-                            <img
-                                src={driver.vehicle_image_url}
-                                alt={`${driver.name} vehicle`}
-                                className="border-border/60 ml-auto hidden h-20 w-28 rounded-lg border object-cover sm:block"
-                            />
-                        ) : null}
                     </div>
+
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" asChild>
-                            <Link href={DriverController.edit.url(driver.id)}>
-                                Edit
+                        <Button variant="secondary" asChild>
+                            <Link href={DriverController.index.url()}>
+                                All drivers
                             </Link>
                         </Button>
                         <Button
@@ -179,106 +200,158 @@ export default function PlatformDriversShow({
                             <Building2 className="size-4" />
                             Manage branches
                         </Button>
-                        <Button variant="outline" asChild>
-                            <Link href={DriverController.index.url()}>
-                                All drivers
+                        <Button asChild>
+                            <Link href={DriverController.edit.url(driver.id)}>
+                                Edit
                             </Link>
                         </Button>
                     </div>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
-                    <Card className="shadow-none">
+                <div className="grid items-start gap-4 xl:grid-cols-2">
+                    <Card className="shadow-sm">
                         <CardHeader>
                             <CardTitle>Profile</CardTitle>
                             <CardDescription>
                                 Address, license, and availability override
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-2 text-sm">
-                            <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                    Address
-                                </span>
-                                <span className="text-right">
-                                    {driver.address ?? '—'}
-                                </span>
-                            </div>
-                            <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                    License
-                                </span>
-                                <span>{driver.license_number ?? '—'}</span>
-                            </div>
-                            <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                    Vehicle
-                                </span>
-                                <span>
-                                    {driver.vehicle_type_label ?? '—'}
-                                </span>
-                            </div>
-                            <div className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                    Override status
-                                </span>
-                                <span>
-                                    {driver.availability_status_label ?? '—'}
-                                </span>
-                            </div>
+                        <CardContent>
+                            <dl className="grid gap-5 sm:grid-cols-2">
+                                <DetailItem
+                                    label="Phone"
+                                    icon={<Phone className="size-4" />}
+                                    value={driver.phone}
+                                />
+                                <DetailItem
+                                    label="Email"
+                                    icon={<Mail className="size-4" />}
+                                    value={driver.email ?? '—'}
+                                />
+                                <DetailItem
+                                    label="Address"
+                                    icon={<MapPin className="size-4" />}
+                                    value={driver.address ?? '—'}
+                                />
+                                <DetailItem
+                                    label="License"
+                                    icon={<IdCard className="size-4" />}
+                                    value={driver.license_number ?? '—'}
+                                />
+                                <DetailItem
+                                    label="Vehicle"
+                                    value={driver.vehicle_type_label ?? '—'}
+                                />
+                                <DetailItem
+                                    label="Override status"
+                                    value={
+                                        driver.availability_status_label ?? '—'
+                                    }
+                                />
+                            </dl>
                             {driver.notes ? (
-                                <p className="text-muted-foreground pt-2">
-                                    {driver.notes}
-                                </p>
+                                <div className="mt-5">
+                                    <DetailItem
+                                        label="Notes"
+                                        icon={
+                                            <StickyNote className="size-4" />
+                                        }
+                                        value={driver.notes}
+                                    />
+                                </div>
                             ) : null}
                         </CardContent>
                     </Card>
 
-                    <Card className="shadow-none">
+                    <Card className="shadow-sm">
                         <CardHeader>
-                            <CardTitle>Branch assignments</CardTitle>
+                            <CardTitle>Vehicle</CardTitle>
                             <CardDescription>
-                                Active and historical branch links
+                                Photo used on the driver profile
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-2">
-                            {driver.assignments.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">
-                                    No branch assignments yet.
-                                </p>
+                        <CardContent>
+                            {driver.vehicle_image_url ? (
+                                <img
+                                    src={driver.vehicle_image_url}
+                                    alt={`${driver.name} vehicle`}
+                                    className="border-border/70 h-56 w-full rounded-xl border object-cover"
+                                />
                             ) : (
-                                driver.assignments.map((assignment) => (
-                                    <div
-                                        key={assignment.id}
-                                        className="flex items-center justify-between gap-2 text-sm"
-                                    >
-                                        {assignment.branch_slug ? (
-                                            <Link
-                                                href={BranchController.show.url(
-                                                    assignment.branch_slug,
-                                                )}
-                                                className="font-medium hover:underline"
-                                            >
-                                                {assignment.branch_name ??
-                                                    'Unknown branch'}
-                                            </Link>
-                                        ) : (
-                                            <span>
-                                                {assignment.branch_name ??
-                                                    'Unknown branch'}
-                                            </span>
-                                        )}
-                                        <Badge variant="secondary">
-                                            {assignment.status_label}
-                                        </Badge>
-                                    </div>
-                                ))
+                                <div className="border-border/70 bg-muted/30 flex min-h-36 flex-col items-center justify-center rounded-xl border border-dashed px-4 py-8 text-center">
+                                    <p className="text-sm font-medium">
+                                        No vehicle photo
+                                    </p>
+                                    <p className="text-muted-foreground max-w-xs text-xs">
+                                        Add one from Edit so dispatchers can
+                                        recognize this driver.
+                                    </p>
+                                </div>
                             )}
                         </CardContent>
                     </Card>
                 </div>
 
-                <Card className="shadow-none">
+                <Card className="shadow-sm">
+                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-1.5">
+                            <CardTitle>Branch assignments</CardTitle>
+                            <CardDescription>
+                                Active and historical branch links
+                            </CardDescription>
+                        </div>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setBranchSheetOpen(true)}
+                        >
+                            <Building2 className="size-4" />
+                            Manage branches
+                        </Button>
+                    </CardHeader>
+                    <CardContent>
+                        {driver.assignments.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">
+                                No branch assignments yet.
+                            </p>
+                        ) : (
+                            <div className="flex flex-col">
+                                {driver.assignments.map(
+                                    (assignment, index) => (
+                                        <div key={assignment.id}>
+                                            {index > 0 ? (
+                                                <Separator className="my-4" />
+                                            ) : null}
+                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                {assignment.branch_slug ? (
+                                                    <Link
+                                                        href={BranchController.show.url(
+                                                            assignment.branch_slug,
+                                                        )}
+                                                        className="font-medium hover:underline"
+                                                    >
+                                                        {assignment.branch_name ??
+                                                            'Unknown branch'}
+                                                    </Link>
+                                                ) : (
+                                                    <span className="font-medium">
+                                                        {assignment.branch_name ??
+                                                            'Unknown branch'}
+                                                    </span>
+                                                )}
+                                                <Badge variant="secondary">
+                                                    {assignment.status_label}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    ),
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-sm">
                     <CardHeader>
                         <CardTitle>Rosters</CardTitle>
                         <CardDescription>
@@ -291,7 +364,7 @@ export default function PlatformDriversShow({
                                 driver.id,
                             )}
                             method="post"
-                            className="grid gap-3 md:grid-cols-5"
+                            className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"
                             options={{ preserveScroll: true }}
                             onSuccess={() => {
                                 setDate('');
@@ -306,7 +379,11 @@ export default function PlatformDriversShow({
                                         name="branch_id"
                                         value={branchId}
                                     />
-                                    <input type="hidden" name="date" value={date} />
+                                    <input
+                                        type="hidden"
+                                        name="date"
+                                        value={date}
+                                    />
                                     <input
                                         type="hidden"
                                         name="start_time"
@@ -346,7 +423,9 @@ export default function PlatformDriversShow({
                                                                 assignment.branch_id,
                                                             )}
                                                         >
-                                                            {assignment.branch_name}
+                                                            {
+                                                                assignment.branch_name
+                                                            }
                                                         </SelectItem>
                                                     ),
                                                 )}
@@ -430,50 +509,55 @@ export default function PlatformDriversShow({
                             )}
                         </Form>
 
-                        <div className="space-y-2">
-                            {driver.rosters.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">
-                                    No roster shifts yet.
-                                </p>
-                            ) : (
-                                driver.rosters.map((roster) => (
-                                    <div
-                                        key={roster.id}
-                                        className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
-                                    >
-                                        <div>
-                                            <div className="font-medium">
-                                                {roster.branch_name} ·{' '}
-                                                {roster.date}
+                        {driver.rosters.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">
+                                No roster shifts yet.
+                            </p>
+                        ) : (
+                            <div className="flex flex-col">
+                                {driver.rosters.map((roster, index) => (
+                                    <div key={roster.id}>
+                                        {index > 0 ? (
+                                            <Separator className="my-4" />
+                                        ) : null}
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-medium">
+                                                    {roster.branch_name} ·{' '}
+                                                    {roster.date}
+                                                </p>
+                                                <p className="text-muted-foreground text-sm">
+                                                    {roster.start_time} –{' '}
+                                                    {roster.end_time} ·{' '}
+                                                    {roster.status_label}
+                                                </p>
                                             </div>
-                                            <div className="text-muted-foreground">
-                                                {roster.start_time} –{' '}
-                                                {roster.end_time} ·{' '}
-                                                {roster.status_label}
-                                            </div>
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-destructive"
-                                            onClick={() =>
-                                                router.delete(
-                                                    DriverController.destroyRoster.url(
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-destructive"
+                                                onClick={() =>
+                                                    router.delete(
+                                                        DriverController.destroyRoster.url(
+                                                            {
+                                                                user: driver.id,
+                                                                roster: roster.id,
+                                                            },
+                                                        ),
                                                         {
-                                                            user: driver.id,
-                                                            roster: roster.id,
+                                                            preserveScroll:
+                                                                true,
                                                         },
-                                                    ),
-                                                    { preserveScroll: true },
-                                                )
-                                            }
-                                        >
-                                            Remove
-                                        </Button>
+                                                    )
+                                                }
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
                                     </div>
-                                ))
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -487,3 +571,11 @@ export default function PlatformDriversShow({
         </>
     );
 }
+
+PlatformDriversShow.layout = {
+    breadcrumbs: [
+        { title: 'Dashboard', href: '/platform/dashboard' },
+        { title: 'Drivers', href: '/platform/drivers' },
+        { title: 'Show', href: '#' },
+    ],
+};

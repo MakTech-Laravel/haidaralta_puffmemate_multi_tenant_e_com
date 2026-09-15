@@ -36,7 +36,7 @@ export default function BranchDriversCreate({
         <>
             <Head title="Add driver" />
 
-            <div className="mx-auto max-w-4xl space-y-4 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Add driver"
                     description={`Create a driver and assign them to ${branch.name}`}

@@ -1,4 +1,6 @@
 import { Form, Head, Link, router, setLayoutProps } from '@inertiajs/react';
+import { IdCard, Mail, MapPin, Phone } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import DriverController from '@/actions/App/Http/Controllers/Branch/DriverController';
 import Heading from '@/components/heading';
@@ -22,6 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { TimePicker } from '@/components/ui/time-picker';
 
@@ -63,6 +66,32 @@ function initials(name: string): string {
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase() ?? '')
         .join('');
+}
+
+function DetailItem({
+    label,
+    value,
+    icon,
+}: {
+    label: string;
+    value: ReactNode;
+    icon?: ReactNode;
+}) {
+    return (
+        <div className="flex gap-3">
+            {icon ? (
+                <div className="bg-muted text-muted-foreground mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg">
+                    {icon}
+                </div>
+            ) : null}
+            <div className="flex min-w-0 flex-col gap-1">
+                <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                    {label}
+                </dt>
+                <dd className="text-sm font-medium wrap-break-word">{value}</dd>
+            </div>
+        </div>
+    );
 }
 
 export default function BranchDriversShow({
@@ -107,24 +136,27 @@ export default function BranchDriversShow({
         <>
             <Head title={driver.name} />
 
-            <div className="mx-auto max-w-4xl space-y-4 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-4">
-                        <Avatar className="size-14">
-                            <AvatarImage
-                                src={driver.avatar_url ?? undefined}
-                                alt={driver.name}
-                            />
-                            <AvatarFallback>
+                        <Avatar className="size-16 rounded-2xl border shadow-sm">
+                            {driver.avatar_url ? (
+                                <AvatarImage
+                                    src={driver.avatar_url}
+                                    alt={driver.name}
+                                    className="object-cover"
+                                />
+                            ) : null}
+                            <AvatarFallback className="rounded-2xl text-base font-semibold">
                                 {initials(driver.name)}
                             </AvatarFallback>
                         </Avatar>
-                        <div className="space-y-2">
+                        <div className="flex min-w-0 flex-col gap-2">
                             <Heading
                                 title={driver.name}
                                 description={`${driver.phone}${driver.email ? ` · ${driver.email}` : ''}`}
                             />
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <Badge
                                     variant={
                                         driver.is_active
@@ -138,10 +170,15 @@ export default function BranchDriversShow({
                                     {driver.effective_availability_label ??
                                         'Offline'}
                                 </Badge>
+                                {driver.vehicle_type_label ? (
+                                    <Badge variant="outline">
+                                        {driver.vehicle_type_label}
+                                    </Badge>
+                                ) : null}
                             </div>
                         </div>
                     </div>
-                    <Button variant="outline" asChild>
+                    <Button asChild>
                         <Link
                             href={DriverController.edit.url({
                                 branch: branch.slug,
@@ -153,46 +190,76 @@ export default function BranchDriversShow({
                     </Button>
                 </div>
 
-                <Card className="shadow-none">
-                    <CardHeader>
-                        <CardTitle>Profile</CardTitle>
-                        <CardDescription>
-                            Vehicle and availability for this driver
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm">
-                        <div className="flex justify-between gap-4">
-                            <span className="text-muted-foreground">
-                                Address
-                            </span>
-                            <span className="text-right">
-                                {driver.address ?? '—'}
-                            </span>
-                        </div>
-                        <div className="flex justify-between gap-4">
-                            <span className="text-muted-foreground">
-                                Vehicle
-                            </span>
-                            <span>{driver.vehicle_type_label ?? '—'}</span>
-                        </div>
-                        <div className="flex justify-between gap-4">
-                            <span className="text-muted-foreground">
-                                Override status
-                            </span>
-                            <span>
-                                {driver.availability_status_label ?? '—'}
-                            </span>
-                        </div>
-                        <div className="flex justify-between gap-4">
-                            <span className="text-muted-foreground">
-                                License
-                            </span>
-                            <span>{driver.license_number ?? '—'}</span>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="grid items-start gap-4 xl:grid-cols-2">
+                    <Card className="shadow-sm">
+                        <CardHeader>
+                            <CardTitle>Profile</CardTitle>
+                            <CardDescription>
+                                Vehicle and availability at {branch.name}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <dl className="grid gap-5 sm:grid-cols-2">
+                                <DetailItem
+                                    label="Phone"
+                                    icon={<Phone className="size-4" />}
+                                    value={driver.phone}
+                                />
+                                <DetailItem
+                                    label="Email"
+                                    icon={<Mail className="size-4" />}
+                                    value={driver.email ?? '—'}
+                                />
+                                <DetailItem
+                                    label="Address"
+                                    icon={<MapPin className="size-4" />}
+                                    value={driver.address ?? '—'}
+                                />
+                                <DetailItem
+                                    label="License"
+                                    icon={<IdCard className="size-4" />}
+                                    value={driver.license_number ?? '—'}
+                                />
+                                <DetailItem
+                                    label="Vehicle"
+                                    value={driver.vehicle_type_label ?? '—'}
+                                />
+                                <DetailItem
+                                    label="Override status"
+                                    value={
+                                        driver.availability_status_label ?? '—'
+                                    }
+                                />
+                            </dl>
+                        </CardContent>
+                    </Card>
 
-                <Card className="shadow-none">
+                    <Card className="shadow-sm">
+                        <CardHeader>
+                            <CardTitle>Vehicle</CardTitle>
+                            <CardDescription>
+                                Photo used on this driver profile
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {driver.vehicle_image_url ? (
+                                <img
+                                    src={driver.vehicle_image_url}
+                                    alt={`${driver.name} vehicle`}
+                                    className="border-border/70 h-56 w-full rounded-xl border object-cover"
+                                />
+                            ) : (
+                                <div className="border-border/70 bg-muted/30 flex min-h-36 flex-col items-center justify-center rounded-xl border border-dashed px-4 py-8 text-center">
+                                    <p className="text-sm font-medium">
+                                        No vehicle photo
+                                    </p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <Card className="shadow-sm">
                     <CardHeader>
                         <CardTitle>Rosters at {branch.name}</CardTitle>
                         <CardDescription>
@@ -206,7 +273,7 @@ export default function BranchDriversShow({
                                 user: driver.id,
                             })}
                             method="post"
-                            className="grid gap-3 md:grid-cols-4"
+                            className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"
                             options={{ preserveScroll: true }}
                             onSuccess={() => {
                                 setDate('');
@@ -307,50 +374,55 @@ export default function BranchDriversShow({
                             )}
                         </Form>
 
-                        <div className="space-y-2">
-                            {driver.rosters.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">
-                                    No roster shifts yet.
-                                </p>
-                            ) : (
-                                driver.rosters.map((roster) => (
-                                    <div
-                                        key={roster.id}
-                                        className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
-                                    >
-                                        <div>
-                                            <div className="font-medium">
-                                                {roster.date}
+                        {driver.rosters.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">
+                                No roster shifts yet.
+                            </p>
+                        ) : (
+                            <div className="flex flex-col">
+                                {driver.rosters.map((roster, index) => (
+                                    <div key={roster.id}>
+                                        {index > 0 ? (
+                                            <Separator className="my-4" />
+                                        ) : null}
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-medium">
+                                                    {roster.date}
+                                                </p>
+                                                <p className="text-muted-foreground text-sm">
+                                                    {roster.start_time} –{' '}
+                                                    {roster.end_time} ·{' '}
+                                                    {roster.status_label}
+                                                </p>
                                             </div>
-                                            <div className="text-muted-foreground">
-                                                {roster.start_time} –{' '}
-                                                {roster.end_time} ·{' '}
-                                                {roster.status_label}
-                                            </div>
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-destructive"
-                                            onClick={() =>
-                                                router.delete(
-                                                    DriverController.destroyRoster.url(
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-destructive"
+                                                onClick={() =>
+                                                    router.delete(
+                                                        DriverController.destroyRoster.url(
+                                                            {
+                                                                branch: branch.slug,
+                                                                user: driver.id,
+                                                                roster: roster.id,
+                                                            },
+                                                        ),
                                                         {
-                                                            branch: branch.slug,
-                                                            user: driver.id,
-                                                            roster: roster.id,
+                                                            preserveScroll:
+                                                                true,
                                                         },
-                                                    ),
-                                                    { preserveScroll: true },
-                                                )
-                                            }
-                                        >
-                                            Remove
-                                        </Button>
+                                                    )
+                                                }
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
                                     </div>
-                                ))
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

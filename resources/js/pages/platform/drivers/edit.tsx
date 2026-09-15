@@ -41,7 +41,7 @@ export default function PlatformDriversEdit({
         <>
             <Head title={`Edit ${driver.name}`} />
 
-            <div className="mx-auto max-w-4xl space-y-4 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${driver.name}`}
                     description="Update account, vehicle, and branch assignments"
