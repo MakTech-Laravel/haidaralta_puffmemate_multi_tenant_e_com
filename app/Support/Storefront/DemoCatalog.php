@@ -554,7 +554,7 @@ class DemoCatalog
     /**
      * @return array{
      *     itemCount: int,
-     *     items: list<array{id: string, name: string, image: string, quantity: int, unitPrice: float}>,
+     *     items: list<array{id: string, name: string, image: string, quantity: int, unitPrice: float, branchName: string}>,
      *     summary: array{subtotal: float, deliveryLabel: string, deliveryAmount: float|null, total: float},
      *     deliveryMethods: list<array{id: string, title: string, description: string, meta: string}>,
      *     paymentMethods: list<array{id: string, title: string, description: string, badge: string}>,
@@ -579,6 +579,7 @@ class DemoCatalog
                     'image' => $first['image'],
                     'quantity' => 1,
                     'unitPrice' => 29.95,
+                    'branchName' => 'Williamsburg Branch',
                 ],
                 [
                     'id' => 'co2',
@@ -586,6 +587,7 @@ class DemoCatalog
                     'image' => $vape['image'],
                     'quantity' => 1,
                     'unitPrice' => 39.95,
+                    'branchName' => 'Pacific Coast Tobacco – Brisbane Branch',
                 ],
             ],
             'summary' => [

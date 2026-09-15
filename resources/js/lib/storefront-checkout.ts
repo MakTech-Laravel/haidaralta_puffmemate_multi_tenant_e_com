@@ -6,6 +6,7 @@ export type CheckoutItem = {
     image: string;
     quantity: number;
     unitPrice: number;
+    branchName: string;
 };
 
 export type CheckoutSummary = {

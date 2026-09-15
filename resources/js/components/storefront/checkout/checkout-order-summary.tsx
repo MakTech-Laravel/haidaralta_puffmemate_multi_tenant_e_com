@@ -1,13 +1,13 @@
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
     formatMoney,
     type CheckoutItem,
     type CheckoutSummary,
-} from '@/lib/storefront-checkout';
-import { cn } from '@/lib/utils';
+} from "@/lib/storefront-checkout";
+import { cn } from "@/lib/utils";
 
 type CheckoutOrderSummaryProps = {
     items: CheckoutItem[];
@@ -36,64 +36,56 @@ export function CheckoutOrderSummary({
 }: CheckoutOrderSummaryProps) {
     return (
         <aside
-            className={cn(
-                'bg-accent h-fit p-5 lg:sticky lg:top-28',
-                className,
-            )}
+            className={cn("bg-accent h-fit p-5 lg:sticky lg:top-28", className)}
         >
             <div className="flex items-center justify-between gap-3">
                 <h2 className="text-foreground text-2xl font-bold tracking-tight">
                     Your order
                 </h2>
                 <span className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
-                    {itemCount} item{itemCount === 1 ? '' : 's'}
+                    {itemCount} item{itemCount === 1 ? "" : "s"}
                 </span>
             </div>
 
             <ul className="mt-5 space-y-4">
-                {items.map((item) => (
-                    <li key={item.id} className="flex items-center gap-3">
-                        <div className="bg-muted relative size-12 shrink-0 overflow-hidden rounded-md">
-                            <div
-                                className="absolute inset-0 bg-cover bg-center"
-                                style={{
-                                    backgroundImage: `url(${item.image})`,
-                                }}
-                                role="img"
-                                aria-label={item.name}
-                            />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="text-foreground truncate text-sm font-semibold">
-                                {item.name}
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                                Quantity x {item.quantity}
-                            </p>
-                        </div>
-                        <p className="text-foreground shrink-0 text-sm font-bold">
-                            {formatMoney(item.unitPrice * item.quantity)}
+                {items.map((item, index) => (
+                    <li
+                        key={item.id}
+                        className={`flex flex-col gap-1.5 ${index > 0 ? "mt-8" : ""}`}
+                    >
+                        <p className="text-foreground text-sm font-bold break-words">
+                            {item.branchName}
                         </p>
+
+                        <div className="flex items-center gap-3">
+                            <div className="bg-muted relative size-12 shrink-0 overflow-hidden rounded-md">
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center"
+                                    style={{
+                                        backgroundImage: `url(${item.image})`,
+                                    }}
+                                    role="img"
+                                    aria-label={item.name}
+                                />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                                <p className="text-foreground truncate text-sm font-semibold">
+                                    {item.name}
+                                </p>
+
+                                <p className="text-muted-foreground text-xs">
+                                    Quantity x {item.quantity}
+                                </p>
+                            </div>
+
+                            <p className="text-foreground shrink-0 text-sm font-bold">
+                                {formatMoney(item.unitPrice * item.quantity)}
+                            </p>
+                        </div>
                     </li>
                 ))}
             </ul>
-
-            <div className="mt-5 flex gap-2">
-                <Input
-                    value={coupon}
-                    onChange={(event) => onCouponChange(event.target.value)}
-                    placeholder="Coupon code"
-                    className="h-10 bg-background rounded-none border-none"
-                    aria-label="Coupon code"
-                />
-                <Button
-                    type="button"
-                    className="bg-foreground text-background hover:bg-foreground/90 h-10 shrink-0 rounded-none px-4 font-bold"
-                >
-                    Apply
-                </Button>
-            </div>
-
             <dl className="mt-5 space-y-2.5">
                 <div className="flex items-center justify-between gap-3 text-sm">
                     <dt className="text-muted-foreground">Subtotal</dt>
@@ -112,7 +104,9 @@ export function CheckoutOrderSummary({
             </dl>
 
             <div className="border-border mt-4 flex items-end justify-between gap-3 border-t pt-4">
-                <span className="text-foreground text-base font-bold">Total</span>
+                <span className="text-foreground text-base font-bold">
+                    Total
+                </span>
                 <span className="text-foreground text-2xl font-bold">
                     {formatMoney(summary.total)}
                 </span>
@@ -140,7 +134,7 @@ export function CheckoutOrderSummary({
                     className="text-muted-foreground text-xs leading-relaxed font-normal"
                 >
                     By placing your order, you confirm your details are correct
-                    and agree to PuffMeMate&apos;s terms.
+                    and agree to PuffMeMate's terms.
                 </Label>
             </div>
 
