@@ -185,16 +185,12 @@ export function DriverRosterFields({
                     <DatePicker
                         value={value.start_date}
                         placeholder="Start date"
+                        max={value.end_date || null}
                         disabled={disabled}
                         onChange={(startDate) => {
-                            const nextEnd =
-                                !value.end_date || value.end_date < startDate
-                                    ? startDate
-                                    : value.end_date;
-
                             onChange({
                                 start_date: startDate,
-                                end_date: nextEnd,
+                                end_date: value.end_date || startDate,
                             });
                         }}
                     />
@@ -207,7 +203,17 @@ export function DriverRosterFields({
                         placeholder="End date"
                         min={value.start_date || null}
                         disabled={disabled}
-                        onChange={(endDate) => onChange({ end_date: endDate })}
+                        onChange={(endDate) => {
+                            onChange({
+                                end_date: endDate,
+                                start_date:
+                                    value.start_date &&
+                                    endDate &&
+                                    value.start_date > endDate
+                                        ? endDate
+                                        : value.start_date,
+                            });
+                        }}
                     />
                     <InputError message={endDateError} />
                 </div>
