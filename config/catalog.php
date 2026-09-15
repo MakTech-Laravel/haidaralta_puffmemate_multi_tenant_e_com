@@ -37,7 +37,7 @@ return [
     |
     */
 
-    'branch_can_create_categories' => false,
+    'branch_can_create_categories' => env('BRANCH_CAN_CREATE_CATEGORIES', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -50,6 +50,6 @@ return [
     |
     */
 
-    'show_parent_category' => false,
+    'show_parent_category' => env('SHOW_PARENT_CATEGORY', false),
 
 ];

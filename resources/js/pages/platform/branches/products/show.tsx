@@ -10,7 +10,6 @@ import {
     type TransactionsPage,
 } from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,6 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { cn } from '@/lib/utils';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -107,10 +105,7 @@ export default function PlatformBranchProductShow({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <Avatar
-                            className={cn(
-                                'size-14 rounded-xl border border-border/70',
-                                transparent && COLOR_PICKER_CHECKERBOARD,
-                            )}
+                            className="size-14 rounded-xl border border-border/70"
                             style={
                                 transparent
                                     ? undefined

@@ -20,7 +20,6 @@ import {
 } from '@/components/data-table';
 import Heading from '@/components/heading';
 import { DemoStatCard } from '@/components/portal/demo-stat-card';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,7 +38,6 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { cn } from '@/lib/utils';
 
 type BranchRow = {
     id: number;
@@ -257,10 +255,7 @@ export default function PlatformProductBranches({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <Avatar
-                            className={cn(
-                                'size-14 rounded-xl border border-border/70',
-                                transparent && COLOR_PICKER_CHECKERBOARD,
-                            )}
+                            className="size-14 rounded-xl border border-border/70"
                             style={
                                 transparent
                                     ? undefined

@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react';
 import Lightbox from 'yet-another-react-lightbox';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import 'yet-another-react-lightbox/styles.css';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import {
     Card,
     CardContent,
@@ -54,8 +53,7 @@ function useGalleryPresentation({
     colorCode?: ColorPickerValue | null;
 }) {
     const normalizedColor = normalizeCatalogColorPickerValue(colorCode);
-    const transparent = isTransparentColorPickerValue(normalizedColor);
-    const tileStyle = transparent
+    const tileStyle = isTransparentColorPickerValue(normalizedColor)
         ? undefined
         : colorPickerStyle(normalizedColor);
 
@@ -86,7 +84,7 @@ function useGalleryPresentation({
         [items],
     );
 
-    return { items, slides, transparent, tileStyle };
+    return { items, slides, tileStyle };
 }
 
 export function ProductGallery({
@@ -100,7 +98,7 @@ export function ProductGallery({
 }: ProductGalleryProps) {
     const [open, setOpen] = useState(false);
     const [index, setIndex] = useState(0);
-    const { items, slides, transparent, tileStyle } = useGalleryPresentation({
+    const { items, slides, tileStyle } = useGalleryPresentation({
         images,
         primaryUrl,
         colorCode,
@@ -120,10 +118,7 @@ export function ProductGallery({
             render={{
                 slide: ({ slide }) => (
                     <div
-                        className={cn(
-                            'relative flex h-full w-full items-center justify-center p-6',
-                            transparent && COLOR_PICKER_CHECKERBOARD,
-                        )}
+                        className="relative flex h-full w-full items-center justify-center p-6"
                         style={tileStyle}
                     >
                         <img
@@ -145,10 +140,7 @@ export function ProductGallery({
 
     const empty = (
         <div
-            className={cn(
-                'border-border/70 flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center',
-                transparent ? cn('bg-muted/20', COLOR_PICKER_CHECKERBOARD) : 'bg-muted/20',
-            )}
+            className="border-border/70 bg-muted/20 flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center"
             style={tileStyle}
         >
             <ImageIcon className="text-muted-foreground mb-3 size-8" />
@@ -168,11 +160,7 @@ export function ProductGallery({
                 <>
                     <button
                         type="button"
-                        className={cn(
-                            'group relative flex min-h-72 w-full items-center justify-center overflow-hidden rounded-2xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:min-h-96',
-                            transparent &&
-                                cn('bg-muted/20', COLOR_PICKER_CHECKERBOARD),
-                        )}
+                        className="group relative flex min-h-72 w-full items-center justify-center overflow-hidden rounded-2xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:min-h-96"
                         style={tileStyle}
                         onClick={() => openAt(activeIndex)}
                         aria-label={`Preview ${active?.label ?? productName}`}
@@ -201,11 +189,6 @@ export function ProductGallery({
                                         imageIndex === activeIndex
                                             ? 'border-primary ring-1 ring-primary/30'
                                             : 'border-border/70 hover:border-primary/40',
-                                        transparent &&
-                                            cn(
-                                                'bg-muted/20',
-                                                COLOR_PICKER_CHECKERBOARD,
-                                            ),
                                     )}
                                     style={tileStyle}
                                     onClick={() => setIndex(imageIndex)}
@@ -245,11 +228,7 @@ export function ProductGallery({
                         <button
                             key={image.id}
                             type="button"
-                            className={cn(
-                                'group overflow-hidden rounded-lg border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
-                                transparent &&
-                                    cn('bg-muted/20', COLOR_PICKER_CHECKERBOARD),
-                            )}
+                            className="group overflow-hidden rounded-lg border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             style={tileStyle}
                             onClick={() => openAt(imageIndex)}
                             aria-label={`Preview gallery image ${imageIndex + 1}`}

@@ -6,7 +6,6 @@ import ProductController from '@/actions/App/Http/Controllers/Platform/ProductCo
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import { ColorPicker } from '@/components/color-picker';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -784,14 +783,7 @@ export function ProductForm({
                     <div className="space-y-4">
                         <div className="overflow-hidden rounded-xl border border-border/80">
                             <div
-                                className={cn(
-                                    'aspect-square p-3',
-                                    imageTileTransparent &&
-                                        cn(
-                                            'bg-muted/25',
-                                            COLOR_PICKER_CHECKERBOARD,
-                                        ),
-                                )}
+                                className="aspect-square p-3"
                                 style={
                                     imageTileTransparent
                                         ? undefined
@@ -843,7 +835,7 @@ export function ProductForm({
                                         wrapper:
                                             'flex h-full min-h-0 w-full flex-col',
                                         dropzone:
-                                            'h-full min-h-0 border-dashed border-border/60 bg-background/75 px-3 py-6',
+                                            'h-full min-h-0 border-dashed border-border/60 bg-transparent px-3 py-6',
                                         dropzoneContent: 'gap-1',
                                         card: 'h-full overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
                                         cardMedia: 'h-full bg-transparent',
@@ -864,7 +856,7 @@ export function ProductForm({
                                     enabledModes={[
                                         ...CATALOG_COLOR_PICKER_MODES,
                                     ]}
-                                    defaultMode="solid"
+                                    defaultMode="transparent"
                                     value={data.color_code}
                                     onChange={(color_code) =>
                                         setData('color_code', color_code)
@@ -872,7 +864,7 @@ export function ProductForm({
                                     label="Image background"
                                     description="Fill behind product imagery"
                                     dialogTitle="Image background"
-                                    dialogDescription="Solid red is the default. Switch to none or a two-tone gradient if needed."
+                                    dialogDescription="None is the default. The listing uses the page or card color until you pick a solid or gradient fill."
                                     error={
                                         errors.color_code ??
                                         errors['color_code.mode'] ??

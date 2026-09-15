@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import {
     ProductGallery,
     type ProductGalleryImage,
@@ -22,7 +21,6 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { cn } from '@/lib/utils';
 
 function DetailItem({
     label,
@@ -92,10 +90,7 @@ export function BranchProductSummary({
                     <CardContent className="px-5">
                         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
                             <Avatar
-                                className={cn(
-                                    'size-20 rounded-xl border border-border/70',
-                                    transparent && COLOR_PICKER_CHECKERBOARD,
-                                )}
+                                className="size-20 rounded-xl border border-border/70"
                                 style={
                                     transparent
                                         ? undefined

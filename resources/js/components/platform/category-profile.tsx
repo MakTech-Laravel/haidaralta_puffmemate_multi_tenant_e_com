@@ -9,7 +9,6 @@ import {
     Pencil,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { ProductGallery } from '@/components/product-gallery';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +27,6 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { cn } from '@/lib/utils';
 
 export type CategoryProfileChild = {
     id: number;
@@ -267,10 +265,7 @@ export function CategoryProfile({
                                 </p>
                             </div>
                             <span
-                                className={cn(
-                                    'size-10 shrink-0 rounded-lg border border-border/70 shadow-inner',
-                                    transparent && COLOR_PICKER_CHECKERBOARD,
-                                )}
+                                className="size-10 shrink-0 rounded-lg border border-border/70 shadow-inner"
                                 style={
                                     transparent
                                         ? undefined

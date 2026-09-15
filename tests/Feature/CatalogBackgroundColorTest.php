@@ -95,15 +95,15 @@ test('platform can create category and product with solid and gradient color_cod
     ]);
 });
 
-test('platform can create a product with the catalog default solid red background', function () {
+test('platform can persist a solid red catalog background', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $category = Category::factory()->create();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.products.store'), [
             'category_ids' => [$category->id],
-            'name' => 'Default Red Kit',
-            'slug' => 'default-red-kit',
+            'name' => 'Solid Red Kit',
+            'slug' => 'solid-red-kit',
             'sku' => 'SKU-RED-1',
             'status' => true,
             'color_code' => json_encode([
@@ -111,9 +111,9 @@ test('platform can create a product with the catalog default solid red backgroun
                 'color' => '#EF4444',
             ]),
         ])
-        ->assertRedirect(route('platform.products.show', 'default-red-kit'));
+        ->assertRedirect(route('platform.products.show', 'solid-red-kit'));
 
-    $product = Product::query()->where('slug', 'default-red-kit')->firstOrFail();
+    $product = Product::query()->where('slug', 'solid-red-kit')->firstOrFail();
 
     expect($product->color_code)->toBe([
         'mode' => 'solid',
@@ -121,26 +121,85 @@ test('platform can create a product with the catalog default solid red backgroun
     ]);
 });
 
-test('platform can create a category with the catalog default solid red background', function () {
+test('platform can persist a solid red category background', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.categories.store'), [
-            'name' => 'Default Red Category',
-            'slug' => 'default-red-category',
+            'name' => 'Solid Red Category',
+            'slug' => 'solid-red-category',
             'status' => true,
             'color_code' => [
                 'mode' => 'solid',
                 'color' => '#EF4444',
             ],
         ])
-        ->assertRedirect(route('platform.categories.show', 'default-red-category'));
+        ->assertRedirect(route('platform.categories.show', 'solid-red-category'));
 
-    $category = Category::query()->where('slug', 'default-red-category')->firstOrFail();
+    $category = Category::query()->where('slug', 'solid-red-category')->firstOrFail();
 
     expect($category->color_code)->toBe([
         'mode' => 'solid',
         'color' => '#EF4444',
+    ]);
+});
+
+test('platform create without color_code stores no background fill', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.categories.store'), [
+            'name' => 'Plain Category',
+            'slug' => 'plain-category',
+            'status' => true,
+        ])
+        ->assertRedirect(route('platform.categories.show', 'plain-category'));
+
+    expect(Category::query()->where('slug', 'plain-category')->firstOrFail()->color_code)->toBeNull();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.store'), [
+            'category_ids' => [$category->id],
+            'name' => 'Plain Kit',
+            'slug' => 'plain-kit',
+            'sku' => 'SKU-PLAIN-1',
+            'status' => true,
+        ])
+        ->assertRedirect(route('platform.products.show', 'plain-kit'));
+
+    expect(Product::query()->where('slug', 'plain-kit')->firstOrFail()->color_code)->toBeNull();
+});
+
+test('platform can create a category and product with transparent color_code', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.categories.store'), [
+            'name' => 'Clear Category',
+            'slug' => 'clear-category',
+            'status' => true,
+            'color_code' => ['mode' => 'transparent'],
+        ])
+        ->assertRedirect(route('platform.categories.show', 'clear-category'));
+
+    $category = Category::query()->where('slug', 'clear-category')->firstOrFail();
+
+    expect($category->color_code)->toBe(['mode' => 'transparent']);
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.store'), [
+            'category_ids' => [$category->id],
+            'name' => 'Clear Kit',
+            'slug' => 'clear-kit',
+            'sku' => 'SKU-CLEAR-1',
+            'status' => true,
+            'color_code' => json_encode(['mode' => 'transparent']),
+        ])
+        ->assertRedirect(route('platform.products.show', 'clear-kit'));
+
+    expect(Product::query()->where('slug', 'clear-kit')->firstOrFail()->color_code)->toBe([
+        'mode' => 'transparent',
     ]);
 });
 

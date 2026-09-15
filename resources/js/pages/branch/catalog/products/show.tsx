@@ -19,8 +19,6 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { cn } from '@/lib/utils';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -105,10 +103,7 @@ export default function BranchProductShow({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <Avatar
-                            className={cn(
-                                'size-14 rounded-xl border border-border/70',
-                                transparent && COLOR_PICKER_CHECKERBOARD,
-                            )}
+                            className="size-14 rounded-xl border border-border/70"
                             style={
                                 transparent
                                     ? undefined

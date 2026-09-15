@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import { ColorPicker } from '@/components/color-picker';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -485,7 +484,7 @@ export function CategoryForm({
                         ) : null}
 
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="slogan">Slogan / short description</Label>
+                            <Label htmlFor="slogan">Short description</Label>
                             <Input
                                 id="slogan"
                                 value={data.slogan}
@@ -638,14 +637,7 @@ export function CategoryForm({
 
                         <div className="overflow-hidden rounded-xl border border-border/80">
                             <div
-                                className={cn(
-                                    'aspect-square p-3',
-                                    imageTileTransparent &&
-                                        cn(
-                                            'bg-muted/25',
-                                            COLOR_PICKER_CHECKERBOARD,
-                                        ),
-                                )}
+                                className="aspect-square p-3"
                                 style={
                                     imageTileTransparent
                                         ? undefined
@@ -697,7 +689,7 @@ export function CategoryForm({
                                         wrapper:
                                             'flex h-full min-h-0 w-full flex-col',
                                         dropzone:
-                                            'h-full min-h-0 border-dashed border-border/60 bg-background/75 px-3 py-6',
+                                            'h-full min-h-0 border-dashed border-border/60 bg-transparent px-3 py-6',
                                         dropzoneContent: 'gap-1',
                                         card: 'h-full overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
                                         cardMedia: 'h-full bg-transparent',
@@ -718,7 +710,7 @@ export function CategoryForm({
                                     enabledModes={[
                                         ...CATALOG_COLOR_PICKER_MODES,
                                     ]}
-                                    defaultMode="solid"
+                                    defaultMode="transparent"
                                     value={data.color_code}
                                     onChange={(color_code) =>
                                         setData('color_code', color_code)
@@ -726,7 +718,7 @@ export function CategoryForm({
                                     label="Image background"
                                     description="Fill behind category imagery"
                                     dialogTitle="Image background"
-                                    dialogDescription="Solid red is the default. Switch to none or a two-tone gradient if needed."
+                                    dialogDescription="None is the default. The listing uses the page or card color until you pick a solid or gradient fill."
                                     error={
                                         errors.color_code ??
                                         errors['color_code.mode'] ??

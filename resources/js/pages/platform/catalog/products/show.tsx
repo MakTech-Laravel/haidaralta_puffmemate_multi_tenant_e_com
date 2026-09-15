@@ -19,7 +19,6 @@ import CategoryController from '@/actions/App/Http/Controllers/Platform/Category
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import ProductVariantController from '@/actions/App/Http/Controllers/Platform/ProductVariantController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import {
     DataTable,
     DataTableRowActions,
@@ -54,7 +53,6 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { cn } from '@/lib/utils';
 
 type ProductVariant = {
     id: number;
@@ -539,11 +537,7 @@ export default function PlatformProductsShow({
                                     </p>
                                 </div>
                                 <span
-                                    className={cn(
-                                        'size-10 shrink-0 rounded-lg border border-border/70 shadow-inner',
-                                        transparent &&
-                                            COLOR_PICKER_CHECKERBOARD,
-                                    )}
+                                    className="size-10 shrink-0 rounded-lg border border-border/70 shadow-inner"
                                     style={
                                         transparent
                                             ? undefined
