@@ -1,11 +1,20 @@
 import {
+    Boxes,
     CalendarClock,
+    ChartColumn,
+    Inbox,
     KeyRound,
     LayoutGrid,
+    MapPin,
+    MapPinned,
+    MessageCircle,
+    MessagesSquare,
     Package,
+    Package2,
     ScrollText,
     Shield,
     ShoppingBag,
+    Star,
     Store,
     Tags,
     Truck,
@@ -49,15 +58,33 @@ export function buildBranchNav(slug: string): NavSection[] {
                 ],
             }),
             navGroup({
-                title: 'Floor',
-                icon: Store,
-                permissions: ['manage-branch-orders', 'manage-branch-drivers'],
+                title: 'Orders',
+                icon: ShoppingBag,
+                permissions: ['manage-branch-orders'],
                 items: [
                     navSoon({
-                        title: 'Orders',
+                        title: 'All orders',
                         icon: ShoppingBag,
                         permissions: ['manage-branch-orders'],
                     }),
+                    navSoon({
+                        title: 'Pickup',
+                        icon: Store,
+                        permissions: ['manage-branch-orders'],
+                    }),
+                    navSoon({
+                        title: 'Delivery',
+                        icon: MapPin,
+                        permissions: ['manage-branch-orders'],
+                    }),
+                ],
+            }),
+            navGroup({
+                title: 'Driver management',
+                href: `/branch/${slug}/drivers`,
+                icon: Truck,
+                permissions: ['manage-branch-drivers'],
+                items: [
                     navLink({
                         title: 'Drivers',
                         href: `/branch/${slug}/drivers`,
@@ -68,6 +95,67 @@ export function buildBranchNav(slug: string): NavSection[] {
                         title: 'Shifts',
                         icon: CalendarClock,
                         permissions: ['manage-branch-drivers'],
+                    }),
+                    navSoon({
+                        title: 'Live tracking',
+                        icon: MapPinned,
+                        permissions: ['manage-branch-drivers'],
+                    }),
+                    navSoon({
+                        title: 'Parcels',
+                        icon: Package2,
+                        permissions: ['manage-branch-drivers'],
+                    }),
+                ],
+            }),
+            navGroup({
+                title: 'Customers',
+                icon: Users,
+                permissions: ['manage-branch-orders'],
+                items: [
+                    navSoon({
+                        title: 'All customers',
+                        icon: Users,
+                        permissions: ['manage-branch-orders'],
+                    }),
+                    navSoon({
+                        title: 'Reviews',
+                        icon: Star,
+                        permissions: ['manage-branch-orders'],
+                    }),
+                ],
+            }),
+            navGroup({
+                title: 'Conversations',
+                icon: MessagesSquare,
+                permissions: ['manage-branch-orders', 'manage-branch-drivers'],
+                items: [
+                    navSoon({
+                        title: 'Support inbox',
+                        icon: Inbox,
+                        permissions: ['manage-branch-orders'],
+                    }),
+                    navSoon({
+                        title: 'Driver chat',
+                        icon: MessageCircle,
+                        permissions: ['manage-branch-drivers'],
+                    }),
+                ],
+            }),
+            navGroup({
+                title: 'Reports',
+                icon: ChartColumn,
+                permissions: ['manage-branch-orders'],
+                items: [
+                    navSoon({
+                        title: 'Sales',
+                        icon: ChartColumn,
+                        permissions: ['manage-branch-orders'],
+                    }),
+                    navSoon({
+                        title: 'Inventory',
+                        icon: Boxes,
+                        permissions: ['manage-branch-orders'],
                     }),
                 ],
             }),

@@ -1,25 +1,40 @@
 import {
     Activity,
+    BadgePercent,
+    Banknote,
     BellRing,
+    Boxes,
     Building2,
     CalendarClock,
     ChartColumn,
+    CreditCard,
     Database,
     Gauge,
+    IdCard,
+    Inbox,
     KeyRound,
     LayoutGrid,
     Mail,
+    MapPin,
+    MapPinned,
+    Megaphone,
+    MessageCircle,
+    MessagesSquare,
     Package,
+    Package2,
     Radio,
     ScrollText,
     Settings2,
     Shield,
     ShoppingBag,
+    Star,
+    Store,
     Tags,
     Truck,
     UserCog,
     UserPlus,
     Users,
+    Warehouse,
 } from 'lucide-react';
 import {
     navGroup,
@@ -86,11 +101,7 @@ export const platformNav: NavSection[] = [
             title: 'Branch management',
             href: '/platform/branches',
             icon: Building2,
-            permissions: [
-                'view-branches',
-                'manage-drivers',
-                'manage-branch-users',
-            ],
+            permissions: ['view-branches', 'manage-branch-users'],
             items: [
                 navLink({
                     title: 'Branches',
@@ -99,24 +110,32 @@ export const platformNav: NavSection[] = [
                     permissions: ['view-branches'],
                 }),
                 navLink({
-                    title: 'Drivers',
-                    href: '/platform/drivers',
-                    icon: Truck,
-                    permissions: ['manage-drivers'],
-                }),
-                navLink({
                     title: 'Branch staff',
                     href: '/platform/branch-staff',
                     icon: Users,
                     permissions: ['manage-branch-users'],
                 }),
+                navLink({
+                    title: 'Add staff',
+                    href: '/platform/branch-staff/create',
+                    icon: UserPlus,
+                    exact: true,
+                    permissions: ['manage-branch-users'],
+                }),
             ],
         }),
         navGroup({
-            title: 'Shift management',
-            icon: CalendarClock,
+            title: 'Driver management',
+            href: '/platform/drivers',
+            icon: Truck,
             permissions: ['manage-drivers'],
             items: [
+                navLink({
+                    title: 'All drivers',
+                    href: '/platform/drivers',
+                    icon: Truck,
+                    permissions: ['manage-drivers'],
+                }),
                 navSoon({
                     title: 'Shifts',
                     icon: CalendarClock,
@@ -127,27 +146,125 @@ export const platformNav: NavSection[] = [
                     icon: UserPlus,
                     permissions: ['manage-drivers'],
                 }),
+                navSoon({
+                    title: 'Live tracking',
+                    icon: MapPinned,
+                    permissions: ['manage-drivers'],
+                }),
+                navSoon({
+                    title: 'Parcels',
+                    icon: Package2,
+                    permissions: ['manage-drivers'],
+                }),
             ],
         }),
         navGroup({
-            title: 'Commerce',
+            title: 'Orders',
             icon: ShoppingBag,
-            permissions: ['manage-reports', 'manage-users'],
+            permissions: ['manage-reports'],
             items: [
                 navSoon({
-                    title: 'Orders',
+                    title: 'All orders',
                     icon: ShoppingBag,
                     permissions: ['manage-reports'],
                 }),
                 navSoon({
-                    title: 'Reports',
-                    icon: ChartColumn,
+                    title: 'Pickup',
+                    icon: Store,
+                    permissions: ['manage-reports'],
+                }),
+                navSoon({
+                    title: 'Delivery',
+                    icon: MapPin,
+                    permissions: ['manage-reports'],
+                }),
+            ],
+        }),
+        navGroup({
+            title: 'Customers',
+            icon: Users,
+            permissions: ['manage-users'],
+            items: [
+                navSoon({
+                    title: 'All customers',
+                    icon: Users,
+                    permissions: ['manage-users'],
+                }),
+                navSoon({
+                    title: 'Reviews',
+                    icon: Star,
+                    permissions: ['manage-users'],
+                }),
+                navSoon({
+                    title: 'Wholesale',
+                    icon: Warehouse,
+                    permissions: ['manage-users'],
+                }),
+                navSoon({
+                    title: 'Age verification',
+                    icon: IdCard,
+                    permissions: ['manage-users'],
+                }),
+            ],
+        }),
+        navGroup({
+            title: 'Conversations',
+            icon: MessagesSquare,
+            permissions: ['manage-users', 'manage-drivers'],
+            items: [
+                navSoon({
+                    title: 'Support inbox',
+                    icon: Inbox,
+                    permissions: ['manage-users'],
+                }),
+                navSoon({
+                    title: 'Driver chat',
+                    icon: MessageCircle,
+                    permissions: ['manage-drivers'],
+                }),
+            ],
+        }),
+        navGroup({
+            title: 'Reports',
+            icon: ChartColumn,
+            permissions: ['manage-reports'],
+            items: [
+                navSoon({
+                    title: 'Sales',
+                    icon: Banknote,
+                    permissions: ['manage-reports'],
+                }),
+                navSoon({
+                    title: 'Inventory',
+                    icon: Boxes,
+                    permissions: ['manage-reports'],
+                }),
+                navSoon({
+                    title: 'Drivers',
+                    icon: Truck,
                     permissions: ['manage-reports'],
                 }),
                 navSoon({
                     title: 'Customers',
                     icon: Users,
-                    permissions: ['manage-users'],
+                    permissions: ['manage-reports'],
+                }),
+            ],
+        }),
+        navGroup({
+            title: 'Marketing',
+            icon: Megaphone,
+            permissions: ['manage-reports'],
+            items: [
+                navSoon({
+                    title: 'Coupons',
+                    icon: BadgePercent,
+                    permissions: ['manage-reports'],
+                }),
+                navSoon({
+                    title: 'Deals',
+                    icon: Megaphone,
+                    permissions: ['manage-reports'],
                 }),
             ],
         }),
@@ -167,15 +284,25 @@ export const platformNav: NavSection[] = [
                     icon: Settings2,
                     permissions: ['manage-database-backups'],
                 }),
-                navLink({
-                    title: 'Database',
-                    href: '/platform/database-backups',
-                    icon: Database,
+                navSoon({
+                    title: 'Payments',
+                    icon: CreditCard,
+                    permissions: ['manage-database-backups'],
+                }),
+                navSoon({
+                    title: 'Delivery and fees',
+                    icon: Truck,
                     permissions: ['manage-database-backups'],
                 }),
                 navSoon({
                     title: 'SMTP',
                     icon: Mail,
+                    permissions: ['manage-database-backups'],
+                }),
+                navLink({
+                    title: 'Backups',
+                    href: '/platform/database-backups',
+                    icon: Database,
                     permissions: ['manage-database-backups'],
                 }),
                 navLink({
@@ -185,13 +312,13 @@ export const platformNav: NavSection[] = [
                     permissions: ['view-activity-logs'],
                 }),
                 navGroup({
-                    title: 'Observability',
+                    title: 'Monitoring',
                     href: '/platform/observability',
                     icon: Gauge,
                     permissions: ['view-horizon', 'view-pulse'],
                     items: [
                         navLink({
-                            title: 'Hub',
+                            title: 'Overview',
                             href: '/platform/observability',
                             permissions: ['view-horizon', 'view-pulse'],
                         }),
