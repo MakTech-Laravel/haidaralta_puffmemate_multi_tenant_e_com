@@ -12,6 +12,7 @@ import {
 } from '@/components/data-table';
 import Heading from '@/components/heading';
 import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
+import { Badge } from '@/components/ui/badge';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import {
@@ -21,6 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 type TransactionRow = {
     id: number;
@@ -47,6 +49,44 @@ type SelectedOption = {
 };
 
 type FilterOption = { value?: string; label?: string };
+
+const softBadge = {
+    stockIn:
+        'border-transparent bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
+    stockOut:
+        'border-transparent bg-rose-500/10 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400',
+    adjustment:
+        'border-transparent bg-amber-500/10 text-amber-800 dark:bg-amber-500/15 dark:text-amber-400',
+} as const;
+
+function typeBadgeClass(type: string): string {
+    switch (type) {
+        case 'stock_in':
+            return softBadge.stockIn;
+        case 'stock_out':
+            return softBadge.stockOut;
+        case 'adjustment':
+            return softBadge.adjustment;
+        default:
+            return '';
+    }
+}
+
+function quantityBadgeClass(type: string, quantity: number): string {
+    if (type === 'stock_in') {
+        return softBadge.stockIn;
+    }
+
+    if (type === 'stock_out') {
+        return softBadge.stockOut;
+    }
+
+    if (type === 'adjustment') {
+        return quantity < 0 ? softBadge.stockOut : softBadge.stockIn;
+    }
+
+    return softBadge.adjustment;
+}
 
 function NameLink({
     href,
@@ -154,6 +194,17 @@ export function StockTransactionsPage({
                         onSort={query.toggleSort}
                     />
                 ),
+                cell: ({ row }) => (
+                    <Badge
+                        variant="outline"
+                        className={cn(
+                            'font-medium',
+                            typeBadgeClass(row.original.type),
+                        )}
+                    >
+                        {row.original.type_label}
+                    </Badge>
+                ),
             },
             {
                 accessorKey: 'reason_label',
@@ -173,7 +224,18 @@ export function StockTransactionsPage({
                     />
                 ),
                 cell: ({ row }) => (
-                    <span className="tabular-nums">{row.original.quantity}</span>
+                    <Badge
+                        variant="outline"
+                        className={cn(
+                            'tabular-nums font-medium',
+                            quantityBadgeClass(
+                                row.original.type,
+                                row.original.quantity,
+                            ),
+                        )}
+                    >
+                        {row.original.quantity}
+                    </Badge>
                 ),
             },
             {
