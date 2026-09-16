@@ -20,3 +20,28 @@ test('customers can view the demo product to review page', function () {
             ->where('products.0.name', 'Marlboro Gold')
             ->where('products.0.shippingStatus', 'delivered'));
 });
+
+test('guests are redirected from write product review', function () {
+    $this->get(route('customer.product-to-review.show', 'review-1'))
+        ->assertRedirect(route('login'));
+});
+
+test('customers can view the write product review page', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user, 'customer');
+
+    $this->get(route('customer.product-to-review.show', 'review-1'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('customer/product-to-review/show')
+            ->where('product.id', 'review-1')
+            ->where('product.name', 'Marlboro Gold'));
+});
+
+test('customers receive not found for unknown products to review', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user, 'customer');
+
+    $this->get(route('customer.product-to-review.show', 'review-missing'))
+        ->assertNotFound();
+});

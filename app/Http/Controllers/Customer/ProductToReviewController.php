@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Support\Storefront\DemoCatalog;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ProductToReviewController extends Controller
 {
@@ -16,6 +17,22 @@ class ProductToReviewController extends Controller
     {
         return Inertia::render('customer/product-to-review/index', [
             'products' => DemoCatalog::productsToReview(),
+        ]);
+    }
+
+    /**
+     * Display the write-review form for a demo product.
+     */
+    public function show(string $product): Response
+    {
+        $item = DemoCatalog::productToReview($product);
+
+        if ($item === null) {
+            throw new NotFoundHttpException;
+        }
+
+        return Inertia::render('customer/product-to-review/show', [
+            'product' => $item,
         ]);
     }
 }

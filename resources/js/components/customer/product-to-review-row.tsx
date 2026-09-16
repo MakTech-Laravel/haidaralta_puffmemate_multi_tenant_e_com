@@ -1,6 +1,8 @@
+import { Link } from '@inertiajs/react';
 import type { ProductToReview } from '@/components/customer/product-to-review-types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { show as productToReviewShow } from '@/routes/customer/product-to-review';
 
 const statusLabel: Record<ProductToReview['shippingStatus'], string> = {
     delivered: 'Delivered',
@@ -48,8 +50,14 @@ export function ProductToReviewRow({
                         type="button"
                         size="sm"
                         className="h-9 w-full rounded-md px-4 text-xs font-semibold tracking-wide uppercase sm:w-auto"
+                        asChild
                     >
-                        Write a Review
+                        <Link
+                            href={productToReviewShow.url(product.id)}
+                            prefetch
+                        >
+                            Write a Review
+                        </Link>
                     </Button>
                 </div>
             </div>

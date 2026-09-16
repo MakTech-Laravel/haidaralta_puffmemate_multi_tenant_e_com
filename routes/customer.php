@@ -12,6 +12,8 @@ Route::middleware(['ensure.guard:customer', 'phone.verified'])->group(function (
     Route::get('orders/{order}', [CustomerOrderController::class, 'show'])->name('customer.orders.show');
     Route::get('product-to-review', [CustomerProductToReviewController::class, 'index'])
         ->name('customer.product-to-review.index');
+    Route::get('product-to-review/{product}', [CustomerProductToReviewController::class, 'show'])
+        ->name('customer.product-to-review.show');
     Route::get('activity', [CustomerActivityLogController::class, 'index'])->name('customer.activity.index');
     Route::get('activity/{activity}', [CustomerActivityLogController::class, 'show'])
         ->whereNumber('activity')

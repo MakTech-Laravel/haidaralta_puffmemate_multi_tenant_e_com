@@ -36,7 +36,8 @@ export const accountNavItems: AccountNavItem[] = [
         href: productToReview.url(),
         match: (url) =>
             url === '/product-to-review' ||
-            url.startsWith('/product-to-review?'),
+            url.startsWith('/product-to-review?') ||
+            url.startsWith('/product-to-review/'),
     },
     {
         label: 'Account',

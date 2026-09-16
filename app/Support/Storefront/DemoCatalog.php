@@ -765,4 +765,16 @@ class DemoCatalog
 
         return $items;
     }
+
+    /**
+     * Resolve a single demo product awaiting review.
+     *
+     * @return array{id: string, name: string, image: string, shippingStatus: string}|null
+     */
+    public static function productToReview(string $id): ?array
+    {
+        $product = collect(self::productsToReview())->firstWhere('id', $id);
+
+        return $product;
+    }
 }
