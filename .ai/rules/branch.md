@@ -24,3 +24,6 @@ categories.color_code and products.color_code are nullable JSON: transparent | s
 
 ## Catalog kill-switches live in config
 Category kill-switches live in config/catalog.php and are shared to Inertia as catalog: branch_can_create_categories, branch_can_view_categories (both default false), show_parent_category. When view is false, every branch category route aborts 404 (keep the routes). Controllers read config(); React reads usePage().props.catalog. Do not add CatalogFeatures or duplicate TS constants. Flip the keys to restore hidden list/create/parent UI.
+
+## Adjustment is counted on-hand plus reason
+Adjustment quantity is the counted on-hand total and requires InventoryAdjustmentReason. New entry and Reduce are unsigned deltas (abs add/subtract). Compute after/variance only inside InventoryService::adjust() after lockForUpdate — controllers never pre-compute variance. Reject zero variance. Store signed variance as txn quantity for Adjustment; in/out store a positive units-moved count. Reason is null for in/out and future reserve/sale.

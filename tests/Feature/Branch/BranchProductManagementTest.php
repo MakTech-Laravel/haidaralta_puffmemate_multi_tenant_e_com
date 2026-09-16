@@ -167,6 +167,51 @@ test('branch can adjust inventory and price for a variant', function () {
             ->where('product.variant_prices.'.$variant->id.'.selling_price', '15.25'));
 });
 
+test('branch product inventory adjustment sets counted on-hand with a reason', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($staff, 'branch')
+        ->post(route('branch.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 10,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($staff, 'branch')
+        ->post(route('branch.products.inventory', [$branch, $product]), [
+            'type' => 'adjustment',
+            'quantity' => 7,
+            'reason' => 'damaged',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('inventories', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'variant_id' => null,
+        'quantity' => 7,
+    ]);
+
+    $this->assertDatabaseHas('inventory_transactions', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'type' => 'adjustment',
+        'quantity' => -3,
+        'reason' => 'damaged',
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.products.show', [$branch, $product]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('product.inventory.quantity', 7)
+            ->where('transactions.data.0.reason_label', 'Damaged')
+            ->where('transactions.data.0.quantity', -3)
+            ->has('adjustmentReasons'));
+});
+
 test('branch product index shows stock and filters by missing price', function () {
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();

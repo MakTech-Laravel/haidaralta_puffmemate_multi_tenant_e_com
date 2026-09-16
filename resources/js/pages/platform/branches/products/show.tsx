@@ -48,12 +48,14 @@ export default function PlatformBranchProductShow({
     product,
     transactions,
     transactionTypes,
+    adjustmentReasons,
     discountTypes,
 }: {
     branch: Branch;
     product: ProductShow;
     transactions: TransactionsPage;
     transactionTypes: { value: string; label: string }[];
+    adjustmentReasons: { value: string; label: string }[];
     discountTypes: { value: string; label: string }[];
 }) {
     const colorCode = normalizeCatalogColorPickerValue(product.color_code);
@@ -156,6 +158,7 @@ export default function PlatformBranchProductShow({
                     variantPrices={product.variant_prices}
                     transactions={transactions}
                     transactionTypes={transactionTypes}
+                    adjustmentReasons={adjustmentReasons}
                     discountTypes={discountTypes}
                     inventoryUrl={BranchInventoryController.adjustInventory.url(
                         {

@@ -26,7 +26,8 @@ test('branch manage stock page locks the branch even when unlocked in the query'
         ->assertInertia(fn ($page) => $page
             ->component('branch/stock/manage')
             ->where('context.locked', 'branch')
-            ->where('context.branch.id', $this->branch->id));
+            ->where('context.branch.id', $this->branch->id)
+            ->has('adjustmentReasons'));
 });
 
 test('branch manage stock page 404s when the locked product is missing', function () {
@@ -50,6 +51,44 @@ test('branch stock adjust is rejected for another branch', function () {
             'quantity' => 5,
         ])
         ->assertNotFound();
+});
+
+test('branch adjustment sets counted on-hand and stores a signed variance', function () {
+    $this->actingAs($this->staff, 'branch')
+        ->post(route('branch.stock.adjust', $this->branch), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'stock_in',
+            'quantity' => 10,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($this->staff, 'branch')
+        ->post(route('branch.stock.adjust', $this->branch), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'adjustment',
+            'quantity' => 7,
+            'reason' => 'damaged',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('inventories', [
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'variant_id' => null,
+        'quantity' => 7,
+    ]);
+
+    $this->assertDatabaseHas('inventory_transactions', [
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'type' => 'adjustment',
+        'quantity' => -3,
+        'reason' => 'damaged',
+        'before_quantity' => 10,
+        'after_quantity' => 7,
+    ]);
 });
 
 test('branch import stock only fills this branch', function () {

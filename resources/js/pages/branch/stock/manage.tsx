@@ -9,9 +9,11 @@ type Branch = { id: number; name: string; slug: string };
 export default function BranchManageStock({
     context,
     createProductUrl,
+    adjustmentReasons,
 }: {
     context: StockPageContext;
     createProductUrl: string;
+    adjustmentReasons: { value: string; label: string }[];
 }) {
     const branch = context.branch as Branch;
 
@@ -33,6 +35,7 @@ export default function BranchManageStock({
             pageUrl={StockController.manage.url(branch.slug)}
             adjustUrl={StockController.adjust.url(branch.slug)}
             productOptionsUrl={StockController.productOptions.url(branch.slug)}
+            adjustmentReasons={adjustmentReasons}
         />
     );
 }

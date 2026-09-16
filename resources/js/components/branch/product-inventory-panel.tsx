@@ -1,5 +1,5 @@
 import { router, useForm, usePage } from '@inertiajs/react';
-import { Boxes, Package, Tags } from 'lucide-react';
+import { Boxes, Minus, Package, Plus, Tags } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import InputError from '@/components/input-error';
 import { DemoStatCard } from '@/components/portal/demo-stat-card';
@@ -57,6 +57,10 @@ export type BranchProductVariantRow = {
 export type BranchInventoryTransaction = {
     id: number;
     type: string;
+    type_label?: string;
+    reason?: string | null;
+    reason_note?: string | null;
+    reason_label?: string | null;
     quantity: number;
     before_quantity: number;
     after_quantity: number;
@@ -90,11 +94,42 @@ type ProductInventoryPanelProps = {
     variantPrices: Record<string, BranchPriceSnapshot>;
     transactions: TransactionsPage;
     transactionTypes: { value: string; label: string }[];
+    adjustmentReasons: { value: string; label: string }[];
     discountTypes: { value: string; label: string }[];
     inventoryUrl: string;
     priceUrl: string;
     showUrl: string;
 };
+
+function parseQuantity(value: string): number {
+    if (value.trim() === '') {
+        return 0;
+    }
+
+    const parsed = Number.parseInt(value, 10);
+
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function countedPreview(
+    current: number,
+    counted: number,
+    empty: boolean,
+): string {
+    if (empty) {
+        return 'Enter the counted on-hand quantity.';
+    }
+
+    if (counted === current) {
+        return 'Counted quantity matches current stock.';
+    }
+
+    if (counted > current) {
+        return `Current ${current} → ${counted} (add ${counted - current})`;
+    }
+
+    return `Current ${current} → ${counted} (remove ${current - counted})`;
+}
 
 const BASE_SCOPE = 'base';
 
@@ -157,6 +192,7 @@ export function ProductInventoryPanel({
     variantPrices,
     transactions,
     transactionTypes,
+    adjustmentReasons,
     discountTypes,
     inventoryUrl,
     priceUrl,
@@ -191,7 +227,9 @@ export function ProductInventoryPanel({
 
     const inventoryForm = useForm({
         type: 'stock_in',
-        quantity: 1,
+        quantity: '1',
+        reason: '',
+        reason_note: '',
         variant_id: variantId as number | null,
     });
 
@@ -214,7 +252,9 @@ export function ProductInventoryPanel({
 
         inventoryForm.setData({
             type: 'stock_in',
-            quantity: 1,
+            quantity: '1',
+            reason: '',
+            reason_note: '',
             variant_id: nextVariantId,
         });
 
@@ -285,6 +325,47 @@ export function ProductInventoryPanel({
               )?.name ?? 'Variant');
 
     const showDiscountFields = priceForm.data.discount_type !== 'none';
+    const isAdjustment = inventoryForm.data.type === 'adjustment';
+    const isOtherReason = isAdjustment && inventoryForm.data.reason === 'other';
+    const currentStock = scopedInventory?.quantity ?? 0;
+    const quantityEmpty = inventoryForm.data.quantity.trim() === '';
+    const quantityValue = parseQuantity(inventoryForm.data.quantity);
+    const variance = quantityValue - currentStock;
+    const inventorySaveDisabled =
+        inventoryForm.processing ||
+        quantityEmpty ||
+        (!isAdjustment && quantityValue < 1) ||
+        (isAdjustment &&
+            (inventoryForm.data.reason === '' ||
+                variance === 0 ||
+                (isOtherReason &&
+                    inventoryForm.data.reason_note.trim() === '')));
+
+    const selectInventoryType = (next: string) => {
+        if (next === 'adjustment') {
+            inventoryForm.setData({
+                ...inventoryForm.data,
+                type: next,
+                quantity: String(currentStock),
+            });
+
+            return;
+        }
+
+        if (inventoryForm.data.type === 'adjustment') {
+            inventoryForm.setData({
+                ...inventoryForm.data,
+                type: next,
+                quantity: '1',
+                reason: '',
+                reason_note: '',
+            });
+
+            return;
+        }
+
+        inventoryForm.setData('type', next);
+    };
 
     return (
         <div className="space-y-4">
@@ -414,7 +495,7 @@ export function ProductInventoryPanel({
                                 Adjust inventory
                             </CardTitle>
                             <CardDescription>
-                                Stock in, stock out, or adjust on-hand quantity.
+                                Stock in, stock out, or set counted on-hand.
                             </CardDescription>
                         </CardHeader>
                         <form
@@ -427,6 +508,19 @@ export function ProductInventoryPanel({
                                         activeScope === BASE_SCOPE
                                             ? null
                                             : Number(activeScope),
+                                    quantity:
+                                        data.quantity.trim() === ''
+                                            ? ''
+                                            : parseQuantity(data.quantity),
+                                    reason:
+                                        data.type === 'adjustment'
+                                            ? data.reason
+                                            : null,
+                                    reason_note:
+                                        data.type === 'adjustment' &&
+                                        data.reason === 'other'
+                                            ? data.reason_note
+                                            : null,
                                 }));
                                 inventoryForm.post(inventoryUrl, {
                                     preserveScroll: true,
@@ -438,9 +532,7 @@ export function ProductInventoryPanel({
                                     <Label htmlFor="inventory-type">Type</Label>
                                     <Select
                                         value={inventoryForm.data.type}
-                                        onValueChange={(value) =>
-                                            inventoryForm.setData('type', value)
-                                        }
+                                        onValueChange={selectInventoryType}
                                     >
                                         <SelectTrigger
                                             id="inventory-type"
@@ -460,29 +552,180 @@ export function ProductInventoryPanel({
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="quantity">Quantity</Label>
-                                    <Input
-                                        id="quantity"
-                                        type="number"
-                                        min={0}
-                                        value={inventoryForm.data.quantity}
-                                        onChange={(event) =>
-                                            inventoryForm.setData(
-                                                'quantity',
-                                                Number(event.target.value),
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={inventoryForm.errors.quantity}
-                                    />
+                                <div
+                                    className={
+                                        isAdjustment
+                                            ? 'grid gap-4 sm:grid-cols-2'
+                                            : 'grid gap-2'
+                                    }
+                                >
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="quantity">
+                                            {isAdjustment
+                                                ? 'Counted quantity'
+                                                : 'Quantity'}
+                                        </Label>
+                                        <div className="flex items-stretch overflow-hidden rounded-md border border-border/80 bg-background">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                className="text-foreground h-9 w-10 shrink-0 rounded-none border-r border-border/80"
+                                                aria-label="Decrease quantity"
+                                                disabled={quantityValue <= 0}
+                                                onClick={() =>
+                                                    inventoryForm.setData(
+                                                        'quantity',
+                                                        String(
+                                                            Math.max(
+                                                                0,
+                                                                quantityValue -
+                                                                    1,
+                                                            ),
+                                                        ),
+                                                    )
+                                                }
+                                            >
+                                                <Minus className="size-4" />
+                                            </Button>
+                                            <Input
+                                                id="quantity"
+                                                type="text"
+                                                inputMode="numeric"
+                                                autoComplete="off"
+                                                placeholder="0"
+                                                className="h-9 flex-1 rounded-none border-0 bg-transparent text-center font-semibold tabular-nums shadow-none focus-visible:ring-0"
+                                                value={
+                                                    inventoryForm.data.quantity
+                                                }
+                                                onChange={(event) => {
+                                                    const next =
+                                                        event.target.value;
+
+                                                    if (
+                                                        next === '' ||
+                                                        /^\d+$/.test(next)
+                                                    ) {
+                                                        inventoryForm.setData(
+                                                            'quantity',
+                                                            next,
+                                                        );
+                                                    }
+                                                }}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                className="text-foreground h-9 w-10 shrink-0 rounded-none border-l border-border/80"
+                                                aria-label="Increase quantity"
+                                                onClick={() =>
+                                                    inventoryForm.setData(
+                                                        'quantity',
+                                                        String(
+                                                            quantityValue + 1,
+                                                        ),
+                                                    )
+                                                }
+                                            >
+                                                <Plus className="size-4" />
+                                            </Button>
+                                        </div>
+                                        <p className="text-muted-foreground text-xs">
+                                            {isAdjustment
+                                                ? countedPreview(
+                                                      currentStock,
+                                                      quantityValue,
+                                                      quantityEmpty,
+                                                  )
+                                                : inventoryForm.data.type ===
+                                                    'stock_out'
+                                                  ? 'Removed from on-hand stock'
+                                                  : 'Added to on-hand stock'}
+                                        </p>
+                                        <InputError
+                                            message={
+                                                inventoryForm.errors.quantity
+                                            }
+                                        />
+                                    </div>
+                                    {isAdjustment ? (
+                                        <div className="grid content-start gap-2">
+                                            <Label htmlFor="inventory-reason">
+                                                Reason
+                                            </Label>
+                                            <Select
+                                                value={
+                                                    inventoryForm.data
+                                                        .reason || undefined
+                                                }
+                                                onValueChange={(value) =>
+                                                    inventoryForm.setData({
+                                                        ...inventoryForm.data,
+                                                        reason: value,
+                                                        reason_note:
+                                                            value === 'other'
+                                                                ? inventoryForm
+                                                                      .data
+                                                                      .reason_note
+                                                                : '',
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger
+                                                    id="inventory-reason"
+                                                    className="w-full"
+                                                >
+                                                    <SelectValue placeholder="Select a reason" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {adjustmentReasons.map(
+                                                        (reason) => (
+                                                            <SelectItem
+                                                                key={
+                                                                    reason.value
+                                                                }
+                                                                value={
+                                                                    reason.value
+                                                                }
+                                                            >
+                                                                {reason.label}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            {isOtherReason ? (
+                                                <Input
+                                                    id="inventory-reason-note"
+                                                    value={
+                                                        inventoryForm.data
+                                                            .reason_note
+                                                    }
+                                                    maxLength={255}
+                                                    placeholder="Describe the reason"
+                                                    onChange={(event) =>
+                                                        inventoryForm.setData(
+                                                            'reason_note',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            ) : null}
+                                            <InputError
+                                                message={
+                                                    inventoryForm.errors
+                                                        .reason ||
+                                                    inventoryForm.errors
+                                                        .reason_note
+                                                }
+                                            />
+                                        </div>
+                                    ) : null}
                                 </div>
                             </CardContent>
                             <CardFooter className="mt-auto border-t border-border/60 px-5 py-4">
                                 <Button
                                     type="submit"
-                                    disabled={inventoryForm.processing}
+                                    disabled={inventorySaveDisabled}
                                 >
                                     Save inventory
                                 </Button>
@@ -842,6 +1085,7 @@ export function ProductInventoryPanel({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Type</TableHead>
+                                <TableHead>Reason</TableHead>
                                 <TableHead>Qty</TableHead>
                                 <TableHead>Before</TableHead>
                                 <TableHead>After</TableHead>
@@ -852,7 +1096,7 @@ export function ProductInventoryPanel({
                             {transactions.data.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={5}
+                                        colSpan={6}
                                         className="text-muted-foreground py-10 text-center"
                                     >
                                         No transactions for this scope
@@ -866,8 +1110,12 @@ export function ProductInventoryPanel({
                             ) : (
                                 transactions.data.map((txn) => (
                                     <TableRow key={txn.id}>
-                                        <TableCell className="font-medium capitalize">
-                                            {txn.type.replaceAll('_', ' ')}
+                                        <TableCell className="font-medium">
+                                            {txn.type_label ??
+                                                txn.type.replaceAll('_', ' ')}
+                                        </TableCell>
+                                        <TableCell>
+                                            {txn.reason_label ?? '—'}
                                         </TableCell>
                                         <TableCell className="tabular-nums">
                                             {txn.quantity}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Platform;
 
 use App\DataTables\BranchProductListingDataTable;
 use App\DataTables\ProductBranchInventoryDataTable;
+use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\AdjustBranchInventoryRequest;
@@ -55,6 +56,7 @@ class BranchInventoryController extends Controller
             'product' => BranchProductShowPayload::product($branch, $product),
             'transactions' => BranchProductShowPayload::transactions($branch, $product, $request),
             'transactionTypes' => BranchProductShowPayload::transactionTypes(),
+            'adjustmentReasons' => InventoryAdjustmentReason::options(),
             'discountTypes' => BranchProductShowPayload::discountTypes(),
         ]);
     }
@@ -73,6 +75,8 @@ class BranchInventoryController extends Controller
                 InventoryTransactionType::from($request->validated('type')),
                 (int) $request->validated('quantity'),
                 $request->user('platform'),
+                reason: InventoryAdjustmentReason::fromNullable($request->validated('reason')),
+                reasonNote: InventoryAdjustmentReason::noteFrom($request->validated('reason_note')),
             );
         } catch (InvalidArgumentException $exception) {
             Toast::error($exception->getMessage());

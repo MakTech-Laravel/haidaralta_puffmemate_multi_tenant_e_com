@@ -5,9 +5,11 @@ import type { StockPageContext } from '@/lib/stock-query';
 export default function PlatformManageStock({
     context,
     createProductUrl,
+    adjustmentReasons,
 }: {
     context: StockPageContext;
     createProductUrl: string;
+    adjustmentReasons: { value: string; label: string }[];
 }) {
     return (
         <ManageStockPage
@@ -17,6 +19,7 @@ export default function PlatformManageStock({
             adjustUrl={StockController.adjust.url()}
             productOptionsUrl={StockController.productOptions.url()}
             branchOptionsUrl={StockController.branchOptions.url()}
+            adjustmentReasons={adjustmentReasons}
         />
     );
 }

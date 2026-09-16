@@ -13,3 +13,6 @@ Manage stock is a full-width catalog workspace (`flex w-full flex-col gap-4 p-2 
 
 ## Manage stock quantity is a clearable string
 Manage stock quantity is stored as a digit string (default "0"), not Number(). Empty string is allowed while typing; convert with parseInt only in form.transform on submit. Do not Number(event.target.value) on change — that snaps cleared fields back to 0.
+
+## Stock quantity is unsigned digits
+Quantity fields accept digits only (empty while clearing, then 0–n). Type chooses direction: New entry adds, Reduce subtracts, Adjustment sets counted on-hand and shows a live variance preview. Reason select is required only for Adjustment. Disable Save when counted is empty or matches current stock. Ledger may display a computed negative Adjustment variance; users never type a minus sign.

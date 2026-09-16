@@ -30,6 +30,7 @@ type TransactionRow = {
     product_url: string | null;
     type: string;
     type_label: string;
+    reason_label: string | null;
     quantity: number;
     before_quantity: number;
     after_quantity: number;
@@ -151,6 +152,11 @@ export function StockTransactionsPage({
                         onSort={query.toggleSort}
                     />
                 ),
+            },
+            {
+                accessorKey: 'reason_label',
+                header: 'Reason',
+                cell: ({ row }) => row.original.reason_label ?? '—',
             },
             {
                 accessorKey: 'quantity',

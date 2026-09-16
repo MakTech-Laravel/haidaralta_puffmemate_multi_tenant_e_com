@@ -148,6 +148,10 @@ final class BranchProductShowPayload
             ->through(fn (InventoryTransaction $txn): array => [
                 'id' => $txn->id,
                 'type' => $txn->type->value,
+                'type_label' => $txn->type->label(),
+                'reason' => $txn->reason?->value,
+                'reason_note' => $txn->reason_note,
+                'reason_label' => $txn->reasonLabel(),
                 'quantity' => $txn->quantity,
                 'before_quantity' => $txn->before_quantity,
                 'after_quantity' => $txn->after_quantity,
@@ -183,13 +187,7 @@ final class BranchProductShowPayload
      */
     public static function transactionTypes(): array
     {
-        return collect(InventoryTransactionType::cases())
-            ->map(fn (InventoryTransactionType $type): array => [
-                'value' => $type->value,
-                'label' => str_replace('_', ' ', ucfirst($type->value)),
-            ])
-            ->values()
-            ->all();
+        return InventoryTransactionType::manualOptions();
     }
 
     /**

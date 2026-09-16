@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Branch;
 
 use App\DataTables\BranchProductListingDataTable;
+use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\AdjustBranchInventoryRequest;
@@ -128,6 +129,7 @@ class ProductController extends Controller
             'product' => BranchProductShowPayload::product($branch, $product),
             'transactions' => BranchProductShowPayload::transactions($branch, $product, $request),
             'transactionTypes' => BranchProductShowPayload::transactionTypes(),
+            'adjustmentReasons' => InventoryAdjustmentReason::options(),
             'discountTypes' => BranchProductShowPayload::discountTypes(),
         ]);
     }
@@ -214,6 +216,8 @@ class ProductController extends Controller
                 InventoryTransactionType::from($request->validated('type')),
                 (int) $request->validated('quantity'),
                 $request->user('branch'),
+                reason: InventoryAdjustmentReason::fromNullable($request->validated('reason')),
+                reasonNote: InventoryAdjustmentReason::noteFrom($request->validated('reason_note')),
             );
         } catch (InvalidArgumentException $exception) {
             Toast::error($exception->getMessage());

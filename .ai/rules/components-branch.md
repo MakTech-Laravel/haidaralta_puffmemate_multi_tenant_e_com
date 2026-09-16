@@ -25,3 +25,6 @@ Inventory snapshot is { quantity } only (Stock). Do not post minimum_stock, rese
 
 ## Summary shows stock and missing price
 Branch product summary shows quantity (Stock) and missing_price only. No enable toggle, low-stock badge, or available quantity.
+
+## Inventory panel Adjustment is counted on-hand
+Product inventory panel quantity is a clearable digit string, not Number(). Adjustment uses counted on-hand plus a required reason and the same live variance preview as Manage stock. Hide reason for New entry / Reduce. Disable Save when counted matches current stock. Transactions table shows reason_label (em dash when null) and may show a signed Adjustment qty.

@@ -168,23 +168,7 @@ class InventoryTransactionDataTable extends AbstractDataTable
                 ? null
                 : $this->selectedBranch($branchId),
             'selected_product' => $this->selectedProduct($productId),
-            'types' => collect(InventoryTransactionType::cases())
-                ->filter(fn (InventoryTransactionType $type): bool => in_array($type, [
-                    InventoryTransactionType::StockIn,
-                    InventoryTransactionType::StockOut,
-                    InventoryTransactionType::Adjustment,
-                ], true))
-                ->map(fn (InventoryTransactionType $type): array => [
-                    'value' => $type->value,
-                    'label' => match ($type) {
-                        InventoryTransactionType::StockIn => 'New entry',
-                        InventoryTransactionType::StockOut => 'Reduce',
-                        InventoryTransactionType::Adjustment => 'Adjustment',
-                        default => $type->value,
-                    },
-                ])
-                ->values()
-                ->all(),
+            'types' => InventoryTransactionType::manualOptions(),
         ];
     }
 
@@ -205,14 +189,10 @@ class InventoryTransactionDataTable extends AbstractDataTable
             'product_sku' => $model->product?->sku,
             'product_url' => $this->productUrl($model->product),
             'type' => $model->type->value,
-            'type_label' => match ($model->type) {
-                InventoryTransactionType::StockIn => 'New entry',
-                InventoryTransactionType::StockOut => 'Reduce',
-                InventoryTransactionType::Adjustment => 'Adjustment',
-                InventoryTransactionType::Reserve => 'Reserve',
-                InventoryTransactionType::Release => 'Release',
-                InventoryTransactionType::Sale => 'Sale',
-            },
+            'type_label' => $model->type->label(),
+            'reason' => $model->reason?->value,
+            'reason_note' => $model->reason_note,
+            'reason_label' => $model->reasonLabel(),
             'quantity' => $model->quantity,
             'before_quantity' => $model->before_quantity,
             'after_quantity' => $model->after_quantity,

@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Branch;
 
-use App\Enums\InventoryTransactionType;
+use App\Http\Requests\Stock\AdjustStockRequest;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -23,8 +23,7 @@ class AdjustBranchInventoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['required', Rule::enum(InventoryTransactionType::class)],
-            'quantity' => ['required', 'integer'],
+            ...AdjustStockRequest::typeQuantityReasonRules($this),
             'variant_id' => ['nullable', 'integer', Rule::exists('product_variants', 'id')->whereNull('deleted_at')],
         ];
     }

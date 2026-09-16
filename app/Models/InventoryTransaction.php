@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
 use Database\Factories\InventoryTransactionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,6 +25,8 @@ class InventoryTransaction extends Model
         'product_id',
         'variant_id',
         'type',
+        'reason',
+        'reason_note',
         'quantity',
         'before_quantity',
         'after_quantity',
@@ -80,10 +83,16 @@ class InventoryTransaction extends Model
     {
         return [
             'type' => InventoryTransactionType::class,
+            'reason' => InventoryAdjustmentReason::class,
             'quantity' => 'integer',
             'before_quantity' => 'integer',
             'after_quantity' => 'integer',
             'created_at' => 'datetime',
         ];
+    }
+
+    public function reasonLabel(): ?string
+    {
+        return $this->reason?->displayLabel($this->reason_note);
     }
 }

@@ -34,7 +34,8 @@ test('manage stock page starts unlocked with no selection', function () {
             ->where('context.branch', null)
             ->where('context.product', null)
             ->has('context.branch_options')
-            ->has('context.product_options'));
+            ->has('context.product_options')
+            ->has('adjustmentReasons'));
 });
 
 test('manage stock page locks the pair coming from a list row action', function () {
@@ -76,6 +77,215 @@ test('platform can adjust stock for a branch and product pair', function () {
         ->where('product_id', $this->product->id)
         ->whereNull('variant_id')
         ->value('quantity'))->toBe(8);
+});
+
+test('platform reduce subtracts a positive quantity', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'stock_in',
+            'quantity' => 10,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'stock_out',
+            'quantity' => 3,
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('inventories', [
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'variant_id' => null,
+        'quantity' => 7,
+    ]);
+
+    $this->assertDatabaseHas('inventory_transactions', [
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'type' => 'stock_out',
+        'quantity' => 3,
+        'reason' => null,
+    ]);
+});
+
+test('platform adjustment sets counted on-hand and stores a signed variance', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'stock_in',
+            'quantity' => 10,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'adjustment',
+            'quantity' => 7,
+            'reason' => 'damaged',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('inventories', [
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'variant_id' => null,
+        'quantity' => 7,
+    ]);
+
+    $this->assertDatabaseHas('inventory_transactions', [
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'type' => 'adjustment',
+        'quantity' => -3,
+        'reason' => 'damaged',
+        'reason_note' => null,
+        'before_quantity' => 10,
+        'after_quantity' => 7,
+    ]);
+});
+
+test('platform adjustment requires a reason', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'adjustment',
+            'quantity' => 4,
+        ])
+        ->assertSessionHasErrors('reason');
+});
+
+test('platform adjustment other requires a custom reason', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'adjustment',
+            'quantity' => 4,
+            'reason' => 'other',
+        ])
+        ->assertSessionHasErrors('reason_note');
+});
+
+test('platform adjustment other stores the typed reason', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'stock_in',
+            'quantity' => 10,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'adjustment',
+            'quantity' => 8,
+            'reason' => 'other',
+            'reason_note' => 'Returned from display',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('inventory_transactions', [
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'type' => 'adjustment',
+        'quantity' => -2,
+        'reason' => 'other',
+        'reason_note' => 'Returned from display',
+    ]);
+
+    $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.stock.transactions', ['product' => $this->product->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['reason_label'] === 'Returned from display',
+            )));
+});
+
+test('platform named adjustment reasons reject a custom note', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'adjustment',
+            'quantity' => 4,
+            'reason' => 'damaged',
+            'reason_note' => 'should not be stored',
+        ])
+        ->assertSessionHasErrors('reason_note');
+});
+
+test('platform adjustment rejects a counted quantity that matches current stock', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'stock_in',
+            'quantity' => 6,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'adjustment',
+            'quantity' => 6,
+            'reason' => 'count_correction',
+        ])
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', [
+            'type' => 'error',
+            'message' => 'Counted quantity matches current stock. No adjustment needed.',
+        ]);
+
+    $this->assertDatabaseHas('inventories', [
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'variant_id' => null,
+        'quantity' => 6,
+    ]);
+
+    $this->assertDatabaseMissing('inventory_transactions', [
+        'product_id' => $this->product->id,
+        'type' => 'adjustment',
+    ]);
+});
+
+test('platform new entry rejects a reason', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'stock_in',
+            'quantity' => 4,
+            'reason' => 'damaged',
+        ])
+        ->assertSessionHasErrors('reason');
+});
+
+test('platform stock writes reject a negative quantity', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'stock_out',
+            'quantity' => -5,
+        ])
+        ->assertSessionHasErrors('quantity');
 });
 
 test('import stock adds the same quantity to every branch and product pair', function () {
@@ -161,6 +371,37 @@ test('stock transactions ledger filters by the selected product', function () {
             ->where('table.data.0.product_url', route('platform.products.show', $this->product))
             ->where('table.data.0.branch_url', route('platform.branches.show', $this->branch))
             ->where('table.filterOptions.selected_product.id', $this->product->id));
+});
+
+test('stock transactions include the adjustment reason label and signed variance', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'stock_in',
+            'quantity' => 10,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.adjust'), [
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'type' => 'adjustment',
+            'quantity' => 7,
+            'reason' => 'damaged',
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.stock.transactions', ['product' => $this->product->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['type_label'] === 'Adjustment'
+                    && $row['reason_label'] === 'Damaged'
+                    && $row['quantity'] === -3,
+            )));
 });
 
 test('stock product options paginate and search instead of returning the full catalog', function () {

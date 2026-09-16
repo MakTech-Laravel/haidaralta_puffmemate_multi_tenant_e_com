@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Platform;
 
 use App\DataTables\InventoryTransactionDataTable;
 use App\Enums\DiscountType;
+use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Stock\AdjustStockRequest;
@@ -40,6 +41,7 @@ class StockController extends Controller
             'createProductUrl' => route('platform.products.create', [
                 'return_to' => CatalogReturnTo::currentUrl($request),
             ]),
+            'adjustmentReasons' => InventoryAdjustmentReason::options(),
         ]);
     }
 
@@ -55,6 +57,8 @@ class StockController extends Controller
                 InventoryTransactionType::from($request->validated('type')),
                 (int) $request->validated('quantity'),
                 $request->user('platform'),
+                reason: InventoryAdjustmentReason::fromNullable($request->validated('reason')),
+                reasonNote: InventoryAdjustmentReason::noteFrom($request->validated('reason_note')),
             );
         } catch (InvalidArgumentException $exception) {
             Toast::error($exception->getMessage());

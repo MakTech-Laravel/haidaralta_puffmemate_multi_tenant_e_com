@@ -76,7 +76,54 @@ test('platform can set stock and price for any branch', function () {
             ->has('transactions.links')
             ->has('transactions.filters')
             ->has('product.variant_inventories')
-            ->has('product.variant_prices'));
+            ->has('product.variant_prices')
+            ->has('adjustmentReasons'));
+});
+
+test('platform product inventory adjustment sets counted on-hand with a reason', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 10,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'adjustment',
+            'quantity' => 7,
+            'reason' => 'damaged',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('inventories', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'variant_id' => null,
+        'quantity' => 7,
+    ]);
+
+    $this->assertDatabaseHas('inventory_transactions', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'type' => 'adjustment',
+        'quantity' => -3,
+        'reason' => 'damaged',
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.show', [$branch, $product]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('product.inventory.quantity', 7)
+            ->where('transactions.data.0.reason_label', 'Damaged')
+            ->where('transactions.data.0.quantity', -3)
+            ->where('transactions.data.0.type_label', 'Adjustment')
+            ->has('adjustmentReasons'));
 });
 
 test('platform can set percent discount and clear discount with none', function () {
