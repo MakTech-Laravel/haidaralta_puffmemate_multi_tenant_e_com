@@ -357,14 +357,25 @@ export function DiscountPage({
                                     {hasDiscount ? (
                                         <div className="grid gap-2">
                                             <Label htmlFor="discount_price">
-                                                Discount value
+                                                Discount value{' '}
+                                                <span className="text-muted-foreground font-normal">
+                                                    {form.data.discount_type ===
+                                                    'percent'
+                                                        ? '(%)'
+                                                        : '($)'}
+                                                </span>
                                             </Label>
                                             <Input
                                                 id="discount_price"
                                                 type="number"
                                                 min={0}
                                                 step="0.01"
-                                                placeholder="Enter value"
+                                                placeholder={
+                                                    form.data.discount_type ===
+                                                    'percent'
+                                                        ? 'e.g. 10'
+                                                        : 'e.g. 5.00'
+                                                }
                                                 value={
                                                     form.data.discount_price ??
                                                     ''
