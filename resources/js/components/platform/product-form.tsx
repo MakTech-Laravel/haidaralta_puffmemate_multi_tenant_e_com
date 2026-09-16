@@ -1,5 +1,5 @@
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { Check, ChevronsUpDown, Plus, Trash2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
@@ -571,7 +571,29 @@ export function ProductForm({
 
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="slug">Slug</Label>
+                                <div className="flex items-center justify-between gap-2">
+                                    <Label htmlFor="slug">Slug</Label>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="xs"
+                                        className="text-muted-foreground hover:text-foreground"
+                                        disabled={data.name.trim() === ''}
+                                        onClick={() => {
+                                            const nextSlug = slugify(data.name);
+                                            setSlugTouched(true);
+                                            setSuggestionQuery(nextSlug);
+                                            setData('slug', nextSlug);
+
+                                            if (nextSlug !== '') {
+                                                validate('slug');
+                                            }
+                                        }}
+                                    >
+                                        <RefreshCw className="size-3" />
+                                        Generate
+                                    </Button>
+                                </div>
                                 <Input
                                     id="slug"
                                     value={data.slug}
@@ -592,7 +614,31 @@ export function ProductForm({
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="sku">SKU</Label>
+                                <div className="flex items-center justify-between gap-2">
+                                    <Label htmlFor="sku">SKU</Label>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="xs"
+                                        className="text-muted-foreground hover:text-foreground"
+                                        disabled={data.slug.trim() === ''}
+                                        onClick={() => {
+                                            const nextSku = skuFromSlug(
+                                                data.slug,
+                                                catalog.sku_prefix,
+                                            );
+                                            setSkuTouched(true);
+                                            setData('sku', nextSku);
+
+                                            if (nextSku !== '') {
+                                                validate('sku');
+                                            }
+                                        }}
+                                    >
+                                        <RefreshCw className="size-3" />
+                                        Generate
+                                    </Button>
+                                </div>
                                 <Input
                                     id="sku"
                                     value={data.sku}
