@@ -182,26 +182,36 @@ export default function PlatformProductBranches({
                 header: 'Actions',
                 cell: ({ row }) => (
                     <DataTableRowActions
-                        items={[
+                        contentClassName="w-56"
+                        groups={[
                             {
-                                label: 'Manage',
-                                icon: Settings2,
-                                href: row.original.manage_url,
+                                label: 'Catalog',
+                                items: [
+                                    {
+                                        label: 'Manage',
+                                        icon: Settings2,
+                                        href: row.original.manage_url,
+                                    },
+                                ],
                             },
-                            ...stockActionItems(
-                                {
-                                    manage: StockController.manage.url(),
-                                    transactions:
-                                        StockController.transactions.url(),
-                                    price: StockController.price.url(),
-                                    discount: DiscountController.index.url(),
-                                },
-                                {
-                                    productId: product.id,
-                                    branchId: row.original.id,
-                                    locked: 'both',
-                                },
-                            ),
+                            {
+                                label: 'Stock',
+                                items: stockActionItems(
+                                    {
+                                        manage: StockController.manage.url(),
+                                        transactions:
+                                            StockController.transactions.url(),
+                                        price: StockController.price.url(),
+                                        discount:
+                                            DiscountController.index.url(),
+                                    },
+                                    {
+                                        productId: product.id,
+                                        branchId: row.original.id,
+                                        locked: 'both',
+                                    },
+                                ),
+                            },
                         ]}
                     />
                 ),

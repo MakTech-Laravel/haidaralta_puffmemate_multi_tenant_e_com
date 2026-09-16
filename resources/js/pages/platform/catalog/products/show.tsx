@@ -1,7 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { format, isValid, parseISO } from 'date-fns';
-import { Check, Copy, Network, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Check, Copy, Network, Pencil, Plus, Settings2, Trash2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
@@ -324,28 +324,38 @@ export default function PlatformProductsShow({
                 header: 'Actions',
                 cell: ({ row }) => (
                     <DataTableRowActions
-                        items={[
+                        contentClassName="w-56"
+                        groups={[
                             {
-                                label: 'Manage',
-                                href: row.original.manage_url,
+                                label: 'Catalog',
+                                items: [
+                                    {
+                                        label: 'Manage',
+                                        icon: Settings2,
+                                        href: row.original.manage_url,
+                                    },
+                                ],
                             },
-                            ...(canManageBranches
-                                ? stockActionItems(
-                                      {
-                                          manage: StockController.manage.url(),
-                                          transactions:
-                                              StockController.transactions.url(),
-                                          price: StockController.price.url(),
-                                          discount:
-                                              DiscountController.index.url(),
-                                      },
-                                      {
-                                          productId: product.id,
-                                          branchId: row.original.id,
-                                          locked: 'both',
-                                      },
-                                  )
-                                : []),
+                            {
+                                label: 'Stock',
+                                items: canManageBranches
+                                    ? stockActionItems(
+                                          {
+                                              manage: StockController.manage.url(),
+                                              transactions:
+                                                  StockController.transactions.url(),
+                                              price: StockController.price.url(),
+                                              discount:
+                                                  DiscountController.index.url(),
+                                          },
+                                          {
+                                              productId: product.id,
+                                              branchId: row.original.id,
+                                              locked: 'both',
+                                          },
+                                      )
+                                    : [],
+                            },
                         ]}
                     />
                 ),
