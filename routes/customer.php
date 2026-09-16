@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Customer\AccountController as CustomerAccountController;
 use App\Http\Controllers\Customer\ActivityLogController as CustomerActivityLogController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
@@ -8,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:customer', 'phone.verified'])->group(function () {
     Route::get('dashboard', [CustomerDashboardController::class, 'index'])->name('dashboard');
+    Route::get('account', [CustomerAccountController::class, 'index'])->name('customer.account.index');
     Route::get('orders', [CustomerOrderController::class, 'index'])->name('customer.orders.index');
     Route::get('orders/{order}', [CustomerOrderController::class, 'show'])->name('customer.orders.show');
     Route::get('product-to-review', [CustomerProductToReviewController::class, 'index'])

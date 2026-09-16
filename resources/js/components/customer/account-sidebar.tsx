@@ -1,8 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
+import { index as accountIndex } from '@/routes/customer/account';
 import { index as productToReview } from '@/routes/customer/product-to-review';
-import { edit as editProfile } from '@/routes/profile';
 
 export type AccountNavItem = {
     label: string;
@@ -41,8 +41,9 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Account',
-        href: editProfile.url(),
-        match: (url) => url.startsWith('/settings'),
+        href: accountIndex.url(),
+        match: (url) =>
+            url === '/account' || url.startsWith('/account?'),
     },
     {
         label: 'Log Out',

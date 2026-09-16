@@ -20,6 +20,7 @@ test('profile information can be updated', function () {
 
     $response = $this
         ->actingAs($user, 'customer')
+        ->from(route('profile.edit'))
         ->patch(route('profile.update'), [
             'name' => 'Test User',
             'phone' => '0412987654',
@@ -48,6 +49,7 @@ test('phone verification status is unchanged when the phone number is unchanged'
 
     $response = $this
         ->actingAs($user, 'customer')
+        ->from(route('profile.edit'))
         ->patch(route('profile.update'), [
             'name' => 'Test User',
             'phone' => $user->phone,
