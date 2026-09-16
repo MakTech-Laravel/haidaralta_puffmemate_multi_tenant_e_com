@@ -159,36 +159,45 @@ export default function BranchProductsIndex({
                 header: 'Actions',
                 cell: ({ row }) => (
                     <DataTableRowActions
-                        items={[
+                        contentClassName="w-56"
+                        groups={[
                             {
-                                label: 'Manage',
-                                icon: Settings2,
-                                href: ProductController.show.url({
-                                    branch: branch.slug,
-                                    product: row.original.slug,
-                                }),
+                                label: 'Catalog',
+                                items: [
+                                    {
+                                        label: 'Manage',
+                                        icon: Settings2,
+                                        href: ProductController.show.url({
+                                            branch: branch.slug,
+                                            product: row.original.slug,
+                                        }),
+                                    },
+                                ],
                             },
-                            ...stockActionItems(
-                                {
-                                    manage: StockController.manage.url(
-                                        branch.slug,
-                                    ),
-                                    transactions:
-                                        StockController.transactions.url(
+                            {
+                                label: 'Stock',
+                                items: stockActionItems(
+                                    {
+                                        manage: StockController.manage.url(
                                             branch.slug,
                                         ),
-                                    price: StockController.price.url(
-                                        branch.slug,
-                                    ),
-                                    discount: StockController.discount.url(
-                                        branch.slug,
-                                    ),
-                                },
-                                {
-                                    productId: row.original.id,
-                                    locked: 'both',
-                                },
-                            ),
+                                        transactions:
+                                            StockController.transactions.url(
+                                                branch.slug,
+                                            ),
+                                        price: StockController.price.url(
+                                            branch.slug,
+                                        ),
+                                        discount: StockController.discount.url(
+                                            branch.slug,
+                                        ),
+                                    },
+                                    {
+                                        productId: row.original.id,
+                                        locked: 'both',
+                                    },
+                                ),
+                            },
                         ]}
                     />
                 ),

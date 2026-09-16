@@ -289,24 +289,31 @@ export default function BranchCategoriesIndex({
                     return (
                         <DataTableRowActions
                             contentClassName="w-56"
-                            items={[
-                                ...merchandising,
+                            groups={[
                                 {
-                                    label: 'View',
-                                    icon: Eye,
-                                    href: CategoryController.show.url({
-                                        branch: branch.slug,
-                                        category: category.slug,
-                                    }),
-                                    separatorBefore: merchandising.length > 0,
+                                    label: 'Merchandising',
+                                    items: merchandising,
                                 },
                                 {
-                                    label: 'Edit',
-                                    icon: Pencil,
-                                    href: CategoryController.edit.url({
-                                        branch: branch.slug,
-                                        category: category.slug,
-                                    }),
+                                    label: 'Catalog',
+                                    items: [
+                                        {
+                                            label: 'View',
+                                            icon: Eye,
+                                            href: CategoryController.show.url({
+                                                branch: branch.slug,
+                                                category: category.slug,
+                                            }),
+                                        },
+                                        {
+                                            label: 'Edit',
+                                            icon: Pencil,
+                                            href: CategoryController.edit.url({
+                                                branch: branch.slug,
+                                                category: category.slug,
+                                            }),
+                                        },
+                                    ],
                                 },
                             ]}
                         />

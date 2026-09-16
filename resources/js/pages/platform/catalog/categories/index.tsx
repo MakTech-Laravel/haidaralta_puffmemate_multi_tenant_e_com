@@ -281,13 +281,12 @@ export default function PlatformCategoriesIndex({
                                   () => setNavSortCategory(category),
                               )
                             : [];
-                    const items = [
-                        ...merchandising,
+
+                    const catalogItems = [
                         {
                             label: 'View',
                             icon: Eye,
                             href: CategoryController.show.url(category.slug),
-                            separatorBefore: merchandising.length > 0,
                         },
                         ...(can('manage-catalog') && !category.deleted_at
                             ? [
@@ -315,24 +314,32 @@ export default function PlatformCategoriesIndex({
                                   },
                               ]
                             : []),
-                        ...(can('manage-catalog') && !category.deleted_at
+                    ];
+
+                    const dangerItems =
+                        can('manage-catalog') && !category.deleted_at
                             ? [
                                   {
                                       label: 'Delete',
                                       icon: Trash2,
                                       destructive: true,
-                                      separatorBefore: true,
                                       onSelect: () =>
                                           setDeletingSlug(category.slug),
                                   },
                               ]
-                            : []),
-                    ];
+                            : [];
 
                     return (
                         <DataTableRowActions
-                            items={items}
                             contentClassName="w-56"
+                            groups={[
+                                {
+                                    label: 'Merchandising',
+                                    items: merchandising,
+                                },
+                                { label: 'Catalog', items: catalogItems },
+                                { label: 'Danger zone', items: dangerItems },
+                            ]}
                         />
                     );
                 },

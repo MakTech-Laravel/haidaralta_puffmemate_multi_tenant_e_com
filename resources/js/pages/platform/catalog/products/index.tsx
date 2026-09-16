@@ -202,14 +202,17 @@ export default function PlatformProductsIndex({
                 header: 'Actions',
                 cell: ({ row }) => {
                     const product = row.original;
-                    const items = [
+                    const canInventories =
+                        can('manage-branch-inventories') && !product.deleted_at;
+                    const canCatalog = can('manage-catalog');
+
+                    const catalogItems = [
                         {
                             label: 'View',
                             icon: Eye,
                             href: ProductController.show.url(product.slug),
                         },
-                        ...(can('manage-branch-inventories') &&
-                        !product.deleted_at
+                        ...(canInventories
                             ? [
                                   {
                                       label: 'Manage branches',
@@ -220,20 +223,7 @@ export default function PlatformProductsIndex({
                                   },
                               ]
                             : []),
-                        ...(can('manage-branch-inventories') &&
-                        !product.deleted_at
-                            ? stockActionItems(
-                                  {
-                                      manage: StockController.manage.url(),
-                                      transactions:
-                                          StockController.transactions.url(),
-                                      price: StockController.price.url(),
-                                      discount: StockController.discount.url(),
-                                  },
-                                  { productId: product.id, locked: 'product' },
-                              )
-                            : []),
-                        ...(can('manage-catalog') && !product.deleted_at
+                        ...(canCatalog && !product.deleted_at
                             ? [
                                   {
                                       label: 'Edit',
@@ -244,7 +234,7 @@ export default function PlatformProductsIndex({
                                   },
                               ]
                             : []),
-                        ...(can('manage-catalog') && product.deleted_at
+                        ...(canCatalog && product.deleted_at
                             ? [
                                   {
                                       label: 'Restore',
@@ -259,21 +249,44 @@ export default function PlatformProductsIndex({
                                   },
                               ]
                             : []),
-                        ...(can('manage-catalog') && !product.deleted_at
+                    ];
+
+                    const stockItems = canInventories
+                        ? stockActionItems(
+                              {
+                                  manage: StockController.manage.url(),
+                                  transactions:
+                                      StockController.transactions.url(),
+                                  price: StockController.price.url(),
+                                  discount: StockController.discount.url(),
+                              },
+                              { productId: product.id, locked: 'product' },
+                          )
+                        : [];
+
+                    const dangerItems =
+                        canCatalog && !product.deleted_at
                             ? [
                                   {
                                       label: 'Delete',
                                       icon: Trash2,
                                       destructive: true,
-                                      separatorBefore: true,
                                       onSelect: () =>
                                           setDeletingSlug(product.slug),
                                   },
                               ]
-                            : []),
-                    ];
+                            : [];
 
-                    return <DataTableRowActions items={items} />;
+                    return (
+                        <DataTableRowActions
+                            contentClassName="w-56"
+                            groups={[
+                                { label: 'Catalog', items: catalogItems },
+                                { label: 'Stock', items: stockItems },
+                                { label: 'Danger zone', items: dangerItems },
+                            ]}
+                        />
+                    );
                 },
             },
         ],

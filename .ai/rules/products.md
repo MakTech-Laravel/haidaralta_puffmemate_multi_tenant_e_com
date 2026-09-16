@@ -25,4 +25,4 @@ Do not remove `product_variants` / variant stock/price without explicit site-own
 Hide Variants count column and variant snapshot cards when catalog.show_product_variants is false. Product branch summary is { branches, missing_price } — no enabled/low_stock.
 
 ## Product and branch rows carry stock actions
-Product list and branch-network rows expose Add stock, Stock transactions, Update price, Add discount via `stockActionItems` in `@/lib/stock-query`. From a products list the product is locked; from a product's branch list both are locked; Stock transactions passes the same selection as filters (no `locked`).
+Product list and branch-network rows expose Add stock, Stock transactions, Update price, Add discount via `stockActionItems` in `@/lib/stock-query`. From a products list the product is locked; from a product's branch list both are locked; Stock transactions passes the same selection as filters (no `locked`). Product/category list menus use `DataTableRowActions` `groups` with labels: products → Catalog / Stock / Danger zone; categories → Merchandising / Catalog / Danger zone.
