@@ -23,6 +23,7 @@ import {
     MessagesSquare,
     Package,
     Package2,
+    PackagePlus,
     Radio,
     ScrollText,
     Settings2,
@@ -54,31 +55,6 @@ export const platformNav: NavSection[] = [
             permissions: ['view-dashboard'],
         }),
         navGroup({
-            title: 'Administrator',
-            icon: Shield,
-            permissions: ['manage-users', 'manage-roles'],
-            items: [
-                navLink({
-                    title: 'Admins',
-                    href: '/platform/staff',
-                    icon: UserCog,
-                    permissions: ['manage-users'],
-                }),
-                navLink({
-                    title: 'Roles',
-                    href: '/platform/roles',
-                    icon: Shield,
-                    permissions: ['manage-roles'],
-                }),
-                navLink({
-                    title: 'Permissions',
-                    href: '/platform/permissions',
-                    icon: KeyRound,
-                    permissions: ['manage-roles'],
-                }),
-            ],
-        }),
-        navGroup({
             title: 'Catalog',
             href: '/platform/categories',
             icon: Package,
@@ -98,6 +74,87 @@ export const platformNav: NavSection[] = [
                 }),
             ],
         }),
+        navLink({
+            title: 'Discounts',
+            href: '/platform/discounts',
+            icon: BadgePercent,
+            permissions: ['manage-branch-inventories'],
+        }),
+        navGroup({
+            title: 'Stock management',
+            href: '/platform/stock/manage',
+            icon: Boxes,
+            permissions: ['manage-branch-inventories'],
+            items: [
+                navLink({
+                    title: 'Manage',
+                    href: '/platform/stock/manage',
+                    icon: Boxes,
+                    permissions: ['manage-branch-inventories'],
+                }),
+                navLink({
+                    title: 'Bulk Import',
+                    href: '/platform/stock/import',
+                    icon: PackagePlus,
+                    permissions: ['manage-branch-inventories'],
+                }),
+                navLink({
+                    title: 'Transactions',
+                    href: '/platform/stock/transactions',
+                    icon: ScrollText,
+                    permissions: ['manage-branch-inventories'],
+                }),
+            ],
+        }),
+        navGroup({
+            title: 'Orders',
+            icon: ShoppingBag,
+            permissions: ['manage-reports'],
+            items: [
+                navSoon({
+                    title: 'Orders',
+                    icon: ShoppingBag,
+                    permissions: ['manage-reports'],
+                }),
+                navSoon({
+                    title: 'Pickup',
+                    icon: Store,
+                    permissions: ['manage-reports'],
+                }),
+                navSoon({
+                    title: 'Delivery',
+                    icon: MapPin,
+                    permissions: ['manage-reports'],
+                }),
+            ],
+        }),
+        navGroup({
+            title: 'Customers',
+            icon: Users,
+            permissions: ['manage-users'],
+            items: [
+                navSoon({
+                    title: 'Customers',
+                    icon: Users,
+                    permissions: ['manage-users'],
+                }),
+                navSoon({
+                    title: 'Reviews',
+                    icon: Star,
+                    permissions: ['manage-users'],
+                }),
+                navSoon({
+                    title: 'Wholesale',
+                    icon: Warehouse,
+                    permissions: ['manage-users'],
+                }),
+                navSoon({
+                    title: 'Age verification',
+                    icon: IdCard,
+                    permissions: ['manage-users'],
+                }),
+            ],
+        }),
         navGroup({
             title: 'Branch management',
             href: '/platform/branches',
@@ -111,7 +168,7 @@ export const platformNav: NavSection[] = [
                     permissions: ['view-branches'],
                 }),
                 navLink({
-                    title: 'Branch staff',
+                    title: 'Staff',
                     href: '/platform/branch-staff',
                     icon: Users,
                     permissions: ['manage-branch-users'],
@@ -132,7 +189,7 @@ export const platformNav: NavSection[] = [
             permissions: ['manage-drivers'],
             items: [
                 navLink({
-                    title: 'All drivers',
+                    title: 'Drivers',
                     href: '/platform/drivers',
                     icon: Truck,
                     permissions: ['manage-drivers'],
@@ -160,55 +217,6 @@ export const platformNav: NavSection[] = [
             ],
         }),
         navGroup({
-            title: 'Orders',
-            icon: ShoppingBag,
-            permissions: ['manage-reports'],
-            items: [
-                navSoon({
-                    title: 'All orders',
-                    icon: ShoppingBag,
-                    permissions: ['manage-reports'],
-                }),
-                navSoon({
-                    title: 'Pickup',
-                    icon: Store,
-                    permissions: ['manage-reports'],
-                }),
-                navSoon({
-                    title: 'Delivery',
-                    icon: MapPin,
-                    permissions: ['manage-reports'],
-                }),
-            ],
-        }),
-        navGroup({
-            title: 'Customers',
-            icon: Users,
-            permissions: ['manage-users'],
-            items: [
-                navSoon({
-                    title: 'All customers',
-                    icon: Users,
-                    permissions: ['manage-users'],
-                }),
-                navSoon({
-                    title: 'Reviews',
-                    icon: Star,
-                    permissions: ['manage-users'],
-                }),
-                navSoon({
-                    title: 'Wholesale',
-                    icon: Warehouse,
-                    permissions: ['manage-users'],
-                }),
-                navSoon({
-                    title: 'Age verification',
-                    icon: IdCard,
-                    permissions: ['manage-users'],
-                }),
-            ],
-        }),
-        navGroup({
             title: 'Conversations',
             icon: MessagesSquare,
             permissions: ['manage-users', 'manage-drivers'],
@@ -222,6 +230,23 @@ export const platformNav: NavSection[] = [
                     title: 'Driver chat',
                     icon: MessageCircle,
                     permissions: ['manage-drivers'],
+                }),
+            ],
+        }),
+        navGroup({
+            title: 'Marketing',
+            icon: Megaphone,
+            permissions: ['manage-reports'],
+            items: [
+                navSoon({
+                    title: 'Coupons',
+                    icon: BadgePercent,
+                    permissions: ['manage-reports'],
+                }),
+                navSoon({
+                    title: 'Deals',
+                    icon: Megaphone,
+                    permissions: ['manage-reports'],
                 }),
             ],
         }),
@@ -253,19 +278,27 @@ export const platformNav: NavSection[] = [
             ],
         }),
         navGroup({
-            title: 'Marketing',
-            icon: Megaphone,
-            permissions: ['manage-reports'],
+            title: 'Administrator',
+            icon: Shield,
+            permissions: ['manage-users', 'manage-roles'],
             items: [
-                navSoon({
-                    title: 'Coupons',
-                    icon: BadgePercent,
-                    permissions: ['manage-reports'],
+                navLink({
+                    title: 'Admins',
+                    href: '/platform/staff',
+                    icon: UserCog,
+                    permissions: ['manage-users'],
                 }),
-                navSoon({
-                    title: 'Deals',
-                    icon: Megaphone,
-                    permissions: ['manage-reports'],
+                navLink({
+                    title: 'Roles',
+                    href: '/platform/roles',
+                    icon: Shield,
+                    permissions: ['manage-roles'],
+                }),
+                navLink({
+                    title: 'Permissions',
+                    href: '/platform/permissions',
+                    icon: KeyRound,
+                    permissions: ['manage-roles'],
                 }),
             ],
         }),

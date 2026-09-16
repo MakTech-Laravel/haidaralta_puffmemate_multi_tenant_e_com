@@ -10,6 +10,8 @@ class UpdateProductVariantRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        abort_unless((bool) config('catalog.show_product_variants'), 404);
+
         return true;
     }
 

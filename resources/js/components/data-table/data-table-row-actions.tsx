@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -27,8 +28,15 @@ export type DataTableActionItem = {
     href?: string;
     onSelect?: () => void;
     destructive?: boolean;
+    /** @deprecated Prefer `groups` on DataTableRowActions for labeled sections. */
     separatorBefore?: boolean;
     disabled?: boolean;
+};
+
+export type DataTableActionGroup = {
+    /** Section heading shown above the items. Omit for an unlabeled block. */
+    label?: string;
+    items: DataTableActionItem[];
 };
 
 /** Default icons keyed by action label; used when `icon` is not passed. */
@@ -83,13 +91,51 @@ function ActionItem({ item }: { item: DataTableActionItem }) {
     );
 }
 
+function resolveGroups(
+    items: DataTableActionItem[] | undefined,
+    groups: DataTableActionGroup[] | undefined,
+): DataTableActionGroup[] {
+    if (groups && groups.length > 0) {
+        return groups.filter((group) => group.items.length > 0);
+    }
+
+    if (!items || items.length === 0) {
+        return [];
+    }
+
+    // Preserve legacy separatorBefore by splitting into unlabeled groups.
+    const legacy: DataTableActionGroup[] = [];
+    let current: DataTableActionItem[] = [];
+
+    for (const item of items) {
+        if (item.separatorBefore && current.length > 0) {
+            legacy.push({ items: current });
+            current = [];
+        }
+
+        current.push(item);
+    }
+
+    if (current.length > 0) {
+        legacy.push({ items: current });
+    }
+
+    return legacy;
+}
+
 export function DataTableRowActions({
     items,
+    groups,
     label = 'Actions',
+    contentClassName = 'w-44',
 }: {
-    items: DataTableActionItem[];
+    items?: DataTableActionItem[];
+    groups?: DataTableActionGroup[];
     label?: string;
+    contentClassName?: string;
 }) {
+    const resolvedGroups = resolveGroups(items, groups);
+
     return (
         <div className="flex justify-end">
             <DropdownMenu>
@@ -103,15 +149,24 @@ export function DataTableRowActions({
                         <MoreHorizontal className="size-4" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuContent
+                    align="end"
+                    className={contentClassName}
+                >
                     <DropdownMenuLabel>{label}</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {items.map((item) => (
-                        <Fragment key={item.label}>
-                            {item.separatorBefore ? (
-                                <DropdownMenuSeparator />
-                            ) : null}
-                            <ActionItem item={item} />
+                    {resolvedGroups.map((group, groupIndex) => (
+                        <Fragment key={`${group.label ?? 'group'}-${groupIndex}`}>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuGroup>
+                                {group.label ? (
+                                    <DropdownMenuLabel className="text-muted-foreground px-2 py-1.5 text-xs font-medium">
+                                        {group.label}
+                                    </DropdownMenuLabel>
+                                ) : null}
+                                {group.items.map((item) => (
+                                    <ActionItem key={item.label} item={item} />
+                                ))}
+                            </DropdownMenuGroup>
                         </Fragment>
                     ))}
                 </DropdownMenuContent>

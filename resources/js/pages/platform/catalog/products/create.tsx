@@ -10,8 +10,10 @@ type CategoryOption = {
 
 export default function PlatformProductsCreate({
     categoryOptions,
+    returnTo = null,
 }: {
     categoryOptions: CategoryOption[];
+    returnTo?: string | null;
 }) {
     return (
         <>
@@ -28,6 +30,7 @@ export default function PlatformProductsCreate({
                     categoryOptions={categoryOptions}
                     showBranchNotice
                     enableSuggestions
+                    returnTo={returnTo}
                     cancelHref={ProductController.index.url()}
                 />
             </div>

@@ -7,7 +7,6 @@ import type {
     ColorPickerPresentationMode,
     ColorPickerTriggerVariant,
 } from '@/components/color-picker/color-picker-types';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import {
     type ColorPickerValue,
     colorPickerStyle,
@@ -65,7 +64,6 @@ export function ColorPickerTrigger({
         <span
             className={cn(
                 'relative size-9 shrink-0 overflow-hidden rounded-lg border border-border/70 shadow-inner',
-                transparent ? COLOR_PICKER_CHECKERBOARD : null,
                 classNames?.triggerPreview,
             )}
             style={transparent ? undefined : previewStyle}
@@ -124,7 +122,6 @@ export function ColorPickerTrigger({
                 <span
                     className={cn(
                         'relative size-6 shrink-0 overflow-hidden rounded-md border border-border/70 shadow-inner',
-                        transparent ? COLOR_PICKER_CHECKERBOARD : null,
                         classNames?.triggerPreview,
                     )}
                     style={transparent ? undefined : previewStyle}
@@ -225,7 +222,6 @@ export function ColorPickerTrigger({
                     <span
                         className={cn(
                             'relative size-12 shrink-0 overflow-hidden rounded-xl border border-border/70 shadow-inner',
-                            transparent ? COLOR_PICKER_CHECKERBOARD : null,
                             classNames?.triggerPreview,
                         )}
                         style={transparent ? undefined : previewStyle}

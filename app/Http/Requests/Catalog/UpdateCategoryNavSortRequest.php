@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Branch;
+namespace App\Http\Requests\Catalog;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ToggleBranchProductRequest extends FormRequest
+class UpdateCategoryNavSortRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,7 +17,7 @@ class ToggleBranchProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'boolean'],
+            'nav_sort' => ['required', 'integer', 'min:0', 'max:65535'],
         ];
     }
 }

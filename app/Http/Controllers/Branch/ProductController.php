@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Branch;
 
 use App\DataTables\BranchProductListingDataTable;
+use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\AdjustBranchInventoryRequest;
 use App\Http\Requests\Branch\ReuseBranchProductRequest;
 use App\Http\Requests\Branch\StoreBranchProductRequest;
-use App\Http\Requests\Branch\ToggleBranchProductRequest;
 use App\Http\Requests\Branch\UpdateBranchProductRequest;
 use App\Http\Requests\Branch\UpsertBranchProductPriceRequest;
 use App\Models\Branch;
@@ -19,9 +19,9 @@ use App\Models\ProductVariant;
 use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductSuggestionService;
 use App\Services\Inventory\BranchPricingService;
-use App\Services\Inventory\BranchProductAvailabilityService;
 use App\Services\Inventory\InventoryService;
 use App\Support\BranchProductShowPayload;
+use App\Support\CatalogReturnTo;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -36,7 +36,6 @@ class ProductController extends Controller
     public function __construct(
         private ProductService $products,
         private ProductSuggestionService $suggestions,
-        private BranchProductAvailabilityService $availability,
         private InventoryService $inventory,
         private BranchPricingService $pricing,
     ) {}
@@ -51,12 +50,13 @@ class ProductController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/catalog/products/create', [
             'branch' => $branch->only(['id', 'name', 'slug']),
+            'returnTo' => CatalogReturnTo::fromRequest($request),
             'categoryOptions' => Category::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'slug'])
@@ -72,16 +72,20 @@ class ProductController extends Controller
     public function suggestions(Request $request): JsonResponse
     {
         $query = $request->string('q')->trim()->toString();
+        $excludeProductId = $request->integer('exclude') ?: null;
 
         return response()->json([
-            'suggestions' => $this->suggestions->suggest($query),
+            'suggestions' => $this->suggestions->suggest(
+                $query,
+                excludeProductId: $excludeProductId,
+            ),
         ]);
     }
 
     public function store(StoreBranchProductRequest $request): RedirectResponse
     {
         $branch = $this->currentBranch();
-        $data = $request->safe()->except(['image', 'gallery', 'selling_price', 'discount_price', 'quantity', 'minimum_stock']);
+        $data = $request->safe()->except(['image', 'gallery', 'selling_price', 'discount_price', 'quantity']);
         $data['status'] = $request->boolean('status', true);
 
         $product = $this->products->createFromBranch(
@@ -94,9 +98,14 @@ class ProductController extends Controller
 
         $this->applyOptionalStockAndPrice($branch, $product, $request->validated());
 
-        Toast::success('Product created and enabled for this branch only.');
+        Toast::success('Product created.');
 
-        return redirect()->route('branch.products.show', [$branch, $product]);
+        return CatalogReturnTo::afterProductCreate(
+            $request,
+            $product,
+            'branch.products.show',
+            [$branch, $product],
+        );
     }
 
     public function reuse(ReuseBranchProductRequest $request): RedirectResponse
@@ -104,10 +113,9 @@ class ProductController extends Controller
         $branch = $this->currentBranch();
         $product = Product::query()->findOrFail($request->validated('product_id'));
 
-        $this->availability->setEnabled($branch, $product, true);
         $this->applyOptionalStockAndPrice($branch, $product, $request->validated());
 
-        Toast::success('Existing product enabled for this branch.');
+        Toast::success('Existing product stock and price updated for this branch.');
 
         return redirect()->route('branch.products.show', [$branch, $product]);
     }
@@ -118,13 +126,10 @@ class ProductController extends Controller
 
         return Inertia::render('branch/catalog/products/show', [
             'branch' => $branch->only(['id', 'name', 'slug']),
-            'product' => BranchProductShowPayload::product(
-                $branch,
-                $product,
-                $this->availability->isEnabled($branch, $product),
-            ),
+            'product' => BranchProductShowPayload::product($branch, $product),
             'transactions' => BranchProductShowPayload::transactions($branch, $product, $request),
             'transactionTypes' => BranchProductShowPayload::transactionTypes(),
+            'adjustmentReasons' => InventoryAdjustmentReason::options(),
             'discountTypes' => BranchProductShowPayload::discountTypes(),
         ]);
     }
@@ -195,18 +200,6 @@ class ProductController extends Controller
         return redirect()->route('branch.products.show', [$branch, $product]);
     }
 
-    public function toggle(ToggleBranchProductRequest $request, string $branchSlug, Product $product): RedirectResponse
-    {
-        $branch = $this->currentBranch();
-        $enabled = $request->boolean('status');
-
-        $this->availability->setEnabled($branch, $product, $enabled);
-
-        Toast::success($enabled ? 'Product enabled for this branch.' : 'Product disabled for this branch.');
-
-        return redirect()->back();
-    }
-
     public function adjustInventory(
         AdjustBranchInventoryRequest $request,
         string $branchSlug,
@@ -217,17 +210,14 @@ class ProductController extends Controller
 
         $inventory = $this->inventory->firstOrCreate($branch, $product, $variant);
 
-        if ($request->filled('minimum_stock')) {
-            $this->inventory->setMinimumStock($inventory, (int) $request->validated('minimum_stock'));
-            $inventory->refresh();
-        }
-
         try {
             $this->inventory->adjust(
                 $inventory,
                 InventoryTransactionType::from($request->validated('type')),
                 (int) $request->validated('quantity'),
                 $request->user('branch'),
+                reason: InventoryAdjustmentReason::fromNullable($request->validated('reason')),
+                reasonNote: InventoryAdjustmentReason::noteFrom($request->validated('reason_note')),
             );
         } catch (InvalidArgumentException $exception) {
             Toast::error($exception->getMessage());
@@ -262,17 +252,8 @@ class ProductController extends Controller
      */
     private function applyOptionalStockAndPrice(Branch $branch, Product $product, array $data): void
     {
-        if (array_key_exists('minimum_stock', $data) || array_key_exists('quantity', $data)) {
-            $inventory = $this->inventory->firstOrCreate(
-                $branch,
-                $product,
-                null,
-                ['minimum_stock' => (int) ($data['minimum_stock'] ?? 0)],
-            );
-
-            if (array_key_exists('minimum_stock', $data) && $data['minimum_stock'] !== null) {
-                $this->inventory->setMinimumStock($inventory, (int) $data['minimum_stock']);
-            }
+        if (array_key_exists('quantity', $data)) {
+            $inventory = $this->inventory->firstOrCreate($branch, $product);
 
             $qty = (int) ($data['quantity'] ?? 0);
 

@@ -380,6 +380,18 @@ function buildPreview(file: File): FilePreview {
     return { key, file, preview, type };
 }
 
+/**
+ * Inertia `setData('field', value)` cloneDeep's the whole form — File instances
+ * are re-created (`new File([file], …)`) on every keystroke. Match by content
+ * so we can keep Object URLs instead of blinking/reloading previews.
+ */
+function filesMatch(a: File, b: File): boolean {
+    return (
+        a === b ||
+        (a.name === b.name && a.size === b.size && a.type === b.type)
+    );
+}
+
 function revokePreview(p: FilePreview): void {
     if (p.preview) {
         URL.revokeObjectURL(p.preview);
@@ -923,6 +935,8 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
         // Empty array must count as cleared (ProductForm uses `gallery: []`).
         // Rebuild when the parent has files but local previews were lost (Strict
         // Mode remount, external setData, etc.).
+        // Inertia string-key setData cloneDeep's Files — reuse Object URLs when
+        // name/size/type still match so typing other fields does not blink thumbs.
         useEffect(() => {
             const files = Array.isArray(value)
                 ? value
@@ -931,17 +945,54 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                   : [];
 
             setFilePreviews((prev) => {
-                const same =
+                if (
                     prev.length === files.length &&
-                    prev.every((preview, index) => preview.file === files[index]);
+                    prev.every(
+                        (preview, index) =>
+                            filesMatch(preview.file, files[index]!),
+                    )
+                ) {
+                    if (
+                        prev.every(
+                            (preview, index) => preview.file === files[index],
+                        )
+                    ) {
+                        return prev;
+                    }
 
-                if (same) {
-                    return prev;
+                    return prev.map((preview, index) =>
+                        preview.file === files[index]
+                            ? preview
+                            : { ...preview, file: files[index]! },
+                    );
                 }
 
-                prev.forEach(revokePreview);
+                const used = new Set<number>();
+                const next = files.map((file) => {
+                    const matchIndex = prev.findIndex(
+                        (preview, index) =>
+                            !used.has(index) && filesMatch(preview.file, file),
+                    );
 
-                return files.map(buildPreview);
+                    if (matchIndex >= 0) {
+                        used.add(matchIndex);
+                        const matched = prev[matchIndex]!;
+
+                        return matched.file === file
+                            ? matched
+                            : { ...matched, file };
+                    }
+
+                    return buildPreview(file);
+                });
+
+                prev.forEach((preview, index) => {
+                    if (!used.has(index)) {
+                        revokePreview(preview);
+                    }
+                });
+
+                return next;
             });
         }, [value]);
 

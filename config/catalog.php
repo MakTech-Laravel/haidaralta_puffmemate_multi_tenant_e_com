@@ -26,4 +26,69 @@ return [
 
     'nav_categories_max' => env('NAV_CATEGORIES_MAX', 6),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Branch category create
+    |--------------------------------------------------------------------------
+    |
+    | When false, branch create/store abort 404 and the Add category
+    | button is hidden. The list itself is gated separately by
+    | branch_can_view_categories. Flip to true to restore branch
+    | category creation (the list flag must also be true).
+    |
+    */
+
+    'branch_can_create_categories' => env('BRANCH_CAN_CREATE_CATEGORIES', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Branch category list
+    |--------------------------------------------------------------------------
+    |
+    | When false, branch portals cannot open category index/show/edit (or
+    | merchandising) — those routes abort 404 and the sidebar drops
+    | Categories so Products sits as a top-level item, not under Catalog.
+    | Flip to true to restore the branch category list.
+    |
+    */
+
+    'branch_can_view_categories' => env('BRANCH_CAN_VIEW_CATEGORIES', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Parent / child category UI
+    |--------------------------------------------------------------------------
+    |
+    | When false, parent picker, list column/filter, and subcategory
+    | surfaces stay in the codebase but are not rendered. Flip to true
+    | to restore parent-category management.
+    |
+    */
+
+    'show_parent_category' => env('SHOW_PARENT_CATEGORY', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product variants
+    |--------------------------------------------------------------------------
+    |
+    | When false, variant UI and variant mutations abort 404. Tables and
+    | routes stay in the codebase. Flip to true to restore variants.
+    |
+    */
+
+    'show_product_variants' => env('SHOW_PRODUCT_VARIANTS', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product SKU prefix
+    |--------------------------------------------------------------------------
+    |
+    | Auto-generated SKUs are PREFIX-SLUG in uppercase (e.g. PMM-AIR-PRO).
+    | Staff can still edit the SKU before save.
+    |
+    */
+
+    'sku_prefix' => env('CATALOG_SKU_PREFIX', 'PMM'),
+
 ];

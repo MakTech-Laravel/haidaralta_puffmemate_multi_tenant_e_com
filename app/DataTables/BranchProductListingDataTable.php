@@ -4,11 +4,11 @@ namespace App\DataTables;
 
 use App\DataTables\Filters\StatusBooleanFilter;
 use App\Models\Branch;
-use App\Models\BranchProduct;
 use App\Models\BranchProductPrice;
-use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Support\BranchProductPriceDisplay;
+use App\Support\CategoryOptions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -18,9 +18,6 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class BranchProductListingDataTable extends AbstractDataTable
 {
-    /** @var array<int, bool> */
-    protected array $enabledMap = [];
-
     /** @var Collection<int, Inventory> */
     protected Collection $inventories;
 
@@ -92,66 +89,18 @@ class BranchProductListingDataTable extends AbstractDataTable
 
         return [
             AllowedFilter::callback('category_id', function (Builder $query, mixed $value): void {
-                if ($value === null || $value === '' || $value === 'all') {
+                $ids = CategoryOptions::normalizeIds($value);
+
+                if ($ids === []) {
                     return;
                 }
 
                 $query->whereHas(
                     'categories',
-                    fn (Builder $categories): Builder => $categories->where('categories.id', (int) $value),
+                    fn (Builder $categories): Builder => $categories->whereIn('categories.id', $ids),
                 );
             }),
             StatusBooleanFilter::make('status'),
-            AllowedFilter::callback('enabled', function (Builder $query, mixed $value) use ($branchId): void {
-                if ($value === null || $value === '' || $value === 'all') {
-                    return;
-                }
-
-                $normalized = is_bool($value)
-                    ? ($value ? '1' : '0')
-                    : strtolower((string) $value);
-
-                if (in_array($normalized, ['1', 'true', 'yes', 'enabled'], true)) {
-                    $query->whereHas(
-                        'branchProducts',
-                        fn (Builder $branchProducts): Builder => $branchProducts
-                            ->where('branch_id', $branchId)
-                            ->where('status', true),
-                    );
-
-                    return;
-                }
-
-                if (in_array($normalized, ['0', 'false', 'no', 'disabled'], true)) {
-                    $query->whereDoesntHave(
-                        'branchProducts',
-                        fn (Builder $branchProducts): Builder => $branchProducts
-                            ->where('branch_id', $branchId)
-                            ->where('status', true),
-                    );
-                }
-            }),
-            AllowedFilter::callback('low_stock', function (Builder $query, mixed $value) use ($branchId): void {
-                if ($value === null || $value === '' || $value === 'all') {
-                    return;
-                }
-
-                $normalized = is_bool($value)
-                    ? ($value ? '1' : '0')
-                    : strtolower((string) $value);
-
-                if (! in_array($normalized, ['1', 'true', 'yes'], true)) {
-                    return;
-                }
-
-                $query->whereHas(
-                    'inventories',
-                    fn (Builder $inventories): Builder => $inventories
-                        ->where('branch_id', $branchId)
-                        ->whereNull('variant_id')
-                        ->whereColumn('available_quantity', '<=', 'minimum_stock'),
-                );
-            }),
             AllowedFilter::callback('missing_price', function (Builder $query, mixed $value) use ($branchId): void {
                 if ($value === null || $value === '' || $value === 'all') {
                     return;
@@ -165,12 +114,7 @@ class BranchProductListingDataTable extends AbstractDataTable
                     return;
                 }
 
-                $query->whereHas(
-                    'branchProducts',
-                    fn (Builder $branchProducts): Builder => $branchProducts
-                        ->where('branch_id', $branchId)
-                        ->where('status', true),
-                )->whereDoesntHave(
+                $query->whereDoesntHave(
                     'branchPrices',
                     fn (Builder $prices): Builder => $prices
                         ->where('branch_id', $branchId)
@@ -187,25 +131,12 @@ class BranchProductListingDataTable extends AbstractDataTable
      */
     protected function filterOptions(): array
     {
+        $ids = CategoryOptions::normalizeIds(
+            $this->normalizedFilters()['category_id'] ?? null,
+        );
+
         return [
-            'categories' => Category::query()
-                ->orderBy('name')
-                ->get(['id', 'name', 'slug'])
-                ->map(fn (Category $category): array => [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'slug' => $category->slug,
-                ])
-                ->all(),
-            'enabled' => [
-                ['value' => 'all', 'label' => 'All enablement'],
-                ['value' => '1', 'label' => 'Enabled'],
-                ['value' => '0', 'label' => 'Disabled'],
-            ],
-            'low_stock' => [
-                ['value' => 'all', 'label' => 'All stock'],
-                ['value' => '1', 'label' => 'Low stock'],
-            ],
+            'categories' => CategoryOptions::selected($ids),
             'missing_price' => [
                 ['value' => 'all', 'label' => 'All prices'],
                 ['value' => '1', 'label' => 'Missing price'],
@@ -260,19 +191,11 @@ class BranchProductListingDataTable extends AbstractDataTable
         $ids = collect($productIds)->map(fn ($id): int => (int) $id)->values();
 
         if ($ids->isEmpty()) {
-            $this->enabledMap = [];
             $this->inventories = collect();
             $this->prices = collect();
 
             return;
         }
-
-        $this->enabledMap = BranchProduct::query()
-            ->where('branch_id', $this->branch->id)
-            ->whereIn('product_id', $ids)
-            ->pluck('status', 'product_id')
-            ->map(fn ($status): bool => (bool) $status)
-            ->all();
 
         $this->inventories = Inventory::query()
             ->where('branch_id', $this->branch->id)
@@ -301,6 +224,7 @@ class BranchProductListingDataTable extends AbstractDataTable
         $inventory = $this->inventories->get($model->id);
         /** @var BranchProductPrice|null $price */
         $price = $this->prices->get($model->id);
+        $priceDisplay = BranchProductPriceDisplay::listDisplay($price);
 
         $row = [
             'id' => $model->id,
@@ -326,17 +250,16 @@ class BranchProductListingDataTable extends AbstractDataTable
                 : null,
             'status' => (bool) $model->status,
             'color_code' => $model->color_code,
-            'enabled' => (bool) ($this->enabledMap[$model->id] ?? false),
             'quantity' => $inventory?->quantity ?? 0,
-            'available_quantity' => $inventory?->available_quantity ?? 0,
-            'minimum_stock' => $inventory?->minimum_stock ?? 0,
-            'is_low_stock' => $inventory?->isLowStock() ?? false,
-            'selling_price' => $price?->selling_price,
+            'selling_price' => $priceDisplay['selling_price'],
+            'effective_price' => $priceDisplay['effective_price'],
+            'has_discount' => $priceDisplay['has_discount'],
+            'discount_type' => $priceDisplay['discount_type'],
+            'discount_price' => $priceDisplay['discount_price'],
         ];
 
         if ($this->includeImage) {
             $row['image_url'] = $model->imageUrl();
-            $row['discount_price'] = $price?->discount_price;
         }
 
         return $row;

@@ -3,7 +3,6 @@ import type { LucideIcon } from 'lucide-react';
 
 import type { ColorPickerLabels } from '@/components/color-picker/color-picker-types';
 import { ColorSwatchPopover } from '@/components/color-picker/color-swatch-popover';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -220,10 +219,7 @@ export function ColorPickerPanel({
     return (
         <div className={cn('space-y-5', className)}>
             <div
-                className={cn(
-                    'relative overflow-hidden rounded-2xl border border-border/70 shadow-inner',
-                    transparent ? COLOR_PICKER_CHECKERBOARD : null,
-                )}
+                className="relative overflow-hidden rounded-2xl border border-border/70 shadow-inner"
                 style={transparent ? undefined : previewStyle}
             >
                 <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/5" />

@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Branch;
 
 use App\DataTables\BranchCategoryDataTable;
+use App\Http\Controllers\Concerns\ManagesCategoryMerchandising;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\StoreCategoryRequest;
 use App\Http\Requests\Branch\UpdateCategoryRequest;
+use App\Http\Requests\Catalog\UpdateCategoryNavSortRequest;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Services\Catalog\CategoryService;
 use App\Services\Catalog\CategorySuggestionService;
+use App\Support\CategoryOptions;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +22,8 @@ use Inertia\Response;
 
 class CategoryController extends Controller
 {
+    use ManagesCategoryMerchandising;
+
     public function __construct(
         private CategoryService $categories,
         private CategorySuggestionService $suggestions,
@@ -26,6 +31,8 @@ class CategoryController extends Controller
 
     public function index(Request $request): Response
     {
+        $this->abortUnlessBranchCanViewCategories();
+
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/catalog/categories/index', [
@@ -36,6 +43,9 @@ class CategoryController extends Controller
 
     public function create(): Response
     {
+        $this->abortUnlessBranchCanViewCategories();
+        abort_unless((bool) config('catalog.branch_can_create_categories'), 404);
+
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/catalog/categories/create', [
@@ -47,6 +57,8 @@ class CategoryController extends Controller
 
     public function suggestions(Request $request): JsonResponse
     {
+        $this->abortUnlessBranchCanViewCategories();
+
         $query = $request->string('q')->trim()->toString();
         $excludeCategoryId = $request->integer('exclude') ?: null;
 
@@ -58,8 +70,16 @@ class CategoryController extends Controller
         ]);
     }
 
+    public function options(Request $request): JsonResponse
+    {
+        return response()->json(CategoryOptions::paginated($request));
+    }
+
     public function store(StoreCategoryRequest $request): RedirectResponse
     {
+        $this->abortUnlessBranchCanViewCategories();
+        abort_unless((bool) config('catalog.branch_can_create_categories'), 404);
+
         $branch = $this->currentBranch();
         $data = $request->safe()->except(['image']);
         $data['status'] = $request->boolean('status', true);
@@ -75,6 +95,8 @@ class CategoryController extends Controller
 
     public function show(string $branchSlug, Category $category): Response
     {
+        $this->abortUnlessBranchCanViewCategories();
+
         $branch = $this->currentBranch();
 
         $category->load(['parent:id,name,slug', 'children:id,name,slug,parent_id,status'])
@@ -88,6 +110,8 @@ class CategoryController extends Controller
 
     public function edit(string $branchSlug, Category $category): Response
     {
+        $this->abortUnlessBranchCanViewCategories();
+
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/catalog/categories/edit', [
@@ -100,6 +124,8 @@ class CategoryController extends Controller
 
     public function update(UpdateCategoryRequest $request, string $branchSlug, Category $category): RedirectResponse
     {
+        $this->abortUnlessBranchCanViewCategories();
+
         $branch = $this->currentBranch();
         $data = $request->safe()->except(['image']);
         $data['status'] = $request->boolean('status', true);
@@ -112,6 +138,34 @@ class CategoryController extends Controller
         Toast::success('Category updated.');
 
         return redirect()->route('branch.categories.show', [$branch, $category]);
+    }
+
+    public function toggleStatus(string $branchSlug, Category $category): RedirectResponse
+    {
+        $this->abortUnlessBranchCanViewCategories();
+
+        return $this->merchandiseToggleStatus($category);
+    }
+
+    public function toggleFeatured(string $branchSlug, Category $category): RedirectResponse
+    {
+        $this->abortUnlessBranchCanViewCategories();
+
+        return $this->merchandiseToggleFeatured($category);
+    }
+
+    public function toggleNav(string $branchSlug, Category $category): RedirectResponse
+    {
+        $this->abortUnlessBranchCanViewCategories();
+
+        return $this->merchandiseToggleNav($category);
+    }
+
+    public function updateNavSort(UpdateCategoryNavSortRequest $request, string $branchSlug, Category $category): RedirectResponse
+    {
+        $this->abortUnlessBranchCanViewCategories();
+
+        return $this->merchandiseUpdateNavSort($request, $category);
     }
 
     /**
@@ -176,6 +230,11 @@ class CategoryController extends Controller
         }
 
         return $payload;
+    }
+
+    private function abortUnlessBranchCanViewCategories(): void
+    {
+        abort_unless((bool) config('catalog.branch_can_view_categories'), 404);
     }
 
     private function currentBranch(): Branch

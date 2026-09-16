@@ -1,29 +1,27 @@
-import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Settings2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, type ReactNode } from 'react';
+import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
+import DiscountController from '@/actions/App/Http/Controllers/Branch/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
+import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
+import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
 import {
     DataTable,
     DataTableColumnHeader,
     DataTableRowActions,
     DataTableToolbar,
+    DataTableTruncated,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { stockActionItems } from '@/lib/stock-query';
+
+type CategoryOption = { id: number; name: string; slug: string };
 
 type ProductRow = {
     id: number;
@@ -32,10 +30,12 @@ type ProductRow = {
     sku: string | null;
     category_name: string;
     image_url: string | null;
-    enabled: boolean;
-    available_quantity: number;
-    is_low_stock: boolean;
+    quantity: number;
     selling_price: string | number | null;
+    effective_price: string | number | null;
+    has_discount: boolean;
+    discount_type: string;
+    discount_price: string | number | null;
 };
 
 type Branch = { id: number; name: string; slug: string };
@@ -44,15 +44,36 @@ function initials(name: string): string {
     return name.slice(0, 2).toUpperCase();
 }
 
+function listingPrice(row: ProductRow): ReactNode {
+    if (row.selling_price == null && row.effective_price == null) {
+        return '—';
+    }
+
+    if (row.has_discount && row.selling_price != null) {
+        return (
+            <span className="tabular-nums">
+                <s className="text-muted-foreground">{row.selling_price}</s>{' '}
+                {row.effective_price ?? row.selling_price}
+            </span>
+        );
+    }
+
+    return (
+        <span className="tabular-nums">
+            {row.effective_price ?? row.selling_price}
+        </span>
+    );
+}
+
 export default function BranchProductsIndex({
     branch,
     table: tablePayload,
 }: {
     branch: Branch;
-    table: DataTablePayload<ProductRow>;
+    table: DataTablePayload<ProductRow> & {
+        filterOptions?: { categories?: CategoryOption[] };
+    };
 }) {
-    const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
-
     setLayoutProps({
         breadcrumbs: [
             {
@@ -71,13 +92,14 @@ export default function BranchProductsIndex({
         initial: {
             filter: {
                 search: tablePayload.filters.search ?? '',
-                enabled: tablePayload.filters.enabled ?? null,
-                low_stock: tablePayload.filters.low_stock ?? null,
+                category_id: tablePayload.filters.category_id ?? null,
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,
         },
     });
+
+    const categories = tablePayload.filterOptions?.categories ?? [];
 
     const columns = useMemo<ColumnDef<ProductRow>[]>(
         () => [
@@ -109,13 +131,16 @@ export default function BranchProductsIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <div>
-                        <div className="font-medium">{row.original.name}</div>
-                        <div className="text-muted-foreground text-xs">
+                    <div className="min-w-0">
+                        <DataTableTruncated className="font-medium">
+                            {row.original.name}
+                        </DataTableTruncated>
+                        <DataTableTruncated className="text-muted-foreground text-xs">
                             {row.original.category_name}
-                        </div>
+                        </DataTableTruncated>
                     </div>
                 ),
+                meta: { truncate: false },
             },
             {
                 accessorKey: 'sku',
@@ -132,66 +157,67 @@ export default function BranchProductsIndex({
                 cell: ({ row }) => row.original.sku ?? '—',
             },
             {
-                accessorKey: 'available_quantity',
+                accessorKey: 'quantity',
                 header: 'Stock',
                 cell: ({ row }) => (
-                    <div className="flex items-center gap-2">
-                        {row.original.available_quantity}
-                        {row.original.is_low_stock ? (
-                            <Badge variant="destructive">Low</Badge>
-                        ) : null}
-                    </div>
+                    <span className="tabular-nums">{row.original.quantity}</span>
                 ),
             },
             {
                 accessorKey: 'selling_price',
                 header: 'Price',
-                cell: ({ row }) => row.original.selling_price ?? '—',
-            },
-            {
-                id: 'enabled',
-                header: 'Enabled',
-                cell: ({ row }) => (
-                    <Checkbox
-                        checked={row.original.enabled}
-                        disabled={togglingSlug === row.original.slug}
-                        onCheckedChange={(checked) => {
-                            setTogglingSlug(row.original.slug);
-                            router.put(
-                                ProductController.toggle.url({
-                                    branch: branch.slug,
-                                    product: row.original.slug,
-                                }),
-                                { status: checked === true },
-                                {
-                                    preserveScroll: true,
-                                    onFinish: () => setTogglingSlug(null),
-                                },
-                            );
-                        }}
-                    />
-                ),
+                cell: ({ row }) => listingPrice(row.original),
             },
             {
                 id: 'actions',
                 header: 'Actions',
                 cell: ({ row }) => (
                     <DataTableRowActions
-                        items={[
+                        contentClassName="w-56"
+                        groups={[
                             {
-                                label: 'Manage',
-                                icon: Settings2,
-                                href: ProductController.show.url({
-                                    branch: branch.slug,
-                                    product: row.original.slug,
-                                }),
+                                label: 'Catalog',
+                                items: [
+                                    {
+                                        label: 'Manage',
+                                        icon: Settings2,
+                                        href: ProductController.show.url({
+                                            branch: branch.slug,
+                                            product: row.original.slug,
+                                        }),
+                                    },
+                                ],
+                            },
+                            {
+                                label: 'Stock',
+                                items: stockActionItems(
+                                    {
+                                        manage: StockController.manage.url(
+                                            branch.slug,
+                                        ),
+                                        transactions:
+                                            StockController.transactions.url(
+                                                branch.slug,
+                                            ),
+                                        price: StockController.price.url(
+                                            branch.slug,
+                                        ),
+                                        discount: DiscountController.index.url(
+                                            branch.slug,
+                                        ),
+                                    },
+                                    {
+                                        productId: row.original.id,
+                                        locked: 'both',
+                                    },
+                                ),
                             },
                         ]}
                     />
                 ),
             },
         ],
-        [branch.slug, query.sort, query.toggleSort, togglingSlug],
+        [branch.slug, query.sort, query.toggleSort],
     );
 
     return (
@@ -202,7 +228,7 @@ export default function BranchProductsIndex({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Products"
-                        description={`Enable catalog products and manage stock for ${branch.name}`}
+                        description={`Manage stock and pricing for ${branch.name}`}
                     />
                     <Button asChild>
                         <Link href={ProductController.create.url(branch.slug)}>
@@ -224,68 +250,16 @@ export default function BranchProductsIndex({
                             searchPlaceholder="Search products…"
                             onClear={query.clearFilters}
                             filters={
-                                <>
-                                    <div className="grid gap-2">
-                                        <Label>Enabled</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.enabled ?? 'all',
-                                            )}
-                                            onValueChange={(value) =>
-                                                query.setFilter(
-                                                    'enabled',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-[10rem]">
-                                                <SelectValue placeholder="Enabled" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All enablement
-                                                </SelectItem>
-                                                <SelectItem value="1">
-                                                    Enabled
-                                                </SelectItem>
-                                                <SelectItem value="0">
-                                                    Disabled
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>Stock</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.low_stock ??
-                                                    'all',
-                                            )}
-                                            onValueChange={(value) =>
-                                                query.setFilter(
-                                                    'low_stock',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-[10rem]">
-                                                <SelectValue placeholder="Stock" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All stock
-                                                </SelectItem>
-                                                <SelectItem value="1">
-                                                    Low stock
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </>
+                                <CategoryFilterCombobox
+                                    optionsUrl={CategoryController.options.url(
+                                        branch.slug,
+                                    )}
+                                    value={query.filters.category_id}
+                                    selectedCategories={categories}
+                                    onChange={(ids) =>
+                                        query.setFilter('category_id', ids)
+                                    }
+                                />
                             }
                         />
                     }

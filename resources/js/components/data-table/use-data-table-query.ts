@@ -17,11 +17,37 @@ type UseDataTableQueryOptions = {
     buildQuery?: (state: DataTableQueryState) => QueryParams;
 };
 
+function isOmittedFilterValue(
+    key: string,
+    value: DataTableFilterValue,
+): boolean {
+    if (
+        value === null ||
+        value === undefined ||
+        value === '' ||
+        value === 'all'
+    ) {
+        return true;
+    }
+
+    return key === 'trashed' && value === 'active';
+}
+
 export function buildDataTableQuery(state: DataTableQueryState): QueryParams {
-    const filter: Record<string, string> = {};
+    const filter: QueryParams = {};
 
     Object.entries(state.filter).forEach(([key, value]) => {
-        if (value === null || value === undefined || value === '' || value === 'all') {
+        if (isOmittedFilterValue(key, value)) {
+            return;
+        }
+
+        if (Array.isArray(value)) {
+            if (value.length === 0) {
+                return;
+            }
+
+            filter[key] = value.map(String);
+
             return;
         }
 
@@ -56,6 +82,99 @@ export function buildArchivesDataTableQuery(
     };
 }
 
+function appendQueryParam(
+    params: URLSearchParams,
+    prefix: string,
+    value: QueryParams[string],
+): void {
+    if (value === undefined) {
+        return;
+    }
+
+    if (value === null) {
+        params.append(prefix, '');
+
+        return;
+    }
+
+    if (Array.isArray(value)) {
+        value.forEach((item) => {
+            params.append(`${prefix}[]`, String(item));
+        });
+
+        return;
+    }
+
+    if (typeof value === 'object') {
+        Object.entries(value).forEach(([key, nested]) => {
+            appendQueryParam(
+                params,
+                prefix === '' ? key : `${prefix}[${key}]`,
+                nested,
+            );
+        });
+
+        return;
+    }
+
+    params.append(prefix, String(value));
+}
+
+function queryToSearchParams(query: QueryParams): URLSearchParams {
+    const params = new URLSearchParams();
+
+    Object.entries(query).forEach(([key, value]) => {
+        appendQueryParam(params, key, value);
+    });
+
+    return params;
+}
+
+function sameSearchParams(left: URLSearchParams, right: URLSearchParams): boolean {
+    const leftKeys = [...new Set([...left.keys()])].sort();
+    const rightKeys = [...new Set([...right.keys()])].sort();
+
+    if (
+        leftKeys.length !== rightKeys.length ||
+        leftKeys.some((key, index) => key !== rightKeys[index])
+    ) {
+        return false;
+    }
+
+    return leftKeys.every((key) => {
+        const leftValues = left.getAll(key).sort();
+        const rightValues = right.getAll(key).sort();
+
+        return (
+            leftValues.length === rightValues.length &&
+            leftValues.every((value, index) => value === rightValues[index])
+        );
+    });
+}
+
+function normalizePathname(pathname: string): string {
+    if (pathname === '/') {
+        return pathname;
+    }
+
+    return pathname.replace(/\/+$/, '');
+}
+
+function queryMatchesCurrentUrl(indexUrl: string, query: QueryParams): boolean {
+    if (typeof window === 'undefined') {
+        return false;
+    }
+
+    const current = new URL(window.location.href);
+    const next = new URL(indexUrl, window.location.origin);
+
+    if (normalizePathname(current.pathname) !== normalizePathname(next.pathname)) {
+        return false;
+    }
+
+    return sameSearchParams(current.searchParams, queryToSearchParams(query));
+}
+
 export function useDataTableQuery({
     indexUrl,
     initial,
@@ -70,7 +189,7 @@ export function useDataTableQuery({
     const [filters, setFilters] = useState(initial.filter);
     const [sort, setSort] = useState<string | null>(initial.sort);
     const [perPage, setPerPage] = useState(initial.per_page);
-    const skipNextSearchEffect = useRef(true);
+    const committedSearch = useRef(String(initial.filter[searchKey] ?? ''));
     const extraQueryRef = useRef(extraQuery);
     const buildQueryRef = useRef(buildQuery);
 
@@ -83,27 +202,28 @@ export function useDataTableQuery({
                 typeof extraQueryRef.current === 'function'
                     ? extraQueryRef.current()
                     : (extraQueryRef.current ?? {});
+            const query = {
+                ...extra,
+                ...buildQueryRef.current(next),
+            };
 
-            router.get(
-                indexUrl,
-                {
-                    ...extra,
-                    ...buildQueryRef.current(next),
-                },
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    replace: true,
-                },
-            );
+            committedSearch.current = String(next.filter[searchKey] ?? '');
+
+            if (queryMatchesCurrentUrl(indexUrl, query)) {
+                return;
+            }
+
+            router.get(indexUrl, query, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
         },
-        [indexUrl],
+        [indexUrl, searchKey],
     );
 
     useEffect(() => {
-        if (skipNextSearchEffect.current) {
-            skipNextSearchEffect.current = false;
-
+        if (search === committedSearch.current) {
             return;
         }
 

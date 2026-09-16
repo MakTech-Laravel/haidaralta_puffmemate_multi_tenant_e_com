@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react';
 import Lightbox from 'yet-another-react-lightbox';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import 'yet-another-react-lightbox/styles.css';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import {
     Card,
     CardContent,
@@ -39,9 +38,11 @@ type ProductGalleryProps = {
     className?: string;
     /** When false, render only the grid (no Card chrome). Default true. */
     card?: boolean;
-    /** Large featured stage with primary + gallery thumbs. */
-    layout?: 'grid' | 'hero';
+    /** Large featured stage with primary + gallery thumbs. `tile` is a compact square preview. */
+    layout?: 'grid' | 'hero' | 'tile';
     primaryUrl?: string | null;
+    /** Applied to the wrapping Card when `card` is true. */
+    cardClassName?: string;
 };
 
 function useGalleryPresentation({
@@ -54,8 +55,7 @@ function useGalleryPresentation({
     colorCode?: ColorPickerValue | null;
 }) {
     const normalizedColor = normalizeCatalogColorPickerValue(colorCode);
-    const transparent = isTransparentColorPickerValue(normalizedColor);
-    const tileStyle = transparent
+    const tileStyle = isTransparentColorPickerValue(normalizedColor)
         ? undefined
         : colorPickerStyle(normalizedColor);
 
@@ -86,7 +86,7 @@ function useGalleryPresentation({
         [items],
     );
 
-    return { items, slides, transparent, tileStyle };
+    return { items, slides, tileStyle };
 }
 
 export function ProductGallery({
@@ -97,10 +97,11 @@ export function ProductGallery({
     card = true,
     layout = 'grid',
     primaryUrl = null,
+    cardClassName,
 }: ProductGalleryProps) {
     const [open, setOpen] = useState(false);
     const [index, setIndex] = useState(0);
-    const { items, slides, transparent, tileStyle } = useGalleryPresentation({
+    const { items, slides, tileStyle } = useGalleryPresentation({
         images,
         primaryUrl,
         colorCode,
@@ -120,10 +121,7 @@ export function ProductGallery({
             render={{
                 slide: ({ slide }) => (
                     <div
-                        className={cn(
-                            'relative flex h-full w-full items-center justify-center p-6',
-                            transparent && COLOR_PICKER_CHECKERBOARD,
-                        )}
+                        className="relative flex h-full w-full items-center justify-center p-6"
                         style={tileStyle}
                     >
                         <img
@@ -145,10 +143,7 @@ export function ProductGallery({
 
     const empty = (
         <div
-            className={cn(
-                'border-border/70 flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center',
-                transparent ? cn('bg-muted/20', COLOR_PICKER_CHECKERBOARD) : 'bg-muted/20',
-            )}
+            className="border-border/70 bg-muted/20 flex aspect-square w-full flex-col items-center justify-center rounded-xl border border-dashed px-6 text-center"
             style={tileStyle}
         >
             <ImageIcon className="text-muted-foreground mb-3 size-8" />
@@ -168,11 +163,7 @@ export function ProductGallery({
                 <>
                     <button
                         type="button"
-                        className={cn(
-                            'group relative flex min-h-72 w-full items-center justify-center overflow-hidden rounded-2xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:min-h-96',
-                            transparent &&
-                                cn('bg-muted/20', COLOR_PICKER_CHECKERBOARD),
-                        )}
+                        className="group relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                         style={tileStyle}
                         onClick={() => openAt(activeIndex)}
                         aria-label={`Preview ${active?.label ?? productName}`}
@@ -181,12 +172,17 @@ export function ProductGallery({
                             <img
                                 src={active.url}
                                 alt={productName}
-                                className="max-h-96 w-full object-contain p-6 transition group-hover:scale-[1.02] sm:max-h-112"
+                                className="size-full object-contain p-5 transition group-hover:scale-[1.02]"
                             />
                         ) : null}
                         {active?.label === 'Primary' ? (
                             <span className="bg-background/90 text-foreground absolute top-3 left-3 rounded-full border px-2.5 py-1 text-[11px] font-medium tracking-wide uppercase shadow-sm">
                                 Primary
+                            </span>
+                        ) : null}
+                        {items.length > 1 ? (
+                            <span className="bg-background/90 text-foreground absolute right-3 bottom-3 rounded-md border px-2 py-0.5 text-[11px] font-medium tabular-nums shadow-sm">
+                                {activeIndex + 1}/{items.length}
                             </span>
                         ) : null}
                     </button>
@@ -197,15 +193,10 @@ export function ProductGallery({
                                     key={item.key}
                                     type="button"
                                     className={cn(
-                                        'size-16 shrink-0 overflow-hidden rounded-lg border outline-none transition sm:size-20',
+                                        'size-14 shrink-0 overflow-hidden rounded-lg border outline-none transition sm:size-16',
                                         imageIndex === activeIndex
                                             ? 'border-primary ring-1 ring-primary/30'
                                             : 'border-border/70 hover:border-primary/40',
-                                        transparent &&
-                                            cn(
-                                                'bg-muted/20',
-                                                COLOR_PICKER_CHECKERBOARD,
-                                            ),
                                     )}
                                     style={tileStyle}
                                     onClick={() => setIndex(imageIndex)}
@@ -217,6 +208,71 @@ export function ProductGallery({
                                         src={item.url}
                                         alt=""
                                         className="size-full object-contain p-1"
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    ) : null}
+                </>
+            )}
+            {lightbox}
+        </div>
+    );
+
+    const tileEmpty = (
+        <div
+            className="border-border/70 bg-muted/20 flex aspect-square w-full flex-col items-center justify-center rounded-xl border border-dashed px-3 text-center"
+            style={tileStyle}
+        >
+            <ImageIcon className="text-muted-foreground mb-2 size-6" />
+            <p className="text-muted-foreground text-xs">No listing photo</p>
+        </div>
+    );
+
+    const tile = (
+        <div className={cn('flex w-full flex-col gap-2', className)}>
+            {items.length === 0 ? (
+                tileEmpty
+            ) : (
+                <>
+                    <button
+                        type="button"
+                        className="group relative aspect-square w-full overflow-hidden rounded-xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        style={tileStyle}
+                        onClick={() => openAt(activeIndex)}
+                        aria-label={`Preview ${active?.label ?? productName}`}
+                    >
+                        {active ? (
+                            <img
+                                src={active.url}
+                                alt={productName}
+                                className="size-full object-contain p-2.5 transition group-hover:scale-[1.02]"
+                            />
+                        ) : null}
+                    </button>
+                    {items.length > 1 ? (
+                        <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                            {items.map((item, imageIndex) => (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    className={cn(
+                                        'size-10 shrink-0 overflow-hidden rounded-md border outline-none transition',
+                                        imageIndex === activeIndex
+                                            ? 'border-primary ring-1 ring-primary/30'
+                                            : 'border-border/70 hover:border-primary/40',
+                                    )}
+                                    style={tileStyle}
+                                    onClick={() => setIndex(imageIndex)}
+                                    onDoubleClick={() => openAt(imageIndex)}
+                                    aria-label={`Show ${item.label ?? `image ${imageIndex + 1}`}`}
+                                    aria-pressed={imageIndex === activeIndex}
+                                >
+                                    <img
+                                        src={item.url}
+                                        alt=""
+                                        className="size-full object-contain p-0.5"
+                                        loading="lazy"
                                     />
                                 </button>
                             ))}
@@ -245,11 +301,7 @@ export function ProductGallery({
                         <button
                             key={image.id}
                             type="button"
-                            className={cn(
-                                'group overflow-hidden rounded-lg border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
-                                transparent &&
-                                    cn('bg-muted/20', COLOR_PICKER_CHECKERBOARD),
-                            )}
+                            className="group overflow-hidden rounded-lg border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             style={tileStyle}
                             onClick={() => openAt(imageIndex)}
                             aria-label={`Preview gallery image ${imageIndex + 1}`}
@@ -268,7 +320,8 @@ export function ProductGallery({
         </>
     );
 
-    const body = layout === 'hero' ? hero : grid;
+    const body =
+        layout === 'hero' ? hero : layout === 'tile' ? tile : grid;
 
     if (!card) {
         return body;
@@ -277,7 +330,7 @@ export function ProductGallery({
     const mediaCount = items.length;
 
     return (
-        <Card className="gap-4 py-5 shadow-sm">
+        <Card className={cn('h-full gap-4 py-5 shadow-sm', cardClassName)}>
             <CardHeader className="px-5">
                 <CardTitle className="text-base">
                     {layout === 'hero' ? 'Media' : 'Gallery'}
@@ -290,7 +343,7 @@ export function ProductGallery({
                         : 'Extra images — click a thumbnail to preview'}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="px-5">{body}</CardContent>
+            <CardContent className="flex min-h-0 flex-1 flex-col px-5">{body}</CardContent>
         </Card>
     );
 }

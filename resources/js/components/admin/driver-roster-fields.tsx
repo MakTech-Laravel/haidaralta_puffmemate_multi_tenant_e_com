@@ -179,8 +179,8 @@ export function DriverRosterFields({
                 </div>
             ) : null}
 
-            <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+                <div className="flex min-w-0 flex-col gap-1.5">
                     <Label>Start date</Label>
                     <DatePicker
                         value={value.start_date}
@@ -196,7 +196,7 @@ export function DriverRosterFields({
                     />
                     <InputError message={startDateError} />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex min-w-0 flex-col gap-1.5">
                     <Label>End date</Label>
                     <DatePicker
                         value={value.end_date}
@@ -219,8 +219,8 @@ export function DriverRosterFields({
                 </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+                <div className="flex min-w-0 flex-col gap-1.5">
                     <Label>Start time</Label>
                     <TimePicker
                         value={value.start_time}
@@ -232,7 +232,7 @@ export function DriverRosterFields({
                     />
                     <InputError message={startTimeError} />
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex min-w-0 flex-col gap-1.5">
                     <Label>End time</Label>
                     <TimePicker
                         value={value.end_time}

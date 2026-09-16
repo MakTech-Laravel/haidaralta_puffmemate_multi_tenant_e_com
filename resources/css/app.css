@@ -117,14 +117,87 @@
     --sidebar-ring: oklch(0.52 0.21 25);
     --tertiary: oklch(0.49 0.13 153);
     --review-star: oklch(0.769 0.188 70.08);
+
+    /*
+     * Scrollbars: gray track, brand-red thumb, darker red hover, black active.
+     * Prefer standard scrollbar-color (Firefox + modern Chromium). Keep
+     * ::-webkit-* for Safari and older Chromium that still honor them.
+     */
+    --scrollbar-size: 10px;
+    --scrollbar-track: oklch(0.92 0 0);
+    --scrollbar-thumb: var(--primary);
+    --scrollbar-thumb-hover: oklch(0.42 0.2 25);
+    --scrollbar-thumb-active: oklch(0.22 0 0);
 }
 
 @layer base {
     * {
         @apply border-border;
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+
+    *::-webkit-scrollbar {
+        width: var(--scrollbar-size);
+        height: var(--scrollbar-size);
+    }
+
+    *::-webkit-scrollbar-button {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+
+    *::-webkit-scrollbar-track {
+        background-color: var(--scrollbar-track);
+        border-radius: 9999px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-thumb);
+        border: 2px solid var(--scrollbar-track);
+        border-radius: 9999px;
+        background-clip: padding-box;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background-color: var(--scrollbar-thumb-hover);
+    }
+
+    *::-webkit-scrollbar-thumb:active {
+        background-color: var(--scrollbar-thumb-active);
+    }
+
+    *::-webkit-scrollbar-corner {
+        background-color: var(--scrollbar-track);
+    }
+
+    html {
+        scrollbar-gutter: stable;
     }
 
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+/* Keep intentional hide utilities working across WebKit + Firefox + legacy Edge. */
+@utility scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+}
+
+@utility scrollbar-thin {
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
     }
 }

@@ -13,6 +13,9 @@ class BranchProductPriceDisplay
     /**
      * @return array{
      *     amount: float|null,
+     *     selling: float|null,
+     *     effective: float|null,
+     *     has_discount: bool,
      *     label: string|null,
      *     is_from: bool,
      *     count: int
@@ -25,6 +28,9 @@ class BranchProductPriceDisplay
         if ($amounts->isEmpty()) {
             return [
                 'amount' => null,
+                'selling' => null,
+                'effective' => null,
+                'has_discount' => false,
                 'label' => null,
                 'is_from' => false,
                 'count' => 0,
@@ -36,11 +42,50 @@ class BranchProductPriceDisplay
 
         return [
             'amount' => $min,
+            'selling' => $min,
+            'effective' => $min,
+            'has_discount' => false,
             'label' => $isFrom
                 ? 'Start from $'.number_format($min, 2)
                 : '$'.number_format($min, 2),
             'is_from' => $isFrom,
             'count' => $amounts->count(),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     selling_price: string|null,
+     *     effective_price: string|null,
+     *     has_discount: bool,
+     *     discount_type: string,
+     *     discount_price: string|null
+     * }
+     */
+    public static function listDisplay(?BranchProductPrice $price): array
+    {
+        if ($price === null) {
+            return [
+                'selling_price' => null,
+                'effective_price' => null,
+                'has_discount' => false,
+                'discount_type' => DiscountType::None->value,
+                'discount_price' => null,
+            ];
+        }
+
+        $selling = (float) $price->selling_price;
+        $effective = self::effectiveAmount($price);
+        $hasDiscount = $price->discount_type !== DiscountType::None && $effective < $selling;
+
+        return [
+            'selling_price' => number_format($selling, 2, '.', ''),
+            'effective_price' => number_format($effective, 2, '.', ''),
+            'has_discount' => $hasDiscount,
+            'discount_type' => $price->discount_type->value,
+            'discount_price' => $price->discount_price === null
+                ? null
+                : (string) $price->discount_price,
         ];
     }
 

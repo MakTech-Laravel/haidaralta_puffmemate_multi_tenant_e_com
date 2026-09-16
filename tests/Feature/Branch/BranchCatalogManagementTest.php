@@ -18,23 +18,16 @@ beforeEach(function () {
     $this->seed(UserSeeder::class);
 });
 
-test('branch can create and update a global category', function () {
+test('branch can update a global category', function () {
+    config(['catalog.branch_can_view_categories' => true]);
+
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-
-    $this->actingAs($staff, 'branch')
-        ->post(route('branch.categories.store', $branch), [
-            'name' => 'Branch Coils',
-            'slug' => 'branch-coils',
-            'status' => true,
-            'featured' => true,
-        ])
-        ->assertRedirect(route('branch.categories.show', [$branch, 'branch-coils']));
-
-    $category = Category::query()->where('slug', 'branch-coils')->firstOrFail();
-
-    expect($category->name)->toBe('Branch Coils')
-        ->and($category->featured)->toBeTrue();
+    $category = Category::factory()->create([
+        'name' => 'Branch Coils',
+        'slug' => 'branch-coils',
+        'featured' => true,
+    ]);
 
     $this->actingAs($staff, 'branch')
         ->put(route('branch.categories.update', [$branch, $category]), [
@@ -54,6 +47,84 @@ test('branch can create and update a global category', function () {
         ->assertInertia(fn ($page) => $page
             ->component('branch/catalog/categories/show')
             ->where('category.featured', false));
+});
+
+test('branch category create is not found while branch create is disabled', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.categories.create', $branch))
+        ->assertNotFound();
+});
+
+test('branch category store is not found while branch create is disabled', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $before = Category::query()->count();
+
+    $this->actingAs($staff, 'branch')
+        ->post(route('branch.categories.store', $branch), [
+            'name' => 'Branch Coils',
+            'slug' => 'branch-coils',
+            'status' => true,
+            'featured' => true,
+        ])
+        ->assertNotFound();
+
+    expect(Category::query()->count())->toBe($before);
+});
+
+test('branch category list is not found while viewing is disabled', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.categories.index', $branch))
+        ->assertNotFound();
+});
+
+test('branch category show is not found while viewing is disabled', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.categories.show', [$branch, $category]))
+        ->assertNotFound();
+});
+
+test('branch category update is not found while viewing is disabled', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $category = Category::factory()->create([
+        'name' => 'Hidden Coils',
+        'slug' => 'hidden-coils',
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->put(route('branch.categories.update', [$branch, $category]), [
+            'name' => 'Hidden Coils Updated',
+            'slug' => 'hidden-coils',
+            'status' => true,
+        ])
+        ->assertNotFound();
+
+    expect($category->fresh()->name)->toBe('Hidden Coils');
+});
+
+test('branch can open the category list when viewing is enabled', function () {
+    config(['catalog.branch_can_view_categories' => true]);
+
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.categories.index', $branch))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/categories/index')
+            ->where('catalog.branch_can_view_categories', true));
 });
 
 test('branch can update a global product without destroy routes', function () {
@@ -104,6 +175,8 @@ test('branch catalog mutations require manage-branch-products', function () {
 });
 
 test('branch category suggestions match existing catalog items', function () {
+    config(['catalog.branch_can_view_categories' => true]);
+
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $match = Category::factory()->create([
@@ -117,7 +190,7 @@ test('branch category suggestions match existing catalog items', function () {
         ->assertJsonFragment(['id' => $match->id]);
 });
 
-test('precognitive branch category store returns 422 for a taken slug', function () {
+test('precognitive branch category store is not found while branch create is disabled', function () {
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $existing = Category::factory()->create(['slug' => 'branch-taken-slug']);
@@ -132,9 +205,7 @@ test('precognitive branch category store returns 422 for a taken slug', function
         ->post(route('branch.categories.store', $branch), [
             'slug' => $existing->slug,
         ])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors(['slug'])
-        ->assertHeader('Precognition', 'true');
+        ->assertNotFound();
 
     expect(Category::query()->count())->toBe($before);
 });
@@ -159,4 +230,21 @@ test('precognitive branch product store returns 422 for a taken slug', function 
         ->assertHeader('Precognition', 'true');
 
     expect(Product::query()->count())->toBe($before);
+});
+
+test('branch product suggestions exclude the current product', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $keep = Product::factory()->create(['name' => 'Branch Twin Alpha']);
+    $self = Product::factory()->create(['name' => 'Branch Twin Beta']);
+
+    $this->actingAs($staff, 'branch')
+        ->getJson(route('branch.products.suggestions', [
+            $branch,
+            'q' => 'Branch Twin',
+            'exclude' => $self->id,
+        ]))
+        ->assertOk()
+        ->assertJsonFragment(['id' => $keep->id])
+        ->assertJsonMissing(['id' => $self->id]);
 });

@@ -2,6 +2,7 @@
 
 namespace App\Services\Inventory;
 
+use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
 use App\Models\Branch;
 use App\Models\Inventory;
@@ -15,7 +16,7 @@ use InvalidArgumentException;
 class InventoryService
 {
     /**
-     * @param  array{minimum_stock?: int, status?: bool}  $attributes
+     * @param  array{status?: bool}  $attributes
      */
     public function firstOrCreate(
         Branch $branch,
@@ -44,9 +45,6 @@ class InventoryService
             'product_id' => $product->id,
             'variant_id' => $variant?->id,
             'quantity' => 0,
-            'reserved_quantity' => 0,
-            'available_quantity' => 0,
-            'minimum_stock' => $attributes['minimum_stock'] ?? 0,
             'status' => $attributes['status'] ?? true,
         ]);
     }
@@ -54,50 +52,31 @@ class InventoryService
     public function adjust(
         Inventory $inventory,
         InventoryTransactionType $type,
-        int $quantityDelta,
+        int $quantity,
         ?User $actor = null,
         ?string $referenceType = null,
         ?int $referenceId = null,
+        ?InventoryAdjustmentReason $reason = null,
+        ?string $reasonNote = null,
     ): Inventory {
-        if ($quantityDelta === 0 && $type !== InventoryTransactionType::Adjustment) {
-            throw new InvalidArgumentException('Quantity delta cannot be zero.');
-        }
-
-        return DB::transaction(function () use ($inventory, $type, $quantityDelta, $actor, $referenceType, $referenceId): Inventory {
+        return DB::transaction(function () use ($inventory, $type, $quantity, $actor, $referenceType, $referenceId, $reason, $reasonNote): Inventory {
             /** @var Inventory $locked */
             $locked = Inventory::query()->whereKey($inventory->id)->lockForUpdate()->firstOrFail();
 
             $before = $locked->quantity;
-            $after = match ($type) {
-                InventoryTransactionType::StockIn,
-                InventoryTransactionType::Release => $before + abs($quantityDelta),
-                InventoryTransactionType::StockOut,
-                InventoryTransactionType::Sale,
-                InventoryTransactionType::Reserve => $before - abs($quantityDelta),
-                InventoryTransactionType::Adjustment => $before + $quantityDelta,
-            };
+            [$after, $storedQuantity, $storedReason, $storedNote] = $this->resolveChange(
+                $type,
+                $before,
+                $quantity,
+                $reason,
+                $reasonNote,
+            );
 
             if ($after < 0) {
                 throw new InvalidArgumentException('Insufficient stock for this adjustment.');
             }
 
-            $reserved = $locked->reserved_quantity;
-
-            if ($type === InventoryTransactionType::Reserve) {
-                $reserved += abs($quantityDelta);
-            }
-
-            if ($type === InventoryTransactionType::Release) {
-                $reserved = max(0, $reserved - abs($quantityDelta));
-            }
-
-            if ($reserved > $after) {
-                throw new InvalidArgumentException('Reserved quantity cannot exceed on-hand quantity.');
-            }
-
             $locked->quantity = $after;
-            $locked->reserved_quantity = $reserved;
-            $locked->available_quantity = $after - $reserved;
             $locked->save();
 
             InventoryTransaction::query()->create([
@@ -105,7 +84,9 @@ class InventoryService
                 'product_id' => $locked->product_id,
                 'variant_id' => $locked->variant_id,
                 'type' => $type,
-                'quantity' => $quantityDelta,
+                'reason' => $storedReason,
+                'reason_note' => $storedNote,
+                'quantity' => $storedQuantity,
                 'before_quantity' => $before,
                 'after_quantity' => $after,
                 'reference_type' => $referenceType,
@@ -118,11 +99,70 @@ class InventoryService
         });
     }
 
-    public function setMinimumStock(Inventory $inventory, int $minimumStock): Inventory
-    {
-        $inventory->minimum_stock = max(0, $minimumStock);
-        $inventory->save();
+    /**
+     * @return array{0: int, 1: int, 2: InventoryAdjustmentReason|null, 3: string|null}
+     */
+    private function resolveChange(
+        InventoryTransactionType $type,
+        int $before,
+        int $quantity,
+        ?InventoryAdjustmentReason $reason,
+        ?string $reasonNote,
+    ): array {
+        if ($type === InventoryTransactionType::Adjustment) {
+            if ($reason === null) {
+                throw new InvalidArgumentException('An adjustment reason is required.');
+            }
 
-        return $inventory->refresh();
+            if ($quantity < 0) {
+                throw new InvalidArgumentException('Counted quantity cannot be negative.');
+            }
+
+            $after = $quantity;
+            $variance = $after - $before;
+
+            if ($variance === 0) {
+                throw new InvalidArgumentException('Counted quantity matches current stock. No adjustment needed.');
+            }
+
+            return [$after, $variance, $reason, $this->storedReasonNote($reason, $reasonNote)];
+        }
+
+        if ($reason !== null || InventoryAdjustmentReason::noteFrom($reasonNote) !== null) {
+            throw new InvalidArgumentException('A reason is only used for adjustments.');
+        }
+
+        $delta = abs($quantity);
+
+        if ($delta === 0) {
+            throw new InvalidArgumentException('Quantity delta cannot be zero.');
+        }
+
+        $after = match ($type) {
+            InventoryTransactionType::StockIn,
+            InventoryTransactionType::Release => $before + $delta,
+            default => $before - $delta,
+        };
+
+        return [$after, $delta, null, null];
+    }
+
+    private function storedReasonNote(InventoryAdjustmentReason $reason, ?string $reasonNote): ?string
+    {
+        $note = InventoryAdjustmentReason::noteFrom($reasonNote);
+
+        if ($reason->requiresNote()) {
+            if ($note === null) {
+                throw new InvalidArgumentException('Describe the adjustment reason.');
+            }
+
+            return $note;
+        }
+
+        if ($note !== null) {
+            throw new InvalidArgumentException('A custom reason is only used when Other is selected.');
+        }
+
+        return null;
     }
 }

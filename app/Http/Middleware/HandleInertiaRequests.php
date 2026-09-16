@@ -50,6 +50,13 @@ class HandleInertiaRequests extends Middleware
             'portal' => $portal,
             'branch' => $branch,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'catalog' => [
+                'branch_can_create_categories' => (bool) config('catalog.branch_can_create_categories'),
+                'branch_can_view_categories' => (bool) config('catalog.branch_can_view_categories'),
+                'show_parent_category' => (bool) config('catalog.show_parent_category'),
+                'show_product_variants' => (bool) config('catalog.show_product_variants'),
+                'sku_prefix' => (string) config('catalog.sku_prefix', 'PMM'),
+            ],
             'storefront' => [
                 'navCategories' => StorefrontCatalog::navCategories(),
                 'selectedBranchId' => $request->session()->get(StorefrontCatalog::BRANCH_SESSION_KEY),

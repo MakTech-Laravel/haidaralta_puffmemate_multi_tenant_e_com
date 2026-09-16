@@ -13,5 +13,8 @@ token-subscribe-failed / missing OAuth on getToken usually means browser lost Fi
 ## color-picker lib parse vs normalize
 parseColorPickerValue is for display (any mode). normalizeColorPickerValue applies enabledModes/defaultMode for picker state. Catalog uses normalizeCatalogColorPickerValue (transparent default, no radial). colorPickerStyle/cssValue use parse, not solid-only defaults.
 
-## Catalog create default is solid red
-normalizeCatalogColorPickerValue still maps empty/invalid to transparent for display. Catalog create (product and category) uses catalogFormColorPickerValue() / DEFAULT_CATALOG_SOLID_COLOR (#EF4444). Do not change the display helper default to solid or existing null listings will gain a fill.
+## Catalog create default is transparent
+normalizeCatalogColorPickerValue and catalogFormColorPickerValue map empty/invalid to transparent. Create and edit share that default — do not invent a solid fill on new listings. DEFAULT_CATALOG_SOLID_COLOR (#EF4444) is a palette swatch only.
+
+## Catalog transparent inherits parent surface
+Catalog create/edit default color_code is transparent. Listing/gallery tiles and ColorPicker previews inherit the page or card color when transparent. COLOR_PICKER_CHECKERBOARD stays only on the hex swatch editor, not on catalog tiles.

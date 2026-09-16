@@ -172,12 +172,6 @@ class StorefrontCatalog
             });
         }
 
-        if ($branch !== null) {
-            $query->whereHas('branchProducts', function ($builder) use ($branch): void {
-                $builder->where('branch_id', $branch->id)->where('status', true);
-            });
-        }
-
         return $query->get()
             ->map(fn (Product $product): array => self::mapProductCard($product, $branch))
             ->values()
@@ -194,12 +188,6 @@ class StorefrontCatalog
             ->with(['categories:id,name,slug', 'images'])
             ->orderBy('name')
             ->limit($limit);
-
-        if ($branch !== null) {
-            $query->whereHas('branchProducts', function ($builder) use ($branch): void {
-                $builder->where('branch_id', $branch->id)->where('status', true);
-            });
-        }
 
         return $query->get()
             ->map(fn (Product $product): array => self::mapProductCard($product, $branch))
@@ -218,12 +206,6 @@ class StorefrontCatalog
             ->with(['categories:id,name,slug', 'images'])
             ->orderBy('name')
             ->limit($limit);
-
-        if ($branch !== null) {
-            $query->whereHas('branchProducts', function ($builder) use ($branch): void {
-                $builder->where('branch_id', $branch->id)->where('status', true);
-            });
-        }
 
         return $query->get()
             ->map(fn (Product $product): array => self::mapProductCard($product, $branch))
@@ -345,12 +327,6 @@ class StorefrontCatalog
             $query->whereHas('categories', fn ($builder) => $builder->whereIn('categories.id', $categoryIds));
         }
 
-        if ($branch !== null) {
-            $query->whereHas('branchProducts', function ($builder) use ($branch): void {
-                $builder->where('branch_id', $branch->id)->where('status', true);
-            });
-        }
-
         return $query->get()
             ->map(fn (Product $item): array => self::mapProductCard($item, $branch))
             ->values()
@@ -414,6 +390,6 @@ class StorefrontCatalog
             ->where('branch_id', $branch->id)
             ->where('product_id', $product->id)
             ->where('status', true)
-            ->sum('available_quantity');
+            ->sum('quantity');
     }
 }

@@ -1,12 +1,11 @@
-import { Link, useForm } from '@inertiajs/react';
-import { Check, ChevronsUpDown, Plus, Trash2 } from 'lucide-react';
+import { Link, useForm, usePage } from '@inertiajs/react';
+import { Check, ChevronsUpDown, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import { ColorPicker } from '@/components/color-picker';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -116,10 +115,11 @@ interface ProductFormProps {
     suggestionsUrl?: string;
     suggestionShowHref?: (slug: string) => string;
     excludeProductId?: number | null;
-    /** Branch create: include initial selling_price / quantity / minimum_stock. */
+    /** Branch create: include initial selling_price / quantity. */
     branchOpsFields?: boolean;
     /** Hide gallery when backend ignores it (branch create). Default true. */
     showGallery?: boolean;
+    returnTo?: string | null;
     cancelHref: string;
     submitLabel?: string;
 }
@@ -130,6 +130,17 @@ function slugify(value: string): string {
         .trim()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
+}
+
+function skuFromSlug(slug: string, prefix: string): string {
+    const body = slug.trim().replace(/^-+|-+$/g, '').toUpperCase();
+    const tag = prefix.trim().toUpperCase() || 'PMM';
+
+    if (body === '') {
+        return '';
+    }
+
+    return `${tag}-${body}`;
 }
 
 export function ProductForm({
@@ -144,10 +155,14 @@ export function ProductForm({
     excludeProductId = null,
     branchOpsFields = false,
     showGallery = true,
+    returnTo = null,
     cancelHref,
     submitLabel,
 }: ProductFormProps) {
+    const { catalog } = usePage().props;
     const [slugTouched, setSlugTouched] = useState(isEdit);
+    const [skuTouched, setSkuTouched] = useState(isEdit);
+    const [suggestionQuery, setSuggestionQuery] = useState('');
     const [existingPrimary, setExistingPrimary] = useState<ExistingFile[]>(
         () =>
             defaults?.image && defaults?.image_url
@@ -210,11 +225,11 @@ export function ProductForm({
             isEdit,
         ),
         status: defaults?.status ?? true,
+        ...(returnTo ? { return_to: returnTo } : {}),
         ...(branchOpsFields
             ? {
                   selling_price: '',
                   quantity: 0,
-                  minimum_stock: 0,
               }
             : {}),
         ...(isEdit ? { _method: 'put' } : {}),
@@ -296,11 +311,23 @@ export function ProductForm({
     }, [data.name, data.slug, slugTouched, setData]);
 
     useEffect(() => {
+        if (skuTouched) {
+            return;
+        }
+
+        const nextSku = skuFromSlug(data.slug, catalog.sku_prefix);
+
+        if (nextSku !== data.sku) {
+            setData('sku', nextSku);
+        }
+    }, [catalog.sku_prefix, data.sku, data.slug, setData, skuTouched]);
+
+    useEffect(() => {
         if (!enableSuggestions) {
             return;
         }
 
-        const query = data.name.trim();
+        const query = suggestionQuery.trim();
 
         if (query.length < 2) {
             setSuggestions([]);
@@ -332,9 +359,9 @@ export function ProductForm({
 
         return () => window.clearTimeout(timer);
     }, [
-        data.name,
         enableSuggestions,
         excludeProductId,
+        suggestionQuery,
         suggestionsUrl,
     ]);
 
@@ -352,12 +379,10 @@ export function ProductForm({
                 specifications,
                 selling_price,
                 quantity,
-                minimum_stock,
                 ...rest
             } = form as typeof form & {
                 selling_price?: string;
                 quantity?: number;
-                minimum_stock?: number;
             };
 
             const filteredSpecifications = specifications.filter(
@@ -384,7 +409,6 @@ export function ProductForm({
                               ? { selling_price }
                               : {}),
                           quantity: quantity ?? 0,
-                          minimum_stock: minimum_stock ?? 0,
                       }
                     : {}),
             };
@@ -400,10 +424,10 @@ export function ProductForm({
         <form onSubmit={submit} className="space-y-6">
             {showBranchNotice ? (
                 <Alert className="border-primary/20 bg-primary/5">
-                    <AlertTitle>Branch availability</AlertTitle>
+                    <AlertTitle>Shared catalog</AlertTitle>
                     <AlertDescription>
-                        Disabled for all branches — enable from branch
-                        inventory after creating the product.
+                        Active products are available at every branch. Set stock
+                        and price from Manage stock after creating the listing.
                     </AlertDescription>
                 </Alert>
             ) : null}
@@ -529,9 +553,10 @@ export function ProductForm({
                             <Input
                                 id="name"
                                 value={data.name}
-                                onChange={(event) =>
-                                    setData('name', event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setSuggestionQuery(event.target.value);
+                                    setData('name', event.target.value);
+                                }}
                                 onBlur={() => {
                                     if (data.slug.trim() !== '') {
                                         validate('slug');
@@ -546,12 +571,35 @@ export function ProductForm({
 
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="slug">Slug</Label>
+                                <div className="flex items-center justify-between gap-2">
+                                    <Label htmlFor="slug">Slug</Label>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="xs"
+                                        className="text-muted-foreground hover:text-foreground"
+                                        disabled={data.name.trim() === ''}
+                                        onClick={() => {
+                                            const nextSlug = slugify(data.name);
+                                            setSlugTouched(true);
+                                            setSuggestionQuery(nextSlug);
+                                            setData('slug', nextSlug);
+
+                                            if (nextSlug !== '') {
+                                                validate('slug');
+                                            }
+                                        }}
+                                    >
+                                        <RefreshCw className="size-3" />
+                                        Generate
+                                    </Button>
+                                </div>
                                 <Input
                                     id="slug"
                                     value={data.slug}
                                     onChange={(event) => {
                                         setSlugTouched(true);
+                                        setSuggestionQuery(event.target.value);
                                         setData('slug', event.target.value);
                                     }}
                                     onBlur={() => {
@@ -566,19 +614,44 @@ export function ProductForm({
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="sku">SKU</Label>
+                                <div className="flex items-center justify-between gap-2">
+                                    <Label htmlFor="sku">SKU</Label>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="xs"
+                                        className="text-muted-foreground hover:text-foreground"
+                                        disabled={data.slug.trim() === ''}
+                                        onClick={() => {
+                                            const nextSku = skuFromSlug(
+                                                data.slug,
+                                                catalog.sku_prefix,
+                                            );
+                                            setSkuTouched(true);
+                                            setData('sku', nextSku);
+
+                                            if (nextSku !== '') {
+                                                validate('sku');
+                                            }
+                                        }}
+                                    >
+                                        <RefreshCw className="size-3" />
+                                        Generate
+                                    </Button>
+                                </div>
                                 <Input
                                     id="sku"
                                     value={data.sku}
-                                    onChange={(event) =>
-                                        setData('sku', event.target.value)
-                                    }
+                                    onChange={(event) => {
+                                        setSkuTouched(true);
+                                        setData('sku', event.target.value);
+                                    }}
                                     onBlur={() => {
                                         if (data.sku.trim() !== '') {
                                             validate('sku');
                                         }
                                     }}
-                                    placeholder="e.g. POM-AIR-PRO"
+                                    placeholder={`e.g. ${catalog.sku_prefix}-AIR-PRO`}
                                 />
                                 <InputError message={errors.sku} />
                             </div>
@@ -678,7 +751,7 @@ export function ProductForm({
                         </div>
 
                         {branchOpsFields ? (
-                            <div className="grid gap-5 sm:grid-cols-3">
+                            <div className="grid gap-5 sm:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="selling_price">
                                         Selling price
@@ -732,34 +805,6 @@ export function ProductForm({
                                     />
                                     <InputError message={errors.quantity} />
                                 </div>
-                                <div className="flex flex-col gap-2">
-                                    <Label htmlFor="minimum_stock">
-                                        Minimum stock
-                                    </Label>
-                                    <Input
-                                        id="minimum_stock"
-                                        type="number"
-                                        min="0"
-                                        value={
-                                            (
-                                                data as typeof data & {
-                                                    minimum_stock?: number;
-                                                }
-                                            ).minimum_stock ?? 0
-                                        }
-                                        onChange={(event) =>
-                                            setData(
-                                                'minimum_stock' as never,
-                                                Number(
-                                                    event.target.value,
-                                                ) as never,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={errors.minimum_stock}
-                                    />
-                                </div>
                             </div>
                         ) : null}
                     </div>
@@ -784,14 +829,7 @@ export function ProductForm({
                     <div className="space-y-4">
                         <div className="overflow-hidden rounded-xl border border-border/80">
                             <div
-                                className={cn(
-                                    'aspect-square p-3',
-                                    imageTileTransparent &&
-                                        cn(
-                                            'bg-muted/25',
-                                            COLOR_PICKER_CHECKERBOARD,
-                                        ),
-                                )}
+                                className="aspect-square p-3"
                                 style={
                                     imageTileTransparent
                                         ? undefined
@@ -843,7 +881,7 @@ export function ProductForm({
                                         wrapper:
                                             'flex h-full min-h-0 w-full flex-col',
                                         dropzone:
-                                            'h-full min-h-0 border-dashed border-border/60 bg-background/75 px-3 py-6',
+                                            'h-full min-h-0 border-dashed border-border/60 bg-transparent px-3 py-6',
                                         dropzoneContent: 'gap-1',
                                         card: 'h-full overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
                                         cardMedia: 'h-full bg-transparent',
@@ -864,7 +902,7 @@ export function ProductForm({
                                     enabledModes={[
                                         ...CATALOG_COLOR_PICKER_MODES,
                                     ]}
-                                    defaultMode="solid"
+                                    defaultMode="transparent"
                                     value={data.color_code}
                                     onChange={(color_code) =>
                                         setData('color_code', color_code)
@@ -872,7 +910,7 @@ export function ProductForm({
                                     label="Image background"
                                     description="Fill behind product imagery"
                                     dialogTitle="Image background"
-                                    dialogDescription="Solid red is the default. Switch to none or a two-tone gradient if needed."
+                                    dialogDescription="None is the default. The listing uses the page or card color until you pick a solid or gradient fill."
                                     error={
                                         errors.color_code ??
                                         errors['color_code.mode'] ??
@@ -990,8 +1028,8 @@ export function ProductForm({
                     </p>
                 </div>
 
-                <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                    <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-8">
+                    <div className="grid items-start gap-6 lg:grid-cols-2 lg:gap-8">
                         <div className="flex flex-col gap-3">
                             <div className="space-y-1">
                                 <Label>Tags</Label>
@@ -1034,31 +1072,63 @@ export function ProductForm({
                             <InputError message={errors.tags} />
                         </div>
 
-                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-                            <Checkbox
-                                id="status"
-                                checked={data.status}
-                                onCheckedChange={(value) =>
-                                    setData('status', value === true)
-                                }
-                            />
-                            <div className="space-y-0.5">
-                                <Label
-                                    htmlFor="status"
-                                    className="font-medium"
-                                >
-                                    Active in catalog
-                                </Label>
+                        <div className="space-y-3">
+                            <div className="space-y-1">
+                                <Label>Status</Label>
                                 <p className="text-muted-foreground text-xs">
                                     Inactive products stay hidden from browsing.
                                 </p>
+                            </div>
+                            <div
+                                className="grid gap-3 sm:grid-cols-2"
+                                role="radiogroup"
+                                aria-label="Status"
+                            >
+                                <button
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={data.status}
+                                    className={cn(
+                                        'flex flex-col gap-1 rounded-xl border px-4 py-3 text-left transition-colors',
+                                        data.status
+                                            ? 'border-primary/40 bg-primary/5'
+                                            : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                    )}
+                                    onClick={() => setData('status', true)}
+                                >
+                                    <span className="text-sm font-medium">
+                                        Active
+                                    </span>
+                                    <span className="text-muted-foreground text-xs">
+                                        Visible in the catalog and storefront.
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={!data.status}
+                                    className={cn(
+                                        'flex flex-col gap-1 rounded-xl border px-4 py-3 text-left transition-colors',
+                                        !data.status
+                                            ? 'border-primary/40 bg-primary/5'
+                                            : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                    )}
+                                    onClick={() => setData('status', false)}
+                                >
+                                    <span className="text-sm font-medium">
+                                        Inactive
+                                    </span>
+                                    <span className="text-muted-foreground text-xs">
+                                        Hidden from storefront browsing.
+                                    </span>
+                                </button>
                             </div>
                             <InputError message={errors.status} />
                         </div>
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
                             <div className="space-y-1">
                                 <Label>Specifications</Label>
                                 <p className="text-muted-foreground text-xs">
@@ -1077,8 +1147,8 @@ export function ProductForm({
                                 Add row
                             </Button>
                         </div>
-                        <div className="space-y-0.5">
-                            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-center gap-2 px-0.5">
+                        <div className="space-y-2">
+                            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-center gap-3 px-1">
                                 <span className="text-muted-foreground text-xs font-medium">
                                     Label
                                 </span>
@@ -1087,11 +1157,11 @@ export function ProductForm({
                                 </span>
                                 <span className="size-9" aria-hidden />
                             </div>
-                            <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                            <div className="max-h-80 space-y-3 overflow-y-auto p-1">
                                 {data.specifications.map((row, index) => (
                                     <div
                                         key={`specification-${index}`}
-                                        className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-start gap-2"
+                                        className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-start gap-3"
                                     >
                                         <div className="flex flex-col gap-1">
                                             <Label
