@@ -51,7 +51,6 @@ class UpsertBranchProductPriceRequest extends FormRequest
                 ? ['nullable', 'date', 'after_or_equal:start_date']
                 : ['nullable', 'prohibited'],
             'variant_id' => ['nullable', 'integer', Rule::exists('product_variants', 'id')->whereNull('deleted_at')],
-            'status' => ['sometimes', 'boolean'],
         ];
     }
 

@@ -1,4 +1,5 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
+import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import { BranchProductSummary } from '@/components/branch/branch-product-summary';
 import {
@@ -9,14 +10,8 @@ import {
     type TransactionsPage,
 } from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import {
-    colorPickerStyle,
-    isTransparentColorPickerValue,
-    normalizeCatalogColorPickerValue,
-    type ColorPickerValue,
-} from '@/lib/color-picker';
+import { type ColorPickerValue } from '@/lib/color-picker';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -25,10 +20,14 @@ type ProductShow = {
     name: string;
     slug: string;
     sku: string | null;
+    brand: string | null;
     description: string | null;
+    tags: string[];
+    specifications: { label: string; value: string }[];
     status: boolean;
     image_url: string | null;
     color_code?: ColorPickerValue | null;
+    categories: { id: number; name: string; slug: string }[];
     category_name: string;
     gallery?: {
         id: number;
@@ -36,6 +35,9 @@ type ProductShow = {
         path?: string;
         sort_order?: number;
     }[];
+    created_at: string | null;
+    updated_at: string | null;
+    created_by_name: string | null;
     variants: BranchProductVariantRow[];
     inventory: BranchInventorySnapshot | null;
     price: BranchPriceSnapshot | null;
@@ -58,8 +60,14 @@ export default function BranchProductShow({
     adjustmentReasons: { value: string; label: string }[];
     discountTypes: { value: string; label: string }[];
 }) {
-    const colorCode = normalizeCatalogColorPickerValue(product.color_code);
-    const transparent = isTransparentColorPickerValue(colorCode);
+    const { catalog } = usePage().props;
+    const categoryHref = catalog.branch_can_view_categories
+        ? (slug: string) =>
+              CategoryController.show.url({
+                  branch: branch.slug,
+                  category: slug,
+              })
+        : undefined;
 
     setLayoutProps({
         breadcrumbs: [
@@ -87,36 +95,11 @@ export default function BranchProductShow({
 
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                        <Avatar
-                            className="size-14 rounded-xl border border-border/70"
-                            style={
-                                transparent
-                                    ? undefined
-                                    : colorPickerStyle(colorCode)
-                            }
-                        >
-                            {product.image_url ? (
-                                <AvatarImage
-                                    src={product.image_url}
-                                    alt={product.name}
-                                    className="object-contain p-1"
-                                />
-                            ) : null}
-                            <AvatarFallback className="rounded-xl bg-transparent text-base">
-                                {product.name.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="[&_header]:mb-0">
-                            <Heading
-                                title={product.name}
-                                description={
-                                    product.sku
-                                        ? `SKU ${product.sku}`
-                                        : 'Branch inventory and pricing'
-                                }
-                            />
-                        </div>
+                    <div className="[&_header]:mb-0">
+                        <Heading
+                            title={product.name}
+                            description={`Inventory for ${branch.name}`}
+                        />
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <Button variant="outline" asChild>
@@ -142,13 +125,21 @@ export default function BranchProductShow({
                 <BranchProductSummary
                     name={product.name}
                     sku={product.sku}
+                    slug={product.slug}
+                    brand={product.brand}
                     description={product.description}
-                    categoryName={product.category_name}
+                    status={product.status}
                     imageUrl={product.image_url}
                     colorCode={product.color_code}
                     gallery={product.gallery ?? []}
-                    quantity={product.inventory?.quantity ?? 0}
-                    missingPrice={product.price == null}
+                    categories={product.categories}
+                    categoryName={product.category_name}
+                    tags={product.tags}
+                    specifications={product.specifications}
+                    createdAt={product.created_at}
+                    updatedAt={product.updated_at}
+                    createdByName={product.created_by_name}
+                    categoryHref={categoryHref}
                 />
 
                 <ProductInventoryPanel

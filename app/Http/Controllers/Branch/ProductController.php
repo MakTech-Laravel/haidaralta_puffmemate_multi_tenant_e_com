@@ -237,10 +237,8 @@ class ProductController extends Controller
     ): RedirectResponse {
         $branch = $this->currentBranch();
         $variant = $this->resolveVariant($product, $request->validated('variant_id'));
-        $data = $request->validated();
-        $data['status'] = $request->boolean('status', true);
 
-        $this->pricing->upsert($branch, $product, $data, $variant);
+        $this->pricing->upsert($branch, $product, $request->validated(), $variant);
 
         Toast::success('Price updated.');
 
@@ -271,7 +269,6 @@ class ProductController extends Controller
                 'selling_price' => $data['selling_price'],
                 'discount_type' => ! empty($data['discount_price']) ? 'fixed' : 'none',
                 'discount_price' => $data['discount_price'] ?? null,
-                'status' => true,
             ]);
         }
     }

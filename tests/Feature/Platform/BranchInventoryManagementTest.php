@@ -3,6 +3,7 @@
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Models\Branch;
+use App\Models\BranchProductPrice;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -166,6 +167,53 @@ test('platform can set percent discount and clear discount with none', function 
             ->where('product.price.end_date', null));
 });
 
+test('platform branch product show includes listing details payload', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create([
+        'brand' => 'Geekvape',
+        'tags' => ['best_selling'],
+        'specifications' => [
+            ['label' => 'Resistance', 'value' => '0.2Ω'],
+        ],
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.show', [$branch, $product]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/products/show')
+            ->where('product.brand', 'Geekvape')
+            ->where('product.tags', ['best_selling'])
+            ->where('product.specifications.0.label', 'Resistance')
+            ->where('product.specifications.0.value', '0.2Ω')
+            ->has('product.created_at')
+            ->has('product.updated_at')
+            ->has('product.created_by_name')
+            ->has('transactions.filters.type'));
+});
+
+test('platform price upsert without status still stores a live price', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.prices', [$branch, $product]), [
+            'selling_price' => 22.5,
+        ])
+        ->assertRedirect();
+
+    $price = BranchProductPrice::query()
+        ->where('branch_id', $branch->id)
+        ->where('product_id', $product->id)
+        ->whereNull('variant_id')
+        ->first();
+
+    expect($price)->not->toBeNull()
+        ->and($price->status)->toBeTrue();
+});
+
 test('platform can filter inventory transactions by date range', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -202,6 +250,39 @@ test('platform can filter inventory transactions by date range', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('transactions.meta.total', 0));
+});
+
+test('platform can filter inventory transactions by type', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 5,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_out',
+            'quantity' => 2,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.show', [
+            $branch,
+            $product,
+            'txn_type' => 'stock_in',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('transactions.meta.total', 1)
+            ->where('transactions.filters.type', 'stock_in')
+            ->where('transactions.data.0.type', 'stock_in')
+            ->where('transactions.data.0.quantity', 5));
 });
 
 test('platform can set variant stock and price on branch inventory show', function () {

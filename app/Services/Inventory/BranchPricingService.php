@@ -19,7 +19,6 @@ class BranchPricingService
      *     discount_price?: float|string|null,
      *     start_date?: string|null,
      *     end_date?: string|null,
-     *     status?: bool,
      *     variant_id?: int|null
      * }  $data
      */
@@ -58,7 +57,7 @@ class BranchPricingService
                 'discount_price' => $hasDiscount ? ($data['discount_price'] ?? null) : null,
                 'start_date' => $hasDiscount ? ($data['start_date'] ?? null) : null,
                 'end_date' => $hasDiscount ? ($data['end_date'] ?? null) : null,
-                'status' => $data['status'] ?? true,
+                'status' => true,
             ]);
             $price->save();
 
@@ -88,7 +87,6 @@ class BranchPricingService
             'discount_price' => $data['discount_price'] ?? null,
             'start_date' => $data['start_date'] ?? null,
             'end_date' => $data['end_date'] ?? null,
-            'status' => true,
         ]);
     }
 

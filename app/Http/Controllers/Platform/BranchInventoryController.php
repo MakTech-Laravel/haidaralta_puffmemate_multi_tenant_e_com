@@ -95,10 +95,8 @@ class BranchInventoryController extends Controller
         Product $product,
     ): RedirectResponse {
         $variant = $this->resolveVariant($product, $request->validated('variant_id'));
-        $data = $request->validated();
-        $data['status'] = $request->boolean('status', true);
 
-        $this->pricing->upsert($branch, $product, $data, $variant);
+        $this->pricing->upsert($branch, $product, $request->validated(), $variant);
 
         Toast::success('Price updated.');
 

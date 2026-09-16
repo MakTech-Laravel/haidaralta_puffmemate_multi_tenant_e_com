@@ -1,12 +1,12 @@
 import { router, useForm, usePage } from '@inertiajs/react';
 import { Boxes, Minus, Package, Plus, Tags } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { DataTableTruncated } from '@/components/data-table';
 import InputError from '@/components/input-error';
 import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { SimplePagination } from '@/components/simple-pagination';
 import { AdjustmentReasonNote } from '@/components/stock/adjustment-reason-note';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Card,
     CardContent,
@@ -84,8 +84,11 @@ export type TransactionsPage = {
         scope: string;
         from: string | null;
         to: string | null;
+        type: string | null;
     };
 };
+
+const ALL_TXN_TYPES = 'all';
 
 type ProductInventoryPanelProps = {
     variants: BranchProductVariantRow[];
@@ -206,7 +209,7 @@ export function ProductInventoryPanel({
     );
     const [txnFrom, setTxnFrom] = useState(transactions.filters.from ?? '');
     const [txnTo, setTxnTo] = useState(transactions.filters.to ?? '');
-    const skipTxnReload = useRef(true);
+    const [txnType, setTxnType] = useState(transactions.filters.type ?? '');
 
     const activeVariants = useMemo(
         () =>
@@ -240,7 +243,6 @@ export function ProductInventoryPanel({
         discount_price: scopedPrice?.discount_price ?? '',
         start_date: scopedPrice?.start_date ?? '',
         end_date: scopedPrice?.end_date ?? '',
-        status: scopedPrice?.status ?? true,
         variant_id: variantId as number | null,
     });
 
@@ -265,7 +267,6 @@ export function ProductInventoryPanel({
             discount_price: nextPrice?.discount_price ?? '',
             start_date: nextPrice?.start_date ?? '',
             end_date: nextPrice?.end_date ?? '',
-            status: nextPrice?.status ?? true,
             variant_id: nextVariantId,
         });
         // Only re-sync when scope or server snapshots change.
@@ -282,21 +283,30 @@ export function ProductInventoryPanel({
     useEffect(() => {
         setTxnFrom(transactions.filters.from ?? '');
         setTxnTo(transactions.filters.to ?? '');
-    }, [transactions.filters.from, transactions.filters.to]);
+        setTxnType(transactions.filters.type ?? '');
+    }, [
+        transactions.filters.from,
+        transactions.filters.to,
+        transactions.filters.type,
+    ]);
 
     const reloadTransactions = (next: {
         scope?: string;
         from?: string;
         to?: string;
+        type?: string;
     }) => {
+        const nextFrom = next.from !== undefined ? next.from : txnFrom;
+        const nextTo = next.to !== undefined ? next.to : txnTo;
+        const nextType = next.type !== undefined ? next.type : txnType;
+
         router.get(
             showUrl,
             {
                 txn_scope: next.scope ?? activeScope,
-                ...(next.from || txnFrom
-                    ? { txn_from: next.from ?? txnFrom }
-                    : {}),
-                ...(next.to || txnTo ? { txn_to: next.to ?? txnTo } : {}),
+                ...(nextType ? { txn_type: nextType } : {}),
+                ...(nextFrom ? { txn_from: nextFrom } : {}),
+                ...(nextTo ? { txn_to: nextTo } : {}),
             },
             {
                 only: ['transactions'],
@@ -308,9 +318,9 @@ export function ProductInventoryPanel({
     };
 
     useEffect(() => {
-        if (skipTxnReload.current) {
-            skipTxnReload.current = false;
+        const serverScope = transactions.filters.scope || BASE_SCOPE;
 
+        if (activeScope === serverScope) {
             return;
         }
 
@@ -749,8 +759,7 @@ export function ProductInventoryPanel({
                         <CardHeader className="gap-1 px-5 pt-5 pb-0">
                             <CardTitle className="text-base">Pricing</CardTitle>
                             <CardDescription>
-                                Selling price, optional discount, and active
-                                status.
+                                Selling price and optional discount.
                             </CardDescription>
                         </CardHeader>
                         <form
@@ -861,10 +870,14 @@ export function ProductInventoryPanel({
                                     <>
                                         <div className="grid gap-2">
                                             <Label htmlFor="discount_price">
-                                                {priceForm.data
-                                                    .discount_type === 'percent'
-                                                    ? 'Discount percent'
-                                                    : 'Discount price'}
+                                                Discount value{' '}
+                                                <span className="text-muted-foreground font-normal">
+                                                    {priceForm.data
+                                                        .discount_type ===
+                                                    'percent'
+                                                        ? '(%)'
+                                                        : '(AUD)'}
+                                                </span>
                                             </Label>
                                             <Input
                                                 id="discount_price"
@@ -877,6 +890,13 @@ export function ProductInventoryPanel({
                                                     'percent'
                                                         ? 100
                                                         : undefined
+                                                }
+                                                placeholder={
+                                                    priceForm.data
+                                                        .discount_type ===
+                                                    'percent'
+                                                        ? 'e.g. 10'
+                                                        : 'e.g. 5.00'
                                                 }
                                                 value={
                                                     priceForm.data
@@ -973,32 +993,6 @@ export function ProductInventoryPanel({
                                         </div>
                                     </>
                                 ) : null}
-
-                                <div className="flex items-start gap-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-                                    <Checkbox
-                                        id="price_status"
-                                        checked={priceForm.data.status}
-                                        className="mt-0.5"
-                                        onCheckedChange={(checked) =>
-                                            priceForm.setData(
-                                                'status',
-                                                checked === true,
-                                            )
-                                        }
-                                    />
-                                    <div className="space-y-0.5">
-                                        <Label
-                                            htmlFor="price_status"
-                                            className="font-medium"
-                                        >
-                                            Price active
-                                        </Label>
-                                        <p className="text-muted-foreground text-xs">
-                                            Inactive prices are ignored at this
-                                            branch.
-                                        </p>
-                                    </div>
-                                </div>
                             </CardContent>
                             <CardFooter className="mt-auto border-t border-border/60 px-5 py-4">
                                 <Button
@@ -1028,8 +1022,42 @@ export function ProductInventoryPanel({
                                 .
                             </CardDescription>
                         </div>
-                        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end lg:max-w-xl">
-                            <div className="grid flex-1 gap-2">
+                        <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end lg:max-w-3xl">
+                            <div className="grid min-w-40 flex-1 gap-2">
+                                <Label htmlFor="txn_type">Type</Label>
+                                <Select
+                                    value={txnType || ALL_TXN_TYPES}
+                                    onValueChange={(value) => {
+                                        const next =
+                                            value === ALL_TXN_TYPES
+                                                ? ''
+                                                : value;
+                                        setTxnType(next);
+                                        reloadTransactions({ type: next });
+                                    }}
+                                >
+                                    <SelectTrigger
+                                        id="txn_type"
+                                        className="w-full"
+                                    >
+                                        <SelectValue placeholder="All types" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={ALL_TXN_TYPES}>
+                                            All types
+                                        </SelectItem>
+                                        {transactionTypes.map((type) => (
+                                            <SelectItem
+                                                key={type.value}
+                                                value={type.value}
+                                            >
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid min-w-40 flex-1 gap-2">
                                 <Label htmlFor="txn_from">From</Label>
                                 <DatePicker
                                     id="txn_from"
@@ -1039,7 +1067,7 @@ export function ProductInventoryPanel({
                                     placeholder="Any start"
                                 />
                             </div>
-                            <div className="grid flex-1 gap-2">
+                            <div className="grid min-w-40 flex-1 gap-2">
                                 <Label htmlFor="txn_to">To</Label>
                                 <DatePicker
                                     id="txn_to"
@@ -1056,6 +1084,7 @@ export function ProductInventoryPanel({
                                         reloadTransactions({
                                             from: txnFrom,
                                             to: txnTo,
+                                            type: txnType,
                                         })
                                     }
                                 >
@@ -1063,24 +1092,22 @@ export function ProductInventoryPanel({
                                 </Button>
                                 {(txnFrom ||
                                     txnTo ||
+                                    txnType ||
                                     transactions.filters.from ||
-                                    transactions.filters.to) && (
+                                    transactions.filters.to ||
+                                    transactions.filters.type) && (
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => {
                                             setTxnFrom('');
                                             setTxnTo('');
-                                            router.get(
-                                                showUrl,
-                                                { txn_scope: activeScope },
-                                                {
-                                                    only: ['transactions'],
-                                                    preserveScroll: true,
-                                                    preserveState: true,
-                                                    replace: true,
-                                                },
-                                            );
+                                            setTxnType('');
+                                            reloadTransactions({
+                                                from: '',
+                                                to: '',
+                                                type: '',
+                                            });
                                         }}
                                     >
                                         Clear
@@ -1111,8 +1138,9 @@ export function ProductInventoryPanel({
                                     >
                                         No transactions for this scope
                                         {transactions.filters.from ||
-                                        transactions.filters.to
-                                            ? ' and date range'
+                                        transactions.filters.to ||
+                                        transactions.filters.type
+                                            ? ' and filters'
                                             : ''}
                                         .
                                     </TableCell>
@@ -1120,12 +1148,19 @@ export function ProductInventoryPanel({
                             ) : (
                                 transactions.data.map((txn) => (
                                     <TableRow key={txn.id}>
-                                        <TableCell className="font-medium">
-                                            {txn.type_label ??
-                                                txn.type.replaceAll('_', ' ')}
+                                        <TableCell className="max-w-36 font-medium">
+                                            <DataTableTruncated>
+                                                {txn.type_label ??
+                                                    txn.type.replaceAll(
+                                                        '_',
+                                                        ' ',
+                                                    )}
+                                            </DataTableTruncated>
                                         </TableCell>
-                                        <TableCell>
-                                            {txn.reason_label ?? '—'}
+                                        <TableCell className="max-w-44">
+                                            <DataTableTruncated>
+                                                {txn.reason_label ?? '—'}
+                                            </DataTableTruncated>
                                         </TableCell>
                                         <TableCell className="tabular-nums">
                                             {txn.quantity}
@@ -1136,8 +1171,10 @@ export function ProductInventoryPanel({
                                         <TableCell className="tabular-nums">
                                             {txn.after_quantity}
                                         </TableCell>
-                                        <TableCell className="text-muted-foreground">
-                                            {formatWhen(txn.created_at)}
+                                        <TableCell className="text-muted-foreground max-w-40">
+                                            <DataTableTruncated>
+                                                {formatWhen(txn.created_at)}
+                                            </DataTableTruncated>
                                         </TableCell>
                                     </TableRow>
                                 ))

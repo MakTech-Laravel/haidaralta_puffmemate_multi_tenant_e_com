@@ -18,13 +18,19 @@ Inertia catalog pages live under `resources/js/pages/branch/catalog/{categories,
 Inventory manage UI matches branch dashboard: DemoStatCard metrics, single split Card for inventory+pricing (equal-height footers), shadow-none cards, tables without nested bordered wrappers.
 
 ## Discount types + txn pagination filters
-Pricing uses discount_type none|fixed|percent; when none, hide/clear value+dates. Transactions are server-paginated (txn_page) with txn_scope/txn_from/txn_to filters — not a client-side limit(25) list.
+Pricing uses discount_type none|fixed|percent; when none, hide/clear value+dates. Discount value label is Discount value (AUD) or (%), placeholders `e.g. 5.00` / `e.g. 10`. Transactions are server-paginated (`txn_page`) with `txn_scope` / `txn_from` / `txn_to` / `txn_type` — not a client-side limit(25) list and not `useDataTableQuery` (ledger must coexist with inventory/price forms). Reload only on Filter click, type change, or variant scope change — never on mount. Truncate ledger cells with DataTableTruncated.
+
+## Saved selling price is always live
+Do not show Price active. UpsertBranchProductPriceRequest has no `status`; BranchPricingService::upsert always persists `status => true`. Keep the DB column; list queries still use `where('status', true)`.
+
+## Manage listing details match catalog product show
+Branch/platform product manage uses one Listing details card (tile gallery rail + 3-col facts + category chips + tags + spec tiles). No Product details / Branch stock split, no header Avatar, no extra full-width gallery, no Branch network table. Platform category chips link to category show; branch chips link only when `catalog.branch_can_view_categories`.
 
 ## Inventory panel is quantity-only Stock
 Inventory snapshot is { quantity } only (Stock). Do not post minimum_stock, reserved, available, or low-stock fields. Hide variant scope UI when catalog.show_product_variants is false. Keep adjust + price forms.
 
-## Summary shows stock and missing price
-Branch product summary shows quantity (Stock) and missing_price only. No enable toggle, low-stock badge, or available quantity.
+## Summary is listing details, not stock
+Branch product summary is catalog listing details only. Stock and price live in ProductInventoryPanel. No enable toggle, low-stock badge, or available quantity.
 
 ## Inventory panel Adjustment is counted on-hand
 Product inventory panel quantity is a clearable digit string, not Number(). Adjustment uses counted on-hand plus a required reason and the same live variance preview as Manage stock. Hide reason for New entry / Reduce. Disable Save when counted matches current stock. Transactions table shows reason_label (em dash when null) and may show a signed Adjustment qty.

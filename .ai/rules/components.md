@@ -16,7 +16,7 @@ When maxFiles is exceeded, emit one count rejection summarizing N skipped files 
 FileUpload dropzone never dumps raw accept MIME/extension lists into helper text (overflows). Show hint + Max N MB / up to N files only; keep accept for validation/input only.
 
 ## Compact gallery with lightbox
-Product show gallery uses compact thumbnails + yet-another-react-lightbox click-to-preview. Platform catalog product show uses ProductGallery layout=tile in the listing rail (square + horizontal thumbs). Do not give product show a half-page hero Media card. Branch/platform inventory show keep the compact grid.
+Product show gallery uses compact thumbnails + yet-another-react-lightbox click-to-preview. Platform catalog product show and branch/platform product manage Listing details use ProductGallery layout=tile in the listing rail (square + horizontal thumbs). Do not give product show a half-page hero Media card.
 
 ## Gallery/primary use color_code tile
 Product primary + gallery thumbnails/lightbox use product.color_code via colorPickerStyle (object-contain). Transparent mode inherits the page or card color — never COLOR_PICKER_CHECKERBOARD on listing tiles or picker previews. Checkerboard stays only on the hex swatch editor. Apply on platform catalog show and branch/platform inventory show.

@@ -303,6 +303,86 @@ test('branch product index shows stock and filters by missing price', function (
                 && ! collect($rows)->contains(fn ($row) => $row['slug'] === 'priced-pack')));
 });
 
+test('branch product show includes listing details payload', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $product = Product::factory()->create([
+        'brand' => 'PuffCo',
+        'tags' => ['new_arrival'],
+        'specifications' => [
+            ['label' => 'Nicotine', 'value' => '3%'],
+        ],
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.products.show', [$branch, $product]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/products/show')
+            ->where('product.brand', 'PuffCo')
+            ->where('product.tags', ['new_arrival'])
+            ->where('product.specifications.0.label', 'Nicotine')
+            ->where('product.specifications.0.value', '3%')
+            ->has('product.created_at')
+            ->has('product.updated_at')
+            ->has('product.created_by_name')
+            ->has('transactions.filters.type'));
+});
+
+test('branch price upsert without status still stores a live price', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($staff, 'branch')
+        ->put(route('branch.products.prices', [$branch, $product]), [
+            'selling_price' => 19.99,
+        ])
+        ->assertRedirect();
+
+    $price = BranchProductPrice::query()
+        ->where('branch_id', $branch->id)
+        ->where('product_id', $product->id)
+        ->whereNull('variant_id')
+        ->first();
+
+    expect($price)->not->toBeNull()
+        ->and($price->status)->toBeTrue();
+});
+
+test('branch product show filters transactions by type', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($staff, 'branch')
+        ->post(route('branch.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 5,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($staff, 'branch')
+        ->post(route('branch.products.inventory', [$branch, $product]), [
+            'type' => 'stock_out',
+            'quantity' => 2,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.products.show', [
+            $branch,
+            $product,
+            'txn_type' => 'stock_in',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('transactions.meta.total', 1)
+            ->where('transactions.filters.type', 'stock_in')
+            ->where('transactions.data.0.type', 'stock_in')
+            ->where('transactions.data.0.quantity', 5));
+});
+
 test('branch routes do not expose product destroy', function () {
     expect(Route::has('branch.products.destroy'))->toBeFalse();
 });

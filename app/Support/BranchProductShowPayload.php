@@ -24,7 +24,7 @@ final class BranchProductShowPayload
      */
     public static function product(Branch $branch, Product $product): array
     {
-        $product->loadMissing(['categories:id,name,slug', 'variants', 'images']);
+        $product->loadMissing(['categories:id,name,slug', 'variants', 'images', 'creator:id,name']);
 
         $inventories = Inventory::query()
             ->where('branch_id', $branch->id)
@@ -67,7 +67,13 @@ final class BranchProductShowPayload
             'slug' => $product->slug,
             'sku' => $product->sku,
             'description' => $product->description,
+            'brand' => $product->brand,
+            'tags' => $product->tags ?? [],
+            'specifications' => ProductSpecifications::normalize($product->specifications),
             'status' => (bool) $product->status,
+            'created_at' => $product->created_at?->toIso8601String(),
+            'updated_at' => $product->updated_at?->toIso8601String(),
+            'created_by_name' => $product->creator?->name,
             'image_url' => $product->imageUrl(),
             'color_code' => $product->color_code,
             'category_ids' => $product->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
@@ -106,13 +112,13 @@ final class BranchProductShowPayload
     /**
      * Paginated inventory transactions for the product show page.
      *
-     * Query params: txn_scope (base|{variant_id}), txn_from, txn_to, txn_page.
+     * Query params: txn_scope (base|{variant_id}), txn_from, txn_to, txn_type, txn_page.
      *
      * @return array{
      *     data: list<array<string, mixed>>,
      *     meta: array{current_page: int, last_page: int, per_page: int, total: int, from: ?int, to: ?int},
      *     links: list<array{url: ?string, label: string, active: bool}>,
-     *     filters: array{scope: string, from: ?string, to: ?string}
+     *     filters: array{scope: string, from: ?string, to: ?string, type: ?string}
      * }
      */
     public static function transactions(Branch $branch, Product $product, Request $request): array
@@ -120,6 +126,7 @@ final class BranchProductShowPayload
         $scope = $request->string('txn_scope')->toString() ?: 'base';
         $from = $request->date('txn_from');
         $to = $request->date('txn_to');
+        $type = InventoryTransactionType::tryFrom($request->string('txn_type')->toString());
 
         $query = InventoryTransaction::query()
             ->where('branch_id', $branch->id)
@@ -139,6 +146,10 @@ final class BranchProductShowPayload
 
         if ($to !== null) {
             $query->whereDate('created_at', '<=', $to);
+        }
+
+        if ($type !== null) {
+            $query->where('type', $type);
         }
 
         /** @var LengthAwarePaginator<int, InventoryTransaction> $paginator */
@@ -178,6 +189,7 @@ final class BranchProductShowPayload
                 'scope' => $scope,
                 'from' => $from?->toDateString(),
                 'to' => $to?->toDateString(),
+                'type' => $type?->value,
             ],
         ];
     }
