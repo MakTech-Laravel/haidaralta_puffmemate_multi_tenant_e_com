@@ -23,7 +23,7 @@ ProductForm categories field is multi-select Popover+Command combobox posting ca
 Selected categories render as wrapping secondary Badge chips (keyword style) on the combobox trigger — never a count summary like “N categories selected”.
 
 ## Catalog color_code uses ColorPicker dialog
-Product/category forms use ColorPicker mode=dialog with enabledModes transparent|solid|gradient. Create defaultMode=solid with value solid #EF4444; edit keeps the stored value. Post JSON.stringify(color_code). Display tiles via colorPickerStyle. Do not enable radial until PHP CatalogBackgroundMode supports it.
+Product/category forms use ColorPicker mode=dialog with enabledModes transparent|solid|gradient. Create defaultMode=transparent (no invented fill); edit keeps the stored value. Post JSON.stringify(color_code). Display tiles via colorPickerStyle. Transparent listings inherit the page/card color — do not use COLOR_PICKER_CHECKERBOARD on tiles or picker previews. Do not enable radial until PHP CatalogBackgroundMode supports it.
 
 ## Product primary and gallery image types
 ProductForm primary + gallery accept PNG, JPG/JPEG, SVG, WebP (max 2MB). Backend ValidatesCatalogProductImages uses image:allow_svg + mimes; serve SVG as img src only.
@@ -44,13 +44,19 @@ Category listing-preview FileUpload card is max-w centered (mx-auto) with square
 Category listing preview: do not shrink FileUpload into a nested max-w card. Keep full-width transparent shell; center the image via cardImage object-contain (mx-auto max-h). FileUpload supports classNames.cardImage.
 
 ## Branch ProductForm ops fields keep gallery
-Branch create/edit use ProductForm with gallery enabled (same as platform). branchOpsFields adds selling_price/quantity/minimum_stock on create only. createFromBranch / update persist gallery via ProductService.
+Branch create/edit use ProductForm with gallery enabled (same as platform). branchOpsFields adds selling_price/quantity on create only. createFromBranch / update persist gallery via ProductService.
 
 ## Catalog forms suggestions + slug Precognition
 CategoryForm and ProductForm: enableSuggestions with portal-specific suggestionsUrl; slug uniqueness via Precognition on name/slug blur. Routes need precognitive middleware.
 
 ## Product form listing preview and solid red default
-ProductForm create defaults color_code to solid #EF4444 with defaultMode=solid. Edit keeps the stored value (null → transparent). Media is a narrow rail (not a second equal column): square primary on the color tile, compact ColorPicker in the footer, gallery thumbs with dropzoneVisibility=empty. Do not use min-h-96 or a persistent full-width gallery dropzone — that creates blank space beside details.
+ProductForm create defaults color_code to transparent with defaultMode=transparent. Edit keeps the stored value (null → transparent). Media is a narrow rail (not a second equal column): square primary on the color tile, compact ColorPicker in the footer, gallery thumbs with dropzoneVisibility=empty. Do not use min-h-96 or a persistent full-width gallery dropzone — that creates blank space beside details.
 
-## Category show is a merchandising profile
-Platform and branch category show use CategoryProfile: ProductGallery layout=hero (not Avatar), listing details (slug/parent/nav/background), DemoStatCard snapshots (products/children/media), subcategory chips, catalog timestamps. Pass updated_at from mapCategory. Do not use equal-column details|preview with min-h stretch.
+## Category show is one listing card
+CategoryProfile is a single listing card: compact ProductGallery layout=tile (square ~16rem, card=false) beside facts. Featured, status, created, updated live in Listing details — no Catalog record card, no Media hero, no DemoStatCards. Products jewel stays on the listing header. Subcategory chips only when catalog.show_parent_category.
+
+## Category show background is a fact
+CategoryProfile Image background is a fact in the listing grid, not a full-width bar. Transparent is text only (no empty swatch). Solid/gradient show a size-5 swatch beside the summary.
+
+## Branch ops fields omit minimum_stock
+branchOpsFields is selling_price + quantity only on branch create. Do not include minimum_stock.

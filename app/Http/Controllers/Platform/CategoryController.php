@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Platform;
 
 use App\DataTables\CategoryDataTable;
+use App\Http\Controllers\Concerns\ManagesCategoryMerchandising;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Catalog\UpdateCategoryNavSortRequest;
 use App\Http\Requests\Platform\StoreCategoryRequest;
 use App\Http\Requests\Platform\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Services\Catalog\CategoryService;
 use App\Services\Catalog\CategorySuggestionService;
+use App\Support\CategoryOptions;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +21,8 @@ use Inertia\Response;
 
 class CategoryController extends Controller
 {
+    use ManagesCategoryMerchandising;
+
     public function __construct(
         private CategoryService $categories,
         private CategorySuggestionService $suggestions,
@@ -49,6 +54,11 @@ class CategoryController extends Controller
                 excludeCategoryId: $excludeCategoryId,
             ),
         ]);
+    }
+
+    public function options(Request $request): JsonResponse
+    {
+        return response()->json(CategoryOptions::paginated($request));
     }
 
     public function store(StoreCategoryRequest $request): RedirectResponse
@@ -117,6 +127,26 @@ class CategoryController extends Controller
         Toast::success('Category restored.');
 
         return redirect()->route('platform.categories.show', $category);
+    }
+
+    public function toggleStatus(Category $category): RedirectResponse
+    {
+        return $this->merchandiseToggleStatus($category);
+    }
+
+    public function toggleFeatured(Category $category): RedirectResponse
+    {
+        return $this->merchandiseToggleFeatured($category);
+    }
+
+    public function toggleNav(Category $category): RedirectResponse
+    {
+        return $this->merchandiseToggleNav($category);
+    }
+
+    public function updateNavSort(UpdateCategoryNavSortRequest $request, Category $category): RedirectResponse
+    {
+        return $this->merchandiseUpdateNavSort($request, $category);
     }
 
     /**

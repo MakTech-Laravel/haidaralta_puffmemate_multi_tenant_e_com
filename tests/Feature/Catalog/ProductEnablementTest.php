@@ -2,19 +2,18 @@
 
 use App\Enums\InventoryTransactionType;
 use App\Models\Branch;
-use App\Models\BranchProduct;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\Catalog\ProductService;
-use App\Services\Inventory\BranchProductAvailabilityService;
 use App\Services\Inventory\InventoryService;
+use App\Support\Storefront\StorefrontCatalog;
 
-test('platform product create leaves all branches disabled', function () {
+test('platform product create lists the product at every branch', function () {
     $category = Category::factory()->create();
     $branchA = Branch::factory()->create();
     $branchB = Branch::factory()->create();
 
-    $product = app(ProductService::class)->createFromPlatform([
+    app(ProductService::class)->createFromPlatform([
         'category_ids' => [$category->id],
         'name' => 'Classic Pack',
         'slug' => 'classic-pack',
@@ -22,17 +21,16 @@ test('platform product create leaves all branches disabled', function () {
         'status' => true,
     ]);
 
-    expect(BranchProduct::query()->where('product_id', $product->id)->count())->toBe(0)
-        ->and($product->isEnabledForBranch($branchA->id))->toBeFalse()
-        ->and($product->isEnabledForBranch($branchB->id))->toBeFalse();
+    expect(collect(StorefrontCatalog::products($branchA))->pluck('id'))->toContain('classic-pack')
+        ->and(collect(StorefrontCatalog::products($branchB))->pluck('id'))->toContain('classic-pack');
 });
 
-test('branch product create enables only the creating branch', function () {
+test('branch product create lists the product at other branches too', function () {
     $category = Category::factory()->create();
     $branchA = Branch::factory()->create();
     $branchB = Branch::factory()->create();
 
-    $product = app(ProductService::class)->createFromBranch($branchA, [
+    app(ProductService::class)->createFromBranch($branchA, [
         'category_ids' => [$category->id],
         'name' => 'Branch Pack',
         'slug' => 'branch-pack',
@@ -40,24 +38,17 @@ test('branch product create enables only the creating branch', function () {
         'status' => true,
     ]);
 
-    expect($product->isEnabledForBranch($branchA->id))->toBeTrue()
-        ->and($product->isEnabledForBranch($branchB->id))->toBeFalse()
-        ->and(BranchProduct::query()->where('product_id', $product->id)->count())->toBe(1);
+    expect(collect(StorefrontCatalog::products($branchB))->pluck('id'))->toContain('branch-pack');
 });
 
-test('availability service can enable a disabled branch product', function () {
-    $product = Product::factory()->create();
+test('inactive products stay off the storefront', function () {
     $branch = Branch::factory()->create();
-    $availability = app(BranchProductAvailabilityService::class);
+    Product::factory()->create(['slug' => 'hidden-pack', 'status' => false]);
 
-    expect($availability->isEnabled($branch, $product))->toBeFalse();
-
-    $availability->setEnabled($branch, $product, true);
-
-    expect($availability->isEnabled($branch, $product))->toBeTrue();
+    expect(collect(StorefrontCatalog::products($branch))->pluck('id'))->not->toContain('hidden-pack');
 });
 
-test('inventory service adjusts stock and writes a ledger row', function () {
+test('inventory service adjusts quantity and writes a ledger row', function () {
     $branch = Branch::factory()->create();
     $product = Product::factory()->create();
     $inventory = app(InventoryService::class)->firstOrCreate($branch, $product);
@@ -69,6 +60,18 @@ test('inventory service adjusts stock and writes a ledger row', function () {
     );
 
     expect($updated->quantity)->toBe(10)
-        ->and($updated->available_quantity)->toBe(10)
-        ->and($updated->transactions()->count())->toBeGreaterThanOrEqual(1);
+        ->and($updated->transactions()->count())->toBe(1);
+
+    $reduced = app(InventoryService::class)->adjust(
+        $updated,
+        InventoryTransactionType::StockOut,
+        4,
+    );
+
+    expect($reduced->quantity)->toBe(6)
+        ->and($reduced->getAttributes())->not->toHaveKeys([
+            'available_quantity',
+            'reserved_quantity',
+            'minimum_stock',
+        ]);
 });

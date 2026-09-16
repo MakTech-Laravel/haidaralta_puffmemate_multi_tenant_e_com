@@ -10,4 +10,42 @@ enum InventoryTransactionType: string
     case Reserve = 'reserve';
     case Release = 'release';
     case Sale = 'sale';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::StockIn => 'New entry',
+            self::StockOut => 'Reduce',
+            self::Adjustment => 'Adjustment',
+            self::Reserve => 'Reserve',
+            self::Release => 'Release',
+            self::Sale => 'Sale',
+        };
+    }
+
+    /**
+     * @return list<self>
+     */
+    public static function manualCases(): array
+    {
+        return [
+            self::StockIn,
+            self::StockOut,
+            self::Adjustment,
+        ];
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    public static function manualOptions(): array
+    {
+        return array_map(
+            fn (self $type): array => [
+                'value' => $type->value,
+                'label' => $type->label(),
+            ],
+            self::manualCases(),
+        );
+    }
 }

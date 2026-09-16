@@ -22,7 +22,7 @@ final class BranchProductShowPayload
      *
      * @return array<string, mixed>
      */
-    public static function product(Branch $branch, Product $product, bool $enabled): array
+    public static function product(Branch $branch, Product $product): array
     {
         $product->loadMissing(['categories:id,name,slug', 'variants', 'images']);
 
@@ -96,7 +96,6 @@ final class BranchProductShowPayload
                 'sku' => $variant->sku,
                 'status' => (bool) $variant->status,
             ])->values()->all(),
-            'enabled' => $enabled,
             'inventory' => $baseInventory ? self::mapInventory($baseInventory) : null,
             'price' => $basePrice ? self::mapPrice($basePrice) : null,
             'variant_inventories' => $variantInventories,
@@ -149,6 +148,10 @@ final class BranchProductShowPayload
             ->through(fn (InventoryTransaction $txn): array => [
                 'id' => $txn->id,
                 'type' => $txn->type->value,
+                'type_label' => $txn->type->label(),
+                'reason' => $txn->reason?->value,
+                'reason_note' => $txn->reason_note,
+                'reason_label' => $txn->reasonLabel(),
                 'quantity' => $txn->quantity,
                 'before_quantity' => $txn->before_quantity,
                 'after_quantity' => $txn->after_quantity,
@@ -184,13 +187,7 @@ final class BranchProductShowPayload
      */
     public static function transactionTypes(): array
     {
-        return collect(InventoryTransactionType::cases())
-            ->map(fn (InventoryTransactionType $type): array => [
-                'value' => $type->value,
-                'label' => str_replace('_', ' ', ucfirst($type->value)),
-            ])
-            ->values()
-            ->all();
+        return InventoryTransactionType::manualOptions();
     }
 
     /**
@@ -206,22 +203,12 @@ final class BranchProductShowPayload
     }
 
     /**
-     * @return array{
-     *     quantity: int,
-     *     reserved_quantity: int,
-     *     available_quantity: int,
-     *     minimum_stock: int,
-     *     is_low_stock: bool
-     * }
+     * @return array{quantity: int}
      */
     private static function mapInventory(Inventory $inventory): array
     {
         return [
             'quantity' => $inventory->quantity,
-            'reserved_quantity' => $inventory->reserved_quantity,
-            'available_quantity' => $inventory->available_quantity,
-            'minimum_stock' => $inventory->minimum_stock,
-            'is_low_stock' => $inventory->isLowStock(),
         ];
     }
 

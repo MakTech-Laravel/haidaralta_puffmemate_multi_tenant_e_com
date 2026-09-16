@@ -81,11 +81,11 @@ export const DEFAULT_SOLID_QUICK_SELECT: readonly SolidQuickSelectOption[] = [
     { label: 'Deep red', color: '#991B1B' },
 ] as const;
 
-/** Product create form default — matches the ColorPicker “Red” quick select. */
+/** Palette swatch only — catalog create defaults to transparent, not this fill. */
 export const DEFAULT_CATALOG_SOLID_COLOR = '#EF4444';
 
 export function defaultCatalogColorPickerValue(): ColorPickerValue {
-    return { mode: 'solid', color: DEFAULT_CATALOG_SOLID_COLOR };
+    return { mode: 'transparent' };
 }
 
 export const DEFAULT_GRADIENT_QUICK_SELECT: readonly GradientQuickSelectOption[] =
@@ -350,8 +350,7 @@ export const CATALOG_COLOR_PICKER_MODES: readonly ColorPickerMode[] = [
 ] as const;
 
 /**
- * Display / stored values: empty → transparent (do not invent a fill).
- * Product *create* uses defaultCatalogColorPickerValue() instead.
+ * Display / stored / create values: empty → transparent (do not invent a fill).
  */
 export function normalizeCatalogColorPickerValue(
     value?: ColorPickerValue | null,
@@ -364,9 +363,9 @@ export function normalizeCatalogColorPickerValue(
 
 export function catalogFormColorPickerValue(
     stored?: ColorPickerValue | null,
-    isEdit = false,
+    _isEdit = false,
 ): ColorPickerValue {
-    if (isEdit || stored) {
+    if (stored) {
         return normalizeCatalogColorPickerValue(stored);
     }
 

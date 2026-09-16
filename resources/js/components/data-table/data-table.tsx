@@ -2,10 +2,13 @@ import {
     flexRender,
     getCoreRowModel,
     useReactTable,
+    type Column,
     type ColumnDef,
+    type RowData,
 } from '@tanstack/react-table';
 import type { ReactNode } from 'react';
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
+import { DataTableTruncated } from '@/components/data-table/data-table-truncated';
 import type { DataTablePayload } from '@/components/data-table/types';
 import {
     Table,
@@ -15,6 +18,12 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+
+declare module '@tanstack/react-table' {
+    interface ColumnMeta<TData extends RowData, TValue> {
+        truncate?: boolean;
+    }
+}
 
 type DataTableProps<TData> = {
     columns: ColumnDef<TData, unknown>[];
@@ -29,6 +38,32 @@ type DataTableProps<TData> = {
 
 function isActionsColumn(columnId: string): boolean {
     return columnId === 'actions';
+}
+
+function isImageColumn(columnId: string): boolean {
+    return columnId === 'image';
+}
+
+function cellClassName<TData>(
+    column: Column<TData, unknown>,
+): string | undefined {
+    if (isActionsColumn(column.id)) {
+        return 'w-[1%] text-right';
+    }
+
+    if (isImageColumn(column.id)) {
+        return undefined;
+    }
+
+    return 'max-w-[14rem] min-w-0 overflow-hidden';
+}
+
+function shouldTruncateCell<TData>(column: Column<TData, unknown>): boolean {
+    if (isActionsColumn(column.id) || isImageColumn(column.id)) {
+        return false;
+    }
+
+    return column.columnDef.meta?.truncate !== false;
 }
 
 export function DataTable<TData>({
@@ -84,21 +119,31 @@ export function DataTable<TData>({
                         {table.getRowModel().rows.length > 0 ? (
                             table.getRowModel().rows.map((row) => (
                                 <TableRow key={row.id}>
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell
-                                            key={cell.id}
-                                            className={
-                                                isActionsColumn(cell.column.id)
-                                                    ? 'w-[1%] text-right'
-                                                    : undefined
-                                            }
-                                        >
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext(),
-                                            )}
-                                        </TableCell>
-                                    ))}
+                                    {row.getVisibleCells().map((cell) => {
+                                        const rendered = flexRender(
+                                            cell.column.columnDef.cell,
+                                            cell.getContext(),
+                                        );
+
+                                        return (
+                                            <TableCell
+                                                key={cell.id}
+                                                className={cellClassName(
+                                                    cell.column,
+                                                )}
+                                            >
+                                                {shouldTruncateCell(
+                                                    cell.column,
+                                                ) ? (
+                                                    <DataTableTruncated>
+                                                        {rendered}
+                                                    </DataTableTruncated>
+                                                ) : (
+                                                    rendered
+                                                )}
+                                            </TableCell>
+                                        );
+                                    })}
                                 </TableRow>
                             ))
                         ) : (

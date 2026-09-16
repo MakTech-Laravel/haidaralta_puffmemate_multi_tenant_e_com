@@ -17,6 +17,8 @@ class ProductVariantController extends Controller
 
     public function store(StoreProductVariantRequest $request, Product $product): RedirectResponse
     {
+        abort_unless((bool) config('catalog.show_product_variants'), 404);
+
         $data = $request->validated();
         $data['status'] = $request->boolean('status', true);
 
@@ -32,6 +34,7 @@ class ProductVariantController extends Controller
         Product $product,
         ProductVariant $variant,
     ): RedirectResponse {
+        abort_unless((bool) config('catalog.show_product_variants'), 404);
         abort_unless($variant->product_id === $product->id, 404);
 
         $data = $request->validated();
@@ -46,6 +49,7 @@ class ProductVariantController extends Controller
 
     public function destroy(Product $product, ProductVariant $variant): RedirectResponse
     {
+        abort_unless((bool) config('catalog.show_product_variants'), 404);
         abort_unless($variant->product_id === $product->id, 404);
 
         $this->variants->delete($variant);

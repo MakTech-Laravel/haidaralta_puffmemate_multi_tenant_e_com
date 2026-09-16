@@ -6,7 +6,6 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\Inventory\BranchPricingService;
-use App\Services\Inventory\BranchProductAvailabilityService;
 use App\Support\BranchProductPriceDisplay;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -77,7 +76,6 @@ test('branch product price display uses start from when multiple active prices e
         'sku' => 'CIG-MB-GOLD-20-CTN-TEST',
     ]);
 
-    app(BranchProductAvailabilityService::class)->setEnabled($branch, $product, true);
     $pricing = app(BranchPricingService::class);
 
     $pricing->upsert($branch, $product, [
@@ -104,7 +102,6 @@ test('branch product price display uses a single price label when only one activ
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $product = Product::factory()->create();
 
-    app(BranchProductAvailabilityService::class)->setEnabled($branch, $product, true);
     app(BranchPricingService::class)->upsert($branch, $product, [
         'selling_price' => '18.50',
         'discount_type' => 'none',

@@ -12,6 +12,7 @@ use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Support\Facades\Route;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
@@ -20,25 +21,25 @@ beforeEach(function () {
     $this->seed(UserSeeder::class);
 });
 
-test('platform can enable a platform-created product for a specific branch', function () {
+test('a platform-created product appears on every branch product list', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-    $product = app(ProductService::class)->createFromPlatform([
+    app(ProductService::class)->createFromPlatform([
         'category_ids' => [Category::factory()->create()->id],
         'name' => 'Platform Pack',
         'slug' => 'platform-pack',
         'status' => true,
     ]);
 
-    expect($product->isEnabledForBranch($branch->id))->toBeFalse();
-
     $this->actingAs($admin, 'platform')
-        ->put(route('platform.branches.products.enable', [$branch, $product]), [
-            'status' => true,
-        ])
-        ->assertRedirect();
+        ->get(route('platform.branches.products.index', $branch))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/products/index')
+            ->where('table.data', fn ($rows) => collect($rows)
+                ->contains(fn ($row) => $row['slug'] === 'platform-pack')));
 
-    expect($product->fresh()->isEnabledForBranch($branch->id))->toBeTrue();
+    expect(Route::has('platform.branches.products.enable'))->toBeFalse();
 });
 
 test('platform can set stock and price for any branch', function () {
@@ -50,7 +51,6 @@ test('platform can set stock and price for any branch', function () {
         ->post(route('platform.branches.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
             'quantity' => 12,
-            'minimum_stock' => 3,
         ])
         ->assertRedirect();
 
@@ -76,7 +76,54 @@ test('platform can set stock and price for any branch', function () {
             ->has('transactions.links')
             ->has('transactions.filters')
             ->has('product.variant_inventories')
-            ->has('product.variant_prices'));
+            ->has('product.variant_prices')
+            ->has('adjustmentReasons'));
+});
+
+test('platform product inventory adjustment sets counted on-hand with a reason', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 10,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'adjustment',
+            'quantity' => 7,
+            'reason' => 'damaged',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('inventories', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'variant_id' => null,
+        'quantity' => 7,
+    ]);
+
+    $this->assertDatabaseHas('inventory_transactions', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'type' => 'adjustment',
+        'quantity' => -3,
+        'reason' => 'damaged',
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.show', [$branch, $product]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('product.inventory.quantity', 7)
+            ->where('transactions.data.0.reason_label', 'Damaged')
+            ->where('transactions.data.0.quantity', -3)
+            ->where('transactions.data.0.type_label', 'Adjustment')
+            ->has('adjustmentReasons'));
 });
 
 test('platform can set percent discount and clear discount with none', function () {
@@ -128,7 +175,6 @@ test('platform can filter inventory transactions by date range', function () {
         ->post(route('platform.branches.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
             'quantity' => 5,
-            'minimum_stock' => 1,
         ])
         ->assertRedirect();
 
@@ -159,6 +205,8 @@ test('platform can filter inventory transactions by date range', function () {
 });
 
 test('platform can set variant stock and price on branch inventory show', function () {
+    config(['catalog.show_product_variants' => true]);
+
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $product = Product::factory()->create();
@@ -168,7 +216,6 @@ test('platform can set variant stock and price on branch inventory show', functi
         ->post(route('platform.branches.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
             'quantity' => 3,
-            'minimum_stock' => 1,
             'variant_id' => $variant->id,
         ])
         ->assertRedirect();
@@ -208,16 +255,9 @@ test('platform can list filter and paginate branch products', function () {
     ]);
 
     $this->actingAs($admin, 'platform')
-        ->put(route('platform.branches.products.enable', [$branch, $matched]), [
-            'status' => true,
-        ])
-        ->assertRedirect();
-
-    $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$branch, $matched]), [
             'type' => 'stock_in',
             'quantity' => 2,
-            'minimum_stock' => 5,
         ])
         ->assertRedirect();
 
@@ -226,10 +266,10 @@ test('platform can list filter and paginate branch products', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branches/products/index')
-            ->where('summary.enabled', fn ($value) => $value >= 1)
-            ->where('summary.low_stock', fn ($value) => $value >= 1)
+            ->where('summary.products', fn ($value) => $value >= 2)
             ->where('summary.missing_price', fn ($value) => $value >= 1)
-            ->has('table.data')
+            ->where('table.data', fn ($rows) => collect($rows)
+                ->firstWhere('slug', 'alpha-branch-filter-pack')['quantity'] === 2)
             ->has('table.filterOptions.categories')
             ->has('table.meta'));
 
@@ -242,28 +282,6 @@ test('platform can list filter and paginate branch products', function () {
         ->assertInertia(fn ($page) => $page
             ->where('table.data', fn ($rows) => collect($rows)->contains(
                 fn ($row) => $row['slug'] === $matched->slug,
-            )));
-
-    $this->actingAs($admin, 'platform')
-        ->get(route('platform.branches.products.index', [
-            'branch' => $branch,
-            'filter' => ['enabled' => '1'],
-        ]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->where('table.data', fn ($rows) => collect($rows)->every(
-                fn ($row) => $row['enabled'] === true,
-            )));
-
-    $this->actingAs($admin, 'platform')
-        ->get(route('platform.branches.products.index', [
-            'branch' => $branch,
-            'filter' => ['low_stock' => '1'],
-        ]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->where('table.data', fn ($rows) => collect($rows)->contains(
-                fn ($row) => $row['slug'] === $matched->slug && $row['is_low_stock'] === true,
             )));
 
     $this->actingAs($admin, 'platform')
@@ -307,13 +325,6 @@ test('platform can open product branch inventory overview', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $product = Product::factory()->create(['slug' => 'branch-overview-pack']);
     $branchCount = Branch::query()->count();
-    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-
-    $this->actingAs($admin, 'platform')
-        ->put(route('platform.branches.products.enable', [$downtown, $product]), [
-            'status' => true,
-        ])
-        ->assertRedirect();
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.products.branches', $product))
@@ -322,7 +333,6 @@ test('platform can open product branch inventory overview', function () {
             ->component('platform/catalog/products/branches')
             ->where('product.slug', 'branch-overview-pack')
             ->where('summary.branches', $branchCount)
-            ->where('summary.enabled', 1)
             ->has('table.data', $branchCount)
             ->has('table.meta')
             ->has('table.links')
@@ -336,16 +346,9 @@ test('platform can search and filter product branch inventory table', function (
     $uptown = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
-        ->put(route('platform.branches.products.enable', [$downtown, $product]), [
-            'status' => true,
-        ])
-        ->assertRedirect();
-
-    $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$downtown, $product]), [
             'type' => 'stock_in',
             'quantity' => 2,
-            'minimum_stock' => 5,
         ])
         ->assertRedirect();
 
@@ -358,27 +361,6 @@ test('platform can search and filter product branch inventory table', function (
         ->assertInertia(fn ($page) => $page
             ->has('table.data', 1)
             ->where('table.data.0.slug', BranchSeeder::SYDNEY_CBD));
-
-    $this->actingAs($admin, 'platform')
-        ->get(route('platform.products.branches', [
-            'product' => $product,
-            'filter' => ['enabled' => '1'],
-        ]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->has('table.data', 1)
-            ->where('table.data.0.slug', BranchSeeder::SYDNEY_CBD));
-
-    $this->actingAs($admin, 'platform')
-        ->get(route('platform.products.branches', [
-            'product' => $product,
-            'filter' => ['low_stock' => '1'],
-        ]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->where('table.data', fn ($rows) => collect($rows)->contains(
-                fn ($row) => $row['slug'] === BranchSeeder::SYDNEY_CBD && $row['is_low_stock'] === true,
-            )));
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.products.branches', [

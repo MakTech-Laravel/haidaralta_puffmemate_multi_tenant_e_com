@@ -86,14 +86,6 @@ class Product extends Model
     }
 
     /**
-     * @return HasMany<BranchProduct, $this>
-     */
-    public function branchProducts(): HasMany
-    {
-        return $this->hasMany(BranchProduct::class);
-    }
-
-    /**
      * @return HasMany<Inventory, $this>
      */
     public function inventories(): HasMany
@@ -114,12 +106,16 @@ class Product extends Model
         return MediaUrl::resolve($this->image, fallback: null);
     }
 
-    public function isEnabledForBranch(int $branchId): bool
+    public static function skuFromSlug(string $slug): string
     {
-        return $this->branchProducts()
-            ->where('branch_id', $branchId)
-            ->where('status', true)
-            ->exists();
+        $prefix = strtoupper(trim((string) config('catalog.sku_prefix', 'PMM')));
+        $body = strtoupper(trim($slug, '-'));
+
+        if ($body === '') {
+            return $prefix;
+        }
+
+        return $prefix.'-'.$body;
     }
 
     public function categoryNamesLabel(): string

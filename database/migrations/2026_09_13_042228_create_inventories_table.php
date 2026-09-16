@@ -14,9 +14,6 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->foreignId('variant_id')->nullable()->constrained('product_variants')->nullOnDelete();
             $table->integer('quantity')->default(0);
-            $table->integer('reserved_quantity')->default(0);
-            $table->integer('available_quantity')->default(0);
-            $table->integer('minimum_stock')->default(0);
             $table->boolean('status')->default(true);
             $table->timestamps();
 

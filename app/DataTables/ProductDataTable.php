@@ -5,6 +5,7 @@ namespace App\DataTables;
 use App\DataTables\Filters\StatusBooleanFilter;
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\CategoryOptions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -37,13 +38,15 @@ class ProductDataTable extends AbstractDataTable
     {
         return [
             AllowedFilter::callback('category_id', function (Builder $query, mixed $value): void {
-                if ($value === null || $value === '' || $value === 'all') {
+                $ids = CategoryOptions::normalizeIds($value);
+
+                if ($ids === []) {
                     return;
                 }
 
                 $query->whereHas(
                     'categories',
-                    fn (Builder $categories): Builder => $categories->where('categories.id', (int) $value),
+                    fn (Builder $categories): Builder => $categories->whereIn('categories.id', $ids),
                 );
             }),
             StatusBooleanFilter::make('status'),
@@ -87,16 +90,12 @@ class ProductDataTable extends AbstractDataTable
      */
     protected function filterOptions(): array
     {
+        $ids = CategoryOptions::normalizeIds(
+            $this->normalizedFilters()['category_id'] ?? null,
+        );
+
         return [
-            'categories' => Category::query()
-                ->orderBy('name')
-                ->get(['id', 'name', 'slug'])
-                ->map(fn (Category $category): array => [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'slug' => $category->slug,
-                ])
-                ->all(),
+            'categories' => CategoryOptions::selected($ids),
         ];
     }
 

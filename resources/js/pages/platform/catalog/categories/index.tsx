@@ -1,9 +1,12 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { Eye, Package, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
+import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import { categoryMerchandisingItems } from '@/components/platform/category-merchandising-actions';
+import { CategoryNavSortSheet } from '@/components/platform/category-nav-sort-sheet';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -43,6 +46,7 @@ type CategoryRow = {
     status: boolean;
     featured: boolean;
     show_in_nav: boolean;
+    nav_sort: number | null;
     products_count: number;
     deleted_at: string | null;
 };
@@ -65,8 +69,11 @@ export default function PlatformCategoriesIndex({
     };
 }) {
     const { can } = usePermission();
+    const { catalog } = usePage().props;
     const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
+    const [navSortCategory, setNavSortCategory] =
+        useState<CategoryRow | null>(null);
 
     const query = useDataTableQuery({
         indexUrl: CategoryController.index.url(),
@@ -77,7 +84,7 @@ export default function PlatformCategoriesIndex({
                 featured: tablePayload.filters.featured ?? 'all',
                 show_in_nav: tablePayload.filters.show_in_nav ?? 'all',
                 parent_id: tablePayload.filters.parent_id ?? 'all',
-                trashed: tablePayload.filters.trashed ?? 'active',
+                trashed: tablePayload.filters.trashed ?? null,
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,
@@ -138,20 +145,25 @@ export default function PlatformCategoriesIndex({
                     />
                 ),
             },
-            {
-                accessorKey: 'parent_name',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Parent"
-                        sortable
-                        sortKey="parent_name"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
-                ),
-                cell: ({ row }) => row.original.parent_name ?? '—',
-            },
+            ...(catalog.show_parent_category
+                ? [
+                      {
+                          accessorKey: 'parent_name',
+                          header: ({ column }) => (
+                              <DataTableColumnHeader
+                                  column={column}
+                                  title="Parent"
+                                  sortable
+                                  sortKey="parent_name"
+                                  currentSort={query.sort}
+                                  onSort={query.toggleSort}
+                              />
+                          ),
+                          cell: ({ row }) =>
+                              row.original.parent_name ?? '—',
+                      } satisfies ColumnDef<CategoryRow>,
+                  ]
+                : []),
             {
                 accessorKey: 'products_count',
                 header: ({ column }) => (
@@ -227,13 +239,23 @@ export default function PlatformCategoriesIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <Badge
-                        variant={
-                            row.original.show_in_nav ? 'default' : 'secondary'
-                        }
-                    >
-                        {row.original.show_in_nav ? 'In nav' : 'Hidden'}
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge
+                            variant={
+                                row.original.show_in_nav
+                                    ? 'default'
+                                    : 'secondary'
+                            }
+                        >
+                            {row.original.show_in_nav ? 'In nav' : 'Hidden'}
+                        </Badge>
+                        {row.original.show_in_nav &&
+                        row.original.nav_sort !== null ? (
+                            <span className="text-muted-foreground text-xs">
+                                #{row.original.nav_sort}
+                            </span>
+                        ) : null}
+                    </div>
                 ),
             },
             {
@@ -241,11 +263,42 @@ export default function PlatformCategoriesIndex({
                 header: 'Actions',
                 cell: ({ row }) => {
                     const category = row.original;
-                    const items = [
+                    const merchandising =
+                        can('manage-catalog')
+                            ? categoryMerchandisingItems(
+                                  category,
+                                  {
+                                      status: CategoryController.toggleStatus.url(
+                                          category.slug,
+                                      ),
+                                      featured:
+                                          CategoryController.toggleFeatured.url(
+                                              category.slug,
+                                          ),
+                                      nav: CategoryController.toggleNav.url(
+                                          category.slug,
+                                      ),
+                                  },
+                                  () => setNavSortCategory(category),
+                              )
+                            : [];
+
+                    const catalogItems = [
                         {
                             label: 'View',
                             icon: Eye,
                             href: CategoryController.show.url(category.slug),
+                        },
+                        {
+                            label: 'View products',
+                            icon: Package,
+                            href: ProductController.index.url({
+                                query: {
+                                    filter: {
+                                        category_id: category.id,
+                                    },
+                                },
+                            }),
                         },
                         ...(can('manage-catalog') && !category.deleted_at
                             ? [
@@ -273,25 +326,38 @@ export default function PlatformCategoriesIndex({
                                   },
                               ]
                             : []),
-                        ...(can('manage-catalog') && !category.deleted_at
+                    ];
+
+                    const dangerItems =
+                        can('manage-catalog') && !category.deleted_at
                             ? [
                                   {
                                       label: 'Delete',
                                       icon: Trash2,
                                       destructive: true,
-                                      separatorBefore: true,
                                       onSelect: () =>
                                           setDeletingSlug(category.slug),
                                   },
                               ]
-                            : []),
-                    ];
+                            : [];
 
-                    return <DataTableRowActions items={items} />;
+                    return (
+                        <DataTableRowActions
+                            contentClassName="w-56"
+                            groups={[
+                                {
+                                    label: 'Merchandising',
+                                    items: merchandising,
+                                },
+                                { label: 'Catalog', items: catalogItems },
+                                { label: 'Danger zone', items: dangerItems },
+                            ]}
+                        />
+                    );
                 },
             },
         ],
-        [can, query.sort, query.toggleSort],
+        [can, catalog.show_parent_category, query.sort, query.toggleSort],
     );
 
     return (
@@ -421,6 +487,7 @@ export default function PlatformCategoriesIndex({
                                             </SelectContent>
                                         </Select>
                                     </div>
+                                    {catalog.show_parent_category ? (
                                     <div className="grid gap-2">
                                         <Label>Parent</Label>
                                         <Select
@@ -457,6 +524,7 @@ export default function PlatformCategoriesIndex({
                                             </SelectContent>
                                         </Select>
                                     </div>
+                                    ) : null}
                                     <div className="grid gap-2">
                                         <Label>Trash</Label>
                                         <Select
@@ -495,6 +563,23 @@ export default function PlatformCategoriesIndex({
                     }
                 />
             </div>
+
+            <CategoryNavSortSheet
+                open={navSortCategory !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setNavSortCategory(null);
+                    }
+                }}
+                category={navSortCategory}
+                actionUrl={
+                    navSortCategory
+                        ? CategoryController.updateNavSort.url(
+                              navSortCategory.slug,
+                          )
+                        : null
+                }
+            />
 
             <ConfirmDeleteDialog
                 open={deletingSlug !== null}

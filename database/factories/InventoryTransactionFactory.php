@@ -26,6 +26,8 @@ class InventoryTransactionFactory extends Factory
             'product_id' => Product::factory(),
             'variant_id' => null,
             'type' => InventoryTransactionType::StockIn,
+            'reason' => null,
+            'reason_note' => null,
             'quantity' => $delta,
             'before_quantity' => $before,
             'after_quantity' => $before + $delta,

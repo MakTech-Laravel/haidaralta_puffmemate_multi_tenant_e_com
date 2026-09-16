@@ -7,10 +7,13 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/actions/** | .ai/rules/actions.md |
 | app/Services/ActivityLog/** | .ai/rules/activity-log.md |
 | resources/js/components/admin/branch-form.tsx, resources/js/components/admin/driver-form.tsx, resources/js/components/admin/duty-days-picker.tsx, resources/js/components/admin/driver-roster-fields.tsx | .ai/rules/admin.md |
-| app/Services/Backup/**, config/backup.php, config/scout.php | .ai/rules/backup.md |
-| app/Models/{Category,Product,ProductVariant,BranchProduct,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php, app/Models/Driver*.php | .ai/rules/branch.md |
+| app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php | .ai/rules/backup.md |
+| app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php, app/Models/Driver*.php | .ai/rules/branch.md |
+| app/{Models,Services/Inventory,Services/Catalog,DataTables,Support}/** | .ai/rules/catalog-data-tables-support.md |
+| resources/js/pages/**/catalog/products/index.tsx | .ai/rules/catalog-products.md |
+| resources/js/pages/**/catalog/categories/index.tsx | .ai/rules/categories.md |
 | resources/js/components/color-picker/** | .ai/rules/color-picker.md |
-| resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx | .ai/rules/components-branch.md |
+| resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx | .ai/rules/components-branch.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx | .ai/rules/components.md |
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
@@ -18,6 +21,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/layouts/customer/** | .ai/rules/customer.md |
 | app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php, app/DataTables/BranchProductListingDataTable.php, app/DataTables/BranchCategoryDataTable.php, app/DataTables/ProductBranchInventoryDataTable.php | .ai/rules/data-tables.md |
 | resources/js/components/{ui/date-picker,branch/product-inventory-panel}.tsx | .ai/rules/date-pickerbranch.md |
+| resources/js/components/discounts/**, resources/js/pages/{platform,branch}/discounts/**, app/Http/Controllers/{Platform,Branch}/DiscountController.php, app/Http/Requests/Discount/** | .ai/rules/discounts.md |
 | docker/**, docker/nginx.conf | .ai/rules/docker.md |
 | Dockerfile | .ai/rules/dockerfile.md |
 | app/Services/Driver/**, app/Models/Driver*.php, app/Http/Controllers/{Platform,Branch}/*Driver*.php, resources/js/pages/{platform,branch}/drivers/**, resources/js/pages/platform/branches/drivers/** | .ai/rules/driver.md |
@@ -43,6 +47,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/seeders/** | .ai/rules/seeders.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |
+| resources/js/components/stock/** | .ai/rules/stock.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts | .ai/rules/storefront.md |
 | app/Support/OpsDashboardAccess.php, config/cache.php | .ai/rules/support.md |
 | resources/js/components/ui/{time-picker,wheel-picker}.tsx | .ai/rules/ui.md |

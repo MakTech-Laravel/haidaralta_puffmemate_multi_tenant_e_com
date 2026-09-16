@@ -1,10 +1,14 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, Network, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
+import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
+import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -31,6 +35,7 @@ import {
     isTransparentColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
+import { stockActionItems } from '@/lib/stock-query';
 
 type ProductRow = {
     id: number;
@@ -65,6 +70,7 @@ export default function PlatformProductsIndex({
     };
 }) {
     const { can } = usePermission();
+    const { catalog } = usePage().props;
     const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
 
@@ -74,8 +80,8 @@ export default function PlatformProductsIndex({
             filter: {
                 search: tablePayload.filters.search ?? '',
                 status: tablePayload.filters.status ?? 'all',
-                category_id: tablePayload.filters.category_id ?? 'all',
-                trashed: tablePayload.filters.trashed ?? 'active',
+                category_id: tablePayload.filters.category_id ?? null,
+                trashed: tablePayload.filters.trashed ?? null,
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,
@@ -150,19 +156,23 @@ export default function PlatformProductsIndex({
                     />
                 ),
             },
-            {
-                accessorKey: 'variants_count',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Variants"
-                        sortable
-                        sortKey="variants_count"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
-                ),
-            },
+            ...(catalog.show_product_variants
+                ? [
+                      {
+                          accessorKey: 'variants_count',
+                          header: ({ column }) => (
+                              <DataTableColumnHeader
+                                  column={column}
+                                  title="Variants"
+                                  sortable
+                                  sortKey="variants_count"
+                                  currentSort={query.sort}
+                                  onSort={query.toggleSort}
+                              />
+                          ),
+                      } satisfies ColumnDef<ProductRow>,
+                  ]
+                : []),
             {
                 accessorKey: 'status',
                 header: ({ column }) => (
@@ -195,14 +205,17 @@ export default function PlatformProductsIndex({
                 header: 'Actions',
                 cell: ({ row }) => {
                     const product = row.original;
-                    const items = [
+                    const canInventories =
+                        can('manage-branch-inventories') && !product.deleted_at;
+                    const canCatalog = can('manage-catalog');
+
+                    const catalogItems = [
                         {
                             label: 'View',
                             icon: Eye,
                             href: ProductController.show.url(product.slug),
                         },
-                        ...(can('manage-branch-inventories') &&
-                        !product.deleted_at
+                        ...(canInventories
                             ? [
                                   {
                                       label: 'Manage branches',
@@ -213,7 +226,7 @@ export default function PlatformProductsIndex({
                                   },
                               ]
                             : []),
-                        ...(can('manage-catalog') && !product.deleted_at
+                        ...(canCatalog && !product.deleted_at
                             ? [
                                   {
                                       label: 'Edit',
@@ -224,7 +237,7 @@ export default function PlatformProductsIndex({
                                   },
                               ]
                             : []),
-                        ...(can('manage-catalog') && product.deleted_at
+                        ...(canCatalog && product.deleted_at
                             ? [
                                   {
                                       label: 'Restore',
@@ -239,25 +252,48 @@ export default function PlatformProductsIndex({
                                   },
                               ]
                             : []),
-                        ...(can('manage-catalog') && !product.deleted_at
+                    ];
+
+                    const stockItems = canInventories
+                        ? stockActionItems(
+                              {
+                                  manage: StockController.manage.url(),
+                                  transactions:
+                                      StockController.transactions.url(),
+                                  price: StockController.price.url(),
+                                  discount: DiscountController.index.url(),
+                              },
+                              { productId: product.id, locked: 'product' },
+                          )
+                        : [];
+
+                    const dangerItems =
+                        canCatalog && !product.deleted_at
                             ? [
                                   {
                                       label: 'Delete',
                                       icon: Trash2,
                                       destructive: true,
-                                      separatorBefore: true,
                                       onSelect: () =>
                                           setDeletingSlug(product.slug),
                                   },
                               ]
-                            : []),
-                    ];
+                            : [];
 
-                    return <DataTableRowActions items={items} />;
+                    return (
+                        <DataTableRowActions
+                            contentClassName="w-56"
+                            groups={[
+                                { label: 'Catalog', items: catalogItems },
+                                { label: 'Stock', items: stockItems },
+                                { label: 'Danger zone', items: dangerItems },
+                            ]}
+                        />
+                    );
                 },
             },
         ],
-        [can, query.sort, query.toggleSort],
+        [can, catalog.show_product_variants, query.sort, query.toggleSort],
     );
 
     return (
@@ -323,42 +359,14 @@ export default function PlatformProductsIndex({
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="grid gap-2">
-                                        <Label>Category</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.category_id ??
-                                                    'all',
-                                            )}
-                                            onValueChange={(value) =>
-                                                query.setFilter(
-                                                    'category_id',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-[12rem]">
-                                                <SelectValue placeholder="Category" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All categories
-                                                </SelectItem>
-                                                {categories.map((category) => (
-                                                    <SelectItem
-                                                        key={category.id}
-                                                        value={String(
-                                                            category.id,
-                                                        )}
-                                                    >
-                                                        {category.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                    <CategoryFilterCombobox
+                                        optionsUrl={CategoryController.options.url()}
+                                        value={query.filters.category_id}
+                                        selectedCategories={categories}
+                                        onChange={(ids) =>
+                                            query.setFilter('category_id', ids)
+                                        }
+                                    />
                                     <div className="grid gap-2">
                                         <Label>Trash</Label>
                                         <Select

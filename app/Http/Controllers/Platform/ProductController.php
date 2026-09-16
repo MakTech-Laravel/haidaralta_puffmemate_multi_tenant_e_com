@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\DataTables\ProductBranchInventoryDataTable;
 use App\DataTables\ProductDataTable;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreProductRequest;
@@ -12,7 +13,7 @@ use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductSuggestionService;
-use App\Support\ProductBranchInventoryPayload;
+use App\Support\CatalogReturnTo;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -35,10 +36,11 @@ class ProductController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         return Inertia::render('platform/catalog/products/create', [
             'categoryOptions' => $this->categoryOptions(),
+            'returnTo' => CatalogReturnTo::fromRequest($request),
         ]);
     }
 
@@ -67,18 +69,23 @@ class ProductController extends Controller
             $request->user('platform'),
         );
 
-        Toast::success('Product created. Disabled for all branches — enable from branch inventory.');
+        Toast::success('Product created.');
 
-        return redirect()->route('platform.products.show', $product);
+        return CatalogReturnTo::afterProductCreate(
+            $request,
+            $product,
+            'platform.products.show',
+            $product,
+        );
     }
 
-    public function show(Product $product): Response
+    public function show(Request $request, Product $product): Response
     {
         $product->load(['categories:id,name,slug', 'variants', 'images', 'creator:id,name']);
 
         return Inertia::render('platform/catalog/products/show', [
             'product' => $this->mapProduct($product, detailed: true),
-            'branchSummary' => ProductBranchInventoryPayload::summary($product),
+            'table' => ProductBranchInventoryDataTable::makeForProduct($request, $product),
         ]);
     }
 
@@ -226,7 +233,6 @@ class ProductController extends Controller
                     ->all()
                 : [];
             $payload['created_by_name'] = $product->creator?->name;
-            $payload['enablement_notice'] = 'Disabled for all branches until enabled from branch inventory.';
         }
 
         return $payload;

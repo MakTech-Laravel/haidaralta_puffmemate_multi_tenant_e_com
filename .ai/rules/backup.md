@@ -3,9 +3,13 @@ paths:
   - 'app/Services/Backup/**'
   - config/backup.php
   - config/scout.php
+  - config/catalog.php
 ---
 
 # Backup
+
+## Catalog kill-switches live in config/catalog.php
+Catalog feature flags are plain config keys shared on the Inertia `catalog` prop by HandleInertiaRequests — no Support class. `show_product_variants` (env SHOW_PRODUCT_VARIANTS, default false) hides variant UI and makes ProductVariantController plus variant-scoped inventory/price writes abort 404 while keeping the table and routes. `sku_prefix` (env CATALOG_SKU_PREFIX, default PMM) drives the auto SKU `PREFIX-SLUG` uppercased from the live slug, client-side until the field is touched and server-side in ProductService when omitted.
 
 ## Spatie Backup is the backup source of truth
 Use BackupService (not custom pg_dump SQL UI) for run/list/clean/download. Disk: backups → storage/app/private/spatie-backups. Restore is DB-only from zip via RestoreDatabaseFromBackupJob (psql); never extract app files onto Coolify. Persist storage/app/private with a Coolify volume or backups are lost on redeploy. POSTGRES_BINARY_PATH for pg_dump; BACKUP_MAIL_TO empty means no mail channels.

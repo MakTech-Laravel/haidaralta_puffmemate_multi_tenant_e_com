@@ -9,6 +9,7 @@ import {
     DataTableColumnHeader,
     DataTableRowActions,
     DataTableToolbar,
+    DataTableTruncated,
     buildArchivesDataTableQuery,
     buildDataTableQuery,
     useDataTableQuery,
@@ -176,15 +177,16 @@ export default function PlatformDatabaseBackupsIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <div>
-                        <div className="font-medium">
+                    <div className="min-w-0">
+                        <DataTableTruncated className="font-medium">
                             {row.original.filename}
-                        </div>
-                        <div className="text-muted-foreground mt-0.5 text-xs md:hidden">
+                        </DataTableTruncated>
+                        <DataTableTruncated className="text-muted-foreground mt-0.5 text-xs md:hidden">
                             {formatWhen(row.original.date)}
-                        </div>
+                        </DataTableTruncated>
                     </div>
                 ),
+                meta: { truncate: false },
             },
             {
                 accessorKey: 'date',

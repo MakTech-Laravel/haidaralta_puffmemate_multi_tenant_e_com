@@ -17,13 +17,23 @@ export type DataTablePayload<T> = {
     data: T[];
     meta: DataTableMeta;
     links: DataTableLink[];
-    filters: Record<string, string | number | boolean | null | undefined>;
+    filters: Record<
+        string,
+        string | number | boolean | string[] | number[] | null | undefined
+    >;
     filterOptions?: Record<string, unknown>;
     sort: string | null;
     per_page: number;
 };
 
-export type DataTableFilterValue = string | number | boolean | null | undefined;
+export type DataTableFilterValue =
+    | string
+    | number
+    | boolean
+    | string[]
+    | number[]
+    | null
+    | undefined;
 
 export type DataTableQueryState = {
     filter: Record<string, DataTableFilterValue>;

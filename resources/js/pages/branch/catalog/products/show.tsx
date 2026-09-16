@@ -1,5 +1,4 @@
-import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import { BranchProductSummary } from '@/components/branch/branch-product-summary';
 import {
@@ -11,7 +10,6 @@ import {
 } from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     colorPickerStyle,
@@ -19,8 +17,6 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { cn } from '@/lib/utils';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -41,7 +37,6 @@ type ProductShow = {
         sort_order?: number;
     }[];
     variants: BranchProductVariantRow[];
-    enabled: boolean;
     inventory: BranchInventorySnapshot | null;
     price: BranchPriceSnapshot | null;
     variant_inventories: Record<string, BranchInventorySnapshot>;
@@ -53,15 +48,16 @@ export default function BranchProductShow({
     product,
     transactions,
     transactionTypes,
+    adjustmentReasons,
     discountTypes,
 }: {
     branch: Branch;
     product: ProductShow;
     transactions: TransactionsPage;
     transactionTypes: { value: string; label: string }[];
+    adjustmentReasons: { value: string; label: string }[];
     discountTypes: { value: string; label: string }[];
 }) {
-    const [enabled, setEnabled] = useState(product.enabled);
     const colorCode = normalizeCatalogColorPickerValue(product.color_code);
     const transparent = isTransparentColorPickerValue(colorCode);
 
@@ -85,18 +81,6 @@ export default function BranchProductShow({
         ],
     });
 
-    const toggleEnabled = (next: boolean) => {
-        setEnabled(next);
-        router.put(
-            ProductController.toggle.url({
-                branch: branch.slug,
-                product: product.slug,
-            }),
-            { status: next },
-            { preserveScroll: true },
-        );
-    };
-
     return (
         <>
             <Head title={product.name} />
@@ -105,10 +89,7 @@ export default function BranchProductShow({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <Avatar
-                            className={cn(
-                                'size-14 rounded-xl border border-border/70',
-                                transparent && COLOR_PICKER_CHECKERBOARD,
-                            )}
+                            className="size-14 rounded-xl border border-border/70"
                             style={
                                 transparent
                                     ? undefined
@@ -135,14 +116,6 @@ export default function BranchProductShow({
                                         : 'Branch inventory and pricing'
                                 }
                             />
-                            {product.inventory?.is_low_stock ? (
-                                <Badge
-                                    variant="outline"
-                                    className="mt-2 border-destructive/40 text-destructive"
-                                >
-                                    Low stock
-                                </Badge>
-                            ) : null}
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -174,10 +147,8 @@ export default function BranchProductShow({
                     imageUrl={product.image_url}
                     colorCode={product.color_code}
                     gallery={product.gallery ?? []}
-                    enabled={enabled}
-                    lowStock={Boolean(product.inventory?.is_low_stock)}
-                    onEnabledChange={toggleEnabled}
-                    enabledLabel="Enabled for this branch"
+                    quantity={product.inventory?.quantity ?? 0}
+                    missingPrice={product.price == null}
                 />
 
                 <ProductInventoryPanel
@@ -188,6 +159,7 @@ export default function BranchProductShow({
                     variantPrices={product.variant_prices}
                     transactions={transactions}
                     transactionTypes={transactionTypes}
+                    adjustmentReasons={adjustmentReasons}
                     discountTypes={discountTypes}
                     inventoryUrl={ProductController.adjustInventory.url({
                         branch: branch.slug,

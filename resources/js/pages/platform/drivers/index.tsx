@@ -10,6 +10,7 @@ import {
     DataTable,
     DataTableRowActions,
     DataTableToolbar,
+    DataTableTruncated,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
@@ -85,6 +86,7 @@ export default function PlatformDriversIndex({
             {
                 id: 'avatar',
                 header: 'Driver',
+                meta: { truncate: false },
                 cell: ({ row }) => (
                     <div className="flex min-w-0 items-center gap-3">
                         <Avatar className="size-10">
@@ -97,12 +99,12 @@ export default function PlatformDriversIndex({
                             </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                            <div className="truncate font-medium">
+                            <DataTableTruncated className="font-medium">
                                 {row.original.name}
-                            </div>
-                            <div className="text-muted-foreground truncate text-xs">
+                            </DataTableTruncated>
+                            <DataTableTruncated className="text-muted-foreground text-xs">
                                 {row.original.phone}
-                            </div>
+                            </DataTableTruncated>
                         </div>
                     </div>
                 ),

@@ -44,7 +44,6 @@ class StoreBranchProductRequest extends FormRequest
             'selling_price' => ['nullable', 'numeric', 'min:0'],
             'discount_price' => ['nullable', 'numeric', 'min:0'],
             'quantity' => ['nullable', 'integer'],
-            'minimum_stock' => ['nullable', 'integer', 'min:0'],
             ...$this->colorCodeRules(),
             ...$this->productCatalogMetaRules(),
         ];

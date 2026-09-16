@@ -1,33 +1,27 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { format, isValid, parseISO } from 'date-fns';
-import {
-    Building2,
-    Check,
-    Copy,
-    ImageIcon,
-    Network,
-    Package,
-    Pencil,
-    Plus,
-    Trash2,
-    TriangleAlert,
-} from 'lucide-react';
+import { Check, Copy, Network, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
+import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import ProductVariantController from '@/actions/App/Http/Controllers/Platform/ProductVariantController';
+import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
-import { COLOR_PICKER_CHECKERBOARD } from '@/components/color-picker/color-swatch-popover';
 import {
     DataTable,
+    DataTableColumnHeader,
     DataTableRowActions,
+    DataTableToolbar,
+    DataTableTruncated,
     toClientDataTablePayload,
+    useDataTableQuery,
+    type DataTablePayload,
 } from '@/components/data-table';
 import { PRODUCT_TAG_OPTIONS } from '@/components/platform/product-form';
 import { VariantForm } from '@/components/platform/variant-form';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { ProductGallery } from '@/components/product-gallery';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,7 +39,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { usePermission } from '@/hooks/use-permissions';
 import {
     colorPickerStyle,
@@ -54,7 +55,7 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { cn } from '@/lib/utils';
+import { stockActionItems } from '@/lib/stock-query';
 
 type ProductVariant = {
     id: number;
@@ -102,12 +103,41 @@ type Product = {
     created_by_name: string | null;
 };
 
-type BranchSummary = {
-    branches: number;
-    enabled: number;
-    low_stock: number;
-    missing_price: number;
+type BranchRow = {
+    id: number;
+    name: string;
+    slug: string;
+    code: string | null;
+    branch_active: boolean;
+    quantity: number;
+    selling_price: string | number | null;
+    effective_price: string | number | null;
+    has_discount: boolean;
+    discount_type: string;
+    discount_price: string | number | null;
+    manage_url: string;
 };
+
+function listingPrice(row: BranchRow): ReactNode {
+    if (row.selling_price == null && row.effective_price == null) {
+        return '—';
+    }
+
+    if (row.has_discount && row.selling_price != null) {
+        return (
+            <span className="tabular-nums">
+                <s className="text-muted-foreground">{row.selling_price}</s>{' '}
+                {row.effective_price ?? row.selling_price}
+            </span>
+        );
+    }
+
+    return (
+        <span className="tabular-nums">
+            {row.effective_price ?? row.selling_price}
+        </span>
+    );
+}
 
 function tagLabel(value: string): string {
     return (
@@ -189,12 +219,13 @@ function CopyValueButton({ value, label }: { value: string; label: string }) {
 
 export default function PlatformProductsShow({
     product,
-    branchSummary,
+    table,
 }: {
     product: Product;
-    branchSummary: BranchSummary;
+    table: DataTablePayload<BranchRow>;
 }) {
     const { can } = usePermission();
+    const { catalog } = usePage().props;
     const [variantDialogOpen, setVariantDialogOpen] = useState(false);
     const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(
         null,
@@ -227,11 +258,106 @@ export default function PlatformProductsShow({
         product.categories.length > 0
             ? product.categories
             : [];
-    const activeVariants = product.variants.filter(
-        (variant) => variant.status,
-    ).length;
-    const mediaCount =
-        (product.image_url ? 1 : 0) + product.gallery.length;
+
+    const branchQuery = useDataTableQuery({
+        indexUrl: ProductController.show.url(product.slug),
+        initial: {
+            filter: {
+                search: table.filters.search ?? '',
+                missing_price: table.filters.missing_price ?? null,
+            },
+            sort: table.sort,
+            per_page: table.per_page,
+        },
+    });
+
+    const branchColumns = useMemo<ColumnDef<BranchRow>[]>(
+        () => [
+            {
+                accessorKey: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Branch"
+                        sortable
+                        sortKey="name"
+                        currentSort={branchQuery.sort}
+                        onSort={branchQuery.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <DataTableTruncated className="font-medium">
+                                {row.original.name}
+                            </DataTableTruncated>
+                            {!row.original.branch_active ? (
+                                <Badge variant="secondary">
+                                    Branch inactive
+                                </Badge>
+                            ) : null}
+                        </div>
+                        <DataTableTruncated className="text-muted-foreground text-xs">
+                            {row.original.code ? `${row.original.code} · ` : ''}
+                            /{row.original.slug}
+                        </DataTableTruncated>
+                    </div>
+                ),
+                meta: { truncate: false },
+            },
+            {
+                accessorKey: 'quantity',
+                header: 'Stock',
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {row.original.quantity}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'selling_price',
+                header: 'Price',
+                cell: ({ row }) => listingPrice(row.original),
+            },
+            {
+                id: 'actions',
+                header: 'Actions',
+                cell: ({ row }) => (
+                    <DataTableRowActions
+                        items={[
+                            {
+                                label: 'Manage',
+                                href: row.original.manage_url,
+                            },
+                            ...(canManageBranches
+                                ? stockActionItems(
+                                      {
+                                          manage: StockController.manage.url(),
+                                          transactions:
+                                              StockController.transactions.url(),
+                                          price: StockController.price.url(),
+                                          discount:
+                                              DiscountController.index.url(),
+                                      },
+                                      {
+                                          productId: product.id,
+                                          branchId: row.original.id,
+                                          locked: 'both',
+                                      },
+                                  )
+                                : []),
+                        ]}
+                    />
+                ),
+            },
+        ],
+        [
+            branchQuery.sort,
+            branchQuery.toggleSort,
+            canManageBranches,
+            product.id,
+        ],
+    );
 
     const variantColumns = useMemo<ColumnDef<ProductVariant>[]>(() => {
         const columns: ColumnDef<ProductVariant>[] = [
@@ -332,7 +458,7 @@ export default function PlatformProductsShow({
         <>
             <Head title={product.name} />
 
-            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0 space-y-3">
                         <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
@@ -406,222 +532,194 @@ export default function PlatformProductsShow({
                     </div>
                 </div>
 
-                <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-                    <ProductGallery
-                        layout="hero"
-                        productName={product.name}
-                        primaryUrl={product.image_url}
-                        images={product.gallery}
-                        colorCode={product.color_code}
-                    />
+                <Card className="gap-4 py-5 shadow-sm">
+                    <CardHeader className="px-5">
+                        <CardTitle>Listing details</CardTitle>
+                        <CardDescription>
+                            What customers and operators see for this SKU
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-5 px-5">
+                        <div className="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)]">
+                            <ProductGallery
+                                card={false}
+                                layout="tile"
+                                productName={product.name}
+                                primaryUrl={product.image_url}
+                                images={product.gallery}
+                                colorCode={product.color_code}
+                            />
 
-                    <Card className="shadow-sm">
-                        <CardHeader>
-                            <CardTitle>Listing details</CardTitle>
-                            <CardDescription>
-                                What customers and operators see for this SKU
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-5">
-                            <p className="text-sm leading-relaxed">
-                                {product.description?.trim() || (
-                                    <span className="text-muted-foreground">
-                                        No description yet. Add one from Edit so
-                                        the storefront has copy for this
-                                        product.
-                                    </span>
-                                )}
-                            </p>
-
-                            <Separator />
-
-                            <dl className="grid gap-4 sm:grid-cols-2">
-                                <Fact
-                                    label="SKU"
-                                    value={
-                                        <span className="font-mono">
-                                            {product.sku ?? '—'}
+                            <div className="min-w-0 space-y-5">
+                                <p className="text-sm leading-relaxed">
+                                    {product.description?.trim() || (
+                                        <span className="text-muted-foreground">
+                                            No description yet. Add one from
+                                            Edit so the storefront has copy for
+                                            this product.
                                         </span>
-                                    }
-                                    action={
-                                        product.sku ? (
-                                            <CopyValueButton
-                                                value={product.sku}
-                                                label="SKU"
-                                            />
-                                        ) : null
-                                    }
-                                />
-                                <Fact
-                                    label="Slug"
-                                    value={
-                                        <span className="font-mono">
-                                            /{product.slug}
-                                        </span>
-                                    }
-                                    action={
-                                        <CopyValueButton
-                                            value={product.slug}
-                                            label="slug"
-                                        />
-                                    }
-                                />
-                                <Fact
-                                    label="Brand"
-                                    value={product.brand ?? '—'}
-                                />
-                                <Fact
-                                    label="Catalog ID"
-                                    value={
-                                        <span className="font-mono">
-                                            #{product.id}
-                                        </span>
-                                    }
-                                />
-                            </dl>
-
-                            <div className="space-y-2">
-                                <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                                    Categories
-                                </p>
-                                {categories.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {categories.map((category) => (
-                                            <Badge
-                                                key={category.id}
-                                                variant="secondary"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={CategoryController.show.url(
-                                                        category.slug,
-                                                    )}
-                                                >
-                                                    {category.name}
-                                                </Link>
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-sm">{product.category_name}</p>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                                    Merchandising tags
-                                </p>
-                                {product.tags.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {product.tags.map((tag) => (
-                                            <Badge
-                                                key={tag}
-                                                variant="outline"
-                                            >
-                                                {tagLabel(tag)}
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-muted-foreground text-sm">
-                                        No storefront tags
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="flex items-center justify-between gap-3 rounded-xl border px-3 py-3">
-                                <div className="min-w-0">
-                                    <p className="text-sm font-medium">
-                                        Image background
-                                    </p>
-                                    <p className="text-muted-foreground truncate text-xs">
-                                        {colorPickerSummary(colorCode)}
-                                    </p>
-                                </div>
-                                <span
-                                    className={cn(
-                                        'size-10 shrink-0 rounded-lg border border-border/70 shadow-inner',
-                                        transparent &&
-                                            COLOR_PICKER_CHECKERBOARD,
                                     )}
-                                    style={
-                                        transparent
-                                            ? undefined
-                                            : colorPickerStyle(colorCode)
-                                    }
-                                    aria-hidden
-                                />
+                                </p>
+
+                                <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                    <Fact
+                                        label="SKU"
+                                        value={
+                                            <span className="font-mono">
+                                                {product.sku ?? '—'}
+                                            </span>
+                                        }
+                                        action={
+                                            product.sku ? (
+                                                <CopyValueButton
+                                                    value={product.sku}
+                                                    label="SKU"
+                                                />
+                                            ) : null
+                                        }
+                                    />
+                                    <Fact
+                                        label="Slug"
+                                        value={
+                                            <span className="font-mono">
+                                                /{product.slug}
+                                            </span>
+                                        }
+                                        action={
+                                            <CopyValueButton
+                                                value={product.slug}
+                                                label="slug"
+                                            />
+                                        }
+                                    />
+                                    <Fact
+                                        label="Brand"
+                                        value={product.brand ?? '—'}
+                                    />
+                                    <Fact
+                                        label="Catalog ID"
+                                        value={
+                                            <span className="font-mono">
+                                                #{product.id}
+                                            </span>
+                                        }
+                                    />
+                                    <Fact
+                                        label="Status"
+                                        value={
+                                            product.status
+                                                ? 'Active'
+                                                : 'Inactive'
+                                        }
+                                    />
+                                    <Fact
+                                        label="Image background"
+                                        value={
+                                            <span className="inline-flex items-center gap-2">
+                                                {transparent ? null : (
+                                                    <span
+                                                        className="size-5 shrink-0 rounded-md border border-border/70"
+                                                        style={colorPickerStyle(
+                                                            colorCode,
+                                                        )}
+                                                        aria-hidden
+                                                    />
+                                                )}
+                                                {colorPickerSummary(colorCode)}
+                                            </span>
+                                        }
+                                    />
+                                    <Fact
+                                        label="Created"
+                                        value={formatTimestamp(
+                                            product.created_at,
+                                        )}
+                                    />
+                                    <Fact
+                                        label="Updated"
+                                        value={formatTimestamp(
+                                            product.updated_at,
+                                        )}
+                                    />
+                                    <Fact
+                                        label="Created by"
+                                        value={product.created_by_name ?? '—'}
+                                    />
+                                </dl>
+
+                                <div className="space-y-2">
+                                    <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                                        Categories
+                                    </p>
+                                    {categories.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {categories.map((category) => (
+                                                <Badge
+                                                    key={category.id}
+                                                    variant="secondary"
+                                                    asChild
+                                                >
+                                                    <Link
+                                                        href={CategoryController.show.url(
+                                                            category.slug,
+                                                        )}
+                                                    >
+                                                        {category.name}
+                                                    </Link>
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm">
+                                            {product.category_name}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                                        Merchandising tags
+                                    </p>
+                                    {product.tags.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {product.tags.map((tag) => (
+                                                <Badge
+                                                    key={tag}
+                                                    variant="outline"
+                                                >
+                                                    {tagLabel(tag)}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-muted-foreground text-sm">
+                                            No storefront tags
+                                        </p>
+                                    )}
+                                </div>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                        </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <DemoStatCard
-                        icon={Package}
-                        label="Variants"
-                        value={String(product.variants.length)}
-                        hint={`${activeVariants} active purchasable SKU${activeVariants === 1 ? '' : 's'}`}
-                    />
-                    <DemoStatCard
-                        icon={ImageIcon}
-                        label="Media"
-                        value={String(mediaCount)}
-                        hint={
-                            product.image_url
-                                ? 'Includes primary listing photo'
-                                : 'Primary photo missing'
-                        }
-                    />
-                    <DemoStatCard
-                        icon={Building2}
-                        label="Branch enablement"
-                        value={`${branchSummary.enabled}/${branchSummary.branches}`}
-                        hint="Enabled of all branches"
-                    />
-                    <DemoStatCard
-                        icon={TriangleAlert}
-                        label="Attention"
-                        value={String(
-                            branchSummary.low_stock +
-                                branchSummary.missing_price,
-                        )}
-                        hint={`${branchSummary.low_stock} low stock · ${branchSummary.missing_price} missing price`}
-                        valueClassName={
-                            branchSummary.low_stock +
-                                branchSummary.missing_price >
-                            0
-                                ? 'text-destructive'
-                                : undefined
-                        }
-                    />
-                </div>
-
-                <div className="grid items-start gap-6 xl:grid-cols-2">
-                    <Card className="shadow-sm">
-                        <CardHeader>
-                            <CardTitle>Specifications</CardTitle>
-                            <CardDescription>
-                                Storefront facts shown with this listing
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
+                        <div className="space-y-3 border-t pt-5">
+                            <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                                Specifications
+                            </p>
                             {product.specifications.length > 0 ? (
-                                <dl className="divide-border overflow-hidden rounded-xl border">
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
                                     {product.specifications.map((row) => (
                                         <div
                                             key={`${row.label}-${row.value}`}
-                                            className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)] sm:gap-4"
+                                            className="bg-muted/40 flex min-w-0 flex-col gap-1 rounded-lg px-3 py-2.5"
                                         >
-                                            <dt className="text-muted-foreground text-sm">
+                                            <p className="text-muted-foreground truncate text-[11px] font-medium tracking-wide uppercase">
                                                 {row.label}
-                                            </dt>
-                                            <dd className="text-sm font-medium">
+                                            </p>
+                                            <p className="text-sm leading-snug font-semibold wrap-break-word">
                                                 {row.value}
-                                            </dd>
+                                            </p>
                                         </div>
                                     ))}
-                                </dl>
+                                </div>
                             ) : (
                                 <p className="text-muted-foreground text-sm">
                                     No specifications yet. Add label/value rows
@@ -629,48 +727,17 @@ export default function PlatformProductsShow({
                                     resistance.
                                 </p>
                             )}
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <Card className="shadow-sm">
-                        <CardHeader>
-                            <CardTitle>Catalog record</CardTitle>
-                            <CardDescription>
-                                Internal metadata for this product
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <dl className="grid gap-4 sm:grid-cols-2">
-                                <Fact
-                                    label="Created"
-                                    value={formatTimestamp(product.created_at)}
-                                />
-                                <Fact
-                                    label="Updated"
-                                    value={formatTimestamp(product.updated_at)}
-                                />
-                                <Fact
-                                    label="Created by"
-                                    value={product.created_by_name ?? '—'}
-                                />
-                                <Fact
-                                    label="Status"
-                                    value={
-                                        product.status ? 'Active' : 'Inactive'
-                                    }
-                                />
-                            </dl>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <Card className="shadow-sm">
-                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+                <Card className="gap-4 py-5 shadow-sm">
+                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 px-5">
                         <div className="space-y-1.5">
                             <CardTitle>Branch network</CardTitle>
                             <CardDescription>
-                                Catalog products stay disabled per branch until
-                                you enable them and set stock or price.
+                                Set stock and selling price at each branch that
+                                should carry this product.
                             </CardDescription>
                         </div>
                         {canManageBranches ? (
@@ -686,38 +753,59 @@ export default function PlatformProductsShow({
                             </Button>
                         ) : null}
                     </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-3 sm:grid-cols-3">
-                            <div className="rounded-xl border px-4 py-3">
-                                <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                                    Enabled
-                                </p>
-                                <p className="mt-1 text-lg font-semibold tabular-nums">
-                                    {branchSummary.enabled}
-                                </p>
-                            </div>
-                            <div className="rounded-xl border px-4 py-3">
-                                <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                                    Low stock
-                                </p>
-                                <p className="mt-1 text-lg font-semibold tabular-nums">
-                                    {branchSummary.low_stock}
-                                </p>
-                            </div>
-                            <div className="rounded-xl border px-4 py-3">
-                                <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                                    Missing price
-                                </p>
-                                <p className="mt-1 text-lg font-semibold tabular-nums">
-                                    {branchSummary.missing_price}
-                                </p>
-                            </div>
-                        </div>
+                    <CardContent className="px-5">
+                        <DataTable
+                            columns={branchColumns}
+                            payload={table}
+                            perPage={branchQuery.perPage}
+                            onPerPageChange={branchQuery.changePerPage}
+                            emptyMessage="No branches match this filter."
+                            toolbar={
+                                <DataTableToolbar
+                                    search={branchQuery.search}
+                                    onSearchChange={branchQuery.setSearch}
+                                    searchPlaceholder="Search branch name, slug, or code…"
+                                    onClear={branchQuery.clearFilters}
+                                    filters={
+                                        <div className="grid gap-2">
+                                            <Label>Price</Label>
+                                            <Select
+                                                value={String(
+                                                    branchQuery.filters
+                                                        .missing_price ?? 'all',
+                                                )}
+                                                onValueChange={(value) =>
+                                                    branchQuery.setFilter(
+                                                        'missing_price',
+                                                        value === 'all'
+                                                            ? null
+                                                            : value,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger className="w-[10rem]">
+                                                    <SelectValue placeholder="Price" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">
+                                                        All prices
+                                                    </SelectItem>
+                                                    <SelectItem value="1">
+                                                        Missing price
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    }
+                                />
+                            }
+                        />
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm">
-                    <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+                {catalog.show_product_variants ? (
+                <Card className="gap-4 py-5 shadow-sm">
+                    <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-5">
                         <div className="flex flex-col gap-1.5">
                             <CardTitle>Variants</CardTitle>
                             <CardDescription>
@@ -731,7 +819,7 @@ export default function PlatformProductsShow({
                             </Button>
                         ) : null}
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-5">
                         <DataTable
                             columns={variantColumns}
                             payload={variantsPayload}
@@ -742,10 +830,11 @@ export default function PlatformProductsShow({
                         />
                     </CardContent>
                 </Card>
+                ) : null}
             </div>
 
+            {catalog.show_product_variants ? (
             <Dialog
-                open={variantDialogOpen}
                 onOpenChange={(open) => {
                     setVariantDialogOpen(open);
 
@@ -790,6 +879,7 @@ export default function PlatformProductsShow({
                     />
                 </DialogContent>
             </Dialog>
+            ) : null}
 
             <ConfirmDeleteDialog
                 open={deletingVariantId !== null}

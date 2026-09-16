@@ -1,14 +1,13 @@
 <?php
 
+use App\Enums\InventoryTransactionType;
 use App\Models\Branch;
-use App\Models\BranchProduct;
 use App\Models\BranchProductPrice;
 use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
-use App\Services\Inventory\BranchProductAvailabilityService;
 use App\Services\Inventory\InventoryService;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -22,7 +21,7 @@ beforeEach(function () {
     $this->seed(UserSeeder::class);
 });
 
-test('branch create enables only the creating branch', function () {
+test('branch create stores stock and price for the creating branch only', function () {
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branchA = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $branchB = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
@@ -37,15 +36,10 @@ test('branch create enables only the creating branch', function () {
             'status' => true,
             'selling_price' => 19.99,
             'quantity' => 5,
-            'minimum_stock' => 2,
         ])
         ->assertRedirect(route('branch.products.show', [$branchA, 'sydney-cbd-exclusive']));
 
     $product = Product::query()->where('slug', 'sydney-cbd-exclusive')->firstOrFail();
-
-    expect($product->isEnabledForBranch($branchA->id))->toBeTrue()
-        ->and($product->isEnabledForBranch($branchB->id))->toBeFalse()
-        ->and(BranchProduct::query()->where('product_id', $product->id)->count())->toBe(1);
 
     $inventory = Inventory::query()
         ->where('branch_id', $branchA->id)
@@ -55,7 +49,12 @@ test('branch create enables only the creating branch', function () {
 
     expect($inventory)->not->toBeNull()
         ->and($inventory->quantity)->toBe(5)
-        ->and($inventory->minimum_stock)->toBe(2);
+        ->and(
+            Inventory::query()
+                ->where('branch_id', $branchB->id)
+                ->where('product_id', $product->id)
+                ->exists(),
+        )->toBeFalse();
 
     expect(
         BranchProductPrice::query()
@@ -92,24 +91,75 @@ test('branch create persists gallery images', function () {
         ->and($product->images()->count())->toBe(2);
 });
 
-test('disabling a product at branch A does not affect branch B', function () {
-    $staffA = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
-    $branchA = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-    $branchB = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
-    $product = Product::factory()->create();
-    $availability = app(BranchProductAvailabilityService::class);
+test('a catalog product created elsewhere is listed at this branch', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    Product::factory()->create(['slug' => 'shared-catalog-pack', 'status' => true]);
 
-    $availability->setEnabled($branchA, $product, true);
-    $availability->setEnabled($branchB, $product, true);
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.products.index', $branch))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/products/index')
+            ->where('table.data', fn ($rows) => collect($rows)
+                ->contains(fn ($row) => $row['slug'] === 'shared-catalog-pack')));
+});
 
-    $this->actingAs($staffA, 'branch')
-        ->put(route('branch.products.enable', [$branchA, $product]), [
-            'status' => false,
-        ])
-        ->assertRedirect();
+test('branch products index filters by category_id', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $matchedCategory = Category::factory()->create(['slug' => 'branch-filter-matched']);
+    $otherCategory = Category::factory()->create(['slug' => 'branch-filter-other']);
 
-    expect($product->isEnabledForBranch($branchA->id))->toBeFalse()
-        ->and($product->isEnabledForBranch($branchB->id))->toBeTrue();
+    $matched = Product::factory()->hasAttached($matchedCategory)->create([
+        'slug' => 'branch-category-matched-pack',
+        'status' => true,
+    ]);
+    $other = Product::factory()->hasAttached($otherCategory)->create([
+        'slug' => 'branch-category-other-pack',
+        'status' => true,
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.products.index', [
+            'branch' => $branch,
+            'filter' => ['category_id' => (string) $matchedCategory->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/products/index')
+            ->where('table.filters.category_id', (string) $matchedCategory->id)
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['slug'] === $matched->slug,
+            ))
+            ->where('table.data', fn ($rows) => collect($rows)->every(
+                fn ($row) => $row['slug'] !== $other->slug,
+            ))
+            ->where('table.filterOptions.categories.0.id', $matchedCategory->id));
+});
+
+test('branch category options are available without viewing categories', function () {
+    config(['catalog.branch_can_view_categories' => false]);
+
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $match = Category::factory()->create([
+        'name' => 'Branch Option Coils',
+        'slug' => 'branch-option-coils',
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->getJson(route('branch.categories.options', [
+            'branch' => $branch,
+            'filter' => ['search' => 'Option Coils'],
+            'per_page' => 10,
+        ]))
+        ->assertOk()
+        ->assertJsonFragment(['id' => $match->id, 'name' => 'Branch Option Coils']);
+});
+
+test('branch routes no longer expose an enablement toggle', function () {
+    expect(Route::has('branch.products.enable'))->toBeFalse();
 });
 
 test('branch can reuse a product with initial stock and price', function () {
@@ -122,11 +172,8 @@ test('branch can reuse a product with initial stock and price', function () {
             'product_id' => $product->id,
             'selling_price' => 11.5,
             'quantity' => 4,
-            'minimum_stock' => 1,
         ])
         ->assertRedirect(route('branch.products.show', [$branch, $product]));
-
-    expect($product->isEnabledForBranch($branch->id))->toBeTrue();
 
     $inventory = Inventory::query()
         ->where('branch_id', $branch->id)
@@ -135,22 +182,21 @@ test('branch can reuse a product with initial stock and price', function () {
         ->first();
 
     expect($inventory)->not->toBeNull()
-        ->and($inventory->quantity)->toBe(4)
-        ->and($inventory->minimum_stock)->toBe(1);
+        ->and($inventory->quantity)->toBe(4);
 });
 
 test('branch can adjust inventory and price for a variant', function () {
+    config(['catalog.show_product_variants' => true]);
+
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $product = Product::factory()->create();
     $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
-    app(BranchProductAvailabilityService::class)->setEnabled($branch, $product, true);
 
     $this->actingAs($staff, 'branch')
         ->post(route('branch.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
             'quantity' => 7,
-            'minimum_stock' => 2,
             'variant_id' => $variant->id,
         ])
         ->assertRedirect();
@@ -174,45 +220,87 @@ test('branch can adjust inventory and price for a variant', function () {
             ->where('product.variant_prices.'.$variant->id.'.selling_price', '15.25'));
 });
 
-test('branch product index filters by enabled and low stock', function () {
+test('branch product inventory adjustment sets counted on-hand with a reason', function () {
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-    $availability = app(BranchProductAvailabilityService::class);
-    $inventory = app(InventoryService::class);
+    $product = Product::factory()->create();
 
-    $enabled = Product::factory()->create(['name' => 'Enabled Filter Pack', 'slug' => 'enabled-filter-pack']);
-    $disabled = Product::factory()->create(['name' => 'Disabled Filter Pack', 'slug' => 'disabled-filter-pack']);
-    $low = Product::factory()->create(['name' => 'Low Stock Filter Pack', 'slug' => 'low-stock-filter-pack']);
+    $this->actingAs($staff, 'branch')
+        ->post(route('branch.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 10,
+        ])
+        ->assertRedirect();
 
-    $availability->setEnabled($branch, $enabled, true);
-    $availability->setEnabled($branch, $low, true);
+    $this->actingAs($staff, 'branch')
+        ->post(route('branch.products.inventory', [$branch, $product]), [
+            'type' => 'adjustment',
+            'quantity' => 7,
+            'reason' => 'damaged',
+        ])
+        ->assertRedirect();
 
-    $row = $inventory->firstOrCreate($branch, $low, null, ['minimum_stock' => 5]);
-    $inventory->setMinimumStock($row, 5);
+    $this->assertDatabaseHas('inventories', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'variant_id' => null,
+        'quantity' => 7,
+    ]);
+
+    $this->assertDatabaseHas('inventory_transactions', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'type' => 'adjustment',
+        'quantity' => -3,
+        'reason' => 'damaged',
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.products.show', [$branch, $product]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('product.inventory.quantity', 7)
+            ->where('transactions.data.0.reason_label', 'Damaged')
+            ->where('transactions.data.0.quantity', -3)
+            ->has('adjustmentReasons'));
+});
+
+test('branch product index shows stock and filters by missing price', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $priced = Product::factory()->create(['name' => 'Priced Pack', 'slug' => 'priced-pack']);
+    $unpriced = Product::factory()->create(['name' => 'Unpriced Pack', 'slug' => 'unpriced-pack']);
+
+    $inventory = app(InventoryService::class)->firstOrCreate($branch, $priced);
+    app(InventoryService::class)->adjust($inventory, InventoryTransactionType::StockIn, 9);
+
+    BranchProductPrice::factory()->create([
+        'branch_id' => $branch->id,
+        'product_id' => $priced->id,
+        'variant_id' => null,
+        'selling_price' => 12.5,
+        'status' => true,
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.products.index', $branch))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/products/index')
+            ->where('table.data', fn ($rows) => collect($rows)
+                ->firstWhere('slug', 'priced-pack')['quantity'] === 9));
 
     $this->actingAs($staff, 'branch')
         ->get(route('branch.products.index', [
             'branch' => $branch,
-            'filter' => ['enabled' => '1'],
+            'filter' => ['missing_price' => '1'],
         ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/catalog/products/index')
-            ->has('table.data')
-            ->where('table.data', fn ($rows) => collect($rows)->contains(fn ($row) => $row['slug'] === 'enabled-filter-pack')
-                && collect($rows)->contains(fn ($row) => $row['slug'] === 'low-stock-filter-pack')
-                && ! collect($rows)->contains(fn ($row) => $row['slug'] === 'disabled-filter-pack')));
-
-    $this->actingAs($staff, 'branch')
-        ->get(route('branch.products.index', [
-            'branch' => $branch,
-            'filter' => ['low_stock' => '1'],
-        ]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('branch/catalog/products/index')
-            ->where('table.data', fn ($rows) => collect($rows)->contains(fn ($row) => $row['slug'] === 'low-stock-filter-pack')
-                && ! collect($rows)->contains(fn ($row) => $row['slug'] === 'enabled-filter-pack')));
+            ->where('table.data', fn ($rows) => collect($rows)->contains(fn ($row) => $row['slug'] === 'unpriced-pack')
+                && ! collect($rows)->contains(fn ($row) => $row['slug'] === 'priced-pack')));
 });
 
 test('branch routes do not expose product destroy', function () {

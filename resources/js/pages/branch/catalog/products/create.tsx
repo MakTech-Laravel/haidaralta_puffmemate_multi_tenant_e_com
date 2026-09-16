@@ -22,9 +22,11 @@ type Suggestion = {
 export default function BranchProductsCreate({
     branch,
     categoryOptions,
+    returnTo = null,
 }: {
     branch: Branch;
     categoryOptions: CategoryOption[];
+    returnTo?: string | null;
 }) {
     const [query, setQuery] = useState('');
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -32,7 +34,6 @@ export default function BranchProductsCreate({
         product_id: 0,
         selling_price: '',
         quantity: 0,
-        minimum_stock: 0,
     });
 
     setLayoutProps({
@@ -85,14 +86,14 @@ export default function BranchProductsCreate({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Add product"
-                    description="Reuse an existing catalog item or create a new global product enabled only for this branch"
+                    description="Reuse an existing catalog item or create a new global product"
                 />
 
                 <Alert>
                     <AlertTitle>Prefer reuse</AlertTitle>
                     <AlertDescription>
                         Search the global catalog first. Creating a new product
-                        adds it for every branch, but only enables{' '}
+                        adds it to the catalog and sets stock and price for{' '}
                         {branch.name}.
                     </AlertDescription>
                 </Alert>
@@ -108,7 +109,7 @@ export default function BranchProductsCreate({
                         />
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2">
                         <div className="grid gap-2">
                             <Label htmlFor="reuse_selling_price">
                                 Selling price
@@ -148,26 +149,6 @@ export default function BranchProductsCreate({
                             />
                             <InputError message={reuseForm.errors.quantity} />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="reuse_minimum_stock">
-                                Minimum stock
-                            </Label>
-                            <Input
-                                id="reuse_minimum_stock"
-                                type="number"
-                                min="0"
-                                value={reuseForm.data.minimum_stock}
-                                onChange={(event) =>
-                                    reuseForm.setData(
-                                        'minimum_stock',
-                                        Number(event.target.value),
-                                    )
-                                }
-                            />
-                            <InputError
-                                message={reuseForm.errors.minimum_stock}
-                            />
-                        </div>
                     </div>
 
                     {suggestions.length > 0 ? (
@@ -189,21 +170,19 @@ export default function BranchProductsCreate({
                                         type="button"
                                         size="sm"
                                         onClick={() => {
-                                            reuseForm
-                                                .transform((data) => ({
-                                                    ...data,
-                                                    product_id: suggestion.id,
-                                                    selling_price:
-                                                        data.selling_price ===
-                                                        ''
-                                                            ? null
-                                                            : data.selling_price,
-                                                }))
-                                                .post(
-                                                    ProductController.reuse.url(
-                                                        branch.slug,
-                                                    ),
-                                                );
+                                            reuseForm.transform((data) => ({
+                                                ...data,
+                                                product_id: suggestion.id,
+                                                selling_price:
+                                                    data.selling_price === ''
+                                                        ? null
+                                                        : data.selling_price,
+                                            }));
+                                            reuseForm.post(
+                                                ProductController.reuse.url(
+                                                    branch.slug,
+                                                ),
+                                            );
                                         }}
                                         disabled={reuseForm.processing}
                                     >
@@ -221,8 +200,19 @@ export default function BranchProductsCreate({
                         action={ProductController.store.form(branch.slug)}
                         categoryOptions={categoryOptions}
                         cancelHref={ProductController.index.url(branch.slug)}
-                        submitLabel="Create & enable here"
+                        submitLabel="Create product"
                         branchOpsFields
+                        enableSuggestions
+                        returnTo={returnTo}
+                        suggestionsUrl={ProductController.suggestions.url(
+                            branch.slug,
+                        )}
+                        suggestionShowHref={(slug) =>
+                            ProductController.show.url({
+                                branch: branch.slug,
+                                product: slug,
+                            })
+                        }
                     />
                 </section>
             </div>

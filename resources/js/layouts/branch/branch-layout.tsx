@@ -10,7 +10,7 @@ export default function BranchLayout({
     breadcrumbs?: BreadcrumbItem[];
     children: React.ReactNode;
 }) {
-    const { branch } = usePage().props;
+    const { branch, catalog } = usePage().props;
     const slug = branch?.slug ?? '';
 
     return (
@@ -18,7 +18,11 @@ export default function BranchLayout({
             portal="branch"
             breadcrumbs={breadcrumbs}
             logoHref={slug ? `/branch/${slug}/dashboard` : '/login'}
-            sections={slug ? buildBranchNav(slug) : []}
+            sections={
+                slug
+                    ? buildBranchNav(slug, catalog.branch_can_view_categories)
+                    : []
+            }
             sidebarVariant="inset"
             sidebarWidth="16.5rem"
             brandEyebrow="Branch"

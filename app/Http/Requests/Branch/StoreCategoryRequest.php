@@ -17,6 +17,9 @@ class StoreCategoryRequest extends FormRequest
 
     public function authorize(): bool
     {
+        abort_unless((bool) config('catalog.branch_can_view_categories'), 404);
+        abort_unless((bool) config('catalog.branch_can_create_categories'), 404);
+
         return true;
     }
 

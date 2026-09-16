@@ -10,6 +10,10 @@ class UpsertBranchProductPriceRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        if ($this->filled('variant_id')) {
+            abort_unless((bool) config('catalog.show_product_variants'), 404);
+        }
+
         return true;
     }
 
