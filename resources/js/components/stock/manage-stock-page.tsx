@@ -13,6 +13,7 @@ import {
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { DemoStatCard } from '@/components/portal/demo-stat-card';
+import { AdjustmentReasonNote } from '@/components/stock/adjustment-reason-note';
 import { StockPairFields } from '@/components/stock/stock-pair-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -265,149 +266,151 @@ export function ManageStockPage({
                                     <InputError message={form.errors.type} />
                                 </div>
 
-                                <div
-                                    className={cn(
-                                        'grid gap-4',
-                                        isAdjustment
-                                            ? 'max-w-2xl sm:grid-cols-2'
-                                            : 'max-w-sm',
-                                    )}
-                                >
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="quantity">
-                                            {isAdjustment
-                                                ? 'Counted quantity'
-                                                : 'Quantity'}
-                                        </Label>
-                                        <div className="flex items-stretch overflow-hidden rounded-xl border border-border/80 bg-background shadow-xs">
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                className="text-foreground h-12 w-12 shrink-0 rounded-none border-r border-border/80"
-                                                aria-label="Decrease quantity"
-                                                disabled={quantityValue <= 0}
-                                                onClick={() =>
-                                                    setQuantity(
-                                                        quantityValue - 1,
-                                                    )
-                                                }
-                                            >
-                                                <Minus className="size-4" />
-                                            </Button>
-                                            <Input
-                                                id="quantity"
-                                                type="text"
-                                                inputMode="numeric"
-                                                autoComplete="off"
-                                                placeholder="0"
-                                                aria-label="Quantity"
-                                                className="h-12 flex-1 rounded-none border-0 bg-transparent text-center text-xl font-semibold tabular-nums shadow-none focus-visible:ring-0"
-                                                value={form.data.quantity}
-                                                onChange={(event) => {
-                                                    const next =
-                                                        event.target.value;
-
-                                                    if (
-                                                        next === '' ||
-                                                        /^\d+$/.test(next)
-                                                    ) {
-                                                        form.setData(
-                                                            'quantity',
-                                                            next,
-                                                        );
-                                                    }
-                                                }}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                className="text-foreground h-12 w-12 shrink-0 rounded-none border-l border-border/80"
-                                                aria-label="Increase quantity"
-                                                onClick={() =>
-                                                    setQuantity(
-                                                        quantityValue + 1,
-                                                    )
-                                                }
-                                            >
-                                                <Plus className="size-4" />
-                                            </Button>
-                                        </div>
-                                        <p className="text-muted-foreground text-xs">
-                                            {quantityHint}
-                                        </p>
-                                        <InputError
-                                            message={form.errors.quantity}
-                                        />
-                                    </div>
-
-                                    {isAdjustment ? (
-                                        <div className="grid content-start gap-2">
-                                            <Label htmlFor="reason">
-                                                Reason
+                                <div className="grid gap-4">
+                                    <div
+                                        className={cn(
+                                            'grid items-start gap-4',
+                                            isAdjustment
+                                                ? 'sm:grid-cols-2'
+                                                : 'max-w-sm',
+                                        )}
+                                    >
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="quantity">
+                                                {isAdjustment
+                                                    ? 'Counted quantity'
+                                                    : 'Quantity'}
                                             </Label>
-                                            <Select
-                                                value={
-                                                    form.data.reason ||
-                                                    undefined
-                                                }
-                                                onValueChange={(value) =>
-                                                    form.setData({
-                                                        ...form.data,
-                                                        reason: value,
-                                                        reason_note:
-                                                            value === 'other'
-                                                                ? form.data
-                                                                      .reason_note
-                                                                : '',
-                                                    })
-                                                }
-                                            >
-                                                <SelectTrigger
-                                                    id="reason"
-                                                    className="h-12 w-full"
-                                                >
-                                                    <SelectValue placeholder="Select a reason" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {adjustmentReasons.map(
-                                                        (reason) => (
-                                                            <SelectItem
-                                                                key={
-                                                                    reason.value
-                                                                }
-                                                                value={
-                                                                    reason.value
-                                                                }
-                                                            >
-                                                                {reason.label}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            {isOtherReason ? (
-                                                <Input
-                                                    id="reason_note"
-                                                    value={
-                                                        form.data.reason_note
+                                            <div className="flex items-stretch overflow-hidden rounded-xl border border-border/80 bg-background shadow-xs">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    className="text-foreground h-12 w-12 shrink-0 rounded-none border-r border-border/80"
+                                                    aria-label="Decrease quantity"
+                                                    disabled={
+                                                        quantityValue <= 0
                                                     }
-                                                    maxLength={255}
-                                                    placeholder="Describe the reason"
-                                                    onChange={(event) =>
-                                                        form.setData(
-                                                            'reason_note',
-                                                            event.target.value,
+                                                    onClick={() =>
+                                                        setQuantity(
+                                                            quantityValue - 1,
                                                         )
                                                     }
+                                                >
+                                                    <Minus className="size-4" />
+                                                </Button>
+                                                <Input
+                                                    id="quantity"
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    autoComplete="off"
+                                                    placeholder="0"
+                                                    aria-label="Quantity"
+                                                    className="h-12 flex-1 rounded-none border-0 bg-transparent text-center text-xl font-semibold tabular-nums shadow-none focus-visible:ring-0"
+                                                    value={form.data.quantity}
+                                                    onChange={(event) => {
+                                                        const next =
+                                                            event.target.value;
+
+                                                        if (
+                                                            next === '' ||
+                                                            /^\d+$/.test(next)
+                                                        ) {
+                                                            form.setData(
+                                                                'quantity',
+                                                                next,
+                                                            );
+                                                        }
+                                                    }}
                                                 />
-                                            ) : null}
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    className="text-foreground h-12 w-12 shrink-0 rounded-none border-l border-border/80"
+                                                    aria-label="Increase quantity"
+                                                    onClick={() =>
+                                                        setQuantity(
+                                                            quantityValue + 1,
+                                                        )
+                                                    }
+                                                >
+                                                    <Plus className="size-4" />
+                                                </Button>
+                                            </div>
+                                            <p className="text-muted-foreground text-xs">
+                                                {quantityHint}
+                                            </p>
                                             <InputError
-                                                message={
-                                                    form.errors.reason ||
-                                                    form.errors.reason_note
-                                                }
+                                                message={form.errors.quantity}
                                             />
                                         </div>
+
+                                        {isAdjustment ? (
+                                            <div className="grid content-start gap-2">
+                                                <Label htmlFor="reason">
+                                                    Reason
+                                                </Label>
+                                                <Select
+                                                    value={
+                                                        form.data.reason ||
+                                                        undefined
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        form.setData({
+                                                            ...form.data,
+                                                            reason: value,
+                                                            reason_note:
+                                                                value ===
+                                                                'other'
+                                                                    ? form.data
+                                                                          .reason_note
+                                                                    : '',
+                                                        })
+                                                    }
+                                                >
+                                                    <SelectTrigger
+                                                        id="reason"
+                                                        className="h-12 min-h-12 w-full rounded-xl py-0 data-[size=default]:h-12"
+                                                    >
+                                                        <SelectValue placeholder="Select a reason" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {adjustmentReasons.map(
+                                                            (reason) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        reason.value
+                                                                    }
+                                                                    value={
+                                                                        reason.value
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        reason.label
+                                                                    }
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <InputError
+                                                    message={form.errors.reason}
+                                                />
+                                            </div>
+                                        ) : null}
+                                    </div>
+
+                                    {isOtherReason ? (
+                                        <AdjustmentReasonNote
+                                            id="reason_note"
+                                            value={form.data.reason_note}
+                                            error={form.errors.reason_note}
+                                            onChange={(value) =>
+                                                form.setData(
+                                                    'reason_note',
+                                                    value,
+                                                )
+                                            }
+                                        />
                                     ) : null}
                                 </div>
 

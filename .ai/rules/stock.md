@@ -19,3 +19,6 @@ Quantity fields accept digits only (empty while clearing, then 0–n). Type choo
 
 ## Adjustment reason sits beside quantity
 On Adjustment, Reason sits beside Counted quantity. Other reveals a required reason_note input. New entry and Reduce have no reason or notes.
+
+## Other reason is a full-width counted textarea
+Reason SelectTrigger must match the quantity stepper (h-12 min-h-12 rounded-xl data-[size=default]:h-12). Other uses AdjustmentReasonNote: full-width textarea after the quantity/reason row, live n/255 count, maxLength 255.

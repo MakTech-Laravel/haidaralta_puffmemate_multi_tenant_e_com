@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import InputError from '@/components/input-error';
 import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { SimplePagination } from '@/components/simple-pagination';
+import { AdjustmentReasonNote } from '@/components/stock/adjustment-reason-note';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -552,173 +553,182 @@ export function ProductInventoryPanel({
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div
-                                    className={
-                                        isAdjustment
-                                            ? 'grid gap-4 sm:grid-cols-2'
-                                            : 'grid gap-2'
-                                    }
-                                >
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="quantity">
-                                            {isAdjustment
-                                                ? 'Counted quantity'
-                                                : 'Quantity'}
-                                        </Label>
-                                        <div className="flex items-stretch overflow-hidden rounded-md border border-border/80 bg-background">
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                className="text-foreground h-9 w-10 shrink-0 rounded-none border-r border-border/80"
-                                                aria-label="Decrease quantity"
-                                                disabled={quantityValue <= 0}
-                                                onClick={() =>
-                                                    inventoryForm.setData(
-                                                        'quantity',
-                                                        String(
-                                                            Math.max(
-                                                                0,
-                                                                quantityValue -
-                                                                    1,
-                                                            ),
-                                                        ),
-                                                    )
-                                                }
-                                            >
-                                                <Minus className="size-4" />
-                                            </Button>
-                                            <Input
-                                                id="quantity"
-                                                type="text"
-                                                inputMode="numeric"
-                                                autoComplete="off"
-                                                placeholder="0"
-                                                className="h-9 flex-1 rounded-none border-0 bg-transparent text-center font-semibold tabular-nums shadow-none focus-visible:ring-0"
-                                                value={
-                                                    inventoryForm.data.quantity
-                                                }
-                                                onChange={(event) => {
-                                                    const next =
-                                                        event.target.value;
-
-                                                    if (
-                                                        next === '' ||
-                                                        /^\d+$/.test(next)
-                                                    ) {
+                                <div className="grid gap-4">
+                                    <div
+                                        className={
+                                            isAdjustment
+                                                ? 'grid items-start gap-4 sm:grid-cols-2'
+                                                : 'grid gap-2'
+                                        }
+                                    >
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="quantity">
+                                                {isAdjustment
+                                                    ? 'Counted quantity'
+                                                    : 'Quantity'}
+                                            </Label>
+                                            <div className="flex items-stretch overflow-hidden rounded-md border border-border/80 bg-background">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    className="text-foreground h-9 w-10 shrink-0 rounded-none border-r border-border/80"
+                                                    aria-label="Decrease quantity"
+                                                    disabled={
+                                                        quantityValue <= 0
+                                                    }
+                                                    onClick={() =>
                                                         inventoryForm.setData(
                                                             'quantity',
-                                                            next,
-                                                        );
-                                                    }
-                                                }}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                className="text-foreground h-9 w-10 shrink-0 rounded-none border-l border-border/80"
-                                                aria-label="Increase quantity"
-                                                onClick={() =>
-                                                    inventoryForm.setData(
-                                                        'quantity',
-                                                        String(
-                                                            quantityValue + 1,
-                                                        ),
-                                                    )
-                                                }
-                                            >
-                                                <Plus className="size-4" />
-                                            </Button>
-                                        </div>
-                                        <p className="text-muted-foreground text-xs">
-                                            {isAdjustment
-                                                ? countedPreview(
-                                                      currentStock,
-                                                      quantityValue,
-                                                      quantityEmpty,
-                                                  )
-                                                : inventoryForm.data.type ===
-                                                    'stock_out'
-                                                  ? 'Removed from on-hand stock'
-                                                  : 'Added to on-hand stock'}
-                                        </p>
-                                        <InputError
-                                            message={
-                                                inventoryForm.errors.quantity
-                                            }
-                                        />
-                                    </div>
-                                    {isAdjustment ? (
-                                        <div className="grid content-start gap-2">
-                                            <Label htmlFor="inventory-reason">
-                                                Reason
-                                            </Label>
-                                            <Select
-                                                value={
-                                                    inventoryForm.data
-                                                        .reason || undefined
-                                                }
-                                                onValueChange={(value) =>
-                                                    inventoryForm.setData({
-                                                        ...inventoryForm.data,
-                                                        reason: value,
-                                                        reason_note:
-                                                            value === 'other'
-                                                                ? inventoryForm
-                                                                      .data
-                                                                      .reason_note
-                                                                : '',
-                                                    })
-                                                }
-                                            >
-                                                <SelectTrigger
-                                                    id="inventory-reason"
-                                                    className="w-full"
-                                                >
-                                                    <SelectValue placeholder="Select a reason" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {adjustmentReasons.map(
-                                                        (reason) => (
-                                                            <SelectItem
-                                                                key={
-                                                                    reason.value
-                                                                }
-                                                                value={
-                                                                    reason.value
-                                                                }
-                                                            >
-                                                                {reason.label}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            {isOtherReason ? (
-                                                <Input
-                                                    id="inventory-reason-note"
-                                                    value={
-                                                        inventoryForm.data
-                                                            .reason_note
-                                                    }
-                                                    maxLength={255}
-                                                    placeholder="Describe the reason"
-                                                    onChange={(event) =>
-                                                        inventoryForm.setData(
-                                                            'reason_note',
-                                                            event.target.value,
+                                                            String(
+                                                                Math.max(
+                                                                    0,
+                                                                    quantityValue -
+                                                                        1,
+                                                                ),
+                                                            ),
                                                         )
                                                     }
+                                                >
+                                                    <Minus className="size-4" />
+                                                </Button>
+                                                <Input
+                                                    id="quantity"
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    autoComplete="off"
+                                                    placeholder="0"
+                                                    className="h-9 flex-1 rounded-none border-0 bg-transparent text-center font-semibold tabular-nums shadow-none focus-visible:ring-0"
+                                                    value={
+                                                        inventoryForm.data
+                                                            .quantity
+                                                    }
+                                                    onChange={(event) => {
+                                                        const next =
+                                                            event.target.value;
+
+                                                        if (
+                                                            next === '' ||
+                                                            /^\d+$/.test(next)
+                                                        ) {
+                                                            inventoryForm.setData(
+                                                                'quantity',
+                                                                next,
+                                                            );
+                                                        }
+                                                    }}
                                                 />
-                                            ) : null}
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    className="text-foreground h-9 w-10 shrink-0 rounded-none border-l border-border/80"
+                                                    aria-label="Increase quantity"
+                                                    onClick={() =>
+                                                        inventoryForm.setData(
+                                                            'quantity',
+                                                            String(
+                                                                quantityValue +
+                                                                    1,
+                                                            ),
+                                                        )
+                                                    }
+                                                >
+                                                    <Plus className="size-4" />
+                                                </Button>
+                                            </div>
+                                            <p className="text-muted-foreground text-xs">
+                                                {isAdjustment
+                                                    ? countedPreview(
+                                                          currentStock,
+                                                          quantityValue,
+                                                          quantityEmpty,
+                                                      )
+                                                    : inventoryForm.data
+                                                            .type ===
+                                                        'stock_out'
+                                                      ? 'Removed from on-hand stock'
+                                                      : 'Added to on-hand stock'}
+                                            </p>
                                             <InputError
                                                 message={
                                                     inventoryForm.errors
-                                                        .reason ||
-                                                    inventoryForm.errors
-                                                        .reason_note
+                                                        .quantity
                                                 }
                                             />
                                         </div>
+                                        {isAdjustment ? (
+                                            <div className="grid content-start gap-2">
+                                                <Label htmlFor="inventory-reason">
+                                                    Reason
+                                                </Label>
+                                                <Select
+                                                    value={
+                                                        inventoryForm.data
+                                                            .reason || undefined
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        inventoryForm.setData({
+                                                            ...inventoryForm.data,
+                                                            reason: value,
+                                                            reason_note:
+                                                                value ===
+                                                                'other'
+                                                                    ? inventoryForm
+                                                                          .data
+                                                                          .reason_note
+                                                                    : '',
+                                                        })
+                                                    }
+                                                >
+                                                    <SelectTrigger
+                                                        id="inventory-reason"
+                                                        className="h-9 min-h-9 w-full data-[size=default]:h-9"
+                                                    >
+                                                        <SelectValue placeholder="Select a reason" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {adjustmentReasons.map(
+                                                            (reason) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        reason.value
+                                                                    }
+                                                                    value={
+                                                                        reason.value
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        reason.label
+                                                                    }
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <InputError
+                                                    message={
+                                                        inventoryForm.errors
+                                                            .reason
+                                                    }
+                                                />
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                    {isOtherReason ? (
+                                        <AdjustmentReasonNote
+                                            id="inventory-reason-note"
+                                            value={
+                                                inventoryForm.data.reason_note
+                                            }
+                                            error={
+                                                inventoryForm.errors.reason_note
+                                            }
+                                            onChange={(value) =>
+                                                inventoryForm.setData(
+                                                    'reason_note',
+                                                    value,
+                                                )
+                                            }
+                                        />
                                     ) : null}
                                 </div>
                             </CardContent>
