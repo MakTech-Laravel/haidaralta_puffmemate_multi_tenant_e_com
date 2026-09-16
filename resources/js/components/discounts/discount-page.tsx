@@ -362,7 +362,7 @@ export function DiscountPage({
                                                     {form.data.discount_type ===
                                                     'percent'
                                                         ? '(%)'
-                                                        : '($)'}
+                                                        : '(AUD)'}
                                                 </span>
                                             </Label>
                                             <Input
