@@ -9,6 +9,7 @@ use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffCo
 use App\Http\Controllers\Platform\CategoryController as PlatformCategoryController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
+use App\Http\Controllers\Platform\DiscountController as PlatformDiscountController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\NotificationController as PlatformNotificationController;
@@ -141,14 +142,18 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.branches.products.inventory');
         Route::put('branches/{branch}/products/{product}/prices', [PlatformBranchInventoryController::class, 'upsertPrice'])
             ->name('platform.branches.products.prices');
+        Route::get('discounts', [PlatformDiscountController::class, 'index'])->name('platform.discounts');
+        Route::put('discounts', [PlatformDiscountController::class, 'update'])->name('platform.discounts.update');
+        Route::get('discounts/preview', [PlatformDiscountController::class, 'preview'])
+            ->name('platform.discounts.preview');
+        Route::permanentRedirect('stock/discount', '/platform/discounts');
+        Route::permanentRedirect('stock/discount-preview', '/platform/discounts/preview');
         Route::get('stock/manage', [PlatformStockController::class, 'manage'])->name('platform.stock.manage');
         Route::post('stock/manage', [PlatformStockController::class, 'adjust'])->name('platform.stock.adjust');
         Route::get('stock/import', [PlatformStockController::class, 'import'])->name('platform.stock.import');
         Route::post('stock/import', [PlatformStockController::class, 'storeImport'])->name('platform.stock.import.store');
         Route::get('stock/price', [PlatformStockController::class, 'price'])->name('platform.stock.price');
         Route::put('stock/price', [PlatformStockController::class, 'updatePrice'])->name('platform.stock.price.update');
-        Route::get('stock/discount', [PlatformStockController::class, 'discount'])->name('platform.stock.discount');
-        Route::put('stock/discount', [PlatformStockController::class, 'updateDiscount'])->name('platform.stock.discount.update');
         Route::get('stock/transactions', [PlatformStockController::class, 'transactions'])->name('platform.stock.transactions');
         Route::get('stock/branch-options', [PlatformStockController::class, 'branchOptions'])
             ->name('platform.stock.branch-options');

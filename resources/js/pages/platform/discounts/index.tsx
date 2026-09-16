@@ -1,8 +1,9 @@
+import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
-import { AddDiscountPage } from '@/components/stock/add-discount-page';
+import { DiscountPage } from '@/components/discounts/discount-page';
 import type { StockPageContext } from '@/lib/stock-query';
 
-export default function PlatformAddStockDiscount({
+export default function PlatformDiscounts({
     context,
     createProductUrl,
     discountTypes,
@@ -12,11 +13,11 @@ export default function PlatformAddStockDiscount({
     discountTypes: { value: string; label: string }[];
 }) {
     return (
-        <AddDiscountPage
+        <DiscountPage
             context={context}
             createProductUrl={createProductUrl}
-            pageUrl={StockController.discount.url()}
-            updateUrl={StockController.updateDiscount.url()}
+            updateUrl={DiscountController.update.url()}
+            previewUrl={DiscountController.preview.url()}
             discountTypes={discountTypes}
             productOptionsUrl={StockController.productOptions.url()}
             branchOptionsUrl={StockController.branchOptions.url()}
@@ -24,10 +25,9 @@ export default function PlatformAddStockDiscount({
     );
 }
 
-PlatformAddStockDiscount.layout = {
+PlatformDiscounts.layout = {
     breadcrumbs: [
         { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Products', href: '/platform/products' },
-        { title: 'Add discount', href: '/platform/stock/discount' },
+        { title: 'Discounts', href: '/platform/discounts' },
     ],
 };

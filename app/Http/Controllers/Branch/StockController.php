@@ -9,7 +9,6 @@ use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Stock\AdjustStockRequest;
 use App\Http\Requests\Stock\ImportStockRequest;
-use App\Http\Requests\Stock\UpdateStockDiscountRequest;
 use App\Http\Requests\Stock\UpdateStockPriceRequest;
 use App\Models\Branch;
 use App\Models\BranchProductPrice;
@@ -143,40 +142,6 @@ class StockController extends Controller
         ]);
 
         Toast::success('Price updated.');
-
-        return redirect()->back();
-    }
-
-    public function discount(Request $request): Response
-    {
-        $branch = $this->currentBranch();
-
-        return Inertia::render('branch/stock/discount', [
-            'context' => StockPageContext::fromRequest($request, $branch),
-            'discountTypes' => [
-                ['value' => DiscountType::None->value, 'label' => 'None'],
-                ['value' => DiscountType::Fixed->value, 'label' => 'Fixed'],
-                ['value' => DiscountType::Percent->value, 'label' => 'Percent'],
-            ],
-            'createProductUrl' => route('branch.products.create', [
-                'branch' => $branch,
-                'return_to' => CatalogReturnTo::currentUrl($request),
-            ]),
-        ]);
-    }
-
-    public function updateDiscount(UpdateStockDiscountRequest $request): RedirectResponse
-    {
-        $branch = $this->currentBranch();
-        abort_unless((int) $request->validated('branch_id') === $branch->id, 404);
-
-        $product = Product::query()->findOrFail((int) $request->validated('product_id'));
-        $data = $request->validated();
-        $data['status'] = true;
-
-        $this->pricing->upsert($branch, $product, $data);
-
-        Toast::success('Discount updated.');
 
         return redirect()->back();
     }

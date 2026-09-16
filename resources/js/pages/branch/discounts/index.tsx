@@ -1,12 +1,12 @@
 import { setLayoutProps } from '@inertiajs/react';
-import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
+import DiscountController from '@/actions/App/Http/Controllers/Branch/DiscountController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
-import { AddDiscountPage } from '@/components/stock/add-discount-page';
+import { DiscountPage } from '@/components/discounts/discount-page';
 import type { StockPageContext } from '@/lib/stock-query';
 
 type Branch = { id: number; name: string; slug: string };
 
-export default function BranchAddStockDiscount({
+export default function BranchDiscounts({
     context,
     createProductUrl,
     discountTypes,
@@ -20,22 +20,22 @@ export default function BranchAddStockDiscount({
     setLayoutProps({
         breadcrumbs: [
             { title: 'Dashboard', href: `/branch/${branch.slug}/dashboard` },
-            { title: 'Products', href: ProductController.index.url(branch.slug) },
             {
-                title: 'Add discount',
-                href: StockController.discount.url(branch.slug),
+                title: 'Discounts',
+                href: DiscountController.index.url(branch.slug),
             },
         ],
     });
 
     return (
-        <AddDiscountPage
+        <DiscountPage
             context={context}
             createProductUrl={createProductUrl}
-            pageUrl={StockController.discount.url(branch.slug)}
-            updateUrl={StockController.updateDiscount.url(branch.slug)}
+            updateUrl={DiscountController.update.url(branch.slug)}
+            previewUrl={DiscountController.preview.url(branch.slug)}
             discountTypes={discountTypes}
             productOptionsUrl={StockController.productOptions.url(branch.slug)}
+            lockBranch
         />
     );
 }

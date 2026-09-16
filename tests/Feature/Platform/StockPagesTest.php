@@ -341,38 +341,6 @@ test('import stock rejects a zero quantity', function () {
         ->assertSessionHasErrors('quantity');
 });
 
-test('platform can set a selling price and then a discount', function () {
-    $this->actingAs($this->admin, 'platform')
-        ->put(route('platform.stock.price.update'), [
-            'branch_id' => $this->branch->id,
-            'product_id' => $this->product->id,
-            'selling_price' => 20,
-        ])
-        ->assertRedirect();
-
-    $this->actingAs($this->admin, 'platform')
-        ->put(route('platform.stock.discount.update'), [
-            'branch_id' => $this->branch->id,
-            'product_id' => $this->product->id,
-            'selling_price' => 20,
-            'discount_type' => 'percent',
-            'discount_price' => 25,
-        ])
-        ->assertRedirect();
-
-    $this->actingAs($this->admin, 'platform')
-        ->get(route('platform.stock.discount', [
-            'branch' => $this->branch->id,
-            'product' => $this->product->id,
-        ]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('platform/stock/discount')
-            ->where('context.price.selling_price', '20.00')
-            ->where('context.price.effective_price', '15.00')
-            ->where('context.price.has_discount', true));
-});
-
 test('stock transactions ledger filters by the selected product', function () {
     $other = Product::factory()->create();
 

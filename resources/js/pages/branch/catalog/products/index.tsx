@@ -2,6 +2,7 @@ import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Settings2 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
+import DiscountController from '@/actions/App/Http/Controllers/Branch/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import {
@@ -192,7 +193,7 @@ export default function BranchProductsIndex({
                                         price: StockController.price.url(
                                             branch.slug,
                                         ),
-                                        discount: StockController.discount.url(
+                                        discount: DiscountController.index.url(
                                             branch.slug,
                                         ),
                                     },

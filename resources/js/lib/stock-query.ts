@@ -112,7 +112,13 @@ export function stockActionItems(
             }),
         },
         { label: 'Update price', href: stockPageUrl(urls.price, params) },
-        { label: 'Add discount', href: stockPageUrl(urls.discount, params) },
+        {
+            label: 'Add discount',
+            href: stockPageUrl(urls.discount, {
+                ...params,
+                locked: null,
+            }),
+        },
     ];
 }
 

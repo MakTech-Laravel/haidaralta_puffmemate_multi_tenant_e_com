@@ -14,6 +14,7 @@ import {
     Package,
     Package2,
     PackagePlus,
+    BadgePercent,
     ScrollText,
     Settings2,
     Shield,
@@ -97,6 +98,12 @@ export function buildBranchNav(
                 permissions: ['view-branch-dashboard'],
             }),
             catalogNav,
+            navLink({
+                title: 'Discounts',
+                href: `/branch/${slug}/discounts`,
+                icon: BadgePercent,
+                permissions: ['manage-branch-products'],
+            }),
             stockNav,
             navGroup({
                 title: 'Orders',

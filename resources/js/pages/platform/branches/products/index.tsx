@@ -3,6 +3,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { CircleDollarSign, Package, Settings2 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
+import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import {
     DataTable,
@@ -203,7 +204,7 @@ export default function PlatformBranchProductsIndex({
                                     transactions:
                                         StockController.transactions.url(),
                                     price: StockController.price.url(),
-                                    discount: StockController.discount.url(),
+                                    discount: DiscountController.index.url(),
                                 },
                                 {
                                     productId: row.original.id,

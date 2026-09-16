@@ -5,6 +5,7 @@ import { Check, Copy, Network, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
+import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import ProductVariantController from '@/actions/App/Http/Controllers/Platform/ProductVariantController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
@@ -336,7 +337,7 @@ export default function PlatformProductsShow({
                                               StockController.transactions.url(),
                                           price: StockController.price.url(),
                                           discount:
-                                              StockController.discount.url(),
+                                              DiscountController.index.url(),
                                       },
                                       {
                                           productId: product.id,

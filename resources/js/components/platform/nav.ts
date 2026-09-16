@@ -74,6 +74,12 @@ export const platformNav: NavSection[] = [
                 }),
             ],
         }),
+        navLink({
+            title: 'Discounts',
+            href: '/platform/discounts',
+            icon: BadgePercent,
+            permissions: ['manage-branch-inventories'],
+        }),
         navGroup({
             title: 'Stock management',
             href: '/platform/stock/manage',
