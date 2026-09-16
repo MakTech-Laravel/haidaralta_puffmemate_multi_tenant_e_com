@@ -27,3 +27,6 @@ Category kill-switches live in config/catalog.php and are shared to Inertia as c
 
 ## Adjustment is counted on-hand plus reason
 Adjustment quantity is the counted on-hand total and requires InventoryAdjustmentReason. New entry and Reduce are unsigned deltas (abs add/subtract). Compute after/variance only inside InventoryService::adjust() after lockForUpdate — controllers never pre-compute variance. Reject zero variance. Store signed variance as txn quantity for Adjustment; in/out store a positive units-moved count. Reason is null for in/out and future reserve/sale.
+
+## Other adjustment requires a typed reason_note
+reason_note is stored only when reason is Other. Named reasons (damaged, expired, etc.) keep reason_note null. New entry and Reduce never take a reason or note.

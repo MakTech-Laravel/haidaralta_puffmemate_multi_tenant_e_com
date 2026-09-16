@@ -12,3 +12,6 @@ Per-branch data is inventories + branch_product_prices only. Lists show "Stock" 
 
 ## Ledger shows reason and signed Adjustment qty
 Ledger rows expose reason / reason_label (em dash when null). Adjustment Qty may be a signed variance; Reduce Qty stays a positive units-removed count. Type labels come from InventoryTransactionType::label() / manualOptions() so DataTable, BranchProductShowPayload, and UI stay in sync.
+
+## Ledger reason_label uses Other note
+reason_label uses InventoryTransaction::reasonLabel() (typed note when Other). Payload includes reason_note. in/out rows stay null.

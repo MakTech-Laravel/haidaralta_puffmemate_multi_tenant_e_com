@@ -20,3 +20,5 @@ Pre-handover: categories.featured boolean (default false) belongs on the origina
 ## Category slogan / nav columns on create migration
 Pre-handover: categories.slogan, show_in_nav, nav_sort (and products.brand, tags, specifications) belong on the original create_* migrations — never Schema::table greenfield mods.
 
+## Inventory transaction reason belongs on create
+inventory_transactions.reason and reason_note belong on the original create_inventory_transactions migration. Do not add a Schema::table modification for greenfield columns on this table.

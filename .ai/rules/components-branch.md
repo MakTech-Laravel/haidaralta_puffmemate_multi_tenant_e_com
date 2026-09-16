@@ -28,3 +28,6 @@ Branch product summary shows quantity (Stock) and missing_price only. No enable 
 
 ## Inventory panel Adjustment is counted on-hand
 Product inventory panel quantity is a clearable digit string, not Number(). Adjustment uses counted on-hand plus a required reason and the same live variance preview as Manage stock. Hide reason for New entry / Reduce. Disable Save when counted matches current stock. Transactions table shows reason_label (em dash when null) and may show a signed Adjustment qty.
+
+## Inventory panel reason sits beside quantity
+Adjustment reason select sits beside counted quantity. Other shows a required describe-the-reason input. Hide reason for New entry / Reduce. Ledger reason_label is the typed note when Other.

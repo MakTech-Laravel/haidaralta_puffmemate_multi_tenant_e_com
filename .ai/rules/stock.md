@@ -16,3 +16,6 @@ Manage stock quantity is stored as a digit string (default "0"), not Number(). E
 
 ## Stock quantity is unsigned digits
 Quantity fields accept digits only (empty while clearing, then 0–n). Type chooses direction: New entry adds, Reduce subtracts, Adjustment sets counted on-hand and shows a live variance preview. Reason select is required only for Adjustment. Disable Save when counted is empty or matches current stock. Ledger may display a computed negative Adjustment variance; users never type a minus sign.
+
+## Adjustment reason sits beside quantity
+On Adjustment, Reason sits beside Counted quantity. Other reveals a required reason_note input. New entry and Reduce have no reason or notes.
