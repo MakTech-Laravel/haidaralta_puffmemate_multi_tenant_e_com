@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
+import { index as productToReview } from '@/routes/customer/product-to-review';
 import { edit as editProfile } from '@/routes/profile';
 
 export type AccountNavItem = {
@@ -18,10 +19,9 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Orders',
-        href: '/activity',
-        // Orders shares /activity until a dedicated orders route exists;
-        // My activity owns the active state on that path.
-        match: () => false,
+        href: '/orders',
+        match: (url) =>
+            url === '/orders' || url.startsWith('/orders?') || url.startsWith('/orders/'),
     },
     {
         label: 'My activity',
@@ -33,8 +33,11 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Product to review',
-        href: '/dashboard',
-        match: () => false,
+        href: productToReview.url(),
+        match: (url) =>
+            url === '/product-to-review' ||
+            url.startsWith('/product-to-review?') ||
+            url.startsWith('/product-to-review/'),
     },
     {
         label: 'Account',

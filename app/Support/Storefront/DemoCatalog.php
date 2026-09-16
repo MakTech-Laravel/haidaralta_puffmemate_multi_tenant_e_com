@@ -310,31 +310,6 @@ class DemoCatalog
         return array_slice($similar, 0, $limit);
     }
 
-    /**
-     * @return array{
-     *     id: string,
-     *     name: string,
-     *     description: string,
-     *     category: string,
-     *     categorySlug: string|null,
-     *     badges: list<string>,
-     *     images: list<string>,
-     *     price: string,
-     *     compareAtPrice: string,
-     *     availability: string,
-     *     rating: float,
-     *     reviewCount: int,
-     *     about: string,
-     *     branch: string,
-     *     stock: int,
-     *     cardPrice: string,
-     *     image: string,
-     *     specifications: list<array{label: string, value: string}>,
-     *     shippingPoints: list<string>,
-     *     responsiblePoints: list<string>,
-     *     reviews: list<array{id: string, author: string, date: string, rating: int, body: string}>
-     * }
-     */
     public static function productDetail(string $id): array
     {
         $product = self::findProduct($id);
@@ -406,40 +381,6 @@ class DemoCatalog
         ];
     }
 
-    /**
-     * @return array{
-     *     itemCount: int,
-     *     stockReserved: bool,
-     *     groups: list<array{
-     *         id: string,
-     *         branchName: string,
-     *         selected: bool,
-     *         items: list<array{
-     *             id: string,
-     *             productId: string,
-     *             name: string,
-     *             category: string,
-     *             description: string,
-     *             image: string,
-     *             unitPrice: float,
-     *             quantity: int,
-     *             available: int|null,
-     *             unavailable: bool,
-     *             branchId: string,
-     *             branchName: string,
-     *             selected: bool
-     *         }>
-     *     }>,
-     *     summary: array{
-     *         branches: list<array{
-     *             branchName: string,
-     *             lines: list<array{label: string, amount: float, tone: string}>
-     *         }>,
-     *         total: float
-     *     },
-     *     branches: list<array{id: string, name: string}>
-     * }
-     */
     public static function cart(): array
     {
         $products = self::products();
@@ -551,19 +492,6 @@ class DemoCatalog
         ];
     }
 
-    /**
-     * @return array{
-     *     itemCount: int,
-     *     items: list<array{id: string, name: string, image: string, quantity: int, unitPrice: float, branchName: string}>,
-     *     summary: array{subtotal: float, deliveryLabel: string, deliveryAmount: float|null, total: float},
-     *     deliveryMethods: list<array{id: string, title: string, description: string, meta: string}>,
-     *     paymentMethods: list<array{id: string, title: string, description: string, badge: string}>,
-     *     timeSlots: list<array{id: string, label: string}>,
-     *     trustBadges: list<string>,
-     *     deliveryAlert: string,
-     *     legalNote: string
-     * }
-     */
     public static function checkout(): array
     {
         $products = self::products();
@@ -638,5 +566,215 @@ class DemoCatalog
             'deliveryAlert' => 'Local delivery covers selected metro zones near your branch. Outside those areas, choose Australia-wide shipping.',
             'legalNote' => 'Age-restricted products. You must be 18+ with valid photo ID. Orders may be refused if ID cannot be verified on delivery.',
         ];
+    }
+
+    public static function customerOrders(): array
+    {
+        $products = self::products();
+        $images = [
+            $products[0]['image'],
+            $products[1]['image'],
+            $products[2]['image'],
+            $products[3]['image'],
+            $products[4]['image'] ?? $products[0]['image'],
+        ];
+
+        $templates = [
+            [
+                'title' => 'Marlboro Gold',
+                'description' => 'Selected pack with branch-checked stock before dispatch. Smooth gold blend for everyday preference.',
+                'priceLabel' => '$1,300',
+                'status' => 'shipped',
+            ],
+            [
+                'title' => 'Premium Vape',
+                'description' => 'Heat-not-burn kit reserved at your selected branch. Includes starter accessories for first use.',
+                'priceLabel' => '$2,500',
+                'status' => 'processing',
+            ],
+            [
+                'title' => 'Industrial Grade Material',
+                'description' => 'Wholesale-style carton selection delivered after ID verification at handover.',
+                'priceLabel' => '$5,450',
+                'status' => 'delivered',
+            ],
+            [
+                'title' => 'Industrial Powder',
+                'description' => 'Compact pouch assortment with discreet packaging and branch-accurate pricing.',
+                'priceLabel' => '$850',
+                'status' => 'shipped',
+            ],
+            [
+                'title' => 'Winfield Blue',
+                'description' => 'Classic blue pack line with courier ETA updates once the driver is assigned.',
+                'priceLabel' => '$980',
+                'status' => 'processing',
+            ],
+            [
+                'title' => 'Vuse GO Berry',
+                'description' => 'Disposable berry flavour unit from the Brisbane branch assortment.',
+                'priceLabel' => '$420',
+                'status' => 'delivered',
+            ],
+            [
+                'title' => 'Horizon Menthol',
+                'description' => 'Menthol carton option with stock reserved at checkout confirmation.',
+                'priceLabel' => '$1,150',
+                'status' => 'shipped',
+            ],
+        ];
+
+        $orders = [];
+
+        for ($index = 0; $index < 13; $index++) {
+            $template = $templates[$index % count($templates)];
+            $number = str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT);
+
+            $orders[] = [
+                'id' => 'ord-'.($index + 1),
+                'orderNumber' => '#ORD-CP2026-'.$number,
+                'title' => $template['title'],
+                'description' => $template['description'],
+                'priceLabel' => $template['priceLabel'],
+                'image' => $images[$index % count($images)],
+                'status' => $template['status'],
+            ];
+        }
+
+        return $orders;
+    }
+
+    /**
+     * Demo order tracking detail for the customer account track page.
+     *
+     * @return array{
+     *     id: string,
+     *     orderNumber: string,
+     *     status: string,
+     *     products: list<array{name: string, quantityLabel: string, priceLabel: string}>,
+     *     totalLabel: string,
+     *     shippingAddress: array{name: string, lines: list<string>, mobile: string},
+     *     driver: array{name: string, truckNumber: string, phone: string},
+     *     timeline: list<array{key: string, label: string, state: string, detail: string}>
+     * }|null
+     */
+    public static function customerOrderDetail(string $id): ?array
+    {
+        $order = collect(self::customerOrders())->firstWhere('id', $id);
+
+        if ($order === null) {
+            return null;
+        }
+
+        $status = $order['status'];
+
+        $timeline = match ($status) {
+            'delivered' => [
+                ['key' => 'submitted', 'label' => 'Submitted', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'processing', 'label' => 'Processing', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'driver_assigned', 'label' => 'Driver Assigned', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'on_the_way', 'label' => 'On The Way', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'delivered', 'label' => 'Delivered', 'state' => 'completed', 'detail' => 'Completed'],
+            ],
+            'processing' => [
+                ['key' => 'submitted', 'label' => 'Submitted', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'processing', 'label' => 'Processing', 'state' => 'current', 'detail' => 'in progress right now'],
+                ['key' => 'driver_assigned', 'label' => 'Driver Assigned', 'state' => 'upcoming', 'detail' => 'Up next'],
+                ['key' => 'on_the_way', 'label' => 'On The Way', 'state' => 'upcoming', 'detail' => 'Up next'],
+                ['key' => 'delivered', 'label' => 'Delivered', 'state' => 'upcoming', 'detail' => 'Up next'],
+            ],
+            default => [
+                ['key' => 'submitted', 'label' => 'Submitted', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'processing', 'label' => 'Processing', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'driver_assigned', 'label' => 'Driver Assigned', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'on_the_way', 'label' => 'On The Way', 'state' => 'current', 'detail' => 'in progress right now'],
+                ['key' => 'delivered', 'label' => 'Delivered', 'state' => 'upcoming', 'detail' => 'Up next'],
+            ],
+        };
+
+        return [
+            'id' => $order['id'],
+            'orderNumber' => $order['orderNumber'],
+            'status' => $status,
+            'products' => [
+                [
+                    'name' => $order['title'],
+                    'quantityLabel' => '1 Unit',
+                    'priceLabel' => $order['priceLabel'],
+                ],
+                [
+                    'name' => 'Vuse GO Berry',
+                    'quantityLabel' => '1 Unit',
+                    'priceLabel' => '$450',
+                ],
+            ],
+            'totalLabel' => $order['priceLabel'],
+            'shippingAddress' => [
+                'name' => 'John Davidson',
+                'lines' => [
+                    '3 Boucaut Street',
+                    'Australia',
+                ],
+                'mobile' => 'Mobile: (+61) 4555-666-666',
+            ],
+            'driver' => [
+                'name' => 'John Smith',
+                'truckNumber' => 'Truck #TR-4523',
+                'phone' => '(+61) 4555-666-666',
+            ],
+            'timeline' => $timeline,
+        ];
+    }
+
+    /**
+     * Demo products awaiting a customer review.
+     *
+     * @return list<array{id: string, name: string, image: string, shippingStatus: string}>
+     */
+    public static function productsToReview(): array
+    {
+        $catalog = self::products();
+        $names = [
+            'Marlboro Gold',
+            'L&M Blue Label',
+            'Vuse GO Berry',
+            'Winfield Blue',
+            'Horizon Menthol',
+            'IQOS Iluma',
+            'Peter Stuyvesant Red',
+            'ZYN Cool Mint',
+            'Dunhill Red',
+            'Benson & Hedges Gold',
+            'Lucky Strike Original',
+            'Camel Blue',
+            'Clipper Classic',
+        ];
+
+        $items = [];
+
+        foreach ($names as $index => $name) {
+            $source = $catalog[$index % count($catalog)];
+
+            $items[] = [
+                'id' => 'review-'.($index + 1),
+                'name' => $name,
+                'image' => $source['image'],
+                'shippingStatus' => 'delivered',
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Resolve a single demo product awaiting review.
+     *
+     * @return array{id: string, name: string, image: string, shippingStatus: string}|null
+     */
+    public static function productToReview(string $id): ?array
+    {
+        $product = collect(self::productsToReview())->firstWhere('id', $id);
+
+        return $product;
     }
 }
