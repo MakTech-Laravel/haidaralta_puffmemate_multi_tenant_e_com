@@ -66,7 +66,7 @@ export default function CustomerLayout({
                     </nav>
 
                     <div className="grid gap-10 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-14">
-                        <AccountSidebar className="lg:pt-1" />
+                        <AccountSidebar className="lg:sticky lg:top-28 lg:self-start lg:pt-1" />
                         <div className="min-w-0">{children}</div>
                     </div>
                 </div>

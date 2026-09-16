@@ -62,7 +62,7 @@ export function OrderList({
                 {pageOrders.map((order) => (
                     <li key={order.id}>
                         <article className="bg-accent relative flex flex-col gap-4 p-4 sm:flex-row sm:items-stretch sm:gap-5 sm:p-5">
-                            <div className="bg-accent relative aspect-square w-full shrink-0 overflow-hidden rounded-xl sm:size-36 md:size-40">
+                            <div className="bg-accent relative aspect-square w-full shrink-0 overflow-hidden rounded-sm sm:size-36 md:size-40">
                                 <div
                                     className="absolute inset-0 bg-cover bg-center"
                                     style={{
