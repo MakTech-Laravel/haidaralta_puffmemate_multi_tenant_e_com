@@ -46,7 +46,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { usePermission } from '@/hooks/use-permissions';
 import {
     colorPickerStyle,
@@ -458,7 +457,7 @@ export default function PlatformProductsShow({
         <>
             <Head title={product.name} />
 
-            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0 space-y-3">
                         <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
@@ -532,178 +531,194 @@ export default function PlatformProductsShow({
                     </div>
                 </div>
 
-                <div className="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)]">
-                    <ProductGallery
-                        card={false}
-                        layout="tile"
-                        productName={product.name}
-                        primaryUrl={product.image_url}
-                        images={product.gallery}
-                        colorCode={product.color_code}
-                    />
+                <Card className="gap-4 py-5 shadow-sm">
+                    <CardHeader className="px-5">
+                        <CardTitle>Listing details</CardTitle>
+                        <CardDescription>
+                            What customers and operators see for this SKU
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-5 px-5">
+                        <div className="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)]">
+                            <ProductGallery
+                                card={false}
+                                layout="tile"
+                                productName={product.name}
+                                primaryUrl={product.image_url}
+                                images={product.gallery}
+                                colorCode={product.color_code}
+                            />
 
-                    <Card className="shadow-sm">
-                        <CardHeader>
-                            <CardTitle>Listing details</CardTitle>
-                            <CardDescription>
-                                What customers and operators see for this SKU
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-5">
-                            <p className="text-sm leading-relaxed">
-                                {product.description?.trim() || (
-                                    <span className="text-muted-foreground">
-                                        No description yet. Add one from Edit so
-                                        the storefront has copy for this
-                                        product.
-                                    </span>
-                                )}
-                            </p>
-
-                            <Separator />
-
-                            <dl className="grid gap-4 sm:grid-cols-2">
-                                <Fact
-                                    label="SKU"
-                                    value={
-                                        <span className="font-mono">
-                                            {product.sku ?? '—'}
+                            <div className="min-w-0 space-y-5">
+                                <p className="text-sm leading-relaxed">
+                                    {product.description?.trim() || (
+                                        <span className="text-muted-foreground">
+                                            No description yet. Add one from
+                                            Edit so the storefront has copy for
+                                            this product.
                                         </span>
-                                    }
-                                    action={
-                                        product.sku ? (
+                                    )}
+                                </p>
+
+                                <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                    <Fact
+                                        label="SKU"
+                                        value={
+                                            <span className="font-mono">
+                                                {product.sku ?? '—'}
+                                            </span>
+                                        }
+                                        action={
+                                            product.sku ? (
+                                                <CopyValueButton
+                                                    value={product.sku}
+                                                    label="SKU"
+                                                />
+                                            ) : null
+                                        }
+                                    />
+                                    <Fact
+                                        label="Slug"
+                                        value={
+                                            <span className="font-mono">
+                                                /{product.slug}
+                                            </span>
+                                        }
+                                        action={
                                             <CopyValueButton
-                                                value={product.sku}
-                                                label="SKU"
+                                                value={product.slug}
+                                                label="slug"
                                             />
-                                        ) : null
-                                    }
-                                />
-                                <Fact
-                                    label="Slug"
-                                    value={
-                                        <span className="font-mono">
-                                            /{product.slug}
-                                        </span>
-                                    }
-                                    action={
-                                        <CopyValueButton
-                                            value={product.slug}
-                                            label="slug"
-                                        />
-                                    }
-                                />
-                                <Fact
-                                    label="Brand"
-                                    value={product.brand ?? '—'}
-                                />
-                                <Fact
-                                    label="Catalog ID"
-                                    value={
-                                        <span className="font-mono">
-                                            #{product.id}
-                                        </span>
-                                    }
-                                />
-                            </dl>
+                                        }
+                                    />
+                                    <Fact
+                                        label="Brand"
+                                        value={product.brand ?? '—'}
+                                    />
+                                    <Fact
+                                        label="Catalog ID"
+                                        value={
+                                            <span className="font-mono">
+                                                #{product.id}
+                                            </span>
+                                        }
+                                    />
+                                    <Fact
+                                        label="Status"
+                                        value={
+                                            product.status
+                                                ? 'Active'
+                                                : 'Inactive'
+                                        }
+                                    />
+                                    <Fact
+                                        label="Image background"
+                                        value={
+                                            <span className="inline-flex items-center gap-2">
+                                                {transparent ? null : (
+                                                    <span
+                                                        className="size-5 shrink-0 rounded-md border border-border/70"
+                                                        style={colorPickerStyle(
+                                                            colorCode,
+                                                        )}
+                                                        aria-hidden
+                                                    />
+                                                )}
+                                                {colorPickerSummary(colorCode)}
+                                            </span>
+                                        }
+                                    />
+                                    <Fact
+                                        label="Created"
+                                        value={formatTimestamp(
+                                            product.created_at,
+                                        )}
+                                    />
+                                    <Fact
+                                        label="Updated"
+                                        value={formatTimestamp(
+                                            product.updated_at,
+                                        )}
+                                    />
+                                    <Fact
+                                        label="Created by"
+                                        value={product.created_by_name ?? '—'}
+                                    />
+                                </dl>
 
-                            <div className="space-y-2">
-                                <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                                    Categories
-                                </p>
-                                {categories.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {categories.map((category) => (
-                                            <Badge
-                                                key={category.id}
-                                                variant="secondary"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={CategoryController.show.url(
-                                                        category.slug,
-                                                    )}
+                                <div className="space-y-2">
+                                    <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                                        Categories
+                                    </p>
+                                    {categories.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {categories.map((category) => (
+                                                <Badge
+                                                    key={category.id}
+                                                    variant="secondary"
+                                                    asChild
                                                 >
-                                                    {category.name}
-                                                </Link>
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-sm">{product.category_name}</p>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                                    Merchandising tags
-                                </p>
-                                {product.tags.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {product.tags.map((tag) => (
-                                            <Badge
-                                                key={tag}
-                                                variant="outline"
-                                            >
-                                                {tagLabel(tag)}
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-muted-foreground text-sm">
-                                        No storefront tags
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="flex items-center justify-between gap-3 rounded-xl border px-3 py-3">
-                                <div className="min-w-0">
-                                    <p className="text-sm font-medium">
-                                        Image background
-                                    </p>
-                                    <p className="text-muted-foreground truncate text-xs">
-                                        {colorPickerSummary(colorCode)}
-                                    </p>
+                                                    <Link
+                                                        href={CategoryController.show.url(
+                                                            category.slug,
+                                                        )}
+                                                    >
+                                                        {category.name}
+                                                    </Link>
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm">
+                                            {product.category_name}
+                                        </p>
+                                    )}
                                 </div>
-                                <span
-                                    className="size-10 shrink-0 rounded-lg border border-border/70 shadow-inner"
-                                    style={
-                                        transparent
-                                            ? undefined
-                                            : colorPickerStyle(colorCode)
-                                    }
-                                    aria-hidden
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
 
-                <div className="grid items-start gap-6 xl:grid-cols-2">
-                    <Card className="shadow-sm">
-                        <CardHeader>
-                            <CardTitle>Specifications</CardTitle>
-                            <CardDescription>
-                                Storefront facts shown with this listing
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
+                                <div className="space-y-2">
+                                    <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                                        Merchandising tags
+                                    </p>
+                                    {product.tags.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {product.tags.map((tag) => (
+                                                <Badge
+                                                    key={tag}
+                                                    variant="outline"
+                                                >
+                                                    {tagLabel(tag)}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-muted-foreground text-sm">
+                                            No storefront tags
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 border-t pt-5">
+                            <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                                Specifications
+                            </p>
                             {product.specifications.length > 0 ? (
-                                <dl className="divide-border max-h-64 overflow-y-auto overflow-hidden rounded-xl border">
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
                                     {product.specifications.map((row) => (
                                         <div
                                             key={`${row.label}-${row.value}`}
-                                            className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)] sm:gap-4"
+                                            className="bg-muted/40 flex min-w-0 flex-col gap-1 rounded-lg px-3 py-2.5"
                                         >
-                                            <dt className="text-muted-foreground text-sm">
+                                            <p className="text-muted-foreground truncate text-[11px] font-medium tracking-wide uppercase">
                                                 {row.label}
-                                            </dt>
-                                            <dd className="text-sm font-medium">
+                                            </p>
+                                            <p className="text-sm leading-snug font-semibold wrap-break-word">
                                                 {row.value}
-                                            </dd>
+                                            </p>
                                         </div>
                                     ))}
-                                </dl>
+                                </div>
                             ) : (
                                 <p className="text-muted-foreground text-sm">
                                     No specifications yet. Add label/value rows
@@ -711,43 +726,12 @@ export default function PlatformProductsShow({
                                     resistance.
                                 </p>
                             )}
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <Card className="shadow-sm">
-                        <CardHeader>
-                            <CardTitle>Catalog record</CardTitle>
-                            <CardDescription>
-                                Internal metadata for this product
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <dl className="grid gap-4 sm:grid-cols-2">
-                                <Fact
-                                    label="Created"
-                                    value={formatTimestamp(product.created_at)}
-                                />
-                                <Fact
-                                    label="Updated"
-                                    value={formatTimestamp(product.updated_at)}
-                                />
-                                <Fact
-                                    label="Created by"
-                                    value={product.created_by_name ?? '—'}
-                                />
-                                <Fact
-                                    label="Status"
-                                    value={
-                                        product.status ? 'Active' : 'Inactive'
-                                    }
-                                />
-                            </dl>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <Card className="shadow-sm">
-                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+                <Card className="gap-4 py-5 shadow-sm">
+                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 px-5">
                         <div className="space-y-1.5">
                             <CardTitle>Branch network</CardTitle>
                             <CardDescription>
@@ -768,7 +752,7 @@ export default function PlatformProductsShow({
                             </Button>
                         ) : null}
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-5">
                         <DataTable
                             columns={branchColumns}
                             payload={table}
@@ -819,8 +803,8 @@ export default function PlatformProductsShow({
                 </Card>
 
                 {catalog.show_product_variants ? (
-                <Card className="shadow-sm">
-                    <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+                <Card className="gap-4 py-5 shadow-sm">
+                    <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-5">
                         <div className="flex flex-col gap-1.5">
                             <CardTitle>Variants</CardTitle>
                             <CardDescription>
@@ -834,7 +818,7 @@ export default function PlatformProductsShow({
                             </Button>
                         ) : null}
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-5">
                         <DataTable
                             columns={variantColumns}
                             payload={variantsPayload}

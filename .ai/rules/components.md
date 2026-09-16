@@ -16,7 +16,7 @@ When maxFiles is exceeded, emit one count rejection summarizing N skipped files 
 FileUpload dropzone never dumps raw accept MIME/extension lists into helper text (overflows). Show hint + Max N MB / up to N files only; keep accept for validation/input only.
 
 ## Compact gallery with lightbox
-Product show gallery uses compact thumbnails (dense grid) + yet-another-react-lightbox click-to-preview. Platform catalog product show uses ProductGallery layout=hero (large primary stage + thumbs). BranchProductShowPayload includes gallery; branch/platform inventory show keep the compact grid.
+Product show gallery uses compact thumbnails + yet-another-react-lightbox click-to-preview. Platform catalog product show uses ProductGallery layout=tile in the listing rail (square + horizontal thumbs). Do not give product show a half-page hero Media card. Branch/platform inventory show keep the compact grid.
 
 ## Gallery/primary use color_code tile
 Product primary + gallery thumbnails/lightbox use product.color_code via colorPickerStyle (object-contain). Transparent mode inherits the page or card color — never COLOR_PICKER_CHECKERBOARD on listing tiles or picker previews. Checkerboard stays only on the hex swatch editor. Apply on platform catalog show and branch/platform inventory show.
@@ -25,7 +25,10 @@ Product primary + gallery thumbnails/lightbox use product.color_code via colorPi
 FileUpload dropzoneVisibility=empty hides the dashed dropzone once files exist and shows a compact Add tile in the grid (opacity-0 input overlay, not programmatic click). compactCards hides filename/size (square thumbs). Default dropzoneVisibility=always so other callers keep the large zone.
 
 ## Gallery tile layout is compact square
-ProductGallery layout=tile is a compact square click-to-preview (no min-h-96, no Media card). Use it on category show. Product catalog show keeps layout=hero. Transparent color_code still inherits the parent surface.
+ProductGallery layout=tile is a compact square click-to-preview. When more than one media item exists, show a horizontal scrolling thumb strip under the square (size-10, not a 4-col grid). Category show passes images=[] so thumbs stay hidden. Product catalog show uses tile in the listing rail. layout=hero stays a larger square + thumbs for other callers.
 
 ## FileUpload survives Inertia File cloneDeep
 Inertia useForm setData('key', value) cloneDeep's the whole form (es-toolkit new File([file], …)), so File refs change on every keystroke. FileUpload preview sync must match by name+size+type and reuse Object URLs/keys — never revoke/rebuild solely because preview.file !== value[i]. Prefer functional setData(current => ({...current, field})) when updating non-file fields beside large uploads.
+
+## Tile thumbs are a strip, not a grid
+ProductGallery layout=tile may include a horizontal thumb strip when gallery images exist. Keep thumbs size-10 and overflow-x-auto so a 14–16rem rail does not grow taller than the listing facts. Never use a wrapping 4-col thumb grid or a 50/50 Media card on product show.

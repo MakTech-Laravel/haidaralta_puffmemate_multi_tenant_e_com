@@ -143,7 +143,7 @@ export function ProductGallery({
 
     const empty = (
         <div
-            className="border-border/70 bg-muted/20 flex min-h-64 flex-1 flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center"
+            className="border-border/70 bg-muted/20 flex aspect-square w-full flex-col items-center justify-center rounded-xl border border-dashed px-6 text-center"
             style={tileStyle}
         >
             <ImageIcon className="text-muted-foreground mb-3 size-8" />
@@ -156,14 +156,14 @@ export function ProductGallery({
     );
 
     const hero = (
-        <div className={cn('flex min-h-0 flex-1 flex-col gap-3', className)}>
+        <div className={cn('flex flex-col gap-3', className)}>
             {items.length === 0 ? (
                 empty
             ) : (
                 <>
                     <button
                         type="button"
-                        className="group relative flex min-h-72 w-full flex-1 items-center justify-center overflow-hidden rounded-2xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:min-h-96"
+                        className="group relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                         style={tileStyle}
                         onClick={() => openAt(activeIndex)}
                         aria-label={`Preview ${active?.label ?? productName}`}
@@ -172,12 +172,17 @@ export function ProductGallery({
                             <img
                                 src={active.url}
                                 alt={productName}
-                                className="max-h-96 w-full object-contain p-6 transition group-hover:scale-[1.02] sm:max-h-112"
+                                className="size-full object-contain p-5 transition group-hover:scale-[1.02]"
                             />
                         ) : null}
                         {active?.label === 'Primary' ? (
                             <span className="bg-background/90 text-foreground absolute top-3 left-3 rounded-full border px-2.5 py-1 text-[11px] font-medium tracking-wide uppercase shadow-sm">
                                 Primary
+                            </span>
+                        ) : null}
+                        {items.length > 1 ? (
+                            <span className="bg-background/90 text-foreground absolute right-3 bottom-3 rounded-md border px-2 py-0.5 text-[11px] font-medium tabular-nums shadow-sm">
+                                {activeIndex + 1}/{items.length}
                             </span>
                         ) : null}
                     </button>
@@ -188,7 +193,7 @@ export function ProductGallery({
                                     key={item.key}
                                     type="button"
                                     className={cn(
-                                        'size-16 shrink-0 overflow-hidden rounded-lg border outline-none transition sm:size-20',
+                                        'size-14 shrink-0 overflow-hidden rounded-lg border outline-none transition sm:size-16',
                                         imageIndex === activeIndex
                                             ? 'border-primary ring-1 ring-primary/30'
                                             : 'border-border/70 hover:border-primary/40',
@@ -225,25 +230,55 @@ export function ProductGallery({
     );
 
     const tile = (
-        <div className={cn('w-full', className)}>
+        <div className={cn('flex w-full flex-col gap-2', className)}>
             {items.length === 0 ? (
                 tileEmpty
             ) : (
-                <button
-                    type="button"
-                    className="group relative aspect-square w-full overflow-hidden rounded-xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                    style={tileStyle}
-                    onClick={() => openAt(activeIndex)}
-                    aria-label={`Preview ${active?.label ?? productName}`}
-                >
-                    {active ? (
-                        <img
-                            src={active.url}
-                            alt={productName}
-                            className="size-full object-contain p-2.5 transition group-hover:scale-[1.02]"
-                        />
+                <>
+                    <button
+                        type="button"
+                        className="group relative aspect-square w-full overflow-hidden rounded-xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        style={tileStyle}
+                        onClick={() => openAt(activeIndex)}
+                        aria-label={`Preview ${active?.label ?? productName}`}
+                    >
+                        {active ? (
+                            <img
+                                src={active.url}
+                                alt={productName}
+                                className="size-full object-contain p-2.5 transition group-hover:scale-[1.02]"
+                            />
+                        ) : null}
+                    </button>
+                    {items.length > 1 ? (
+                        <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                            {items.map((item, imageIndex) => (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    className={cn(
+                                        'size-10 shrink-0 overflow-hidden rounded-md border outline-none transition',
+                                        imageIndex === activeIndex
+                                            ? 'border-primary ring-1 ring-primary/30'
+                                            : 'border-border/70 hover:border-primary/40',
+                                    )}
+                                    style={tileStyle}
+                                    onClick={() => setIndex(imageIndex)}
+                                    onDoubleClick={() => openAt(imageIndex)}
+                                    aria-label={`Show ${item.label ?? `image ${imageIndex + 1}`}`}
+                                    aria-pressed={imageIndex === activeIndex}
+                                >
+                                    <img
+                                        src={item.url}
+                                        alt=""
+                                        className="size-full object-contain p-0.5"
+                                        loading="lazy"
+                                    />
+                                </button>
+                            ))}
+                        </div>
                     ) : null}
-                </button>
+                </>
             )}
             {lightbox}
         </div>
