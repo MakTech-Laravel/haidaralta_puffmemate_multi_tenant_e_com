@@ -26,3 +26,6 @@ FileUpload dropzoneVisibility=empty hides the dashed dropzone once files exist a
 
 ## Gallery tile layout is compact square
 ProductGallery layout=tile is a compact square click-to-preview (no min-h-96, no Media card). Use it on category show. Product catalog show keeps layout=hero. Transparent color_code still inherits the parent surface.
+
+## FileUpload survives Inertia File cloneDeep
+Inertia useForm setData('key', value) cloneDeep's the whole form (es-toolkit new File([file], …)), so File refs change on every keystroke. FileUpload preview sync must match by name+size+type and reuse Object URLs/keys — never revoke/rebuild solely because preview.file !== value[i]. Prefer functional setData(current => ({...current, field})) when updating non-file fields beside large uploads.
