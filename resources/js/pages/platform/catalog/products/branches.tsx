@@ -10,6 +10,7 @@ import {
     DataTableColumnHeader,
     DataTableRowActions,
     DataTableToolbar,
+    DataTableTruncated,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
@@ -140,25 +141,26 @@ export default function PlatformProductBranches({
                     />
                 ),
                 cell: ({ row }) => (
-                    <div className="flex flex-col gap-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium">
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <DataTableTruncated className="font-medium">
                                 {row.original.name}
-                            </span>
+                            </DataTableTruncated>
                             {!row.original.branch_active ? (
                                 <Badge variant="secondary">
                                     Branch inactive
                                 </Badge>
                             ) : null}
                         </div>
-                        <div className="text-muted-foreground text-xs">
+                        <DataTableTruncated className="text-muted-foreground text-xs">
                             {row.original.code
                                 ? `${row.original.code} · `
                                 : ''}
                             /{row.original.slug}
-                        </div>
+                        </DataTableTruncated>
                     </div>
                 ),
+                meta: { truncate: false },
             },
             {
                 accessorKey: 'quantity',

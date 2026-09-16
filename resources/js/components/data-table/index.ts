@@ -1,6 +1,7 @@
 export { DataTable } from '@/components/data-table/data-table';
 export { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 export { DataTablePagination } from '@/components/data-table/data-table-pagination';
+export { DataTableTruncated } from '@/components/data-table/data-table-truncated';
 export {
     DataTableRowActions,
     defaultDataTableActionIcons,

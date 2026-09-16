@@ -9,6 +9,7 @@ import {
     DataTableColumnHeader,
     DataTableRowActions,
     DataTableToolbar,
+    DataTableTruncated,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
@@ -120,13 +121,16 @@ export default function BranchProductsIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <div>
-                        <div className="font-medium">{row.original.name}</div>
-                        <div className="text-muted-foreground text-xs">
+                    <div className="min-w-0">
+                        <DataTableTruncated className="font-medium">
+                            {row.original.name}
+                        </DataTableTruncated>
+                        <DataTableTruncated className="text-muted-foreground text-xs">
                             {row.original.category_name}
-                        </div>
+                        </DataTableTruncated>
                     </div>
                 ),
+                meta: { truncate: false },
             },
             {
                 accessorKey: 'sku',

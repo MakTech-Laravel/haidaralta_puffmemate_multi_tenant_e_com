@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import {
     DataTable,
     DataTableRowActions,
+    DataTableTruncated,
     type DataTablePayload,
 } from '@/components/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -66,16 +67,17 @@ export function ActivityLogTable({
             {
                 id: 'causer',
                 header: 'Causer',
+                meta: { truncate: false },
                 cell: ({ row }) =>
                     row.original.causer ? (
                         <div className="min-w-0">
-                            <p className="text-foreground truncate">
+                            <DataTableTruncated className="text-foreground">
                                 {row.original.causer.name}
-                            </p>
+                            </DataTableTruncated>
                             {row.original.causer.email ? (
-                                <p className="text-muted-foreground truncate text-xs">
+                                <DataTableTruncated className="text-muted-foreground text-xs">
                                     {row.original.causer.email}
-                                </p>
+                                </DataTableTruncated>
                             ) : null}
                         </div>
                     ) : (
@@ -85,16 +87,17 @@ export function ActivityLogTable({
             {
                 id: 'subject',
                 header: 'Subject',
+                meta: { truncate: false },
                 cell: ({ row }) =>
                     row.original.subject ? (
                         <div className="min-w-0">
-                            <p className="text-foreground truncate">
+                            <DataTableTruncated className="text-foreground">
                                 {row.original.subject.label ??
                                     `#${row.original.subject.id}`}
-                            </p>
-                            <p className="text-muted-foreground text-xs">
+                            </DataTableTruncated>
+                            <DataTableTruncated className="text-muted-foreground text-xs">
                                 {row.original.subject.type}
-                            </p>
+                            </DataTableTruncated>
                         </div>
                     ) : (
                         <span className="text-muted-foreground">—</span>

@@ -6,6 +6,7 @@ import {
     DataTable,
     DataTableColumnHeader,
     DataTableToolbar,
+    DataTableTruncated,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
@@ -59,13 +60,13 @@ function NameLink({
     }
 
     if (!href) {
-        return children;
+        return <span className="block min-w-0 truncate">{children}</span>;
     }
 
     return (
         <Link
             href={href}
-            className="text-foreground hover:underline"
+            className="text-foreground block min-w-0 truncate hover:underline"
         >
             {children}
         </Link>
@@ -125,17 +126,18 @@ export function StockTransactionsPage({
             {
                 accessorKey: 'product_name',
                 header: 'Product',
+                meta: { truncate: false },
                 cell: ({ row }) => (
-                    <div>
-                        <div>
+                    <div className="min-w-0">
+                        <DataTableTruncated>
                             <NameLink href={row.original.product_url}>
                                 {row.original.product_name}
                             </NameLink>
-                        </div>
+                        </DataTableTruncated>
                         {row.original.product_sku ? (
-                            <div className="text-muted-foreground text-xs">
+                            <DataTableTruncated className="text-muted-foreground text-xs">
                                 {row.original.product_sku}
-                            </div>
+                            </DataTableTruncated>
                         ) : null}
                     </div>
                 ),

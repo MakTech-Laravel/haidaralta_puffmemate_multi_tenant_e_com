@@ -42,3 +42,6 @@ Branch/platform product listings use quantity as Stock. No Enabled column or tog
 
 ## Stock transaction filters do not dump catalogs
 InventoryTransactionDataTable filterOptions carry types plus the currently selected branch/product only. Branch/product pickers load pages from stock/*-options JSON (filter[search], page, per_page) with infinite scroll. Row payloads include branch_url, product_url, and created_by_url.
+
+## DataTable cells truncate with overflow tooltip
+Non-action/image DataTable cells truncate with max-w-[14rem] and DataTableTruncated (overflow-only Tooltip from innerText). Composite cells (avatar, name+subtitle, badges, price stacks) set meta.truncate: false and wrap each text line in DataTableTruncated instead of the whole block.
