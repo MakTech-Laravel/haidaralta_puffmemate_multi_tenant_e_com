@@ -725,4 +725,44 @@ class DemoCatalog
             'timeline' => $timeline,
         ];
     }
+
+    /**
+     * Demo products awaiting a customer review.
+     *
+     * @return list<array{id: string, name: string, image: string, shippingStatus: string}>
+     */
+    public static function productsToReview(): array
+    {
+        $catalog = self::products();
+        $names = [
+            'Marlboro Gold',
+            'L&M Blue Label',
+            'Vuse GO Berry',
+            'Winfield Blue',
+            'Horizon Menthol',
+            'IQOS Iluma',
+            'Peter Stuyvesant Red',
+            'ZYN Cool Mint',
+            'Dunhill Red',
+            'Benson & Hedges Gold',
+            'Lucky Strike Original',
+            'Camel Blue',
+            'Clipper Classic',
+        ];
+
+        $items = [];
+
+        foreach ($names as $index => $name) {
+            $source = $catalog[$index % count($catalog)];
+
+            $items[] = [
+                'id' => 'review-'.($index + 1),
+                'name' => $name,
+                'image' => $source['image'],
+                'shippingStatus' => 'delivered',
+            ];
+        }
+
+        return $items;
+    }
 }

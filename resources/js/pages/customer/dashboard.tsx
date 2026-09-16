@@ -1,8 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { FileCheck2, Link2, Star, UserRound } from 'lucide-react';
-import type { ComponentType } from 'react';
 import { cn } from '@/lib/utils';
 import { logout, wholesale } from '@/routes';
+import { index as productToReview } from '@/routes/customer/product-to-review';
 import { edit as editProfile } from '@/routes/profile';
 import type { Auth } from '@/types';
 
@@ -20,7 +19,7 @@ const cards: AccountCard[] = [
     },
     {
         label: 'Product To Review',
-        href: '/dashboard',
+        href: productToReview.url(),
         image: '/images/customer/Vector (1).svg',
     },
     {
