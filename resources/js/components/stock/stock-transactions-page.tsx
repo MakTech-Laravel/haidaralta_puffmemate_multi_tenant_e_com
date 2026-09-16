@@ -64,7 +64,7 @@ function NameLink({
     return (
         <Link
             href={href}
-            className="text-primary font-medium hover:underline"
+            className="text-foreground hover:underline"
         >
             {children}
         </Link>
