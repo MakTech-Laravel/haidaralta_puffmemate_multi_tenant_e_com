@@ -983,101 +983,103 @@ export function ProductForm({
                 </div>
 
                 <div className="flex flex-col gap-8">
-                    <div className="flex flex-col gap-3">
-                        <div className="space-y-1">
-                            <Label>Tags</Label>
-                            <p className="text-muted-foreground text-xs">
-                                Highlight this product in storefront
-                                collections.
-                            </p>
-                        </div>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            {PRODUCT_TAG_OPTIONS.map((option) => {
-                                const checked = data.tags.includes(
-                                    option.value,
-                                );
+                    <div className="grid items-start gap-6 lg:grid-cols-2 lg:gap-8">
+                        <div className="flex flex-col gap-3">
+                            <div className="space-y-1">
+                                <Label>Tags</Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Highlight this product in storefront
+                                    collections.
+                                </p>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                                {PRODUCT_TAG_OPTIONS.map((option) => {
+                                    const checked = data.tags.includes(
+                                        option.value,
+                                    );
 
-                                return (
-                                    <label
-                                        key={option.value}
-                                        htmlFor={`tag-${option.value}`}
-                                        className={cn(
-                                            'inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors',
-                                            checked
-                                                ? 'border-primary/40 bg-primary/5'
-                                                : 'border-border/70 bg-muted/20 hover:bg-muted/40',
-                                        )}
-                                    >
-                                        <Checkbox
-                                            id={`tag-${option.value}`}
-                                            checked={checked}
-                                            onCheckedChange={() =>
-                                                toggleTag(option.value)
-                                            }
-                                        />
-                                        <span className="font-normal">
-                                            {option.label}
-                                        </span>
-                                    </label>
-                                );
-                            })}
+                                    return (
+                                        <label
+                                            key={option.value}
+                                            htmlFor={`tag-${option.value}`}
+                                            className={cn(
+                                                'inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors',
+                                                checked
+                                                    ? 'border-primary/40 bg-primary/5'
+                                                    : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                            )}
+                                        >
+                                            <Checkbox
+                                                id={`tag-${option.value}`}
+                                                checked={checked}
+                                                onCheckedChange={() =>
+                                                    toggleTag(option.value)
+                                                }
+                                            />
+                                            <span className="font-normal">
+                                                {option.label}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                            <InputError message={errors.tags} />
                         </div>
-                        <InputError message={errors.tags} />
+
+                        <div className="space-y-3">
+                            <div className="space-y-1">
+                                <Label>Status</Label>
+                                <p className="text-muted-foreground text-xs">
+                                    Inactive products stay hidden from browsing.
+                                </p>
+                            </div>
+                            <div
+                                className="grid gap-3 sm:grid-cols-2"
+                                role="radiogroup"
+                                aria-label="Status"
+                            >
+                                <button
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={data.status}
+                                    className={cn(
+                                        'flex flex-col gap-1 rounded-xl border px-4 py-3 text-left transition-colors',
+                                        data.status
+                                            ? 'border-primary/40 bg-primary/5'
+                                            : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                    )}
+                                    onClick={() => setData('status', true)}
+                                >
+                                    <span className="text-sm font-medium">
+                                        Active
+                                    </span>
+                                    <span className="text-muted-foreground text-xs">
+                                        Visible in the catalog and storefront.
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={!data.status}
+                                    className={cn(
+                                        'flex flex-col gap-1 rounded-xl border px-4 py-3 text-left transition-colors',
+                                        !data.status
+                                            ? 'border-primary/40 bg-primary/5'
+                                            : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                    )}
+                                    onClick={() => setData('status', false)}
+                                >
+                                    <span className="text-sm font-medium">
+                                        Inactive
+                                    </span>
+                                    <span className="text-muted-foreground text-xs">
+                                        Hidden from storefront browsing.
+                                    </span>
+                                </button>
+                            </div>
+                            <InputError message={errors.status} />
+                        </div>
                     </div>
-
-                    <fieldset className="space-y-3">
-                        <legend className="text-sm font-medium">Status</legend>
-                        <p className="text-muted-foreground text-xs">
-                            Inactive products stay hidden from browsing.
-                        </p>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <label
-                                className={cn(
-                                    'flex cursor-pointer flex-col gap-1 rounded-xl border px-4 py-3 transition-colors',
-                                    data.status
-                                        ? 'border-primary/40 bg-primary/5'
-                                        : 'border-border/70 bg-muted/20 hover:bg-muted/40',
-                                )}
-                            >
-                                <input
-                                    type="radio"
-                                    name="status"
-                                    className="sr-only"
-                                    checked={data.status}
-                                    onChange={() => setData('status', true)}
-                                />
-                                <span className="text-sm font-medium">
-                                    Active
-                                </span>
-                                <span className="text-muted-foreground text-xs">
-                                    Visible in the catalog and storefront.
-                                </span>
-                            </label>
-                            <label
-                                className={cn(
-                                    'flex cursor-pointer flex-col gap-1 rounded-xl border px-4 py-3 transition-colors',
-                                    !data.status
-                                        ? 'border-primary/40 bg-primary/5'
-                                        : 'border-border/70 bg-muted/20 hover:bg-muted/40',
-                                )}
-                            >
-                                <input
-                                    type="radio"
-                                    name="status"
-                                    className="sr-only"
-                                    checked={!data.status}
-                                    onChange={() => setData('status', false)}
-                                />
-                                <span className="text-sm font-medium">
-                                    Inactive
-                                </span>
-                                <span className="text-muted-foreground text-xs">
-                                    Hidden from storefront browsing.
-                                </span>
-                            </label>
-                        </div>
-                        <InputError message={errors.status} />
-                    </fieldset>
 
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -1099,8 +1101,8 @@ export function ProductForm({
                                 Add row
                             </Button>
                         </div>
-                        <div className="space-y-0.5">
-                            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-center gap-2 px-0.5">
+                        <div className="space-y-2">
+                            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-center gap-3 px-1">
                                 <span className="text-muted-foreground text-xs font-medium">
                                     Label
                                 </span>
@@ -1109,11 +1111,11 @@ export function ProductForm({
                                 </span>
                                 <span className="size-9" aria-hidden />
                             </div>
-                            <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                            <div className="max-h-80 space-y-3 overflow-y-auto p-1">
                                 {data.specifications.map((row, index) => (
                                     <div
                                         key={`specification-${index}`}
-                                        className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-start gap-2"
+                                        className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-start gap-3"
                                     >
                                         <div className="flex flex-col gap-1">
                                             <Label
