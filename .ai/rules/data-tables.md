@@ -45,3 +45,6 @@ InventoryTransactionDataTable filterOptions carry types plus the currently selec
 
 ## DataTable cells truncate with overflow tooltip
 Non-action/image DataTable cells truncate with max-w-[14rem] and DataTableTruncated (overflow-only Tooltip from innerText). Composite cells (avatar, name+subtitle, badges, price stacks) set meta.truncate: false and wrap each text line in DataTableTruncated instead of the whole block.
+
+## useDataTableQuery must not visit on mount
+useDataTableQuery must not router.get on mount. React Strict Mode double-invokes effects in Vite/dev, so never use a one-shot skip ref. Visit only when search differs from the last committed value, and skip when the built query already matches the current URL. Never serialize UI sentinels into filter[] (trashed=active, status=all); Spatie trashed is with|only or omitted.

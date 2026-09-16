@@ -81,7 +81,7 @@ export default function PlatformProductsIndex({
                 search: tablePayload.filters.search ?? '',
                 status: tablePayload.filters.status ?? 'all',
                 category_id: tablePayload.filters.category_id ?? null,
-                trashed: tablePayload.filters.trashed ?? 'active',
+                trashed: tablePayload.filters.trashed ?? null,
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,

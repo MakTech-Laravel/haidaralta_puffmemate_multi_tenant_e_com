@@ -84,7 +84,7 @@ export default function PlatformCategoriesIndex({
                 featured: tablePayload.filters.featured ?? 'all',
                 show_in_nav: tablePayload.filters.show_in_nav ?? 'all',
                 parent_id: tablePayload.filters.parent_id ?? 'all',
-                trashed: tablePayload.filters.trashed ?? 'active',
+                trashed: tablePayload.filters.trashed ?? null,
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,
