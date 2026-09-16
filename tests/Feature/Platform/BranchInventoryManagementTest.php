@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DiscountType;
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Models\Branch;
@@ -165,6 +166,169 @@ test('platform can set percent discount and clear discount with none', function 
             ->where('product.price.discount_price', null)
             ->where('product.price.start_date', null)
             ->where('product.price.end_date', null));
+});
+
+test('manage page hydrates a price without an offer as none', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    BranchProductPrice::factory()->create([
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'variant_id' => null,
+        'selling_price' => 20,
+        'discount_type' => DiscountType::None,
+        'discount_price' => null,
+        'start_date' => null,
+        'end_date' => null,
+        'status' => true,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.products.show', [$branch, $product]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('product.price.selling_price', '20.00')
+            ->where('product.price.discount_type', 'none')
+            ->where('product.price.discount_price', null)
+            ->where('product.price.start_date', null)
+            ->where('product.price.end_date', null));
+});
+
+test('platform reduce subtracts a positive quantity', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 10,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_out',
+            'quantity' => 3,
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('inventories', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'variant_id' => null,
+        'quantity' => 7,
+    ]);
+});
+
+test('platform inventory adjustment requires a reason', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'adjustment',
+            'quantity' => 4,
+        ])
+        ->assertSessionHasErrors('reason');
+});
+
+test('platform inventory adjustment other stores the typed reason', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 10,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'adjustment',
+            'quantity' => 8,
+            'reason' => 'other',
+            'reason_note' => 'Returned from display',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('inventory_transactions', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'type' => 'adjustment',
+        'quantity' => -2,
+        'reason' => 'other',
+        'reason_note' => 'Returned from display',
+    ]);
+});
+
+test('platform inventory adjustment rejects a counted quantity that matches current stock', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 6,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'adjustment',
+            'quantity' => 6,
+            'reason' => 'count_correction',
+        ])
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', [
+            'type' => 'error',
+            'message' => 'Counted quantity matches current stock. No adjustment needed.',
+        ]);
+
+    $this->assertDatabaseHas('inventories', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'variant_id' => null,
+        'quantity' => 6,
+    ]);
+
+    $this->assertDatabaseMissing('inventory_transactions', [
+        'product_id' => $product->id,
+        'type' => 'adjustment',
+    ]);
+});
+
+test('platform inventory new entry rejects a reason', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 4,
+            'reason' => 'damaged',
+        ])
+        ->assertSessionHasErrors('reason');
+});
+
+test('platform inventory writes reject a negative quantity', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_out',
+            'quantity' => -5,
+        ])
+        ->assertSessionHasErrors('quantity');
 });
 
 test('platform branch product show includes listing details payload', function () {

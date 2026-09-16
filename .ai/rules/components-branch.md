@@ -18,7 +18,7 @@ Inertia catalog pages live under `resources/js/pages/branch/catalog/{categories,
 Inventory manage is one `shadow-sm` card: snapshot strip (Stock, Selling, Effective) plus two content-sized Stock/Price forms with Save in each section header. Do not float a DemoStatCard, stretch equal-height footers, or leave an empty inventory column. DatePickers stay `min-w-0`. Type is a 3-button row, not a full-width select.
 
 ## Discount types + txn pagination filters
-Pricing uses discount_type none|fixed|percent; when none, hide/clear value+dates. Discount value label is Discount value (AUD) or (%), placeholders `e.g. 5.00` / `e.g. 10`. Transactions are server-paginated (`txn_page`) with `txn_scope` / `txn_from` / `txn_to` / `txn_type` — not a client-side limit(25) list and not `useDataTableQuery` (ledger must coexist with inventory/price forms). Reload only on Filter click, type change, or variant scope change — never on mount. Truncate ledger cells with DataTableTruncated.
+Pricing uses discount_type none|fixed|percent. No price, or `discount_type` none/missing, selects None and hides value+dates. Saved fixed/percent offers hydrate so Save is not destructive. Discount value label is Discount value (AUD) or (%), placeholders `e.g. 5.00` / `e.g. 10`. Transactions are server-paginated (`txn_page`) with `txn_scope` / `txn_from` / `txn_to` / `txn_type` — not a client-side limit(25) list and not `useDataTableQuery` (ledger must coexist with inventory/price forms). Reload only on Filter click, type change, or variant scope change — never on mount. Truncate ledger cells with DataTableTruncated.
 
 ## Saved selling price is always live
 Do not show Price active. UpsertBranchProductPriceRequest has no `status`; BranchPricingService::upsert always persists `status => true`. Keep the DB column; list queries still use `where('status', true)`.
@@ -33,7 +33,7 @@ Inventory snapshot is { quantity } only (Stock). Do not post minimum_stock, rese
 Branch product summary is catalog listing details only. Stock and price live in ProductInventoryPanel. No enable toggle, low-stock badge, or available quantity.
 
 ## Inventory panel Adjustment is counted on-hand
-Product inventory panel quantity is a clearable digit string, not Number(). Adjustment uses counted on-hand plus a required reason and the same live variance preview as Manage stock. Hide reason for New entry / Reduce. Disable Save when counted matches current stock. Transactions table shows reason_label (em dash when null) and may show a signed Adjustment qty.
+Product inventory panel quantity is a clearable digit string, not Number(). Adjustment uses counted on-hand plus a required reason and the same live variance preview as stock import. Hide reason for New entry / Reduce. Disable Save when counted matches current stock. Transactions table shows reason_label (em dash when null) and may show a signed Adjustment qty.
 
 ## Inventory panel reason sits beside quantity
 Adjustment reason select sits beside counted quantity. Other shows a required describe-the-reason input. Hide reason for New entry / Reduce. Ledger reason_label is the typed note when Other.

@@ -4,7 +4,6 @@ import { CircleDollarSign, Package, Settings2 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
-import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
 import {
@@ -202,16 +201,12 @@ export default function PlatformBranchProductsIndex({
                             },
                             ...stockActionItems(
                                 {
-                                    manage: StockController.manage.url(),
                                     transactions:
                                         StockController.transactions.url(),
-                                    price: StockController.price.url(),
-                                    discount: DiscountController.index.url(),
                                 },
                                 {
                                     productId: row.original.id,
                                     branchId: branch.id,
-                                    locked: 'both',
                                 },
                             ),
                         ]}

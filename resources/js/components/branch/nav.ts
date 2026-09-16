@@ -14,7 +14,6 @@ import {
     Package,
     Package2,
     PackagePlus,
-    BadgePercent,
     ScrollText,
     Settings2,
     Shield,
@@ -64,16 +63,10 @@ export function buildBranchNav(
 
     const stockNav = navGroup({
         title: 'Stock management',
-        href: `/branch/${slug}/stock/manage`,
+        href: `/branch/${slug}/stock/transactions`,
         icon: Boxes,
         permissions: ['manage-branch-products'],
         items: [
-            navLink({
-                title: 'Manage',
-                href: `/branch/${slug}/stock/manage`,
-                icon: Boxes,
-                permissions: ['manage-branch-products'],
-            }),
             navLink({
                 title: 'Bulk Import',
                 href: `/branch/${slug}/stock/import`,
@@ -98,12 +91,6 @@ export function buildBranchNav(
                 permissions: ['view-branch-dashboard'],
             }),
             catalogNav,
-            navLink({
-                title: 'Discounts',
-                href: `/branch/${slug}/discounts`,
-                icon: BadgePercent,
-                permissions: ['manage-branch-products'],
-            }),
             stockNav,
             navGroup({
                 title: 'Orders',

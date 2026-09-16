@@ -27,12 +27,13 @@ Branch create/edit coords: Address then Map location with Set on map (BranchLoca
 Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids). Nested platform.branches.drivers and branch.drivers auto-assign the current branch on create and can assign existing drivers. Rosters require an active assignment for that branch. Overlap is per driver: date ranges overlap AND weekdays intersect AND times overlap. Roster forms use start/end dates + Mon–Sun day chips. No parcel/GPS/chat yet.
 
 ## Stock pages share a product/branch/locked query contract
-Manage stock, Import stock, Update price and Stock transactions exist on both portals and share the query contract `product`, `branch`, `locked` (`product|branch|both`), resolved by `App\Support\StockPageContext`. Locked selections render read-only and 404 when the id or slug does not resolve.
-The branch portal always forces `locked` to include `branch` (`StockPageContext::fromRequest($request, $branch)`), and every write asserts `branch_id` / `branch_ids` match the current branch.
+Import stock and Stock transactions exist on both portals and share the query contract `product`, `branch`, `locked` (`product|branch|both`), resolved by `App\Support\StockPageContext`. Locked selections 404 when the id or slug does not resolve.
+The branch portal always forces `locked` to include `branch` (`StockPageContext::fromRequest($request, $branch)`), and import writes assert `branch_ids` match the current branch.
 When a product is missing from a picker, the Add product link carries `return_to` = current URL; `CatalogReturnTo::afterProductCreate` redirects back with `?product={id}` appended.
+Daily stock/price/discount writes use product manage (`platform.branches.products.*` / `branch.products.*`). Retired `stock/manage`, `stock/price`, and `/discounts` GET routes redirect via `App\Support\ProductManageRedirect`.
 
-## Discounts is not a Stock child
-DiscountController (not StockController) owns `/discounts`. Pages live in `resources/js/pages/{platform,branch}/discounts`. Do not add discount actions back onto stock routes.
+## Discounts are not a Stock child
+Discounts are edited on the product manage Inventory & pricing card. Do not add a DiscountController, `/discounts` workspace, or discount actions on StockController. Old `/discounts` and `/stock/discount` URLs redirect through `ProductManageRedirect`.
 
 ## Stock transaction filters paginate branch and product options
 Do not embed the full branch or product catalogs in `InventoryTransactionDataTable` filterOptions. Branch and product filters are shadcn Popover+Command comboboxes that fetch `stock/branch-options` and `stock/product-options` (page, per_page, filter[search]) and append on scroll. Keep only `types` plus the currently selected branch/product labels on the table payload. Row names link to the matching show page (`branch_url`, `product_url`, `created_by_url`).

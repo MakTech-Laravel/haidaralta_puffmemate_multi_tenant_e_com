@@ -3,17 +3,11 @@
 namespace App\Http\Controllers\Platform;
 
 use App\DataTables\InventoryTransactionDataTable;
-use App\Enums\DiscountType;
-use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Stock\AdjustStockRequest;
 use App\Http\Requests\Stock\ImportStockRequest;
-use App\Http\Requests\Stock\UpdateStockPriceRequest;
 use App\Models\Branch;
-use App\Models\BranchProductPrice;
 use App\Models\Product;
-use App\Services\Inventory\BranchPricingService;
 use App\Services\Inventory\InventoryService;
 use App\Support\CatalogReturnTo;
 use App\Support\StockPageContext;
@@ -24,51 +18,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
-use InvalidArgumentException;
 
 class StockController extends Controller
 {
     public function __construct(
         private InventoryService $inventory,
-        private BranchPricingService $pricing,
     ) {}
-
-    public function manage(Request $request): Response
-    {
-        return Inertia::render('platform/stock/manage', [
-            'context' => StockPageContext::fromRequest($request),
-            'createProductUrl' => route('platform.products.create', [
-                'return_to' => CatalogReturnTo::currentUrl($request),
-            ]),
-            'adjustmentReasons' => InventoryAdjustmentReason::options(),
-        ]);
-    }
-
-    public function adjust(AdjustStockRequest $request): RedirectResponse
-    {
-        $branch = Branch::query()->findOrFail((int) $request->validated('branch_id'));
-        $product = Product::query()->findOrFail((int) $request->validated('product_id'));
-        $inventory = $this->inventory->firstOrCreate($branch, $product);
-
-        try {
-            $this->inventory->adjust(
-                $inventory,
-                InventoryTransactionType::from($request->validated('type')),
-                (int) $request->validated('quantity'),
-                $request->user('platform'),
-                reason: InventoryAdjustmentReason::fromNullable($request->validated('reason')),
-                reasonNote: InventoryAdjustmentReason::noteFrom($request->validated('reason_note')),
-            );
-        } catch (InvalidArgumentException $exception) {
-            Toast::error($exception->getMessage());
-
-            return redirect()->back();
-        }
-
-        Toast::success('Stock updated.');
-
-        return redirect()->back();
-    }
 
     public function import(Request $request): Response
     {
@@ -105,36 +60,6 @@ class StockController extends Controller
         return redirect()->back();
     }
 
-    public function price(Request $request): Response
-    {
-        return Inertia::render('platform/stock/price', [
-            'context' => StockPageContext::fromRequest($request),
-            'createProductUrl' => route('platform.products.create', [
-                'return_to' => CatalogReturnTo::currentUrl($request),
-            ]),
-        ]);
-    }
-
-    public function updatePrice(UpdateStockPriceRequest $request): RedirectResponse
-    {
-        $branch = Branch::query()->findOrFail((int) $request->validated('branch_id'));
-        $product = Product::query()->findOrFail((int) $request->validated('product_id'));
-        $existing = $this->existingPrice($branch, $product);
-
-        $this->pricing->upsert($branch, $product, [
-            'selling_price' => $request->validated('selling_price'),
-            'discount_type' => $existing?->discount_type ?? DiscountType::None,
-            'discount_price' => $existing?->discount_price,
-            'start_date' => $existing?->start_date?->toDateString(),
-            'end_date' => $existing?->end_date?->toDateString(),
-            'status' => true,
-        ]);
-
-        Toast::success('Price updated.');
-
-        return redirect()->back();
-    }
-
     public function transactions(Request $request): Response
     {
         $this->mergeSelectionFilters($request);
@@ -153,16 +78,6 @@ class StockController extends Controller
     public function productOptions(Request $request): JsonResponse
     {
         return response()->json(StockPageContext::paginatedProductOptions($request));
-    }
-
-    private function existingPrice(Branch $branch, Product $product): ?BranchProductPrice
-    {
-        return BranchProductPrice::query()
-            ->where('branch_id', $branch->id)
-            ->where('product_id', $product->id)
-            ->whereNull('variant_id')
-            ->where('status', true)
-            ->first();
     }
 
     private function mergeSelectionFilters(Request $request): void

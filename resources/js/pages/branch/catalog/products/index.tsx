@@ -3,7 +3,6 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { Settings2 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
-import DiscountController from '@/actions/App/Http/Controllers/Branch/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
@@ -192,23 +191,13 @@ export default function BranchProductsIndex({
                                 label: 'Stock',
                                 items: stockActionItems(
                                     {
-                                        manage: StockController.manage.url(
-                                            branch.slug,
-                                        ),
                                         transactions:
                                             StockController.transactions.url(
                                                 branch.slug,
                                             ),
-                                        price: StockController.price.url(
-                                            branch.slug,
-                                        ),
-                                        discount: DiscountController.index.url(
-                                            branch.slug,
-                                        ),
                                     },
                                     {
                                         productId: row.original.id,
-                                        locked: 'both',
                                     },
                                 ),
                             },

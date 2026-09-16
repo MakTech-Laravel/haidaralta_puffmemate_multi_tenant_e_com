@@ -186,13 +186,11 @@ function formatWhen(value: string | null): string {
 }
 
 function resolveDiscountType(price: BranchPriceSnapshot | null): string {
-    if (price?.discount_type) {
+    if (price?.discount_type === 'fixed' || price?.discount_type === 'percent') {
         return price.discount_type;
     }
 
-    return price?.discount_price != null && price.discount_price !== ''
-        ? 'fixed'
-        : 'none';
+    return 'none';
 }
 
 function formatMoney(value: string | number | null | undefined): string {

@@ -21,7 +21,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/layouts/customer/** | .ai/rules/customer.md |
 | app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php, app/DataTables/BranchProductListingDataTable.php, app/DataTables/BranchCategoryDataTable.php, app/DataTables/ProductBranchInventoryDataTable.php | .ai/rules/data-tables.md |
 | resources/js/components/{ui/date-picker,branch/product-inventory-panel}.tsx | .ai/rules/date-pickerbranch.md |
-| resources/js/components/discounts/**, resources/js/pages/{platform,branch}/discounts/**, app/Http/Controllers/{Platform,Branch}/DiscountController.php, app/Http/Requests/Discount/** | .ai/rules/discounts.md |
+| resources/js/components/branch/product-inventory-panel.tsx, resources/js/pages/{platform,branch}/**/products/show.tsx, app/Support/ProductManageRedirect.php, routes/{platform,branch}.php | .ai/rules/discounts.md |
 | docker/**, docker/nginx.conf | .ai/rules/docker.md |
 | Dockerfile | .ai/rules/dockerfile.md |
 | app/Services/Driver/**, app/Models/Driver*.php, app/Http/Controllers/{Platform,Branch}/*Driver*.php, resources/js/pages/{platform,branch}/drivers/**, resources/js/pages/platform/branches/drivers/** | .ai/rules/driver.md |
@@ -30,7 +30,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | package.json, vite.config.ts | .ai/rules/general.md |
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
 | resources/js/layouts/{platform,branch}/** | .ai/rules/layoutsplatformbranch.md |
-| resources/js/lib/fcm.ts, resources/js/lib/color-picker.ts | .ai/rules/lib.md |
+| resources/js/lib/fcm.ts, resources/js/lib/color-picker.ts, resources/js/lib/stock-query.ts | .ai/rules/lib.md |
 | database/migrations/** | .ai/rules/migrations.md |
 | app/Models/**.php | .ai/rules/models.md |
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |

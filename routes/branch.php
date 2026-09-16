@@ -3,7 +3,6 @@
 use App\Http\Controllers\Branch\ActivityLogController as BranchActivityLogController;
 use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
-use App\Http\Controllers\Branch\DiscountController as BranchDiscountController;
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
@@ -11,6 +10,9 @@ use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
 use App\Http\Controllers\Branch\StaffController as BranchStaffController;
 use App\Http\Controllers\Branch\StockController as BranchStockController;
+use App\Models\Branch;
+use App\Support\ProductManageRedirect;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{branch}')->group(function () {
@@ -59,18 +61,20 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.products.inventory');
         Route::put('products/{product}/prices', [BranchProductController::class, 'upsertPrice'])
             ->name('branch.products.prices');
-        Route::get('discounts', [BranchDiscountController::class, 'index'])->name('branch.discounts');
-        Route::put('discounts', [BranchDiscountController::class, 'update'])->name('branch.discounts.update');
-        Route::get('discounts/preview', [BranchDiscountController::class, 'preview'])
+        Route::get('discounts', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
+            ->name('branch.discounts');
+        Route::put('discounts', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
+            ->name('branch.discounts.update');
+        Route::get('discounts/preview', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
             ->name('branch.discounts.preview');
-        Route::permanentRedirect('stock/discount', '/branch/{branch}/discounts');
-        Route::permanentRedirect('stock/discount-preview', '/branch/{branch}/discounts/preview');
-        Route::get('stock/manage', [BranchStockController::class, 'manage'])->name('branch.stock.manage');
-        Route::post('stock/manage', [BranchStockController::class, 'adjust'])->name('branch.stock.adjust');
+        Route::get('stock/discount', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch, 301));
+        Route::get('stock/discount-preview', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch, 301));
+        Route::get('stock/manage', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
+            ->name('branch.stock.manage');
         Route::get('stock/import', [BranchStockController::class, 'import'])->name('branch.stock.import');
         Route::post('stock/import', [BranchStockController::class, 'storeImport'])->name('branch.stock.import.store');
-        Route::get('stock/price', [BranchStockController::class, 'price'])->name('branch.stock.price');
-        Route::put('stock/price', [BranchStockController::class, 'updatePrice'])->name('branch.stock.price.update');
+        Route::get('stock/price', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
+            ->name('branch.stock.price');
         Route::get('stock/transactions', [BranchStockController::class, 'transactions'])->name('branch.stock.transactions');
         Route::get('stock/product-options', [BranchStockController::class, 'productOptions'])
             ->name('branch.stock.product-options');

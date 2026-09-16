@@ -1,15 +1,18 @@
 ---
 paths:
-  - 'resources/js/components/discounts/**'
-  - 'resources/js/pages/{platform,branch}/discounts/**'
-  - 'app/Http/Controllers/{Platform,Branch}/DiscountController.php'
-  - 'app/Http/Requests/Discount/**'
+  - 'resources/js/components/branch/product-inventory-panel.tsx'
+  - 'resources/js/pages/{platform,branch}/**/products/show.tsx'
+  - 'app/Support/ProductManageRedirect.php'
+  - 'routes/{platform,branch}.php'
 ---
 
 # Discounts
 
-## Discounts is its own workspace
-Discounts lives under `resources/js/pages/{platform,branch}/discounts` and `resources/js/components/discounts` — never under stock or catalog. The page is a full-width workspace (`flex w-full flex-col gap-4 p-2 md:p-4`) with InfiniteScrollMultiCombobox pickers. Discount type SelectTrigger is `w-full` with SelectValue placeholder "Select type". Save replaces type/value/dates per selected pair and keeps selling_price. Branch portal locks the current branch; row-action entry pre-selects without locking pickers.
+## Discounts live on product manage
+There is no bulk Discounts workspace. Selling price and discount type/value/dates are edited on the product manage Inventory & pricing card (`ProductInventoryPanel`) for one branch + one SKU (including variants). Hydrate saved fixed/percent offers so Save is not destructive. Empty SKUs and prices with `discount_type` none/missing select None and hide value + dates.
 
-## Discounts has its own controller and routes
-Platform and branch DiscountController own GET/PUT `/discounts` and GET `/discounts/preview` (names `platform.discounts` / `branch.discounts`). Do not put discount actions on StockController or under `stock/` URLs. Old `/stock/discount` URLs permanently redirect. Writes accept `branch_ids`+`product_ids`, keep selling_price, replace the offer, 404 on branch portal if another branch id is posted. Picker option JSON stays on `stock/branch-options` and `stock/product-options`.
+## Old discount URLs redirect
+GET/PUT `/discounts`, `/discounts/preview`, and legacy `/stock/discount` go through `App\Support\ProductManageRedirect` (same destinations as retired Manage stock / Update price). Both IDs → product manage show; platform product-only → Manage branches; otherwise products index. Branch portal product-only → that branch’s product show. Do not restore DiscountController or `applyDiscount` / `previewSelectedPairs`.
+
+## Retired stock URLs resolve through ProductManageRedirect
+Old stock/manage, stock/price, and /discounts URLs redirect here. Both IDs go to product manage show; platform product-only goes to Manage branches; otherwise products index. Branch portal product-only goes to that branch product show. Invalid filled ids 404.

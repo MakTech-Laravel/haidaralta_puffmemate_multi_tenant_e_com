@@ -4,7 +4,6 @@ import { Eye, Network, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
-import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -257,13 +256,10 @@ export default function PlatformProductsIndex({
                     const stockItems = canInventories
                         ? stockActionItems(
                               {
-                                  manage: StockController.manage.url(),
                                   transactions:
                                       StockController.transactions.url(),
-                                  price: StockController.price.url(),
-                                  discount: DiscountController.index.url(),
                               },
-                              { productId: product.id, locked: 'product' },
+                              { productId: product.id },
                           )
                         : [];
 

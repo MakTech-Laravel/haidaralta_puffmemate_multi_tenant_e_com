@@ -19,76 +19,37 @@ beforeEach(function () {
     $this->product = Product::factory()->create(['slug' => 'branch-stock-pack']);
 });
 
-test('branch manage stock page locks the branch even when unlocked in the query', function () {
+test('manage stock url with a product redirects to this branch product manage page', function () {
     $this->actingAs($this->staff, 'branch')
-        ->get(route('branch.stock.manage', $this->branch))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('branch/stock/manage')
-            ->where('context.locked', 'branch')
-            ->where('context.branch.id', $this->branch->id)
-            ->has('adjustmentReasons'));
+        ->get(route('branch.stock.manage', [
+            'branch' => $this->branch,
+            'product' => $this->product->id,
+        ]))
+        ->assertRedirect(route('branch.products.show', [$this->branch, $this->product]));
 });
 
-test('branch manage stock page 404s when the locked product is missing', function () {
+test('manage stock url with no product redirects to this branch products index', function () {
+    $this->actingAs($this->staff, 'branch')
+        ->get(route('branch.stock.manage', $this->branch))
+        ->assertRedirect(route('branch.products.index', $this->branch));
+});
+
+test('update price url with a product redirects to this branch product manage page', function () {
+    $this->actingAs($this->staff, 'branch')
+        ->get(route('branch.stock.price', [
+            'branch' => $this->branch,
+            'product' => $this->product->slug,
+        ]))
+        ->assertRedirect(route('branch.products.show', [$this->branch, $this->product]));
+});
+
+test('manage stock url 404s when the product is missing', function () {
     $this->actingAs($this->staff, 'branch')
         ->get(route('branch.stock.manage', [
             'branch' => $this->branch,
             'product' => 'no-such-product',
-            'locked' => 'product',
         ]))
         ->assertNotFound();
-});
-
-test('branch stock adjust is rejected for another branch', function () {
-    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
-
-    $this->actingAs($this->staff, 'branch')
-        ->post(route('branch.stock.adjust', $this->branch), [
-            'branch_id' => $melbourne->id,
-            'product_id' => $this->product->id,
-            'type' => 'stock_in',
-            'quantity' => 5,
-        ])
-        ->assertNotFound();
-});
-
-test('branch adjustment sets counted on-hand and stores a signed variance', function () {
-    $this->actingAs($this->staff, 'branch')
-        ->post(route('branch.stock.adjust', $this->branch), [
-            'branch_id' => $this->branch->id,
-            'product_id' => $this->product->id,
-            'type' => 'stock_in',
-            'quantity' => 10,
-        ])
-        ->assertRedirect();
-
-    $this->actingAs($this->staff, 'branch')
-        ->post(route('branch.stock.adjust', $this->branch), [
-            'branch_id' => $this->branch->id,
-            'product_id' => $this->product->id,
-            'type' => 'adjustment',
-            'quantity' => 7,
-            'reason' => 'damaged',
-        ])
-        ->assertRedirect();
-
-    $this->assertDatabaseHas('inventories', [
-        'branch_id' => $this->branch->id,
-        'product_id' => $this->product->id,
-        'variant_id' => null,
-        'quantity' => 7,
-    ]);
-
-    $this->assertDatabaseHas('inventory_transactions', [
-        'branch_id' => $this->branch->id,
-        'product_id' => $this->product->id,
-        'type' => 'adjustment',
-        'quantity' => -3,
-        'reason' => 'damaged',
-        'before_quantity' => 10,
-        'after_quantity' => 7,
-    ]);
 });
 
 test('branch import stock page locks the branch even when unlocked in the query', function () {
@@ -120,18 +81,14 @@ test('branch stock transactions only list this branch ledger', function () {
     $melbourneStaff = User::query()->where('email', UserSeeder::BRANCH_2_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($this->staff, 'branch')
-        ->post(route('branch.stock.adjust', $this->branch), [
-            'branch_id' => $this->branch->id,
-            'product_id' => $this->product->id,
+        ->post(route('branch.products.inventory', [$this->branch, $this->product]), [
             'type' => 'stock_in',
             'quantity' => 4,
         ])
         ->assertRedirect();
 
     $this->actingAs($melbourneStaff, 'branch')
-        ->post(route('branch.stock.adjust', $melbourne), [
-            'branch_id' => $melbourne->id,
-            'product_id' => $this->product->id,
+        ->post(route('branch.products.inventory', [$melbourne, $this->product]), [
             'type' => 'stock_in',
             'quantity' => 9,
         ])
@@ -165,7 +122,7 @@ test('branch stock product options paginate catalog products', function () {
 });
 
 test('creating a product from a branch stock page returns to it with the product selected', function () {
-    $returnTo = '/branch/'.$this->branch->slug.'/stock/manage';
+    $returnTo = '/branch/'.$this->branch->slug.'/stock/import';
 
     $response = $this->actingAs($this->staff, 'branch')
         ->post(route('branch.products.store', $this->branch), [
@@ -182,5 +139,5 @@ test('creating a product from a branch stock page returns to it with the product
 });
 
 test('guests cannot open branch stock pages', function () {
-    $this->get(route('branch.stock.manage', $this->branch))->assertRedirect(route('login'));
+    $this->get(route('branch.stock.import', $this->branch))->assertRedirect(route('login'));
 });

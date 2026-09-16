@@ -240,8 +240,8 @@ export function ImportStockPage({
                                         New entry
                                     </h2>
                                     <p className="text-muted-foreground text-sm">
-                                        Import only adds stock. Use Manage stock
-                                        to reduce or set a counted total.
+                                        Import only adds stock. Use Catalog
+                                        Manage to reduce or set a counted total.
                                     </p>
                                 </div>
 
