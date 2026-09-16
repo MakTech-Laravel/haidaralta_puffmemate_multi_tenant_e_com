@@ -15,7 +15,7 @@ use InvalidArgumentException;
 class InventoryService
 {
     /**
-     * @param  array{minimum_stock?: int, status?: bool}  $attributes
+     * @param  array{status?: bool}  $attributes
      */
     public function firstOrCreate(
         Branch $branch,
@@ -44,9 +44,6 @@ class InventoryService
             'product_id' => $product->id,
             'variant_id' => $variant?->id,
             'quantity' => 0,
-            'reserved_quantity' => 0,
-            'available_quantity' => 0,
-            'minimum_stock' => $attributes['minimum_stock'] ?? 0,
             'status' => $attributes['status'] ?? true,
         ]);
     }
@@ -81,23 +78,7 @@ class InventoryService
                 throw new InvalidArgumentException('Insufficient stock for this adjustment.');
             }
 
-            $reserved = $locked->reserved_quantity;
-
-            if ($type === InventoryTransactionType::Reserve) {
-                $reserved += abs($quantityDelta);
-            }
-
-            if ($type === InventoryTransactionType::Release) {
-                $reserved = max(0, $reserved - abs($quantityDelta));
-            }
-
-            if ($reserved > $after) {
-                throw new InvalidArgumentException('Reserved quantity cannot exceed on-hand quantity.');
-            }
-
             $locked->quantity = $after;
-            $locked->reserved_quantity = $reserved;
-            $locked->available_quantity = $after - $reserved;
             $locked->save();
 
             InventoryTransaction::query()->create([
@@ -116,13 +97,5 @@ class InventoryService
 
             return $locked->refresh();
         });
-    }
-
-    public function setMinimumStock(Inventory $inventory, int $minimumStock): Inventory
-    {
-        $inventory->minimum_stock = max(0, $minimumStock);
-        $inventory->save();
-
-        return $inventory->refresh();
     }
 }

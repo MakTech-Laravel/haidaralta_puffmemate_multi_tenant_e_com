@@ -23,6 +23,7 @@ import {
     MessagesSquare,
     Package,
     Package2,
+    PackagePlus,
     Radio,
     ScrollText,
     Settings2,
@@ -82,7 +83,7 @@ export const platformNav: NavSection[] = [
             title: 'Catalog',
             href: '/platform/categories',
             icon: Package,
-            permissions: ['manage-catalog'],
+            permissions: ['manage-catalog', 'manage-branch-inventories'],
             items: [
                 navLink({
                     title: 'Categories',
@@ -95,6 +96,24 @@ export const platformNav: NavSection[] = [
                     href: '/platform/products',
                     icon: Package,
                     permissions: ['manage-catalog'],
+                }),
+                navLink({
+                    title: 'Manage stock',
+                    href: '/platform/stock/manage',
+                    icon: Boxes,
+                    permissions: ['manage-branch-inventories'],
+                }),
+                navLink({
+                    title: 'Import stock',
+                    href: '/platform/stock/import',
+                    icon: PackagePlus,
+                    permissions: ['manage-branch-inventories'],
+                }),
+                navLink({
+                    title: 'Stock transactions',
+                    href: '/platform/stock/transactions',
+                    icon: ScrollText,
+                    permissions: ['manage-branch-inventories'],
                 }),
             ],
         }),

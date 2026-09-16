@@ -13,6 +13,7 @@ import {
     MessagesSquare,
     Package,
     Package2,
+    PackagePlus,
     ScrollText,
     Settings2,
     Shield,
@@ -42,23 +43,43 @@ export function buildBranchNav(
         permissions: ['manage-branch-products'],
     });
 
-    const catalogNav = canViewCategories
-        ? navGroup({
-              title: 'Catalog',
-              href: `/branch/${slug}/products`,
-              icon: Package,
-              permissions: ['manage-branch-products'],
-              items: [
-                  navLink({
-                      title: 'Categories',
-                      href: `/branch/${slug}/categories`,
-                      icon: Tags,
-                      permissions: ['manage-branch-products'],
-                  }),
-                  productsLink,
-              ],
-          })
-        : productsLink;
+    const catalogNav = navGroup({
+        title: 'Catalog',
+        href: `/branch/${slug}/products`,
+        icon: Package,
+        permissions: ['manage-branch-products'],
+        items: [
+            ...(canViewCategories
+                ? [
+                      navLink({
+                          title: 'Categories',
+                          href: `/branch/${slug}/categories`,
+                          icon: Tags,
+                          permissions: ['manage-branch-products'],
+                      }),
+                  ]
+                : []),
+            productsLink,
+            navLink({
+                title: 'Manage stock',
+                href: `/branch/${slug}/stock/manage`,
+                icon: Boxes,
+                permissions: ['manage-branch-products'],
+            }),
+            navLink({
+                title: 'Import stock',
+                href: `/branch/${slug}/stock/import`,
+                icon: PackagePlus,
+                permissions: ['manage-branch-products'],
+            }),
+            navLink({
+                title: 'Stock transactions',
+                href: `/branch/${slug}/stock/transactions`,
+                icon: ScrollText,
+                permissions: ['manage-branch-products'],
+            }),
+        ],
+    });
 
     return [
         navSection(undefined, [

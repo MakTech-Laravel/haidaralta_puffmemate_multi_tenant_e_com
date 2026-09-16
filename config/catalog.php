@@ -67,4 +67,28 @@ return [
 
     'show_parent_category' => env('SHOW_PARENT_CATEGORY', false),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Product variants
+    |--------------------------------------------------------------------------
+    |
+    | When false, variant UI and variant mutations abort 404. Tables and
+    | routes stay in the codebase. Flip to true to restore variants.
+    |
+    */
+
+    'show_product_variants' => env('SHOW_PRODUCT_VARIANTS', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product SKU prefix
+    |--------------------------------------------------------------------------
+    |
+    | Auto-generated SKUs are PREFIX-SLUG in uppercase (e.g. PMM-AIR-PRO).
+    | Staff can still edit the SKU before save.
+    |
+    */
+
+    'sku_prefix' => env('CATALOG_SKU_PREFIX', 'PMM'),
+
 ];

@@ -25,3 +25,8 @@ Branch create/edit coords: Address then Map location with Set on map (BranchLoca
 
 ## Driver CRUD surfaces
 Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids). Nested platform.branches.drivers and branch.drivers auto-assign the current branch on create and can assign existing drivers. Rosters require an active assignment for that branch. Overlap is per driver: date ranges overlap AND weekdays intersect AND times overlap. Roster forms use start/end dates + Mon–Sun day chips. No parcel/GPS/chat yet.
+
+## Stock pages share a product/branch/locked query contract
+Manage stock, Import stock, Update price, Add discount and Stock transactions exist on both portals and share the query contract `product`, `branch`, `locked` (`product|branch|both`), resolved by `App\Support\StockPageContext`. Locked selections render read-only and 404 when the id or slug does not resolve.
+The branch portal always forces `locked` to include `branch` (`StockPageContext::fromRequest($request, $branch)`), and every write asserts `branch_id` matches the current branch.
+When a product is missing from a picker, the Add product link carries `return_to` = current stock URL; `CatalogReturnTo::afterProductCreate` redirects back with `?product={id}` appended.

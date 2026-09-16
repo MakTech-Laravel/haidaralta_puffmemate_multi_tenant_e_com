@@ -9,6 +9,7 @@ use App\Http\Controllers\Branch\PermissionController as BranchPermissionControll
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
 use App\Http\Controllers\Branch\StaffController as BranchStaffController;
+use App\Http\Controllers\Branch\StockController as BranchStockController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{branch}')->group(function () {
@@ -51,12 +52,19 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::put('products/{product}', [BranchProductController::class, 'update'])
             ->middleware('precognitive')
             ->name('branch.products.update');
-        Route::put('products/{product}/enable', [BranchProductController::class, 'toggle'])
-            ->name('branch.products.enable');
         Route::post('products/{product}/inventory', [BranchProductController::class, 'adjustInventory'])
             ->name('branch.products.inventory');
         Route::put('products/{product}/prices', [BranchProductController::class, 'upsertPrice'])
             ->name('branch.products.prices');
+        Route::get('stock/manage', [BranchStockController::class, 'manage'])->name('branch.stock.manage');
+        Route::post('stock/manage', [BranchStockController::class, 'adjust'])->name('branch.stock.adjust');
+        Route::get('stock/import', [BranchStockController::class, 'import'])->name('branch.stock.import');
+        Route::post('stock/import', [BranchStockController::class, 'storeImport'])->name('branch.stock.import.store');
+        Route::get('stock/price', [BranchStockController::class, 'price'])->name('branch.stock.price');
+        Route::put('stock/price', [BranchStockController::class, 'updatePrice'])->name('branch.stock.price.update');
+        Route::get('stock/discount', [BranchStockController::class, 'discount'])->name('branch.stock.discount');
+        Route::put('stock/discount', [BranchStockController::class, 'updateDiscount'])->name('branch.stock.discount.update');
+        Route::get('stock/transactions', [BranchStockController::class, 'transactions'])->name('branch.stock.transactions');
     });
 
     Route::middleware(['permission:view-branch-activity-logs'])->group(function () {

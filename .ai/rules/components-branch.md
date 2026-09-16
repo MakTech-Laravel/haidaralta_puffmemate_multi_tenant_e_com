@@ -3,6 +3,7 @@ paths:
   - 'resources/js/components/branch/**'
   - resources/js/components/branch/nav.ts
   - resources/js/components/branch/product-inventory-panel.tsx
+  - resources/js/components/branch/branch-product-summary.tsx
 ---
 
 # Components Branch
@@ -19,3 +20,8 @@ Inventory manage UI matches branch dashboard: DemoStatCard metrics, single split
 ## Discount types + txn pagination filters
 Pricing uses discount_type none|fixed|percent; when none, hide/clear value+dates. Transactions are server-paginated (txn_page) with txn_scope/txn_from/txn_to filters — not a client-side limit(25) list.
 
+## Inventory panel is quantity-only Stock
+Inventory snapshot is { quantity } only (Stock). Do not post minimum_stock, reserved, available, or low-stock fields. Hide variant scope UI when catalog.show_product_variants is false. Keep adjust + price forms.
+
+## Summary shows stock and missing price
+Branch product summary shows quantity (Stock) and missing_price only. No enable toggle, low-stock badge, or available quantity.

@@ -164,5 +164,6 @@ test('platform shares catalog kill-switches on the category index', function () 
         ->assertInertia(fn ($page) => $page
             ->where('catalog.branch_can_create_categories', false)
             ->where('catalog.branch_can_view_categories', false)
-            ->where('catalog.show_parent_category', false));
+            ->where('catalog.show_parent_category', false)
+            ->where('catalog.show_product_variants', false));
 });

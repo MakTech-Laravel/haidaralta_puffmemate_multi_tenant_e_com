@@ -1,15 +1,10 @@
-import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import {
-    AlertTriangle,
-    Building2,
-    CircleDollarSign,
-    PackageCheck,
-    Settings2,
-} from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Building2, CircleDollarSign, Settings2 } from 'lucide-react';
+import { useMemo, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -23,7 +18,6 @@ import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -38,6 +32,7 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
+import { stockActionItems } from '@/lib/stock-query';
 
 type BranchRow = {
     id: number;
@@ -45,14 +40,12 @@ type BranchRow = {
     slug: string;
     code: string | null;
     branch_active: boolean;
-    enabled: boolean;
-    quantity: number | null;
-    available_quantity: number | null;
-    minimum_stock: number | null;
-    is_low_stock: boolean;
-    selling_price: string | null;
-    discount_type: 'none' | 'fixed' | 'percent';
-    discount_price: string | null;
+    quantity: number;
+    selling_price: string | number | null;
+    effective_price: string | number | null;
+    has_discount: boolean;
+    discount_type: string;
+    discount_price: string | number | null;
     manage_url: string;
 };
 
@@ -69,25 +62,28 @@ type ProductSummary = {
 
 type Summary = {
     branches: number;
-    enabled: number;
-    low_stock: number;
     missing_price: number;
 };
 
-function formatPrice(row: BranchRow): string {
-    if (row.selling_price === null) {
+function listingPrice(row: BranchRow): ReactNode {
+    if (row.selling_price == null && row.effective_price == null) {
         return '—';
     }
 
-    if (row.discount_type === 'percent' && row.discount_price) {
-        return `${row.selling_price} · ${row.discount_price}% off`;
+    if (row.has_discount && row.selling_price != null) {
+        return (
+            <span className="tabular-nums">
+                <s className="text-muted-foreground">{row.selling_price}</s>{' '}
+                {row.effective_price ?? row.selling_price}
+            </span>
+        );
     }
 
-    if (row.discount_type === 'fixed' && row.discount_price) {
-        return `${row.selling_price} · sale ${row.discount_price}`;
-    }
-
-    return row.selling_price;
+    return (
+        <span className="tabular-nums">
+            {row.effective_price ?? row.selling_price}
+        </span>
+    );
 }
 
 export default function PlatformProductBranches({
@@ -99,8 +95,6 @@ export default function PlatformProductBranches({
     summary: Summary;
     table: DataTablePayload<BranchRow>;
 }) {
-    const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
-
     const colorCode = normalizeCatalogColorPickerValue(product.color_code);
     const transparent = isTransparentColorPickerValue(colorCode);
 
@@ -124,8 +118,6 @@ export default function PlatformProductBranches({
         initial: {
             filter: {
                 search: tablePayload.filters.search ?? '',
-                enabled: tablePayload.filters.enabled ?? null,
-                low_stock: tablePayload.filters.low_stock ?? null,
                 missing_price: tablePayload.filters.missing_price ?? null,
             },
             sort: tablePayload.sort,
@@ -158,14 +150,6 @@ export default function PlatformProductBranches({
                                     Branch inactive
                                 </Badge>
                             ) : null}
-                            {row.original.is_low_stock ? (
-                                <Badge
-                                    variant="outline"
-                                    className="border-destructive/40 text-destructive"
-                                >
-                                    Low stock
-                                </Badge>
-                            ) : null}
                         </div>
                         <div className="text-muted-foreground text-xs">
                             {row.original.code
@@ -177,56 +161,18 @@ export default function PlatformProductBranches({
                 ),
             },
             {
-                id: 'enabled',
-                header: 'Enabled',
-                cell: ({ row }) => (
-                    <Checkbox
-                        checked={row.original.enabled}
-                        disabled={togglingSlug === row.original.slug}
-                        onCheckedChange={(checked) => {
-                            setTogglingSlug(row.original.slug);
-                            router.put(
-                                BranchInventoryController.toggle.url({
-                                    branch: row.original.slug,
-                                    product: product.slug,
-                                }),
-                                { status: checked === true },
-                                {
-                                    preserveScroll: true,
-                                    onFinish: () => setTogglingSlug(null),
-                                },
-                            );
-                        }}
-                        aria-label={`Enable ${row.original.name}`}
-                    />
-                ),
-            },
-            {
                 accessorKey: 'quantity',
-                header: 'On hand',
+                header: 'Stock',
                 cell: ({ row }) => (
                     <span className="tabular-nums">
-                        {row.original.quantity ?? '—'}
-                    </span>
-                ),
-            },
-            {
-                accessorKey: 'available_quantity',
-                header: 'Available',
-                cell: ({ row }) => (
-                    <span className="tabular-nums">
-                        {row.original.available_quantity ?? '—'}
+                        {row.original.quantity}
                     </span>
                 ),
             },
             {
                 accessorKey: 'selling_price',
                 header: 'Price',
-                cell: ({ row }) => (
-                    <span className="tabular-nums">
-                        {formatPrice(row.original)}
-                    </span>
-                ),
+                cell: ({ row }) => listingPrice(row.original),
             },
             {
                 id: 'actions',
@@ -239,12 +185,26 @@ export default function PlatformProductBranches({
                                 icon: Settings2,
                                 href: row.original.manage_url,
                             },
+                            ...stockActionItems(
+                                {
+                                    manage: StockController.manage.url(),
+                                    transactions:
+                                        StockController.transactions.url(),
+                                    price: StockController.price.url(),
+                                    discount: StockController.discount.url(),
+                                },
+                                {
+                                    productId: product.id,
+                                    branchId: row.original.id,
+                                    locked: 'both',
+                                },
+                            ),
                         ]}
                     />
                 ),
             },
         ],
-        [product.slug, query.sort, query.toggleSort, togglingSlug],
+        [product.id, query.sort, query.toggleSort],
     );
 
     return (
@@ -276,7 +236,7 @@ export default function PlatformProductBranches({
                         <div className="[&_header]:mb-0">
                             <Heading
                                 title="Manage branches"
-                                description={`Inventory, pricing, and enablement for ${product.name}`}
+                                description={`Inventory and pricing for ${product.name}`}
                             />
                             <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-2 text-sm">
                                 <span>
@@ -316,29 +276,12 @@ export default function PlatformProductBranches({
                     </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2">
                     <DemoStatCard
                         icon={Building2}
                         label="Branches"
                         value={String(summary.branches)}
                         hint="Locations in the network"
-                    />
-                    <DemoStatCard
-                        icon={PackageCheck}
-                        label="Enabled"
-                        value={String(summary.enabled)}
-                        hint="Selling this product"
-                    />
-                    <DemoStatCard
-                        icon={AlertTriangle}
-                        label="Low stock"
-                        value={String(summary.low_stock)}
-                        hint="At or below minimum"
-                        valueClassName={
-                            summary.low_stock > 0
-                                ? 'text-destructive'
-                                : undefined
-                        }
                     />
                     <DemoStatCard
                         icon={CircleDollarSign}
@@ -361,97 +304,33 @@ export default function PlatformProductBranches({
                             searchPlaceholder="Search branch name, slug, or code…"
                             onClear={query.clearFilters}
                             filters={
-                                <>
-                                    <div className="grid gap-2">
-                                        <Label>Enabled</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.enabled ?? 'all',
-                                            )}
-                                            onValueChange={(value) =>
-                                                query.setFilter(
-                                                    'enabled',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-[10rem]">
-                                                <SelectValue placeholder="Enabled" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All enablement
-                                                </SelectItem>
-                                                <SelectItem value="1">
-                                                    Enabled
-                                                </SelectItem>
-                                                <SelectItem value="0">
-                                                    Disabled
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>Stock</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.low_stock ??
-                                                    'all',
-                                            )}
-                                            onValueChange={(value) =>
-                                                query.setFilter(
-                                                    'low_stock',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-[10rem]">
-                                                <SelectValue placeholder="Stock" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All stock
-                                                </SelectItem>
-                                                <SelectItem value="1">
-                                                    Low stock
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>Price</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.missing_price ??
-                                                    'all',
-                                            )}
-                                            onValueChange={(value) =>
-                                                query.setFilter(
-                                                    'missing_price',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-[10rem]">
-                                                <SelectValue placeholder="Price" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All prices
-                                                </SelectItem>
-                                                <SelectItem value="1">
-                                                    Missing price
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </>
+                                <div className="grid gap-2">
+                                    <Label>Price</Label>
+                                    <Select
+                                        value={String(
+                                            query.filters.missing_price ??
+                                                'all',
+                                        )}
+                                        onValueChange={(value) =>
+                                            query.setFilter(
+                                                'missing_price',
+                                                value === 'all' ? null : value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger className="w-[10rem]">
+                                            <SelectValue placeholder="Price" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All prices
+                                            </SelectItem>
+                                            <SelectItem value="1">
+                                                Missing price
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             }
                         />
                     }

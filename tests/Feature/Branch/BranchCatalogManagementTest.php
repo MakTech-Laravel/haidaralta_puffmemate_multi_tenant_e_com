@@ -231,3 +231,20 @@ test('precognitive branch product store returns 422 for a taken slug', function 
 
     expect(Product::query()->count())->toBe($before);
 });
+
+test('branch product suggestions exclude the current product', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $keep = Product::factory()->create(['name' => 'Branch Twin Alpha']);
+    $self = Product::factory()->create(['name' => 'Branch Twin Beta']);
+
+    $this->actingAs($staff, 'branch')
+        ->getJson(route('branch.products.suggestions', [
+            $branch,
+            'q' => 'Branch Twin',
+            'exclude' => $self->id,
+        ]))
+        ->assertOk()
+        ->assertJsonFragment(['id' => $keep->id])
+        ->assertJsonMissing(['id' => $self->id]);
+});

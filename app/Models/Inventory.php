@@ -22,9 +22,6 @@ class Inventory extends Model
         'product_id',
         'variant_id',
         'quantity',
-        'reserved_quantity',
-        'available_quantity',
-        'minimum_stock',
         'status',
     ];
 
@@ -61,11 +58,6 @@ class Inventory extends Model
             ->where('branch_id', $this->branch_id);
     }
 
-    public function isLowStock(): bool
-    {
-        return $this->available_quantity <= $this->minimum_stock;
-    }
-
     /**
      * @return array<string, string>
      */
@@ -73,9 +65,6 @@ class Inventory extends Model
     {
         return [
             'quantity' => 'integer',
-            'reserved_quantity' => 'integer',
-            'available_quantity' => 'integer',
-            'minimum_stock' => 'integer',
             'status' => 'boolean',
         ];
     }

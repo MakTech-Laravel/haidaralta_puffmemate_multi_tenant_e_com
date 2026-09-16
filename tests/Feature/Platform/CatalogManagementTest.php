@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Branch;
-use App\Models\BranchProduct;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
@@ -15,9 +14,8 @@ beforeEach(function () {
     $this->seed(UserSeeder::class);
 });
 
-test('platform admin can create a category and product without enabling branches', function () {
+test('platform admin can create a category and product for the shared catalog', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $branch = Branch::query()->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.categories.store'), [
@@ -54,14 +52,12 @@ test('platform admin can create a category and product without enabling branches
         ->assertRedirect(route('platform.products.show', 'starter-kit'))
         ->assertInertiaFlash('toast', [
             'type' => 'success',
-            'message' => 'Product created. Disabled for all branches — enable from branch inventory.',
+            'message' => 'Product created.',
         ]);
 
     $product = Product::query()->where('slug', 'starter-kit')->firstOrFail();
 
-    expect($product->isEnabledForBranch($branch->id))->toBeFalse()
-        ->and(BranchProduct::query()->where('product_id', $product->id)->count())->toBe(0)
-        ->and($product->categories()->pluck('categories.id')->all())->toBe([$category->id]);
+    expect($product->categories()->pluck('categories.id')->all())->toBe([$category->id]);
 });
 
 test('platform can toggle category featured on update', function () {
@@ -333,6 +329,39 @@ test('platform products data table filters sorts and paginates', function () {
             ->where('table.data.0.slug', 'zulu-trashed'));
 });
 
+test('platform product show paginates and searches the branch network table', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $product = Product::factory()->create(['slug' => 'network-pack']);
+    Branch::factory()->count(20)->create();
+    $total = Branch::query()->count();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.products.show', [
+            'product' => $product,
+            'per_page' => 15,
+            'page' => 2,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/catalog/products/show')
+            ->where('table.per_page', 15)
+            ->where('table.meta.current_page', 2)
+            ->where('table.meta.total', $total)
+            ->has('table.data', $total - 15));
+
+    $searched = Branch::query()->orderBy('id')->first();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.products.show', [
+            'product' => $product,
+            'filter' => ['search' => $searched->name],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.data', fn ($rows) => collect($rows)
+                ->contains(fn ($row) => $row['slug'] === $searched->slug)));
+});
+
 test('platform categories data table filters by status', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $active = Category::factory()->create([
@@ -360,4 +389,38 @@ test('platform categories data table filters by status', function () {
             ->has('table.data', 1)
             ->where('table.data.0.id', $active->id)
             ->where('table.data.0.products_count', 0));
+});
+
+test('platform generates a prefixed sku when the sku is omitted', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.store'), [
+            'category_ids' => [$category->id],
+            'name' => 'Auto Sku Kit',
+            'slug' => 'auto-sku-kit',
+            'status' => true,
+        ])
+        ->assertRedirect(route('platform.products.show', 'auto-sku-kit'));
+
+    $product = Product::query()->where('slug', 'auto-sku-kit')->firstOrFail();
+
+    expect($product->sku)->toBe(Product::skuFromSlug('auto-sku-kit'))
+        ->and($product->sku)->toStartWith((string) config('catalog.sku_prefix'));
+});
+
+test('platform product suggestions exclude the current product', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $keep = Product::factory()->create(['name' => 'Exclude Twin Alpha']);
+    $self = Product::factory()->create(['name' => 'Exclude Twin Beta']);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.products.suggestions', [
+            'q' => 'Exclude Twin',
+            'exclude' => $self->id,
+        ]))
+        ->assertOk()
+        ->assertJsonFragment(['id' => $keep->id])
+        ->assertJsonMissing(['id' => $self->id]);
 });

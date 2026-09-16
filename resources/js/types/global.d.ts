@@ -19,6 +19,8 @@ declare module '@inertiajs/core' {
                 branch_can_create_categories: boolean;
                 branch_can_view_categories: boolean;
                 show_parent_category: boolean;
+                show_product_variants: boolean;
+                sku_prefix: string;
             };
             [key: string]: unknown;
         };

@@ -1,5 +1,4 @@
-import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import { BranchProductSummary } from '@/components/branch/branch-product-summary';
 import {
@@ -11,7 +10,6 @@ import {
 } from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     colorPickerStyle,
@@ -39,7 +37,6 @@ type ProductShow = {
         sort_order?: number;
     }[];
     variants: BranchProductVariantRow[];
-    enabled: boolean;
     inventory: BranchInventorySnapshot | null;
     price: BranchPriceSnapshot | null;
     variant_inventories: Record<string, BranchInventorySnapshot>;
@@ -59,7 +56,6 @@ export default function BranchProductShow({
     transactionTypes: { value: string; label: string }[];
     discountTypes: { value: string; label: string }[];
 }) {
-    const [enabled, setEnabled] = useState(product.enabled);
     const colorCode = normalizeCatalogColorPickerValue(product.color_code);
     const transparent = isTransparentColorPickerValue(colorCode);
 
@@ -82,18 +78,6 @@ export default function BranchProductShow({
             },
         ],
     });
-
-    const toggleEnabled = (next: boolean) => {
-        setEnabled(next);
-        router.put(
-            ProductController.toggle.url({
-                branch: branch.slug,
-                product: product.slug,
-            }),
-            { status: next },
-            { preserveScroll: true },
-        );
-    };
 
     return (
         <>
@@ -130,14 +114,6 @@ export default function BranchProductShow({
                                         : 'Branch inventory and pricing'
                                 }
                             />
-                            {product.inventory?.is_low_stock ? (
-                                <Badge
-                                    variant="outline"
-                                    className="mt-2 border-destructive/40 text-destructive"
-                                >
-                                    Low stock
-                                </Badge>
-                            ) : null}
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -169,10 +145,8 @@ export default function BranchProductShow({
                     imageUrl={product.image_url}
                     colorCode={product.color_code}
                     gallery={product.gallery ?? []}
-                    enabled={enabled}
-                    lowStock={Boolean(product.inventory?.is_low_stock)}
-                    onEnabledChange={toggleEnabled}
-                    enabledLabel="Enabled for this branch"
+                    quantity={product.inventory?.quantity ?? 0}
+                    missingPrice={product.price == null}
                 />
 
                 <ProductInventoryPanel

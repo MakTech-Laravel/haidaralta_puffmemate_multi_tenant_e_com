@@ -19,6 +19,7 @@ use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVar
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
 use App\Http\Controllers\Platform\StaffController as PlatformStaffController;
+use App\Http\Controllers\Platform\StockController as PlatformStockController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function () {
@@ -136,12 +137,19 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.branches.products.index');
         Route::get('branches/{branch}/products/{product}', [PlatformBranchInventoryController::class, 'show'])
             ->name('platform.branches.products.show');
-        Route::put('branches/{branch}/products/{product}/enable', [PlatformBranchInventoryController::class, 'toggle'])
-            ->name('platform.branches.products.enable');
         Route::post('branches/{branch}/products/{product}/inventory', [PlatformBranchInventoryController::class, 'adjustInventory'])
             ->name('platform.branches.products.inventory');
         Route::put('branches/{branch}/products/{product}/prices', [PlatformBranchInventoryController::class, 'upsertPrice'])
             ->name('platform.branches.products.prices');
+        Route::get('stock/manage', [PlatformStockController::class, 'manage'])->name('platform.stock.manage');
+        Route::post('stock/manage', [PlatformStockController::class, 'adjust'])->name('platform.stock.adjust');
+        Route::get('stock/import', [PlatformStockController::class, 'import'])->name('platform.stock.import');
+        Route::post('stock/import', [PlatformStockController::class, 'storeImport'])->name('platform.stock.import.store');
+        Route::get('stock/price', [PlatformStockController::class, 'price'])->name('platform.stock.price');
+        Route::put('stock/price', [PlatformStockController::class, 'updatePrice'])->name('platform.stock.price.update');
+        Route::get('stock/discount', [PlatformStockController::class, 'discount'])->name('platform.stock.discount');
+        Route::put('stock/discount', [PlatformStockController::class, 'updateDiscount'])->name('platform.stock.discount.update');
+        Route::get('stock/transactions', [PlatformStockController::class, 'transactions'])->name('platform.stock.transactions');
     });
 
     Route::middleware(['permission:manage-catalog'])->group(function () {

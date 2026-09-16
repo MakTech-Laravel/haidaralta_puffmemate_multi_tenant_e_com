@@ -1,32 +1,25 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { format, isValid, parseISO } from 'date-fns';
-import {
-    Building2,
-    Check,
-    Copy,
-    ImageIcon,
-    Network,
-    Package,
-    Pencil,
-    Plus,
-    Trash2,
-    TriangleAlert,
-} from 'lucide-react';
+import { Check, Copy, Network, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import ProductVariantController from '@/actions/App/Http/Controllers/Platform/ProductVariantController';
+import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import {
     DataTable,
+    DataTableColumnHeader,
     DataTableRowActions,
+    DataTableToolbar,
     toClientDataTablePayload,
+    useDataTableQuery,
+    type DataTablePayload,
 } from '@/components/data-table';
 import { PRODUCT_TAG_OPTIONS } from '@/components/platform/product-form';
 import { VariantForm } from '@/components/platform/variant-form';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { ProductGallery } from '@/components/product-gallery';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,6 +37,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { usePermission } from '@/hooks/use-permissions';
 import {
@@ -53,6 +54,7 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
+import { stockActionItems } from '@/lib/stock-query';
 
 type ProductVariant = {
     id: number;
@@ -100,12 +102,41 @@ type Product = {
     created_by_name: string | null;
 };
 
-type BranchSummary = {
-    branches: number;
-    enabled: number;
-    low_stock: number;
-    missing_price: number;
+type BranchRow = {
+    id: number;
+    name: string;
+    slug: string;
+    code: string | null;
+    branch_active: boolean;
+    quantity: number;
+    selling_price: string | number | null;
+    effective_price: string | number | null;
+    has_discount: boolean;
+    discount_type: string;
+    discount_price: string | number | null;
+    manage_url: string;
 };
+
+function listingPrice(row: BranchRow): ReactNode {
+    if (row.selling_price == null && row.effective_price == null) {
+        return '—';
+    }
+
+    if (row.has_discount && row.selling_price != null) {
+        return (
+            <span className="tabular-nums">
+                <s className="text-muted-foreground">{row.selling_price}</s>{' '}
+                {row.effective_price ?? row.selling_price}
+            </span>
+        );
+    }
+
+    return (
+        <span className="tabular-nums">
+            {row.effective_price ?? row.selling_price}
+        </span>
+    );
+}
 
 function tagLabel(value: string): string {
     return (
@@ -187,12 +218,13 @@ function CopyValueButton({ value, label }: { value: string; label: string }) {
 
 export default function PlatformProductsShow({
     product,
-    branchSummary,
+    table,
 }: {
     product: Product;
-    branchSummary: BranchSummary;
+    table: DataTablePayload<BranchRow>;
 }) {
     const { can } = usePermission();
+    const { catalog } = usePage().props;
     const [variantDialogOpen, setVariantDialogOpen] = useState(false);
     const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(
         null,
@@ -225,11 +257,105 @@ export default function PlatformProductsShow({
         product.categories.length > 0
             ? product.categories
             : [];
-    const activeVariants = product.variants.filter(
-        (variant) => variant.status,
-    ).length;
-    const mediaCount =
-        (product.image_url ? 1 : 0) + product.gallery.length;
+
+    const branchQuery = useDataTableQuery({
+        indexUrl: ProductController.show.url(product.slug),
+        initial: {
+            filter: {
+                search: table.filters.search ?? '',
+                missing_price: table.filters.missing_price ?? null,
+            },
+            sort: table.sort,
+            per_page: table.per_page,
+        },
+    });
+
+    const branchColumns = useMemo<ColumnDef<BranchRow>[]>(
+        () => [
+            {
+                accessorKey: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Branch"
+                        sortable
+                        sortKey="name"
+                        currentSort={branchQuery.sort}
+                        onSort={branchQuery.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <div className="flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium">
+                                {row.original.name}
+                            </span>
+                            {!row.original.branch_active ? (
+                                <Badge variant="secondary">
+                                    Branch inactive
+                                </Badge>
+                            ) : null}
+                        </div>
+                        <div className="text-muted-foreground text-xs">
+                            {row.original.code ? `${row.original.code} · ` : ''}
+                            /{row.original.slug}
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'quantity',
+                header: 'Stock',
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {row.original.quantity}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'selling_price',
+                header: 'Price',
+                cell: ({ row }) => listingPrice(row.original),
+            },
+            {
+                id: 'actions',
+                header: 'Actions',
+                cell: ({ row }) => (
+                    <DataTableRowActions
+                        items={[
+                            {
+                                label: 'Manage',
+                                href: row.original.manage_url,
+                            },
+                            ...(canManageBranches
+                                ? stockActionItems(
+                                      {
+                                          manage: StockController.manage.url(),
+                                          transactions:
+                                              StockController.transactions.url(),
+                                          price: StockController.price.url(),
+                                          discount:
+                                              StockController.discount.url(),
+                                      },
+                                      {
+                                          productId: product.id,
+                                          branchId: row.original.id,
+                                          locked: 'both',
+                                      },
+                                  )
+                                : []),
+                        ]}
+                    />
+                ),
+            },
+        ],
+        [
+            branchQuery.sort,
+            branchQuery.toggleSort,
+            canManageBranches,
+            product.id,
+        ],
+    );
 
     const variantColumns = useMemo<ColumnDef<ProductVariant>[]>(() => {
         const columns: ColumnDef<ProductVariant>[] = [
@@ -404,9 +530,10 @@ export default function PlatformProductsShow({
                     </div>
                 </div>
 
-                <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+                <div className="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)]">
                     <ProductGallery
-                        layout="hero"
+                        card={false}
+                        layout="tile"
                         productName={product.name}
                         primaryUrl={product.image_url}
                         images={product.gallery}
@@ -550,47 +677,6 @@ export default function PlatformProductsShow({
                     </Card>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <DemoStatCard
-                        icon={Package}
-                        label="Variants"
-                        value={String(product.variants.length)}
-                        hint={`${activeVariants} active purchasable SKU${activeVariants === 1 ? '' : 's'}`}
-                    />
-                    <DemoStatCard
-                        icon={ImageIcon}
-                        label="Media"
-                        value={String(mediaCount)}
-                        hint={
-                            product.image_url
-                                ? 'Includes primary listing photo'
-                                : 'Primary photo missing'
-                        }
-                    />
-                    <DemoStatCard
-                        icon={Building2}
-                        label="Branch enablement"
-                        value={`${branchSummary.enabled}/${branchSummary.branches}`}
-                        hint="Enabled of all branches"
-                    />
-                    <DemoStatCard
-                        icon={TriangleAlert}
-                        label="Attention"
-                        value={String(
-                            branchSummary.low_stock +
-                                branchSummary.missing_price,
-                        )}
-                        hint={`${branchSummary.low_stock} low stock · ${branchSummary.missing_price} missing price`}
-                        valueClassName={
-                            branchSummary.low_stock +
-                                branchSummary.missing_price >
-                            0
-                                ? 'text-destructive'
-                                : undefined
-                        }
-                    />
-                </div>
-
                 <div className="grid items-start gap-6 xl:grid-cols-2">
                     <Card className="shadow-sm">
                         <CardHeader>
@@ -601,7 +687,7 @@ export default function PlatformProductsShow({
                         </CardHeader>
                         <CardContent>
                             {product.specifications.length > 0 ? (
-                                <dl className="divide-border overflow-hidden rounded-xl border">
+                                <dl className="divide-border max-h-64 overflow-y-auto overflow-hidden rounded-xl border">
                                     {product.specifications.map((row) => (
                                         <div
                                             key={`${row.label}-${row.value}`}
@@ -663,8 +749,8 @@ export default function PlatformProductsShow({
                         <div className="space-y-1.5">
                             <CardTitle>Branch network</CardTitle>
                             <CardDescription>
-                                Catalog products stay disabled per branch until
-                                you enable them and set stock or price.
+                                Set stock and selling price at each branch that
+                                should carry this product.
                             </CardDescription>
                         </div>
                         {canManageBranches ? (
@@ -681,35 +767,56 @@ export default function PlatformProductsShow({
                         ) : null}
                     </CardHeader>
                     <CardContent>
-                        <div className="grid gap-3 sm:grid-cols-3">
-                            <div className="rounded-xl border px-4 py-3">
-                                <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                                    Enabled
-                                </p>
-                                <p className="mt-1 text-lg font-semibold tabular-nums">
-                                    {branchSummary.enabled}
-                                </p>
-                            </div>
-                            <div className="rounded-xl border px-4 py-3">
-                                <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                                    Low stock
-                                </p>
-                                <p className="mt-1 text-lg font-semibold tabular-nums">
-                                    {branchSummary.low_stock}
-                                </p>
-                            </div>
-                            <div className="rounded-xl border px-4 py-3">
-                                <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                                    Missing price
-                                </p>
-                                <p className="mt-1 text-lg font-semibold tabular-nums">
-                                    {branchSummary.missing_price}
-                                </p>
-                            </div>
-                        </div>
+                        <DataTable
+                            columns={branchColumns}
+                            payload={table}
+                            perPage={branchQuery.perPage}
+                            onPerPageChange={branchQuery.changePerPage}
+                            emptyMessage="No branches match this filter."
+                            toolbar={
+                                <DataTableToolbar
+                                    search={branchQuery.search}
+                                    onSearchChange={branchQuery.setSearch}
+                                    searchPlaceholder="Search branch name, slug, or code…"
+                                    onClear={branchQuery.clearFilters}
+                                    filters={
+                                        <div className="grid gap-2">
+                                            <Label>Price</Label>
+                                            <Select
+                                                value={String(
+                                                    branchQuery.filters
+                                                        .missing_price ?? 'all',
+                                                )}
+                                                onValueChange={(value) =>
+                                                    branchQuery.setFilter(
+                                                        'missing_price',
+                                                        value === 'all'
+                                                            ? null
+                                                            : value,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger className="w-[10rem]">
+                                                    <SelectValue placeholder="Price" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">
+                                                        All prices
+                                                    </SelectItem>
+                                                    <SelectItem value="1">
+                                                        Missing price
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    }
+                                />
+                            }
+                        />
                     </CardContent>
                 </Card>
 
+                {catalog.show_product_variants ? (
                 <Card className="shadow-sm">
                     <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
                         <div className="flex flex-col gap-1.5">
@@ -736,10 +843,11 @@ export default function PlatformProductsShow({
                         />
                     </CardContent>
                 </Card>
+                ) : null}
             </div>
 
+            {catalog.show_product_variants ? (
             <Dialog
-                open={variantDialogOpen}
                 onOpenChange={(open) => {
                     setVariantDialogOpen(open);
 
@@ -784,6 +892,7 @@ export default function PlatformProductsShow({
                     />
                 </DialogContent>
             </Dialog>
+            ) : null}
 
             <ConfirmDeleteDialog
                 open={deletingVariantId !== null}

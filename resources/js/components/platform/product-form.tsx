@@ -1,4 +1,4 @@
-import { Link, useForm } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import { Check, ChevronsUpDown, Plus, Trash2 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
@@ -115,10 +115,11 @@ interface ProductFormProps {
     suggestionsUrl?: string;
     suggestionShowHref?: (slug: string) => string;
     excludeProductId?: number | null;
-    /** Branch create: include initial selling_price / quantity / minimum_stock. */
+    /** Branch create: include initial selling_price / quantity. */
     branchOpsFields?: boolean;
     /** Hide gallery when backend ignores it (branch create). Default true. */
     showGallery?: boolean;
+    returnTo?: string | null;
     cancelHref: string;
     submitLabel?: string;
 }
@@ -129,6 +130,17 @@ function slugify(value: string): string {
         .trim()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
+}
+
+function skuFromSlug(slug: string, prefix: string): string {
+    const body = slug.trim().replace(/^-+|-+$/g, '').toUpperCase();
+    const tag = prefix.trim().toUpperCase() || 'PMM';
+
+    if (body === '') {
+        return '';
+    }
+
+    return `${tag}-${body}`;
 }
 
 export function ProductForm({
@@ -143,10 +155,14 @@ export function ProductForm({
     excludeProductId = null,
     branchOpsFields = false,
     showGallery = true,
+    returnTo = null,
     cancelHref,
     submitLabel,
 }: ProductFormProps) {
+    const { catalog } = usePage().props;
     const [slugTouched, setSlugTouched] = useState(isEdit);
+    const [skuTouched, setSkuTouched] = useState(isEdit);
+    const [suggestionQuery, setSuggestionQuery] = useState('');
     const [existingPrimary, setExistingPrimary] = useState<ExistingFile[]>(
         () =>
             defaults?.image && defaults?.image_url
@@ -209,11 +225,11 @@ export function ProductForm({
             isEdit,
         ),
         status: defaults?.status ?? true,
+        ...(returnTo ? { return_to: returnTo } : {}),
         ...(branchOpsFields
             ? {
                   selling_price: '',
                   quantity: 0,
-                  minimum_stock: 0,
               }
             : {}),
         ...(isEdit ? { _method: 'put' } : {}),
@@ -295,11 +311,23 @@ export function ProductForm({
     }, [data.name, data.slug, slugTouched, setData]);
 
     useEffect(() => {
+        if (skuTouched) {
+            return;
+        }
+
+        const nextSku = skuFromSlug(data.slug, catalog.sku_prefix);
+
+        if (nextSku !== data.sku) {
+            setData('sku', nextSku);
+        }
+    }, [catalog.sku_prefix, data.sku, data.slug, setData, skuTouched]);
+
+    useEffect(() => {
         if (!enableSuggestions) {
             return;
         }
 
-        const query = data.name.trim();
+        const query = suggestionQuery.trim();
 
         if (query.length < 2) {
             setSuggestions([]);
@@ -331,9 +359,9 @@ export function ProductForm({
 
         return () => window.clearTimeout(timer);
     }, [
-        data.name,
         enableSuggestions,
         excludeProductId,
+        suggestionQuery,
         suggestionsUrl,
     ]);
 
@@ -351,12 +379,10 @@ export function ProductForm({
                 specifications,
                 selling_price,
                 quantity,
-                minimum_stock,
                 ...rest
             } = form as typeof form & {
                 selling_price?: string;
                 quantity?: number;
-                minimum_stock?: number;
             };
 
             const filteredSpecifications = specifications.filter(
@@ -383,7 +409,6 @@ export function ProductForm({
                               ? { selling_price }
                               : {}),
                           quantity: quantity ?? 0,
-                          minimum_stock: minimum_stock ?? 0,
                       }
                     : {}),
             };
@@ -399,10 +424,10 @@ export function ProductForm({
         <form onSubmit={submit} className="space-y-6">
             {showBranchNotice ? (
                 <Alert className="border-primary/20 bg-primary/5">
-                    <AlertTitle>Branch availability</AlertTitle>
+                    <AlertTitle>Shared catalog</AlertTitle>
                     <AlertDescription>
-                        Disabled for all branches — enable from branch
-                        inventory after creating the product.
+                        Active products are available at every branch. Set stock
+                        and price from Manage stock after creating the listing.
                     </AlertDescription>
                 </Alert>
             ) : null}
@@ -528,9 +553,10 @@ export function ProductForm({
                             <Input
                                 id="name"
                                 value={data.name}
-                                onChange={(event) =>
-                                    setData('name', event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setSuggestionQuery(event.target.value);
+                                    setData('name', event.target.value);
+                                }}
                                 onBlur={() => {
                                     if (data.slug.trim() !== '') {
                                         validate('slug');
@@ -551,6 +577,7 @@ export function ProductForm({
                                     value={data.slug}
                                     onChange={(event) => {
                                         setSlugTouched(true);
+                                        setSuggestionQuery(event.target.value);
                                         setData('slug', event.target.value);
                                     }}
                                     onBlur={() => {
@@ -569,15 +596,16 @@ export function ProductForm({
                                 <Input
                                     id="sku"
                                     value={data.sku}
-                                    onChange={(event) =>
-                                        setData('sku', event.target.value)
-                                    }
+                                    onChange={(event) => {
+                                        setSkuTouched(true);
+                                        setData('sku', event.target.value);
+                                    }}
                                     onBlur={() => {
                                         if (data.sku.trim() !== '') {
                                             validate('sku');
                                         }
                                     }}
-                                    placeholder="e.g. POM-AIR-PRO"
+                                    placeholder={`e.g. ${catalog.sku_prefix}-AIR-PRO`}
                                 />
                                 <InputError message={errors.sku} />
                             </div>
@@ -677,7 +705,7 @@ export function ProductForm({
                         </div>
 
                         {branchOpsFields ? (
-                            <div className="grid gap-5 sm:grid-cols-3">
+                            <div className="grid gap-5 sm:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="selling_price">
                                         Selling price
@@ -730,34 +758,6 @@ export function ProductForm({
                                         }
                                     />
                                     <InputError message={errors.quantity} />
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <Label htmlFor="minimum_stock">
-                                        Minimum stock
-                                    </Label>
-                                    <Input
-                                        id="minimum_stock"
-                                        type="number"
-                                        min="0"
-                                        value={
-                                            (
-                                                data as typeof data & {
-                                                    minimum_stock?: number;
-                                                }
-                                            ).minimum_stock ?? 0
-                                        }
-                                        onChange={(event) =>
-                                            setData(
-                                                'minimum_stock' as never,
-                                                Number(
-                                                    event.target.value,
-                                                ) as never,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={errors.minimum_stock}
-                                    />
                                 </div>
                             </div>
                         ) : null}
@@ -982,75 +982,105 @@ export function ProductForm({
                     </p>
                 </div>
 
-                <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                    <div className="flex flex-col gap-5">
-                        <div className="flex flex-col gap-3">
-                            <div className="space-y-1">
-                                <Label>Tags</Label>
-                                <p className="text-muted-foreground text-xs">
-                                    Highlight this product in storefront
-                                    collections.
-                                </p>
-                            </div>
-                            <div className="grid gap-2 sm:grid-cols-2">
-                                {PRODUCT_TAG_OPTIONS.map((option) => {
-                                    const checked = data.tags.includes(
-                                        option.value,
-                                    );
-
-                                    return (
-                                        <label
-                                            key={option.value}
-                                            htmlFor={`tag-${option.value}`}
-                                            className={cn(
-                                                'inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors',
-                                                checked
-                                                    ? 'border-primary/40 bg-primary/5'
-                                                    : 'border-border/70 bg-muted/20 hover:bg-muted/40',
-                                            )}
-                                        >
-                                            <Checkbox
-                                                id={`tag-${option.value}`}
-                                                checked={checked}
-                                                onCheckedChange={() =>
-                                                    toggleTag(option.value)
-                                                }
-                                            />
-                                            <span className="font-normal">
-                                                {option.label}
-                                            </span>
-                                        </label>
-                                    );
-                                })}
-                            </div>
-                            <InputError message={errors.tags} />
+                <div className="flex flex-col gap-8">
+                    <div className="flex flex-col gap-3">
+                        <div className="space-y-1">
+                            <Label>Tags</Label>
+                            <p className="text-muted-foreground text-xs">
+                                Highlight this product in storefront
+                                collections.
+                            </p>
                         </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            {PRODUCT_TAG_OPTIONS.map((option) => {
+                                const checked = data.tags.includes(
+                                    option.value,
+                                );
 
-                        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-                            <Checkbox
-                                id="status"
-                                checked={data.status}
-                                onCheckedChange={(value) =>
-                                    setData('status', value === true)
-                                }
-                            />
-                            <div className="space-y-0.5">
-                                <Label
-                                    htmlFor="status"
-                                    className="font-medium"
-                                >
-                                    Active in catalog
-                                </Label>
-                                <p className="text-muted-foreground text-xs">
-                                    Inactive products stay hidden from browsing.
-                                </p>
-                            </div>
-                            <InputError message={errors.status} />
+                                return (
+                                    <label
+                                        key={option.value}
+                                        htmlFor={`tag-${option.value}`}
+                                        className={cn(
+                                            'inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors',
+                                            checked
+                                                ? 'border-primary/40 bg-primary/5'
+                                                : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                        )}
+                                    >
+                                        <Checkbox
+                                            id={`tag-${option.value}`}
+                                            checked={checked}
+                                            onCheckedChange={() =>
+                                                toggleTag(option.value)
+                                            }
+                                        />
+                                        <span className="font-normal">
+                                            {option.label}
+                                        </span>
+                                    </label>
+                                );
+                            })}
                         </div>
+                        <InputError message={errors.tags} />
                     </div>
 
+                    <fieldset className="space-y-3">
+                        <legend className="text-sm font-medium">Status</legend>
+                        <p className="text-muted-foreground text-xs">
+                            Inactive products stay hidden from browsing.
+                        </p>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <label
+                                className={cn(
+                                    'flex cursor-pointer flex-col gap-1 rounded-xl border px-4 py-3 transition-colors',
+                                    data.status
+                                        ? 'border-primary/40 bg-primary/5'
+                                        : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                )}
+                            >
+                                <input
+                                    type="radio"
+                                    name="status"
+                                    className="sr-only"
+                                    checked={data.status}
+                                    onChange={() => setData('status', true)}
+                                />
+                                <span className="text-sm font-medium">
+                                    Active
+                                </span>
+                                <span className="text-muted-foreground text-xs">
+                                    Visible in the catalog and storefront.
+                                </span>
+                            </label>
+                            <label
+                                className={cn(
+                                    'flex cursor-pointer flex-col gap-1 rounded-xl border px-4 py-3 transition-colors',
+                                    !data.status
+                                        ? 'border-primary/40 bg-primary/5'
+                                        : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                )}
+                            >
+                                <input
+                                    type="radio"
+                                    name="status"
+                                    className="sr-only"
+                                    checked={!data.status}
+                                    onChange={() => setData('status', false)}
+                                />
+                                <span className="text-sm font-medium">
+                                    Inactive
+                                </span>
+                                <span className="text-muted-foreground text-xs">
+                                    Hidden from storefront browsing.
+                                </span>
+                            </label>
+                        </div>
+                        <InputError message={errors.status} />
+                    </fieldset>
+
                     <div className="flex flex-col gap-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
                             <div className="space-y-1">
                                 <Label>Specifications</Label>
                                 <p className="text-muted-foreground text-xs">

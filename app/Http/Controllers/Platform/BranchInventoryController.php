@@ -7,13 +7,11 @@ use App\DataTables\ProductBranchInventoryDataTable;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\AdjustBranchInventoryRequest;
-use App\Http\Requests\Branch\ToggleBranchProductRequest;
 use App\Http\Requests\Branch\UpsertBranchProductPriceRequest;
 use App\Models\Branch;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\Inventory\BranchPricingService;
-use App\Services\Inventory\BranchProductAvailabilityService;
 use App\Services\Inventory\InventoryService;
 use App\Support\BranchProductListingPayload;
 use App\Support\BranchProductShowPayload;
@@ -28,7 +26,6 @@ use InvalidArgumentException;
 class BranchInventoryController extends Controller
 {
     public function __construct(
-        private BranchProductAvailabilityService $availability,
         private InventoryService $inventory,
         private BranchPricingService $pricing,
     ) {}
@@ -55,25 +52,11 @@ class BranchInventoryController extends Controller
     {
         return Inertia::render('platform/branches/products/show', [
             'branch' => $branch->only(['id', 'name', 'slug']),
-            'product' => BranchProductShowPayload::product(
-                $branch,
-                $product,
-                $this->availability->isEnabled($branch, $product),
-            ),
+            'product' => BranchProductShowPayload::product($branch, $product),
             'transactions' => BranchProductShowPayload::transactions($branch, $product, $request),
             'transactionTypes' => BranchProductShowPayload::transactionTypes(),
             'discountTypes' => BranchProductShowPayload::discountTypes(),
         ]);
-    }
-
-    public function toggle(ToggleBranchProductRequest $request, Branch $branch, Product $product): RedirectResponse
-    {
-        $enabled = $request->boolean('status');
-        $this->availability->setEnabled($branch, $product, $enabled);
-
-        Toast::success($enabled ? 'Product enabled for branch.' : 'Product disabled for branch.');
-
-        return redirect()->back();
     }
 
     public function adjustInventory(
@@ -83,11 +66,6 @@ class BranchInventoryController extends Controller
     ): RedirectResponse {
         $variant = $this->resolveVariant($product, $request->validated('variant_id'));
         $inventory = $this->inventory->firstOrCreate($branch, $product, $variant);
-
-        if ($request->filled('minimum_stock')) {
-            $this->inventory->setMinimumStock($inventory, (int) $request->validated('minimum_stock'));
-            $inventory->refresh();
-        }
 
         try {
             $this->inventory->adjust(

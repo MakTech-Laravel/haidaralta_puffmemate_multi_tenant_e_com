@@ -29,10 +29,13 @@ Free-text search may use Scout/Meilisearch only on Searchable models when driver
 Backup zip listing is filesystem metadata, not Eloquent. Use DatabaseBackupZipDataTable + archives_* query keys (archives_search/sort/per_page/page) so it coexists with operator history DataTable on the same page. Frontend prop is archives. No Meilisearch.
 
 ## Branch listing makeForBranch + filters
-Use BranchProductListingDataTable::makeForBranch (not make) — child signature cannot override AbstractDataTable::make. Filters: category_id, status (catalog), enabled (branch_products.status), low_stock (product-level inventory available <= minimum), missing_price (enabled for branch without active selling price). filterOptions include categories. Platform index passes includeImage true and BranchProductListingPayload::summary (products/enabled/low_stock/missing_price, branch-wide).
+Use BranchProductListingDataTable::makeForBranch (not make) — child signature cannot override AbstractDataTable::make. Filters: category_id, status (catalog), missing_price (product for branch without active selling price). filterOptions include categories. Platform index passes includeImage true and BranchProductListingPayload::summary (products/missing_price, branch-wide). No enabled/low_stock filters.
 
 ## Product → branches inventory DataTable
-Platform catalog Manage branches uses ProductBranchInventoryDataTable::makeForProduct (Scout free-text on Branch; SQL filters enabled / low_stock / missing_price; paginate+sort). Pair with ProductBranchInventoryPayload::product + ::summary for header cards (summary is product-wide, not the current page). Page: platform/catalog/products/branches.
+Platform catalog Manage branches uses ProductBranchInventoryDataTable::makeForProduct (Scout free-text on Branch; SQL filter missing_price; paginate+sort). Pair with ProductBranchInventoryPayload::product + ::summary for header cards (summary is product-wide, not the current page: branches/missing_price). Page: platform/catalog/products/branches.
 
 ## Branch categories DataTable no trash
 Branch category index uses BranchCategoryDataTable without AllowedFilter::trashed — soft-delete UI stays platform-only.
+
+## Listings use quantity and discounted price
+Branch/platform product listings use quantity as Stock. No Enabled column or toggle (route gone). No enabled/low_stock filters. Discounted prices show strikethrough selling_price plus effective_price when has_discount. Summary cards are { products, missing_price } or { branches, missing_price }.

@@ -12,9 +12,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
 import {
     colorPickerStyle,
     isTransparentColorPickerValue,
@@ -52,10 +49,8 @@ type BranchProductSummaryProps = {
     imageUrl?: string | null;
     colorCode?: ColorPickerValue | null;
     gallery?: ProductGalleryImage[];
-    enabled: boolean;
-    lowStock?: boolean;
-    onEnabledChange: (enabled: boolean) => void;
-    enabledLabel?: string;
+    quantity: number;
+    missingPrice?: boolean;
 };
 
 export function BranchProductSummary({
@@ -66,10 +61,8 @@ export function BranchProductSummary({
     imageUrl = null,
     colorCode = null,
     gallery = [],
-    enabled,
-    lowStock = false,
-    onEnabledChange,
-    enabledLabel = 'Available at this branch',
+    quantity,
+    missingPrice = false,
 }: BranchProductSummaryProps) {
     const categories = categoryLabels(categoryName);
     const normalizedColor = normalizeCatalogColorPickerValue(colorCode);
@@ -147,53 +140,31 @@ export function BranchProductSummary({
                 <Card className="h-full gap-4 py-5 shadow-none">
                     <CardHeader className="px-5">
                         <CardTitle className="text-base">
-                            Branch availability
+                            Branch stock
                         </CardTitle>
                         <CardDescription>
-                            Control whether this product sells here
+                            Quantity and pricing for this branch
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-1 flex-col gap-5 px-5">
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="space-y-1">
-                                <Label
-                                    htmlFor="branch-product-enabled"
-                                    className="text-sm font-medium"
-                                >
-                                    {enabledLabel}
-                                </Label>
-                                <p className="text-muted-foreground text-xs">
-                                    {enabled
-                                        ? 'Visible and sellable at this branch.'
-                                        : 'Hidden from this branch storefront.'}
-                                </p>
-                            </div>
-                            <Switch
-                                id="branch-product-enabled"
-                                checked={enabled}
-                                onCheckedChange={(checked) =>
-                                    onEnabledChange(checked === true)
-                                }
-                            />
-                        </div>
-
-                        <Separator />
-
-                        <div className="space-y-1">
-                            <p className="text-muted-foreground text-sm">
-                                Stock alert
-                            </p>
-                            {lowStock ? (
-                                <Badge
-                                    variant="outline"
-                                    className="border-destructive/40 text-destructive"
-                                >
-                                    Low stock
-                                </Badge>
-                            ) : (
-                                <p className="text-sm font-medium">Healthy</p>
-                            )}
-                        </div>
+                        <DetailItem
+                            label="Stock"
+                            value={
+                                <span className="tabular-nums">{quantity}</span>
+                            }
+                        />
+                        <DetailItem
+                            label="Price"
+                            value={
+                                missingPrice ? (
+                                    <span className="text-muted-foreground">
+                                        Missing
+                                    </span>
+                                ) : (
+                                    'On file'
+                                )
+                            }
+                        />
                     </CardContent>
                 </Card>
             </div>

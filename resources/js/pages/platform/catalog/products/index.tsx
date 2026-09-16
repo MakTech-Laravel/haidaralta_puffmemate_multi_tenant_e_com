@@ -1,9 +1,10 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, Network, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import {
     DataTable,
@@ -31,6 +32,7 @@ import {
     isTransparentColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
+import { stockActionItems } from '@/lib/stock-query';
 
 type ProductRow = {
     id: number;
@@ -65,6 +67,7 @@ export default function PlatformProductsIndex({
     };
 }) {
     const { can } = usePermission();
+    const { catalog } = usePage().props;
     const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
 
@@ -150,19 +153,23 @@ export default function PlatformProductsIndex({
                     />
                 ),
             },
-            {
-                accessorKey: 'variants_count',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Variants"
-                        sortable
-                        sortKey="variants_count"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
-                ),
-            },
+            ...(catalog.show_product_variants
+                ? [
+                      {
+                          accessorKey: 'variants_count',
+                          header: ({ column }) => (
+                              <DataTableColumnHeader
+                                  column={column}
+                                  title="Variants"
+                                  sortable
+                                  sortKey="variants_count"
+                                  currentSort={query.sort}
+                                  onSort={query.toggleSort}
+                              />
+                          ),
+                      } satisfies ColumnDef<ProductRow>,
+                  ]
+                : []),
             {
                 accessorKey: 'status',
                 header: ({ column }) => (
@@ -213,6 +220,19 @@ export default function PlatformProductsIndex({
                                   },
                               ]
                             : []),
+                        ...(can('manage-branch-inventories') &&
+                        !product.deleted_at
+                            ? stockActionItems(
+                                  {
+                                      manage: StockController.manage.url(),
+                                      transactions:
+                                          StockController.transactions.url(),
+                                      price: StockController.price.url(),
+                                      discount: StockController.discount.url(),
+                                  },
+                                  { productId: product.id, locked: 'product' },
+                              )
+                            : []),
                         ...(can('manage-catalog') && !product.deleted_at
                             ? [
                                   {
@@ -257,7 +277,7 @@ export default function PlatformProductsIndex({
                 },
             },
         ],
-        [can, query.sort, query.toggleSort],
+        [can, catalog.show_product_variants, query.sort, query.toggleSort],
     );
 
     return (

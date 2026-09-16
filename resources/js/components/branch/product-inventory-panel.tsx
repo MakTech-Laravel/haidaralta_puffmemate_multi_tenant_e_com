@@ -1,17 +1,9 @@
-import { router, useForm } from '@inertiajs/react';
-import {
-    ArrowDownToLine,
-    Boxes,
-    CircleDollarSign,
-    Package,
-    Tags,
-    TriangleAlert,
-} from 'lucide-react';
+import { router, useForm, usePage } from '@inertiajs/react';
+import { Boxes, Package, Tags } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import InputError from '@/components/input-error';
 import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { SimplePagination } from '@/components/simple-pagination';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -44,10 +36,6 @@ import {
 
 export type BranchInventorySnapshot = {
     quantity: number;
-    reserved_quantity: number;
-    available_quantity: number;
-    minimum_stock: number;
-    is_low_stock: boolean;
 };
 
 export type BranchPriceSnapshot = {
@@ -174,6 +162,8 @@ export function ProductInventoryPanel({
     priceUrl,
     showUrl,
 }: ProductInventoryPanelProps) {
+    const { catalog } = usePage().props;
+    const showVariants = catalog.show_product_variants;
     const [scope, setScope] = useState(
         transactions.filters.scope || BASE_SCOPE,
     );
@@ -182,23 +172,26 @@ export function ProductInventoryPanel({
     const skipTxnReload = useRef(true);
 
     const activeVariants = useMemo(
-        () => variants.filter((variant) => variant.status !== false),
-        [variants],
+        () =>
+            showVariants
+                ? variants.filter((variant) => variant.status !== false)
+                : [],
+        [showVariants, variants],
     );
 
+    const activeScope = showVariants ? scope : BASE_SCOPE;
     const scopedInventory = resolveInventory(
-        scope,
+        activeScope,
         inventory,
         variantInventories,
     );
-    const scopedPrice = resolvePrice(scope, price, variantPrices);
-    const variantId = scope === BASE_SCOPE ? null : Number(scope);
+    const scopedPrice = resolvePrice(activeScope, price, variantPrices);
+    const variantId = activeScope === BASE_SCOPE ? null : Number(activeScope);
     const discountType = resolveDiscountType(scopedPrice);
 
     const inventoryForm = useForm({
         type: 'stock_in',
         quantity: 1,
-        minimum_stock: scopedInventory?.minimum_stock ?? 0,
         variant_id: variantId as number | null,
     });
 
@@ -213,19 +206,15 @@ export function ProductInventoryPanel({
     });
 
     useEffect(() => {
-        const nextInventory = resolveInventory(
-            scope,
-            inventory,
-            variantInventories,
-        );
-        const nextPrice = resolvePrice(scope, price, variantPrices);
-        const nextVariantId = scope === BASE_SCOPE ? null : Number(scope);
+        const nextScope = showVariants ? scope : BASE_SCOPE;
+        const nextPrice = resolvePrice(nextScope, price, variantPrices);
+        const nextVariantId =
+            nextScope === BASE_SCOPE ? null : Number(nextScope);
         const nextDiscountType = resolveDiscountType(nextPrice);
 
         inventoryForm.setData({
             type: 'stock_in',
             quantity: 1,
-            minimum_stock: nextInventory?.minimum_stock ?? 0,
             variant_id: nextVariantId,
         });
 
@@ -240,7 +229,14 @@ export function ProductInventoryPanel({
         });
         // Only re-sync when scope or server snapshots change.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [scope, inventory, price, variantInventories, variantPrices]);
+    }, [
+        scope,
+        showVariants,
+        inventory,
+        price,
+        variantInventories,
+        variantPrices,
+    ]);
 
     useEffect(() => {
         setTxnFrom(transactions.filters.from ?? '');
@@ -255,7 +251,7 @@ export function ProductInventoryPanel({
         router.get(
             showUrl,
             {
-                txn_scope: next.scope ?? scope,
+                txn_scope: next.scope ?? activeScope,
                 ...(next.from || txnFrom
                     ? { txn_from: next.from ?? txnFrom }
                     : {}),
@@ -277,17 +273,17 @@ export function ProductInventoryPanel({
             return;
         }
 
-        reloadTransactions({ scope });
+        reloadTransactions({ scope: activeScope });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [scope]);
+    }, [activeScope]);
 
     const scopeLabel =
-        scope === BASE_SCOPE
+        activeScope === BASE_SCOPE
             ? 'Base product'
-            : (activeVariants.find((variant) => String(variant.id) === scope)
-                  ?.name ?? 'Variant');
+            : (activeVariants.find(
+                  (variant) => String(variant.id) === activeScope,
+              )?.name ?? 'Variant');
 
-    const reserved = scopedInventory?.reserved_quantity ?? 0;
     const showDiscountFields = priceForm.data.discount_type !== 'none';
 
     return (
@@ -299,82 +295,49 @@ export function ProductInventoryPanel({
                         <h2 className="text-base font-semibold tracking-tight">
                             Inventory & pricing
                         </h2>
-                        {scopedInventory?.is_low_stock ? (
-                            <Badge variant="destructive">Low stock</Badge>
-                        ) : null}
                     </div>
                     <p className="text-muted-foreground text-sm">
                         Manage stock and price for {scopeLabel}.
                     </p>
                 </div>
-                <div className="grid w-full gap-2 sm:max-w-[16rem]">
-                    <Label htmlFor="inventory-scope">Scope</Label>
-                    <Select value={scope} onValueChange={setScope}>
-                        <SelectTrigger id="inventory-scope" className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={BASE_SCOPE}>
-                                Base product
-                            </SelectItem>
-                            {activeVariants.map((variant) => (
-                                <SelectItem
-                                    key={variant.id}
-                                    value={String(variant.id)}
-                                >
-                                    {variant.name}
-                                    {variant.sku ? ` · ${variant.sku}` : ''}
+                {showVariants ? (
+                    <div className="grid w-full gap-2 sm:max-w-[16rem]">
+                        <Label htmlFor="inventory-scope">Scope</Label>
+                        <Select value={activeScope} onValueChange={setScope}>
+                            <SelectTrigger
+                                id="inventory-scope"
+                                className="w-full"
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={BASE_SCOPE}>
+                                    Base product
                                 </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
+                                {activeVariants.map((variant) => (
+                                    <SelectItem
+                                        key={variant.id}
+                                        value={String(variant.id)}
+                                    >
+                                        {variant.name}
+                                        {variant.sku
+                                            ? ` · ${variant.sku}`
+                                            : ''}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                ) : null}
                 <DemoStatCard
                     icon={Boxes}
-                    label="On hand"
+                    label="Stock"
                     value={String(scopedInventory?.quantity ?? 0)}
-                    hint={
-                        reserved > 0
-                            ? `${reserved} reserved`
-                            : 'Physical quantity'
-                    }
-                />
-                <DemoStatCard
-                    icon={ArrowDownToLine}
-                    label="Available"
-                    value={String(scopedInventory?.available_quantity ?? 0)}
-                    hint={
-                        scopedInventory?.is_low_stock
-                            ? 'Below minimum'
-                            : 'Ready to sell'
-                    }
-                    valueClassName={
-                        scopedInventory?.is_low_stock
-                            ? 'text-destructive'
-                            : undefined
-                    }
-                    className={
-                        scopedInventory?.is_low_stock
-                            ? 'border-destructive/30'
-                            : undefined
-                    }
-                />
-                <DemoStatCard
-                    icon={
-                        scopedInventory?.is_low_stock
-                            ? TriangleAlert
-                            : CircleDollarSign
-                    }
-                    label="Minimum"
-                    value={String(scopedInventory?.minimum_stock ?? 0)}
-                    hint="Restock threshold"
+                    hint="On-hand quantity"
                 />
             </div>
 
-            {activeVariants.length > 0 ? (
+            {showVariants && activeVariants.length > 0 ? (
                 <Card className="gap-4 py-5 shadow-none">
                     <CardHeader className="px-5">
                         <CardTitle className="flex items-center gap-2 text-base">
@@ -390,7 +353,7 @@ export function ProductInventoryPanel({
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Variant</TableHead>
-                                    <TableHead>Available</TableHead>
+                                    <TableHead>Stock</TableHead>
                                     <TableHead>Price</TableHead>
                                     <TableHead className="text-right">
                                         Actions
@@ -414,18 +377,8 @@ export function ProductInventoryPanel({
                                                     {variant.sku ?? '—'}
                                                 </div>
                                             </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="tabular-nums">
-                                                        {rowInventory?.available_quantity ??
-                                                            0}
-                                                    </span>
-                                                    {rowInventory?.is_low_stock ? (
-                                                        <Badge variant="destructive">
-                                                            Low
-                                                        </Badge>
-                                                    ) : null}
-                                                </div>
+                                            <TableCell className="tabular-nums">
+                                                {rowInventory?.quantity ?? 0}
                                             </TableCell>
                                             <TableCell className="tabular-nums">
                                                 {rowPrice?.selling_price ?? '—'}
@@ -461,7 +414,7 @@ export function ProductInventoryPanel({
                                 Adjust inventory
                             </CardTitle>
                             <CardDescription>
-                                Stock in, stock out, or set minimum levels.
+                                Stock in, stock out, or adjust on-hand quantity.
                             </CardDescription>
                         </CardHeader>
                         <form
@@ -471,9 +424,9 @@ export function ProductInventoryPanel({
                                 inventoryForm.transform((data) => ({
                                     ...data,
                                     variant_id:
-                                        scope === BASE_SCOPE
+                                        activeScope === BASE_SCOPE
                                             ? null
-                                            : Number(scope),
+                                            : Number(activeScope),
                                 }));
                                 inventoryForm.post(inventoryUrl, {
                                     preserveScroll: true,
@@ -507,54 +460,23 @@ export function ProductInventoryPanel({
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="quantity">
-                                            Quantity
-                                        </Label>
-                                        <Input
-                                            id="quantity"
-                                            type="number"
-                                            min={0}
-                                            value={inventoryForm.data.quantity}
-                                            onChange={(event) =>
-                                                inventoryForm.setData(
-                                                    'quantity',
-                                                    Number(event.target.value),
-                                                )
-                                            }
-                                        />
-                                        <InputError
-                                            message={
-                                                inventoryForm.errors.quantity
-                                            }
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="minimum_stock">
-                                            Minimum stock
-                                        </Label>
-                                        <Input
-                                            id="minimum_stock"
-                                            type="number"
-                                            min={0}
-                                            value={
-                                                inventoryForm.data.minimum_stock
-                                            }
-                                            onChange={(event) =>
-                                                inventoryForm.setData(
-                                                    'minimum_stock',
-                                                    Number(event.target.value),
-                                                )
-                                            }
-                                        />
-                                        <InputError
-                                            message={
-                                                inventoryForm.errors
-                                                    .minimum_stock
-                                            }
-                                        />
-                                    </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="quantity">Quantity</Label>
+                                    <Input
+                                        id="quantity"
+                                        type="number"
+                                        min={0}
+                                        value={inventoryForm.data.quantity}
+                                        onChange={(event) =>
+                                            inventoryForm.setData(
+                                                'quantity',
+                                                Number(event.target.value),
+                                            )
+                                        }
+                                    />
+                                    <InputError
+                                        message={inventoryForm.errors.quantity}
+                                    />
                                 </div>
                             </CardContent>
                             <CardFooter className="mt-auto border-t border-border/60 px-5 py-4">
@@ -588,9 +510,9 @@ export function ProductInventoryPanel({
                                     return {
                                         ...data,
                                         variant_id:
-                                            scope === BASE_SCOPE
+                                            activeScope === BASE_SCOPE
                                                 ? null
-                                                : Number(scope),
+                                                : Number(activeScope),
                                         discount_price: none
                                             ? null
                                             : data.discount_price === ''
@@ -898,7 +820,7 @@ export function ProductInventoryPanel({
                                             setTxnTo('');
                                             router.get(
                                                 showUrl,
-                                                { txn_scope: scope },
+                                                { txn_scope: activeScope },
                                                 {
                                                     only: ['transactions'],
                                                     preserveScroll: true,

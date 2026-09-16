@@ -6,7 +6,6 @@ use App\Models\Branch;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\User;
-use App\Services\Inventory\BranchProductAvailabilityService;
 use App\Support\CatalogBackgroundColor;
 use App\Support\ProductSpecifications;
 use Illuminate\Http\UploadedFile;
@@ -15,10 +14,6 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductService
 {
-    public function __construct(
-        public BranchProductAvailabilityService $availability,
-    ) {}
-
     /**
      * @param  array{
      *     category_ids: list<int>,
@@ -38,7 +33,7 @@ class ProductService
         ?User $actor = null,
     ): Product {
         return DB::transaction(function () use ($data, $primaryImage, $galleryImages, $actor): Product {
-            return $this->createProduct($data, $primaryImage, $galleryImages, $actor, enableForBranch: null);
+            return $this->createProduct($data, $primaryImage, $galleryImages, $actor);
         });
     }
 
@@ -61,8 +56,8 @@ class ProductService
         array $galleryImages = [],
         ?User $actor = null,
     ): Product {
-        return DB::transaction(function () use ($branch, $data, $primaryImage, $galleryImages, $actor): Product {
-            return $this->createProduct($data, $primaryImage, $galleryImages, $actor, enableForBranch: $branch);
+        return DB::transaction(function () use ($data, $primaryImage, $galleryImages, $actor): Product {
+            return $this->createProduct($data, $primaryImage, $galleryImages, $actor);
         });
     }
 
@@ -167,7 +162,6 @@ class ProductService
         ?UploadedFile $primaryImage,
         array $galleryImages,
         ?User $actor,
-        ?Branch $enableForBranch,
     ): Product {
         $primaryPath = $primaryImage?->store('products', 'public');
 
@@ -181,7 +175,9 @@ class ProductService
         $product = Product::query()->create([
             'name' => $data['name'],
             'slug' => $data['slug'],
-            'sku' => $data['sku'] ?? null,
+            'sku' => filled($data['sku'] ?? null)
+                ? $data['sku']
+                : Product::skuFromSlug((string) $data['slug']),
             'description' => $data['description'] ?? null,
             'brand' => $data['brand'] ?? null,
             'tags' => array_values(array_unique(array_map(
@@ -199,10 +195,6 @@ class ProductService
 
         if ($galleryImages !== []) {
             $this->appendGalleryImages($product, $galleryImages);
-        }
-
-        if ($enableForBranch !== null) {
-            $this->availability->enableForBranchOnly($enableForBranch, $product);
         }
 
         return $product->refresh()->load(['images', 'categories:id,name,slug']);

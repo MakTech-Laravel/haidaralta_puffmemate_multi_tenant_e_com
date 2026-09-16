@@ -7,14 +7,13 @@ use App\Models\Branch;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\Inventory\BranchPricingService;
-use App\Services\Inventory\BranchProductAvailabilityService;
 use App\Services\Inventory\InventoryService;
 use Illuminate\Database\Seeder;
 
 class BranchInventorySeeder extends Seeder
 {
     /**
-     * Enable catalog products per branch with realistic stock and prices (no Faker).
+     * Seed catalog products per branch with stock and prices (no Faker).
      * Depends on BranchSeeder + CatalogSeeder.
      */
     public function run(): void
@@ -23,12 +22,11 @@ class BranchInventorySeeder extends Seeder
         $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
         $brisbane = Branch::query()->where('slug', BranchSeeder::BRISBANE_QUEEN)->firstOrFail();
 
-        $availability = app(BranchProductAvailabilityService::class);
         $inventory = app(InventoryService::class);
         $pricing = app(BranchPricingService::class);
 
         // Sydney CBD flagship: full assortment, healthy stock, some promos.
-        $this->seedBranch($sydney, $availability, $inventory, $pricing, [
+        $this->seedBranch($sydney, $inventory, $pricing, [
             'marlboro-gold-soft-pack-20s' => ['qty' => 120, 'min' => 24, 'price' => '48.95', 'discount_type' => 'none', 'discount' => null],
             'winfield-blue-soft-pack-20s' => ['qty' => 140, 'min' => 30, 'price' => '46.50', 'discount_type' => 'none', 'discount' => null],
             'horizon-red-soft-pack-25s' => ['qty' => 80, 'min' => 20, 'price' => '52.90', 'discount_type' => 'fixed', 'discount' => '49.90'],
@@ -57,7 +55,7 @@ class BranchInventorySeeder extends Seeder
         ]);
 
         // Melbourne Collins: strong cigarette + heated tobacco focus, leaner vape range.
-        $this->seedBranch($melbourne, $availability, $inventory, $pricing, [
+        $this->seedBranch($melbourne, $inventory, $pricing, [
             'marlboro-gold-soft-pack-20s' => ['qty' => 95, 'min' => 20, 'price' => '49.50', 'discount_type' => 'none', 'discount' => null],
             'winfield-blue-soft-pack-20s' => ['qty' => 110, 'min' => 25, 'price' => '47.00', 'discount_type' => 'none', 'discount' => null],
             'horizon-red-soft-pack-25s' => ['qty' => 40, 'min' => 15, 'price' => '53.40', 'discount_type' => 'none', 'discount' => null],
@@ -78,7 +76,7 @@ class BranchInventorySeeder extends Seeder
         ]);
 
         // Brisbane Queen St: compact store — vapes + pouches heavy, limited cigarette SKUs.
-        $this->seedBranch($brisbane, $availability, $inventory, $pricing, [
+        $this->seedBranch($brisbane, $inventory, $pricing, [
             'winfield-blue-soft-pack-20s' => ['qty' => 48, 'min' => 16, 'price' => '46.80', 'discount_type' => 'none', 'discount' => null],
             'peter-jackson-menthol-20s' => ['qty' => 22, 'min' => 10, 'price' => '47.50', 'discount_type' => 'none', 'discount' => null],
             'vuse-go-5000-disposable' => ['qty' => 42, 'min' => 12, 'price' => '39.50', 'discount_type' => 'percent', 'discount' => '8'],
@@ -112,7 +110,7 @@ class BranchInventorySeeder extends Seeder
         $this->seedVariantStock($sydney, $inventory, 'marlboro-gold-soft-pack-20s', [
             'CIG-MB-GOLD-20-PK' => 100,
             'CIG-MB-GOLD-20-CTN' => 12,
-        ], minimumStock: 10);
+        ]);
 
         $this->seedVariantPrices($sydney, $pricing, 'marlboro-gold-soft-pack-20s', [
             'CIG-MB-GOLD-20-PK' => '48.95',
@@ -123,13 +121,13 @@ class BranchInventorySeeder extends Seeder
             'HTP-TEREA-AMBER' => 28,
             'HTP-TEREA-SIENNA' => 24,
             'HTP-TEREA-TURQ' => 18,
-        ], minimumStock: 6);
+        ]);
 
         $this->seedVariantStock($brisbane, $inventory, 'nordic-mint-pouches', [
             'POUCH-NORDIC-6' => 16,
             'POUCH-NORDIC-10' => 14,
             'POUCH-NORDIC-16' => 10,
-        ], minimumStock: 4);
+        ]);
     }
 
     /**
@@ -143,7 +141,6 @@ class BranchInventorySeeder extends Seeder
      */
     private function seedBranch(
         Branch $branch,
-        BranchProductAvailabilityService $availability,
         InventoryService $inventory,
         BranchPricingService $pricing,
         array $lines,
@@ -151,14 +148,7 @@ class BranchInventorySeeder extends Seeder
         foreach ($lines as $slug => $line) {
             $product = Product::query()->where('slug', $slug)->firstOrFail();
 
-            $availability->setEnabled($branch, $product, true);
-
-            $row = $inventory->firstOrCreate(
-                $branch,
-                $product,
-                null,
-                ['minimum_stock' => $line['min']],
-            );
+            $row = $inventory->firstOrCreate($branch, $product);
 
             if ($row->quantity === 0 && $line['qty'] > 0) {
                 $inventory->adjust(
@@ -166,8 +156,6 @@ class BranchInventorySeeder extends Seeder
                     InventoryTransactionType::StockIn,
                     $line['qty'],
                 );
-            } elseif ($row->minimum_stock !== $line['min']) {
-                $inventory->setMinimumStock($row, $line['min']);
             }
 
             $pricing->upsert($branch, $product, [
@@ -187,19 +175,13 @@ class BranchInventorySeeder extends Seeder
         InventoryService $inventory,
         string $productSlug,
         array $variantSkus,
-        int $minimumStock = 4,
     ): void {
         $product = Product::query()->where('slug', $productSlug)->firstOrFail();
 
         foreach ($variantSkus as $sku => $qty) {
             $variant = ProductVariant::query()->where('sku', $sku)->firstOrFail();
 
-            $row = $inventory->firstOrCreate(
-                $branch,
-                $product,
-                $variant,
-                ['minimum_stock' => $minimumStock],
-            );
+            $row = $inventory->firstOrCreate($branch, $product, $variant);
 
             if ($row->quantity === 0 && $qty > 0) {
                 $inventory->adjust(

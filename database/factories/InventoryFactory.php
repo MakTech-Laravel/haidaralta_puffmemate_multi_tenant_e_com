@@ -17,17 +17,11 @@ class InventoryFactory extends Factory
      */
     public function definition(): array
     {
-        $quantity = fake()->numberBetween(0, 100);
-        $reserved = fake()->numberBetween(0, min(10, $quantity));
-
         return [
             'branch_id' => Branch::factory(),
             'product_id' => Product::factory(),
             'variant_id' => null,
-            'quantity' => $quantity,
-            'reserved_quantity' => $reserved,
-            'available_quantity' => $quantity - $reserved,
-            'minimum_stock' => 5,
+            'quantity' => fake()->numberBetween(0, 100),
             'status' => true,
         ];
     }
