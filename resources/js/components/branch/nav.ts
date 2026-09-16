@@ -30,7 +30,7 @@ import {
     navSection,
     navSoon,
 } from '@/components/navigation/nav-builders';
-import type { NavSection } from '@/components/navigation/types';
+import type { NavNode, NavSection } from '@/components/navigation/types';
 
 export function buildBranchNav(
     slug: string,
@@ -43,37 +43,44 @@ export function buildBranchNav(
         permissions: ['manage-branch-products'],
     });
 
-    const catalogNav = navGroup({
-        title: 'Catalog',
-        href: `/branch/${slug}/products`,
-        icon: Package,
+    const catalogNav: NavNode = canViewCategories
+        ? navGroup({
+              title: 'Catalog',
+              href: `/branch/${slug}/products`,
+              icon: Package,
+              permissions: ['manage-branch-products'],
+              items: [
+                  navLink({
+                      title: 'Categories',
+                      href: `/branch/${slug}/categories`,
+                      icon: Tags,
+                      permissions: ['manage-branch-products'],
+                  }),
+                  productsLink,
+              ],
+          })
+        : productsLink;
+
+    const stockNav = navGroup({
+        title: 'Stock management',
+        href: `/branch/${slug}/stock/manage`,
+        icon: Boxes,
         permissions: ['manage-branch-products'],
         items: [
-            ...(canViewCategories
-                ? [
-                      navLink({
-                          title: 'Categories',
-                          href: `/branch/${slug}/categories`,
-                          icon: Tags,
-                          permissions: ['manage-branch-products'],
-                      }),
-                  ]
-                : []),
-            productsLink,
             navLink({
-                title: 'Manage stock',
+                title: 'Manage',
                 href: `/branch/${slug}/stock/manage`,
                 icon: Boxes,
                 permissions: ['manage-branch-products'],
             }),
             navLink({
-                title: 'Import stock',
+                title: 'Bulk Import',
                 href: `/branch/${slug}/stock/import`,
                 icon: PackagePlus,
                 permissions: ['manage-branch-products'],
             }),
             navLink({
-                title: 'Stock transactions',
+                title: 'Transactions',
                 href: `/branch/${slug}/stock/transactions`,
                 icon: ScrollText,
                 permissions: ['manage-branch-products'],
@@ -89,39 +96,15 @@ export function buildBranchNav(
                 icon: LayoutGrid,
                 permissions: ['view-branch-dashboard'],
             }),
-            navGroup({
-                title: 'Administrator',
-                icon: Shield,
-                permissions: ['manage-branch-staff', 'manage-branch-roles'],
-                items: [
-                    navLink({
-                        title: 'Staff',
-                        href: `/branch/${slug}/staff`,
-                        icon: Users,
-                        permissions: ['manage-branch-staff'],
-                    }),
-                    navLink({
-                        title: 'Roles',
-                        href: `/branch/${slug}/roles`,
-                        icon: Shield,
-                        permissions: ['manage-branch-roles'],
-                    }),
-                    navLink({
-                        title: 'Permissions',
-                        href: `/branch/${slug}/permissions`,
-                        icon: KeyRound,
-                        permissions: ['manage-branch-roles'],
-                    }),
-                ],
-            }),
             catalogNav,
+            stockNav,
             navGroup({
                 title: 'Orders',
                 icon: ShoppingBag,
                 permissions: ['manage-branch-orders'],
                 items: [
                     navSoon({
-                        title: 'All orders',
+                        title: 'Orders',
                         icon: ShoppingBag,
                         permissions: ['manage-branch-orders'],
                     }),
@@ -133,6 +116,23 @@ export function buildBranchNav(
                     navSoon({
                         title: 'Delivery',
                         icon: MapPin,
+                        permissions: ['manage-branch-orders'],
+                    }),
+                ],
+            }),
+            navGroup({
+                title: 'Customers',
+                icon: Users,
+                permissions: ['manage-branch-orders'],
+                items: [
+                    navSoon({
+                        title: 'Customers',
+                        icon: Users,
+                        permissions: ['manage-branch-orders'],
+                    }),
+                    navSoon({
+                        title: 'Reviews',
+                        icon: Star,
                         permissions: ['manage-branch-orders'],
                     }),
                 ],
@@ -167,23 +167,6 @@ export function buildBranchNav(
                 ],
             }),
             navGroup({
-                title: 'Customers',
-                icon: Users,
-                permissions: ['manage-branch-orders'],
-                items: [
-                    navSoon({
-                        title: 'All customers',
-                        icon: Users,
-                        permissions: ['manage-branch-orders'],
-                    }),
-                    navSoon({
-                        title: 'Reviews',
-                        icon: Star,
-                        permissions: ['manage-branch-orders'],
-                    }),
-                ],
-            }),
-            navGroup({
                 title: 'Conversations',
                 icon: MessagesSquare,
                 permissions: ['manage-branch-orders', 'manage-branch-drivers'],
@@ -214,6 +197,31 @@ export function buildBranchNav(
                         title: 'Inventory',
                         icon: Boxes,
                         permissions: ['manage-branch-orders'],
+                    }),
+                ],
+            }),
+            navGroup({
+                title: 'Administrator',
+                icon: Shield,
+                permissions: ['manage-branch-staff', 'manage-branch-roles'],
+                items: [
+                    navLink({
+                        title: 'Staff',
+                        href: `/branch/${slug}/staff`,
+                        icon: Users,
+                        permissions: ['manage-branch-staff'],
+                    }),
+                    navLink({
+                        title: 'Roles',
+                        href: `/branch/${slug}/roles`,
+                        icon: Shield,
+                        permissions: ['manage-branch-roles'],
+                    }),
+                    navLink({
+                        title: 'Permissions',
+                        href: `/branch/${slug}/permissions`,
+                        icon: KeyRound,
+                        permissions: ['manage-branch-roles'],
                     }),
                 ],
             }),
