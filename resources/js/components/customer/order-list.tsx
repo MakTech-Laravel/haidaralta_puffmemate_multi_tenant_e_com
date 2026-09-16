@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { CancelOrderDialog } from '@/components/customer/cancel-order-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Pagination,
@@ -48,6 +50,7 @@ export function OrderList({
     onPageChange,
     className,
 }: OrderListProps) {
+    const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
     const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
     const currentPage = Math.min(Math.max(page, 1), totalPages);
     const pageOrders = orders.slice(
@@ -55,6 +58,7 @@ export function OrderList({
         currentPage * PAGE_SIZE,
     );
     const showPagination = orders.length > PAGE_SIZE;
+    const cancelOrder = orders.find((order) => order.id === cancelOrderId);
 
     return (
         <div className={cn('flex flex-col gap-6', className)}>
@@ -72,7 +76,6 @@ export function OrderList({
                                     aria-label={order.title}
                                 />
                             </div>
-                            
 
                             <div className="flex min-w-0 flex-1 flex-col gap-3 pr-0 sm:pr-28">
                                 <div className="min-w-0 space-y-1.5">
@@ -103,6 +106,11 @@ export function OrderList({
                                             order.status === 'delivered' &&
                                                 'bg-foreground text-background hover:bg-foreground/90',
                                         )}
+                                        onClick={() => {
+                                            if (order.status === 'processing') {
+                                                setCancelOrderId(order.id);
+                                            }
+                                        }}
                                     >
                                         {actionLabel[order.status]}
                                     </Button>
@@ -180,6 +188,16 @@ export function OrderList({
                     </PaginationContent>
                 </Pagination>
             ) : null}
+
+            <CancelOrderDialog
+                open={cancelOrderId !== null}
+                orderNumber={cancelOrder?.orderNumber}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setCancelOrderId(null);
+                    }
+                }}
+            />
         </div>
     );
 }
