@@ -1,9 +1,17 @@
 import { router, useForm, usePage } from '@inertiajs/react';
-import { Boxes, Minus, Package, Plus, Tags } from 'lucide-react';
+import {
+    ArrowDownToLine,
+    ArrowUpFromLine,
+    Minus,
+    Package,
+    Plus,
+    SlidersHorizontal,
+    Tags,
+    type LucideIcon,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { DataTableTruncated } from '@/components/data-table';
 import InputError from '@/components/input-error';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
 import { SimplePagination } from '@/components/simple-pagination';
 import { AdjustmentReasonNote } from '@/components/stock/adjustment-reason-note';
 import { Button } from '@/components/ui/button';
@@ -11,7 +19,6 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -25,7 +32,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import {
     Table,
     TableBody,
@@ -34,6 +40,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 export type BranchInventorySnapshot = {
     quantity: number;
@@ -188,6 +195,78 @@ function resolveDiscountType(price: BranchPriceSnapshot | null): string {
         : 'none';
 }
 
+function formatMoney(value: string | number | null | undefined): string {
+    if (value == null || value === '') {
+        return '—';
+    }
+
+    const amount = Number(value);
+
+    return Number.isFinite(amount) ? amount.toFixed(2) : String(value);
+}
+
+function effectivePrice(price: BranchPriceSnapshot | null): string {
+    if (!price) {
+        return '—';
+    }
+
+    const selling = Number(price.selling_price);
+    const type = resolveDiscountType(price);
+
+    if (
+        type === 'none' ||
+        price.discount_price == null ||
+        price.discount_price === '' ||
+        !Number.isFinite(selling)
+    ) {
+        return formatMoney(price.selling_price);
+    }
+
+    const discount = Number(price.discount_price);
+
+    if (!Number.isFinite(discount)) {
+        return formatMoney(price.selling_price);
+    }
+
+    if (type === 'percent') {
+        return formatMoney(
+            Math.max(0, Math.round(selling * (1 - discount / 100) * 100) / 100),
+        );
+    }
+
+    return formatMoney(Math.max(0, discount));
+}
+
+function SnapshotStat({
+    label,
+    value,
+    hint,
+}: {
+    label: string;
+    value: string;
+    hint?: string;
+}) {
+    return (
+        <div className="flex min-w-0 flex-col gap-0.5 px-5 py-3">
+            <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                {label}
+            </p>
+            <p className="text-lg font-semibold tracking-tight tabular-nums">
+                {value}
+            </p>
+            {hint ? (
+                <p className="text-muted-foreground truncate text-xs">{hint}</p>
+            ) : null}
+        </div>
+    );
+}
+
+const INVENTORY_TYPE_ICONS: Record<string, LucideIcon> = {
+    stock_in: ArrowDownToLine,
+    stock_out: ArrowUpFromLine,
+    adjustment: SlidersHorizontal,
+};
+
 export function ProductInventoryPanel({
     variants,
     inventory,
@@ -336,6 +415,12 @@ export function ProductInventoryPanel({
               )?.name ?? 'Variant');
 
     const showDiscountFields = priceForm.data.discount_type !== 'none';
+    const sellingDisplay = formatMoney(scopedPrice?.selling_price);
+    const effectiveDisplay = effectivePrice(scopedPrice);
+    const hasLiveDiscount =
+        scopedPrice != null &&
+        resolveDiscountType(scopedPrice) !== 'none' &&
+        effectiveDisplay !== sellingDisplay;
     const isAdjustment = inventoryForm.data.type === 'adjustment';
     const isOtherReason = isAdjustment && inventoryForm.data.reason === 'other';
     const currentStock = scopedInventory?.quantity ?? 0;
@@ -380,67 +465,83 @@ export function ProductInventoryPanel({
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <Package className="text-muted-foreground size-4" />
-                        <h2 className="text-base font-semibold tracking-tight">
+            <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+                <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 border-b px-5 py-4">
+                    <div className="min-w-0 space-y-1">
+                        <CardTitle className="flex items-center gap-2">
+                            <Package className="text-muted-foreground size-4" />
                             Inventory & pricing
-                        </h2>
-                    </div>
-                    <p className="text-muted-foreground text-sm">
-                        Manage stock and price for {scopeLabel}.
-                    </p>
-                </div>
-                {showVariants ? (
-                    <div className="grid w-full gap-2 sm:max-w-[16rem]">
-                        <Label htmlFor="inventory-scope">Scope</Label>
-                        <Select value={activeScope} onValueChange={setScope}>
-                            <SelectTrigger
-                                id="inventory-scope"
-                                className="w-full"
-                            >
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={BASE_SCOPE}>
-                                    Base product
-                                </SelectItem>
-                                {activeVariants.map((variant) => (
-                                    <SelectItem
-                                        key={variant.id}
-                                        value={String(variant.id)}
-                                    >
-                                        {variant.name}
-                                        {variant.sku
-                                            ? ` · ${variant.sku}`
-                                            : ''}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                ) : null}
-                <DemoStatCard
-                    icon={Boxes}
-                    label="Stock"
-                    value={String(scopedInventory?.quantity ?? 0)}
-                    hint="On-hand quantity"
-                />
-            </div>
-
-            {showVariants && activeVariants.length > 0 ? (
-                <Card className="gap-4 py-5 shadow-none">
-                    <CardHeader className="px-5">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Tags className="text-muted-foreground size-4" />
-                            Variants
                         </CardTitle>
                         <CardDescription>
-                            Switch scope to manage a specific variant.
+                            Stock and selling price for {scopeLabel}
                         </CardDescription>
-                    </CardHeader>
-                    <CardContent className="px-5">
+                    </div>
+                    {showVariants ? (
+                        <div className="grid w-full min-w-0 gap-1.5 sm:max-w-[16rem]">
+                            <Label htmlFor="inventory-scope">Scope</Label>
+                            <Select
+                                value={activeScope}
+                                onValueChange={setScope}
+                            >
+                                <SelectTrigger
+                                    id="inventory-scope"
+                                    className="w-full"
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={BASE_SCOPE}>
+                                        Base product
+                                    </SelectItem>
+                                    {activeVariants.map((variant) => (
+                                        <SelectItem
+                                            key={variant.id}
+                                            value={String(variant.id)}
+                                        >
+                                            {variant.name}
+                                            {variant.sku
+                                                ? ` · ${variant.sku}`
+                                                : ''}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    ) : null}
+                </CardHeader>
+
+                <div className="grid divide-y border-b sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                    <SnapshotStat
+                        label="Stock"
+                        value={String(scopedInventory?.quantity ?? 0)}
+                        hint="On-hand units"
+                    />
+                    <SnapshotStat
+                        label="Selling"
+                        value={sellingDisplay}
+                        hint={
+                            scopedPrice == null ? 'No price on file' : 'AUD'
+                        }
+                    />
+                    <SnapshotStat
+                        label="Effective"
+                        value={effectiveDisplay}
+                        hint={
+                            hasLiveDiscount
+                                ? 'After discount'
+                                : scopedPrice == null
+                                  ? 'Set a selling price'
+                                  : 'Same as selling'
+                        }
+                    />
+                </div>
+
+                {showVariants && activeVariants.length > 0 ? (
+                    <div className="border-b px-5 py-4">
+                        <div className="mb-3 flex items-center gap-2">
+                            <Tags className="text-muted-foreground size-4" />
+                            <p className="text-sm font-medium">Variants</p>
+                        </div>
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -455,25 +556,28 @@ export function ProductInventoryPanel({
                             <TableBody>
                                 {activeVariants.map((variant) => {
                                     const rowInventory =
-                                        variantInventories[String(variant.id)];
+                                        variantInventories[
+                                            String(variant.id)
+                                        ];
                                     const rowPrice =
                                         variantPrices[String(variant.id)];
 
                                     return (
                                         <TableRow key={variant.id}>
-                                            <TableCell>
-                                                <div className="font-medium">
+                                            <TableCell className="max-w-48">
+                                                <DataTableTruncated className="font-medium">
                                                     {variant.name}
-                                                </div>
-                                                <div className="text-muted-foreground text-xs">
+                                                </DataTableTruncated>
+                                                <DataTableTruncated className="text-muted-foreground text-xs">
                                                     {variant.sku ?? '—'}
-                                                </div>
+                                                </DataTableTruncated>
                                             </TableCell>
                                             <TableCell className="tabular-nums">
                                                 {rowInventory?.quantity ?? 0}
                                             </TableCell>
                                             <TableCell className="tabular-nums">
-                                                {rowPrice?.selling_price ?? '—'}
+                                                {rowPrice?.selling_price ??
+                                                    '—'}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Button
@@ -482,7 +586,9 @@ export function ProductInventoryPanel({
                                                     size="sm"
                                                     onClick={() =>
                                                         setScope(
-                                                            String(variant.id),
+                                                            String(
+                                                                variant.id,
+                                                            ),
                                                         )
                                                     }
                                                 >
@@ -494,24 +600,13 @@ export function ProductInventoryPanel({
                                 })}
                             </TableBody>
                         </Table>
-                    </CardContent>
-                </Card>
-            ) : null}
+                    </div>
+                ) : null}
 
-            <Card className="gap-0 overflow-hidden py-0 shadow-none">
-                <div className="grid xl:grid-cols-2">
-                    <section className="flex flex-col border-border/70 xl:border-r">
-                        <CardHeader className="gap-1 px-5 pt-5 pb-0">
-                            <CardTitle className="text-base">
-                                Adjust inventory
-                            </CardTitle>
-                            <CardDescription>
-                                Stock in, stock out, or set counted on-hand.
-                            </CardDescription>
-                        </CardHeader>
-                        <form
-                            className="flex min-h-0 flex-1 flex-col"
-                            onSubmit={(event) => {
+                <div className="grid items-start lg:grid-cols-2">
+                    <form
+                        className="grid content-start gap-4 border-b p-5 lg:border-r lg:border-b-0"
+                        onSubmit={(event) => {
                                 event.preventDefault();
                                 inventoryForm.transform((data) => ({
                                     ...data,
@@ -537,477 +632,430 @@ export function ProductInventoryPanel({
                                     preserveScroll: true,
                                 });
                             }}
-                        >
-                            <CardContent className="grid content-start gap-4 px-5 py-5">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="inventory-type">Type</Label>
-                                    <Select
-                                        value={inventoryForm.data.type}
-                                        onValueChange={selectInventoryType}
-                                    >
-                                        <SelectTrigger
-                                            id="inventory-type"
-                                            className="w-full"
+                    >
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                                <h3 className="text-sm font-semibold">
+                                    Stock
+                                </h3>
+                                <p className="text-muted-foreground text-xs">
+                                    New entry, reduce, or counted on-hand
+                                </p>
+                            </div>
+                            <Button
+                                type="submit"
+                                size="sm"
+                                disabled={inventorySaveDisabled}
+                            >
+                                Save
+                            </Button>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label>Type</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {transactionTypes.map((type) => {
+                                    const Icon =
+                                        INVENTORY_TYPE_ICONS[type.value] ??
+                                        Package;
+                                    const selected =
+                                        inventoryForm.data.type === type.value;
+
+                                    return (
+                                        <Button
+                                            key={type.value}
+                                            type="button"
+                                            variant={
+                                                selected ? 'default' : 'outline'
+                                            }
+                                            className={cn(
+                                                'h-auto min-h-9 flex-col gap-1 px-1 py-2 text-[11px] sm:h-9 sm:flex-row sm:gap-1.5 sm:px-2 sm:py-0 sm:text-xs',
+                                                !selected && 'text-foreground',
+                                            )}
+                                            onClick={() =>
+                                                selectInventoryType(type.value)
+                                            }
                                         >
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {transactionTypes.map((type) => (
-                                                <SelectItem
-                                                    key={type.value}
-                                                    value={type.value}
-                                                >
-                                                    {type.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid gap-4">
-                                    <div
-                                        className={
-                                            isAdjustment
-                                                ? 'grid items-start gap-4 sm:grid-cols-2'
-                                                : 'grid gap-2'
+                                            <Icon className="size-3.5" />
+                                            {type.label}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div
+                            className={cn(
+                                'grid items-start gap-4',
+                                isAdjustment ? 'sm:grid-cols-2' : 'grid-cols-1',
+                            )}
+                        >
+                            <div className="grid gap-2">
+                                <Label htmlFor="quantity">
+                                    {isAdjustment
+                                        ? 'Counted quantity'
+                                        : 'Quantity'}
+                                </Label>
+                                <div className="flex items-stretch overflow-hidden rounded-md border border-border/80 bg-background">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="text-foreground h-9 w-10 shrink-0 rounded-none border-r border-border/80"
+                                        aria-label="Decrease quantity"
+                                        disabled={quantityValue <= 0}
+                                        onClick={() =>
+                                            inventoryForm.setData(
+                                                'quantity',
+                                                String(
+                                                    Math.max(
+                                                        0,
+                                                        quantityValue - 1,
+                                                    ),
+                                                ),
+                                            )
                                         }
                                     >
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="quantity">
-                                                {isAdjustment
-                                                    ? 'Counted quantity'
-                                                    : 'Quantity'}
-                                            </Label>
-                                            <div className="flex items-stretch overflow-hidden rounded-md border border-border/80 bg-background">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    className="text-foreground h-9 w-10 shrink-0 rounded-none border-r border-border/80"
-                                                    aria-label="Decrease quantity"
-                                                    disabled={
-                                                        quantityValue <= 0
-                                                    }
-                                                    onClick={() =>
-                                                        inventoryForm.setData(
-                                                            'quantity',
-                                                            String(
-                                                                Math.max(
-                                                                    0,
-                                                                    quantityValue -
-                                                                        1,
-                                                                ),
-                                                            ),
-                                                        )
-                                                    }
-                                                >
-                                                    <Minus className="size-4" />
-                                                </Button>
-                                                <Input
-                                                    id="quantity"
-                                                    type="text"
-                                                    inputMode="numeric"
-                                                    autoComplete="off"
-                                                    placeholder="0"
-                                                    className="h-9 flex-1 rounded-none border-0 bg-transparent text-center font-semibold tabular-nums shadow-none focus-visible:ring-0"
-                                                    value={
-                                                        inventoryForm.data
-                                                            .quantity
-                                                    }
-                                                    onChange={(event) => {
-                                                        const next =
-                                                            event.target.value;
+                                        <Minus className="size-4" />
+                                    </Button>
+                                    <Input
+                                        id="quantity"
+                                        type="text"
+                                        inputMode="numeric"
+                                        autoComplete="off"
+                                        placeholder="0"
+                                        className="h-9 flex-1 rounded-none border-0 bg-transparent text-center font-semibold tabular-nums shadow-none focus-visible:ring-0"
+                                        value={inventoryForm.data.quantity}
+                                        onChange={(event) => {
+                                            const next = event.target.value;
 
-                                                        if (
-                                                            next === '' ||
-                                                            /^\d+$/.test(next)
-                                                        ) {
-                                                            inventoryForm.setData(
-                                                                'quantity',
-                                                                next,
-                                                            );
-                                                        }
-                                                    }}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    className="text-foreground h-9 w-10 shrink-0 rounded-none border-l border-border/80"
-                                                    aria-label="Increase quantity"
-                                                    onClick={() =>
-                                                        inventoryForm.setData(
-                                                            'quantity',
-                                                            String(
-                                                                quantityValue +
-                                                                    1,
-                                                            ),
-                                                        )
-                                                    }
-                                                >
-                                                    <Plus className="size-4" />
-                                                </Button>
-                                            </div>
-                                            <p className="text-muted-foreground text-xs">
-                                                {isAdjustment
-                                                    ? countedPreview(
-                                                          currentStock,
-                                                          quantityValue,
-                                                          quantityEmpty,
-                                                      )
-                                                    : inventoryForm.data
-                                                            .type ===
-                                                        'stock_out'
-                                                      ? 'Removed from on-hand stock'
-                                                      : 'Added to on-hand stock'}
-                                            </p>
-                                            <InputError
-                                                message={
-                                                    inventoryForm.errors
-                                                        .quantity
-                                                }
-                                            />
-                                        </div>
-                                        {isAdjustment ? (
-                                            <div className="grid content-start gap-2">
-                                                <Label htmlFor="inventory-reason">
-                                                    Reason
-                                                </Label>
-                                                <Select
-                                                    value={
-                                                        inventoryForm.data
-                                                            .reason || undefined
-                                                    }
-                                                    onValueChange={(value) =>
-                                                        inventoryForm.setData({
-                                                            ...inventoryForm.data,
-                                                            reason: value,
-                                                            reason_note:
-                                                                value ===
-                                                                'other'
-                                                                    ? inventoryForm
-                                                                          .data
-                                                                          .reason_note
-                                                                    : '',
-                                                        })
-                                                    }
-                                                >
-                                                    <SelectTrigger
-                                                        id="inventory-reason"
-                                                        className="h-9 min-h-9 w-full data-[size=default]:h-9"
-                                                    >
-                                                        <SelectValue placeholder="Select a reason" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {adjustmentReasons.map(
-                                                            (reason) => (
-                                                                <SelectItem
-                                                                    key={
-                                                                        reason.value
-                                                                    }
-                                                                    value={
-                                                                        reason.value
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        reason.label
-                                                                    }
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                                <InputError
-                                                    message={
-                                                        inventoryForm.errors
-                                                            .reason
-                                                    }
-                                                />
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                    {isOtherReason ? (
-                                        <AdjustmentReasonNote
-                                            id="inventory-reason-note"
-                                            value={
-                                                inventoryForm.data.reason_note
-                                            }
-                                            error={
-                                                inventoryForm.errors.reason_note
-                                            }
-                                            onChange={(value) =>
+                                            if (
+                                                next === '' ||
+                                                /^\d+$/.test(next)
+                                            ) {
                                                 inventoryForm.setData(
-                                                    'reason_note',
-                                                    value,
-                                                )
+                                                    'quantity',
+                                                    next,
+                                                );
                                             }
-                                        />
-                                    ) : null}
+                                        }}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="text-foreground h-9 w-10 shrink-0 rounded-none border-l border-border/80"
+                                        aria-label="Increase quantity"
+                                        onClick={() =>
+                                            inventoryForm.setData(
+                                                'quantity',
+                                                String(quantityValue + 1),
+                                            )
+                                        }
+                                    >
+                                        <Plus className="size-4" />
+                                    </Button>
                                 </div>
-                            </CardContent>
-                            <CardFooter className="mt-auto border-t border-border/60 px-5 py-4">
-                                <Button
-                                    type="submit"
-                                    disabled={inventorySaveDisabled}
+                                <p className="text-muted-foreground text-xs">
+                                    {isAdjustment
+                                        ? countedPreview(
+                                              currentStock,
+                                              quantityValue,
+                                              quantityEmpty,
+                                          )
+                                        : inventoryForm.data.type ===
+                                            'stock_out'
+                                          ? 'Removed from on-hand stock'
+                                          : 'Added to on-hand stock'}
+                                </p>
+                                <InputError
+                                    message={inventoryForm.errors.quantity}
+                                />
+                            </div>
+                            {isAdjustment ? (
+                                <div className="grid content-start gap-2">
+                                    <Label htmlFor="inventory-reason">
+                                        Reason
+                                    </Label>
+                                    <Select
+                                        value={
+                                            inventoryForm.data.reason ||
+                                            undefined
+                                        }
+                                        onValueChange={(value) =>
+                                            inventoryForm.setData({
+                                                ...inventoryForm.data,
+                                                reason: value,
+                                                reason_note:
+                                                    value === 'other'
+                                                        ? inventoryForm.data
+                                                              .reason_note
+                                                        : '',
+                                            })
+                                        }
+                                    >
+                                        <SelectTrigger
+                                            id="inventory-reason"
+                                            className="h-9 min-h-9 w-full data-[size=default]:h-9"
+                                        >
+                                            <SelectValue placeholder="Select a reason" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {adjustmentReasons.map(
+                                                (reason) => (
+                                                    <SelectItem
+                                                        key={reason.value}
+                                                        value={reason.value}
+                                                    >
+                                                        {reason.label}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError
+                                        message={inventoryForm.errors.reason}
+                                    />
+                                </div>
+                            ) : null}
+                        </div>
+                        {isOtherReason ? (
+                            <AdjustmentReasonNote
+                                id="inventory-reason-note"
+                                value={inventoryForm.data.reason_note}
+                                error={inventoryForm.errors.reason_note}
+                                onChange={(value) =>
+                                    inventoryForm.setData(
+                                        'reason_note',
+                                        value,
+                                    )
+                                }
+                            />
+                        ) : null}
+                    </form>
+
+                    <form
+                        className="grid content-start gap-4 p-5"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            priceForm.transform((data) => {
+                                const none = data.discount_type === 'none';
+
+                                return {
+                                    ...data,
+                                    variant_id:
+                                        activeScope === BASE_SCOPE
+                                            ? null
+                                            : Number(activeScope),
+                                    discount_price: none
+                                        ? null
+                                        : data.discount_price === ''
+                                          ? null
+                                          : data.discount_price,
+                                    start_date: none
+                                        ? null
+                                        : data.start_date === ''
+                                          ? null
+                                          : data.start_date,
+                                    end_date: none
+                                        ? null
+                                        : data.end_date === ''
+                                          ? null
+                                          : data.end_date,
+                                };
+                            });
+                            priceForm.put(priceUrl, {
+                                preserveScroll: true,
+                            });
+                        }}
+                    >
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                                <h3 className="text-sm font-semibold">
+                                    Price
+                                </h3>
+                                <p className="text-muted-foreground text-xs">
+                                    Selling price and optional discount
+                                </p>
+                            </div>
+                            <Button
+                                type="submit"
+                                size="sm"
+                                disabled={priceForm.processing}
+                            >
+                                Save
+                            </Button>
+                        </div>
+
+                        <div className="grid min-w-0 items-start gap-4 sm:grid-cols-2">
+                            <div className="grid min-w-0 gap-2">
+                                <Label htmlFor="selling_price">
+                                    Selling price{' '}
+                                    <span className="text-muted-foreground font-normal">
+                                        (AUD)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="selling_price"
+                                    type="number"
+                                    step="0.01"
+                                    min={0}
+                                    placeholder="e.g. 16.50"
+                                    value={priceForm.data.selling_price}
+                                    onChange={(event) =>
+                                        priceForm.setData(
+                                            'selling_price',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={priceForm.errors.selling_price}
+                                />
+                            </div>
+
+                            <div className="grid min-w-0 gap-2">
+                                <Label htmlFor="discount_type">Discount</Label>
+                                <Select
+                                    value={priceForm.data.discount_type}
+                                    onValueChange={(value) => {
+                                        priceForm.setData({
+                                            ...priceForm.data,
+                                            discount_type: value,
+                                            ...(value === 'none'
+                                                ? {
+                                                      discount_price: '',
+                                                      start_date: '',
+                                                      end_date: '',
+                                                  }
+                                                : {}),
+                                        });
+                                    }}
                                 >
-                                    Save inventory
-                                </Button>
-                            </CardFooter>
-                        </form>
-                    </section>
+                                    <SelectTrigger
+                                        id="discount_type"
+                                        className="w-full"
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {discountTypes.map((type) => (
+                                            <SelectItem
+                                                key={type.value}
+                                                value={type.value}
+                                            >
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError
+                                    message={priceForm.errors.discount_type}
+                                />
+                            </div>
+                        </div>
 
-                    <Separator className="xl:hidden" />
-
-                    <section className="flex flex-col">
-                        <CardHeader className="gap-1 px-5 pt-5 pb-0">
-                            <CardTitle className="text-base">Pricing</CardTitle>
-                            <CardDescription>
-                                Selling price and optional discount.
-                            </CardDescription>
-                        </CardHeader>
-                        <form
-                            className="flex min-h-0 flex-1 flex-col"
-                            onSubmit={(event) => {
-                                event.preventDefault();
-                                priceForm.transform((data) => {
-                                    const none = data.discount_type === 'none';
-
-                                    return {
-                                        ...data,
-                                        variant_id:
-                                            activeScope === BASE_SCOPE
-                                                ? null
-                                                : Number(activeScope),
-                                        discount_price: none
-                                            ? null
-                                            : data.discount_price === ''
-                                              ? null
-                                              : data.discount_price,
-                                        start_date: none
-                                            ? null
-                                            : data.start_date === ''
-                                              ? null
-                                              : data.start_date,
-                                        end_date: none
-                                            ? null
-                                            : data.end_date === ''
-                                              ? null
-                                              : data.end_date,
-                                    };
-                                });
-                                priceForm.put(priceUrl, {
-                                    preserveScroll: true,
-                                });
-                            }}
-                        >
-                            <CardContent className="grid content-start gap-4 px-5 py-5">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="selling_price">
-                                        Selling price
+                        {showDiscountFields ? (
+                            <div className="grid min-w-0 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                <div className="grid min-w-0 gap-2">
+                                    <Label htmlFor="discount_price">
+                                        Discount value{' '}
+                                        <span className="text-muted-foreground font-normal">
+                                            {priceForm.data.discount_type ===
+                                            'percent'
+                                                ? '(%)'
+                                                : '(AUD)'}
+                                        </span>
                                     </Label>
                                     <Input
-                                        id="selling_price"
+                                        id="discount_price"
                                         type="number"
                                         step="0.01"
                                         min={0}
-                                        value={priceForm.data.selling_price}
+                                        max={
+                                            priceForm.data.discount_type ===
+                                            'percent'
+                                                ? 100
+                                                : undefined
+                                        }
+                                        placeholder={
+                                            priceForm.data.discount_type ===
+                                            'percent'
+                                                ? 'e.g. 10'
+                                                : 'e.g. 5.00'
+                                        }
+                                        value={priceForm.data.discount_price}
                                         onChange={(event) =>
                                             priceForm.setData(
-                                                'selling_price',
+                                                'discount_price',
                                                 event.target.value,
                                             )
                                         }
                                     />
+                                    <p className="text-muted-foreground text-xs">
+                                        {priceForm.data.discount_type ===
+                                        'percent'
+                                            ? 'Off the selling price (0–100).'
+                                            : 'Sale price, ≤ selling.'}
+                                    </p>
                                     <InputError
                                         message={
-                                            priceForm.errors.selling_price
+                                            priceForm.errors.discount_price
                                         }
                                     />
                                 </div>
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="discount_type">
-                                        Discount
+                                <div className="grid min-w-0 gap-2">
+                                    <Label htmlFor="start_date">
+                                        Start date
                                     </Label>
-                                    <Select
-                                        value={priceForm.data.discount_type}
-                                        onValueChange={(value) => {
-                                            priceForm.setData({
-                                                ...priceForm.data,
-                                                discount_type: value,
-                                                ...(value === 'none'
-                                                    ? {
-                                                          discount_price: '',
-                                                          start_date: '',
-                                                          end_date: '',
-                                                      }
-                                                    : {}),
-                                            });
-                                        }}
-                                    >
-                                        <SelectTrigger
-                                            id="discount_type"
-                                            className="w-full"
-                                        >
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {discountTypes.map((type) => (
-                                                <SelectItem
-                                                    key={type.value}
-                                                    value={type.value}
-                                                >
-                                                    {type.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError
-                                        message={
-                                            priceForm.errors.discount_type
+                                    <DatePicker
+                                        id="start_date"
+                                        value={priceForm.data.start_date}
+                                        onChange={(next) =>
+                                            priceForm.setData(
+                                                'start_date',
+                                                next,
+                                            )
                                         }
+                                        max={
+                                            priceForm.data.end_date ||
+                                            undefined
+                                        }
+                                        placeholder="Optional start"
+                                        aria-invalid={Boolean(
+                                            priceForm.errors.start_date,
+                                        )}
+                                    />
+                                    <InputError
+                                        message={priceForm.errors.start_date}
                                     />
                                 </div>
-
-                                {showDiscountFields ? (
-                                    <>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="discount_price">
-                                                Discount value{' '}
-                                                <span className="text-muted-foreground font-normal">
-                                                    {priceForm.data
-                                                        .discount_type ===
-                                                    'percent'
-                                                        ? '(%)'
-                                                        : '(AUD)'}
-                                                </span>
-                                            </Label>
-                                            <Input
-                                                id="discount_price"
-                                                type="number"
-                                                step="0.01"
-                                                min={0}
-                                                max={
-                                                    priceForm.data
-                                                        .discount_type ===
-                                                    'percent'
-                                                        ? 100
-                                                        : undefined
-                                                }
-                                                placeholder={
-                                                    priceForm.data
-                                                        .discount_type ===
-                                                    'percent'
-                                                        ? 'e.g. 10'
-                                                        : 'e.g. 5.00'
-                                                }
-                                                value={
-                                                    priceForm.data
-                                                        .discount_price
-                                                }
-                                                onChange={(event) =>
-                                                    priceForm.setData(
-                                                        'discount_price',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <p className="text-muted-foreground text-xs">
-                                                {priceForm.data
-                                                    .discount_type === 'percent'
-                                                    ? 'Percentage off the selling price (0–100).'
-                                                    : 'Fixed sale price (must be ≤ selling price).'}
-                                            </p>
-                                            <InputError
-                                                message={
-                                                    priceForm.errors
-                                                        .discount_price
-                                                }
-                                            />
-                                        </div>
-                                        <div className="grid gap-4 sm:grid-cols-2">
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="start_date">
-                                                    Start date
-                                                </Label>
-                                                <DatePicker
-                                                    id="start_date"
-                                                    value={
-                                                        priceForm.data
-                                                            .start_date
-                                                    }
-                                                    onChange={(next) =>
-                                                        priceForm.setData(
-                                                            'start_date',
-                                                            next,
-                                                        )
-                                                    }
-                                                    max={
-                                                        priceForm.data
-                                                            .end_date ||
-                                                        undefined
-                                                    }
-                                                    placeholder="Optional start"
-                                                    aria-invalid={Boolean(
-                                                        priceForm.errors
-                                                            .start_date,
-                                                    )}
-                                                />
-                                                <InputError
-                                                    message={
-                                                        priceForm.errors
-                                                            .start_date
-                                                    }
-                                                />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="end_date">
-                                                    End date
-                                                </Label>
-                                                <DatePicker
-                                                    id="end_date"
-                                                    value={
-                                                        priceForm.data.end_date
-                                                    }
-                                                    onChange={(next) =>
-                                                        priceForm.setData(
-                                                            'end_date',
-                                                            next,
-                                                        )
-                                                    }
-                                                    min={
-                                                        priceForm.data
-                                                            .start_date ||
-                                                        undefined
-                                                    }
-                                                    placeholder="Optional end"
-                                                    aria-invalid={Boolean(
-                                                        priceForm.errors
-                                                            .end_date,
-                                                    )}
-                                                />
-                                                <InputError
-                                                    message={
-                                                        priceForm.errors
-                                                            .end_date
-                                                    }
-                                                />
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : null}
-                            </CardContent>
-                            <CardFooter className="mt-auto border-t border-border/60 px-5 py-4">
-                                <Button
-                                    type="submit"
-                                    disabled={priceForm.processing}
-                                >
-                                    Save price
-                                </Button>
-                            </CardFooter>
-                        </form>
-                    </section>
+                                <div className="grid min-w-0 gap-2">
+                                    <Label htmlFor="end_date">End date</Label>
+                                    <DatePicker
+                                        id="end_date"
+                                        value={priceForm.data.end_date}
+                                        onChange={(next) =>
+                                            priceForm.setData('end_date', next)
+                                        }
+                                        min={
+                                            priceForm.data.start_date ||
+                                            undefined
+                                        }
+                                        placeholder="Optional end"
+                                        aria-invalid={Boolean(
+                                            priceForm.errors.end_date,
+                                        )}
+                                    />
+                                    <InputError
+                                        message={priceForm.errors.end_date}
+                                    />
+                                </div>
+                            </div>
+                        ) : null}
+                    </form>
                 </div>
             </Card>
 
-            <Card className="gap-4 py-5 shadow-none">
+            <Card className="gap-4 py-5 shadow-sm">
                 <CardHeader className="px-5">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <div className="space-y-1">
