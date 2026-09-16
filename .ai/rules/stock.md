@@ -10,3 +10,6 @@ Manage stock, Update price, and Add discount share StockPairFields. Branch and p
 
 ## Manage stock is a full-width workspace
 Manage stock is a full-width catalog workspace (`flex w-full flex-col gap-4 p-2 md:p-4`), not a centered max-w form. Match ProductForm: details left (`xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]`) and a snapshot rail of DemoStatCards (stock, branch, product) on the right.
+
+## Manage stock quantity is a clearable string
+Manage stock quantity is stored as a digit string (default "0"), not Number(). Empty string is allowed while typing; convert with parseInt only in form.transform on submit. Do not Number(event.target.value) on change — that snaps cleared fields back to 0.

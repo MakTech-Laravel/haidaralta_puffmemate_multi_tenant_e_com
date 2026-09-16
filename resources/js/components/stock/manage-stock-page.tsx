@@ -4,7 +4,9 @@ import {
     ArrowUpFromLine,
     Boxes,
     Building2,
+    Minus,
     Package,
+    Plus,
     SlidersHorizontal,
     type LucideIcon,
 } from 'lucide-react';
@@ -17,6 +19,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { StockPageContext } from '@/lib/stock-query';
 import { cn } from '@/lib/utils';
+
+function parseQuantity(value: string): number {
+    if (value.trim() === '') {
+        return 0;
+    }
+
+    const parsed = Number.parseInt(value, 10);
+
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
 
 const ADJUST_TYPES: Array<{
     value: string;
@@ -66,11 +78,16 @@ export function ManageStockPage({
         branch_id: context.branch?.id ?? 0,
         product_id: context.product?.id ?? 0,
         type: 'stock_in',
-        quantity: 0,
+        quantity: '0',
     });
     const selectedType =
         ADJUST_TYPES.find((type) => type.value === form.data.type) ??
         ADJUST_TYPES[0];
+    const quantityValue = parseQuantity(form.data.quantity);
+
+    const setQuantity = (next: number) => {
+        form.setData('quantity', String(Math.max(0, next)));
+    };
 
     return (
         <>
@@ -110,6 +127,10 @@ export function ManageStockPage({
                                         ...data,
                                         branch_id: context.branch?.id ?? 0,
                                         product_id: context.product?.id ?? 0,
+                                        quantity:
+                                            data.quantity.trim() === ''
+                                                ? ''
+                                                : parseQuantity(data.quantity),
                                     }));
                                     form.post(adjustUrl, {
                                         preserveScroll: true,
@@ -167,19 +188,55 @@ export function ManageStockPage({
 
                                 <div className="grid max-w-sm gap-2">
                                     <Label htmlFor="quantity">Quantity</Label>
-                                    <Input
-                                        id="quantity"
-                                        type="number"
-                                        min={0}
-                                        className="h-11 text-lg tabular-nums"
-                                        value={form.data.quantity}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'quantity',
-                                                Number(event.target.value),
-                                            )
-                                        }
-                                    />
+                                    <div className="flex items-stretch overflow-hidden rounded-xl border border-border/80 bg-background shadow-xs">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="text-foreground h-12 w-12 shrink-0 rounded-none border-r border-border/80"
+                                            aria-label="Decrease quantity"
+                                            disabled={quantityValue <= 0}
+                                            onClick={() =>
+                                                setQuantity(quantityValue - 1)
+                                            }
+                                        >
+                                            <Minus className="size-4" />
+                                        </Button>
+                                        <Input
+                                            id="quantity"
+                                            type="text"
+                                            inputMode="numeric"
+                                            autoComplete="off"
+                                            placeholder="0"
+                                            aria-label="Quantity"
+                                            className="h-12 flex-1 rounded-none border-0 bg-transparent text-center text-xl font-semibold tabular-nums shadow-none focus-visible:ring-0"
+                                            value={form.data.quantity}
+                                            onChange={(event) => {
+                                                const next =
+                                                    event.target.value;
+
+                                                if (
+                                                    next === '' ||
+                                                    /^\d+$/.test(next)
+                                                ) {
+                                                    form.setData(
+                                                        'quantity',
+                                                        next,
+                                                    );
+                                                }
+                                            }}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="text-foreground h-12 w-12 shrink-0 rounded-none border-l border-border/80"
+                                            aria-label="Increase quantity"
+                                            onClick={() =>
+                                                setQuantity(quantityValue + 1)
+                                            }
+                                        >
+                                            <Plus className="size-4" />
+                                        </Button>
+                                    </div>
                                     <p className="text-muted-foreground text-xs">
                                         {selectedType.hint}
                                     </p>
