@@ -105,6 +105,39 @@ test('a catalog product created elsewhere is listed at this branch', function ()
                 ->contains(fn ($row) => $row['slug'] === 'shared-catalog-pack')));
 });
 
+test('branch products index filters by category_id', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $matchedCategory = Category::factory()->create(['slug' => 'branch-filter-matched']);
+    $otherCategory = Category::factory()->create(['slug' => 'branch-filter-other']);
+
+    $matched = Product::factory()->hasAttached($matchedCategory)->create([
+        'slug' => 'branch-category-matched-pack',
+        'status' => true,
+    ]);
+    $other = Product::factory()->hasAttached($otherCategory)->create([
+        'slug' => 'branch-category-other-pack',
+        'status' => true,
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.products.index', [
+            'branch' => $branch,
+            'filter' => ['category_id' => (string) $matchedCategory->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/products/index')
+            ->where('table.filters.category_id', (string) $matchedCategory->id)
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['slug'] === $matched->slug,
+            ))
+            ->where('table.data', fn ($rows) => collect($rows)->every(
+                fn ($row) => $row['slug'] !== $other->slug,
+            ))
+            ->has('table.filterOptions.categories'));
+});
+
 test('branch routes no longer expose an enablement toggle', function () {
     expect(Route::has('branch.products.enable'))->toBeFalse();
 });

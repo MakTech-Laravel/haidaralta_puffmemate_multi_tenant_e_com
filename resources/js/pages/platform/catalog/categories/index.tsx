@@ -1,8 +1,9 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { Eye, Package, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
+import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import { categoryMerchandisingItems } from '@/components/platform/category-merchandising-actions';
 import { CategoryNavSortSheet } from '@/components/platform/category-nav-sort-sheet';
@@ -287,6 +288,17 @@ export default function PlatformCategoriesIndex({
                             label: 'View',
                             icon: Eye,
                             href: CategoryController.show.url(category.slug),
+                        },
+                        {
+                            label: 'View products',
+                            icon: Package,
+                            href: ProductController.index.url({
+                                query: {
+                                    filter: {
+                                        category_id: category.id,
+                                    },
+                                },
+                            }),
                         },
                         ...(can('manage-catalog') && !category.deleted_at
                             ? [

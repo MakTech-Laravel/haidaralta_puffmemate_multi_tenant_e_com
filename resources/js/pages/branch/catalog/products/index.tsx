@@ -17,7 +17,17 @@ import {
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { stockActionItems } from '@/lib/stock-query';
+
+type CategoryOption = { id: number; name: string; slug: string };
 
 type ProductRow = {
     id: number;
@@ -66,7 +76,9 @@ export default function BranchProductsIndex({
     table: tablePayload,
 }: {
     branch: Branch;
-    table: DataTablePayload<ProductRow>;
+    table: DataTablePayload<ProductRow> & {
+        filterOptions?: { categories?: CategoryOption[] };
+    };
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -86,11 +98,14 @@ export default function BranchProductsIndex({
         initial: {
             filter: {
                 search: tablePayload.filters.search ?? '',
+                category_id: tablePayload.filters.category_id ?? 'all',
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,
         },
     });
+
+    const categories = tablePayload.filterOptions?.categories ?? [];
 
     const columns = useMemo<ColumnDef<ProductRow>[]>(
         () => [
@@ -240,6 +255,39 @@ export default function BranchProductsIndex({
                             onSearchChange={query.setSearch}
                             searchPlaceholder="Search products…"
                             onClear={query.clearFilters}
+                            filters={
+                                <div className="grid gap-2">
+                                    <Label>Category</Label>
+                                    <Select
+                                        value={String(
+                                            query.filters.category_id ?? 'all',
+                                        )}
+                                        onValueChange={(value) =>
+                                            query.setFilter(
+                                                'category_id',
+                                                value === 'all' ? null : value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger className="w-[12rem]">
+                                            <SelectValue placeholder="Category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All categories
+                                            </SelectItem>
+                                            {categories.map((category) => (
+                                                <SelectItem
+                                                    key={category.id}
+                                                    value={String(category.id)}
+                                                >
+                                                    {category.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            }
                         />
                     }
                 />

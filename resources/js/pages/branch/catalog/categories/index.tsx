@@ -1,8 +1,9 @@
 import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil } from 'lucide-react';
+import { Eye, Package, Pencil } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
+import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -304,6 +305,21 @@ export default function BranchCategoriesIndex({
                                                 branch: branch.slug,
                                                 category: category.slug,
                                             }),
+                                        },
+                                        {
+                                            label: 'View products',
+                                            icon: Package,
+                                            href: ProductController.index.url(
+                                                branch.slug,
+                                                {
+                                                    query: {
+                                                        filter: {
+                                                            category_id:
+                                                                category.id,
+                                                        },
+                                                    },
+                                                },
+                                            ),
                                         },
                                         {
                                             label: 'Edit',
