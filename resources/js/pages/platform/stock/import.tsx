@@ -14,6 +14,8 @@ export default function PlatformImportStock({
             context={context}
             createProductUrl={createProductUrl}
             storeUrl={StockController.storeImport.url()}
+            productOptionsUrl={StockController.productOptions.url()}
+            branchOptionsUrl={StockController.branchOptions.url()}
         />
     );
 }

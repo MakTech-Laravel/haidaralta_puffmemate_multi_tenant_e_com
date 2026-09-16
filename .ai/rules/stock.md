@@ -22,3 +22,6 @@ On Adjustment, Reason sits beside Counted quantity. Other reveals a required rea
 
 ## Other reason is a full-width counted textarea
 Reason SelectTrigger must match the quantity stepper (h-12 min-h-12 rounded-xl data-[size=default]:h-12). Other uses AdjustmentReasonNote: full-width textarea after the quantity/reason row, live n/255 count, maxLength 255.
+
+## Import stock uses multi infinite pickers
+Import stock is New entry only. Branch and product pickers are InfiniteScrollMultiCombobox against stock/*-options (same as Manage stock, multi-select). Do not map context.branch_options or product_options into checkboxes. Quantity is an unsigned digit string with the manage-stock stepper. Branch portal locks the current branch.

@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\BranchProductPrice;
 use App\Models\Category;
 use App\Models\Inventory;
+use App\Models\InventoryTransaction;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\PlatformTeamResolver;
@@ -288,6 +289,17 @@ test('platform stock writes reject a negative quantity', function () {
         ->assertSessionHasErrors('quantity');
 });
 
+test('import stock page starts unlocked with no selection', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.stock.import'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/stock/import')
+            ->where('context.locked', null)
+            ->where('context.branch', null)
+            ->where('context.product', null));
+});
+
 test('import stock adds the same quantity to every branch and product pair', function () {
     $other = Product::factory()->create();
     $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
@@ -301,6 +313,32 @@ test('import stock adds the same quantity to every branch and product pair', fun
         ->assertRedirect();
 
     expect(Inventory::query()->where('quantity', 3)->count())->toBe(4);
+    expect(InventoryTransaction::query()->count())->toBe(4);
+    $this->assertDatabaseHas('inventory_transactions', [
+        'type' => 'stock_in',
+        'quantity' => 3,
+        'reason' => null,
+    ]);
+});
+
+test('import stock rejects an empty product list', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.import.store'), [
+            'branch_ids' => [$this->branch->id],
+            'product_ids' => [],
+            'quantity' => 3,
+        ])
+        ->assertSessionHasErrors('product_ids');
+});
+
+test('import stock rejects a zero quantity', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.import.store'), [
+            'branch_ids' => [$this->branch->id],
+            'product_ids' => [$this->product->id],
+            'quantity' => 0,
+        ])
+        ->assertSessionHasErrors('quantity');
 });
 
 test('platform can set a selling price and then a discount', function () {

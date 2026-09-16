@@ -91,6 +91,16 @@ test('branch adjustment sets counted on-hand and stores a signed variance', func
     ]);
 });
 
+test('branch import stock page locks the branch even when unlocked in the query', function () {
+    $this->actingAs($this->staff, 'branch')
+        ->get(route('branch.stock.import', $this->branch))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/stock/import')
+            ->where('context.locked', 'branch')
+            ->where('context.branch.id', $this->branch->id));
+});
+
 test('branch import stock only fills this branch', function () {
     $other = Product::factory()->create();
 

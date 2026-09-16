@@ -31,6 +31,7 @@ export default function BranchImportStock({
             context={context}
             createProductUrl={createProductUrl}
             storeUrl={StockController.storeImport.url(branch.slug)}
+            productOptionsUrl={StockController.productOptions.url(branch.slug)}
             lockBranch
         />
     );
