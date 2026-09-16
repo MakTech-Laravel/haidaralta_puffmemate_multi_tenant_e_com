@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 import { CancelOrderDialog } from '@/components/customer/cancel-order-dialog';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import {
     PaginationPrevious,
 } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
+import { show as orderShow } from '@/routes/customer/orders';
 
 export type CustomerOrderStatus = 'shipped' | 'processing' | 'delivered';
 
@@ -94,26 +96,43 @@ export function OrderList({
                                 </div>
 
                                 <div>
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        className={cn(
-                                            'h-9 rounded-md px-4 text-sm font-semibold',
-                                            order.status === 'shipped' &&
-                                                'bg-primary text-primary-foreground hover:bg-primary/90',
-                                            order.status === 'processing' &&
-                                                'bg-muted-foreground text-background hover:bg-muted-foreground/90',
-                                            order.status === 'delivered' &&
-                                                'bg-foreground text-background hover:bg-foreground/90',
-                                        )}
-                                        onClick={() => {
-                                            if (order.status === 'processing') {
-                                                setCancelOrderId(order.id);
-                                            }
-                                        }}
-                                    >
-                                        {actionLabel[order.status]}
-                                    </Button>
+                                    {order.status === 'shipped' ? (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 rounded-md px-4 text-sm font-semibold"
+                                            asChild
+                                        >
+                                            <Link
+                                                href={orderShow.url(order.id)}
+                                                prefetch
+                                            >
+                                                {actionLabel[order.status]}
+                                            </Link>
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            className={cn(
+                                                'h-9 rounded-md px-4 text-sm font-semibold',
+                                                order.status === 'processing' &&
+                                                    'bg-muted-foreground text-background hover:bg-muted-foreground/90',
+                                                order.status === 'delivered' &&
+                                                    'bg-foreground text-background hover:bg-foreground/90',
+                                            )}
+                                            onClick={() => {
+                                                if (
+                                                    order.status ===
+                                                    'processing'
+                                                ) {
+                                                    setCancelOrderId(order.id);
+                                                }
+                                            }}
+                                        >
+                                            {actionLabel[order.status]}
+                                        </Button>
+                                    )}
                                 </div>
                             </div>
 

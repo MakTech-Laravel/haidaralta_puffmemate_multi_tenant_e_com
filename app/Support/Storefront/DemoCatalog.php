@@ -310,7 +310,6 @@ class DemoCatalog
         return array_slice($similar, 0, $limit);
     }
 
-
     public static function productDetail(string $id): array
     {
         $product = self::findProduct($id);
@@ -381,7 +380,6 @@ class DemoCatalog
             ],
         ];
     }
-
 
     public static function cart(): array
     {
@@ -494,7 +492,6 @@ class DemoCatalog
         ];
     }
 
-
     public static function checkout(): array
     {
         $products = self::products();
@@ -571,7 +568,6 @@ class DemoCatalog
         ];
     }
 
-
     public static function customerOrders(): array
     {
         $products = self::products();
@@ -646,5 +642,87 @@ class DemoCatalog
         }
 
         return $orders;
+    }
+
+    /**
+     * Demo order tracking detail for the customer account track page.
+     *
+     * @return array{
+     *     id: string,
+     *     orderNumber: string,
+     *     status: string,
+     *     products: list<array{name: string, quantityLabel: string, priceLabel: string}>,
+     *     totalLabel: string,
+     *     shippingAddress: array{name: string, lines: list<string>, mobile: string},
+     *     driver: array{name: string, truckNumber: string, phone: string},
+     *     timeline: list<array{key: string, label: string, state: string, detail: string}>
+     * }|null
+     */
+    public static function customerOrderDetail(string $id): ?array
+    {
+        $order = collect(self::customerOrders())->firstWhere('id', $id);
+
+        if ($order === null) {
+            return null;
+        }
+
+        $status = $order['status'];
+
+        $timeline = match ($status) {
+            'delivered' => [
+                ['key' => 'submitted', 'label' => 'Submitted', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'processing', 'label' => 'Processing', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'driver_assigned', 'label' => 'Driver Assigned', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'on_the_way', 'label' => 'On The Way', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'delivered', 'label' => 'Delivered', 'state' => 'completed', 'detail' => 'Completed'],
+            ],
+            'processing' => [
+                ['key' => 'submitted', 'label' => 'Submitted', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'processing', 'label' => 'Processing', 'state' => 'current', 'detail' => 'in progress right now'],
+                ['key' => 'driver_assigned', 'label' => 'Driver Assigned', 'state' => 'upcoming', 'detail' => 'Up next'],
+                ['key' => 'on_the_way', 'label' => 'On The Way', 'state' => 'upcoming', 'detail' => 'Up next'],
+                ['key' => 'delivered', 'label' => 'Delivered', 'state' => 'upcoming', 'detail' => 'Up next'],
+            ],
+            default => [
+                ['key' => 'submitted', 'label' => 'Submitted', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'processing', 'label' => 'Processing', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'driver_assigned', 'label' => 'Driver Assigned', 'state' => 'completed', 'detail' => 'Completed'],
+                ['key' => 'on_the_way', 'label' => 'On The Way', 'state' => 'current', 'detail' => 'in progress right now'],
+                ['key' => 'delivered', 'label' => 'Delivered', 'state' => 'upcoming', 'detail' => 'Up next'],
+            ],
+        };
+
+        return [
+            'id' => $order['id'],
+            'orderNumber' => $order['orderNumber'],
+            'status' => $status,
+            'products' => [
+                [
+                    'name' => $order['title'],
+                    'quantityLabel' => '1 Unit',
+                    'priceLabel' => $order['priceLabel'],
+                ],
+                [
+                    'name' => 'Vuse GO Berry',
+                    'quantityLabel' => '1 Unit',
+                    'priceLabel' => '$450',
+                ],
+            ],
+            'totalLabel' => $order['priceLabel'],
+            'shippingAddress' => [
+                'name' => 'John Davidson',
+                'lines' => [
+                    '3 Boucaut Street',
+                    'Australia',
+                ],
+                'mobile' => 'Mobile: (+61) 4555-666-666',
+            ],
+            'driver' => [
+                'name' => 'John Smith',
+                'truckNumber' => 'Truck #TR-4523',
+                'phone' => '(+61) 4555-666-666',
+            ],
+            'timeline' => $timeline,
+        ];
     }
 }
