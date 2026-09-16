@@ -18,6 +18,8 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
     Route::get('notifications', [BranchNotificationController::class, 'index'])->name('branch.notifications.index');
 
     Route::middleware(['permission:manage-branch-products'])->group(function () {
+        Route::get('categories/options', [BranchCategoryController::class, 'options'])
+            ->name('branch.categories.options');
         Route::get('categories/suggestions', [BranchCategoryController::class, 'suggestions'])
             ->name('branch.categories.suggestions');
         Route::get('categories', [BranchCategoryController::class, 'index'])->name('branch.categories.index');

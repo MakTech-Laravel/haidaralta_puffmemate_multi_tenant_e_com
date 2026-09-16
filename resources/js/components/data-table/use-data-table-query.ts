@@ -18,10 +18,25 @@ type UseDataTableQueryOptions = {
 };
 
 export function buildDataTableQuery(state: DataTableQueryState): QueryParams {
-    const filter: Record<string, string> = {};
+    const filter: QueryParams = {};
 
     Object.entries(state.filter).forEach(([key, value]) => {
-        if (value === null || value === undefined || value === '' || value === 'all') {
+        if (
+            value === null ||
+            value === undefined ||
+            value === '' ||
+            value === 'all'
+        ) {
+            return;
+        }
+
+        if (Array.isArray(value)) {
+            if (value.length === 0) {
+                return;
+            }
+
+            filter[key] = value.map(String);
+
             return;
         }
 

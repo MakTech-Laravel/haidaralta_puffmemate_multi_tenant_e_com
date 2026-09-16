@@ -5,10 +5,10 @@ namespace App\DataTables;
 use App\DataTables\Filters\StatusBooleanFilter;
 use App\Models\Branch;
 use App\Models\BranchProductPrice;
-use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Support\BranchProductPriceDisplay;
+use App\Support\CategoryOptions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -89,13 +89,15 @@ class BranchProductListingDataTable extends AbstractDataTable
 
         return [
             AllowedFilter::callback('category_id', function (Builder $query, mixed $value): void {
-                if ($value === null || $value === '' || $value === 'all') {
+                $ids = CategoryOptions::normalizeIds($value);
+
+                if ($ids === []) {
                     return;
                 }
 
                 $query->whereHas(
                     'categories',
-                    fn (Builder $categories): Builder => $categories->where('categories.id', (int) $value),
+                    fn (Builder $categories): Builder => $categories->whereIn('categories.id', $ids),
                 );
             }),
             StatusBooleanFilter::make('status'),
@@ -129,16 +131,12 @@ class BranchProductListingDataTable extends AbstractDataTable
      */
     protected function filterOptions(): array
     {
+        $ids = CategoryOptions::normalizeIds(
+            $this->normalizedFilters()['category_id'] ?? null,
+        );
+
         return [
-            'categories' => Category::query()
-                ->orderBy('name')
-                ->get(['id', 'name', 'slug'])
-                ->map(fn (Category $category): array => [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'slug' => $category->slug,
-                ])
-                ->all(),
+            'categories' => CategoryOptions::selected($ids),
             'missing_price' => [
                 ['value' => 'all', 'label' => 'All prices'],
                 ['value' => '1', 'label' => 'Missing price'],

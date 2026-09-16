@@ -11,6 +11,7 @@ use App\Http\Requests\Platform\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Services\Catalog\CategoryService;
 use App\Services\Catalog\CategorySuggestionService;
+use App\Support\CategoryOptions;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -53,6 +54,11 @@ class CategoryController extends Controller
                 excludeCategoryId: $excludeCategoryId,
             ),
         ]);
+    }
+
+    public function options(Request $request): JsonResponse
+    {
+        return response()->json(CategoryOptions::paginated($request));
     }
 
     public function store(StoreCategoryRequest $request): RedirectResponse

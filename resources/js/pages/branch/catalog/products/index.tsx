@@ -2,9 +2,11 @@ import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Settings2 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
+import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import DiscountController from '@/actions/App/Http/Controllers/Branch/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
+import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -17,14 +19,6 @@ import {
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { stockActionItems } from '@/lib/stock-query';
 
 type CategoryOption = { id: number; name: string; slug: string };
@@ -98,7 +92,7 @@ export default function BranchProductsIndex({
         initial: {
             filter: {
                 search: tablePayload.filters.search ?? '',
-                category_id: tablePayload.filters.category_id ?? 'all',
+                category_id: tablePayload.filters.category_id ?? null,
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,
@@ -256,37 +250,16 @@ export default function BranchProductsIndex({
                             searchPlaceholder="Search products…"
                             onClear={query.clearFilters}
                             filters={
-                                <div className="grid gap-2">
-                                    <Label>Category</Label>
-                                    <Select
-                                        value={String(
-                                            query.filters.category_id ?? 'all',
-                                        )}
-                                        onValueChange={(value) =>
-                                            query.setFilter(
-                                                'category_id',
-                                                value === 'all' ? null : value,
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger className="w-[12rem]">
-                                            <SelectValue placeholder="Category" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">
-                                                All categories
-                                            </SelectItem>
-                                            {categories.map((category) => (
-                                                <SelectItem
-                                                    key={category.id}
-                                                    value={String(category.id)}
-                                                >
-                                                    {category.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                <CategoryFilterCombobox
+                                    optionsUrl={CategoryController.options.url(
+                                        branch.slug,
+                                    )}
+                                    value={query.filters.category_id}
+                                    selectedCategories={categories}
+                                    onChange={(ids) =>
+                                        query.setFilter('category_id', ids)
+                                    }
+                                />
                             }
                         />
                     }

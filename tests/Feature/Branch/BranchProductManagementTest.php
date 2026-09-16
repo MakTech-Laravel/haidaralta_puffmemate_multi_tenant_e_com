@@ -135,7 +135,27 @@ test('branch products index filters by category_id', function () {
             ->where('table.data', fn ($rows) => collect($rows)->every(
                 fn ($row) => $row['slug'] !== $other->slug,
             ))
-            ->has('table.filterOptions.categories'));
+            ->where('table.filterOptions.categories.0.id', $matchedCategory->id));
+});
+
+test('branch category options are available without viewing categories', function () {
+    config(['catalog.branch_can_view_categories' => false]);
+
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $match = Category::factory()->create([
+        'name' => 'Branch Option Coils',
+        'slug' => 'branch-option-coils',
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->getJson(route('branch.categories.options', [
+            'branch' => $branch,
+            'filter' => ['search' => 'Option Coils'],
+            'per_page' => 10,
+        ]))
+        ->assertOk()
+        ->assertJsonFragment(['id' => $match->id, 'name' => 'Branch Option Coils']);
 });
 
 test('branch routes no longer expose an enablement toggle', function () {

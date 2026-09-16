@@ -34,6 +34,7 @@ export function InfiniteScrollMultiCombobox({
     className,
     id,
     descriptionKey = 'sku',
+    showSelectedBadges = true,
 }: {
     optionsUrl: string;
     values: string[];
@@ -45,6 +46,8 @@ export function InfiniteScrollMultiCombobox({
     className?: string;
     id?: string;
     descriptionKey?: 'sku' | null;
+    /** Form pickers keep chips; compact toolbars should pass false. */
+    showSelectedBadges?: boolean;
 }) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -274,7 +277,7 @@ export function InfiniteScrollMultiCombobox({
                     </Command>
                 </PopoverContent>
             </Popover>
-            {selectedItems.length > 0 ? (
+            {showSelectedBadges && selectedItems.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                     {selectedItems.map((item) => (
                         <Badge

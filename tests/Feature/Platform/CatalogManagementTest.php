@@ -188,6 +188,72 @@ test('platform category suggestions match existing catalog items', function () {
         ->assertJsonPath('suggestions', []);
 });
 
+test('platform category options paginate and search', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $match = Category::factory()->create([
+        'name' => 'Omega Coils',
+        'slug' => 'omega-coils-options',
+    ]);
+    Category::factory()->create([
+        'name' => 'Zeta Batteries',
+        'slug' => 'zeta-batteries-options',
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.categories.options', [
+            'filter' => ['search' => 'Omega'],
+            'per_page' => 10,
+        ]))
+        ->assertOk()
+        ->assertJsonFragment(['id' => $match->id, 'name' => 'Omega Coils'])
+        ->assertJsonMissing(['slug' => 'zeta-batteries-options'])
+        ->assertJsonPath('meta.per_page', 10);
+});
+
+test('platform products index accepts multiple category_id filters', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $fruit = Category::factory()->create(['name' => 'Multi Fruit', 'slug' => 'multi-fruit']);
+    $gear = Category::factory()->create(['name' => 'Multi Gear', 'slug' => 'multi-gear']);
+    $other = Category::factory()->create(['name' => 'Multi Other', 'slug' => 'multi-other']);
+
+    $fruitProduct = Product::factory()->hasAttached($fruit)->create([
+        'slug' => 'multi-fruit-pack',
+        'status' => true,
+    ]);
+    $gearProduct = Product::factory()->hasAttached($gear)->create([
+        'slug' => 'multi-gear-pack',
+        'status' => true,
+    ]);
+    Product::factory()->hasAttached($other)->create([
+        'slug' => 'multi-other-pack',
+        'status' => true,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.products.index', [
+            'filter' => [
+                'category_id' => [(string) $fruit->id, (string) $gear->id],
+            ],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/catalog/products/index')
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['slug'] === $fruitProduct->slug,
+            ))
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['slug'] === $gearProduct->slug,
+            ))
+            ->where('table.data', fn ($rows) => collect($rows)->every(
+                fn ($row) => $row['slug'] !== 'multi-other-pack',
+            ))
+            ->where('table.filterOptions.categories', fn ($categories) => collect($categories)
+                ->pluck('id')
+                ->sort()
+                ->values()
+                ->all() === collect([$fruit->id, $gear->id])->sort()->values()->all()));
+});
+
 test('precognitive platform category store returns 422 for a taken slug', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $existing = Category::factory()->create(['slug' => 'taken-category']);
@@ -317,7 +383,7 @@ test('platform products data table filters sorts and paginates', function () {
             ->where('table.data.0.id', $active->id)
             ->where('table.data.0.variants_count', 0)
             ->where('table.per_page', 25)
-            ->has('table.filterOptions.categories'));
+            ->where('table.filterOptions.categories.0.id', $fruit->id));
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.products.index', [

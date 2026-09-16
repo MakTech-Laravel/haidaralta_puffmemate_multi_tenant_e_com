@@ -3,10 +3,12 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, Network, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
+import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
 import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -78,7 +80,7 @@ export default function PlatformProductsIndex({
             filter: {
                 search: tablePayload.filters.search ?? '',
                 status: tablePayload.filters.status ?? 'all',
-                category_id: tablePayload.filters.category_id ?? 'all',
+                category_id: tablePayload.filters.category_id ?? null,
                 trashed: tablePayload.filters.trashed ?? 'active',
             },
             sort: tablePayload.sort,
@@ -357,42 +359,14 @@ export default function PlatformProductsIndex({
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="grid gap-2">
-                                        <Label>Category</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.category_id ??
-                                                    'all',
-                                            )}
-                                            onValueChange={(value) =>
-                                                query.setFilter(
-                                                    'category_id',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-[12rem]">
-                                                <SelectValue placeholder="Category" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All categories
-                                                </SelectItem>
-                                                {categories.map((category) => (
-                                                    <SelectItem
-                                                        key={category.id}
-                                                        value={String(
-                                                            category.id,
-                                                        )}
-                                                    >
-                                                        {category.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                    <CategoryFilterCombobox
+                                        optionsUrl={CategoryController.options.url()}
+                                        value={query.filters.category_id}
+                                        selectedCategories={categories}
+                                        onChange={(ids) =>
+                                            query.setFilter('category_id', ids)
+                                        }
+                                    />
                                     <div className="grid gap-2">
                                         <Label>Trash</Label>
                                         <Select

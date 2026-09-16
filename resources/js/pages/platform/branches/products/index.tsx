@@ -3,8 +3,10 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { CircleDollarSign, Package, Settings2 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
+import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
 import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
+import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -259,42 +261,14 @@ export default function PlatformBranchProductsIndex({
                             onClear={query.clearFilters}
                             filters={
                                 <>
-                                    <div className="grid gap-2">
-                                        <Label>Category</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.category_id ??
-                                                    'all',
-                                            )}
-                                            onValueChange={(value) =>
-                                                query.setFilter(
-                                                    'category_id',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-[12rem]">
-                                                <SelectValue placeholder="Category" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All categories
-                                                </SelectItem>
-                                                {categories.map((category) => (
-                                                    <SelectItem
-                                                        key={category.id}
-                                                        value={String(
-                                                            category.id,
-                                                        )}
-                                                    >
-                                                        {category.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                    <CategoryFilterCombobox
+                                        optionsUrl={CategoryController.options.url()}
+                                        value={query.filters.category_id}
+                                        selectedCategories={categories}
+                                        onChange={(ids) =>
+                                            query.setFilter('category_id', ids)
+                                        }
+                                    />
                                     <div className="grid gap-2">
                                         <Label>Price</Label>
                                         <Select

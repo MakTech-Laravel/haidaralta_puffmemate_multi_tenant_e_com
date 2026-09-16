@@ -161,6 +161,11 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.stock.product-options');
     });
 
+    Route::middleware(['permission:manage-catalog|manage-branch-inventories'])->group(function () {
+        Route::get('categories/options', [PlatformCategoryController::class, 'options'])
+            ->name('platform.categories.options');
+    });
+
     Route::middleware(['permission:manage-catalog'])->group(function () {
         Route::get('categories/suggestions', [PlatformCategoryController::class, 'suggestions'])
             ->name('platform.categories.suggestions');
