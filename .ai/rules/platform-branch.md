@@ -30,3 +30,6 @@ Platform /platform/drivers is the full driver admin (create requires ≥1 branch
 Manage stock, Import stock, Update price, Add discount and Stock transactions exist on both portals and share the query contract `product`, `branch`, `locked` (`product|branch|both`), resolved by `App\Support\StockPageContext`. Locked selections render read-only and 404 when the id or slug does not resolve.
 The branch portal always forces `locked` to include `branch` (`StockPageContext::fromRequest($request, $branch)`), and every write asserts `branch_id` matches the current branch.
 When a product is missing from a picker, the Add product link carries `return_to` = current stock URL; `CatalogReturnTo::afterProductCreate` redirects back with `?product={id}` appended.
+
+## Stock transaction filters paginate branch and product options
+Do not embed the full branch or product catalogs in `InventoryTransactionDataTable` filterOptions. Branch and product filters are shadcn Popover+Command comboboxes that fetch `stock/branch-options` and `stock/product-options` (page, per_page, filter[search]) and append on scroll. Keep only `types` plus the currently selected branch/product labels on the table payload. Row names link to the matching show page (`branch_url`, `product_url`, `created_by_url`).

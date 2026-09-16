@@ -94,7 +94,25 @@ test('branch stock transactions only list this branch ledger', function () {
         ->assertInertia(fn ($page) => $page
             ->component('branch/stock/transactions')
             ->where('table.meta.total', 1)
-            ->where('table.data.0.quantity', 4));
+            ->where('table.data.0.quantity', 4)
+            ->where('table.data.0.product_url', route('branch.products.show', [$this->branch, $this->product]))
+            ->where('table.data.0.created_by_url', route('branch.staff.show', [$this->branch, $this->staff]))
+            ->missing('table.filterOptions.products'));
+});
+
+test('branch stock product options paginate catalog products', function () {
+    Product::factory()->count(21)->create();
+
+    $this->actingAs($this->staff, 'branch')
+        ->getJson(route('branch.stock.product-options', [
+            'branch' => $this->branch,
+            'per_page' => 10,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('meta.per_page', 10)
+        ->assertJsonCount(10, 'data')
+        ->assertJsonPath('meta.last_page', 3)
+        ->assertJsonPath('meta.total', 22);
 });
 
 test('creating a product from a branch stock page returns to it with the product selected', function () {

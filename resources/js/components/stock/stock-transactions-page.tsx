@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { format, isValid, parseISO } from 'date-fns';
 import { useMemo } from 'react';
@@ -10,6 +10,7 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import {
@@ -23,32 +24,70 @@ import {
 type TransactionRow = {
     id: number;
     branch_name: string | null;
+    branch_url: string | null;
     product_name: string | null;
     product_sku: string | null;
+    product_url: string | null;
     type: string;
     type_label: string;
     quantity: number;
     before_quantity: number;
     after_quantity: number;
     created_by_name: string | null;
+    created_by_url: string | null;
     created_at: string | null;
 };
 
-type FilterOption = { id?: number; value?: string; name?: string; label?: string; sku?: string | null };
+type SelectedOption = {
+    id: number;
+    name: string;
+    sku?: string | null;
+};
+
+type FilterOption = { value?: string; label?: string };
+
+function NameLink({
+    href,
+    children,
+}: {
+    href: string | null;
+    children: string | null;
+}) {
+    if (!children) {
+        return '—';
+    }
+
+    if (!href) {
+        return children;
+    }
+
+    return (
+        <Link
+            href={href}
+            className="text-primary font-medium hover:underline"
+        >
+            {children}
+        </Link>
+    );
+}
 
 export function StockTransactionsPage({
     table: tablePayload,
     indexUrl,
+    productOptionsUrl,
+    branchOptionsUrl,
     hideBranchFilter = false,
 }: {
     table: DataTablePayload<TransactionRow> & {
         filterOptions?: {
-            branches?: FilterOption[];
-            products?: FilterOption[];
+            selected_branch?: SelectedOption | null;
+            selected_product?: SelectedOption | null;
             types?: FilterOption[];
         };
     };
     indexUrl: string;
+    productOptionsUrl: string;
+    branchOptionsUrl?: string;
     hideBranchFilter?: boolean;
 }) {
     const query = useDataTableQuery({
@@ -75,6 +114,11 @@ export function StockTransactionsPage({
                       {
                           accessorKey: 'branch_name',
                           header: 'Branch',
+                          cell: ({ row }) => (
+                              <NameLink href={row.original.branch_url}>
+                                  {row.original.branch_name}
+                              </NameLink>
+                          ),
                       } satisfies ColumnDef<TransactionRow>,
                   ]),
             {
@@ -82,12 +126,16 @@ export function StockTransactionsPage({
                 header: 'Product',
                 cell: ({ row }) => (
                     <div>
-                        <div className="font-medium">
-                            {row.original.product_name ?? '—'}
+                        <div>
+                            <NameLink href={row.original.product_url}>
+                                {row.original.product_name}
+                            </NameLink>
                         </div>
-                        <div className="text-muted-foreground text-xs">
-                            {row.original.product_sku ?? ''}
-                        </div>
+                        {row.original.product_sku ? (
+                            <div className="text-muted-foreground text-xs">
+                                {row.original.product_sku}
+                            </div>
+                        ) : null}
                     </div>
                 ),
             },
@@ -165,15 +213,21 @@ export function StockTransactionsPage({
             {
                 accessorKey: 'created_by_name',
                 header: 'By',
-                cell: ({ row }) => row.original.created_by_name ?? '—',
+                cell: ({ row }) => (
+                    <NameLink href={row.original.created_by_url}>
+                        {row.original.created_by_name}
+                    </NameLink>
+                ),
             },
         ],
         [hideBranchFilter, query.sort, query.toggleSort],
     );
 
-    const products = tablePayload.filterOptions?.products ?? [];
-    const branches = tablePayload.filterOptions?.branches ?? [];
     const types = tablePayload.filterOptions?.types ?? [];
+    const selectedBranch = tablePayload.filterOptions?.selected_branch;
+    const selectedProduct = tablePayload.filterOptions?.selected_product;
+    const branchFilter = String(query.filters.branch_id ?? 'all');
+    const productFilter = String(query.filters.product_id ?? 'all');
 
     return (
         <>
@@ -197,85 +251,65 @@ export function StockTransactionsPage({
                             onClear={query.clearFilters}
                             filters={
                                 <>
-                                    {hideBranchFilter ? null : (
+                                    {hideBranchFilter || !branchOptionsUrl ? null : (
                                         <div className="grid gap-2">
                                             <Label>Branch</Label>
-                                            <Select
-                                                value={String(
-                                                    query.filters.branch_id ??
-                                                        'all',
-                                                )}
+                                            <InfiniteScrollCombobox
+                                                optionsUrl={branchOptionsUrl}
+                                                value={
+                                                    branchFilter === 'all'
+                                                        ? null
+                                                        : branchFilter
+                                                }
                                                 onValueChange={(value) =>
                                                     query.setFilter(
                                                         'branch_id',
-                                                        value === 'all'
-                                                            ? null
-                                                            : value,
+                                                        value,
                                                     )
                                                 }
-                                            >
-                                                <SelectTrigger className="w-44">
-                                                    <SelectValue placeholder="Branch" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="all">
-                                                        All branches
-                                                    </SelectItem>
-                                                    {branches.map((branch) => (
-                                                        <SelectItem
-                                                            key={branch.id}
-                                                            value={String(
-                                                                branch.id,
-                                                            )}
-                                                        >
-                                                            {branch.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                                selectedLabel={
+                                                    selectedBranch?.name ?? null
+                                                }
+                                                placeholder="All branches"
+                                                searchPlaceholder="Search branches…"
+                                                emptyText="No branch found."
+                                                noneLabel="All branches"
+                                                descriptionKey={null}
+                                                className="w-52"
+                                            />
                                         </div>
                                     )}
                                     <div className="grid gap-2">
                                         <Label>Product</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.product_id ??
-                                                    'all',
-                                            )}
+                                        <InfiniteScrollCombobox
+                                            optionsUrl={productOptionsUrl}
+                                            value={
+                                                productFilter === 'all'
+                                                    ? null
+                                                    : productFilter
+                                            }
                                             onValueChange={(value) =>
                                                 query.setFilter(
                                                     'product_id',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
+                                                    value,
                                                 )
                                             }
-                                        >
-                                            <SelectTrigger className="w-52">
-                                                <SelectValue placeholder="Product" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All products
-                                                </SelectItem>
-                                                {products.map((product) => (
-                                                    <SelectItem
-                                                        key={product.id}
-                                                        value={String(
-                                                            product.id,
-                                                        )}
-                                                    >
-                                                        {product.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                            selectedLabel={
+                                                selectedProduct?.name ?? null
+                                            }
+                                            placeholder="All products"
+                                            searchPlaceholder="Search products…"
+                                            emptyText="No product found."
+                                            noneLabel="All products"
+                                            className="w-56"
+                                        />
                                     </div>
                                     <div className="grid gap-2">
                                         <Label>Type</Label>
                                         <Select
                                             value={String(
-                                                query.filters.type ?? 'all',
+                                                query.filters.type ??
+                                                    'all',
                                             )}
                                             onValueChange={(value) =>
                                                 query.setFilter(

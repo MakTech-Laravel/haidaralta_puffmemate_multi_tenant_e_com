@@ -65,6 +65,8 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::get('stock/discount', [BranchStockController::class, 'discount'])->name('branch.stock.discount');
         Route::put('stock/discount', [BranchStockController::class, 'updateDiscount'])->name('branch.stock.discount.update');
         Route::get('stock/transactions', [BranchStockController::class, 'transactions'])->name('branch.stock.transactions');
+        Route::get('stock/product-options', [BranchStockController::class, 'productOptions'])
+            ->name('branch.stock.product-options');
     });
 
     Route::middleware(['permission:view-branch-activity-logs'])->group(function () {

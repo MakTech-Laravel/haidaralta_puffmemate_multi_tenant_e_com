@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\BranchProductPrice;
 use App\Models\Inventory;
 use App\Models\Product;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 
 final class StockPageContext
@@ -170,6 +171,102 @@ final class StockPageContext
         abort_unless($branch !== null, 404);
 
         return $branch;
+    }
+
+    /**
+     * @return array{
+     *     data: list<array{id: int, name: string, slug: string}>,
+     *     meta: array{current_page: int, last_page: int, per_page: int, total: int}
+     * }
+     */
+    public static function paginatedBranchOptions(Request $request): array
+    {
+        $search = self::optionSearch($request);
+        $perPage = self::optionPerPage($request);
+
+        $query = Branch::query()->orderBy('name')->orderBy('id');
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search): void {
+                $builder
+                    ->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('slug', 'like', '%'.$search.'%')
+                    ->orWhere('code', 'like', '%'.$search.'%');
+            });
+        }
+
+        $paginator = $query->paginate($perPage)->appends($request->query());
+
+        return [
+            'data' => collect($paginator->items())->map(fn (Branch $branch): array => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'slug' => $branch->slug,
+            ])->values()->all(),
+            'meta' => self::optionMeta($paginator),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     data: list<array{id: int, name: string, slug: string, sku: ?string}>,
+     *     meta: array{current_page: int, last_page: int, per_page: int, total: int}
+     * }
+     */
+    public static function paginatedProductOptions(Request $request): array
+    {
+        $search = self::optionSearch($request);
+        $perPage = self::optionPerPage($request);
+
+        $query = Product::query()->orderBy('name')->orderBy('id');
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search): void {
+                $builder
+                    ->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('sku', 'like', '%'.$search.'%')
+                    ->orWhere('slug', 'like', '%'.$search.'%');
+            });
+        }
+
+        $paginator = $query->paginate($perPage)->appends($request->query());
+
+        return [
+            'data' => collect($paginator->items())->map(fn (Product $product): array => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'sku' => $product->sku,
+            ])->values()->all(),
+            'meta' => self::optionMeta($paginator),
+        ];
+    }
+
+    private static function optionSearch(Request $request): string
+    {
+        return trim((string) (
+            $request->input('filter.search')
+            ?? $request->query('search', '')
+        ));
+    }
+
+    private static function optionPerPage(Request $request): int
+    {
+        return min(50, max(10, (int) $request->integer('per_page', 20)));
+    }
+
+    /**
+     * @param  LengthAwarePaginator<int, mixed>  $paginator
+     * @return array{current_page: int, last_page: int, per_page: int, total: int}
+     */
+    private static function optionMeta(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+        ];
     }
 
     private static function resolveProduct(Request $request, bool $required = false): ?Product

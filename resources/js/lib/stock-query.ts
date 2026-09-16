@@ -123,3 +123,52 @@ export function isBranchLocked(locked: StockLock | null): boolean {
 export function isProductLocked(locked: StockLock | null): boolean {
     return locked === 'product' || locked === 'both';
 }
+
+export type StockOptionPage = {
+    data: Array<{
+        id: number;
+        name: string;
+        slug?: string;
+        sku?: string | null;
+    }>;
+    meta: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+    };
+};
+
+export async function fetchStockOptions(
+    optionsUrl: string,
+    args: {
+        search?: string;
+        page?: number;
+        perPage?: number;
+        signal?: AbortSignal;
+    } = {},
+): Promise<StockOptionPage> {
+    const url = new URL(optionsUrl, window.location.origin);
+
+    if (args.search) {
+        url.searchParams.set('filter[search]', args.search);
+    }
+
+    url.searchParams.set('page', String(args.page ?? 1));
+    url.searchParams.set('per_page', String(args.perPage ?? 20));
+
+    const response = await fetch(url.toString(), {
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin',
+        signal: args.signal,
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to load options');
+    }
+
+    return (await response.json()) as StockOptionPage;
+}

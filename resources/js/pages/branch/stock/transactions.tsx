@@ -31,6 +31,7 @@ export default function BranchStockTransactions({
         <StockTransactionsPage
             table={table}
             indexUrl={StockController.transactions.url(branch.slug)}
+            productOptionsUrl={StockController.productOptions.url(branch.slug)}
             hideBranchFilter
         />
     );

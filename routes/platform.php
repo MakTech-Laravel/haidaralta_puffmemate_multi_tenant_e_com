@@ -150,6 +150,10 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::get('stock/discount', [PlatformStockController::class, 'discount'])->name('platform.stock.discount');
         Route::put('stock/discount', [PlatformStockController::class, 'updateDiscount'])->name('platform.stock.discount.update');
         Route::get('stock/transactions', [PlatformStockController::class, 'transactions'])->name('platform.stock.transactions');
+        Route::get('stock/branch-options', [PlatformStockController::class, 'branchOptions'])
+            ->name('platform.stock.branch-options');
+        Route::get('stock/product-options', [PlatformStockController::class, 'productOptions'])
+            ->name('platform.stock.product-options');
     });
 
     Route::middleware(['permission:manage-catalog'])->group(function () {

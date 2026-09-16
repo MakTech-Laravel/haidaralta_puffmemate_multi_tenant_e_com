@@ -144,14 +144,54 @@ test('stock transactions ledger filters by the selected product', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/stock/transactions')
-            ->where('table.meta.total', 2));
+            ->where('table.meta.total', 2)
+            ->missing('table.filterOptions.products')
+            ->missing('table.filterOptions.branches')
+            ->has('table.filterOptions.types')
+            ->has('table.data.0.product_url')
+            ->has('table.data.0.branch_url')
+            ->where('table.data.0.created_by_url', route('platform.staff.show', $this->admin)));
 
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.stock.transactions', ['product' => $this->product->id]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('table.meta.total', 1)
-            ->where('table.data.0.product_name', $this->product->name));
+            ->where('table.data.0.product_name', $this->product->name)
+            ->where('table.data.0.product_url', route('platform.products.show', $this->product))
+            ->where('table.data.0.branch_url', route('platform.branches.show', $this->branch))
+            ->where('table.filterOptions.selected_product.id', $this->product->id));
+});
+
+test('stock product options paginate and search instead of returning the full catalog', function () {
+    Product::factory()->count(21)->create();
+
+    $this->actingAs($this->admin, 'platform')
+        ->getJson(route('platform.stock.product-options', ['per_page' => 10]))
+        ->assertOk()
+        ->assertJsonPath('meta.per_page', 10)
+        ->assertJsonCount(10, 'data')
+        ->assertJsonPath('meta.last_page', 3)
+        ->assertJsonPath('meta.total', 22);
+
+    $this->actingAs($this->admin, 'platform')
+        ->getJson(route('platform.stock.product-options', [
+            'filter' => ['search' => $this->product->name],
+            'per_page' => 10,
+        ]))
+        ->assertOk()
+        ->assertJsonFragment(['id' => $this->product->id, 'name' => $this->product->name]);
+});
+
+test('stock branch options paginate and search', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->getJson(route('platform.stock.branch-options', [
+            'filter' => ['search' => 'Sydney'],
+            'per_page' => 10,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('meta.per_page', 10)
+        ->assertJsonFragment(['slug' => BranchSeeder::SYDNEY_CBD]);
 });
 
 test('creating a product from a stock page returns to it with the product selected', function () {
@@ -192,10 +232,16 @@ test('stock pages require manage-branch-inventories', function () {
     $this->actingAs($user, 'platform')
         ->get(route('platform.stock.manage'))
         ->assertForbidden();
+
+    $this->actingAs($user, 'platform')
+        ->getJson(route('platform.stock.product-options'))
+        ->assertForbidden();
 });
 
 test('guests cannot open stock pages', function () {
     $this->get(route('platform.stock.manage'))->assertRedirect(route('login'));
+    $this->getJson(route('platform.stock.product-options'))->assertRedirect(route('login'));
+    $this->getJson(route('platform.stock.branch-options'))->assertRedirect(route('login'));
 });
 
 test('price page shows the current branch price for the selected pair', function () {

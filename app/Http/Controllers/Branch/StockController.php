@@ -18,6 +18,7 @@ use App\Services\Inventory\InventoryService;
 use App\Support\CatalogReturnTo;
 use App\Support\StockPageContext;
 use App\Support\Toast;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -182,9 +183,14 @@ class StockController extends Controller
         $this->mergeSelectionFilters($request);
 
         return Inertia::render('branch/stock/transactions', [
-            'table' => InventoryTransactionDataTable::makeFor($request, $branch->id),
+            'table' => InventoryTransactionDataTable::makeFor($request, $branch->id, 'branch', $branch->slug),
             'context' => StockPageContext::fromRequest($request, $branch),
         ]);
+    }
+
+    public function productOptions(Request $request): JsonResponse
+    {
+        return response()->json(StockPageContext::paginatedProductOptions($request));
     }
 
     private function existingPrice(Branch $branch, Product $product): ?BranchProductPrice

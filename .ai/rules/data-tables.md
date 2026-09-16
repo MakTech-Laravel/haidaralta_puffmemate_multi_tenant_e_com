@@ -39,3 +39,6 @@ Branch category index uses BranchCategoryDataTable without AllowedFilter::trashe
 
 ## Listings use quantity and discounted price
 Branch/platform product listings use quantity as Stock. No Enabled column or toggle (route gone). No enabled/low_stock filters. Discounted prices show strikethrough selling_price plus effective_price when has_discount. Summary cards are { products, missing_price } or { branches, missing_price }.
+
+## Stock transaction filters do not dump catalogs
+InventoryTransactionDataTable filterOptions carry types plus the currently selected branch/product only. Branch/product pickers load pages from stock/*-options JSON (filter[search], page, per_page) with infinite scroll. Row payloads include branch_url, product_url, and created_by_url.
