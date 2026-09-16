@@ -35,6 +35,7 @@ export default function BranchAddStockDiscount({
             pageUrl={StockController.discount.url(branch.slug)}
             updateUrl={StockController.updateDiscount.url(branch.slug)}
             discountTypes={discountTypes}
+            productOptionsUrl={StockController.productOptions.url(branch.slug)}
         />
     );
 }

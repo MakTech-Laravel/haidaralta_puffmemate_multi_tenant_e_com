@@ -15,6 +15,8 @@ export default function PlatformManageStock({
             createProductUrl={createProductUrl}
             pageUrl={StockController.manage.url()}
             adjustUrl={StockController.adjust.url()}
+            productOptionsUrl={StockController.productOptions.url()}
+            branchOptionsUrl={StockController.branchOptions.url()}
         />
     );
 }

@@ -15,6 +15,8 @@ export default function PlatformUpdateStockPrice({
             createProductUrl={createProductUrl}
             pageUrl={StockController.price.url()}
             updateUrl={StockController.updatePrice.url()}
+            productOptionsUrl={StockController.productOptions.url()}
+            branchOptionsUrl={StockController.branchOptions.url()}
         />
     );
 }

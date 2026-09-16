@@ -32,6 +32,7 @@ export default function BranchManageStock({
             createProductUrl={createProductUrl}
             pageUrl={StockController.manage.url(branch.slug)}
             adjustUrl={StockController.adjust.url(branch.slug)}
+            productOptionsUrl={StockController.productOptions.url(branch.slug)}
         />
     );
 }

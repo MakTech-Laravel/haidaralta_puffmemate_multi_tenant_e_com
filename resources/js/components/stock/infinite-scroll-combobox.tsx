@@ -32,6 +32,7 @@ export function InfiniteScrollCombobox({
     emptyText,
     noneLabel,
     className,
+    id,
     descriptionKey = 'sku',
 }: {
     optionsUrl: string;
@@ -41,8 +42,9 @@ export function InfiniteScrollCombobox({
     placeholder: string;
     searchPlaceholder: string;
     emptyText: string;
-    noneLabel: string;
+    noneLabel?: string;
     className?: string;
+    id?: string;
     descriptionKey?: 'sku' | null;
 }) {
     const [open, setOpen] = useState(false);
@@ -163,12 +165,12 @@ export function InfiniteScrollCombobox({
         );
     };
 
-    const displayLabel =
-        value && value !== 'all'
-            ? (selectedLabel ??
-              options.find((option) => option.value === value)?.label ??
-              placeholder)
-            : noneLabel;
+    const hasSelection = Boolean(value && value !== 'all');
+    const displayLabel = hasSelection
+        ? (selectedLabel ??
+          options.find((option) => option.value === value)?.label ??
+          placeholder)
+        : (noneLabel ?? placeholder);
 
     return (
         <Popover
@@ -187,16 +189,26 @@ export function InfiniteScrollCombobox({
         >
             <PopoverTrigger asChild>
                 <Button
+                    id={id}
                     type="button"
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
                     className={cn(
-                        'h-9 justify-between px-3 font-normal',
+                        'h-9 w-full justify-between px-3 font-normal',
                         className,
                     )}
                 >
-                    <span className="truncate">{displayLabel}</span>
+                    <span
+                        className={cn(
+                            'truncate',
+                            !hasSelection && !noneLabel
+                                ? 'text-muted-foreground'
+                                : '',
+                        )}
+                    >
+                        {displayLabel}
+                    </span>
                     <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
@@ -212,23 +224,25 @@ export function InfiniteScrollCombobox({
                     />
                     <CommandList onScroll={handleScroll}>
                         <CommandGroup>
-                            <CommandItem
-                                value="all"
-                                onSelect={() => {
-                                    onValueChange(null);
-                                    setOpen(false);
-                                }}
-                            >
-                                {noneLabel}
-                                <Check
-                                    className={cn(
-                                        'ml-auto',
-                                        !value || value === 'all'
-                                            ? 'opacity-100'
-                                            : 'opacity-0',
-                                    )}
-                                />
-                            </CommandItem>
+                            {noneLabel ? (
+                                <CommandItem
+                                    value="all"
+                                    onSelect={() => {
+                                        onValueChange(null);
+                                        setOpen(false);
+                                    }}
+                                >
+                                    {noneLabel}
+                                    <Check
+                                        className={cn(
+                                            'ml-auto',
+                                            !value || value === 'all'
+                                                ? 'opacity-100'
+                                                : 'opacity-0',
+                                        )}
+                                    />
+                                </CommandItem>
+                            ) : null}
                             {options.map((option) => (
                                 <CommandItem
                                     key={option.value}

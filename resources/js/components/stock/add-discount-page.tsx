@@ -23,12 +23,16 @@ export function AddDiscountPage({
     pageUrl,
     updateUrl,
     discountTypes,
+    productOptionsUrl,
+    branchOptionsUrl,
 }: {
     context: StockPageContext;
     createProductUrl: string;
     pageUrl: string;
     updateUrl: string;
     discountTypes: DiscountTypeOption[];
+    productOptionsUrl: string;
+    branchOptionsUrl?: string;
 }) {
     const ready = context.branch !== null && context.product !== null;
     const form = useForm({
@@ -54,6 +58,8 @@ export function AddDiscountPage({
                     context={context}
                     pageUrl={pageUrl}
                     createProductUrl={createProductUrl}
+                    productOptionsUrl={productOptionsUrl}
+                    branchOptionsUrl={branchOptionsUrl}
                 />
                 {ready ? (
                     <form

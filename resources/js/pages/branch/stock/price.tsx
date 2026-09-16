@@ -32,6 +32,7 @@ export default function BranchUpdateStockPrice({
             createProductUrl={createProductUrl}
             pageUrl={StockController.price.url(branch.slug)}
             updateUrl={StockController.updatePrice.url(branch.slug)}
+            productOptionsUrl={StockController.productOptions.url(branch.slug)}
         />
     );
 }

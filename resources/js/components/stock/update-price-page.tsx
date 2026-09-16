@@ -12,11 +12,15 @@ export function UpdatePricePage({
     createProductUrl,
     pageUrl,
     updateUrl,
+    productOptionsUrl,
+    branchOptionsUrl,
 }: {
     context: StockPageContext;
     createProductUrl: string;
     pageUrl: string;
     updateUrl: string;
+    productOptionsUrl: string;
+    branchOptionsUrl?: string;
 }) {
     const ready = context.branch !== null && context.product !== null;
     const form = useForm({
@@ -37,6 +41,8 @@ export function UpdatePricePage({
                     context={context}
                     pageUrl={pageUrl}
                     createProductUrl={createProductUrl}
+                    productOptionsUrl={productOptionsUrl}
+                    branchOptionsUrl={branchOptionsUrl}
                 />
                 {ready ? (
                     <form

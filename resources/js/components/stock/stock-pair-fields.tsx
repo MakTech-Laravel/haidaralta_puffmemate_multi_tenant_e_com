@@ -1,12 +1,7 @@
 import { Link, router } from '@inertiajs/react';
+import type { ReactNode } from 'react';
+import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import {
     isBranchLocked,
     isProductLocked,
@@ -18,11 +13,15 @@ export function StockPairFields({
     context,
     pageUrl,
     createProductUrl,
+    productOptionsUrl,
+    branchOptionsUrl,
     allowEmpty = false,
 }: {
     context: StockPageContext;
     pageUrl: string;
     createProductUrl: string;
+    productOptionsUrl: string;
+    branchOptionsUrl?: string;
     allowEmpty?: boolean;
 }) {
     const branchLocked = isBranchLocked(context.locked);
@@ -38,108 +37,77 @@ export function StockPairFields({
         });
     };
 
+    const productLabel = context.product
+        ? `${context.product.name}${context.product.sku ? ` · ${context.product.sku}` : ''}`
+        : null;
+
     return (
         <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
-                <Label>Branch</Label>
+                <Label htmlFor="stock-branch">Branch</Label>
                 {branchLocked && context.branch ? (
-                    <p className="bg-muted rounded-md border px-3 py-2 text-sm font-medium">
-                        {context.branch.name}
-                    </p>
-                ) : (
-                    <Select
+                    <LockedValue>{context.branch.name}</LockedValue>
+                ) : branchOptionsUrl ? (
+                    <InfiniteScrollCombobox
+                        id="stock-branch"
+                        optionsUrl={branchOptionsUrl}
                         value={
-                            context.branch
-                                ? String(context.branch.id)
-                                : allowEmpty
-                                  ? 'all'
-                                  : ''
+                            context.branch ? String(context.branch.id) : null
                         }
                         onValueChange={(value) =>
                             visit({
-                                branchId:
-                                    value === 'all' ? null : Number(value),
+                                branchId: value ? Number(value) : null,
                             })
                         }
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a branch" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {allowEmpty ? (
-                                <SelectItem value="all">All branches</SelectItem>
-                            ) : null}
-                            {context.branch_options.map((branch) => (
-                                <SelectItem
-                                    key={branch.id}
-                                    value={String(branch.id)}
-                                >
-                                    {branch.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                )}
+                        selectedLabel={context.branch?.name}
+                        placeholder="Select a branch"
+                        searchPlaceholder="Search branches…"
+                        emptyText="No branches found."
+                        noneLabel={allowEmpty ? 'All branches' : undefined}
+                        descriptionKey={null}
+                    />
+                ) : null}
             </div>
             <div className="grid gap-2">
                 <div className="flex items-center justify-between gap-2">
-                    <Label>Product</Label>
-                    <ButtonLink href={createProductUrl} />
+                    <Label htmlFor="stock-product">Product</Label>
+                    <Link
+                        href={createProductUrl}
+                        className="text-primary text-xs font-medium hover:underline"
+                    >
+                        Add product
+                    </Link>
                 </div>
                 {productLocked && context.product ? (
-                    <p className="bg-muted rounded-md border px-3 py-2 text-sm font-medium">
-                        {context.product.name}
-                        {context.product.sku
-                            ? ` · ${context.product.sku}`
-                            : ''}
-                    </p>
+                    <LockedValue>{productLabel}</LockedValue>
                 ) : (
-                    <Select
+                    <InfiniteScrollCombobox
+                        id="stock-product"
+                        optionsUrl={productOptionsUrl}
                         value={
-                            context.product
-                                ? String(context.product.id)
-                                : allowEmpty
-                                  ? 'all'
-                                  : ''
+                            context.product ? String(context.product.id) : null
                         }
                         onValueChange={(value) =>
                             visit({
-                                productId:
-                                    value === 'all' ? null : Number(value),
+                                productId: value ? Number(value) : null,
                             })
                         }
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a product" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {allowEmpty ? (
-                                <SelectItem value="all">All products</SelectItem>
-                            ) : null}
-                            {context.product_options.map((product) => (
-                                <SelectItem
-                                    key={product.id}
-                                    value={String(product.id)}
-                                >
-                                    {product.name}
-                                    {product.sku ? ` · ${product.sku}` : ''}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        selectedLabel={productLabel}
+                        placeholder="Select a product"
+                        searchPlaceholder="Search products…"
+                        emptyText="No products found."
+                        noneLabel={allowEmpty ? 'All products' : undefined}
+                    />
                 )}
             </div>
         </div>
     );
 }
 
-function ButtonLink({ href }: { href: string }) {
+function LockedValue({ children }: { children: ReactNode }) {
     return (
-        <Link
-            href={href}
-            className="text-primary text-xs font-medium hover:underline"
-        >
-            Add product
-        </Link>
+        <div className="bg-muted/60 flex h-9 items-center rounded-md border px-3 text-sm font-medium">
+            <span className="truncate">{children}</span>
+        </div>
     );
 }

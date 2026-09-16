@@ -18,6 +18,8 @@ export default function PlatformAddStockDiscount({
             pageUrl={StockController.discount.url()}
             updateUrl={StockController.updateDiscount.url()}
             discountTypes={discountTypes}
+            productOptionsUrl={StockController.productOptions.url()}
+            branchOptionsUrl={StockController.branchOptions.url()}
         />
     );
 }
