@@ -31,7 +31,7 @@ export default function CustomerLayout({
                 <div className="mx-auto container px-4 py-8 sm:px-6 sm:py-10">
                     <nav
                         aria-label="Breadcrumb"
-                        className="text-muted-foreground mb-6 text-base"
+                        className="text-muted-foreground text-base mb-6 sm:mb-10 md:mb-20"
                     >
                         <ol className="flex flex-wrap items-center gap-1.5">
                             {trail.map((item, index) => {
@@ -62,6 +62,7 @@ export default function CustomerLayout({
                                 );
                             })}
                         </ol>
+                        <div className="hidden lg:block h-0.5 w-full bg-border"></div>
                     </nav>
 
                     <div className="grid gap-10 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-14">

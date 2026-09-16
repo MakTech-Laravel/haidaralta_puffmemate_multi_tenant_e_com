@@ -15,7 +15,7 @@ type AccountCard = {
 const cards: AccountCard[] = [
     {
         label: 'Orders',
-        href: '/activity',
+        href: '/orders',
         image: '/images/customer/Vector.svg',
     },
     {
@@ -61,7 +61,7 @@ export default function CustomerDashboard() {
                     <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
                         From Your Account Dashboard, You Can Easily Check Your{' '}
                         <Link
-                            href="/activity"
+                            href="/orders"
                             prefetch
                             className="text-primary font-medium underline underline-offset-2"
                         >
@@ -77,7 +77,7 @@ export default function CustomerDashboard() {
                         </Link>
                         , And Track Your{' '}
                         <Link
-                            href="/activity"
+                            href="/orders"
                             prefetch
                             className="text-primary font-medium underline underline-offset-2"
                         >

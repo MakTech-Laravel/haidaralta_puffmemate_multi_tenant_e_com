@@ -18,10 +18,9 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Orders',
-        href: '/activity',
-        // Orders shares /activity until a dedicated orders route exists;
-        // My activity owns the active state on that path.
-        match: () => false,
+        href: '/orders',
+        match: (url) =>
+            url === '/orders' || url.startsWith('/orders?'),
     },
     {
         label: 'My activity',
