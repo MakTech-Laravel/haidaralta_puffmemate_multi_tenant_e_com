@@ -386,8 +386,8 @@ export function DiscountPage({
                                 </div>
 
                                 {hasDiscount ? (
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="grid gap-2">
+                                    <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+                                        <div className="grid min-w-0 gap-2">
                                             <Label>Start date</Label>
                                             <DatePicker
                                                 value={
@@ -408,7 +408,7 @@ export function DiscountPage({
                                                 }
                                             />
                                         </div>
-                                        <div className="grid gap-2">
+                                        <div className="grid min-w-0 gap-2">
                                             <Label>End date</Label>
                                             <DatePicker
                                                 value={

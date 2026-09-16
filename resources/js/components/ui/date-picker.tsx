@@ -58,8 +58,10 @@ export function DatePicker({
     const minDate = parseDateValue(min);
     const maxDate = parseDateValue(max);
 
+    const showClear = clearable && Boolean(selected);
+
     return (
-        <div className={cn('flex w-full items-center gap-1.5', className)}>
+        <div className={cn('relative w-full min-w-0', className)}>
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button
@@ -70,12 +72,13 @@ export function DatePicker({
                         aria-invalid={ariaInvalid}
                         aria-expanded={open}
                         className={cn(
-                            'border-input h-9 w-full min-w-0 justify-between gap-2 bg-transparent px-3 font-normal shadow-xs',
+                            'border-input h-9 w-full min-w-0 shrink justify-between gap-2 overflow-hidden bg-transparent px-3 font-normal shadow-xs',
                             'hover:bg-transparent',
+                            showClear && 'pr-16',
                             !selected && 'text-muted-foreground',
                         )}
                     >
-                        <span className="truncate">
+                        <span className="min-w-0 flex-1 truncate text-left">
                             {selected
                                 ? format(selected, 'PPP')
                                 : placeholder}
@@ -135,17 +138,18 @@ export function DatePicker({
                     />
                 </PopoverContent>
             </Popover>
-            {clearable && selected ? (
+            {showClear ? (
                 <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-9 shrink-0"
+                    className="absolute top-1/2 right-8 z-10 size-7 -translate-y-1/2"
                     disabled={disabled}
+                    onPointerDown={(event) => event.preventDefault()}
                     onClick={() => onChange('')}
                     aria-label="Clear date"
                 >
-                    <XIcon className="size-4" />
+                    <XIcon className="size-3.5" />
                 </Button>
             ) : null}
         </div>
