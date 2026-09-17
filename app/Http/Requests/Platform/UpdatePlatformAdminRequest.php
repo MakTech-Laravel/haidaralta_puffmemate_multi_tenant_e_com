@@ -13,7 +13,7 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
 use Spatie\Permission\PermissionRegistrar;
 
-class UpdatePlatformStaffRequest extends FormRequest
+class UpdatePlatformAdminRequest extends FormRequest
 {
     use NormalizesPhoneInput;
 
@@ -60,6 +60,8 @@ class UpdatePlatformStaffRequest extends FormRequest
                     ->where($teamKey, PlatformTeamResolver::PLATFORM_TEAM_ID),
             ],
             'is_active' => ['required', 'boolean'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_avatar' => ['sometimes', 'boolean'],
         ];
     }
 

@@ -6,6 +6,7 @@ paths:
   - app/Models/ProductImage.php
   - 'app/Models/{Category,Product}.php'
   - 'app/Models/Driver*.php'
+  - app/Models/User.php
 ---
 
 # Catalog
@@ -30,3 +31,6 @@ Adjustment quantity is the counted on-hand total and requires InventoryAdjustmen
 
 ## Other adjustment requires a typed reason_note
 reason_note is stored only when reason is Other. Named reasons (damaged, expired, etc.) keep reason_note null. New entry and Reduce never take a reason or note.
+
+## User avatars live on users.avatar
+Every user type stores the photo on users.avatar (public disk users/avatars, MediaUrl). Do not put avatar_path on driver_profiles; vehicle_image_path stays on the profile. Share auth.user.avatar as the resolved URL.

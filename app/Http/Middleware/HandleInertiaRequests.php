@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Enums\RoleEnum;
 use App\Models\Branch;
 use App\Models\User;
+use App\Support\MediaUrl;
 use App\Support\PortalAuth;
 use App\Support\Storefront\StorefrontCatalog;
 use Illuminate\Http\Request;
@@ -89,6 +90,7 @@ class HandleInertiaRequests extends Middleware
                     'roles' => $user->getRoleNames()->values()->all(),
                     'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
                     'is_super_admin' => $user->hasRole(RoleEnum::SUPER_ADMIN->value),
+                    'avatar' => MediaUrl::resolve($user->avatar, fallback: null),
                 ]),
             ],
             $user->user_type->value,

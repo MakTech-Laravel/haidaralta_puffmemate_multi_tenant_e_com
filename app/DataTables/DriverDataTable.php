@@ -145,7 +145,7 @@ class DriverDataTable extends AbstractDataTable
             'phone' => $model->phone,
             'email' => $model->email,
             'is_active' => (bool) $model->is_active,
-            'avatar_url' => MediaUrl::resolve($profile?->avatar_path, fallback: null),
+            'avatar_url' => MediaUrl::resolve($model->avatar, fallback: null),
             'vehicle_type' => $profile?->vehicle_type?->value,
             'vehicle_type_label' => $profile?->vehicle_type?->label(),
             'availability_status' => $profile?->availability_status?->value,

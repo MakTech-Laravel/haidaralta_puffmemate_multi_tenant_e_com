@@ -273,9 +273,9 @@ test('platform can store driver with address and avatar and sync branches', func
     $profile = $driver->driverProfile;
 
     expect($profile?->address)->toBe('12 Delivery Lane, Sydney')
-        ->and($profile?->avatar_path)->not->toBeNull();
+        ->and($driver->avatar)->not->toBeNull();
 
-    Storage::disk('public')->assertExists($profile->avatar_path);
+    Storage::disk('public')->assertExists($driver->avatar);
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.drivers.branches.sync', $driver), [
@@ -287,6 +287,31 @@ test('platform can store driver with address and avatar and sync branches', func
         ->where('driver_id', $driver->id)
         ->where('status', DriverAssignmentStatus::Active)
         ->count())->toBe(2);
+});
+
+test('platform can update a driver avatar onto users.avatar', function () {
+    Storage::fake('public');
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $profile = $driver->driverProfile;
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.drivers.update', $driver), [
+            'name' => $driver->name,
+            'phone' => $driver->phone,
+            'email' => $driver->email,
+            'vehicle_type' => $profile?->vehicle_type?->value ?? DriverVehicleType::Car->value,
+            'availability_status' => $profile?->availability_status?->value ?? DriverAvailabilityStatus::Offline->value,
+            'is_active' => true,
+            'avatar' => UploadedFile::fake()->image('driver-avatar.jpg'),
+        ])
+        ->assertRedirect();
+
+    $driver->refresh();
+
+    expect($driver->avatar)->not->toBeNull();
+    Storage::disk('public')->assertExists($driver->avatar);
 });
 
 test('driver list payload includes branch slug and effective availability from roster', function () {

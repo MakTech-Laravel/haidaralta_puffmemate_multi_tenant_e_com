@@ -12,7 +12,7 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
 use Spatie\Permission\PermissionRegistrar;
 
-class StorePlatformStaffRequest extends FormRequest
+class StorePlatformAdminRequest extends FormRequest
 {
     use NormalizesPhoneInput;
 
@@ -47,6 +47,7 @@ class StorePlatformStaffRequest extends FormRequest
                     ->where($teamKey, PlatformTeamResolver::PLATFORM_TEAM_ID),
             ],
             'is_active' => ['sometimes', 'boolean'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 

@@ -26,7 +26,6 @@ class DriverProfileFactory extends Factory
             'availability_status' => DriverAvailabilityStatus::Offline,
             'notes' => null,
             'address' => null,
-            'avatar_path' => null,
             'vehicle_image_path' => null,
         ];
     }

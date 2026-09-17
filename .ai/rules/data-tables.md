@@ -48,3 +48,6 @@ Non-action/image DataTable cells truncate with max-w-[14rem] and DataTableTrunca
 
 ## useDataTableQuery must not visit on mount
 useDataTableQuery must not router.get on mount. React Strict Mode double-invokes effects in Vite/dev, so never use a one-shot skip ref. Visit only when search differs from the last committed value, and skip when the built query already matches the current URL. Never serialize UI sentinels into filter[] (trashed=active, status=all); Spatie trashed is with|only or omitted.
+
+## User list avatars use users.avatar
+Image-first user columns (platform admins, drivers, and other user lists) read users.avatar and expose avatar_url via MediaUrl. Composite name+phone cells set meta.truncate: false. Do not read driver_profiles for avatars.

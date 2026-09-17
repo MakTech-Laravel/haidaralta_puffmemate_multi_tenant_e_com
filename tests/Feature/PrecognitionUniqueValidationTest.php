@@ -33,13 +33,13 @@ function precognitionHeaders(string $only): array
     ];
 }
 
-test('precognitive staff store returns 204 for an available phone without creating a user', function () {
+test('precognitive admin store returns 204 for an available phone without creating a user', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $before = User::query()->count();
 
     $this->actingAs($admin, 'platform')
         ->withHeaders(precognitionHeaders('phone'))
-        ->post(route('platform.staff.store'), [
+        ->post(route('platform.admins.store'), [
             'phone' => '0412987654',
         ])
         ->assertNoContent()
@@ -48,13 +48,13 @@ test('precognitive staff store returns 204 for an available phone without creati
     expect(User::query()->count())->toBe($before);
 });
 
-test('precognitive staff store returns 422 for a taken phone without creating a user', function () {
+test('precognitive admin store returns 422 for a taken phone without creating a user', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $before = User::query()->count();
 
     $this->actingAs($admin, 'platform')
         ->withHeaders(precognitionHeaders('phone'))
-        ->post(route('platform.staff.store'), [
+        ->post(route('platform.admins.store'), [
             'phone' => $admin->phone,
         ])
         ->assertUnprocessable()
@@ -64,12 +64,12 @@ test('precognitive staff store returns 422 for a taken phone without creating a 
     expect(User::query()->count())->toBe($before);
 });
 
-test('precognitive staff update ignores the current users phone', function () {
+test('precognitive admin update ignores the current users phone', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->withHeaders(precognitionHeaders('phone'))
-        ->put(route('platform.staff.update', $admin), [
+        ->put(route('platform.admins.update', $admin), [
             'phone' => $admin->phone,
         ])
         ->assertNoContent()

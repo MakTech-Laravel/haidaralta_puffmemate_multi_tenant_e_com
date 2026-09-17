@@ -293,7 +293,7 @@ class InventoryTransactionDataTable extends AbstractDataTable
 
         if ($this->portal === 'platform') {
             return match ($creator->user_type) {
-                UserType::PLATFORM => route('platform.staff.show', $creator),
+                UserType::PLATFORM => route('platform.admins.show', $creator),
                 UserType::BRANCH => route('platform.branch-staff.show', $creator),
                 default => null,
             };

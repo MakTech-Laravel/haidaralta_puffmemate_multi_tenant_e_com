@@ -209,7 +209,7 @@ test('stock transactions ledger filters by the selected product', function () {
             ->has('table.data.0.product_sku')
             ->has('table.data.0.branch_url')
             ->has('table.data.0.branch_name')
-            ->where('table.data.0.created_by_url', route('platform.staff.show', $this->admin)));
+            ->where('table.data.0.created_by_url', route('platform.admins.show', $this->admin)));
 
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.reports.stock-transactions', ['product' => $this->product->id]))
