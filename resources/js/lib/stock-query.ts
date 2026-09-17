@@ -57,10 +57,7 @@ export function stockSelectionQuery(
 }
 
 export type StockActionUrls = {
-    manage: string;
     transactions: string;
-    price: string;
-    discount: string;
 };
 
 export function stockPageUrl(
@@ -91,33 +88,21 @@ export function stockPageUrl(
 }
 
 /**
- * Row actions for a product row (product locked) or a branch row on a product
- * page (both locked). Transactions keeps the same selection as filters.
+ * Row action for the stock ledger. Daily stock, price, and discount edits
+ * live on Stock management → Manage (Catalog Manage with a known pair opens
+ * that page locked). Transactions keeps the same selection as filters.
  */
 export function stockActionItems(
     urls: StockActionUrls,
     params: {
         productId?: number | null;
         branchId?: number | null;
-        locked: StockLock;
     },
 ): Array<{ label: string; href: string }> {
     return [
-        { label: 'Add stock', href: stockPageUrl(urls.manage, params) },
         {
             label: 'Stock transactions',
-            href: stockPageUrl(urls.transactions, {
-                ...params,
-                locked: null,
-            }),
-        },
-        { label: 'Update price', href: stockPageUrl(urls.price, params) },
-        {
-            label: 'Add discount',
-            href: stockPageUrl(urls.discount, {
-                ...params,
-                locked: null,
-            }),
+            href: stockPageUrl(urls.transactions, params),
         },
     ];
 }

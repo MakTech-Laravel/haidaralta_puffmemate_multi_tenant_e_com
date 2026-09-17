@@ -103,13 +103,16 @@ class InventoryTransactionDataTable extends AbstractDataTable
                                 ->where('name', 'like', '%'.$term.'%')
                                 ->orWhere('sku', 'like', '%'.$term.'%')
                                 ->orWhere('slug', 'like', '%'.$term.'%'),
-                        )
-                        ->orWhereHas(
+                        );
+
+                    if ($this->scopedBranchId === null) {
+                        $builder->orWhereHas(
                             'branch',
                             fn (Builder $branches): Builder => $branches
                                 ->where('name', 'like', '%'.$term.'%')
                                 ->orWhere('slug', 'like', '%'.$term.'%'),
                         );
+                    }
                 });
             }),
             AllowedFilter::callback('branch_id', function (Builder $query, mixed $value): void {

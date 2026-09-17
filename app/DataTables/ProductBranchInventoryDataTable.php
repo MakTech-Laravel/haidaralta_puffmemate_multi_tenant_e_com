@@ -7,6 +7,7 @@ use App\Models\BranchProductPrice;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Support\BranchProductPriceDisplay;
+use App\Support\ProductManageRedirect;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -213,10 +214,7 @@ class ProductBranchInventoryDataTable extends AbstractDataTable
             'has_discount' => $priceDisplay['has_discount'],
             'discount_type' => $priceDisplay['discount_type'],
             'discount_price' => $priceDisplay['discount_price'],
-            'manage_url' => route('platform.branches.products.show', [
-                'branch' => $model->slug,
-                'product' => $this->product->slug,
-            ]),
+            'manage_url' => ProductManageRedirect::platformUrl($model, $this->product),
         ];
     }
 }

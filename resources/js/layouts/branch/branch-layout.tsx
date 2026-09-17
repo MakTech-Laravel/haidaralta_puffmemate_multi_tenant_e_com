@@ -20,7 +20,11 @@ export default function BranchLayout({
             logoHref={slug ? `/branch/${slug}/dashboard` : '/login'}
             sections={
                 slug
-                    ? buildBranchNav(slug, catalog.branch_can_view_categories)
+                    ? buildBranchNav(
+                          slug,
+                          catalog.branch_can_view_categories,
+                          catalog.show_bulk_import,
+                      )
                     : []
             }
             sidebarVariant="inset"

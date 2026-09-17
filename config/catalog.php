@@ -81,6 +81,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Bulk stock import (web)
+    |--------------------------------------------------------------------------
+    |
+    | When false, Bulk Import is hidden from platform and branch sidebars and
+    | stock/import routes abort 404. Pages and controllers stay in the
+    | codebase. Flip to true to restore web bulk import.
+    |
+    */
+
+    'show_bulk_import' => env('SHOW_BULK_IMPORT', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Product SKU prefix
     |--------------------------------------------------------------------------
     |

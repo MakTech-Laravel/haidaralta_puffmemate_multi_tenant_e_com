@@ -1,11 +1,11 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Network, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { Eye, Network, Pencil, RotateCcw, Settings2, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
-import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
@@ -35,7 +35,7 @@ import {
     isTransparentColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { stockActionItems } from '@/lib/stock-query';
+import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type ProductRow = {
     id: number;
@@ -218,6 +218,17 @@ export default function PlatformProductsIndex({
                         ...(canInventories
                             ? [
                                   {
+                                      label: 'Manage stock',
+                                      icon: Settings2,
+                                      href: stockPageUrl(
+                                          StockController.manage.url(),
+                                          {
+                                              productId: product.id,
+                                              locked: 'product',
+                                          },
+                                      ),
+                                  },
+                                  {
                                       label: 'Manage branches',
                                       icon: Network,
                                       href: BranchInventoryController.forProduct.url(
@@ -257,13 +268,10 @@ export default function PlatformProductsIndex({
                     const stockItems = canInventories
                         ? stockActionItems(
                               {
-                                  manage: StockController.manage.url(),
                                   transactions:
-                                      StockController.transactions.url(),
-                                  price: StockController.price.url(),
-                                  discount: DiscountController.index.url(),
+                                      StockTransactionController.index.url(),
                               },
-                              { productId: product.id, locked: 'product' },
+                              { productId: product.id },
                           )
                         : [];
 

@@ -34,8 +34,8 @@ final class StockPageContext
             };
         }
 
-        $branch = $forcedBranch ?? self::resolveBranch($request);
-        $product = self::resolveProduct($request);
+        $branch = $forcedBranch ?? self::optionalBranch($request);
+        $product = self::optionalProduct($request);
 
         if (in_array($locked, ['product', 'both'], true)) {
             abort_unless($product !== null, 404);
@@ -90,6 +90,16 @@ final class StockPageContext
             'branch_options' => self::branchOptions(),
             'product_options' => self::productOptions(),
         ];
+    }
+
+    public static function optionalBranch(Request $request): ?Branch
+    {
+        return self::resolveBranch($request);
+    }
+
+    public static function optionalProduct(Request $request): ?Product
+    {
+        return self::resolveProduct($request);
     }
 
     public static function requireBranch(Request $request, ?Branch $forcedBranch = null): Branch

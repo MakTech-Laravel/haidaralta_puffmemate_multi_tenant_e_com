@@ -2,19 +2,13 @@
 
 namespace App\Http\Controllers\Branch;
 
-use App\DataTables\InventoryTransactionDataTable;
-use App\Enums\DiscountType;
 use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Stock\AdjustStockRequest;
 use App\Http\Requests\Stock\ImportStockRequest;
-use App\Http\Requests\Stock\UpdateStockPriceRequest;
 use App\Models\Branch;
-use App\Models\BranchProductPrice;
-use App\Models\Product;
-use App\Services\Inventory\BranchPricingService;
 use App\Services\Inventory\InventoryService;
+use App\Support\BranchProductShowPayload;
 use App\Support\CatalogReturnTo;
 use App\Support\StockPageContext;
 use App\Support\Toast;
@@ -24,59 +18,63 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
-use InvalidArgumentException;
 
 class StockController extends Controller
 {
     public function __construct(
         private InventoryService $inventory,
-        private BranchPricingService $pricing,
     ) {}
 
     public function manage(Request $request): Response
     {
         $branch = $this->currentBranch();
+        $context = StockPageContext::fromRequest($request, $branch);
+        $product = StockPageContext::optionalProduct($request);
+
+        if ($product === null) {
+            return Inertia::render('branch/stock/manage', [
+                'context' => $context,
+                'product' => null,
+                'adjustmentReasons' => InventoryAdjustmentReason::options(),
+                'transactionTypes' => BranchProductShowPayload::transactionTypes(),
+                'discountTypes' => BranchProductShowPayload::discountTypes(),
+                'createProductUrl' => route('branch.products.create', [
+                    'branch' => $branch,
+                    'return_to' => CatalogReturnTo::currentUrl($request),
+                ]),
+                'inventoryUrl' => null,
+                'priceUrl' => null,
+                'transactionsUrl' => null,
+                'allBranchesUrl' => null,
+                'branchProductsUrl' => null,
+            ]);
+        }
 
         return Inertia::render('branch/stock/manage', [
-            'context' => StockPageContext::fromRequest($request, $branch),
+            'context' => $context,
+            'product' => BranchProductShowPayload::product($branch, $product),
+            'adjustmentReasons' => InventoryAdjustmentReason::options(),
+            'transactionTypes' => BranchProductShowPayload::transactionTypes(),
+            'discountTypes' => BranchProductShowPayload::discountTypes(),
             'createProductUrl' => route('branch.products.create', [
                 'branch' => $branch,
                 'return_to' => CatalogReturnTo::currentUrl($request),
             ]),
-            'adjustmentReasons' => InventoryAdjustmentReason::options(),
+            'inventoryUrl' => route('branch.products.inventory', [$branch, $product]),
+            'priceUrl' => route('branch.products.prices', [$branch, $product]),
+            'transactionsUrl' => route('branch.reports.stock-transactions', [
+                'branch' => $branch,
+                'product' => $product->id,
+            ]),
+            'allBranchesUrl' => null,
+            'branchProductsUrl' => route('branch.products.index', $branch),
         ]);
-    }
-
-    public function adjust(AdjustStockRequest $request): RedirectResponse
-    {
-        $branch = $this->currentBranch();
-        abort_unless((int) $request->validated('branch_id') === $branch->id, 404);
-
-        $product = Product::query()->findOrFail((int) $request->validated('product_id'));
-        $inventory = $this->inventory->firstOrCreate($branch, $product);
-
-        try {
-            $this->inventory->adjust(
-                $inventory,
-                InventoryTransactionType::from($request->validated('type')),
-                (int) $request->validated('quantity'),
-                $request->user('branch'),
-                reason: InventoryAdjustmentReason::fromNullable($request->validated('reason')),
-                reasonNote: InventoryAdjustmentReason::noteFrom($request->validated('reason_note')),
-            );
-        } catch (InvalidArgumentException $exception) {
-            Toast::error($exception->getMessage());
-
-            return redirect()->back();
-        }
-
-        Toast::success('Stock updated.');
-
-        return redirect()->back();
     }
 
     public function import(Request $request): Response
     {
+        abort_unless((bool) config('catalog.show_bulk_import'), 404);
+
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/stock/import', [
@@ -90,6 +88,8 @@ class StockController extends Controller
 
     public function storeImport(ImportStockRequest $request): RedirectResponse
     {
+        abort_unless((bool) config('catalog.show_bulk_import'), 404);
+
         $branch = $this->currentBranch();
         $products = StockPageContext::requireProducts($request->validated('product_ids'));
         $quantity = (int) $request->validated('quantity');
@@ -111,83 +111,9 @@ class StockController extends Controller
         return redirect()->back();
     }
 
-    public function price(Request $request): Response
-    {
-        $branch = $this->currentBranch();
-
-        return Inertia::render('branch/stock/price', [
-            'context' => StockPageContext::fromRequest($request, $branch),
-            'createProductUrl' => route('branch.products.create', [
-                'branch' => $branch,
-                'return_to' => CatalogReturnTo::currentUrl($request),
-            ]),
-        ]);
-    }
-
-    public function updatePrice(UpdateStockPriceRequest $request): RedirectResponse
-    {
-        $branch = $this->currentBranch();
-        abort_unless((int) $request->validated('branch_id') === $branch->id, 404);
-
-        $product = Product::query()->findOrFail((int) $request->validated('product_id'));
-        $existing = $this->existingPrice($branch, $product);
-
-        $this->pricing->upsert($branch, $product, [
-            'selling_price' => $request->validated('selling_price'),
-            'discount_type' => $existing?->discount_type ?? DiscountType::None,
-            'discount_price' => $existing?->discount_price,
-            'start_date' => $existing?->start_date?->toDateString(),
-            'end_date' => $existing?->end_date?->toDateString(),
-            'status' => true,
-        ]);
-
-        Toast::success('Price updated.');
-
-        return redirect()->back();
-    }
-
-    public function transactions(Request $request): Response
-    {
-        $branch = $this->currentBranch();
-        $this->mergeSelectionFilters($request);
-
-        return Inertia::render('branch/stock/transactions', [
-            'table' => InventoryTransactionDataTable::makeFor($request, $branch->id, 'branch', $branch->slug),
-            'context' => StockPageContext::fromRequest($request, $branch),
-        ]);
-    }
-
     public function productOptions(Request $request): JsonResponse
     {
         return response()->json(StockPageContext::paginatedProductOptions($request));
-    }
-
-    private function existingPrice(Branch $branch, Product $product): ?BranchProductPrice
-    {
-        return BranchProductPrice::query()
-            ->where('branch_id', $branch->id)
-            ->where('product_id', $product->id)
-            ->whereNull('variant_id')
-            ->where('status', true)
-            ->first();
-    }
-
-    private function mergeSelectionFilters(Request $request): void
-    {
-        $filters = $request->input('filter', []);
-        $filters = is_array($filters) ? $filters : [];
-
-        if ($request->filled('product') && empty($filters['product_id'])) {
-            $product = Product::query()->find($request->integer('product'))
-                ?? Product::query()->where('slug', $request->string('product')->toString())->first();
-
-            abort_unless($product !== null, 404);
-            $filters['product_id'] = $product->id;
-        } elseif ($request->filled('product')) {
-            StockPageContext::fromRequest($request, $this->currentBranch());
-        }
-
-        $request->merge(['filter' => $filters]);
     }
 
     private function currentBranch(): Branch

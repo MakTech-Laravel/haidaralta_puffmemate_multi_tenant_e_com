@@ -1,10 +1,14 @@
-import type { ReactNode } from 'react';
+import { Link } from '@inertiajs/react';
+import { format, isValid, parseISO } from 'date-fns';
+import { Check, Copy } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { PRODUCT_TAG_OPTIONS } from '@/components/platform/product-form';
 import {
     ProductGallery,
     type ProductGalleryImage,
 } from '@/components/product-gallery';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -14,166 +18,311 @@ import {
 } from '@/components/ui/card';
 import {
     colorPickerStyle,
+    colorPickerSummary,
     isTransparentColorPickerValue,
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
 
-function DetailItem({
-    label,
-    value,
-}: {
-    label: string;
-    value: ReactNode;
-}) {
-    return (
-        <div className="flex flex-col gap-1">
-            <dt className="text-muted-foreground text-sm">{label}</dt>
-            <dd className="text-sm font-medium">{value}</dd>
-        </div>
-    );
-}
+type ProductCategory = {
+    id: number;
+    name: string;
+    slug: string;
+};
 
-function categoryLabels(categoryName: string): string[] {
-    return categoryName
-        .split(',')
-        .map((name) => name.trim())
-        .filter(Boolean);
-}
+type ProductSpecificationRow = {
+    label: string;
+    value: string;
+};
 
 type BranchProductSummaryProps = {
     name: string;
     sku: string | null;
+    slug: string;
+    brand?: string | null;
     description?: string | null;
-    categoryName: string;
+    status: boolean;
     imageUrl?: string | null;
     colorCode?: ColorPickerValue | null;
     gallery?: ProductGalleryImage[];
-    quantity: number;
-    missingPrice?: boolean;
+    categories?: ProductCategory[];
+    categoryName: string;
+    tags?: string[];
+    specifications?: ProductSpecificationRow[];
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    createdByName?: string | null;
+    categoryHref?: (slug: string) => string;
 };
+
+function tagLabel(value: string): string {
+    return (
+        PRODUCT_TAG_OPTIONS.find((option) => option.value === value)?.label ??
+        value
+    );
+}
+
+function formatTimestamp(value: string | null | undefined): string {
+    if (!value) {
+        return '—';
+    }
+
+    const parsed = parseISO(value);
+
+    return isValid(parsed) ? format(parsed, 'd MMM yyyy, HH:mm') : value;
+}
+
+function Fact({
+    label,
+    value,
+    action,
+}: {
+    label: string;
+    value: ReactNode;
+    action?: ReactNode;
+}) {
+    return (
+        <div className="flex min-w-0 flex-col gap-1">
+            <dt className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                {label}
+            </dt>
+            <dd className="flex items-start justify-between gap-2 text-sm font-medium">
+                <span className="min-w-0 wrap-break-word">{value}</span>
+                {action}
+            </dd>
+        </div>
+    );
+}
+
+function CopyValueButton({ value, label }: { value: string; label: string }) {
+    const [copied, setCopied] = useState(false);
+
+    return (
+        <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0"
+            aria-label={`Copy ${label}`}
+            onClick={() => {
+                void navigator.clipboard.writeText(value).then(() => {
+                    setCopied(true);
+                    window.setTimeout(() => setCopied(false), 1600);
+                });
+            }}
+        >
+            {copied ? (
+                <Check className="size-3.5" />
+            ) : (
+                <Copy className="size-3.5" />
+            )}
+        </Button>
+    );
+}
 
 export function BranchProductSummary({
     name,
     sku,
+    slug,
+    brand = null,
     description,
-    categoryName,
+    status,
     imageUrl = null,
     colorCode = null,
     gallery = [],
-    quantity,
-    missingPrice = false,
+    categories = [],
+    categoryName,
+    tags = [],
+    specifications = [],
+    createdAt = null,
+    updatedAt = null,
+    createdByName = null,
+    categoryHref,
 }: BranchProductSummaryProps) {
-    const categories = categoryLabels(categoryName);
     const normalizedColor = normalizeCatalogColorPickerValue(colorCode);
     const transparent = isTransparentColorPickerValue(normalizedColor);
 
     return (
-        <div className="space-y-6">
-            <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-                <Card className="h-full gap-4 py-5 shadow-none">
-                    <CardHeader className="px-5">
-                        <CardTitle className="text-base">
-                            Product details
-                        </CardTitle>
-                        <CardDescription>
-                            Catalog information for this product
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="px-5">
-                        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-                            <Avatar
-                                className="size-20 rounded-xl border border-border/70"
-                                style={
-                                    transparent
-                                        ? undefined
-                                        : colorPickerStyle(normalizedColor)
-                                }
-                            >
-                                {imageUrl ? (
-                                    <AvatarImage
-                                        src={imageUrl}
-                                        alt={name}
-                                        className="object-contain p-1"
-                                    />
-                                ) : null}
-                                <AvatarFallback className="rounded-xl bg-transparent text-base">
-                                    {name.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                            </Avatar>
-                            <dl className="grid min-w-0 flex-1 gap-5 sm:grid-cols-2">
-                                <DetailItem label="SKU" value={sku ?? '—'} />
-                                <DetailItem
-                                    label="Categories"
-                                    value={
-                                        categories.length > 0 ? (
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {categories.map((category) => (
-                                                    <Badge
-                                                        key={category}
-                                                        variant="secondary"
-                                                    >
-                                                        {category}
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            '—'
-                                        )
-                                    }
-                                />
-                                <div className="sm:col-span-2">
-                                    <DetailItem
-                                        label="Description"
-                                        value={
-                                            <span className="whitespace-pre-wrap">
-                                                {description?.trim() || '—'}
-                                            </span>
-                                        }
-                                    />
-                                </div>
-                            </dl>
-                        </div>
-                    </CardContent>
-                </Card>
+        <Card className="gap-4 py-5 shadow-sm">
+            <CardHeader className="px-5">
+                <CardTitle>Listing details</CardTitle>
+                <CardDescription>
+                    What customers and operators see for this SKU
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5 px-5">
+                <div className="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)]">
+                    <ProductGallery
+                        card={false}
+                        layout="tile"
+                        productName={name}
+                        primaryUrl={imageUrl}
+                        images={gallery}
+                        colorCode={normalizedColor}
+                    />
 
-                <Card className="h-full gap-4 py-5 shadow-none">
-                    <CardHeader className="px-5">
-                        <CardTitle className="text-base">
-                            Branch stock
-                        </CardTitle>
-                        <CardDescription>
-                            Quantity and pricing for this branch
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-1 flex-col gap-5 px-5">
-                        <DetailItem
-                            label="Stock"
-                            value={
-                                <span className="tabular-nums">{quantity}</span>
-                            }
-                        />
-                        <DetailItem
-                            label="Price"
-                            value={
-                                missingPrice ? (
-                                    <span className="text-muted-foreground">
-                                        Missing
+                    <div className="min-w-0 space-y-5">
+                        <p className="text-sm leading-relaxed">
+                            {description?.trim() || (
+                                <span className="text-muted-foreground">
+                                    No description yet.
+                                </span>
+                            )}
+                        </p>
+
+                        <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <Fact
+                                label="SKU"
+                                value={
+                                    <span className="font-mono">
+                                        {sku ?? '—'}
                                     </span>
-                                ) : (
-                                    'On file'
-                                )
-                            }
-                        />
-                    </CardContent>
-                </Card>
-            </div>
+                                }
+                                action={
+                                    sku ? (
+                                        <CopyValueButton
+                                            value={sku}
+                                            label="SKU"
+                                        />
+                                    ) : null
+                                }
+                            />
+                            <Fact
+                                label="Slug"
+                                value={
+                                    <span className="font-mono">/{slug}</span>
+                                }
+                                action={
+                                    <CopyValueButton
+                                        value={slug}
+                                        label="slug"
+                                    />
+                                }
+                            />
+                            <Fact label="Brand" value={brand ?? '—'} />
+                            <Fact
+                                label="Status"
+                                value={status ? 'Active' : 'Inactive'}
+                            />
+                            <Fact
+                                label="Image background"
+                                value={
+                                    <span className="inline-flex items-center gap-2">
+                                        {transparent ? null : (
+                                            <span
+                                                className="size-5 shrink-0 rounded-md border border-border/70"
+                                                style={colorPickerStyle(
+                                                    normalizedColor,
+                                                )}
+                                                aria-hidden
+                                            />
+                                        )}
+                                        {colorPickerSummary(normalizedColor)}
+                                    </span>
+                                }
+                            />
+                            <Fact
+                                label="Updated"
+                                value={formatTimestamp(updatedAt)}
+                            />
+                            <Fact
+                                label="Created"
+                                value={formatTimestamp(createdAt)}
+                            />
+                            <Fact
+                                label="Created by"
+                                value={createdByName ?? '—'}
+                            />
+                        </dl>
 
-            <ProductGallery
-                productName={name}
-                images={gallery}
-                colorCode={normalizedColor}
-            />
-        </div>
+                        <div className="space-y-2">
+                            <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                                Categories
+                            </p>
+                            {categories.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {categories.map((category) => {
+                                        const href = categoryHref?.(
+                                            category.slug,
+                                        );
+
+                                        if (href) {
+                                            return (
+                                                <Badge
+                                                    key={category.id}
+                                                    variant="secondary"
+                                                    asChild
+                                                >
+                                                    <Link href={href}>
+                                                        {category.name}
+                                                    </Link>
+                                                </Badge>
+                                            );
+                                        }
+
+                                        return (
+                                            <Badge
+                                                key={category.id}
+                                                variant="secondary"
+                                            >
+                                                {category.name}
+                                            </Badge>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <p className="text-sm">{categoryName || '—'}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                                Merchandising tags
+                            </p>
+                            {tags.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {tags.map((tag) => (
+                                        <Badge key={tag} variant="outline">
+                                            {tagLabel(tag)}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-muted-foreground text-sm">
+                                    No storefront tags
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-3 border-t pt-5">
+                    <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                        Specifications
+                    </p>
+                    {specifications.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+                            {specifications.map((row) => (
+                                <div
+                                    key={`${row.label}-${row.value}`}
+                                    className="bg-muted/40 flex min-w-0 flex-col gap-1 rounded-lg px-3 py-2.5"
+                                >
+                                    <p className="text-muted-foreground truncate text-[11px] font-medium tracking-wide uppercase">
+                                        {row.label}
+                                    </p>
+                                    <p className="text-sm leading-snug font-semibold wrap-break-word">
+                                        {row.value}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">
+                            No specifications yet.
+                        </p>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
     );
 }
