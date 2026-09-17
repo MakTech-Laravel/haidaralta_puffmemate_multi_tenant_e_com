@@ -182,7 +182,9 @@ test('stock transactions ledger filters by the selected product', function () {
             ->missing('table.filterOptions.branches')
             ->has('table.filterOptions.types')
             ->has('table.data.0.product_url')
+            ->has('table.data.0.product_sku')
             ->has('table.data.0.branch_url')
+            ->has('table.data.0.branch_name')
             ->where('table.data.0.created_by_url', route('platform.staff.show', $this->admin)));
 
     $this->actingAs($this->admin, 'platform')
@@ -194,6 +196,53 @@ test('stock transactions ledger filters by the selected product', function () {
             ->where('table.data.0.product_url', route('platform.products.show', $this->product))
             ->where('table.data.0.branch_url', route('platform.branches.show', $this->branch))
             ->where('table.filterOptions.selected_product.id', $this->product->id));
+});
+
+test('stock transactions ledger lists product and branch combinations and filters by branch', function () {
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $other = Product::factory()->create(['sku' => 'COMBO-SKU']);
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$this->branch, $this->product]), [
+            'type' => 'stock_in',
+            'quantity' => 2,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$melbourne, $other]), [
+            'type' => 'stock_in',
+            'quantity' => 5,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.stock.transactions'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/stock/transactions')
+            ->where('table.meta.total', 2)
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['product_name'] === $this->product->name
+                    && $row['product_sku'] === $this->product->sku
+                    && $row['branch_name'] === $this->branch->name,
+            ) && collect($rows)->contains(
+                fn ($row) => $row['product_name'] === $other->name
+                    && $row['product_sku'] === 'COMBO-SKU'
+                    && $row['branch_name'] === $melbourne->name,
+            )));
+
+    $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.stock.transactions', [
+            'branch' => $melbourne->id,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.meta.total', 1)
+            ->where('table.data.0.product_name', $other->name)
+            ->where('table.data.0.product_sku', 'COMBO-SKU')
+            ->where('table.data.0.branch_name', $melbourne->name)
+            ->where('table.filterOptions.selected_branch.id', $melbourne->id));
 });
 
 test('stock transactions include the adjustment reason label and signed variance', function () {

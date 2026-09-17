@@ -150,19 +150,6 @@ export function StockTransactionsPage({
 
     const columns = useMemo<ColumnDef<TransactionRow>[]>(
         () => [
-            ...(hideBranchFilter
-                ? []
-                : [
-                      {
-                          accessorKey: 'branch_name',
-                          header: 'Branch',
-                          cell: ({ row }) => (
-                              <NameLink href={row.original.branch_url}>
-                                  {row.original.branch_name}
-                              </NameLink>
-                          ),
-                      } satisfies ColumnDef<TransactionRow>,
-                  ]),
             {
                 accessorKey: 'product_name',
                 header: 'Product',
@@ -182,6 +169,19 @@ export function StockTransactionsPage({
                     </div>
                 ),
             },
+            ...(hideBranchFilter
+                ? []
+                : [
+                      {
+                          accessorKey: 'branch_name',
+                          header: 'Branch',
+                          cell: ({ row }) => (
+                              <NameLink href={row.original.branch_url}>
+                                  {row.original.branch_name}
+                              </NameLink>
+                          ),
+                      } satisfies ColumnDef<TransactionRow>,
+                  ]),
             {
                 accessorKey: 'type_label',
                 header: ({ column }) => (
@@ -317,10 +317,39 @@ export function StockTransactionsPage({
                         <DataTableToolbar
                             search={query.search}
                             onSearchChange={query.setSearch}
-                            searchPlaceholder="Search product, SKU, or branch…"
+                            searchPlaceholder={
+                                hideBranchFilter
+                                    ? 'Search product or SKU…'
+                                    : 'Search product, SKU, or branch…'
+                            }
                             onClear={query.clearFilters}
                             filters={
                                 <>
+                                    <div className="grid gap-2">
+                                        <Label>Product</Label>
+                                        <InfiniteScrollCombobox
+                                            optionsUrl={productOptionsUrl}
+                                            value={
+                                                productFilter === 'all'
+                                                    ? null
+                                                    : productFilter
+                                            }
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'product_id',
+                                                    value,
+                                                )
+                                            }
+                                            selectedLabel={
+                                                selectedProduct?.name ?? null
+                                            }
+                                            placeholder="All products"
+                                            searchPlaceholder="Search products…"
+                                            emptyText="No product found."
+                                            noneLabel="All products"
+                                            className="w-56"
+                                        />
+                                    </div>
                                     {hideBranchFilter || !branchOptionsUrl ? null : (
                                         <div className="grid gap-2">
                                             <Label>Branch</Label>
@@ -349,31 +378,6 @@ export function StockTransactionsPage({
                                             />
                                         </div>
                                     )}
-                                    <div className="grid gap-2">
-                                        <Label>Product</Label>
-                                        <InfiniteScrollCombobox
-                                            optionsUrl={productOptionsUrl}
-                                            value={
-                                                productFilter === 'all'
-                                                    ? null
-                                                    : productFilter
-                                            }
-                                            onValueChange={(value) =>
-                                                query.setFilter(
-                                                    'product_id',
-                                                    value,
-                                                )
-                                            }
-                                            selectedLabel={
-                                                selectedProduct?.name ?? null
-                                            }
-                                            placeholder="All products"
-                                            searchPlaceholder="Search products…"
-                                            emptyText="No product found."
-                                            noneLabel="All products"
-                                            className="w-56"
-                                        />
-                                    </div>
                                     <div className="grid gap-2">
                                         <Label>Type</Label>
                                         <Select

@@ -103,7 +103,9 @@ export function ManageStockPage({
                         description={
                             hasPair
                                 ? `Inventory for ${context.branch?.name ?? 'this branch'}`
-                                : 'Pick a branch and a product to manage stock, selling price, and discounts.'
+                                : lockBranch
+                                  ? 'Pick a product to manage stock, selling price, and discounts.'
+                                  : 'Pick a branch and a product to manage stock, selling price, and discounts.'
                         }
                     />
                     {hasPair ? (
@@ -141,14 +143,18 @@ export function ManageStockPage({
                 <section className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6">
                     <div className="space-y-1">
                         <h2 className="text-base font-semibold tracking-tight">
-                            Branch and product
+                            {lockBranch ? 'Product' : 'Branch and product'}
                         </h2>
                         <p className="text-muted-foreground text-sm">
                             {hasPair
                                 ? pairLocked
                                     ? 'Stock, selling price, and discounts for this listing.'
-                                    : 'Change either picker to load a different listing.'
-                                : 'Select one of each. Inventory & pricing appear after both are chosen.'}
+                                    : lockBranch
+                                      ? 'Change the product to load a different listing.'
+                                      : 'Change either picker to load a different listing.'
+                                : lockBranch
+                                  ? 'Select a product. Inventory & pricing appear after it is chosen.'
+                                  : 'Select one of each. Inventory & pricing appear after both are chosen.'}
                         </p>
                     </div>
                     <div className="mt-5">

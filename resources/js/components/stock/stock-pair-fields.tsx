@@ -67,32 +67,34 @@ export function StockPairFields({
     };
 
     return (
-        <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid min-w-0 gap-2">
-                <div className="flex h-8 items-center">
-                    <Label htmlFor="stock-manage-branch">Branch</Label>
+        <div className={lockBranch ? 'grid min-w-0 gap-4' : 'grid gap-4 sm:grid-cols-2'}>
+            {lockBranch ? null : (
+                <div className="grid min-w-0 gap-2">
+                    <div className="flex h-8 items-center">
+                        <Label htmlFor="stock-manage-branch">Branch</Label>
+                    </div>
+                    {branchLocked && context.branch ? (
+                        <LockedValue>{context.branch.name}</LockedValue>
+                    ) : (
+                        <InfiniteScrollCombobox
+                            id="stock-manage-branch"
+                            optionsUrl={branchOptionsUrl ?? ''}
+                            value={
+                                context.branch ? String(context.branch.id) : null
+                            }
+                            selectedLabel={context.branch?.name}
+                            onValueChange={(value) =>
+                                visit({
+                                    branchId: value ? Number(value) : null,
+                                })
+                            }
+                            placeholder="Select a branch"
+                            searchPlaceholder="Search branches"
+                            emptyText="No branches found."
+                        />
+                    )}
                 </div>
-                {branchLocked && context.branch ? (
-                    <LockedValue>{context.branch.name}</LockedValue>
-                ) : (
-                    <InfiniteScrollCombobox
-                        id="stock-manage-branch"
-                        optionsUrl={branchOptionsUrl ?? ''}
-                        value={
-                            context.branch ? String(context.branch.id) : null
-                        }
-                        selectedLabel={context.branch?.name}
-                        onValueChange={(value) =>
-                            visit({
-                                branchId: value ? Number(value) : null,
-                            })
-                        }
-                        placeholder="Select a branch"
-                        searchPlaceholder="Search branches"
-                        emptyText="No branches found."
-                    />
-                )}
-            </div>
+            )}
             <div className="grid min-w-0 gap-2">
                 <div className="flex h-8 items-center justify-between gap-2">
                     <Label htmlFor="stock-manage-product">Product</Label>

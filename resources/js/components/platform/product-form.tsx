@@ -303,7 +303,7 @@ export function ProductForm({
             return;
         }
 
-        const nextSlug = slugify(data.name);
+            const nextSlug = slugify(data.name);
 
         if (nextSlug !== data.slug) {
             setData('slug', nextSlug);
@@ -422,15 +422,15 @@ export function ProductForm({
 
     return (
         <form onSubmit={submit} className="space-y-6">
-            {showBranchNotice ? (
+                    {showBranchNotice ? (
                 <Alert className="border-primary/20 bg-primary/5">
                     <AlertTitle>Shared catalog</AlertTitle>
-                    <AlertDescription>
+                            <AlertDescription>
                         Active products are available at every branch. Set stock
                         and price from Catalog Manage after creating the listing.
-                    </AlertDescription>
-                </Alert>
-            ) : null}
+                            </AlertDescription>
+                        </Alert>
+                    ) : null}
 
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]">
                 <section
@@ -513,7 +513,7 @@ export function ProductForm({
                                                         return (
                                                             <CommandItem
                                                                 key={option.id}
-                                                                value={
+                            value={
                                                                     option.name
                                                                 }
                                                                 onSelect={() =>
@@ -530,7 +530,7 @@ export function ProductForm({
                                                                             : 'opacity-0',
                                                                     )}
                                                                 />
-                                                                {option.name}
+                                            {option.name}
                                                             </CommandItem>
                                                         );
                                                     },
@@ -546,7 +546,7 @@ export function ProductForm({
                                     errors['category_ids.0']
                                 }
                             />
-                        </div>
+                    </div>
 
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="name">Name</Label>
@@ -570,9 +570,9 @@ export function ProductForm({
                         </div>
 
                         <div className="grid gap-5 sm:grid-cols-2">
-                            <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2">
                                 <div className="flex items-center justify-between gap-2">
-                                    <Label htmlFor="slug">Slug</Label>
+                            <Label htmlFor="slug">Slug</Label>
                                     <Button
                                         type="button"
                                         variant="ghost"
@@ -594,28 +594,28 @@ export function ProductForm({
                                         Generate
                                     </Button>
                                 </div>
-                                <Input
-                                    id="slug"
-                                    value={data.slug}
-                                    onChange={(event) => {
-                                        setSlugTouched(true);
+                            <Input
+                                id="slug"
+                                value={data.slug}
+                                onChange={(event) => {
+                                    setSlugTouched(true);
                                         setSuggestionQuery(event.target.value);
-                                        setData('slug', event.target.value);
-                                    }}
+                                    setData('slug', event.target.value);
+                                }}
                                     onBlur={() => {
                                         if (data.slug.trim() !== '') {
                                             validate('slug');
                                         }
                                     }}
-                                    required
+                                required
                                     placeholder="e.g. air-pro-kit"
-                                />
-                                <InputError message={errors.slug} />
-                            </div>
+                            />
+                            <InputError message={errors.slug} />
+                    </div>
 
-                            <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2">
                                 <div className="flex items-center justify-between gap-2">
-                                    <Label htmlFor="sku">SKU</Label>
+                        <Label htmlFor="sku">SKU</Label>
                                     <Button
                                         type="button"
                                         variant="ghost"
@@ -639,21 +639,21 @@ export function ProductForm({
                                         Generate
                                     </Button>
                                 </div>
-                                <Input
-                                    id="sku"
-                                    value={data.sku}
+                        <Input
+                            id="sku"
+                            value={data.sku}
                                     onChange={(event) => {
                                         setSkuTouched(true);
                                         setData('sku', event.target.value);
                                     }}
-                                    onBlur={() => {
-                                        if (data.sku.trim() !== '') {
-                                            validate('sku');
-                                        }
-                                    }}
+                            onBlur={() => {
+                                if (data.sku.trim() !== '') {
+                                    validate('sku');
+                                }
+                            }}
                                     placeholder={`e.g. ${catalog.sku_prefix}-AIR-PRO`}
-                                />
-                                <InputError message={errors.sku} />
+                        />
+                        <InputError message={errors.sku} />
                             </div>
                         </div>
 
@@ -730,25 +730,25 @@ export function ProductForm({
                                 placeholder="e.g. PuffMeMate"
                             />
                             <InputError message={errors.brand} />
-                        </div>
+                    </div>
 
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea
-                                id="description"
-                                value={data.description}
-                                onChange={(event) =>
+                    <div className="flex flex-col gap-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                            id="description"
+                            value={data.description}
+                            onChange={(event) =>
                                     setData(
                                         'description',
                                         event.target.value,
                                     )
-                                }
+                            }
                                 placeholder="Tell customers what makes this product stand out"
-                                rows={4}
+                            rows={4}
                                 className="min-h-28 resize-y"
-                            />
-                            <InputError message={errors.description} />
-                        </div>
+                        />
+                        <InputError message={errors.description} />
+                    </div>
 
                         {branchOpsFields ? (
                             <div className="grid gap-5 sm:grid-cols-2">
@@ -1055,7 +1055,7 @@ export function ProductForm({
                                                     : 'border-border/70 bg-muted/20 hover:bg-muted/40',
                                             )}
                                         >
-                                            <Checkbox
+                        <Checkbox
                                                 id={`tag-${option.value}`}
                                                 checked={checked}
                                                 onCheckedChange={() =>
@@ -1097,7 +1097,7 @@ export function ProductForm({
                                     onClick={() => setData('status', true)}
                                 >
                                     <span className="text-sm font-medium">
-                                        Active
+                            Active
                                     </span>
                                     <span className="text-muted-foreground text-xs">
                                         Visible in the catalog and storefront.
@@ -1123,7 +1123,7 @@ export function ProductForm({
                                     </span>
                                 </button>
                             </div>
-                            <InputError message={errors.status} />
+                        <InputError message={errors.status} />
                         </div>
                     </div>
 
@@ -1228,7 +1228,7 @@ export function ProductForm({
                                             aria-label="Remove specification row"
                                         >
                                             <Trash2 className="size-4" />
-                                        </Button>
+                    </Button>
                                     </div>
                                 ))}
                             </div>
@@ -1240,9 +1240,9 @@ export function ProductForm({
             </div>
 
             <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-                <Button variant="secondary" asChild>
-                    <Link href={cancelHref}>Cancel</Link>
-                </Button>
+                    <Button variant="secondary" asChild>
+                        <Link href={cancelHref}>Cancel</Link>
+                    </Button>
                 <Button type="submit" disabled={processing}>
                     {processing ? <Spinner /> : null}
                     {submitLabel ?? (isEdit ? 'Save changes' : 'Create product')}

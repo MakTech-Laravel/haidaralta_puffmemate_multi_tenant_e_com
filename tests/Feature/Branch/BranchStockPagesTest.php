@@ -145,7 +145,17 @@ test('branch stock transactions only list this branch ledger', function () {
             ->where('table.data.0.quantity', 4)
             ->where('table.data.0.product_url', route('branch.products.show', [$this->branch, $this->product]))
             ->where('table.data.0.created_by_url', route('branch.staff.show', [$this->branch, $this->staff]))
-            ->missing('table.filterOptions.products'));
+            ->missing('table.filterOptions.products')
+            ->where('table.filterOptions.selected_branch', null));
+
+    $this->actingAs($this->staff, 'branch')
+        ->get(route('branch.stock.transactions', [
+            $this->branch,
+            'filter' => ['search' => $this->branch->name],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.meta.total', 0));
 });
 
 test('branch stock product options paginate catalog products', function () {
