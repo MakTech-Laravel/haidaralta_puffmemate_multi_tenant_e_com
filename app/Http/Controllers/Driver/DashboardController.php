@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Driver;
 
 use App\Http\Controllers\Controller;
+use App\Support\Storefront\DemoCatalog;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -13,6 +14,22 @@ class DashboardController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('driver/dashboard');
+        $orders = DemoCatalog::driverAssignedOrders();
+        $activeOrders = array_values(array_filter(
+            $orders,
+            static fn (array $order): bool => $order['status'] !== 'delivered',
+        ));
+        $deliveredCount = count($orders) - count($activeOrders);
+        $nextStop = $activeOrders[0] ?? null;
+
+        return Inertia::render('driver/dashboard', [
+            'summary' => [
+                'activeCount' => count($activeOrders),
+                'deliveredCount' => $deliveredCount,
+                'assignedCount' => count($orders),
+                'nextStop' => $nextStop,
+                'activeOrders' => array_slice($activeOrders, 0, 4),
+            ],
+        ]);
     }
 }

@@ -1,16 +1,49 @@
-import { LayoutGrid, ScrollText } from 'lucide-react';
-import { navLink } from '@/components/navigation/nav-builders';
-import type { NavNode } from '@/components/navigation/types';
+import {
+    Activity,
+    LayoutDashboard,
+    LogOut,
+    Package,
+    type LucideIcon,
+} from 'lucide-react';
 
-export const driverNav: NavNode[] = [
-    navLink({
-        title: 'Dashboard',
+export type DriverNavItem = {
+    label: string;
+    icon: LucideIcon;
+    href?: string;
+    match?: (url: string) => boolean;
+    logout?: boolean;
+};
+
+/** Text sidebar items for the driver account-style shell (not PortalShell / bottom tabs). */
+export const driverNavItems: DriverNavItem[] = [
+    {
+        label: 'Dashboard',
+        icon: LayoutDashboard,
         href: '/driver/dashboard',
-        icon: LayoutGrid,
-    }),
-    navLink({
-        title: 'My activity',
+        match: (url) =>
+            url === '/driver/dashboard' || url.startsWith('/driver/dashboard?'),
+    },
+    {
+        label: 'Orders',
+        icon: Package,
+        href: '/driver/orders',
+        match: (url) =>
+            url === '/driver/orders' ||
+            url.startsWith('/driver/orders?') ||
+            url.startsWith('/driver/orders/'),
+    },
+    {
+        label: 'My activity',
+        icon: Activity,
         href: '/driver/activity',
-        icon: ScrollText,
-    }),
+        match: (url) =>
+            url === '/driver/activity' ||
+            url.startsWith('/driver/activity?') ||
+            url.startsWith('/driver/activity/'),
+    },
+    {
+        label: 'Log Out',
+        icon: LogOut,
+        logout: true,
+    },
 ];

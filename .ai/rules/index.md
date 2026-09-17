@@ -14,6 +14,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/**/catalog/categories/index.tsx | .ai/rules/categories.md |
 | resources/js/components/color-picker/** | .ai/rules/color-picker.md |
 | resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx | .ai/rules/components-branch.md |
+| resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx} | .ai/rules/components-driver.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx | .ai/rules/components.md |
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
@@ -29,6 +30,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/Fcm/** | .ai/rules/fcm.md |
 | package.json, vite.config.ts | .ai/rules/general.md |
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
+| resources/js/layouts/driver/** | .ai/rules/layouts-driver.md |
 | resources/js/layouts/{platform,branch}/** | .ai/rules/layoutsplatformbranch.md |
 | resources/js/lib/fcm.ts, resources/js/lib/color-picker.ts, resources/js/lib/stock-query.ts | .ai/rules/lib.md |
 | database/migrations/** | .ai/rules/migrations.md |
