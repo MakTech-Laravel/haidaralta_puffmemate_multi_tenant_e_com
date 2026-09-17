@@ -10,6 +10,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 
 type FormMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
@@ -26,6 +28,13 @@ interface RoleFormProps {
     defaults?: { name: string; permissions: string[] };
     cancelHref: string;
     submitLabel?: string;
+}
+
+function sectionClassName(): string {
+    return cn(
+        'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+        'sm:p-6',
+    );
 }
 
 export function RoleForm({
@@ -45,60 +54,71 @@ export function RoleForm({
         <Form
             action={action.action}
             method={(action.method ?? 'post').toLowerCase() as FormMethod}
-            className="space-y-6"
+            className="w-full space-y-6"
             options={{ preserveScroll: true }}
             validationTimeout={500}
         >
             {({ processing, errors, validate }) => (
                 <>
-                    {locked && (
+                    {locked ? (
                         <Alert>
-                            <ShieldAlert className="h-4 w-4" />
+                            <ShieldAlert />
                             <AlertTitle>Super Admin role</AlertTitle>
                             <AlertDescription>
                                 This role implicitly receives every permission
-                                via{' '}
-                                <code className="bg-muted rounded px-1 py-0.5 text-xs">
-                                    Gate::before
-                                </code>
-                                , so it cannot be renamed or have permissions
-                                edited.
+                                via Gate, so it cannot be renamed or have
+                                permissions edited.
                             </AlertDescription>
                         </Alert>
-                    )}
+                    ) : null}
 
-                    <div className="grid max-w-md gap-2">
-                        <Label htmlFor="name">Role name</Label>
-                        <Input
-                            id="name"
-                            name="name"
-                            defaultValue={defaults?.name ?? ''}
-                            required
-                            disabled={locked}
-                            readOnly={locked}
-                            placeholder="e.g. auditor"
-                            onBlur={() => {
-                                if (!locked) {
-                                    validate('name');
-                                }
-                            }}
-                        />
-                        {locked && (
-                            <input
-                                type="hidden"
+                    <section className={sectionClassName()}>
+                        <div className="mb-5 space-y-1">
+                            <h2 className="text-base font-semibold tracking-tight">
+                                Details
+                            </h2>
+                            <p className="text-muted-foreground text-sm">
+                                The name shown when assigning this role to an
+                                account.
+                            </p>
+                        </div>
+                        <div className="flex max-w-md flex-col gap-1.5">
+                            <Label htmlFor="name">Role name</Label>
+                            <Input
+                                id="name"
                                 name="name"
-                                value={defaults?.name ?? ''}
+                                defaultValue={defaults?.name ?? ''}
+                                required
+                                disabled={locked}
+                                readOnly={locked}
+                                placeholder="Store manager"
+                                autoComplete="off"
+                                onBlur={() => {
+                                    if (!locked) {
+                                        validate('name');
+                                    }
+                                }}
                             />
-                        )}
-                        <InputError message={errors.name} />
-                    </div>
+                            {locked ? (
+                                <input
+                                    type="hidden"
+                                    name="name"
+                                    value={defaults?.name ?? ''}
+                                />
+                            ) : null}
+                            <InputError message={errors.name} />
+                        </div>
+                    </section>
 
-                    <div className="space-y-3">
-                        <div>
-                            <Label>Permissions</Label>
-                            <p className="text-muted-foreground text-xs">
-                                Toggle individual permissions or whole groups at
-                                once.
+                    <section className={sectionClassName()}>
+                        <div className="mb-3 space-y-1">
+                            <h2 className="text-base font-semibold tracking-tight">
+                                Permissions
+                            </h2>
+                            <p className="text-muted-foreground text-sm">
+                                Pick a group, then toggle individual
+                                permissions. Accounts with this role inherit the
+                                selection.
                             </p>
                         </div>
                         <PermissionSelector
@@ -108,15 +128,16 @@ export function RoleForm({
                             disabled={locked}
                         />
                         <InputError message={errors.permissions} />
-                    </div>
+                    </section>
 
-                    <div className="flex items-center gap-3 border-t pt-5">
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" asChild>
+                            <Link href={cancelHref}>Cancel</Link>
+                        </Button>
                         <Button type="submit" disabled={processing || locked}>
+                            {processing ? <Spinner /> : null}
                             {submitLabel ??
                                 (isEdit ? 'Save changes' : 'Create role')}
-                        </Button>
-                        <Button variant="secondary" asChild>
-                            <Link href={cancelHref}>Cancel</Link>
                         </Button>
                     </div>
                 </>

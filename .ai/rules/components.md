@@ -2,6 +2,7 @@
 paths:
   - resources/js/components/file-upload.tsx
   - resources/js/components/product-gallery.tsx
+  - resources/js/components/permission-selector.tsx
 ---
 
 # Components
@@ -32,3 +33,6 @@ Inertia useForm setData('key', value) cloneDeep's the whole form (es-toolkit new
 
 ## Tile thumbs are a strip, not a grid
 ProductGallery layout=tile may include a horizontal thumb strip when gallery images exist. Keep thumbs size-10 and overflow-x-auto so a 14–16rem rail does not grow taller than the listing facts. Never use a wrapping 4-col thumb grid or a 50/50 Media card on product show.
+
+## Permission picker is a compact two-pane
+Role permission assignment is a fixed-height two-pane picker (group nav + dense checkbox rows), not stacked accordion cards or two-column permission grids. Keep posting selected values as hidden permissions[] inputs. Search filters groups and rows.

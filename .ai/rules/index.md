@@ -14,7 +14,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/**/catalog/categories/index.tsx | .ai/rules/categories.md |
 | resources/js/components/color-picker/** | .ai/rules/color-picker.md |
 | resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx | .ai/rules/components-branch.md |
-| resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx | .ai/rules/components.md |
+| resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/Platform/AdminController.php | .ai/rules/controllers-platform.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
@@ -46,6 +46,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/{Platform,Branch}/Reports/**, resources/js/pages/{platform,branch}/reports/** | .ai/rules/reports.md |
 | app/Http/Requests/{Platform,Branch}/*Product*Request.php | .ai/rules/requests-platform-branch.md |
 | app/Http/Requests/Platform/*Category*Request.php | .ai/rules/requests-platform.md |
+| resources/js/components/admin/role-*.tsx, resources/js/pages/{platform,branch}/roles/** | .ai/rules/roles.md |
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |
 | database/seeders/** | .ai/rules/seeders.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
