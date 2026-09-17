@@ -144,7 +144,11 @@ export const platformNav: NavSection[] = [
             title: 'Branch management',
             href: '/platform/branches',
             icon: Building2,
-            permissions: ['view-branches', 'manage-branch-users'],
+            permissions: [
+                'view-branches',
+                'manage-branch-users',
+                'manage-branch-inventories',
+            ],
             items: [
                 navLink({
                     title: 'Branches',
@@ -159,11 +163,10 @@ export const platformNav: NavSection[] = [
                     permissions: ['manage-branch-users'],
                 }),
                 navLink({
-                    title: 'Add staff',
-                    href: '/platform/branch-staff/create',
-                    icon: UserPlus,
-                    exact: true,
-                    permissions: ['manage-branch-users'],
+                    title: 'Manage stock',
+                    href: '/platform/stock/manage',
+                    icon: Boxes,
+                    permissions: ['manage-branch-inventories'],
                 }),
             ],
         }),
@@ -184,12 +187,6 @@ export const platformNav: NavSection[] = [
                     href: '/platform/products',
                     icon: Package,
                     permissions: ['manage-catalog'],
-                }),
-                navLink({
-                    title: 'Manage stock',
-                    href: '/platform/stock/manage',
-                    icon: Boxes,
-                    permissions: ['manage-branch-inventories'],
                 }),
                 navLink({
                     title: 'Bulk Import',
