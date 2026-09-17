@@ -200,7 +200,7 @@ export function StorefrontHeader() {
                                 <SheetHeader>
                                     <SheetTitle>Menu</SheetTitle>
                                 </SheetHeader>
-                                <nav className="mt-6 flex flex-col gap-4 px-1">
+                                <nav className="mt-6 flex flex-col gap-4 px-5">
                                     {items.map((item) => (
                                         <NavLabel
                                             key={item.label}

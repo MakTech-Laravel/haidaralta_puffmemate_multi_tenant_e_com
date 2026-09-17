@@ -1,7 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
-import { edit as editProfile } from '@/routes/profile';
+import { index as accountIndex } from '@/routes/customer/account';
+import { index as productToReview } from '@/routes/customer/product-to-review';
 
 export type AccountNavItem = {
     label: string;
@@ -18,10 +19,9 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Orders',
-        href: '/activity',
-        // Orders shares /activity until a dedicated orders route exists;
-        // My activity owns the active state on that path.
-        match: () => false,
+        href: '/orders',
+        match: (url) =>
+            url === '/orders' || url.startsWith('/orders?') || url.startsWith('/orders/'),
     },
     {
         label: 'My activity',
@@ -33,13 +33,17 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Product to review',
-        href: '/dashboard',
-        match: () => false,
+        href: productToReview.url(),
+        match: (url) =>
+            url === '/product-to-review' ||
+            url.startsWith('/product-to-review?') ||
+            url.startsWith('/product-to-review/'),
     },
     {
         label: 'Account',
-        href: editProfile.url(),
-        match: (url) => url.startsWith('/settings'),
+        href: accountIndex.url(),
+        match: (url) =>
+            url === '/account' || url.startsWith('/account?'),
     },
     {
         label: 'Log Out',
@@ -65,7 +69,7 @@ export function AccountSidebar({ className }: AccountSidebarProps) {
                             key={item.label}
                             href={logout()}
                             as="button"
-                            className="border-border text-foreground hover:text-primary border-b py-3 text-left text-base font-medium transition-colors first:border-t"
+                            className="border-border text-foreground hover:text-primary cursor-pointer border-b py-3 text-left text-base font-medium transition-colors first:border-t"
                             data-test="account-logout"
                         >
                             {item.label}
