@@ -53,6 +53,22 @@ test('platform super admin can create and view a platform admin', function () {
             ->where('admin.avatar_url', null));
 });
 
+test('platform admin store rejects more than one role', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.admins.store'), [
+            'name' => 'Two Roles',
+            'phone' => '0412987656',
+            'email' => 'two-roles@test.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'roles' => [RoleEnum::STAFF->value, RoleEnum::MANAGER->value],
+            'is_active' => true,
+        ])
+        ->assertInvalid(['roles']);
+});
+
 test('platform super admin can create an admin with an avatar', function () {
     Storage::fake('public');
 

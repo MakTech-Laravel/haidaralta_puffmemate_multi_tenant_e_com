@@ -239,17 +239,12 @@ export default function PlatformAdminsShow({ admin }: { admin: Admin }) {
 
                     <div className="flex min-w-0 flex-col gap-6">
                         <section className="overflow-hidden rounded-2xl border bg-card">
-                            <div className="flex items-center justify-between gap-3 px-5 py-4">
-                                <div>
-                                    <h2 className="text-base font-semibold tracking-tight">
-                                        Roles
-                                    </h2>
-                                    <p className="text-muted-foreground text-sm">
-                                        Access is inherited from assigned roles
-                                    </p>
-                                </div>
-                                <p className="text-muted-foreground text-sm tabular-nums">
-                                    {admin.roles.length}
+                            <div className="px-5 py-4">
+                                <h2 className="text-base font-semibold tracking-tight">
+                                    Role
+                                </h2>
+                                <p className="text-muted-foreground text-sm">
+                                    Access is inherited from this role
                                 </p>
                             </div>
                             <Separator />
@@ -286,7 +281,7 @@ export default function PlatformAdminsShow({ admin }: { admin: Admin }) {
                                     <p className="text-muted-foreground text-sm">
                                         {admin.is_super_admin
                                             ? 'Super-admin bypasses permission checks via Gate.'
-                                            : 'Effective access from assigned roles'}
+                                            : 'Effective access from this role'}
                                     </p>
                                 </div>
                                 <p className="text-muted-foreground text-sm tabular-nums">

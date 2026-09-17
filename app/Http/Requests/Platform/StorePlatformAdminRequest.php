@@ -39,7 +39,7 @@ class StorePlatformAdminRequest extends FormRequest
             'phone' => ['required', 'string', ...Phone::validationRule(), Rule::unique('users', 'phone')],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'roles' => ['required', 'array', 'min:1'],
+            'roles' => ['required', 'array', 'min:1', 'max:1'],
             'roles.*' => [
                 'string',
                 Rule::exists('roles', 'name')

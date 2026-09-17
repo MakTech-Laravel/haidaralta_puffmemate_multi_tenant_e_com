@@ -1,5 +1,5 @@
 import { Link, useForm } from '@inertiajs/react';
-import { Lock, Plus, Search, X } from 'lucide-react';
+import { Lock, Search } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
@@ -52,52 +52,37 @@ function sectionClassName(): string {
     );
 }
 
-function RoleAssignmentPicker({
+function RoleRadioList({
     roles,
     selected,
-    onToggle,
+    onSelect,
     lockedSuperAdmin,
 }: {
     roles: RoleOption[];
-    selected: string[];
-    onToggle: (value: string) => void;
+    selected: string | null;
+    onSelect: (value: string) => void;
     lockedSuperAdmin: boolean;
 }) {
     const [query, setQuery] = useState('');
-    const selectedSet = useMemo(() => new Set(selected), [selected]);
+    const locked = lockedSuperAdmin && selected === SUPER_ADMIN_ROLE;
 
-    const available = useMemo(() => {
+    const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
 
-        return roles.filter((role) => {
-            if (selectedSet.has(role.value)) {
-                return false;
-            }
+        if (q === '') {
+            return roles;
+        }
 
-            if (q === '') {
-                return true;
-            }
-
-            return (
+        return roles.filter(
+            (role) =>
                 role.label.toLowerCase().includes(q) ||
-                role.value.toLowerCase().includes(q)
-            );
-        });
-    }, [query, roles, selectedSet]);
-
-    const assigned = useMemo(
-        () => roles.filter((role) => selectedSet.has(role.value)),
-        [roles, selectedSet],
-    );
+                role.value.toLowerCase().includes(q),
+        );
+    }, [query, roles]);
 
     return (
         <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-                <Label>Roles</Label>
-                <p className="text-muted-foreground text-xs">
-                    {selected.length} assigned
-                </p>
-            </div>
+            <Label>Role</Label>
             <div className="relative">
                 <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                 <Input
@@ -108,79 +93,63 @@ function RoleAssignmentPicker({
                     autoComplete="off"
                 />
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
-                <div className="overflow-hidden rounded-xl border">
-                    <div className="bg-muted/40 text-muted-foreground border-b px-3 py-2 text-xs font-medium tracking-wide uppercase">
-                        Available
-                    </div>
-                    <div className="max-h-64 overflow-y-auto">
-                        {available.length === 0 ? (
-                            <p className="text-muted-foreground px-3 py-8 text-center text-sm">
-                                {query.trim() === ''
-                                    ? 'All roles are assigned.'
-                                    : 'No matching roles.'}
-                            </p>
-                        ) : (
-                            available.map((role) => (
-                                <button
-                                    key={role.value}
-                                    type="button"
-                                    onClick={() => onToggle(role.value)}
-                                    className="hover:bg-muted/50 flex w-full items-center justify-between gap-2 border-b px-3 py-2.5 text-left text-sm last:border-b-0"
-                                >
-                                    <span className="min-w-0 truncate font-medium">
-                                        {role.label}
-                                    </span>
-                                    <Plus className="text-muted-foreground size-4 shrink-0" />
-                                </button>
-                            ))
-                        )}
-                    </div>
-                </div>
-                <div className="overflow-hidden rounded-xl border">
-                    <div className="bg-muted/40 text-muted-foreground border-b px-3 py-2 text-xs font-medium tracking-wide uppercase">
-                        Assigned
-                    </div>
-                    <div className="max-h-64 overflow-y-auto">
-                        {assigned.length === 0 ? (
-                            <p className="text-muted-foreground px-3 py-8 text-center text-sm">
-                                Assign at least one role.
-                            </p>
-                        ) : (
-                            assigned.map((role) => {
-                                const locked =
-                                    (role.value === SUPER_ADMIN_ROLE &&
-                                        lockedSuperAdmin) ||
-                                    selected.length === 1;
+            <div
+                role="radiogroup"
+                aria-label="Role"
+                className="max-h-64 overflow-y-auto rounded-xl border"
+            >
+                {filtered.length === 0 ? (
+                    <p className="text-muted-foreground px-3 py-8 text-center text-sm">
+                        No matching roles.
+                    </p>
+                ) : (
+                    filtered.map((role) => {
+                        const isSelected = selected === role.value;
+                        const disabled = locked && role.value !== SUPER_ADMIN_ROLE;
 
-                                return (
-                                    <div
-                                        key={role.value}
-                                        className="flex items-center justify-between gap-2 border-b px-3 py-2.5 last:border-b-0"
-                                    >
-                                        <span className="min-w-0 truncate text-sm font-medium">
-                                            {role.label}
-                                        </span>
-                                        {locked ? (
-                                            <Lock className="text-muted-foreground size-3.5 shrink-0" />
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    onToggle(role.value)
-                                                }
-                                                className="text-muted-foreground hover:text-destructive rounded-md p-0.5"
-                                                aria-label={`Remove ${role.label}`}
-                                            >
-                                                <X className="size-4" />
-                                            </button>
-                                        )}
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-                </div>
+                        return (
+                            <button
+                                key={role.value}
+                                type="button"
+                                role="radio"
+                                aria-checked={isSelected}
+                                disabled={disabled}
+                                onClick={() => {
+                                    if (!disabled) {
+                                        onSelect(role.value);
+                                    }
+                                }}
+                                className={cn(
+                                    'flex w-full items-center gap-2.5 border-b px-3 py-2.5 text-left text-sm last:border-b-0',
+                                    isSelected
+                                        ? 'bg-primary/5'
+                                        : 'hover:bg-muted/40',
+                                    disabled && 'cursor-not-allowed opacity-60',
+                                )}
+                            >
+                                <span
+                                    className={cn(
+                                        'flex size-4 shrink-0 items-center justify-center rounded-full border',
+                                        isSelected
+                                            ? 'border-primary'
+                                            : 'border-muted-foreground/40',
+                                    )}
+                                    aria-hidden
+                                >
+                                    {isSelected ? (
+                                        <span className="bg-primary size-2 rounded-full" />
+                                    ) : null}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate font-medium">
+                                    {role.label}
+                                </span>
+                                {locked && isSelected ? (
+                                    <Lock className="text-muted-foreground size-3.5 shrink-0" />
+                                ) : null}
+                            </button>
+                        );
+                    })
+                )}
             </div>
         </div>
     );
@@ -295,7 +264,7 @@ export function AdminForm({
         email: defaults?.email ?? '',
         password: '',
         password_confirmation: '',
-        roles: defaults?.roles ?? [],
+        roles: defaults?.roles?.slice(0, 1) ?? [],
         is_active: defaults?.is_active ?? true,
         avatar: null as File | null,
         remove_avatar: false,
@@ -306,19 +275,16 @@ export function AdminForm({
         setValidationTimeout(500);
     }, [setValidationTimeout]);
 
-    const toggleRole = (value: string): void => {
-        const hasRole = data.roles.includes(value);
-
-        if (value === SUPER_ADMIN_ROLE && hasRole && lockedSuperAdmin) {
+    const selectRole = (value: string): void => {
+        if (
+            lockedSuperAdmin &&
+            data.roles.includes(SUPER_ADMIN_ROLE) &&
+            value !== SUPER_ADMIN_ROLE
+        ) {
             return;
         }
 
-        setData(
-            'roles',
-            hasRole
-                ? data.roles.filter((role) => role !== value)
-                : [...data.roles, value],
-        );
+        setData('roles', [value]);
     };
 
     const submit = (event: FormEvent): void => {
@@ -525,8 +491,8 @@ export function AdminForm({
                         Access
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                        Assign one or more roles. Permissions are inherited from
-                        the selected roles.
+                        Assign one role. Permissions are inherited from that
+                        role.
                     </p>
                 </div>
 
@@ -536,10 +502,10 @@ export function AdminForm({
                             No roles available.
                         </p>
                     ) : (
-                        <RoleAssignmentPicker
+                        <RoleRadioList
                             roles={roles}
-                            selected={data.roles}
-                            onToggle={toggleRole}
+                            selected={data.roles[0] ?? null}
+                            onSelect={selectRole}
                             lockedSuperAdmin={lockedSuperAdmin}
                         />
                     )}

@@ -100,16 +100,20 @@ export default function PlatformAdminsIndex({
             },
             {
                 id: 'roles',
-                header: 'Roles',
-                cell: ({ row }) => (
-                    <div className="flex flex-wrap gap-1">
-                        {row.original.roles.map((role) => (
-                            <Badge key={role} variant="secondary">
-                                {role}
-                            </Badge>
-                        ))}
-                    </div>
-                ),
+                header: 'Role',
+                cell: ({ row }) => {
+                    const role = row.original.roles[0];
+
+                    if (!role) {
+                        return '—';
+                    }
+
+                    return (
+                        <Badge variant="secondary" className="capitalize">
+                            {role.replaceAll('-', ' ')}
+                        </Badge>
+                    );
+                },
             },
             {
                 accessorKey: 'is_active',

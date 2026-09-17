@@ -52,7 +52,7 @@ class UpdatePlatformAdminRequest extends FormRequest
                 Rule::unique('users', 'email')->ignore($user->id),
             ],
             'password' => ['nullable', 'confirmed', Password::defaults()],
-            'roles' => ['required', 'array', 'min:1'],
+            'roles' => ['required', 'array', 'min:1', 'max:1'],
             'roles.*' => [
                 'string',
                 Rule::exists('roles', 'name')
