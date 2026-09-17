@@ -1,6 +1,6 @@
 import { Camera } from 'lucide-react';
 import { Form, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import {
     accountButtonClass,
@@ -23,21 +23,18 @@ type AccountSettingSectionProps = {
     className?: string;
 };
 
-function splitName(fullName: string): { firstName: string; lastName: string } {
+function initialsFromName(fullName: string): string {
     const parts = fullName.trim().split(/\s+/u).filter(Boolean);
 
     if (parts.length === 0) {
-        return { firstName: '', lastName: '' };
+        return '';
     }
 
     if (parts.length === 1) {
-        return { firstName: parts[0], lastName: '' };
+        return parts[0].charAt(0).toUpperCase();
     }
 
-    return {
-        firstName: parts[0],
-        lastName: parts.slice(1).join(' '),
-    };
+    return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
 }
 
 export function AccountSettingSection({
@@ -45,9 +42,7 @@ export function AccountSettingSection({
 }: AccountSettingSectionProps) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const user = auth.user;
-    const initial = useMemo(() => splitName(user?.name ?? ''), [user?.name]);
-    const [firstName, setFirstName] = useState(initial.firstName);
-    const [lastName, setLastName] = useState(initial.lastName);
+    const [fullName, setFullName] = useState(user?.name ?? '');
     const [region, setRegion] = useState('');
     const [previewUrl, setPreviewUrl] = useState(DEFAULT_AVATAR);
 
@@ -64,8 +59,7 @@ export function AccountSettingSection({
     }
 
     const initials =
-        `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() ||
-        user.name.charAt(0).toUpperCase();
+        initialsFromName(fullName) || user.name.charAt(0).toUpperCase();
 
     const onAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -120,56 +114,32 @@ export function AccountSettingSection({
                 options={{ preserveScroll: true }}
                 transform={(data) => ({
                     ...data,
-                    name: [firstName, lastName]
-                        .map((part) => part.trim())
-                        .filter(Boolean)
-                        .join(' '),
+                    name: fullName.trim(),
                 })}
                 className="space-y-5"
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="grid gap-2">
-                                <Label
-                                    htmlFor="account-first-name"
-                                    className={accountLabelClass}
-                                >
-                                    First name
-                                </Label>
-                                <Input
-                                    id="account-first-name"
-                                    value={firstName}
-                                    onChange={(event) =>
-                                        setFirstName(event.target.value)
-                                    }
-                                    autoComplete="given-name"
-                                    placeholder="First name"
-                                    required
-                                    className={accountInputClass}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label
-                                    htmlFor="account-last-name"
-                                    className={accountLabelClass}
-                                >
-                                    Last name
-                                </Label>
-                                <Input
-                                    id="account-last-name"
-                                    value={lastName}
-                                    onChange={(event) =>
-                                        setLastName(event.target.value)
-                                    }
-                                    autoComplete="family-name"
-                                    placeholder="Last name"
-                                    className={accountInputClass}
-                                />
-                            </div>
+                        <div className="grid gap-2">
+                            <Label
+                                htmlFor="account-full-name"
+                                className={accountLabelClass}
+                            >
+                                Full Name
+                            </Label>
+                            <Input
+                                id="account-full-name"
+                                value={fullName}
+                                onChange={(event) =>
+                                    setFullName(event.target.value)
+                                }
+                                autoComplete="name"
+                                placeholder="Full Name"
+                                required
+                                className={accountInputClass}
+                            />
+                            <InputError message={errors.name} />
                         </div>
-
-                        <InputError message={errors.name} />
 
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="grid gap-2">

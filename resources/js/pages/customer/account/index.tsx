@@ -28,7 +28,7 @@ export default function CustomerAccountIndex({
                     canManageTwoFactor={canManageTwoFactor}
                     twoFactorEnabled={twoFactorEnabled}
                 />
-                <div className="grid min-w-0 gap-5 lg:grid-cols-2">
+                {/* <div className="grid min-w-0 gap-5 lg:grid-cols-2">
                     <AccountAddressSection
                         title="Billing Address"
                         idPrefix="billing"
@@ -37,7 +37,7 @@ export default function CustomerAccountIndex({
                         title="Shipping Address"
                         idPrefix="shipping"
                     />
-                </div>
+                </div> */}
             </div>
         </>
     );
