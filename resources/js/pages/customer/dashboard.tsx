@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 import { logout, wholesale } from '@/routes';
+import { index as accountIndex } from '@/routes/customer/account';
 import { index as productToReview } from '@/routes/customer/product-to-review';
 import { edit as editProfile } from '@/routes/profile';
 import type { Auth } from '@/types';
@@ -24,7 +25,7 @@ const cards: AccountCard[] = [
     },
     {
         label: 'Account',
-        href: editProfile.url(),
+        href: accountIndex.url(),
         image: '/images/customer/Vector (2).svg',
     },
     {
