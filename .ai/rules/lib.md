@@ -21,4 +21,4 @@ normalizeCatalogColorPickerValue and catalogFormColorPickerValue map empty/inval
 Catalog create/edit default color_code is transparent. Listing/gallery tiles and ColorPicker previews inherit the page or card color when transparent. COLOR_PICKER_CHECKERBOARD stays only on the hex swatch editor, not on catalog tiles.
 
 ## Row stock actions are transactions only
-stockActionItems is Stock transactions only. Daily stock, selling price, and discounts stay on Catalog Manage. Do not add Add stock, Update price, or Add discount row actions.
+stockActionItems is Stock transactions only. Daily stock, selling price, and discounts stay on Stock **Manage**. Catalog **Manage** with a known pair opens that page locked. Do not add Add stock, Update price, or Add discount row actions.

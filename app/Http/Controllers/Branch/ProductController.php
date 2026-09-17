@@ -20,8 +20,8 @@ use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductSuggestionService;
 use App\Services\Inventory\BranchPricingService;
 use App\Services\Inventory\InventoryService;
-use App\Support\BranchProductShowPayload;
 use App\Support\CatalogReturnTo;
+use App\Support\ProductManageRedirect;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -103,8 +103,12 @@ class ProductController extends Controller
         return CatalogReturnTo::afterProductCreate(
             $request,
             $product,
-            'branch.products.show',
-            [$branch, $product],
+            'branch.stock.manage',
+            [
+                'branch' => $branch,
+                'product' => $product->id,
+                'locked' => 'both',
+            ],
         );
     }
 
@@ -117,21 +121,12 @@ class ProductController extends Controller
 
         Toast::success('Existing product stock and price updated for this branch.');
 
-        return redirect()->route('branch.products.show', [$branch, $product]);
+        return redirect()->to(ProductManageRedirect::branchUrl($branch, $product));
     }
 
-    public function show(Request $request, string $branchSlug, Product $product): Response
+    public function show(string $branchSlug, Product $product): RedirectResponse
     {
-        $branch = $this->currentBranch();
-
-        return Inertia::render('branch/catalog/products/show', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
-            'product' => BranchProductShowPayload::product($branch, $product),
-            'transactions' => BranchProductShowPayload::transactions($branch, $product, $request),
-            'transactionTypes' => BranchProductShowPayload::transactionTypes(),
-            'adjustmentReasons' => InventoryAdjustmentReason::options(),
-            'discountTypes' => BranchProductShowPayload::discountTypes(),
-        ]);
+        return redirect()->to(ProductManageRedirect::branchUrl($this->currentBranch(), $product));
     }
 
     public function edit(string $branchSlug, Product $product): Response
@@ -197,7 +192,7 @@ class ProductController extends Controller
 
         Toast::success('Product updated.');
 
-        return redirect()->route('branch.products.show', [$branch, $product]);
+        return redirect()->to(ProductManageRedirect::branchUrl($branch, $product));
     }
 
     public function adjustInventory(

@@ -69,8 +69,7 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.discounts.preview');
         Route::get('stock/discount', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch, 301));
         Route::get('stock/discount-preview', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch, 301));
-        Route::get('stock/manage', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
-            ->name('branch.stock.manage');
+        Route::get('stock/manage', [BranchStockController::class, 'manage'])->name('branch.stock.manage');
         Route::get('stock/import', [BranchStockController::class, 'import'])->name('branch.stock.import');
         Route::post('stock/import', [BranchStockController::class, 'storeImport'])->name('branch.stock.import.store');
         Route::get('stock/price', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))

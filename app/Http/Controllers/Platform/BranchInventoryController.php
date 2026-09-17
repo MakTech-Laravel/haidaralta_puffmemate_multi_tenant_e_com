@@ -15,8 +15,8 @@ use App\Models\ProductVariant;
 use App\Services\Inventory\BranchPricingService;
 use App\Services\Inventory\InventoryService;
 use App\Support\BranchProductListingPayload;
-use App\Support\BranchProductShowPayload;
 use App\Support\ProductBranchInventoryPayload;
+use App\Support\ProductManageRedirect;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -49,16 +49,9 @@ class BranchInventoryController extends Controller
         ]);
     }
 
-    public function show(Request $request, Branch $branch, Product $product): Response
+    public function show(Branch $branch, Product $product): RedirectResponse
     {
-        return Inertia::render('platform/branches/products/show', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
-            'product' => BranchProductShowPayload::product($branch, $product),
-            'transactions' => BranchProductShowPayload::transactions($branch, $product, $request),
-            'transactionTypes' => BranchProductShowPayload::transactionTypes(),
-            'adjustmentReasons' => InventoryAdjustmentReason::options(),
-            'discountTypes' => BranchProductShowPayload::discountTypes(),
-        ]);
+        return redirect()->to(ProductManageRedirect::platformUrl($branch, $product));
     }
 
     public function adjustInventory(

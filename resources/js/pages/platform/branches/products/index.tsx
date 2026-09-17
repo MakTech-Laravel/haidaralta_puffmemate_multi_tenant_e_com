@@ -26,7 +26,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { stockActionItems } from '@/lib/stock-query';
+import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type ProductRow = {
     id: number;
@@ -194,10 +194,14 @@ export default function PlatformBranchProductsIndex({
                             {
                                 label: 'Manage',
                                 icon: Settings2,
-                                href: BranchInventoryController.show.url({
-                                    branch: branch.slug,
-                                    product: row.original.slug,
-                                }),
+                                href: stockPageUrl(
+                                    StockController.manage.url(),
+                                    {
+                                        productId: row.original.id,
+                                        branchId: branch.id,
+                                        locked: 'both',
+                                    },
+                                ),
                             },
                             ...stockActionItems(
                                 {

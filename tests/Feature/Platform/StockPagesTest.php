@@ -9,6 +9,7 @@ use App\Models\InventoryTransaction;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\PlatformTeamResolver;
+use App\Support\ProductManageRedirect;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -24,42 +25,85 @@ beforeEach(function () {
     $this->product = Product::factory()->create(['slug' => 'stock-pack']);
 });
 
-test('manage stock url with a pair redirects to the product manage page', function () {
+test('manage stock page starts unlocked with no selection', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.stock.manage'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/stock/manage')
+            ->where('context.locked', null)
+            ->where('context.branch', null)
+            ->where('context.product', null)
+            ->where('product', null)
+            ->missing('transactions'));
+});
+
+test('manage stock page with a pair renders listing details without transactions', function () {
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.stock.manage', [
             'branch' => $this->branch->id,
             'product' => $this->product->id,
         ]))
-        ->assertRedirect(route('platform.branches.products.show', [$this->branch, $this->product]));
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/stock/manage')
+            ->where('context.locked', null)
+            ->where('product.id', $this->product->id)
+            ->where('product.name', $this->product->name)
+            ->has('transactionsUrl')
+            ->missing('transactions'));
 });
 
-test('manage stock url with only a product redirects to manage branches', function () {
+test('manage stock page with a locked pair keeps both pickers locked', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->get(ProductManageRedirect::platformUrl($this->branch, $this->product))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/stock/manage')
+            ->where('context.locked', 'both')
+            ->where('context.branch.id', $this->branch->id)
+            ->where('context.product.id', $this->product->id)
+            ->where('product.id', $this->product->id)
+            ->missing('transactions'));
+});
+
+test('manage stock page with only a product stays on manage until a branch is picked', function () {
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.stock.manage', [
             'product' => $this->product->id,
         ]))
-        ->assertRedirect(route('platform.products.branches', $this->product));
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/stock/manage')
+            ->where('context.product.id', $this->product->id)
+            ->where('product', null)
+            ->missing('transactions'));
 });
 
-test('manage stock url with no pair redirects to the products index', function () {
-    $this->actingAs($this->admin, 'platform')
-        ->get(route('platform.stock.manage'))
-        ->assertRedirect(route('platform.products.index'));
-});
-
-test('update price url with a pair redirects to the product manage page', function () {
+test('update price url with a pair redirects to manage stock', function () {
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.stock.price', [
             'branch' => $this->branch->slug,
             'product' => $this->product->slug,
         ]))
-        ->assertRedirect(route('platform.branches.products.show', [$this->branch, $this->product]));
+        ->assertRedirect(route('platform.stock.manage', [
+            'branch' => $this->branch->id,
+            'product' => $this->product->id,
+        ]));
 });
 
-test('manage stock url 404s when the product is missing', function () {
+test('old branch product show url redirects to locked manage stock', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.branches.products.show', [$this->branch, $this->product]))
+        ->assertRedirect(ProductManageRedirect::platformUrl($this->branch, $this->product));
+});
+
+test('manage stock url 404s when a locked product is missing', function () {
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.stock.manage', [
+            'branch' => $this->branch->id,
             'product' => 'no-such-product',
+            'locked' => 'both',
         ]))
         ->assertNotFound();
 });

@@ -10,7 +10,7 @@ paths:
 Product show variants use in-memory DataTable (toClientDataTablePayload + showPagination=false + DataTableRowActions). Keep create/edit dialogs. Do not add ProductVariantDataTable/Meilisearch unless a product regularly exceeds ~50 variants and needs server search.
 
 ## Catalog Manage branches overview
-Platform catalog products expose Manage branches (permission manage-branch-inventories) to GET platform.products.branches — a product-centric list of every branch with stock/price snapshots and Manage → platform.branches.products.show. Wire from products index row actions and product show header/alert; do not nest this under branch-first inventory only.
+Platform catalog products expose Manage branches (permission manage-branch-inventories) to GET platform.products.branches — a product-centric list of every branch with stock/price snapshots. Row **Manage** (when branch + product are known) goes to `stock/manage?branch=&product=&locked=both`. Wire from products index row actions and product show header/alert; do not nest this under branch-first inventory only. Platform catalog products list stays **Manage branches** (no branch yet).
 
 ## Manage branches uses server DataTable
 Manage branches list is a server DataTable (filter[search|missing_price], sort, per_page, page) via useDataTableQuery — not client-only filtering. Keep DemoStatCard summary from server summary prop (`branches`, `missing_price`).
@@ -25,7 +25,7 @@ Do not remove `product_variants` / variant stock/price without explicit site-own
 Hide Variants count column and variant snapshot cards when catalog.show_product_variants is false. Product branch summary is { branches, missing_price } — no enabled/low_stock.
 
 ## Product and branch rows carry stock actions
-Product list and branch-network rows expose Stock transactions via `stockActionItems` in `@/lib/stock-query` (same query filters, `locked` omitted). Daily stock, selling price, and discounts stay under Catalog **Manage** / **Manage branches**. Do not add Add stock, Update price, or Add discount row actions. Product/category list menus use `DataTableRowActions` `groups` with labels: products → Catalog / Stock / Danger zone; categories → Merchandising / Catalog / Danger zone; branch network / Manage branches → Catalog (Manage) / Stock. Category Catalog group includes View products → products index with `filter[category_id]`.
+Product list and branch-network rows expose Stock transactions via `stockActionItems` in `@/lib/stock-query` (same query filters, `locked` omitted). Daily stock, selling price, and discounts stay under Stock **Manage**. Catalog **Manage** with a known pair opens that page locked. Do not add Add stock, Update price, or Add discount row actions. Product/category list menus use `DataTableRowActions` `groups` with labels: products → Catalog / Stock / Danger zone; categories → Merchandising / Catalog / Danger zone; branch network / Manage branches → Catalog (Manage) / Stock. Category Catalog group includes View products → products index with `filter[category_id]`.
 
 ## Product show matches category profile
 Platform product show is one Listing details card (not a 50/50 Media + details split). Compact tile rail + 3-col facts including image background. Specs fold into the same card; there is no Catalog record card.

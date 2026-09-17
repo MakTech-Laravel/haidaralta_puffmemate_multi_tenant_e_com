@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\Inventory\InventoryService;
+use App\Support\ProductManageRedirect;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -27,7 +28,7 @@ test('branch create stores stock and price for the creating branch only', functi
     $branchB = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
     $category = Category::factory()->create();
 
-    $this->actingAs($staff, 'branch')
+    $response = $this->actingAs($staff, 'branch')
         ->post(route('branch.products.store', $branchA), [
             'category_ids' => [$category->id],
             'name' => 'Sydney CBD Exclusive',
@@ -36,8 +37,11 @@ test('branch create stores stock and price for the creating branch only', functi
             'status' => true,
             'selling_price' => 19.99,
             'quantity' => 5,
-        ])
-        ->assertRedirect(route('branch.products.show', [$branchA, 'sydney-cbd-exclusive']));
+        ]);
+
+    $created = Product::query()->where('slug', 'sydney-cbd-exclusive')->firstOrFail();
+
+    $response->assertRedirect(ProductManageRedirect::branchUrl($branchA, $created));
 
     $product = Product::query()->where('slug', 'sydney-cbd-exclusive')->firstOrFail();
 
@@ -71,7 +75,7 @@ test('branch create persists gallery images', function () {
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $category = Category::factory()->create();
 
-    $this->actingAs($staff, 'branch')
+    $response = $this->actingAs($staff, 'branch')
         ->post(route('branch.products.store', $branch), [
             'category_ids' => [$category->id],
             'name' => 'Gallery Branch Pack',
@@ -82,10 +86,11 @@ test('branch create persists gallery images', function () {
                 UploadedFile::fake()->image('gallery-a.jpg', 400, 400),
                 UploadedFile::fake()->image('gallery-b.jpg', 400, 400),
             ],
-        ])
-        ->assertRedirect(route('branch.products.show', [$branch, 'gallery-branch-pack']));
+        ]);
 
     $product = Product::query()->where('slug', 'gallery-branch-pack')->firstOrFail();
+
+    $response->assertRedirect(ProductManageRedirect::branchUrl($branch, $product));
 
     expect($product->image)->not->toBeNull()
         ->and($product->images()->count())->toBe(2);
@@ -173,7 +178,7 @@ test('branch can reuse a product with initial stock and price', function () {
             'selling_price' => 11.5,
             'quantity' => 4,
         ])
-        ->assertRedirect(route('branch.products.show', [$branch, $product]));
+        ->assertRedirect(ProductManageRedirect::branchUrl($branch, $product));
 
     $inventory = Inventory::query()
         ->where('branch_id', $branch->id)
@@ -210,10 +215,10 @@ test('branch can adjust inventory and price for a variant', function () {
         ->assertRedirect();
 
     $this->actingAs($staff, 'branch')
-        ->get(route('branch.products.show', [$branch, $product]))
+        ->get(ProductManageRedirect::branchUrl($branch, $product))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('branch/catalog/products/show')
+            ->component('branch/stock/manage')
             ->has('product.variant_inventories.'.$variant->id)
             ->where('product.variant_inventories.'.$variant->id.'.quantity', 7)
             ->has('product.variant_prices.'.$variant->id)
@@ -256,13 +261,12 @@ test('branch product inventory adjustment sets counted on-hand with a reason', f
     ]);
 
     $this->actingAs($staff, 'branch')
-        ->get(route('branch.products.show', [$branch, $product]))
+        ->get(ProductManageRedirect::branchUrl($branch, $product))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('product.inventory.quantity', 7)
-            ->where('transactions.data.0.reason_label', 'Damaged')
-            ->where('transactions.data.0.quantity', -3)
-            ->has('adjustmentReasons'));
+            ->has('adjustmentReasons')
+            ->missing('transactions'));
 });
 
 test('branch product index shows stock and filters by missing price', function () {
@@ -315,10 +319,10 @@ test('branch product show includes listing details payload', function () {
     ]);
 
     $this->actingAs($staff, 'branch')
-        ->get(route('branch.products.show', [$branch, $product]))
+        ->get(ProductManageRedirect::branchUrl($branch, $product))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('branch/catalog/products/show')
+            ->component('branch/stock/manage')
             ->where('product.brand', 'PuffCo')
             ->where('product.tags', ['new_arrival'])
             ->where('product.specifications.0.label', 'Nicotine')
@@ -326,7 +330,7 @@ test('branch product show includes listing details payload', function () {
             ->has('product.created_at')
             ->has('product.updated_at')
             ->has('product.created_by_name')
-            ->has('transactions.filters.type'));
+            ->missing('transactions'));
 });
 
 test('branch price upsert without status still stores a live price', function () {
@@ -348,39 +352,6 @@ test('branch price upsert without status still stores a live price', function ()
 
     expect($price)->not->toBeNull()
         ->and($price->status)->toBeTrue();
-});
-
-test('branch product show filters transactions by type', function () {
-    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
-    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-    $product = Product::factory()->create();
-
-    $this->actingAs($staff, 'branch')
-        ->post(route('branch.products.inventory', [$branch, $product]), [
-            'type' => 'stock_in',
-            'quantity' => 5,
-        ])
-        ->assertRedirect();
-
-    $this->actingAs($staff, 'branch')
-        ->post(route('branch.products.inventory', [$branch, $product]), [
-            'type' => 'stock_out',
-            'quantity' => 2,
-        ])
-        ->assertRedirect();
-
-    $this->actingAs($staff, 'branch')
-        ->get(route('branch.products.show', [
-            $branch,
-            $product,
-            'txn_type' => 'stock_in',
-        ]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->where('transactions.meta.total', 1)
-            ->where('transactions.filters.type', 'stock_in')
-            ->where('transactions.data.0.type', 'stock_in')
-            ->where('transactions.data.0.quantity', 5));
 });
 
 test('branch routes do not expose product destroy', function () {

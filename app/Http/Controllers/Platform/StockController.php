@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Platform;
 
 use App\DataTables\InventoryTransactionDataTable;
+use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Stock\ImportStockRequest;
 use App\Models\Branch;
 use App\Models\Product;
 use App\Services\Inventory\InventoryService;
+use App\Support\BranchProductShowPayload;
 use App\Support\CatalogReturnTo;
 use App\Support\StockPageContext;
 use App\Support\Toast;
@@ -24,6 +26,52 @@ class StockController extends Controller
     public function __construct(
         private InventoryService $inventory,
     ) {}
+
+    public function manage(Request $request): Response
+    {
+        $context = StockPageContext::fromRequest($request);
+        $branch = StockPageContext::optionalBranch($request);
+        $product = StockPageContext::optionalProduct($request);
+
+        if ($branch === null || $product === null) {
+            return Inertia::render('platform/stock/manage', [
+                'context' => $context,
+                'product' => null,
+                'adjustmentReasons' => InventoryAdjustmentReason::options(),
+                'transactionTypes' => BranchProductShowPayload::transactionTypes(),
+                'discountTypes' => BranchProductShowPayload::discountTypes(),
+                'createProductUrl' => route('platform.products.create', [
+                    'return_to' => CatalogReturnTo::currentUrl($request),
+                ]),
+                'inventoryUrl' => null,
+                'priceUrl' => null,
+                'transactionsUrl' => null,
+                'allBranchesUrl' => null,
+                'branchProductsUrl' => null,
+                'editUrl' => null,
+            ]);
+        }
+
+        return Inertia::render('platform/stock/manage', [
+            'context' => $context,
+            'product' => BranchProductShowPayload::product($branch, $product),
+            'adjustmentReasons' => InventoryAdjustmentReason::options(),
+            'transactionTypes' => BranchProductShowPayload::transactionTypes(),
+            'discountTypes' => BranchProductShowPayload::discountTypes(),
+            'createProductUrl' => route('platform.products.create', [
+                'return_to' => CatalogReturnTo::currentUrl($request),
+            ]),
+            'inventoryUrl' => route('platform.branches.products.inventory', [$branch, $product]),
+            'priceUrl' => route('platform.branches.products.prices', [$branch, $product]),
+            'transactionsUrl' => route('platform.stock.transactions', [
+                'branch' => $branch->id,
+                'product' => $product->id,
+            ]),
+            'allBranchesUrl' => route('platform.products.branches', $product),
+            'branchProductsUrl' => route('platform.branches.products.index', $branch),
+            'editUrl' => null,
+        ]);
+    }
 
     public function import(Request $request): Response
     {

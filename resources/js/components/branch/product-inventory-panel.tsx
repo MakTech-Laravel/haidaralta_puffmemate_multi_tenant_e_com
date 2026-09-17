@@ -1,4 +1,4 @@
-import { router, useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
@@ -12,12 +12,10 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { DataTableTruncated } from '@/components/data-table';
 import InputError from '@/components/input-error';
-import { SimplePagination } from '@/components/simple-pagination';
 import { AdjustmentReasonNote } from '@/components/stock/adjustment-reason-note';
 import { Button } from '@/components/ui/button';
 import {
     Card,
-    CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
@@ -62,54 +60,18 @@ export type BranchProductVariantRow = {
     status?: boolean;
 };
 
-export type BranchInventoryTransaction = {
-    id: number;
-    type: string;
-    type_label?: string;
-    reason?: string | null;
-    reason_note?: string | null;
-    reason_label?: string | null;
-    quantity: number;
-    before_quantity: number;
-    after_quantity: number;
-    variant_id: number | null;
-    created_at: string | null;
-};
-
-export type TransactionsPage = {
-    data: BranchInventoryTransaction[];
-    meta: {
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-        from: number | null;
-        to: number | null;
-    };
-    links: { url: string | null; label: string; active: boolean }[];
-    filters: {
-        scope: string;
-        from: string | null;
-        to: string | null;
-        type: string | null;
-    };
-};
-
-const ALL_TXN_TYPES = 'all';
-
 type ProductInventoryPanelProps = {
     variants: BranchProductVariantRow[];
     inventory: BranchInventorySnapshot | null;
     price: BranchPriceSnapshot | null;
     variantInventories: Record<string, BranchInventorySnapshot>;
     variantPrices: Record<string, BranchPriceSnapshot>;
-    transactions: TransactionsPage;
     transactionTypes: { value: string; label: string }[];
     adjustmentReasons: { value: string; label: string }[];
     discountTypes: { value: string; label: string }[];
     inventoryUrl: string;
     priceUrl: string;
-    showUrl: string;
+    transactionsUrl: string;
 };
 
 function parseQuantity(value: string): number {
@@ -166,23 +128,6 @@ function resolvePrice(
     }
 
     return variantPrices[scope] ?? null;
-}
-
-function formatWhen(value: string | null): string {
-    if (!value) {
-        return '—';
-    }
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-        return value;
-    }
-
-    return date.toLocaleString(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    });
 }
 
 function resolveDiscountType(price: BranchPriceSnapshot | null): string {
@@ -271,22 +216,16 @@ export function ProductInventoryPanel({
     price,
     variantInventories,
     variantPrices,
-    transactions,
     transactionTypes,
     adjustmentReasons,
     discountTypes,
     inventoryUrl,
     priceUrl,
-    showUrl,
+    transactionsUrl,
 }: ProductInventoryPanelProps) {
     const { catalog } = usePage().props;
     const showVariants = catalog.show_product_variants;
-    const [scope, setScope] = useState(
-        transactions.filters.scope || BASE_SCOPE,
-    );
-    const [txnFrom, setTxnFrom] = useState(transactions.filters.from ?? '');
-    const [txnTo, setTxnTo] = useState(transactions.filters.to ?? '');
-    const [txnType, setTxnType] = useState(transactions.filters.type ?? '');
+    const [scope, setScope] = useState(BASE_SCOPE);
 
     const activeVariants = useMemo(
         () =>
@@ -357,54 +296,6 @@ export function ProductInventoryPanel({
         variantPrices,
     ]);
 
-    useEffect(() => {
-        setTxnFrom(transactions.filters.from ?? '');
-        setTxnTo(transactions.filters.to ?? '');
-        setTxnType(transactions.filters.type ?? '');
-    }, [
-        transactions.filters.from,
-        transactions.filters.to,
-        transactions.filters.type,
-    ]);
-
-    const reloadTransactions = (next: {
-        scope?: string;
-        from?: string;
-        to?: string;
-        type?: string;
-    }) => {
-        const nextFrom = next.from !== undefined ? next.from : txnFrom;
-        const nextTo = next.to !== undefined ? next.to : txnTo;
-        const nextType = next.type !== undefined ? next.type : txnType;
-
-        router.get(
-            showUrl,
-            {
-                txn_scope: next.scope ?? activeScope,
-                ...(nextType ? { txn_type: nextType } : {}),
-                ...(nextFrom ? { txn_from: nextFrom } : {}),
-                ...(nextTo ? { txn_to: nextTo } : {}),
-            },
-            {
-                only: ['transactions'],
-                preserveScroll: true,
-                preserveState: true,
-                replace: true,
-            },
-        );
-    };
-
-    useEffect(() => {
-        const serverScope = transactions.filters.scope || BASE_SCOPE;
-
-        if (activeScope === serverScope) {
-            return;
-        }
-
-        reloadTransactions({ scope: activeScope });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeScope]);
-
     const scopeLabel =
         activeScope === BASE_SCOPE
             ? 'Base product'
@@ -474,7 +365,13 @@ export function ProductInventoryPanel({
                             Stock and selling price for {scopeLabel}
                         </CardDescription>
                     </div>
-                    {showVariants ? (
+                    <div className="flex flex-wrap items-start gap-3">
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={transactionsUrl}>
+                                View transactions
+                            </Link>
+                        </Button>
+                        {showVariants ? (
                         <div className="grid w-full min-w-0 gap-1.5 sm:max-w-[16rem]">
                             <Label htmlFor="inventory-scope">Scope</Label>
                             <Select
@@ -506,6 +403,7 @@ export function ProductInventoryPanel({
                             </Select>
                         </div>
                     ) : null}
+                    </div>
                 </CardHeader>
 
                 <div className="grid divide-y border-b sm:grid-cols-3 sm:divide-x sm:divide-y-0">
@@ -1051,184 +949,6 @@ export function ProductInventoryPanel({
                         ) : null}
                     </form>
                 </div>
-            </Card>
-
-            <Card className="gap-4 py-5 shadow-sm">
-                <CardHeader className="px-5">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                        <div className="space-y-1">
-                            <CardTitle className="text-base">
-                                Recent transactions
-                            </CardTitle>
-                            <CardDescription>
-                                Stock movements for {scopeLabel}
-                                {transactions.meta.total > 0
-                                    ? ` · ${transactions.meta.total} total`
-                                    : ''}
-                                .
-                            </CardDescription>
-                        </div>
-                        <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end lg:max-w-3xl">
-                            <div className="grid min-w-40 flex-1 gap-2">
-                                <Label htmlFor="txn_type">Type</Label>
-                                <Select
-                                    value={txnType || ALL_TXN_TYPES}
-                                    onValueChange={(value) => {
-                                        const next =
-                                            value === ALL_TXN_TYPES
-                                                ? ''
-                                                : value;
-                                        setTxnType(next);
-                                        reloadTransactions({ type: next });
-                                    }}
-                                >
-                                    <SelectTrigger
-                                        id="txn_type"
-                                        className="w-full"
-                                    >
-                                        <SelectValue placeholder="All types" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value={ALL_TXN_TYPES}>
-                                            All types
-                                        </SelectItem>
-                                        {transactionTypes.map((type) => (
-                                            <SelectItem
-                                                key={type.value}
-                                                value={type.value}
-                                            >
-                                                {type.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid min-w-40 flex-1 gap-2">
-                                <Label htmlFor="txn_from">From</Label>
-                                <DatePicker
-                                    id="txn_from"
-                                    value={txnFrom}
-                                    onChange={setTxnFrom}
-                                    max={txnTo || undefined}
-                                    placeholder="Any start"
-                                />
-                            </div>
-                            <div className="grid min-w-40 flex-1 gap-2">
-                                <Label htmlFor="txn_to">To</Label>
-                                <DatePicker
-                                    id="txn_to"
-                                    value={txnTo}
-                                    onChange={setTxnTo}
-                                    min={txnFrom || undefined}
-                                    placeholder="Any end"
-                                />
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    type="button"
-                                    onClick={() =>
-                                        reloadTransactions({
-                                            from: txnFrom,
-                                            to: txnTo,
-                                            type: txnType,
-                                        })
-                                    }
-                                >
-                                    Filter
-                                </Button>
-                                {(txnFrom ||
-                                    txnTo ||
-                                    txnType ||
-                                    transactions.filters.from ||
-                                    transactions.filters.to ||
-                                    transactions.filters.type) && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => {
-                                            setTxnFrom('');
-                                            setTxnTo('');
-                                            setTxnType('');
-                                            reloadTransactions({
-                                                from: '',
-                                                to: '',
-                                                type: '',
-                                            });
-                                        }}
-                                    >
-                                        Clear
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4 px-5">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Reason</TableHead>
-                                <TableHead>Qty</TableHead>
-                                <TableHead>Before</TableHead>
-                                <TableHead>After</TableHead>
-                                <TableHead>When</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {transactions.data.length === 0 ? (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={6}
-                                        className="text-muted-foreground py-10 text-center"
-                                    >
-                                        No transactions for this scope
-                                        {transactions.filters.from ||
-                                        transactions.filters.to ||
-                                        transactions.filters.type
-                                            ? ' and filters'
-                                            : ''}
-                                        .
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                transactions.data.map((txn) => (
-                                    <TableRow key={txn.id}>
-                                        <TableCell className="max-w-36 font-medium">
-                                            <DataTableTruncated>
-                                                {txn.type_label ??
-                                                    txn.type.replaceAll(
-                                                        '_',
-                                                        ' ',
-                                                    )}
-                                            </DataTableTruncated>
-                                        </TableCell>
-                                        <TableCell className="max-w-44">
-                                            <DataTableTruncated>
-                                                {txn.reason_label ?? '—'}
-                                            </DataTableTruncated>
-                                        </TableCell>
-                                        <TableCell className="tabular-nums">
-                                            {txn.quantity}
-                                        </TableCell>
-                                        <TableCell className="tabular-nums">
-                                            {txn.before_quantity}
-                                        </TableCell>
-                                        <TableCell className="tabular-nums">
-                                            {txn.after_quantity}
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground max-w-40">
-                                            <DataTableTruncated>
-                                                {formatWhen(txn.created_at)}
-                                            </DataTableTruncated>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                    <SimplePagination links={transactions.links} />
-                </CardContent>
             </Card>
         </div>
     );

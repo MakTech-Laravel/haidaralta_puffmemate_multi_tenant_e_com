@@ -18,7 +18,7 @@ import {
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { stockActionItems } from '@/lib/stock-query';
+import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type CategoryOption = { id: number; name: string; slug: string };
 
@@ -180,10 +180,16 @@ export default function BranchProductsIndex({
                                     {
                                         label: 'Manage',
                                         icon: Settings2,
-                                        href: ProductController.show.url({
-                                            branch: branch.slug,
-                                            product: row.original.slug,
-                                        }),
+                                        href: stockPageUrl(
+                                            StockController.manage.url(
+                                                branch.slug,
+                                            ),
+                                            {
+                                                productId: row.original.id,
+                                                branchId: branch.id,
+                                                locked: 'both',
+                                            },
+                                        ),
                                     },
                                 ],
                             },

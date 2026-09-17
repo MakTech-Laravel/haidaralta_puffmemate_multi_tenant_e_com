@@ -151,8 +151,7 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.discounts.preview');
         Route::get('stock/discount', fn (Request $request) => ProductManageRedirect::platform($request, 301));
         Route::get('stock/discount-preview', fn (Request $request) => ProductManageRedirect::platform($request, 301));
-        Route::get('stock/manage', fn (Request $request) => ProductManageRedirect::platform($request))
-            ->name('platform.stock.manage');
+        Route::get('stock/manage', [PlatformStockController::class, 'manage'])->name('platform.stock.manage');
         Route::get('stock/import', [PlatformStockController::class, 'import'])->name('platform.stock.import');
         Route::post('stock/import', [PlatformStockController::class, 'storeImport'])->name('platform.stock.import.store');
         Route::get('stock/price', fn (Request $request) => ProductManageRedirect::platform($request))

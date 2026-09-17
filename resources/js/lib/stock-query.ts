@@ -89,7 +89,8 @@ export function stockPageUrl(
 
 /**
  * Row action for the stock ledger. Daily stock, price, and discount edits
- * live on Catalog Manage. Transactions keeps the same selection as filters.
+ * live on Stock management → Manage (Catalog Manage with a known pair opens
+ * that page locked). Transactions keeps the same selection as filters.
  */
 export function stockActionItems(
     urls: StockActionUrls,

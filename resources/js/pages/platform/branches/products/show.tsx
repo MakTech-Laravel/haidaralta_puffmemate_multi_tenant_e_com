@@ -1,17 +1,18 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
+import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { BranchProductSummary } from '@/components/branch/branch-product-summary';
 import {
     ProductInventoryPanel,
     type BranchInventorySnapshot,
     type BranchPriceSnapshot,
     type BranchProductVariantRow,
-    type TransactionsPage,
 } from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { type ColorPickerValue } from '@/lib/color-picker';
+import { stockPageUrl } from '@/lib/stock-query';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -48,14 +49,12 @@ type ProductShow = {
 export default function PlatformBranchProductShow({
     branch,
     product,
-    transactions,
     transactionTypes,
     adjustmentReasons,
     discountTypes,
 }: {
     branch: Branch;
     product: ProductShow;
-    transactions: TransactionsPage;
     transactionTypes: { value: string; label: string }[];
     adjustmentReasons: { value: string; label: string }[];
     discountTypes: { value: string; label: string }[];
@@ -142,7 +141,6 @@ export default function PlatformBranchProductShow({
                     price={product.price}
                     variantInventories={product.variant_inventories}
                     variantPrices={product.variant_prices}
-                    transactions={transactions}
                     transactionTypes={transactionTypes}
                     adjustmentReasons={adjustmentReasons}
                     discountTypes={discountTypes}
@@ -156,10 +154,13 @@ export default function PlatformBranchProductShow({
                         branch: branch.slug,
                         product: product.slug,
                     })}
-                    showUrl={BranchInventoryController.show.url({
-                        branch: branch.slug,
-                        product: product.slug,
-                    })}
+                    transactionsUrl={stockPageUrl(
+                        StockController.transactions.url(),
+                        {
+                            productId: product.id,
+                            branchId: branch.id,
+                        },
+                    )}
                 />
             </div>
         </>

@@ -76,10 +76,16 @@ export const platformNav: NavSection[] = [
         }),
         navGroup({
             title: 'Stock management',
-            href: '/platform/stock/transactions',
+            href: '/platform/stock/manage',
             icon: Boxes,
             permissions: ['manage-branch-inventories'],
             items: [
+                navLink({
+                    title: 'Manage',
+                    href: '/platform/stock/manage',
+                    icon: Settings2,
+                    permissions: ['manage-branch-inventories'],
+                }),
                 navLink({
                     title: 'Bulk Import',
                     href: '/platform/stock/import',

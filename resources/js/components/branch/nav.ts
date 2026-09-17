@@ -63,10 +63,16 @@ export function buildBranchNav(
 
     const stockNav = navGroup({
         title: 'Stock management',
-        href: `/branch/${slug}/stock/transactions`,
+        href: `/branch/${slug}/stock/manage`,
         icon: Boxes,
         permissions: ['manage-branch-products'],
         items: [
+            navLink({
+                title: 'Manage',
+                href: `/branch/${slug}/stock/manage`,
+                icon: Settings2,
+                permissions: ['manage-branch-products'],
+            }),
             navLink({
                 title: 'Bulk Import',
                 href: `/branch/${slug}/stock/import`,

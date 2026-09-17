@@ -27,10 +27,11 @@ Branch create/edit coords: Address then Map location with Set on map (BranchLoca
 Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids). Nested platform.branches.drivers and branch.drivers auto-assign the current branch on create and can assign existing drivers. Rosters require an active assignment for that branch. Overlap is per driver: date ranges overlap AND weekdays intersect AND times overlap. Roster forms use start/end dates + Mon–Sun day chips. No parcel/GPS/chat yet.
 
 ## Stock pages share a product/branch/locked query contract
-Import stock and Stock transactions exist on both portals and share the query contract `product`, `branch`, `locked` (`product|branch|both`), resolved by `App\Support\StockPageContext`. Locked selections 404 when the id or slug does not resolve.
+Manage stock, Import stock, and Stock transactions exist on both portals and share the query contract `product`, `branch`, `locked` (`product|branch|both`), resolved by `App\Support\StockPageContext`. Locked selections 404 when the id or slug does not resolve.
 The branch portal always forces `locked` to include `branch` (`StockPageContext::fromRequest($request, $branch)`), and import writes assert `branch_ids` match the current branch.
 When a product is missing from a picker, the Add product link carries `return_to` = current URL; `CatalogReturnTo::afterProductCreate` redirects back with `?product={id}` appended.
-Daily stock/price/discount writes use product manage (`platform.branches.products.*` / `branch.products.*`). Retired `stock/manage`, `stock/price`, and `/discounts` GET routes redirect via `App\Support\ProductManageRedirect`.
+`GET stock/manage` renders the pair-picker workspace. When both IDs resolve, load `BranchProductShowPayload::product` plus adjustment/discount types — do not load `::transactions`. Stock/price writes stay on nested `platform.branches.products.inventory|prices` and `branch.products.inventory|prices`. After save, `back()` returns to `stock/manage?…`.
+Old `GET platform.branches.products.show` / `GET branch.products.show` 302 to `stock/manage?branch=&product=&locked=both`. `stock/price` and `/discounts` still redirect through `App\Support\ProductManageRedirect` (pair → `stock.manage` with query; platform product-only → Manage branches; otherwise products index). Do not restore `POST stock/manage`.
 
 ## Discounts are not a Stock child
 Discounts are edited on the product manage Inventory & pricing card. Do not add a DiscountController, `/discounts` workspace, or discount actions on StockController. Old `/discounts` and `/stock/discount` URLs redirect through `ProductManageRedirect`.

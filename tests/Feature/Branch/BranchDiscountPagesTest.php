@@ -29,7 +29,10 @@ test('discounts url with a product redirects to this branch product manage page'
             'branch' => $this->branch,
             'product' => $this->product->id,
         ]))
-        ->assertRedirect(route('branch.products.show', [$this->branch, $this->product]));
+        ->assertRedirect(route('branch.stock.manage', [
+            'branch' => $this->branch,
+            'product' => $this->product->id,
+        ]));
 });
 
 test('discount writes redirect to the same destination as the discounts page', function () {
@@ -38,7 +41,10 @@ test('discount writes redirect to the same destination as the discounts page', f
             'branch' => $this->branch,
             'product' => $this->product->id,
         ]))
-        ->assertRedirect(route('branch.products.show', [$this->branch, $this->product]));
+        ->assertRedirect(route('branch.stock.manage', [
+            'branch' => $this->branch,
+            'product' => $this->product->id,
+        ]));
 
     $this->actingAs($this->staff, 'branch')
         ->get(route('branch.discounts.preview', $this->branch))
@@ -53,6 +59,9 @@ test('legacy branch stock discount url permanently redirects without chaining th
 
     $this->actingAs($this->staff, 'branch')
         ->get('/branch/'.$this->branch->slug.'/stock/discount?product='.$this->product->id)
-        ->assertRedirect(route('branch.products.show', [$this->branch, $this->product]))
+        ->assertRedirect(route('branch.stock.manage', [
+            'branch' => $this->branch,
+            'product' => $this->product->id,
+        ]))
         ->assertStatus(301);
 });
