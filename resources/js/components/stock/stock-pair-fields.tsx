@@ -1,7 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { Building2, Package, Plus } from 'lucide-react';
 import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
     isBranchLocked,
@@ -12,7 +10,7 @@ import {
 
 function LockedValue({ children }: { children: string }) {
     return (
-        <div className="bg-muted/60 flex h-9 items-center rounded-md border px-3 text-sm font-medium">
+        <div className="bg-muted/60 flex h-9 min-w-0 items-center rounded-md border px-3 text-sm font-medium">
             <span className="truncate">{children}</span>
         </div>
     );
@@ -70,14 +68,10 @@ export function StockPairFields({
 
     return (
         <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-2">
-                <Label
-                    htmlFor="stock-manage-branch"
-                    className="flex items-center gap-2"
-                >
-                    <Building2 className="text-muted-foreground size-3.5" />
-                    Branch
-                </Label>
+            <div className="grid min-w-0 gap-2">
+                <div className="flex h-8 items-center">
+                    <Label htmlFor="stock-manage-branch">Branch</Label>
+                </div>
                 {branchLocked && context.branch ? (
                     <LockedValue>{context.branch.name}</LockedValue>
                 ) : (
@@ -99,22 +93,16 @@ export function StockPairFields({
                     />
                 )}
             </div>
-            <div className="grid gap-2">
-                <div className="flex items-center justify-between gap-2">
-                    <Label
-                        htmlFor="stock-manage-product"
-                        className="flex items-center gap-2"
-                    >
-                        <Package className="text-muted-foreground size-3.5" />
-                        Product
-                    </Label>
+            <div className="grid min-w-0 gap-2">
+                <div className="flex h-8 items-center justify-between gap-2">
+                    <Label htmlFor="stock-manage-product">Product</Label>
                     {productLocked ? null : (
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={createProductUrl}>
-                                <Plus className="size-3.5" />
-                                Add product
-                            </Link>
-                        </Button>
+                        <Link
+                            href={createProductUrl}
+                            className="text-primary shrink-0 text-xs font-medium hover:underline"
+                        >
+                            Add product
+                        </Link>
                     )}
                 </div>
                 {productLocked && context.product ? (

@@ -10,7 +10,11 @@ import Heading from '@/components/heading';
 import { StockPairFields } from '@/components/stock/stock-pair-fields';
 import { Button } from '@/components/ui/button';
 import { type ColorPickerValue } from '@/lib/color-picker';
-import type { StockPageContext } from '@/lib/stock-query';
+import {
+    isBranchLocked,
+    isProductLocked,
+    type StockPageContext,
+} from '@/lib/stock-query';
 
 export type StockManageProduct = {
     id: number;
@@ -83,21 +87,27 @@ export function ManageStockPage({
 }) {
     setLayoutProps({ breadcrumbs });
 
-    const title = product?.name ?? 'Manage stock';
-    const description = product
-        ? `Inventory for ${context.branch?.name ?? 'this branch'}`
-        : 'Pick a branch and a product to manage stock, selling price, and discounts.';
+    const hasPair = Boolean(
+        product && inventoryUrl && priceUrl && transactionsUrl,
+    );
+    const pairLocked =
+        isBranchLocked(context.locked) && isProductLocked(context.locked);
 
     return (
         <>
-            <Head title={title} />
+            <Head title="Manage stock" />
 
-            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
+            <div className="flex w-full min-w-0 flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="[&_header]:mb-0">
-                        <Heading title={title} description={description} />
-                    </div>
-                    {product ? (
+                    <Heading
+                        title="Manage stock"
+                        description={
+                            hasPair
+                                ? `Inventory for ${context.branch?.name ?? 'this branch'}`
+                                : 'Pick a branch and a product to manage stock, selling price, and discounts.'
+                        }
+                    />
+                    {hasPair ? (
                         <div className="flex flex-wrap gap-2">
                             {allBranchesUrl ? (
                                 <Button variant="outline" asChild>
@@ -106,7 +116,7 @@ export function ManageStockPage({
                                     </Link>
                                 </Button>
                             ) : null}
-                                    {branchProductsUrl ? (
+                            {branchProductsUrl ? (
                                 <Button variant="outline" asChild>
                                     <Link href={branchProductsUrl}>
                                         {allBranchesUrl && context.branch
@@ -124,16 +134,33 @@ export function ManageStockPage({
                     ) : null}
                 </div>
 
-                <StockPairFields
-                    context={context}
-                    pageUrl={pageUrl}
-                    productOptionsUrl={productOptionsUrl}
-                    branchOptionsUrl={branchOptionsUrl}
-                    createProductUrl={createProductUrl}
-                    lockBranch={lockBranch}
-                />
+                <section className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6">
+                    <div className="space-y-1">
+                        <h2 className="text-base font-semibold tracking-tight">
+                            Branch and product
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                            {hasPair
+                                ? pairLocked
+                                    ? 'Stock, selling price, and discounts for this listing.'
+                                    : 'Change either picker to load a different listing.'
+                                : 'Select one of each. Listing details and Inventory & pricing appear after both are chosen.'}
+                        </p>
+                    </div>
+                    <div className="mt-5">
+                        <StockPairFields
+                            context={context}
+                            pageUrl={pageUrl}
+                            productOptionsUrl={productOptionsUrl}
+                            branchOptionsUrl={branchOptionsUrl}
+                            createProductUrl={createProductUrl}
+                            lockBranch={lockBranch}
+                        />
+                    </div>
+                </section>
 
-                {product &&
+                {hasPair &&
+                product &&
                 inventoryUrl &&
                 priceUrl &&
                 transactionsUrl ? (
@@ -172,12 +199,7 @@ export function ManageStockPage({
                             transactionsUrl={transactionsUrl}
                         />
                     </>
-                ) : (
-                    <p className="text-muted-foreground text-sm">
-                        Choose a branch and a product to manage stock,
-                        selling price, and discounts.
-                    </p>
-                )}
+                ) : null}
             </div>
         </>
     );
