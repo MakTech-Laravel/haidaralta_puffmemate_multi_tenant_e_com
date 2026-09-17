@@ -108,7 +108,25 @@ test('manage stock url 404s when a locked product is missing', function () {
         ->assertNotFound();
 });
 
+test('import stock page is not found while bulk import is hidden', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.stock.import'))
+        ->assertNotFound();
+});
+
+test('import stock store is not found while bulk import is hidden', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.import.store'), [
+            'branch_ids' => [$this->branch->id],
+            'product_ids' => [$this->product->id],
+            'quantity' => 3,
+        ])
+        ->assertNotFound();
+});
+
 test('import stock page starts unlocked with no selection', function () {
+    config(['catalog.show_bulk_import' => true]);
+
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.stock.import'))
         ->assertOk()
@@ -120,6 +138,8 @@ test('import stock page starts unlocked with no selection', function () {
 });
 
 test('import stock adds the same quantity to every branch and product pair', function () {
+    config(['catalog.show_bulk_import' => true]);
+
     $other = Product::factory()->create();
     $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
 
@@ -141,6 +161,8 @@ test('import stock adds the same quantity to every branch and product pair', fun
 });
 
 test('import stock rejects an empty product list', function () {
+    config(['catalog.show_bulk_import' => true]);
+
     $this->actingAs($this->admin, 'platform')
         ->post(route('platform.stock.import.store'), [
             'branch_ids' => [$this->branch->id],
@@ -151,6 +173,8 @@ test('import stock rejects an empty product list', function () {
 });
 
 test('import stock rejects a zero quantity', function () {
+    config(['catalog.show_bulk_import' => true]);
+
     $this->actingAs($this->admin, 'platform')
         ->post(route('platform.stock.import.store'), [
             'branch_ids' => [$this->branch->id],
@@ -329,6 +353,8 @@ test('creating a product from a stock page returns to it with the product select
 });
 
 test('stock pages require manage-branch-inventories', function () {
+    config(['catalog.show_bulk_import' => true]);
+
     $user = User::factory()->create([
         'user_type' => UserType::PLATFORM,
         'email_verified_at' => now(),
@@ -348,6 +374,8 @@ test('stock pages require manage-branch-inventories', function () {
 });
 
 test('guests cannot open stock pages', function () {
+    config(['catalog.show_bulk_import' => true]);
+
     $this->get(route('platform.stock.import'))->assertRedirect(route('login'));
     $this->getJson(route('platform.stock.product-options'))->assertRedirect(route('login'));
     $this->getJson(route('platform.stock.branch-options'))->assertRedirect(route('login'));

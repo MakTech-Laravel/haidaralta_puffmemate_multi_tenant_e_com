@@ -12,7 +12,7 @@ paths:
 Stock Manage uses ProductInventoryPanel: base + variant scope selector, posts existing inventory/price routes with variant_id. Never edit global catalog metadata from branch. UI uses Card sections + shared `DatePicker` (`@/components/ui/date-picker`, Calendar popover, `yyyy-MM-dd`) — prefer over native `input type="date"`.
 
 ## Branch Product management nav children
-Inertia catalog pages live under `resources/js/pages/branch/catalog/{categories,products}` (same shape as platform). Categories routes have no destroy/restore. Product management always lists Products, Manage stock, and Bulk Import. When catalog.branch_can_view_categories is false, omit Categories. When true, keep Categories first. Keep the Categories item in source; wrap it, do not delete.
+Inertia catalog pages live under `resources/js/pages/branch/catalog/{categories,products}` (same shape as platform). Categories routes have no destroy/restore. Product management always lists Products and Manage stock; Bulk Import only when `catalog.show_bulk_import`. When catalog.branch_can_view_categories is false, omit Categories. When true, keep Categories first. Keep the Categories and Bulk Import items in source; wrap them, do not delete.
 
 ## Inventory panel is a compact listing card
 Inventory manage is one `shadow-sm` card: snapshot strip (Stock, Selling, Effective) plus two content-sized Stock/Price forms with Save in each section header. Do not float a DemoStatCard, stretch equal-height footers, or leave an empty inventory column. DatePickers stay `min-w-0`. Type is a 3-button row, not a full-width select.

@@ -94,7 +94,24 @@ test('manage stock url 404s when a locked product is missing', function () {
         ->assertNotFound();
 });
 
+test('branch import stock page is not found while bulk import is hidden', function () {
+    $this->actingAs($this->staff, 'branch')
+        ->get(route('branch.stock.import', $this->branch))
+        ->assertNotFound();
+});
+
+test('branch import stock store is not found while bulk import is hidden', function () {
+    $this->actingAs($this->staff, 'branch')
+        ->post(route('branch.stock.import.store', $this->branch), [
+            'product_ids' => [$this->product->id],
+            'quantity' => 6,
+        ])
+        ->assertNotFound();
+});
+
 test('branch import stock page locks the branch even when unlocked in the query', function () {
+    config(['catalog.show_bulk_import' => true]);
+
     $this->actingAs($this->staff, 'branch')
         ->get(route('branch.stock.import', $this->branch))
         ->assertOk()
@@ -105,6 +122,8 @@ test('branch import stock page locks the branch even when unlocked in the query'
 });
 
 test('branch import stock only fills this branch', function () {
+    config(['catalog.show_bulk_import' => true]);
+
     $other = Product::factory()->create();
 
     $this->actingAs($this->staff, 'branch')
@@ -191,5 +210,7 @@ test('creating a product from a branch stock page returns to it with the product
 });
 
 test('guests cannot open branch stock pages', function () {
+    config(['catalog.show_bulk_import' => true]);
+
     $this->get(route('branch.stock.import', $this->branch))->assertRedirect(route('login'));
 });

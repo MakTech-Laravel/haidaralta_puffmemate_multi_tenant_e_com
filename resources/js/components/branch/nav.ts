@@ -35,6 +35,7 @@ import type { NavSection } from '@/components/navigation/types';
 export function buildBranchNav(
     slug: string,
     canViewCategories = false,
+    showBulkImport = false,
 ): NavSection[] {
     const productItems = [
         ...(canViewCategories
@@ -59,12 +60,16 @@ export function buildBranchNav(
             icon: Boxes,
             permissions: ['manage-branch-products'],
         }),
-        navLink({
-            title: 'Bulk Import',
-            href: `/branch/${slug}/stock/import`,
-            icon: PackagePlus,
-            permissions: ['manage-branch-products'],
-        }),
+        ...(showBulkImport
+            ? [
+                  navLink({
+                      title: 'Bulk Import',
+                      href: `/branch/${slug}/stock/import`,
+                      icon: PackagePlus,
+                      permissions: ['manage-branch-products'],
+                  }),
+              ]
+            : []),
     ];
 
     return [

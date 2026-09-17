@@ -46,7 +46,8 @@ import {
 } from '@/components/navigation/nav-builders';
 import type { NavSection } from '@/components/navigation/types';
 
-export const platformNav: NavSection[] = [
+export function buildPlatformNav(showBulkImport = false): NavSection[] {
+    return [
     navSection(undefined, [
         navLink({
             title: 'Dashboard',
@@ -174,7 +175,9 @@ export const platformNav: NavSection[] = [
             title: 'Product management',
             href: '/platform/products',
             icon: Package,
-            permissions: ['manage-catalog', 'manage-branch-inventories'],
+            permissions: showBulkImport
+                ? ['manage-catalog', 'manage-branch-inventories']
+                : ['manage-catalog'],
             items: [
                 navLink({
                     title: 'Categories',
@@ -188,12 +191,16 @@ export const platformNav: NavSection[] = [
                     icon: Package,
                     permissions: ['manage-catalog'],
                 }),
-                navLink({
-                    title: 'Bulk Import',
-                    href: '/platform/stock/import',
-                    icon: PackagePlus,
-                    permissions: ['manage-branch-inventories'],
-                }),
+                ...(showBulkImport
+                    ? [
+                          navLink({
+                              title: 'Bulk Import',
+                              href: '/platform/stock/import',
+                              icon: PackagePlus,
+                              permissions: ['manage-branch-inventories'],
+                          }),
+                      ]
+                    : []),
             ],
         }),
         navGroup({
@@ -372,3 +379,4 @@ export const platformNav: NavSection[] = [
         }),
     ]),
 ];
+}

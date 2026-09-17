@@ -73,6 +73,8 @@ class StockController extends Controller
 
     public function import(Request $request): Response
     {
+        abort_unless((bool) config('catalog.show_bulk_import'), 404);
+
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/stock/import', [
@@ -86,6 +88,8 @@ class StockController extends Controller
 
     public function storeImport(ImportStockRequest $request): RedirectResponse
     {
+        abort_unless((bool) config('catalog.show_bulk_import'), 404);
+
         $branch = $this->currentBranch();
         $products = StockPageContext::requireProducts($request->validated('product_ids'));
         $quantity = (int) $request->validated('quantity');
