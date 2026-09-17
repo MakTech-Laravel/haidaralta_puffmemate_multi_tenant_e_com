@@ -1,10 +1,10 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Settings2 } from 'lucide-react';
+import { Eye, Settings2 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
-import DiscountController from '@/actions/App/Http/Controllers/Branch/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Branch/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
 import {
@@ -19,7 +19,7 @@ import {
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { stockActionItems } from '@/lib/stock-query';
+import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type CategoryOption = { id: number; name: string; slug: string };
 
@@ -179,9 +179,30 @@ export default function BranchProductsIndex({
                                 label: 'Catalog',
                                 items: [
                                     {
-                                        label: 'Manage',
-                                        icon: Settings2,
+                                        label: 'View',
+                                        icon: Eye,
                                         href: ProductController.show.url({
+                                            branch: branch.slug,
+                                            product: row.original.slug,
+                                        }),
+                                    },
+                                    {
+                                        label: 'Manage stock',
+                                        icon: Settings2,
+                                        href: stockPageUrl(
+                                            StockController.manage.url(
+                                                branch.slug,
+                                            ),
+                                            {
+                                                productId: row.original.id,
+                                                branchId: branch.id,
+                                                locked: 'both',
+                                            },
+                                        ),
+                                    },
+                                    {
+                                        label: 'Edit',
+                                        href: ProductController.edit.url({
                                             branch: branch.slug,
                                             product: row.original.slug,
                                         }),
@@ -192,23 +213,13 @@ export default function BranchProductsIndex({
                                 label: 'Stock',
                                 items: stockActionItems(
                                     {
-                                        manage: StockController.manage.url(
-                                            branch.slug,
-                                        ),
                                         transactions:
-                                            StockController.transactions.url(
+                                            StockTransactionController.index.url(
                                                 branch.slug,
                                             ),
-                                        price: StockController.price.url(
-                                            branch.slug,
-                                        ),
-                                        discount: DiscountController.index.url(
-                                            branch.slug,
-                                        ),
                                     },
                                     {
                                         productId: row.original.id,
-                                        locked: 'both',
                                     },
                                 ),
                             },

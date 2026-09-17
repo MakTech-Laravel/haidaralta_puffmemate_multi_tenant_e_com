@@ -1,473 +1,209 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Eye } from 'lucide-react';
 import {
-    ArrowDownToLine,
-    ArrowUpFromLine,
-    Boxes,
-    Building2,
-    Minus,
-    Package,
-    Plus,
-    SlidersHorizontal,
-    type LucideIcon,
-} from 'lucide-react';
+    ProductInventoryPanel,
+    type BranchInventorySnapshot,
+    type BranchPriceSnapshot,
+    type BranchProductVariantRow,
+} from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
-import { AdjustmentReasonNote } from '@/components/stock/adjustment-reason-note';
 import { StockPairFields } from '@/components/stock/stock-pair-fields';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { type ColorPickerValue } from '@/lib/color-picker';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import type { StockPageContext } from '@/lib/stock-query';
-import { cn } from '@/lib/utils';
+    isBranchLocked,
+    isProductLocked,
+    type StockPageContext,
+} from '@/lib/stock-query';
 
-function parseQuantity(value: string): number {
-    if (value.trim() === '') {
-        return 0;
-    }
-
-    const parsed = Number.parseInt(value, 10);
-
-    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
-}
-
-function countedPreview(
-    current: number,
-    counted: number,
-    empty: boolean,
-): string {
-    if (empty) {
-        return 'Enter the counted on-hand quantity.';
-    }
-
-    if (counted === current) {
-        return 'Counted quantity matches current stock.';
-    }
-
-    if (counted > current) {
-        return `Current ${current} → ${counted} (add ${counted - current})`;
-    }
-
-    return `Current ${current} → ${counted} (remove ${current - counted})`;
-}
-
-const ADJUST_TYPES: Array<{
-    value: string;
-    label: string;
-    hint: string;
-    icon: LucideIcon;
-}> = [
-    {
-        value: 'stock_in',
-        label: 'New entry',
-        hint: 'Added to on-hand stock',
-        icon: ArrowDownToLine,
-    },
-    {
-        value: 'stock_out',
-        label: 'Reduce',
-        hint: 'Removed from on-hand stock',
-        icon: ArrowUpFromLine,
-    },
-    {
-        value: 'adjustment',
-        label: 'Adjustment',
-        hint: 'Set stock to the counted on-hand total',
-        icon: SlidersHorizontal,
-    },
-];
+export type StockManageProduct = {
+    id: number;
+    name: string;
+    slug: string;
+    sku: string | null;
+    brand: string | null;
+    description?: string | null;
+    tags: string[];
+    specifications: { label: string; value: string }[];
+    status: boolean;
+    image_url: string | null;
+    color_code?: ColorPickerValue | null;
+    categories: { id: number; name: string; slug: string }[];
+    category_name: string;
+    gallery?: {
+        id: number;
+        url: string;
+        path?: string;
+        sort_order?: number;
+    }[];
+    created_at: string | null;
+    updated_at: string | null;
+    created_by_name: string | null;
+    variants: BranchProductVariantRow[];
+    inventory: BranchInventorySnapshot | null;
+    price: BranchPriceSnapshot | null;
+    variant_inventories: Record<string, BranchInventorySnapshot>;
+    variant_prices: Record<string, BranchPriceSnapshot>;
+};
 
 export function ManageStockPage({
     context,
+    product,
+    transactionTypes,
+    adjustmentReasons,
+    discountTypes,
     createProductUrl,
     pageUrl,
-    adjustUrl,
     productOptionsUrl,
+    inventoryUrl,
+    priceUrl,
+    transactionsUrl,
+    allBranchesUrl,
+    branchProductsUrl,
+    detailsUrl,
     branchOptionsUrl,
-    adjustmentReasons,
-    title = 'Manage stock',
+    lockBranch = false,
+    breadcrumbs,
 }: {
     context: StockPageContext;
+    product: StockManageProduct | null;
+    transactionTypes: { value: string; label: string }[];
+    adjustmentReasons: { value: string; label: string }[];
+    discountTypes: { value: string; label: string }[];
     createProductUrl: string;
     pageUrl: string;
-    adjustUrl: string;
     productOptionsUrl: string;
+    inventoryUrl: string | null;
+    priceUrl: string | null;
+    transactionsUrl: string | null;
+    allBranchesUrl: string | null;
+    branchProductsUrl: string | null;
+    detailsUrl: string | null;
     branchOptionsUrl?: string;
-    adjustmentReasons: { value: string; label: string }[];
-    title?: string;
+    lockBranch?: boolean;
+    breadcrumbs: { title: string; href: string }[];
 }) {
-    const ready = context.branch !== null && context.product !== null;
-    const form = useForm({
-        branch_id: context.branch?.id ?? 0,
-        product_id: context.product?.id ?? 0,
-        type: 'stock_in',
-        quantity: '0',
-        reason: '',
-        reason_note: '',
-    });
-    const selectedType =
-        ADJUST_TYPES.find((type) => type.value === form.data.type) ??
-        ADJUST_TYPES[0];
-    const isAdjustment = form.data.type === 'adjustment';
-    const isOtherReason = isAdjustment && form.data.reason === 'other';
-    const currentStock = context.inventory?.quantity ?? 0;
-    const quantityEmpty = form.data.quantity.trim() === '';
-    const quantityValue = parseQuantity(form.data.quantity);
-    const variance = quantityValue - currentStock;
-    const quantityHint = isAdjustment
-        ? countedPreview(currentStock, quantityValue, quantityEmpty)
-        : selectedType.hint;
-    const saveDisabled =
-        form.processing ||
-        quantityEmpty ||
-        (!isAdjustment && quantityValue < 1) ||
-        (isAdjustment &&
-            (form.data.reason === '' ||
-                variance === 0 ||
-                (isOtherReason && form.data.reason_note.trim() === '')));
+    setLayoutProps({ breadcrumbs });
 
-    const setQuantity = (next: number) => {
-        form.setData('quantity', String(Math.max(0, next)));
-    };
-
-    const selectType = (next: string) => {
-        if (next === 'adjustment') {
-            form.setData({
-                ...form.data,
-                type: next,
-                quantity: String(currentStock),
-            });
-
-            return;
-        }
-
-        if (form.data.type === 'adjustment') {
-            form.setData({
-                ...form.data,
-                type: next,
-                quantity: '0',
-                reason: '',
-                reason_note: '',
-            });
-
-            return;
-        }
-
-        form.setData('type', next);
-    };
+    const hasPair = Boolean(
+        product && inventoryUrl && priceUrl && transactionsUrl,
+    );
+    const pairLocked =
+        isBranchLocked(context.locked) && isProductLocked(context.locked);
 
     return (
         <>
-            <Head title={title} />
-            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
-                <Heading
-                    title={title}
-                    description="Adjust stock for one branch and one product"
-                />
+            <Head title="Manage stock" />
 
-                <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]">
-                    <section className="self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6">
-                        <div className="mb-5 space-y-1">
-                            <h2 className="text-base font-semibold tracking-tight">
-                                Branch and product
-                            </h2>
-                            <p className="text-muted-foreground text-sm">
-                                Choose the branch and catalog product you want
-                                to adjust.
-                            </p>
+            <div className="flex w-full min-w-0 flex-col gap-4 p-2 md:p-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <Heading
+                        className="min-w-0"
+                        title="Manage stock"
+                        description={
+                            hasPair
+                                ? `Inventory for ${context.branch?.name ?? 'this branch'}`
+                                : lockBranch
+                                  ? 'Pick a product to manage stock, selling price, and discounts.'
+                                  : 'Pick a branch and a product to manage stock, selling price, and discounts.'
+                        }
+                    />
+                    {hasPair ? (
+                        <div className="flex max-w-full min-w-0 flex-wrap justify-end gap-2">
+                            {allBranchesUrl ? (
+                                <Button variant="outline" asChild>
+                                    <Link href={allBranchesUrl}>
+                                        All branches
+                                    </Link>
+                                </Button>
+                            ) : null}
+                            {branchProductsUrl ? (
+                                <Button variant="outline" asChild>
+                                    <Link
+                                        href={branchProductsUrl}
+                                        className="max-w-48 min-w-0"
+                                        title={
+                                            allBranchesUrl && context.branch
+                                                ? `${context.branch.name} products`
+                                                : undefined
+                                        }
+                                    >
+                                        <span className="truncate">
+                                            {allBranchesUrl && context.branch
+                                                ? `${context.branch.name} products`
+                                                : 'Back'}
+                                        </span>
+                                    </Link>
+                                </Button>
+                            ) : null}
                         </div>
+                    ) : null}
+                </div>
 
+                <section className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6">
+                    <div className="space-y-1">
+                        <h2 className="text-base font-semibold tracking-tight">
+                            {lockBranch ? 'Product' : 'Branch and product'}
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                            {hasPair
+                                ? pairLocked
+                                    ? 'Stock, selling price, and discounts for this listing.'
+                                    : lockBranch
+                                      ? 'Change the product to load a different listing.'
+                                      : 'Change either picker to load a different listing.'
+                                : lockBranch
+                                  ? 'Select a product. Inventory & pricing appear after it is chosen.'
+                                  : 'Select one of each. Inventory & pricing appear after both are chosen.'}
+                        </p>
+                    </div>
+                    <div className="mt-5">
                         <StockPairFields
                             context={context}
                             pageUrl={pageUrl}
-                            createProductUrl={createProductUrl}
                             productOptionsUrl={productOptionsUrl}
                             branchOptionsUrl={branchOptionsUrl}
+                            createProductUrl={createProductUrl}
+                            lockBranch={lockBranch}
                         />
+                    </div>
+                </section>
 
-                        {ready ? (
-                            <form
-                                className="mt-6 flex flex-col gap-5 border-t border-border/70 pt-6"
-                                onSubmit={(event) => {
-                                    event.preventDefault();
-                                    form.transform((data) => ({
-                                        ...data,
-                                        branch_id: context.branch?.id ?? 0,
-                                        product_id: context.product?.id ?? 0,
-                                        quantity:
-                                            data.quantity.trim() === ''
-                                                ? ''
-                                                : parseQuantity(data.quantity),
-                                        reason:
-                                            data.type === 'adjustment'
-                                                ? data.reason
-                                                : null,
-                                        reason_note:
-                                            data.type === 'adjustment' &&
-                                            data.reason === 'other'
-                                                ? data.reason_note
-                                                : null,
-                                    }));
-                                    form.post(adjustUrl, {
-                                        preserveScroll: true,
-                                    });
-                                }}
-                            >
-                                <div className="space-y-1">
-                                    <h2 className="text-base font-semibold tracking-tight">
-                                        Adjust inventory
-                                    </h2>
-                                    <p className="text-muted-foreground text-sm">
-                                        Stock in, stock out, or set counted
-                                        on-hand for this pair.
-                                    </p>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label>Adjustment</Label>
-                                    <div className="grid gap-2 sm:grid-cols-3">
-                                        {ADJUST_TYPES.map((type) => {
-                                            const Icon = type.icon;
-                                            const selected =
-                                                form.data.type === type.value;
-
-                                            return (
-                                                <Button
-                                                    key={type.value}
-                                                    type="button"
-                                                    variant={
-                                                        selected
-                                                            ? 'default'
-                                                            : 'outline'
-                                                    }
-                                                    className={cn(
-                                                        'h-auto flex-col gap-1.5 py-3 font-medium',
-                                                        selected
-                                                            ? ''
-                                                            : 'text-foreground',
-                                                    )}
-                                                    onClick={() =>
-                                                        selectType(type.value)
-                                                    }
-                                                >
-                                                    <Icon className="size-4" />
-                                                    {type.label}
-                                                </Button>
-                                            );
-                                        })}
-                                    </div>
-                                    <InputError message={form.errors.type} />
-                                </div>
-
-                                <div className="grid gap-4">
-                                    <div
-                                        className={cn(
-                                            'grid items-start gap-4',
-                                            isAdjustment
-                                                ? 'sm:grid-cols-2'
-                                                : 'max-w-sm',
-                                        )}
-                                    >
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="quantity">
-                                                {isAdjustment
-                                                    ? 'Counted quantity'
-                                                    : 'Quantity'}
-                                            </Label>
-                                            <div className="flex items-stretch overflow-hidden rounded-xl border border-border/80 bg-background shadow-xs">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    className="text-foreground h-12 w-12 shrink-0 rounded-none border-r border-border/80"
-                                                    aria-label="Decrease quantity"
-                                                    disabled={
-                                                        quantityValue <= 0
-                                                    }
-                                                    onClick={() =>
-                                                        setQuantity(
-                                                            quantityValue - 1,
-                                                        )
-                                                    }
-                                                >
-                                                    <Minus className="size-4" />
-                                                </Button>
-                                                <Input
-                                                    id="quantity"
-                                                    type="text"
-                                                    inputMode="numeric"
-                                                    autoComplete="off"
-                                                    placeholder="0"
-                                                    aria-label="Quantity"
-                                                    className="h-12 flex-1 rounded-none border-0 bg-transparent text-center text-xl font-semibold tabular-nums shadow-none focus-visible:ring-0"
-                                                    value={form.data.quantity}
-                                                    onChange={(event) => {
-                                                        const next =
-                                                            event.target.value;
-
-                                                        if (
-                                                            next === '' ||
-                                                            /^\d+$/.test(next)
-                                                        ) {
-                                                            form.setData(
-                                                                'quantity',
-                                                                next,
-                                                            );
-                                                        }
-                                                    }}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    className="text-foreground h-12 w-12 shrink-0 rounded-none border-l border-border/80"
-                                                    aria-label="Increase quantity"
-                                                    onClick={() =>
-                                                        setQuantity(
-                                                            quantityValue + 1,
-                                                        )
-                                                    }
-                                                >
-                                                    <Plus className="size-4" />
-                                                </Button>
-                                            </div>
-                                            <p className="text-muted-foreground text-xs">
-                                                {quantityHint}
-                                            </p>
-                                            <InputError
-                                                message={form.errors.quantity}
-                                            />
-                                        </div>
-
-                                        {isAdjustment ? (
-                                            <div className="grid content-start gap-2">
-                                                <Label htmlFor="reason">
-                                                    Reason
-                                                </Label>
-                                                <Select
-                                                    value={
-                                                        form.data.reason ||
-                                                        undefined
-                                                    }
-                                                    onValueChange={(value) =>
-                                                        form.setData({
-                                                            ...form.data,
-                                                            reason: value,
-                                                            reason_note:
-                                                                value ===
-                                                                'other'
-                                                                    ? form.data
-                                                                          .reason_note
-                                                                    : '',
-                                                        })
-                                                    }
-                                                >
-                                                    <SelectTrigger
-                                                        id="reason"
-                                                        className="h-12 min-h-12 w-full rounded-xl py-0 data-[size=default]:h-12"
-                                                    >
-                                                        <SelectValue placeholder="Select a reason" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {adjustmentReasons.map(
-                                                            (reason) => (
-                                                                <SelectItem
-                                                                    key={
-                                                                        reason.value
-                                                                    }
-                                                                    value={
-                                                                        reason.value
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        reason.label
-                                                                    }
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                                <InputError
-                                                    message={form.errors.reason}
-                                                />
-                                            </div>
-                                        ) : null}
-                                    </div>
-
-                                    {isOtherReason ? (
-                                        <AdjustmentReasonNote
-                                            id="reason_note"
-                                            value={form.data.reason_note}
-                                            error={form.errors.reason_note}
-                                            onChange={(value) =>
-                                                form.setData(
-                                                    'reason_note',
-                                                    value,
-                                                )
-                                            }
-                                        />
-                                    ) : null}
-                                </div>
-
-                                <div>
-                                    <Button
-                                        type="submit"
-                                        disabled={saveDisabled}
-                                    >
-                                        Save stock
-                                    </Button>
-                                </div>
-                            </form>
-                        ) : (
-                            <div className="mt-6 flex min-h-64 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/80 px-6 py-12 text-center">
-                                <Package className="text-muted-foreground size-8" />
-                                <p className="text-sm font-medium">
-                                    Nothing selected yet
+                {hasPair &&
+                product &&
+                inventoryUrl &&
+                priceUrl &&
+                transactionsUrl ? (
+                    <>
+                        {detailsUrl ? (
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <p className="text-muted-foreground text-sm">
+                                    Catalog listing for {product.name}
                                 </p>
-                                <p className="text-muted-foreground max-w-sm text-sm">
-                                    Choose a branch and product above to see
-                                    current stock and make an adjustment.
-                                </p>
+                                <Button variant="outline" asChild>
+                                    <Link href={detailsUrl}>
+                                        <Eye className="size-4" />
+                                        View details
+                                    </Link>
+                                </Button>
                             </div>
-                        )}
-                    </section>
+                        ) : null}
 
-                    <aside className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-                        <DemoStatCard
-                            label="Current stock"
-                            value={
-                                ready
-                                    ? String(context.inventory?.quantity ?? 0)
-                                    : '—'
-                            }
-                            hint="On-hand quantity"
-                            icon={Boxes}
+                        <ProductInventoryPanel
+                            variants={product.variants}
+                            inventory={product.inventory}
+                            price={product.price}
+                            variantInventories={product.variant_inventories}
+                            variantPrices={product.variant_prices}
+                            transactionTypes={transactionTypes}
+                            adjustmentReasons={adjustmentReasons}
+                            discountTypes={discountTypes}
+                            inventoryUrl={inventoryUrl}
+                            priceUrl={priceUrl}
+                            transactionsUrl={transactionsUrl}
                         />
-                        <DemoStatCard
-                            label="Branch"
-                            value={context.branch?.name ?? 'Not selected'}
-                            hint="Stock is held at this location"
-                            icon={Building2}
-                            valueClassName="truncate text-lg"
-                        />
-                        <DemoStatCard
-                            label="Product"
-                            value={context.product?.name ?? 'Not selected'}
-                            hint={
-                                context.product?.sku
-                                    ? context.product.sku
-                                    : 'Catalog listing'
-                            }
-                            icon={Package}
-                            valueClassName="truncate text-lg"
-                        />
-                    </aside>
-                </div>
+                    </>
+                ) : null}
             </div>
         </>
     );

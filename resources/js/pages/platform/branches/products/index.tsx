@@ -4,7 +4,7 @@ import { CircleDollarSign, Package, Settings2 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
-import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
 import {
@@ -27,7 +27,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { stockActionItems } from '@/lib/stock-query';
+import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type ProductRow = {
     id: number;
@@ -193,25 +193,25 @@ export default function PlatformBranchProductsIndex({
                     <DataTableRowActions
                         items={[
                             {
-                                label: 'Manage',
+                                label: 'Manage stock',
                                 icon: Settings2,
-                                href: BranchInventoryController.show.url({
-                                    branch: branch.slug,
-                                    product: row.original.slug,
-                                }),
+                                href: stockPageUrl(
+                                    StockController.manage.url(),
+                                    {
+                                        productId: row.original.id,
+                                        branchId: branch.id,
+                                        locked: 'both',
+                                    },
+                                ),
                             },
                             ...stockActionItems(
                                 {
-                                    manage: StockController.manage.url(),
                                     transactions:
-                                        StockController.transactions.url(),
-                                    price: StockController.price.url(),
-                                    discount: DiscountController.index.url(),
+                                        StockTransactionController.index.url(),
                                 },
                                 {
                                     productId: row.original.id,
                                     branchId: branch.id,
-                                    locked: 'both',
                                 },
                             ),
                         ]}

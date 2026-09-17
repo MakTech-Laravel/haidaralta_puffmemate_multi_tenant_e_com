@@ -1,22 +1,15 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
+import { Pencil, ScrollText, Settings2 } from 'lucide-react';
+import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Branch/Reports/StockTransactionController';
+import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import { BranchProductSummary } from '@/components/branch/branch-product-summary';
-import {
-    ProductInventoryPanel,
-    type BranchInventorySnapshot,
-    type BranchPriceSnapshot,
-    type BranchProductVariantRow,
-    type TransactionsPage,
-} from '@/components/branch/product-inventory-panel';
-import Heading from '@/components/heading';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PRODUCT_TAG_OPTIONS } from '@/components/platform/product-form';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    colorPickerStyle,
-    isTransparentColorPickerValue,
-    normalizeCatalogColorPickerValue,
-    type ColorPickerValue,
-} from '@/lib/color-picker';
+import { type ColorPickerValue } from '@/lib/color-picker';
+import { stockPageUrl } from '@/lib/stock-query';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -25,10 +18,14 @@ type ProductShow = {
     name: string;
     slug: string;
     sku: string | null;
+    brand: string | null;
     description: string | null;
+    tags: string[];
+    specifications: { label: string; value: string }[];
     status: boolean;
     image_url: string | null;
     color_code?: ColorPickerValue | null;
+    categories: { id: number; name: string; slug: string }[];
     category_name: string;
     gallery?: {
         id: number;
@@ -36,30 +33,33 @@ type ProductShow = {
         path?: string;
         sort_order?: number;
     }[];
-    variants: BranchProductVariantRow[];
-    inventory: BranchInventorySnapshot | null;
-    price: BranchPriceSnapshot | null;
-    variant_inventories: Record<string, BranchInventorySnapshot>;
-    variant_prices: Record<string, BranchPriceSnapshot>;
+    created_at: string | null;
+    updated_at: string | null;
+    created_by_name: string | null;
 };
+
+function tagLabel(value: string): string {
+    return (
+        PRODUCT_TAG_OPTIONS.find((option) => option.value === value)?.label ??
+        value
+    );
+}
 
 export default function BranchProductShow({
     branch,
     product,
-    transactions,
-    transactionTypes,
-    adjustmentReasons,
-    discountTypes,
 }: {
     branch: Branch;
     product: ProductShow;
-    transactions: TransactionsPage;
-    transactionTypes: { value: string; label: string }[];
-    adjustmentReasons: { value: string; label: string }[];
-    discountTypes: { value: string; label: string }[];
 }) {
-    const colorCode = normalizeCatalogColorPickerValue(product.color_code);
-    const transparent = isTransparentColorPickerValue(colorCode);
+    const { catalog } = usePage().props;
+    const categoryHref = catalog.branch_can_view_categories
+        ? (slug: string) =>
+              CategoryController.show.url({
+                  branch: branch.slug,
+                  category: slug,
+              })
+        : undefined;
 
     setLayoutProps({
         breadcrumbs: [
@@ -87,43 +87,82 @@ export default function BranchProductShow({
 
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                        <Avatar
-                            className="size-14 rounded-xl border border-border/70"
-                            style={
-                                transparent
-                                    ? undefined
-                                    : colorPickerStyle(colorCode)
-                            }
-                        >
-                            {product.image_url ? (
-                                <AvatarImage
-                                    src={product.image_url}
-                                    alt={product.name}
-                                    className="object-contain p-1"
-                                />
-                            ) : null}
-                            <AvatarFallback className="rounded-xl bg-transparent text-base">
-                                {product.name.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="[&_header]:mb-0">
-                            <Heading
-                                title={product.name}
-                                description={
-                                    product.sku
-                                        ? `SKU ${product.sku}`
-                                        : 'Branch inventory and pricing'
-                                }
-                            />
+                    <div className="min-w-0 space-y-3">
+                        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                            Catalog product
+                        </p>
+                        <div className="space-y-2">
+                            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                                {product.name}
+                            </h1>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                <Badge
+                                    variant={
+                                        product.status ? 'default' : 'secondary'
+                                    }
+                                >
+                                    {product.status
+                                        ? 'Active in catalog'
+                                        : 'Inactive'}
+                                </Badge>
+                                {product.brand ? (
+                                    <Badge variant="outline">
+                                        {product.brand}
+                                    </Badge>
+                                ) : null}
+                                {product.sku ? (
+                                    <Badge
+                                        variant="outline"
+                                        className="font-mono font-normal"
+                                    >
+                                        {product.sku}
+                                    </Badge>
+                                ) : null}
+                                {product.tags.map((tag) => (
+                                    <Badge key={tag} variant="secondary">
+                                        {tagLabel(tag)}
+                                    </Badge>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <Button variant="outline" asChild>
                             <Link
                                 href={ProductController.index.url(branch.slug)}
                             >
-                                Back
+                                All products
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={stockPageUrl(
+                                    StockController.manage.url(branch.slug),
+                                    {
+                                        productId: product.id,
+                                        branchId: branch.id,
+                                        locked: 'both',
+                                    },
+                                )}
+                            >
+                                <Settings2 className="size-4" />
+                                Manage stock
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={stockPageUrl(
+                                    StockTransactionController.index.url(
+                                        branch.slug,
+                                    ),
+                                    {
+                                        productId: product.id,
+                                        branchId: branch.id,
+                                    },
+                                )}
+                            >
+                                <ScrollText className="size-4" />
+                                Stock transactions
                             </Link>
                         </Button>
                         <Button asChild>
@@ -133,6 +172,7 @@ export default function BranchProductShow({
                                     product: product.slug,
                                 })}
                             >
+                                <Pencil className="size-4" />
                                 Edit
                             </Link>
                         </Button>
@@ -142,37 +182,21 @@ export default function BranchProductShow({
                 <BranchProductSummary
                     name={product.name}
                     sku={product.sku}
+                    slug={product.slug}
+                    brand={product.brand}
                     description={product.description}
-                    categoryName={product.category_name}
+                    status={product.status}
                     imageUrl={product.image_url}
                     colorCode={product.color_code}
                     gallery={product.gallery ?? []}
-                    quantity={product.inventory?.quantity ?? 0}
-                    missingPrice={product.price == null}
-                />
-
-                <ProductInventoryPanel
-                    variants={product.variants}
-                    inventory={product.inventory}
-                    price={product.price}
-                    variantInventories={product.variant_inventories}
-                    variantPrices={product.variant_prices}
-                    transactions={transactions}
-                    transactionTypes={transactionTypes}
-                    adjustmentReasons={adjustmentReasons}
-                    discountTypes={discountTypes}
-                    inventoryUrl={ProductController.adjustInventory.url({
-                        branch: branch.slug,
-                        product: product.slug,
-                    })}
-                    priceUrl={ProductController.upsertPrice.url({
-                        branch: branch.slug,
-                        product: product.slug,
-                    })}
-                    showUrl={ProductController.show.url({
-                        branch: branch.slug,
-                        product: product.slug,
-                    })}
+                    categories={product.categories}
+                    categoryName={product.category_name}
+                    tags={product.tags}
+                    specifications={product.specifications}
+                    createdAt={product.created_at}
+                    updatedAt={product.updated_at}
+                    createdByName={product.created_by_name}
+                    categoryHref={categoryHref}
                 />
             </div>
         </>

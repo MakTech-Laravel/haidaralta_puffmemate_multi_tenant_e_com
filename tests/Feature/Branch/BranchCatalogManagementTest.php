@@ -145,7 +145,7 @@ test('branch can update a global product without destroy routes', function () {
             'sku' => $product->sku,
             'status' => true,
         ])
-        ->assertRedirect(route('branch.products.show', [$branch, 'editable-air-pro']));
+        ->assertRedirect(route('branch.products.show', [$branch, $product]));
 
     expect($product->fresh()->name)->toBe('Editable Air Pro Plus');
 

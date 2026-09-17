@@ -139,7 +139,11 @@ export function ImportStockPage({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Import stock"
-                    description="Add the same New entry quantity to many branch and product pairs"
+                    description={
+                        lockBranch
+                            ? 'Add the same New entry quantity to many products at this branch'
+                            : 'Add the same New entry quantity to many branch and product pairs'
+                    }
                 />
 
                 <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]">
@@ -160,42 +164,53 @@ export function ImportStockPage({
                         >
                             <div className="space-y-1">
                                 <h2 className="text-base font-semibold tracking-tight">
-                                    Branches and products
+                                    {lockBranch
+                                        ? 'Products'
+                                        : 'Branches and products'}
                                 </h2>
                                 <p className="text-muted-foreground text-sm">
-                                    Select one or more of each. Every pair
-                                    receives the same New entry quantity.
+                                    {lockBranch
+                                        ? 'Select one or more products. Each receives the same New entry quantity.'
+                                        : 'Select one or more of each. Every pair receives the same New entry quantity.'}
                                 </p>
                             </div>
 
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="import-branch">
-                                        Branches
-                                    </Label>
-                                    {branchLocked && context.branch ? (
-                                        <LockedValue>
-                                            {context.branch.name}
-                                        </LockedValue>
-                                    ) : branchOptionsUrl ? (
-                                        <InfiniteScrollMultiCombobox
-                                            id="import-branch"
-                                            optionsUrl={branchOptionsUrl}
-                                            values={form.data.branch_ids.map(
-                                                String,
-                                            )}
-                                            selectedItems={branches}
-                                            onToggle={toggleBranches}
-                                            placeholder="Select branches"
-                                            searchPlaceholder="Search branches…"
-                                            emptyText="No branches found."
-                                            descriptionKey={null}
+                            <div
+                                className={
+                                    lockBranch
+                                        ? 'grid gap-4'
+                                        : 'grid gap-4 md:grid-cols-2'
+                                }
+                            >
+                                {lockBranch ? null : (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="import-branch">
+                                            Branches
+                                        </Label>
+                                        {branchLocked && context.branch ? (
+                                            <LockedValue>
+                                                {context.branch.name}
+                                            </LockedValue>
+                                        ) : branchOptionsUrl ? (
+                                            <InfiniteScrollMultiCombobox
+                                                id="import-branch"
+                                                optionsUrl={branchOptionsUrl}
+                                                values={form.data.branch_ids.map(
+                                                    String,
+                                                )}
+                                                selectedItems={branches}
+                                                onToggle={toggleBranches}
+                                                placeholder="Select branches"
+                                                searchPlaceholder="Search branches…"
+                                                emptyText="No branches found."
+                                                descriptionKey={null}
+                                            />
+                                        ) : null}
+                                        <InputError
+                                            message={form.errors.branch_ids}
                                         />
-                                    ) : null}
-                                    <InputError
-                                        message={form.errors.branch_ids}
-                                    />
-                                </div>
+                                    </div>
+                                )}
                                 <div className="grid gap-2">
                                     <div className="flex items-center justify-between gap-2">
                                         <Label htmlFor="import-product">
@@ -240,8 +255,8 @@ export function ImportStockPage({
                                         New entry
                                     </h2>
                                     <p className="text-muted-foreground text-sm">
-                                        Import only adds stock. Use Manage stock
-                                        to reduce or set a counted total.
+                                        Import only adds stock. Use Catalog
+                                        Manage to reduce or set a counted total.
                                     </p>
                                 </div>
 
@@ -328,24 +343,31 @@ export function ImportStockPage({
                         <DemoStatCard
                             label="Pairs"
                             value={pairCount === 0 ? '—' : String(pairCount)}
-                            hint={`${form.data.branch_ids.length} branches × ${form.data.product_ids.length} products`}
+                            hint={
+                                lockBranch
+                                    ? `${form.data.product_ids.length} products at this branch`
+                                    : `${form.data.branch_ids.length} branches × ${form.data.product_ids.length} products`
+                            }
                             icon={Layers}
                         />
-                        <DemoStatCard
-                            label="Branches"
-                            value={
-                                form.data.branch_ids.length === 0
-                                    ? 'Not selected'
-                                    : String(form.data.branch_ids.length)
-                            }
-                            hint={
-                                branches
-                                    .map((branch) => branch.label)
-                                    .join(', ') || 'Stock is held at these locations'
-                            }
-                            icon={Building2}
-                            valueClassName="truncate text-lg"
-                        />
+                        {lockBranch ? null : (
+                            <DemoStatCard
+                                label="Branches"
+                                value={
+                                    form.data.branch_ids.length === 0
+                                        ? 'Not selected'
+                                        : String(form.data.branch_ids.length)
+                                }
+                                hint={
+                                    branches
+                                        .map((branch) => branch.label)
+                                        .join(', ') ||
+                                    'Stock is held at these locations'
+                                }
+                                icon={Building2}
+                                valueClassName="truncate text-lg"
+                            />
+                        )}
                         <DemoStatCard
                             label="Products"
                             value={

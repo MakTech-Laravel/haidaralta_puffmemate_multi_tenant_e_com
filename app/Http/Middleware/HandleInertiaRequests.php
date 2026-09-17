@@ -55,6 +55,7 @@ class HandleInertiaRequests extends Middleware
                 'branch_can_view_categories' => (bool) config('catalog.branch_can_view_categories'),
                 'show_parent_category' => (bool) config('catalog.show_parent_category'),
                 'show_product_variants' => (bool) config('catalog.show_product_variants'),
+                'show_bulk_import' => (bool) config('catalog.show_bulk_import'),
                 'sku_prefix' => (string) config('catalog.sku_prefix', 'PMM'),
             ],
             'storefront' => [

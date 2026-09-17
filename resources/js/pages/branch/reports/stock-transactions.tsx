@@ -1,5 +1,5 @@
 import { setLayoutProps } from '@inertiajs/react';
-import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Branch/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import type { DataTablePayload } from '@/components/data-table';
 import { StockTransactionsPage } from '@/components/stock/stock-transactions-page';
@@ -19,10 +19,13 @@ export default function BranchStockTransactions({
     setLayoutProps({
         breadcrumbs: [
             { title: 'Dashboard', href: `/branch/${branch.slug}/dashboard` },
-            { title: 'Products', href: ProductController.index.url(branch.slug) },
+            {
+                title: 'Reports',
+                href: StockTransactionController.index.url(branch.slug),
+            },
             {
                 title: 'Stock transactions',
-                href: StockController.transactions.url(branch.slug),
+                href: StockTransactionController.index.url(branch.slug),
             },
         ],
     });
@@ -30,7 +33,7 @@ export default function BranchStockTransactions({
     return (
         <StockTransactionsPage
             table={table}
-            indexUrl={StockController.transactions.url(branch.slug)}
+            indexUrl={StockTransactionController.index.url(branch.slug)}
             productOptionsUrl={StockController.productOptions.url(branch.slug)}
             hideBranchFilter
         />

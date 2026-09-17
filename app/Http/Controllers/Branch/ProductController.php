@@ -20,8 +20,9 @@ use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductSuggestionService;
 use App\Services\Inventory\BranchPricingService;
 use App\Services\Inventory\InventoryService;
-use App\Support\BranchProductShowPayload;
 use App\Support\CatalogReturnTo;
+use App\Support\ProductManageRedirect;
+use App\Support\ProductSpecifications;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -103,8 +104,12 @@ class ProductController extends Controller
         return CatalogReturnTo::afterProductCreate(
             $request,
             $product,
-            'branch.products.show',
-            [$branch, $product],
+            'branch.stock.manage',
+            [
+                'branch' => $branch,
+                'product' => $product->id,
+                'locked' => 'both',
+            ],
         );
     }
 
@@ -117,20 +122,17 @@ class ProductController extends Controller
 
         Toast::success('Existing product stock and price updated for this branch.');
 
-        return redirect()->route('branch.products.show', [$branch, $product]);
+        return redirect()->to(ProductManageRedirect::branchUrl($branch, $product));
     }
 
-    public function show(Request $request, string $branchSlug, Product $product): Response
+    public function show(string $branchSlug, Product $product): Response
     {
         $branch = $this->currentBranch();
+        $product->load(['categories:id,name,slug', 'images', 'creator:id,name']);
 
         return Inertia::render('branch/catalog/products/show', [
             'branch' => $branch->only(['id', 'name', 'slug']),
-            'product' => BranchProductShowPayload::product($branch, $product),
-            'transactions' => BranchProductShowPayload::transactions($branch, $product, $request),
-            'transactionTypes' => BranchProductShowPayload::transactionTypes(),
-            'adjustmentReasons' => InventoryAdjustmentReason::options(),
-            'discountTypes' => BranchProductShowPayload::discountTypes(),
+            'product' => $this->mapCatalogProduct($product),
         ]);
     }
 
@@ -237,10 +239,8 @@ class ProductController extends Controller
     ): RedirectResponse {
         $branch = $this->currentBranch();
         $variant = $this->resolveVariant($product, $request->validated('variant_id'));
-        $data = $request->validated();
-        $data['status'] = $request->boolean('status', true);
 
-        $this->pricing->upsert($branch, $product, $data, $variant);
+        $this->pricing->upsert($branch, $product, $request->validated(), $variant);
 
         Toast::success('Price updated.');
 
@@ -271,7 +271,6 @@ class ProductController extends Controller
                 'selling_price' => $data['selling_price'],
                 'discount_type' => ! empty($data['discount_price']) ? 'fixed' : 'none',
                 'discount_price' => $data['discount_price'] ?? null,
-                'status' => true,
             ]);
         }
     }
@@ -303,6 +302,49 @@ class ProductController extends Controller
             is_array($files) ? $files : [],
             fn ($file): bool => $file instanceof UploadedFile,
         ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function mapCatalogProduct(Product $product): array
+    {
+        return [
+            'id' => $product->id,
+            'categories' => $product->categories
+                ->map(fn (Category $category): array => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                ])
+                ->values()
+                ->all(),
+            'category_name' => $product->categoryNamesLabel(),
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'sku' => $product->sku,
+            'description' => $product->description,
+            'brand' => $product->brand,
+            'tags' => $product->tags ?? [],
+            'specifications' => ProductSpecifications::normalize($product->specifications),
+            'image_url' => $product->imageUrl(),
+            'color_code' => $product->color_code,
+            'status' => (bool) $product->status,
+            'created_at' => $product->created_at?->toIso8601String(),
+            'updated_at' => $product->updated_at?->toIso8601String(),
+            'created_by_name' => $product->creator?->name,
+            'gallery' => $product->relationLoaded('images')
+                ? $product->images
+                    ->map(fn (ProductImage $image): array => [
+                        'id' => $image->id,
+                        'path' => $image->path,
+                        'url' => $image->url(),
+                        'sort_order' => $image->sort_order,
+                    ])
+                    ->values()
+                    ->all()
+                : [],
+        ];
     }
 
     private function currentBranch(): Branch

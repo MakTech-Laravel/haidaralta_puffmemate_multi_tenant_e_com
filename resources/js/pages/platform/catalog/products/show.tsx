@@ -1,13 +1,13 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { format, isValid, parseISO } from 'date-fns';
-import { Check, Copy, Network, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Check, Copy, Network, Pencil, Plus, ScrollText, Settings2, Trash2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
-import DiscountController from '@/actions/App/Http/Controllers/Platform/DiscountController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import ProductVariantController from '@/actions/App/Http/Controllers/Platform/ProductVariantController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import {
@@ -55,7 +55,7 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { stockActionItems } from '@/lib/stock-query';
+import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type ProductVariant = {
     id: number;
@@ -233,6 +233,7 @@ export default function PlatformProductsShow({
     const [deletingVariantId, setDeletingVariantId] = useState<number | null>(
         null,
     );
+    const [deletingProduct, setDeletingProduct] = useState(false);
     const [processing, setProcessing] = useState(false);
 
     const openCreateVariant = () => {
@@ -324,28 +325,33 @@ export default function PlatformProductsShow({
                 header: 'Actions',
                 cell: ({ row }) => (
                     <DataTableRowActions
-                        items={[
+                        contentClassName="w-56"
+                        groups={[
                             {
-                                label: 'Manage',
-                                href: row.original.manage_url,
+                                label: 'Catalog',
+                                items: [
+                                    {
+                                        label: 'Manage stock',
+                                        icon: Settings2,
+                                        href: row.original.manage_url,
+                                    },
+                                ],
                             },
-                            ...(canManageBranches
-                                ? stockActionItems(
-                                      {
-                                          manage: StockController.manage.url(),
-                                          transactions:
-                                              StockController.transactions.url(),
-                                          price: StockController.price.url(),
-                                          discount:
-                                              DiscountController.index.url(),
-                                      },
-                                      {
-                                          productId: product.id,
-                                          branchId: row.original.id,
-                                          locked: 'both',
-                                      },
-                                  )
-                                : []),
+                            {
+                                label: 'Stock',
+                                items: canManageBranches
+                                    ? stockActionItems(
+                                          {
+                                              transactions:
+                                                  StockTransactionController.index.url(),
+                                          },
+                                          {
+                                              productId: product.id,
+                                              branchId: row.original.id,
+                                          },
+                                      )
+                                    : [],
+                            },
                         ]}
                     />
                 ),
@@ -499,12 +505,28 @@ export default function PlatformProductsShow({
                             </div>
                         </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <Button variant="outline" asChild>
                             <Link href={ProductController.index.url()}>
                                 All products
                             </Link>
                         </Button>
+                        {canManageBranches ? (
+                            <Button variant="outline" asChild>
+                                <Link
+                                    href={stockPageUrl(
+                                        StockController.manage.url(),
+                                        {
+                                            productId: product.id,
+                                            locked: 'product',
+                                        },
+                                    )}
+                                >
+                                    <Settings2 className="size-4" />
+                                    Manage stock
+                                </Link>
+                            </Button>
+                        ) : null}
                         {canManageBranches ? (
                             <Button variant="outline" asChild>
                                 <Link
@@ -515,6 +537,28 @@ export default function PlatformProductsShow({
                                     <Network className="size-4" />
                                     Manage branches
                                 </Link>
+                            </Button>
+                        ) : null}
+                        {canManageBranches ? (
+                            <Button variant="outline" asChild>
+                                <Link
+                                    href={stockPageUrl(
+                                        StockTransactionController.index.url(),
+                                        { productId: product.id },
+                                    )}
+                                >
+                                    <ScrollText className="size-4" />
+                                    Stock transactions
+                                </Link>
+                            </Button>
+                        ) : null}
+                        {canManageCatalog ? (
+                            <Button
+                                variant="outline"
+                                onClick={() => setDeletingProduct(true)}
+                            >
+                                <Trash2 className="size-4" />
+                                Delete
                             </Button>
                         ) : null}
                         {canManageCatalog ? (
@@ -909,6 +953,27 @@ export default function PlatformProductsShow({
                             },
                         },
                     );
+                }}
+            />
+
+            <ConfirmDeleteDialog
+                open={deletingProduct}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeletingProduct(false);
+                    }
+                }}
+                title="Delete product?"
+                description="This will soft-delete the product and its variants."
+                processing={processing}
+                onConfirm={() => {
+                    setProcessing(true);
+                    router.delete(ProductController.destroy.url(product.slug), {
+                        onFinish: () => {
+                            setProcessing(false);
+                            setDeletingProduct(false);
+                        },
+                    });
                 }}
             />
         </>

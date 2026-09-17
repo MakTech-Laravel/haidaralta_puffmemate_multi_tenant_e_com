@@ -46,7 +46,8 @@ import {
 } from '@/components/navigation/nav-builders';
 import type { NavSection } from '@/components/navigation/types';
 
-export const platformNav: NavSection[] = [
+export function buildPlatformNav(showBulkImport = false): NavSection[] {
+    return [
     navSection(undefined, [
         navLink({
             title: 'Dashboard',
@@ -55,81 +56,32 @@ export const platformNav: NavSection[] = [
             permissions: ['view-dashboard'],
         }),
         navGroup({
-            title: 'Catalog',
-            href: '/platform/categories',
-            icon: Package,
-            permissions: ['manage-catalog'],
+            title: 'Administrator',
+            icon: Shield,
+            permissions: ['manage-users', 'manage-roles'],
             items: [
                 navLink({
-                    title: 'Categories',
-                    href: '/platform/categories',
-                    icon: Tags,
-                    permissions: ['manage-catalog'],
+                    title: 'Admins',
+                    href: '/platform/staff',
+                    icon: UserCog,
+                    permissions: ['manage-users'],
                 }),
                 navLink({
-                    title: 'Products',
-                    href: '/platform/products',
-                    icon: Package,
-                    permissions: ['manage-catalog'],
-                }),
-            ],
-        }),
-        navLink({
-            title: 'Discounts',
-            href: '/platform/discounts',
-            icon: BadgePercent,
-            permissions: ['manage-branch-inventories'],
-        }),
-        navGroup({
-            title: 'Stock management',
-            href: '/platform/stock/manage',
-            icon: Boxes,
-            permissions: ['manage-branch-inventories'],
-            items: [
-                navLink({
-                    title: 'Manage',
-                    href: '/platform/stock/manage',
-                    icon: Boxes,
-                    permissions: ['manage-branch-inventories'],
+                    title: 'Roles',
+                    href: '/platform/roles',
+                    icon: Shield,
+                    permissions: ['manage-roles'],
                 }),
                 navLink({
-                    title: 'Bulk Import',
-                    href: '/platform/stock/import',
-                    icon: PackagePlus,
-                    permissions: ['manage-branch-inventories'],
-                }),
-                navLink({
-                    title: 'Transactions',
-                    href: '/platform/stock/transactions',
-                    icon: ScrollText,
-                    permissions: ['manage-branch-inventories'],
+                    title: 'Permissions',
+                    href: '/platform/permissions',
+                    icon: KeyRound,
+                    permissions: ['manage-roles'],
                 }),
             ],
         }),
         navGroup({
-            title: 'Orders',
-            icon: ShoppingBag,
-            permissions: ['manage-reports'],
-            items: [
-                navSoon({
-                    title: 'Orders',
-                    icon: ShoppingBag,
-                    permissions: ['manage-reports'],
-                }),
-                navSoon({
-                    title: 'Pickup',
-                    icon: Store,
-                    permissions: ['manage-reports'],
-                }),
-                navSoon({
-                    title: 'Delivery',
-                    icon: MapPin,
-                    permissions: ['manage-reports'],
-                }),
-            ],
-        }),
-        navGroup({
-            title: 'Customers',
+            title: 'Customer management',
             icon: Users,
             permissions: ['manage-users'],
             items: [
@@ -152,33 +104,6 @@ export const platformNav: NavSection[] = [
                     title: 'Age verification',
                     icon: IdCard,
                     permissions: ['manage-users'],
-                }),
-            ],
-        }),
-        navGroup({
-            title: 'Branch management',
-            href: '/platform/branches',
-            icon: Building2,
-            permissions: ['view-branches', 'manage-branch-users'],
-            items: [
-                navLink({
-                    title: 'Branches',
-                    href: '/platform/branches',
-                    icon: Building2,
-                    permissions: ['view-branches'],
-                }),
-                navLink({
-                    title: 'Staff',
-                    href: '/platform/branch-staff',
-                    icon: Users,
-                    permissions: ['manage-branch-users'],
-                }),
-                navLink({
-                    title: 'Add staff',
-                    href: '/platform/branch-staff/create',
-                    icon: UserPlus,
-                    exact: true,
-                    permissions: ['manage-branch-users'],
                 }),
             ],
         }),
@@ -213,6 +138,90 @@ export const platformNav: NavSection[] = [
                     title: 'Parcels',
                     icon: Package2,
                     permissions: ['manage-drivers'],
+                }),
+            ],
+        }),
+        navGroup({
+            title: 'Branch management',
+            href: '/platform/branches',
+            icon: Building2,
+            permissions: [
+                'view-branches',
+                'manage-branch-users',
+                'manage-branch-inventories',
+            ],
+            items: [
+                navLink({
+                    title: 'Branches',
+                    href: '/platform/branches',
+                    icon: Building2,
+                    permissions: ['view-branches'],
+                }),
+                navLink({
+                    title: 'Staff',
+                    href: '/platform/branch-staff',
+                    icon: Users,
+                    permissions: ['manage-branch-users'],
+                }),
+                navLink({
+                    title: 'Manage stock',
+                    href: '/platform/stock/manage',
+                    icon: Boxes,
+                    permissions: ['manage-branch-inventories'],
+                }),
+            ],
+        }),
+        navGroup({
+            title: 'Product management',
+            href: '/platform/products',
+            icon: Package,
+            permissions: showBulkImport
+                ? ['manage-catalog', 'manage-branch-inventories']
+                : ['manage-catalog'],
+            items: [
+                navLink({
+                    title: 'Categories',
+                    href: '/platform/categories',
+                    icon: Tags,
+                    permissions: ['manage-catalog'],
+                }),
+                navLink({
+                    title: 'Products',
+                    href: '/platform/products',
+                    icon: Package,
+                    permissions: ['manage-catalog'],
+                }),
+                ...(showBulkImport
+                    ? [
+                          navLink({
+                              title: 'Bulk Import',
+                              href: '/platform/stock/import',
+                              icon: PackagePlus,
+                              permissions: ['manage-branch-inventories'],
+                          }),
+                      ]
+                    : []),
+            ],
+        }),
+        navGroup({
+            title: 'Order management',
+            icon: ShoppingBag,
+            permissions: ['manage-reports'],
+            items: [
+                navSoon({
+                    title: 'Orders',
+                    icon: ShoppingBag,
+                    permissions: ['manage-reports'],
+                }),
+                navSoon({
+                    title: 'Pickup',
+                    icon: Store,
+                    permissions: ['manage-reports'],
+                }),
+                navSoon({
+                    title: 'Delivery',
+                    icon: MapPin,
+                    permissions: ['manage-reports'],
                 }),
             ],
         }),
@@ -253,17 +262,18 @@ export const platformNav: NavSection[] = [
         navGroup({
             title: 'Reports',
             icon: ChartColumn,
-            permissions: ['manage-reports'],
+            permissions: ['manage-reports', 'manage-branch-inventories'],
             items: [
                 navSoon({
                     title: 'Sales',
                     icon: Banknote,
                     permissions: ['manage-reports'],
                 }),
-                navSoon({
-                    title: 'Inventory',
-                    icon: Boxes,
-                    permissions: ['manage-reports'],
+                navLink({
+                    title: 'Stock transactions',
+                    href: '/platform/reports/stock-transactions',
+                    icon: ScrollText,
+                    permissions: ['manage-branch-inventories'],
                 }),
                 navSoon({
                     title: 'Drivers',
@@ -274,31 +284,6 @@ export const platformNav: NavSection[] = [
                     title: 'Customers',
                     icon: Users,
                     permissions: ['manage-reports'],
-                }),
-            ],
-        }),
-        navGroup({
-            title: 'Administrator',
-            icon: Shield,
-            permissions: ['manage-users', 'manage-roles'],
-            items: [
-                navLink({
-                    title: 'Admins',
-                    href: '/platform/staff',
-                    icon: UserCog,
-                    permissions: ['manage-users'],
-                }),
-                navLink({
-                    title: 'Roles',
-                    href: '/platform/roles',
-                    icon: Shield,
-                    permissions: ['manage-roles'],
-                }),
-                navLink({
-                    title: 'Permissions',
-                    href: '/platform/permissions',
-                    icon: KeyRound,
-                    permissions: ['manage-roles'],
                 }),
             ],
         }),
@@ -394,3 +379,4 @@ export const platformNav: NavSection[] = [
         }),
     ]),
 ];
+}
