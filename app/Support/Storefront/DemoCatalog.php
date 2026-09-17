@@ -235,7 +235,7 @@ class DemoCatalog
      */
     public static function bestSellingProducts(): array
     {
-        return array_values(array_slice(self::products(), 0, 4));
+        return array_values(array_slice(self::products(), 0, 8));
     }
 
     /**
@@ -243,7 +243,7 @@ class DemoCatalog
      */
     public static function newArrivalProducts(): array
     {
-        return array_values(array_slice(self::products(), 4, 4));
+        return array_values(array_slice(self::products(), 4, 8));
     }
 
     /**
