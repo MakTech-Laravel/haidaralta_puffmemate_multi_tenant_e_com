@@ -193,7 +193,7 @@ export default function PlatformBranchProductsIndex({
                     <DataTableRowActions
                         items={[
                             {
-                                label: 'Manage',
+                                label: 'Manage stock',
                                 icon: Settings2,
                                 href: stockPageUrl(
                                     StockController.manage.url(),

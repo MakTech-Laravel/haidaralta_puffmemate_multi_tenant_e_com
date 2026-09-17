@@ -187,7 +187,7 @@ export default function PlatformProductBranches({
                                 label: 'Catalog',
                                 items: [
                                     {
-                                        label: 'Manage',
+                                        label: 'Manage stock',
                                         icon: Settings2,
                                         href: row.original.manage_url,
                                     },

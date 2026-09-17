@@ -331,7 +331,7 @@ export default function PlatformProductsShow({
                                 label: 'Catalog',
                                 items: [
                                     {
-                                        label: 'Manage',
+                                        label: 'Manage stock',
                                         icon: Settings2,
                                         href: row.original.manage_url,
                                     },
@@ -523,7 +523,7 @@ export default function PlatformProductsShow({
                                     )}
                                 >
                                     <Settings2 className="size-4" />
-                                    Manage
+                                    Manage stock
                                 </Link>
                             </Button>
                         ) : null}

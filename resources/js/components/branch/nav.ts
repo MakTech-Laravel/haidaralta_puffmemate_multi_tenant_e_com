@@ -54,7 +54,7 @@ export function buildBranchNav(
             permissions: ['manage-branch-products'],
         }),
         navLink({
-            title: 'Stock',
+            title: 'Manage stock',
             href: `/branch/${slug}/stock/manage`,
             icon: Boxes,
             permissions: ['manage-branch-products'],

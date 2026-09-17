@@ -186,7 +186,7 @@ export const platformNav: NavSection[] = [
                     permissions: ['manage-catalog'],
                 }),
                 navLink({
-                    title: 'Stock',
+                    title: 'Manage stock',
                     href: '/platform/stock/manage',
                     icon: Boxes,
                     permissions: ['manage-branch-inventories'],

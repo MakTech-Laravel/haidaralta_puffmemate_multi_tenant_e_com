@@ -187,7 +187,7 @@ export default function BranchProductsIndex({
                                         }),
                                     },
                                     {
-                                        label: 'Manage',
+                                        label: 'Manage stock',
                                         icon: Settings2,
                                         href: stockPageUrl(
                                             StockController.manage.url(

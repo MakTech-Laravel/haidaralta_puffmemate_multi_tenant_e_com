@@ -218,7 +218,7 @@ export default function PlatformProductsIndex({
                         ...(canInventories
                             ? [
                                   {
-                                      label: 'Manage',
+                                      label: 'Manage stock',
                                       icon: Settings2,
                                       href: stockPageUrl(
                                           StockController.manage.url(),

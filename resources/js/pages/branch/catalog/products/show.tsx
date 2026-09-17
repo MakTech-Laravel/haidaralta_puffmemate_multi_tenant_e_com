@@ -146,7 +146,7 @@ export default function BranchProductShow({
                                 )}
                             >
                                 <Settings2 className="size-4" />
-                                Manage
+                                Manage stock
                             </Link>
                         </Button>
                         <Button variant="outline" asChild>
