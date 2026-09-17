@@ -58,7 +58,10 @@ export function NotificationsPopover({
                 align="end"
                 side="bottom"
                 sideOffset={8}
-                className={cn('w-80 p-0', className)}
+                className={cn(
+                    'w-[min(100vw-1.5rem,24rem)] max-w-[calc(100vw-1.5rem)] p-0',
+                    className,
+                )}
             >
                 <div className="px-3 py-2.5">
                     <p className="text-sm font-medium">Notifications</p>
