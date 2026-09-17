@@ -87,17 +87,21 @@ export default function CustomerDashboard() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+                <div className="grid gap-4 grid-cols-2">
                     {cards.map((card) => (
                         <Link
                             key={card.label}
                             href={card.href}
                             prefetch
                             className={cn(
-                                'border-border bg-background hover:border-primary/50 flex min-h-40 flex-col items-center justify-center gap-4 border px-6 py-10 transition',
+                                'border-border bg-background hover:border-primary/50 flex min-h-28 flex-col items-center justify-center gap-2 border px-3 py-5 transition sm:min-h-40 sm:gap-4 sm:px-6 sm:py-10',
                             )}
                         >
-                            <img src={card.image} alt={card.label} className="size-20" />
+                            <img
+                                src={card.image}
+                                alt={card.label}
+                                className="size-12 sm:size-20"
+                            />
                             <span className="text-foreground text-center text-base font-medium">
                                 {card.label}
                             </span>
