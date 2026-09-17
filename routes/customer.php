@@ -3,6 +3,7 @@
 use App\Http\Controllers\Customer\AccountController as CustomerAccountController;
 use App\Http\Controllers\Customer\ActivityLogController as CustomerActivityLogController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
+use App\Http\Controllers\Customer\NotificationController as CustomerNotificationController;
 use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Customer\ProductToReviewController as CustomerProductToReviewController;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +13,10 @@ Route::middleware(['ensure.guard:customer', 'phone.verified'])->group(function (
     Route::get('account', [CustomerAccountController::class, 'index'])->name('customer.account.index');
     Route::get('orders', [CustomerOrderController::class, 'index'])->name('customer.orders.index');
     Route::get('orders/{order}', [CustomerOrderController::class, 'show'])->name('customer.orders.show');
+    Route::get('notifications', [CustomerNotificationController::class, 'index'])
+        ->name('customer.notifications.index');
+    Route::get('notifications/{notification}', [CustomerNotificationController::class, 'show'])
+        ->name('customer.notifications.show');
     Route::get('product-to-review', [CustomerProductToReviewController::class, 'index'])
         ->name('customer.product-to-review.index');
     Route::get('product-to-review/{product}', [CustomerProductToReviewController::class, 'show'])

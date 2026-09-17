@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
 import { index as accountIndex } from '@/routes/customer/account';
+import { index as notificationsIndex } from '@/routes/customer/notifications';
 import { index as productToReview } from '@/routes/customer/product-to-review';
 
 export type AccountNavItem = {
@@ -22,6 +23,14 @@ export const accountNavItems: AccountNavItem[] = [
         href: '/orders',
         match: (url) =>
             url === '/orders' || url.startsWith('/orders?') || url.startsWith('/orders/'),
+    },
+    {
+        label: 'Notifications',
+        href: notificationsIndex.url(),
+        match: (url) =>
+            url === '/notifications' ||
+            url.startsWith('/notifications?') ||
+            url.startsWith('/notifications/'),
     },
     {
         label: 'My activity',
