@@ -1,7 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { format, isValid, parseISO } from 'date-fns';
-import { Check, Copy, Network, Pencil, Plus, Settings2, Trash2 } from 'lucide-react';
+import { Check, Copy, Network, Pencil, Plus, ScrollText, Settings2, Trash2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
@@ -54,7 +54,7 @@ import {
     normalizeCatalogColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { stockActionItems } from '@/lib/stock-query';
+import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type ProductVariant = {
     id: number;
@@ -510,64 +510,56 @@ export default function PlatformProductsShow({
                                 All products
                             </Link>
                         </Button>
-                        <DataTableRowActions
-                            contentClassName="w-56"
-                            groups={[
-                                {
-                                    label: 'Catalog',
-                                    items: [
-                                        ...(canManageBranches
-                                            ? [
-                                                  {
-                                                      label: 'Manage branches',
-                                                      icon: Network,
-                                                      href: BranchInventoryController.forProduct.url(
-                                                          product.slug,
-                                                      ),
-                                                  },
-                                              ]
-                                            : []),
-                                        ...(canManageCatalog
-                                            ? [
-                                                  {
-                                                      label: 'Edit',
-                                                      icon: Pencil,
-                                                      href: ProductController.edit.url(
-                                                          product.slug,
-                                                      ),
-                                                  },
-                                              ]
-                                            : []),
-                                    ],
-                                },
-                                {
-                                    label: 'Stock',
-                                    items: canManageBranches
-                                        ? stockActionItems(
-                                              {
-                                                  transactions:
-                                                      StockController.transactions.url(),
-                                              },
-                                              { productId: product.id },
-                                          )
-                                        : [],
-                                },
-                                {
-                                    label: 'Danger zone',
-                                    items: canManageCatalog
-                                        ? [
-                                              {
-                                                  label: 'Delete',
-                                                  icon: Trash2,
-                                                  destructive: true,
-                                                  onSelect: () =>
-                                                      setDeletingProduct(true),
-                                              },
-                                          ]
-                                        : [],
-                                },
-                            ]}
-                        />
+                        {canManageBranches ? (
+                            <Button variant="outline" asChild>
+                                <Link
+                                    href={stockPageUrl(
+                                        StockController.manage.url(),
+                                        {
+                                            productId: product.id,
+                                            locked: 'product',
+                                        },
+                                    )}
+                                >
+                                    <Settings2 className="size-4" />
+                                    Manage
+                                </Link>
+                            </Button>
+                        ) : null}
+                        {canManageBranches ? (
+                            <Button variant="outline" asChild>
+                                <Link
+                                    href={BranchInventoryController.forProduct.url(
+                                        product.slug,
+                                    )}
+                                >
+                                    <Network className="size-4" />
+                                    Manage branches
+                                </Link>
+                            </Button>
+                        ) : null}
+                        {canManageBranches ? (
+                            <Button variant="outline" asChild>
+                                <Link
+                                    href={stockPageUrl(
+                                        StockController.transactions.url(),
+                                        { productId: product.id },
+                                    )}
+                                >
+                                    <ScrollText className="size-4" />
+                                    Stock transactions
+                                </Link>
+                            </Button>
+                        ) : null}
+                        {canManageCatalog ? (
+                            <Button
+                                variant="outline"
+                                onClick={() => setDeletingProduct(true)}
+                            >
+                                <Trash2 className="size-4" />
+                                Delete
+                            </Button>
+                        ) : null}
                         {canManageCatalog ? (
                             <Button asChild>
                                 <Link

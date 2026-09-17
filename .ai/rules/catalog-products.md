@@ -1,6 +1,7 @@
 ---
 paths:
   - 'resources/js/pages/**/catalog/products/index.tsx'
+  - 'resources/js/pages/**/catalog/products/{index,show}.tsx'
 ---
 
 # Catalog Products
@@ -9,4 +10,10 @@ paths:
 Product list category filters use CategoryFilterCombobox → InfiniteScrollMultiCombobox against categories/options (20/page, filter[search]). filter[category_id] accepts one id or an array (OR match). filterOptions.categories carries only the currently selected rows for trigger labels—never the full catalog. Toolbar filters pass showSelectedBadges={false}; form pickers keep chips.
 
 ## Branch product rows include View
-Branch products index Catalog group is View / Manage / Edit. View is `branch.products.show` (listing details, no Branch network). Manage stays locked `stock/manage`. Platform products index Catalog group stays View / Manage branches / Edit.
+Branch products index Catalog group is View / Manage / Edit. View is `branch.products.show` (listing details, no Branch network). Manage stays locked `stock/manage` with the current branch + product.
+
+## Platform product rows include Manage
+Platform products index Catalog group is View / Manage / Manage branches / Edit. **Manage** opens `stock/manage?product=&locked=product` (product selected; pick a branch). **Manage branches** stays the product-centric branch list.
+
+## Catalog Manage preselects product
+Catalog Manage with only a product (platform details header + products index) opens stock/manage?product={id}&locked=product so the product picker is pre-selected. Pair-known Manage stays locked=both. Keep Manage branches as the product-centric branch list.

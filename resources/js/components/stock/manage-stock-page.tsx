@@ -98,6 +98,7 @@ export function ManageStockPage({
             <div className="flex w-full min-w-0 flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
+                        className="min-w-0"
                         title="Manage stock"
                         description={
                             hasPair
@@ -106,7 +107,7 @@ export function ManageStockPage({
                         }
                     />
                     {hasPair ? (
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex max-w-full min-w-0 flex-wrap justify-end gap-2">
                             {allBranchesUrl ? (
                                 <Button variant="outline" asChild>
                                     <Link href={allBranchesUrl}>
@@ -116,10 +117,20 @@ export function ManageStockPage({
                             ) : null}
                             {branchProductsUrl ? (
                                 <Button variant="outline" asChild>
-                                    <Link href={branchProductsUrl}>
-                                        {allBranchesUrl && context.branch
-                                            ? `${context.branch.name} products`
-                                            : 'Back'}
+                                    <Link
+                                        href={branchProductsUrl}
+                                        className="max-w-48 min-w-0"
+                                        title={
+                                            allBranchesUrl && context.branch
+                                                ? `${context.branch.name} products`
+                                                : undefined
+                                        }
+                                    >
+                                        <span className="truncate">
+                                            {allBranchesUrl && context.branch
+                                                ? `${context.branch.name} products`
+                                                : 'Back'}
+                                        </span>
                                     </Link>
                                 </Button>
                             ) : null}

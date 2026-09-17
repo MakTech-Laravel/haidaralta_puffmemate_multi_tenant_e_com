@@ -1,6 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Network, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { Eye, Network, Pencil, RotateCcw, Settings2, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
@@ -34,7 +34,7 @@ import {
     isTransparentColorPickerValue,
     type ColorPickerValue,
 } from '@/lib/color-picker';
-import { stockActionItems } from '@/lib/stock-query';
+import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type ProductRow = {
     id: number;
@@ -216,6 +216,17 @@ export default function PlatformProductsIndex({
                         },
                         ...(canInventories
                             ? [
+                                  {
+                                      label: 'Manage',
+                                      icon: Settings2,
+                                      href: stockPageUrl(
+                                          StockController.manage.url(),
+                                          {
+                                              productId: product.id,
+                                              locked: 'product',
+                                          },
+                                      ),
+                                  },
                                   {
                                       label: 'Manage branches',
                                       icon: Network,

@@ -1,15 +1,14 @@
 import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
-import { Pencil, Settings2 } from 'lucide-react';
+import { Pencil, ScrollText, Settings2 } from 'lucide-react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import { BranchProductSummary } from '@/components/branch/branch-product-summary';
-import { DataTableRowActions } from '@/components/data-table';
 import { PRODUCT_TAG_OPTIONS } from '@/components/platform/product-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { type ColorPickerValue } from '@/lib/color-picker';
-import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
+import { stockPageUrl } from '@/lib/stock-query';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -134,53 +133,37 @@ export default function BranchProductShow({
                                 All products
                             </Link>
                         </Button>
-                        <DataTableRowActions
-                            contentClassName="w-56"
-                            groups={[
-                                {
-                                    label: 'Catalog',
-                                    items: [
-                                        {
-                                            label: 'Manage',
-                                            icon: Settings2,
-                                            href: stockPageUrl(
-                                                StockController.manage.url(
-                                                    branch.slug,
-                                                ),
-                                                {
-                                                    productId: product.id,
-                                                    branchId: branch.id,
-                                                    locked: 'both',
-                                                },
-                                            ),
-                                        },
-                                        {
-                                            label: 'Edit',
-                                            icon: Pencil,
-                                            href: ProductController.edit.url({
-                                                branch: branch.slug,
-                                                product: product.slug,
-                                            }),
-                                        },
-                                    ],
-                                },
-                                {
-                                    label: 'Stock',
-                                    items: stockActionItems(
-                                        {
-                                            transactions:
-                                                StockController.transactions.url(
-                                                    branch.slug,
-                                                ),
-                                        },
-                                        {
-                                            productId: product.id,
-                                            branchId: branch.id,
-                                        },
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={stockPageUrl(
+                                    StockController.manage.url(branch.slug),
+                                    {
+                                        productId: product.id,
+                                        branchId: branch.id,
+                                        locked: 'both',
+                                    },
+                                )}
+                            >
+                                <Settings2 className="size-4" />
+                                Manage
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={stockPageUrl(
+                                    StockController.transactions.url(
+                                        branch.slug,
                                     ),
-                                },
-                            ]}
-                        />
+                                    {
+                                        productId: product.id,
+                                        branchId: branch.id,
+                                    },
+                                )}
+                            >
+                                <ScrollText className="size-4" />
+                                Stock transactions
+                            </Link>
+                        </Button>
                         <Button asChild>
                             <Link
                                 href={ProductController.edit.url({
