@@ -7,6 +7,7 @@ import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/B
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import ProductVariantController from '@/actions/App/Http/Controllers/Platform/ProductVariantController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import {
@@ -342,7 +343,7 @@ export default function PlatformProductsShow({
                                     ? stockActionItems(
                                           {
                                               transactions:
-                                                  StockController.transactions.url(),
+                                                  StockTransactionController.index.url(),
                                           },
                                           {
                                               productId: product.id,
@@ -542,7 +543,7 @@ export default function PlatformProductsShow({
                             <Button variant="outline" asChild>
                                 <Link
                                     href={stockPageUrl(
-                                        StockController.transactions.url(),
+                                        StockTransactionController.index.url(),
                                         { productId: product.id },
                                     )}
                                 >

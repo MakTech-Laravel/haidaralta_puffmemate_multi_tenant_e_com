@@ -92,12 +92,6 @@ export const platformNav: NavSection[] = [
                     icon: PackagePlus,
                     permissions: ['manage-branch-inventories'],
                 }),
-                navLink({
-                    title: 'Transactions',
-                    href: '/platform/stock/transactions',
-                    icon: ScrollText,
-                    permissions: ['manage-branch-inventories'],
-                }),
             ],
         }),
         navGroup({
@@ -247,17 +241,18 @@ export const platformNav: NavSection[] = [
         navGroup({
             title: 'Reports',
             icon: ChartColumn,
-            permissions: ['manage-reports'],
+            permissions: ['manage-reports', 'manage-branch-inventories'],
             items: [
                 navSoon({
                     title: 'Sales',
                     icon: Banknote,
                     permissions: ['manage-reports'],
                 }),
-                navSoon({
-                    title: 'Inventory',
-                    icon: Boxes,
-                    permissions: ['manage-reports'],
+                navLink({
+                    title: 'Stock transactions',
+                    href: '/platform/reports/stock-transactions',
+                    icon: ScrollText,
+                    permissions: ['manage-branch-inventories'],
                 }),
                 navSoon({
                     title: 'Drivers',

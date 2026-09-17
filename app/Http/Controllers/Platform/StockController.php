@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers\Platform;
 
-use App\DataTables\InventoryTransactionDataTable;
 use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Stock\ImportStockRequest;
-use App\Models\Branch;
-use App\Models\Product;
 use App\Services\Inventory\InventoryService;
 use App\Support\BranchProductShowPayload;
 use App\Support\CatalogReturnTo;
@@ -62,7 +59,7 @@ class StockController extends Controller
             ]),
             'inventoryUrl' => route('platform.branches.products.inventory', [$branch, $product]),
             'priceUrl' => route('platform.branches.products.prices', [$branch, $product]),
-            'transactionsUrl' => route('platform.stock.transactions', [
+            'transactionsUrl' => route('platform.reports.stock-transactions', [
                 'branch' => $branch->id,
                 'product' => $product->id,
             ]),
@@ -106,16 +103,6 @@ class StockController extends Controller
         return redirect()->back();
     }
 
-    public function transactions(Request $request): Response
-    {
-        $this->mergeSelectionFilters($request);
-
-        return Inertia::render('platform/stock/transactions', [
-            'table' => InventoryTransactionDataTable::makeFor($request),
-            'context' => StockPageContext::fromRequest($request),
-        ]);
-    }
-
     public function branchOptions(Request $request): JsonResponse
     {
         return response()->json(StockPageContext::paginatedBranchOptions($request));
@@ -124,33 +111,5 @@ class StockController extends Controller
     public function productOptions(Request $request): JsonResponse
     {
         return response()->json(StockPageContext::paginatedProductOptions($request));
-    }
-
-    private function mergeSelectionFilters(Request $request): void
-    {
-        $filters = $request->input('filter', []);
-        $filters = is_array($filters) ? $filters : [];
-
-        if ($request->filled('product') && empty($filters['product_id'])) {
-            $product = Product::query()->find($request->integer('product'))
-                ?? Product::query()->where('slug', $request->string('product')->toString())->first();
-
-            abort_unless($product !== null, 404);
-            $filters['product_id'] = $product->id;
-        } elseif ($request->filled('product')) {
-            StockPageContext::fromRequest($request);
-        }
-
-        if ($request->filled('branch') && empty($filters['branch_id'])) {
-            $branch = Branch::query()->find($request->integer('branch'))
-                ?? Branch::query()->where('slug', $request->string('branch')->toString())->first();
-
-            abort_unless($branch !== null, 404);
-            $filters['branch_id'] = $branch->id;
-        } elseif ($request->filled('branch')) {
-            StockPageContext::fromRequest($request);
-        }
-
-        $request->merge(['filter' => $filters]);
     }
 }

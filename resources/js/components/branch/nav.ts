@@ -79,12 +79,6 @@ export function buildBranchNav(
                 icon: PackagePlus,
                 permissions: ['manage-branch-products'],
             }),
-            navLink({
-                title: 'Transactions',
-                href: `/branch/${slug}/stock/transactions`,
-                icon: ScrollText,
-                permissions: ['manage-branch-products'],
-            }),
         ],
     });
 
@@ -186,17 +180,18 @@ export function buildBranchNav(
             navGroup({
                 title: 'Reports',
                 icon: ChartColumn,
-                permissions: ['manage-branch-orders'],
+                permissions: ['manage-branch-orders', 'manage-branch-products'],
                 items: [
                     navSoon({
                         title: 'Sales',
                         icon: ChartColumn,
                         permissions: ['manage-branch-orders'],
                     }),
-                    navSoon({
-                        title: 'Inventory',
-                        icon: Boxes,
-                        permissions: ['manage-branch-orders'],
+                    navLink({
+                        title: 'Stock transactions',
+                        href: `/branch/${slug}/reports/stock-transactions`,
+                        icon: ScrollText,
+                        permissions: ['manage-branch-products'],
                     }),
                 ],
             }),

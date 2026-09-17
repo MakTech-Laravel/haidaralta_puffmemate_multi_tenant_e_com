@@ -2,6 +2,7 @@ import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
 import { Pencil, ScrollText, Settings2 } from 'lucide-react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Branch/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import { BranchProductSummary } from '@/components/branch/branch-product-summary';
 import { PRODUCT_TAG_OPTIONS } from '@/components/platform/product-form';
@@ -151,7 +152,7 @@ export default function BranchProductShow({
                         <Button variant="outline" asChild>
                             <Link
                                 href={stockPageUrl(
-                                    StockController.transactions.url(
+                                    StockTransactionController.index.url(
                                         branch.slug,
                                     ),
                                     {

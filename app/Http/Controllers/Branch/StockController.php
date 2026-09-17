@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Branch;
 
-use App\DataTables\InventoryTransactionDataTable;
 use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Stock\ImportStockRequest;
 use App\Models\Branch;
-use App\Models\Product;
 use App\Services\Inventory\InventoryService;
 use App\Support\BranchProductShowPayload;
 use App\Support\CatalogReturnTo;
@@ -64,7 +62,7 @@ class StockController extends Controller
             ]),
             'inventoryUrl' => route('branch.products.inventory', [$branch, $product]),
             'priceUrl' => route('branch.products.prices', [$branch, $product]),
-            'transactionsUrl' => route('branch.stock.transactions', [
+            'transactionsUrl' => route('branch.reports.stock-transactions', [
                 'branch' => $branch,
                 'product' => $product->id,
             ]),
@@ -109,38 +107,9 @@ class StockController extends Controller
         return redirect()->back();
     }
 
-    public function transactions(Request $request): Response
-    {
-        $branch = $this->currentBranch();
-        $this->mergeSelectionFilters($request);
-
-        return Inertia::render('branch/stock/transactions', [
-            'table' => InventoryTransactionDataTable::makeFor($request, $branch->id, 'branch', $branch->slug),
-            'context' => StockPageContext::fromRequest($request, $branch),
-        ]);
-    }
-
     public function productOptions(Request $request): JsonResponse
     {
         return response()->json(StockPageContext::paginatedProductOptions($request));
-    }
-
-    private function mergeSelectionFilters(Request $request): void
-    {
-        $filters = $request->input('filter', []);
-        $filters = is_array($filters) ? $filters : [];
-
-        if ($request->filled('product') && empty($filters['product_id'])) {
-            $product = Product::query()->find($request->integer('product'))
-                ?? Product::query()->where('slug', $request->string('product')->toString())->first();
-
-            abort_unless($product !== null, 404);
-            $filters['product_id'] = $product->id;
-        } elseif ($request->filled('product')) {
-            StockPageContext::fromRequest($request, $this->currentBranch());
-        }
-
-        $request->merge(['filter' => $filters]);
     }
 
     private function currentBranch(): Branch

@@ -173,10 +173,10 @@ test('stock transactions ledger filters by the selected product', function () {
     }
 
     $this->actingAs($this->admin, 'platform')
-        ->get(route('platform.stock.transactions'))
+        ->get(route('platform.reports.stock-transactions'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('platform/stock/transactions')
+            ->component('platform/reports/stock-transactions')
             ->where('table.meta.total', 2)
             ->missing('table.filterOptions.products')
             ->missing('table.filterOptions.branches')
@@ -188,7 +188,7 @@ test('stock transactions ledger filters by the selected product', function () {
             ->where('table.data.0.created_by_url', route('platform.staff.show', $this->admin)));
 
     $this->actingAs($this->admin, 'platform')
-        ->get(route('platform.stock.transactions', ['product' => $this->product->id]))
+        ->get(route('platform.reports.stock-transactions', ['product' => $this->product->id]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('table.meta.total', 1)
@@ -217,10 +217,10 @@ test('stock transactions ledger lists product and branch combinations and filter
         ->assertRedirect();
 
     $this->actingAs($this->admin, 'platform')
-        ->get(route('platform.stock.transactions'))
+        ->get(route('platform.reports.stock-transactions'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('platform/stock/transactions')
+            ->component('platform/reports/stock-transactions')
             ->where('table.meta.total', 2)
             ->where('table.data', fn ($rows) => collect($rows)->contains(
                 fn ($row) => $row['product_name'] === $this->product->name
@@ -233,7 +233,7 @@ test('stock transactions ledger lists product and branch combinations and filter
             )));
 
     $this->actingAs($this->admin, 'platform')
-        ->get(route('platform.stock.transactions', [
+        ->get(route('platform.reports.stock-transactions', [
             'branch' => $melbourne->id,
         ]))
         ->assertOk()
@@ -262,7 +262,7 @@ test('stock transactions include the adjustment reason label and signed variance
         ->assertRedirect();
 
     $this->actingAs($this->admin, 'platform')
-        ->get(route('platform.stock.transactions', ['product' => $this->product->id]))
+        ->get(route('platform.reports.stock-transactions', ['product' => $this->product->id]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('table.data', fn ($rows) => collect($rows)->contains(

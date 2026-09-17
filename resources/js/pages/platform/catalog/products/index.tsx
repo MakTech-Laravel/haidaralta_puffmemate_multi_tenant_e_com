@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
@@ -268,7 +269,7 @@ export default function PlatformProductsIndex({
                         ? stockActionItems(
                               {
                                   transactions:
-                                      StockController.transactions.url(),
+                                      StockTransactionController.index.url(),
                               },
                               { productId: product.id },
                           )

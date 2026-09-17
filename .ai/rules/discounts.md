@@ -1,9 +1,9 @@
 ---
 paths:
-  - 'resources/js/components/branch/product-inventory-panel.tsx'
+  - resources/js/components/branch/product-inventory-panel.tsx
   - 'resources/js/pages/{platform,branch}/**/products/show.tsx'
   - 'resources/js/pages/{platform,branch}/stock/manage.tsx'
-  - 'app/Support/ProductManageRedirect.php'
+  - app/Support/ProductManageRedirect.php
   - 'routes/{platform,branch}.php'
 ---
 
@@ -17,3 +17,6 @@ GET/PUT `/discounts`, `/discounts/preview`, and legacy `/stock/discount` go thro
 
 ## Retired stock URLs resolve through ProductManageRedirect
 Old stock/price and /discounts URLs redirect here. Pair → `stock.manage` with query (not product show). Platform product-only → Manage branches. Empty → products index. Invalid filled ids 404. `GET stock/manage` is a real Inertia page again — do not send it through this helper.
+
+## No stock/transactions redirect
+Do not keep a stock/transactions redirect. The ledger URL is reports/stock-transactions only (platform.reports.stock-transactions / branch.reports.stock-transactions).

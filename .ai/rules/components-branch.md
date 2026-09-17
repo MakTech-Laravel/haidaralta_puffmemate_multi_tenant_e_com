@@ -18,7 +18,7 @@ Inertia catalog pages live under `resources/js/pages/branch/catalog/{categories,
 Inventory manage is one `shadow-sm` card: snapshot strip (Stock, Selling, Effective) plus two content-sized Stock/Price forms with Save in each section header. Do not float a DemoStatCard, stretch equal-height footers, or leave an empty inventory column. DatePickers stay `min-w-0`. Type is a 3-button row, not a full-width select.
 
 ## Discount types + View transactions
-Pricing uses discount_type none|fixed|percent. No price, or `discount_type` none/missing, selects None and hides value+dates. Saved fixed/percent offers hydrate so Save is not destructive. Discount value label is Discount value (AUD) or (%), placeholders `e.g. 5.00` / `e.g. 10`. Do not render an on-page ledger. **View transactions** (outline) goes to `stock/transactions` with the same `product` + `branch` query (`locked` omitted; no variant). Pass `transactionsUrl` into the panel.
+Pricing uses discount_type none|fixed|percent. No price, or `discount_type` none/missing, selects None and hides value+dates. Saved fixed/percent offers hydrate so Save is not destructive. Discount value label is Discount value (AUD) or (%), placeholders `e.g. 5.00` / `e.g. 10`. Do not render an on-page ledger. **View transactions** (outline) goes to `reports/stock-transactions` with the same `product` + `branch` query (`locked` omitted; no variant). Pass `transactionsUrl` into the panel.
 
 ## Saved selling price is always live
 Do not show Price active. UpsertBranchProductPriceRequest has no `status`; BranchPricingService::upsert always persists `status => true`. Keep the DB column; list queries still use `where('status', true)`.

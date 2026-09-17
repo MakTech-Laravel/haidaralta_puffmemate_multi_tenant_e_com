@@ -4,7 +4,7 @@ import { Building2, CircleDollarSign, Settings2 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
-import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -198,7 +198,7 @@ export default function PlatformProductBranches({
                                 items: stockActionItems(
                                     {
                                         transactions:
-                                            StockController.transactions.url(),
+                                            StockTransactionController.index.url(),
                                     },
                                     {
                                         productId: product.id,

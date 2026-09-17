@@ -4,6 +4,7 @@ import { Eye, Settings2 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Branch/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
 import {
@@ -213,7 +214,7 @@ export default function BranchProductsIndex({
                                 items: stockActionItems(
                                     {
                                         transactions:
-                                            StockController.transactions.url(
+                                            StockTransactionController.index.url(
                                                 branch.slug,
                                             ),
                                     },

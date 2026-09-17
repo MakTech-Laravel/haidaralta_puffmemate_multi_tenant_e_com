@@ -7,6 +7,7 @@ use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
+use App\Http\Controllers\Branch\Reports\StockTransactionController as BranchStockTransactionController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
 use App\Http\Controllers\Branch\StaffController as BranchStaffController;
 use App\Http\Controllers\Branch\StockController as BranchStockController;
@@ -74,7 +75,8 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('stock/import', [BranchStockController::class, 'storeImport'])->name('branch.stock.import.store');
         Route::get('stock/price', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
             ->name('branch.stock.price');
-        Route::get('stock/transactions', [BranchStockController::class, 'transactions'])->name('branch.stock.transactions');
+        Route::get('reports/stock-transactions', [BranchStockTransactionController::class, 'index'])
+            ->name('branch.reports.stock-transactions');
         Route::get('stock/product-options', [BranchStockController::class, 'productOptions'])
             ->name('branch.stock.product-options');
     });

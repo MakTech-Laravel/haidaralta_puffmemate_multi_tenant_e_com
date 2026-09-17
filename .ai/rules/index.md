@@ -21,7 +21,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/layouts/customer/** | .ai/rules/customer.md |
 | app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php, app/DataTables/BranchProductListingDataTable.php, app/DataTables/BranchCategoryDataTable.php, app/DataTables/ProductBranchInventoryDataTable.php | .ai/rules/data-tables.md |
 | resources/js/components/{ui/date-picker,branch/product-inventory-panel}.tsx | .ai/rules/date-pickerbranch.md |
-| resources/js/components/branch/product-inventory-panel.tsx, resources/js/pages/{platform,branch}/**/products/show.tsx, resources/js/pages/{platform,branch}/stock/manage.tsx, app/Support/ProductManageRedirect.php, routes/{platform,branch}.php | .ai/rules/discounts.md |
+| resources/js/components/branch/product-inventory-panel.tsx, resources/js/pages/{platform,branch}/**/products/show.tsx, resources/js/pages/{platform,branch}/stock/manage.tsx, app/Support/ProductManageRedirect.php, routes/{platform,branch}.php, routes/*.php | .ai/rules/discounts.md |
 | docker/**, docker/nginx.conf | .ai/rules/docker.md |
 | Dockerfile | .ai/rules/dockerfile.md |
 | app/Services/Driver/**, app/Models/Driver*.php, app/Http/Controllers/{Platform,Branch}/*Driver*.php, resources/js/pages/{platform,branch}/drivers/**, resources/js/pages/platform/branches/drivers/** | .ai/rules/driver.md |
@@ -42,6 +42,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/{platform,branch}/nav.ts | .ai/rules/platformbranch.md |
 | resources/js/components/portal/** | .ai/rules/portal.md |
 | resources/js/pages/platform/catalog/products/show.tsx, resources/js/pages/platform/catalog/products/**, resources/js/pages/branch/catalog/products/show.tsx | .ai/rules/products.md |
+| app/Http/Controllers/{Platform,Branch}/Reports/**, resources/js/pages/{platform,branch}/reports/** | .ai/rules/reports.md |
 | app/Http/Requests/{Platform,Branch}/*Product*Request.php | .ai/rules/requests-platform-branch.md |
 | app/Http/Requests/Platform/*Category*Request.php | .ai/rules/requests-platform.md |
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |
