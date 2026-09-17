@@ -44,6 +44,7 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
                     <div className="flex min-w-0 flex-col gap-5">
                         <OrderTrackProducts
+                            branchName={order.branchName}
                             products={order.products}
                             totalLabel={order.totalLabel}
                         />

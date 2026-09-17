@@ -581,44 +581,70 @@ class DemoCatalog
 
         $templates = [
             [
-                'title' => 'Marlboro Gold',
-                'description' => 'Selected pack with branch-checked stock before dispatch. Smooth gold blend for everyday preference.',
+                'branchName' => 'Williamsburg Branch',
+                'products' => [
+                    'Marlboro Gold (20)',
+                    'L&M Blue Label (20)',
+                    'Vuse GO Berry (1)',
+                ],
                 'priceLabel' => '$1,300',
                 'status' => 'shipped',
             ],
             [
-                'title' => 'Premium Vape',
-                'description' => 'Heat-not-burn kit reserved at your selected branch. Includes starter accessories for first use.',
+                'branchName' => 'Williamsburg Branch',
+                'products' => [
+                    'Premium Vape (1)',
+                    'IQOS Iluma (1)',
+                    'Clipper Classic (2)',
+                ],
                 'priceLabel' => '$2,500',
                 'status' => 'processing',
             ],
             [
-                'title' => 'Industrial Grade Material',
-                'description' => 'Wholesale-style carton selection delivered after ID verification at handover.',
+                'branchName' => 'Williamsburg Branch',
+                'products' => [
+                    'Industrial Grade Material (1)',
+                    'Winfield Blue (20)',
+                ],
                 'priceLabel' => '$5,450',
                 'status' => 'delivered',
             ],
             [
-                'title' => 'Industrial Powder',
-                'description' => 'Compact pouch assortment with discreet packaging and branch-accurate pricing.',
+                'branchName' => 'Brisbane Branch',
+                'products' => [
+                    'Industrial Powder (1)',
+                    'Camel Blue (20)',
+                    'ZYN Cool Mint (5)',
+                ],
                 'priceLabel' => '$850',
                 'status' => 'shipped',
             ],
             [
-                'title' => 'Winfield Blue',
-                'description' => 'Classic blue pack line with courier ETA updates once the driver is assigned.',
+                'branchName' => 'Williamsburg Branch',
+                'products' => [
+                    'Winfield Blue (20)',
+                    'Horizon Menthol (20)',
+                ],
                 'priceLabel' => '$980',
                 'status' => 'processing',
             ],
             [
-                'title' => 'Vuse GO Berry',
-                'description' => 'Disposable berry flavour unit from the Brisbane branch assortment.',
+                'branchName' => 'Brisbane Branch',
+                'products' => [
+                    'Vuse GO Berry (1)',
+                    'Dunhill Red (20)',
+                    'Lucky Strike Original (20)',
+                ],
                 'priceLabel' => '$420',
                 'status' => 'delivered',
             ],
             [
-                'title' => 'Horizon Menthol',
-                'description' => 'Menthol carton option with stock reserved at checkout confirmation.',
+                'branchName' => 'Williamsburg Branch',
+                'products' => [
+                    'Horizon Menthol (20)',
+                    'Peter Stuyvesant Red (20)',
+                    'Benson & Hedges Gold (20)',
+                ],
                 'priceLabel' => '$1,150',
                 'status' => 'shipped',
             ],
@@ -633,8 +659,8 @@ class DemoCatalog
             $orders[] = [
                 'id' => 'ord-'.($index + 1),
                 'orderNumber' => '#ORD-CP2026-'.$number,
-                'title' => $template['title'],
-                'description' => $template['description'],
+                'branchName' => $template['branchName'],
+                'products' => $template['products'],
                 'priceLabel' => $template['priceLabel'],
                 'image' => $images[$index % count($images)],
                 'status' => $template['status'],
@@ -650,6 +676,7 @@ class DemoCatalog
      * @return array{
      *     id: string,
      *     orderNumber: string,
+     *     branchName: string,
      *     status: string,
      *     products: list<array{name: string, quantityLabel: string, priceLabel: string}>,
      *     totalLabel: string,
@@ -695,19 +722,26 @@ class DemoCatalog
         return [
             'id' => $order['id'],
             'orderNumber' => $order['orderNumber'],
+            'branchName' => $order['branchName'],
             'status' => $status,
-            'products' => [
-                [
-                    'name' => $order['title'],
-                    'quantityLabel' => '1 Unit',
-                    'priceLabel' => $order['priceLabel'],
-                ],
-                [
-                    'name' => 'Vuse GO Berry',
-                    'quantityLabel' => '1 Unit',
-                    'priceLabel' => '$450',
-                ],
-            ],
+            'products' => collect($order['products'])
+                ->values()
+                ->map(function (string $label, int $index) use ($order): array {
+                    $name = $label;
+                    $quantity = 1;
+
+                    if (preg_match('/^(.*)\s+\((\d+)\)$/', $label, $matches) === 1) {
+                        $name = $matches[1];
+                        $quantity = (int) $matches[2];
+                    }
+
+                    return [
+                        'name' => $name,
+                        'quantityLabel' => $quantity === 1 ? '1 Unit' : $quantity.' Packet',
+                        'priceLabel' => $index === 0 ? $order['priceLabel'] : '$450',
+                    ];
+                })
+                ->all(),
             'totalLabel' => $order['priceLabel'],
             'shippingAddress' => [
                 'name' => 'John Davidson',

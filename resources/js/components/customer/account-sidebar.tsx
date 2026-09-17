@@ -69,7 +69,7 @@ export function AccountSidebar({ className }: AccountSidebarProps) {
                             key={item.label}
                             href={logout()}
                             as="button"
-                            className="border-border text-foreground hover:text-primary border-b py-3 text-left text-base font-medium transition-colors first:border-t"
+                            className="border-border text-foreground hover:text-primary cursor-pointer border-b py-3 text-left text-base font-medium transition-colors first:border-t"
                             data-test="account-logout"
                         >
                             {item.label}

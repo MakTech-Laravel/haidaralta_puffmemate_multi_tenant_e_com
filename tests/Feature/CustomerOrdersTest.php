@@ -18,6 +18,9 @@ test('customers can view the demo orders page', function () {
             ->component('customer/orders/index')
             ->has('orders')
             ->where('orders.0.orderNumber', '#ORD-CP2026-001')
+            ->where('orders.0.branchName', 'Williamsburg Branch')
+            ->has('orders.0.products', 3)
+            ->where('orders.0.products.0', 'Marlboro Gold (20)')
             ->has('orders', 13));
 });
 
@@ -36,6 +39,9 @@ test('customers can view a demo order tracking page', function () {
             ->component('customer/orders/show')
             ->where('order.id', 'ord-1')
             ->where('order.orderNumber', '#ORD-CP2026-001')
+            ->where('order.branchName', 'Williamsburg Branch')
+            ->where('order.products.0.name', 'Marlboro Gold')
+            ->where('order.products.0.quantityLabel', '20 Packet')
             ->has('order.products')
             ->has('order.shippingAddress')
             ->has('order.driver')

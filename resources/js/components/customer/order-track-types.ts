@@ -28,6 +28,7 @@ export type OrderTimelineStep = {
 export type CustomerOrderDetail = {
     id: string;
     orderNumber: string;
+    branchName: string;
     status: 'shipped' | 'processing' | 'delivered';
     products: OrderTrackProduct[];
     totalLabel: string;
