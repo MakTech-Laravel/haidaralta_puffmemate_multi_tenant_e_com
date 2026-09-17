@@ -1,6 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Menu, ShoppingCart, User } from 'lucide-react';
 import { useState } from 'react';
+import { NotificationsPopover } from '@/components/notifications/notifications-popover';
+import type { NotificationItem } from '@/components/notifications/types';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -17,6 +19,10 @@ import {
 } from '@/lib/storefront-chrome';
 import { cn } from '@/lib/utils';
 import { about, cart, contact, dashboard, faqs, home, login, shop, wholesale } from '@/routes';
+import {
+    index as notificationsIndex,
+    show as notificationsShow,
+} from '@/routes/customer/notifications';
 import { category as shopCategory } from '@/routes/shop';
 
 function resolveHref(item: StorefrontChromeItem): string {
@@ -96,6 +102,17 @@ function isAccountArea(url: string): boolean {
     return (
         url === '/dashboard' ||
         url.startsWith('/dashboard?') ||
+        url === '/orders' ||
+        url.startsWith('/orders?') ||
+        url.startsWith('/orders/') ||
+        url === '/notifications' ||
+        url.startsWith('/notifications?') ||
+        url.startsWith('/notifications/') ||
+        url === '/account' ||
+        url.startsWith('/account?') ||
+        url === '/product-to-review' ||
+        url.startsWith('/product-to-review?') ||
+        url.startsWith('/product-to-review/') ||
         url === '/activity' ||
         url.startsWith('/activity?') ||
         url.startsWith('/activity/') ||
@@ -105,7 +122,11 @@ function isAccountArea(url: string): boolean {
 
 export function StorefrontHeader() {
     const page = usePage();
-    const { auth, name } = page.props;
+    const { auth, name, customerNotifications = [] } = page.props as {
+        auth: { user: { avatar?: string } | null };
+        name: string;
+        customerNotifications?: NotificationItem[];
+    };
     const url = page.url;
     const [mobileOpen, setMobileOpen] = useState(false);
     const accountHref = auth.user ? dashboard() : login();
@@ -161,6 +182,14 @@ export function StorefrontHeader() {
                         >
                             <ShoppingCart className="size-6 md:size-8" strokeWidth={1.75} />
                         </Link>
+
+                        <NotificationsPopover
+                            items={customerNotifications}
+                            viewAllHref={notificationsIndex.url()}
+                            getItemHref={(item) => notificationsShow.url(item.id)}
+                            isGuest={!auth.user}
+                            guestHref={login.url()}
+                        />
 
                         <Link
                             href={accountHref}

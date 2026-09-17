@@ -6,6 +6,7 @@ use App\Enums\RoleEnum;
 use App\Models\Branch;
 use App\Models\User;
 use App\Support\PortalAuth;
+use App\Support\Storefront\DemoCatalog;
 use App\Support\Storefront\StorefrontCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -62,6 +63,9 @@ class HandleInertiaRequests extends Middleware
                 'navCategories' => StorefrontCatalog::navCategories(),
                 'selectedBranchId' => $request->session()->get(StorefrontCatalog::BRANCH_SESSION_KEY),
             ],
+            'customerNotifications' => $portal === 'customer'
+                ? array_slice(DemoCatalog::customerNotifications(), 0, 5)
+                : [],
         ];
     }
 
