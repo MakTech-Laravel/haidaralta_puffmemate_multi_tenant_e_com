@@ -63,10 +63,6 @@ export default function DriverOrdersIndex({
                     <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
                         Assigned orders
                     </h1>
-                    <p className="text-muted-foreground max-w-xl text-base leading-relaxed">
-                        Assigned stops for this shift. Open an order to view
-                        products and collect the customer OTP.
-                    </p>
                 </div>
 
                 {status ? (

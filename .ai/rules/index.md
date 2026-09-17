@@ -14,7 +14,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/**/catalog/categories/index.tsx | .ai/rules/categories.md |
 | resources/js/components/color-picker/** | .ai/rules/color-picker.md |
 | resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx | .ai/rules/components-branch.md |
-| resources/js/components/driver/nav.ts | .ai/rules/components-driver.md |
+| resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx} | .ai/rules/components-driver.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx | .ai/rules/components.md |
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |

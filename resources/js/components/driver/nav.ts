@@ -1,5 +1,14 @@
+import {
+    Activity,
+    LayoutDashboard,
+    LogOut,
+    Package,
+    type LucideIcon,
+} from 'lucide-react';
+
 export type DriverNavItem = {
     label: string;
+    icon: LucideIcon;
     href?: string;
     match?: (url: string) => boolean;
     logout?: boolean;
@@ -9,12 +18,14 @@ export type DriverNavItem = {
 export const driverNavItems: DriverNavItem[] = [
     {
         label: 'Dashboard',
+        icon: LayoutDashboard,
         href: '/driver/dashboard',
         match: (url) =>
             url === '/driver/dashboard' || url.startsWith('/driver/dashboard?'),
     },
     {
         label: 'Orders',
+        icon: Package,
         href: '/driver/orders',
         match: (url) =>
             url === '/driver/orders' ||
@@ -23,6 +34,7 @@ export const driverNavItems: DriverNavItem[] = [
     },
     {
         label: 'My activity',
+        icon: Activity,
         href: '/driver/activity',
         match: (url) =>
             url === '/driver/activity' ||
@@ -31,6 +43,7 @@ export const driverNavItems: DriverNavItem[] = [
     },
     {
         label: 'Log Out',
+        icon: LogOut,
         logout: true,
     },
 ];
