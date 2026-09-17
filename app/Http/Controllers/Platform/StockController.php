@@ -48,7 +48,6 @@ class StockController extends Controller
                 'transactionsUrl' => null,
                 'allBranchesUrl' => null,
                 'branchProductsUrl' => null,
-                'editUrl' => null,
             ]);
         }
 
@@ -69,7 +68,6 @@ class StockController extends Controller
             ]),
             'allBranchesUrl' => route('platform.products.branches', $product),
             'branchProductsUrl' => route('platform.branches.products.index', $branch),
-            'editUrl' => null,
         ]);
     }
 

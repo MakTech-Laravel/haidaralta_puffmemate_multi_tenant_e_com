@@ -38,7 +38,7 @@ test('manage stock page starts unlocked with no selection', function () {
             ->missing('transactions'));
 });
 
-test('manage stock page with a pair renders listing details without transactions', function () {
+test('manage stock page with a pair renders inventory payload without transactions', function () {
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.stock.manage', [
             'branch' => $this->branch->id,

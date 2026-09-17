@@ -1,5 +1,5 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { BranchProductSummary } from '@/components/branch/branch-product-summary';
+import { Eye } from 'lucide-react';
 import {
     ProductInventoryPanel,
     type BranchInventorySnapshot,
@@ -60,10 +60,9 @@ export function ManageStockPage({
     transactionsUrl,
     allBranchesUrl,
     branchProductsUrl,
-    editUrl,
+    detailsUrl,
     branchOptionsUrl,
     lockBranch = false,
-    categoryHref,
     breadcrumbs,
 }: {
     context: StockPageContext;
@@ -79,10 +78,9 @@ export function ManageStockPage({
     transactionsUrl: string | null;
     allBranchesUrl: string | null;
     branchProductsUrl: string | null;
-    editUrl: string | null;
+    detailsUrl: string | null;
     branchOptionsUrl?: string;
     lockBranch?: boolean;
-    categoryHref?: (slug: string) => string;
     breadcrumbs: { title: string; href: string }[];
 }) {
     setLayoutProps({ breadcrumbs });
@@ -125,11 +123,6 @@ export function ManageStockPage({
                                     </Link>
                                 </Button>
                             ) : null}
-                            {editUrl ? (
-                                <Button asChild>
-                                    <Link href={editUrl}>Edit</Link>
-                                </Button>
-                            ) : null}
                         </div>
                     ) : null}
                 </div>
@@ -144,7 +137,7 @@ export function ManageStockPage({
                                 ? pairLocked
                                     ? 'Stock, selling price, and discounts for this listing.'
                                     : 'Change either picker to load a different listing.'
-                                : 'Select one of each. Listing details and Inventory & pricing appear after both are chosen.'}
+                                : 'Select one of each. Inventory & pricing appear after both are chosen.'}
                         </p>
                     </div>
                     <div className="mt-5">
@@ -165,25 +158,19 @@ export function ManageStockPage({
                 priceUrl &&
                 transactionsUrl ? (
                     <>
-                        <BranchProductSummary
-                            name={product.name}
-                            sku={product.sku}
-                            slug={product.slug}
-                            brand={product.brand}
-                            description={product.description}
-                            status={product.status}
-                            imageUrl={product.image_url}
-                            colorCode={product.color_code}
-                            gallery={product.gallery ?? []}
-                            categories={product.categories}
-                            categoryName={product.category_name}
-                            tags={product.tags}
-                            specifications={product.specifications}
-                            createdAt={product.created_at}
-                            updatedAt={product.updated_at}
-                            createdByName={product.created_by_name}
-                            categoryHref={categoryHref}
-                        />
+                        {detailsUrl ? (
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <p className="text-muted-foreground text-sm">
+                                    Catalog listing for {product.name}
+                                </p>
+                                <Button variant="outline" asChild>
+                                    <Link href={detailsUrl}>
+                                        <Eye className="size-4" />
+                                        View details
+                                    </Link>
+                                </Button>
+                            </div>
+                        ) : null}
 
                         <ProductInventoryPanel
                             variants={product.variants}

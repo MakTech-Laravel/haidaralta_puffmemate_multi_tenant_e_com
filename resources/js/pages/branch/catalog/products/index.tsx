@@ -1,6 +1,6 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Settings2 } from 'lucide-react';
+import { Eye, Settings2 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
@@ -178,6 +178,14 @@ export default function BranchProductsIndex({
                                 label: 'Catalog',
                                 items: [
                                     {
+                                        label: 'View',
+                                        icon: Eye,
+                                        href: ProductController.show.url({
+                                            branch: branch.slug,
+                                            product: row.original.slug,
+                                        }),
+                                    },
+                                    {
                                         label: 'Manage',
                                         icon: Settings2,
                                         href: stockPageUrl(
@@ -190,6 +198,13 @@ export default function BranchProductsIndex({
                                                 locked: 'both',
                                             },
                                         ),
+                                    },
+                                    {
+                                        label: 'Edit',
+                                        href: ProductController.edit.url({
+                                            branch: branch.slug,
+                                            product: row.original.slug,
+                                        }),
                                     },
                                 ],
                             },

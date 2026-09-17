@@ -23,8 +23,8 @@ Pricing uses discount_type none|fixed|percent. No price, or `discount_type` none
 ## Saved selling price is always live
 Do not show Price active. UpsertBranchProductPriceRequest has no `status`; BranchPricingService::upsert always persists `status => true`. Keep the DB column; list queries still use `where('status', true)`.
 
-## Manage listing details match catalog product show
-Stock Manage (after a pair is resolved) uses one Listing details card (tile gallery rail + 3-col facts + category chips + tags + spec tiles). No Product details / Branch stock split, no header Avatar, no extra full-width gallery, no Branch network table. Platform category chips link to category show; branch chips link only when `catalog.branch_can_view_categories`.
+## Listing details live on product show
+Stock Manage (after a pair is resolved) links to catalog product show with **View details**. Do not inline Listing details on Manage. Platform show is `platform.products.show`; branch show is `branch.products.show` (no Branch network table). Platform category chips link to category show; branch chips link only when `catalog.branch_can_view_categories`.
 
 ## Inventory panel is quantity-only Stock
 Inventory snapshot is { quantity } only (Stock). Do not post minimum_stock, reserved, available, or low-stock fields. Hide variant scope UI when catalog.show_product_variants is false. Keep adjust + price forms.

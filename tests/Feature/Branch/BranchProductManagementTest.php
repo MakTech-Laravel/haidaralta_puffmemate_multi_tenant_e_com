@@ -307,7 +307,35 @@ test('branch product index shows stock and filters by missing price', function (
                 && ! collect($rows)->contains(fn ($row) => $row['slug'] === 'priced-pack')));
 });
 
-test('branch product show includes listing details payload', function () {
+test('branch product show includes listing details without a branch network table', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $product = Product::factory()->create([
+        'brand' => 'PuffCo',
+        'tags' => ['new_arrival'],
+        'specifications' => [
+            ['label' => 'Nicotine', 'value' => '3%'],
+        ],
+    ]);
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.products.show', [$branch, $product]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/products/show')
+            ->where('product.brand', 'PuffCo')
+            ->where('product.tags', ['new_arrival'])
+            ->where('product.specifications.0.label', 'Nicotine')
+            ->where('product.specifications.0.value', '3%')
+            ->has('product.created_at')
+            ->has('product.updated_at')
+            ->has('product.created_by_name')
+            ->missing('table')
+            ->missing('inventoryUrl')
+            ->missing('transactions'));
+});
+
+test('branch manage stock still includes inventory listing payload', function () {
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $product = Product::factory()->create([

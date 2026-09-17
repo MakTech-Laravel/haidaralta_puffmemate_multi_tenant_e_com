@@ -1,4 +1,4 @@
-import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
+import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import {
     ManageStockPage,
@@ -18,7 +18,6 @@ export default function PlatformManageStock({
     transactionsUrl,
     allBranchesUrl,
     branchProductsUrl,
-    editUrl,
 }: {
     context: StockPageContext;
     product: StockManageProduct | null;
@@ -31,7 +30,6 @@ export default function PlatformManageStock({
     transactionsUrl: string | null;
     allBranchesUrl: string | null;
     branchProductsUrl: string | null;
-    editUrl: string | null;
 }) {
     return (
         <ManageStockPage
@@ -49,8 +47,9 @@ export default function PlatformManageStock({
             transactionsUrl={transactionsUrl}
             allBranchesUrl={allBranchesUrl}
             branchProductsUrl={branchProductsUrl}
-            editUrl={editUrl}
-            categoryHref={(slug) => CategoryController.show.url(slug)}
+            detailsUrl={
+                product ? ProductController.show.url(product.slug) : null
+            }
             breadcrumbs={[
                 { title: 'Dashboard', href: '/platform/dashboard' },
                 { title: 'Products', href: '/platform/products' },

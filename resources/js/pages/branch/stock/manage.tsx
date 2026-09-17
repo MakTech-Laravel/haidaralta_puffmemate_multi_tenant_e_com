@@ -1,5 +1,3 @@
-import { usePage } from '@inertiajs/react';
-import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import {
@@ -22,7 +20,6 @@ export default function BranchManageStock({
     transactionsUrl,
     allBranchesUrl,
     branchProductsUrl,
-    editUrl,
 }: {
     context: StockPageContext;
     product: StockManageProduct | null;
@@ -35,10 +32,8 @@ export default function BranchManageStock({
     transactionsUrl: string | null;
     allBranchesUrl: string | null;
     branchProductsUrl: string | null;
-    editUrl: string | null;
 }) {
     const branch = context.branch as Branch;
-    const { catalog } = usePage().props;
 
     return (
         <ManageStockPage
@@ -55,17 +50,15 @@ export default function BranchManageStock({
             transactionsUrl={transactionsUrl}
             allBranchesUrl={allBranchesUrl}
             branchProductsUrl={branchProductsUrl}
-            editUrl={editUrl}
-            lockBranch
-            categoryHref={
-                catalog.branch_can_view_categories
-                    ? (slug) =>
-                          CategoryController.show.url({
-                              branch: branch.slug,
-                              category: slug,
-                          })
-                    : undefined
+            detailsUrl={
+                product
+                    ? ProductController.show.url({
+                          branch: branch.slug,
+                          product: product.slug,
+                      })
+                    : null
             }
+            lockBranch
             breadcrumbs={[
                 {
                     title: 'Dashboard',

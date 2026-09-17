@@ -1,18 +1,15 @@
 import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
+import { Pencil, Settings2 } from 'lucide-react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import { BranchProductSummary } from '@/components/branch/branch-product-summary';
-import {
-    ProductInventoryPanel,
-    type BranchInventorySnapshot,
-    type BranchPriceSnapshot,
-    type BranchProductVariantRow,
-} from '@/components/branch/product-inventory-panel';
-import Heading from '@/components/heading';
+import { DataTableRowActions } from '@/components/data-table';
+import { PRODUCT_TAG_OPTIONS } from '@/components/platform/product-form';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { type ColorPickerValue } from '@/lib/color-picker';
-import { stockPageUrl } from '@/lib/stock-query';
+import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -39,25 +36,21 @@ type ProductShow = {
     created_at: string | null;
     updated_at: string | null;
     created_by_name: string | null;
-    variants: BranchProductVariantRow[];
-    inventory: BranchInventorySnapshot | null;
-    price: BranchPriceSnapshot | null;
-    variant_inventories: Record<string, BranchInventorySnapshot>;
-    variant_prices: Record<string, BranchPriceSnapshot>;
 };
+
+function tagLabel(value: string): string {
+    return (
+        PRODUCT_TAG_OPTIONS.find((option) => option.value === value)?.label ??
+        value
+    );
+}
 
 export default function BranchProductShow({
     branch,
     product,
-    transactionTypes,
-    adjustmentReasons,
-    discountTypes,
 }: {
     branch: Branch;
     product: ProductShow;
-    transactionTypes: { value: string; label: string }[];
-    adjustmentReasons: { value: string; label: string }[];
-    discountTypes: { value: string; label: string }[];
 }) {
     const { catalog } = usePage().props;
     const categoryHref = catalog.branch_can_view_categories
@@ -94,20 +87,100 @@ export default function BranchProductShow({
 
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="[&_header]:mb-0">
-                        <Heading
-                            title={product.name}
-                            description={`Inventory for ${branch.name}`}
-                        />
+                    <div className="min-w-0 space-y-3">
+                        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                            Catalog product
+                        </p>
+                        <div className="space-y-2">
+                            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                                {product.name}
+                            </h1>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                <Badge
+                                    variant={
+                                        product.status ? 'default' : 'secondary'
+                                    }
+                                >
+                                    {product.status
+                                        ? 'Active in catalog'
+                                        : 'Inactive'}
+                                </Badge>
+                                {product.brand ? (
+                                    <Badge variant="outline">
+                                        {product.brand}
+                                    </Badge>
+                                ) : null}
+                                {product.sku ? (
+                                    <Badge
+                                        variant="outline"
+                                        className="font-mono font-normal"
+                                    >
+                                        {product.sku}
+                                    </Badge>
+                                ) : null}
+                                {product.tags.map((tag) => (
+                                    <Badge key={tag} variant="secondary">
+                                        {tagLabel(tag)}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <Button variant="outline" asChild>
                             <Link
                                 href={ProductController.index.url(branch.slug)}
                             >
-                                Back
+                                All products
                             </Link>
                         </Button>
+                        <DataTableRowActions
+                            contentClassName="w-56"
+                            groups={[
+                                {
+                                    label: 'Catalog',
+                                    items: [
+                                        {
+                                            label: 'Manage',
+                                            icon: Settings2,
+                                            href: stockPageUrl(
+                                                StockController.manage.url(
+                                                    branch.slug,
+                                                ),
+                                                {
+                                                    productId: product.id,
+                                                    branchId: branch.id,
+                                                    locked: 'both',
+                                                },
+                                            ),
+                                        },
+                                        {
+                                            label: 'Edit',
+                                            icon: Pencil,
+                                            href: ProductController.edit.url({
+                                                branch: branch.slug,
+                                                product: product.slug,
+                                            }),
+                                        },
+                                    ],
+                                },
+                                {
+                                    label: 'Stock',
+                                    items: stockActionItems(
+                                        {
+                                            transactions:
+                                                StockController.transactions.url(
+                                                    branch.slug,
+                                                ),
+                                        },
+                                        {
+                                            productId: product.id,
+                                            branchId: branch.id,
+                                        },
+                                    ),
+                                },
+                            ]}
+                        />
                         <Button asChild>
                             <Link
                                 href={ProductController.edit.url({
@@ -115,6 +188,7 @@ export default function BranchProductShow({
                                     product: product.slug,
                                 })}
                             >
+                                <Pencil className="size-4" />
                                 Edit
                             </Link>
                         </Button>
@@ -139,32 +213,6 @@ export default function BranchProductShow({
                     updatedAt={product.updated_at}
                     createdByName={product.created_by_name}
                     categoryHref={categoryHref}
-                />
-
-                <ProductInventoryPanel
-                    variants={product.variants}
-                    inventory={product.inventory}
-                    price={product.price}
-                    variantInventories={product.variant_inventories}
-                    variantPrices={product.variant_prices}
-                    transactionTypes={transactionTypes}
-                    adjustmentReasons={adjustmentReasons}
-                    discountTypes={discountTypes}
-                    inventoryUrl={ProductController.adjustInventory.url({
-                        branch: branch.slug,
-                        product: product.slug,
-                    })}
-                    priceUrl={ProductController.upsertPrice.url({
-                        branch: branch.slug,
-                        product: product.slug,
-                    })}
-                    transactionsUrl={stockPageUrl(
-                        StockController.transactions.url(branch.slug),
-                        {
-                            productId: product.id,
-                            branchId: branch.id,
-                        },
-                    )}
                 />
             </div>
         </>

@@ -49,7 +49,6 @@ class StockController extends Controller
                 'transactionsUrl' => null,
                 'allBranchesUrl' => null,
                 'branchProductsUrl' => null,
-                'editUrl' => null,
             ]);
         }
 
@@ -71,7 +70,6 @@ class StockController extends Controller
             ]),
             'allBranchesUrl' => null,
             'branchProductsUrl' => route('branch.products.index', $branch),
-            'editUrl' => route('branch.products.edit', [$branch, $product]),
         ]);
     }
 

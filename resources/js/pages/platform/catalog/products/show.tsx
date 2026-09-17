@@ -232,6 +232,7 @@ export default function PlatformProductsShow({
     const [deletingVariantId, setDeletingVariantId] = useState<number | null>(
         null,
     );
+    const [deletingProduct, setDeletingProduct] = useState(false);
     const [processing, setProcessing] = useState(false);
 
     const openCreateVariant = () => {
@@ -503,24 +504,70 @@ export default function PlatformProductsShow({
                             </div>
                         </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <Button variant="outline" asChild>
                             <Link href={ProductController.index.url()}>
                                 All products
                             </Link>
                         </Button>
-                        {canManageBranches ? (
-                            <Button variant="outline" asChild>
-                                <Link
-                                    href={BranchInventoryController.forProduct.url(
-                                        product.slug,
-                                    )}
-                                >
-                                    <Network className="size-4" />
-                                    Manage branches
-                                </Link>
-                            </Button>
-                        ) : null}
+                        <DataTableRowActions
+                            contentClassName="w-56"
+                            groups={[
+                                {
+                                    label: 'Catalog',
+                                    items: [
+                                        ...(canManageBranches
+                                            ? [
+                                                  {
+                                                      label: 'Manage branches',
+                                                      icon: Network,
+                                                      href: BranchInventoryController.forProduct.url(
+                                                          product.slug,
+                                                      ),
+                                                  },
+                                              ]
+                                            : []),
+                                        ...(canManageCatalog
+                                            ? [
+                                                  {
+                                                      label: 'Edit',
+                                                      icon: Pencil,
+                                                      href: ProductController.edit.url(
+                                                          product.slug,
+                                                      ),
+                                                  },
+                                              ]
+                                            : []),
+                                    ],
+                                },
+                                {
+                                    label: 'Stock',
+                                    items: canManageBranches
+                                        ? stockActionItems(
+                                              {
+                                                  transactions:
+                                                      StockController.transactions.url(),
+                                              },
+                                              { productId: product.id },
+                                          )
+                                        : [],
+                                },
+                                {
+                                    label: 'Danger zone',
+                                    items: canManageCatalog
+                                        ? [
+                                              {
+                                                  label: 'Delete',
+                                                  icon: Trash2,
+                                                  destructive: true,
+                                                  onSelect: () =>
+                                                      setDeletingProduct(true),
+                                              },
+                                          ]
+                                        : [],
+                                },
+                            ]}
+                        />
                         {canManageCatalog ? (
                             <Button asChild>
                                 <Link
@@ -913,6 +960,27 @@ export default function PlatformProductsShow({
                             },
                         },
                     );
+                }}
+            />
+
+            <ConfirmDeleteDialog
+                open={deletingProduct}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeletingProduct(false);
+                    }
+                }}
+                title="Delete product?"
+                description="This will soft-delete the product and its variants."
+                processing={processing}
+                onConfirm={() => {
+                    setProcessing(true);
+                    router.delete(ProductController.destroy.url(product.slug), {
+                        onFinish: () => {
+                            setProcessing(false);
+                            setDeletingProduct(false);
+                        },
+                    });
                 }}
             />
         </>

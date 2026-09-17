@@ -22,6 +22,7 @@ use App\Services\Inventory\BranchPricingService;
 use App\Services\Inventory\InventoryService;
 use App\Support\CatalogReturnTo;
 use App\Support\ProductManageRedirect;
+use App\Support\ProductSpecifications;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -124,9 +125,15 @@ class ProductController extends Controller
         return redirect()->to(ProductManageRedirect::branchUrl($branch, $product));
     }
 
-    public function show(string $branchSlug, Product $product): RedirectResponse
+    public function show(string $branchSlug, Product $product): Response
     {
-        return redirect()->to(ProductManageRedirect::branchUrl($this->currentBranch(), $product));
+        $branch = $this->currentBranch();
+        $product->load(['categories:id,name,slug', 'images', 'creator:id,name']);
+
+        return Inertia::render('branch/catalog/products/show', [
+            'branch' => $branch->only(['id', 'name', 'slug']),
+            'product' => $this->mapCatalogProduct($product),
+        ]);
     }
 
     public function edit(string $branchSlug, Product $product): Response
@@ -192,7 +199,7 @@ class ProductController extends Controller
 
         Toast::success('Product updated.');
 
-        return redirect()->to(ProductManageRedirect::branchUrl($branch, $product));
+        return redirect()->route('branch.products.show', [$branch, $product]);
     }
 
     public function adjustInventory(
@@ -295,6 +302,49 @@ class ProductController extends Controller
             is_array($files) ? $files : [],
             fn ($file): bool => $file instanceof UploadedFile,
         ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function mapCatalogProduct(Product $product): array
+    {
+        return [
+            'id' => $product->id,
+            'categories' => $product->categories
+                ->map(fn (Category $category): array => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                ])
+                ->values()
+                ->all(),
+            'category_name' => $product->categoryNamesLabel(),
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'sku' => $product->sku,
+            'description' => $product->description,
+            'brand' => $product->brand,
+            'tags' => $product->tags ?? [],
+            'specifications' => ProductSpecifications::normalize($product->specifications),
+            'image_url' => $product->imageUrl(),
+            'color_code' => $product->color_code,
+            'status' => (bool) $product->status,
+            'created_at' => $product->created_at?->toIso8601String(),
+            'updated_at' => $product->updated_at?->toIso8601String(),
+            'created_by_name' => $product->creator?->name,
+            'gallery' => $product->relationLoaded('images')
+                ? $product->images
+                    ->map(fn (ProductImage $image): array => [
+                        'id' => $image->id,
+                        'path' => $image->path,
+                        'url' => $image->url(),
+                        'sort_order' => $image->sort_order,
+                    ])
+                    ->values()
+                    ->all()
+                : [],
+        ];
     }
 
     private function currentBranch(): Branch

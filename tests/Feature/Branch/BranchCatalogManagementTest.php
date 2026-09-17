@@ -6,7 +6,6 @@ use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
-use App\Support\ProductManageRedirect;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -146,7 +145,7 @@ test('branch can update a global product without destroy routes', function () {
             'sku' => $product->sku,
             'status' => true,
         ])
-        ->assertRedirect(ProductManageRedirect::branchUrl($branch, $product));
+        ->assertRedirect(route('branch.products.show', [$branch, $product]));
 
     expect($product->fresh()->name)->toBe('Editable Air Pro Plus');
 

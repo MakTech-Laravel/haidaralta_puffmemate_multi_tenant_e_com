@@ -20,7 +20,7 @@ beforeEach(function () {
     $this->product = Product::factory()->create(['slug' => 'branch-stock-pack']);
 });
 
-test('manage stock page with a product renders listing details without transactions', function () {
+test('manage stock page with a product renders inventory payload without transactions', function () {
     $this->actingAs($this->staff, 'branch')
         ->get(route('branch.stock.manage', [
             'branch' => $this->branch,
@@ -71,10 +71,17 @@ test('update price url with a product redirects to manage stock', function () {
         ]));
 });
 
-test('old product show url redirects to locked manage stock', function () {
+test('product show renders catalog details without a branch network table', function () {
     $this->actingAs($this->staff, 'branch')
         ->get(route('branch.products.show', [$this->branch, $this->product]))
-        ->assertRedirect(ProductManageRedirect::branchUrl($this->branch, $this->product));
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/products/show')
+            ->where('product.id', $this->product->id)
+            ->where('product.name', $this->product->name)
+            ->missing('table')
+            ->missing('inventoryUrl')
+            ->missing('transactions'));
 });
 
 test('manage stock url 404s when a locked product is missing', function () {
