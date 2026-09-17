@@ -42,7 +42,7 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                 </div>
 
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-                    <div className="flex min-w-0 flex-col gap-5">
+                    <div className="order-2 flex min-w-0 flex-col gap-5 lg:order-1">
                         <OrderTrackProducts
                             branchName={order.branchName}
                             products={order.products}
@@ -52,7 +52,7 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                         <OrderTrackMap />
                     </div>
 
-                    <div className="flex flex-col gap-5">
+                    <div className="order-1 flex flex-col gap-5 lg:order-2">
                         <OrderTrackDriverCard driver={order.driver} />
                         <OrderDeliveryTimeline steps={order.timeline} />
                     </div>
