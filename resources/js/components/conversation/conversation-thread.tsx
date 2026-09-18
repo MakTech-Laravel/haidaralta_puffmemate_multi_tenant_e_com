@@ -137,7 +137,8 @@ export function ConversationThread({
     const [messages, setMessages] = useState(initialMessages);
     const [hasMore, setHasMore] = useState(initialHasMore);
     const [loadingOlder, setLoadingOlder] = useState(false);
-    const [status, setStatus] = useState(conversation.status);
+    const [localClosed, setLocalClosed] = useState(false);
+    const [closing, setClosing] = useState(false);
     const [receipts, setReceipts] = useState<ParticipantReceipt[]>(
         conversation.receipts,
     );
@@ -145,7 +146,12 @@ export function ConversationThread({
     const lastReadRef = useRef(0);
     const lastAckRef = useRef(0);
 
-    const isClosed = status === 'closed';
+    /**
+     * `router.post` preserves this component's state, so status cannot live
+     * only in useState — the Inertia payload is the source of truth, with a
+     * local latch for the click and for Echo events that beat the response.
+     */
+    const isClosed = conversation.status === 'closed' || localClosed;
 
     const onMessage = useCallback(
         ({ message }: { message: ConversationMessage }) => {
@@ -155,8 +161,7 @@ export function ConversationThread({
     );
 
     const onClosed = useCallback(() => {
-        setStatus('closed');
-        router.reload({ only: ['thread'] });
+        setLocalClosed(true);
     }, []);
 
     const onReceipts = useCallback(
@@ -174,6 +179,35 @@ export function ConversationThread({
         onClosed,
         onReceipts,
     });
+
+    useEffect(() => {
+        setMessages((current) => mergeMessages(current, initialMessages));
+        setHasMore(initialHasMore);
+    }, [initialMessages, initialHasMore]);
+
+    useEffect(() => {
+        setReceipts(conversation.receipts);
+    }, [conversation.receipts]);
+
+    const closeThread = (): void => {
+        if (isClosed || closing) {
+            return;
+        }
+
+        setClosing(true);
+        setLocalClosed(true);
+
+        router.post(
+            endpoints.close,
+            {},
+            {
+                preserveScroll: true,
+                only: ['thread', 'conversations', 'inboxMeta'],
+                onError: () => setLocalClosed(false),
+                onFinish: () => setClosing(false),
+            },
+        );
+    };
 
     const persisted = useMemo(
         () => messages.filter((message) => !message.pending),
@@ -414,13 +448,8 @@ export function ConversationThread({
                 {canClose && !isClosed ? (
                     <Button
                         variant="outline"
-                        onClick={() =>
-                            router.post(
-                                endpoints.close,
-                                {},
-                                { preserveScroll: true },
-                            )
-                        }
+                        disabled={closing}
+                        onClick={closeThread}
                     >
                         <Lock />
                         Close conversation

@@ -50,9 +50,13 @@ class ConversationPolicy
         return $conversation->isOpen() && $this->view($user, $conversation);
     }
 
+    /**
+     * Closing is idempotent: operators may POST close against a thread that
+     * is already closed, and the service no-ops instead of 403ing.
+     */
     public function close(User $user, Conversation $conversation): bool
     {
-        return $conversation->isOpen() && $this->isOperatorFor($user, $conversation);
+        return $this->isOperatorFor($user, $conversation);
     }
 
     public function addParticipant(User $user, Conversation $conversation): bool

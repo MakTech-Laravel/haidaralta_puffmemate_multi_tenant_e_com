@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\MessageType;
 use App\Enums\OrderStatus;
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
@@ -111,6 +112,39 @@ test('a closed thread rejects new messages', function () {
 
     expect(fn () => app(ConversationService::class)->sendMessage($conversation, $operator, 'Still there?'))
         ->toThrow(RuntimeException::class);
+});
+
+test('closing a conversation twice writes a single system message', function () {
+    Event::fake([ConversationClosed::class, MessageCreated::class, ConversationInboxUpdated::class]);
+
+    $conversation = openThread();
+    $service = app(ConversationService::class);
+
+    $service->close($conversation, 'Conversation closed by Ava Mitchell.');
+    $service->close($conversation->refresh(), 'Conversation closed by Ava Mitchell.');
+
+    expect($conversation->refresh()->isClosed())->toBeTrue()
+        ->and($conversation->messages()->where('type', MessageType::System)->where('body', 'Conversation closed by Ava Mitchell.')->count())->toBe(1);
+
+    Event::assertDispatchedTimes(ConversationClosed::class, 1);
+    Event::assertDispatchedTimes(MessageCreated::class, 1);
+});
+
+test('an operator closing from the page is idempotent', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $conversation = openThread();
+
+    $this->actingAs($admin, 'platform')
+        ->from(route('platform.conversations.show', $conversation))
+        ->post(route('platform.conversations.close', $conversation))
+        ->assertRedirect(route('platform.conversations.show', $conversation));
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.conversations.close', $conversation))
+        ->assertRedirect(route('platform.conversations.show', $conversation));
+
+    expect($conversation->refresh()->isClosed())->toBeTrue()
+        ->and($conversation->messages()->where('type', MessageType::System)->where('body', 'like', 'Conversation closed by%')->count())->toBe(1);
 });
 
 /**

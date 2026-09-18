@@ -133,24 +133,42 @@ class ConversationService
         return $this->close($conversation, $reason ?? $this->closeReasonFor($order));
     }
 
+    /**
+     * Close the thread. Safe to call twice: a second close is a no-op so a
+     * double-click cannot stamp the transcript with extra system rows.
+     */
     public function close(Conversation $conversation, string $reason): Conversation
     {
-        DB::transaction(function () use ($conversation, $reason): void {
-            $conversation->forceFill([
+        $systemMessage = null;
+
+        DB::transaction(function () use ($conversation, $reason, &$systemMessage): void {
+            $locked = Conversation::query()
+                ->whereKey($conversation->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked === null || $locked->isClosed()) {
+                return;
+            }
+
+            $locked->forceFill([
                 'status' => ConversationStatus::Closed,
                 'closed_at' => now(),
             ])->save();
 
-            $this->touchLastMessage(
-                $conversation,
-                $this->writeSystemMessage($conversation, $reason),
-            );
+            $systemMessage = $this->writeSystemMessage($locked, $reason);
+            $this->touchLastMessage($locked, $systemMessage);
         });
 
         $conversation->refresh();
 
-        broadcast(new ConversationClosed($conversation));
-        $this->notifyInbox($conversation);
+        if ($systemMessage instanceof Message) {
+            $systemMessage->load(['sender:id,name,avatar', 'attachments']);
+
+            broadcast(new MessageCreated($systemMessage));
+            broadcast(new ConversationClosed($conversation));
+            $this->notifyInbox($conversation);
+        }
 
         return $conversation;
     }
