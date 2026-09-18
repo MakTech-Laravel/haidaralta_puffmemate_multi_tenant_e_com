@@ -16,7 +16,7 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
+import { StatCard } from '@/components/portal/stat-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -289,13 +289,13 @@ export default function PlatformProductBranches({
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <DemoStatCard
+                    <StatCard
                         icon={Building2}
                         label="Branches"
                         value={String(summary.branches)}
                         hint="Locations in the network"
                     />
-                    <DemoStatCard
+                    <StatCard
                         icon={CircleDollarSign}
                         label="Missing price"
                         value={String(summary.missing_price)}

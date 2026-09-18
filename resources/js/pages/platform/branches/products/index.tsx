@@ -19,7 +19,7 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
+import { StatCard } from '@/components/portal/stat-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import {
@@ -260,13 +260,13 @@ export default function PlatformBranchProductsIndex({
                 />
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <DemoStatCard
+                    <StatCard
                         icon={Package}
                         label="Catalog"
                         value={String(summary.products)}
                         hint="Products in master catalog"
                     />
-                    <DemoStatCard
+                    <StatCard
                         icon={CircleDollarSign}
                         label="Missing price"
                         value={String(summary.missing_price)}

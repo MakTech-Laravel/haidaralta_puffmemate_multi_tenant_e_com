@@ -10,7 +10,7 @@ import {
 import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
+import { StatCard } from '@/components/portal/stat-card';
 import {
     InfiniteScrollMultiCombobox,
     type MultiComboboxOption,
@@ -368,14 +368,14 @@ export function ImportStockPage({
                     </section>
 
                     <aside className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-                        <DemoStatCard
+                        <StatCard
                             label="Type"
                             value="New entry"
                             hint="Always added to on-hand stock"
                             icon={ArrowDownToLine}
                             valueClassName="text-lg"
                         />
-                        <DemoStatCard
+                        <StatCard
                             label="Pairs"
                             value={pairCount === 0 ? '—' : String(pairCount)}
                             hint={
@@ -386,7 +386,7 @@ export function ImportStockPage({
                             icon={Layers}
                         />
                         {lockBranch ? null : (
-                            <DemoStatCard
+                            <StatCard
                                 label="Branches"
                                 value={
                                     form.data.branch_ids.length === 0
@@ -403,7 +403,7 @@ export function ImportStockPage({
                                 valueClassName="truncate text-lg"
                             />
                         )}
-                        <DemoStatCard
+                        <StatCard
                             label="Products"
                             value={
                                 form.data.product_ids.length === 0

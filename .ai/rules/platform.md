@@ -53,7 +53,7 @@ CategoryForm and ProductForm: enableSuggestions with portal-specific suggestions
 ProductForm create defaults color_code to transparent with defaultMode=transparent. Edit keeps the stored value (null → transparent). Media is a narrow rail (not a second equal column): square primary on the color tile, compact ColorPicker in the footer, gallery thumbs with dropzoneVisibility=empty. Do not use min-h-96 or a persistent full-width gallery dropzone — that creates blank space beside details.
 
 ## Category show is one listing card
-CategoryProfile is a single listing card: compact ProductGallery layout=tile (square ~16rem, card=false) beside facts. Featured, status, created, updated live in Listing details — no Catalog record card, no Media hero, no DemoStatCards. Products jewel stays on the listing header. Subcategory chips only when catalog.show_parent_category.
+CategoryProfile is a single listing card: compact ProductGallery layout=tile (square ~16rem, card=false) beside facts. Featured, status, created, updated live in Listing details — no Catalog record card, no Media hero, no StatCards. Products jewel stays on the listing header. Subcategory chips only when catalog.show_parent_category.
 
 ## Category show background is a fact
 CategoryProfile Image background is a fact in the listing grid, not a full-width bar. Transparent is text only (no empty swatch). Solid/gradient show a size-5 swatch beside the summary.

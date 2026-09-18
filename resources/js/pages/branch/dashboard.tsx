@@ -6,7 +6,7 @@ import {
     TriangleAlert,
     Users,
 } from 'lucide-react';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
+import { StatCard } from '@/components/portal/stat-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -112,25 +112,25 @@ export default function BranchDashboard() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <DemoStatCard
+                    <StatCard
                         icon={ShoppingBag}
                         label="Sales today"
                         value="$1,284"
                         hint="86 tickets so far"
                     />
-                    <DemoStatCard
+                    <StatCard
                         icon={Package}
                         label="Open orders"
                         value="23"
                         hint="9 pickup · 14 delivery"
                     />
-                    <DemoStatCard
+                    <StatCard
                         icon={Users}
                         label="On shift"
                         value="8"
                         hint="2 arriving at 14:00"
                     />
-                    <DemoStatCard
+                    <StatCard
                         icon={TriangleAlert}
                         label="Inventory alerts"
                         value="3"
