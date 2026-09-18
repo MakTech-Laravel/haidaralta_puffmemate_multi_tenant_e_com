@@ -46,7 +46,31 @@ class BranchProductPriceHistoryDataTable extends AbstractDataTable
         string $portal = 'platform',
         ?string $currentBranchSlug = null,
     ): array {
-        return (new static($request, $scopedBranchId, $portal, $currentBranchSlug))->toArray();
+        return static::instanceFor($request, $scopedBranchId, $portal, $currentBranchSlug)->toArray();
+    }
+
+    public static function instanceFor(
+        Request $request,
+        ?int $scopedBranchId = null,
+        string $portal = 'platform',
+        ?string $currentBranchSlug = null,
+    ): static {
+        return new static($request, $scopedBranchId, $portal, $currentBranchSlug);
+    }
+
+    public function includesBranchColumn(): bool
+    {
+        return $this->scopedBranchId === null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $changes
+     */
+    public static function flattenChanges(array $changes): string
+    {
+        return collect(self::mapChangeRows($changes))
+            ->map(fn (array $row): string => sprintf('%s: %s → %s', $row['label'], $row['from'], $row['to']))
+            ->implode('; ');
     }
 
     /**
@@ -225,6 +249,15 @@ class BranchProductPriceHistoryDataTable extends AbstractDataTable
      */
     private function mapChanges(array $changes): array
     {
+        return self::mapChangeRows($changes);
+    }
+
+    /**
+     * @param  array<string, mixed>  $changes
+     * @return list<array{field: string, label: string, from: string, to: string}>
+     */
+    private static function mapChangeRows(array $changes): array
+    {
         $rows = [];
 
         foreach ($changes as $field => $change) {
@@ -238,15 +271,15 @@ class BranchProductPriceHistoryDataTable extends AbstractDataTable
             $rows[] = [
                 'field' => (string) $field,
                 'label' => self::CHANGE_LABELS[$field] ?? (string) $field,
-                'from' => $this->formatChangeValue((string) $field, $from),
-                'to' => $this->formatChangeValue((string) $field, $to),
+                'from' => self::formatChangeValue((string) $field, $from),
+                'to' => self::formatChangeValue((string) $field, $to),
             ];
         }
 
         return $rows;
     }
 
-    private function formatChangeValue(string $field, mixed $value): string
+    private static function formatChangeValue(string $field, mixed $value): string
     {
         if ($value === null || $value === '') {
             return '—';

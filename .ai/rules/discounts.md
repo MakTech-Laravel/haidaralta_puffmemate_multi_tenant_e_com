@@ -6,6 +6,7 @@ paths:
   - app/Support/ProductManageRedirect.php
   - 'routes/{platform,branch}.php'
   - app/Support/BranchProductPriceDisplay.php
+  - routes/platform.php
 ---
 
 # Discounts

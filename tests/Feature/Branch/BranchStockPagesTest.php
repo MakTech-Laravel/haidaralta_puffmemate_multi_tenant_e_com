@@ -3,6 +3,7 @@
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Inventory;
+use App\Models\InventoryTransaction;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\ProductManageRedirect;
@@ -220,4 +221,44 @@ test('guests cannot open branch stock pages', function () {
     config(['catalog.show_bulk_import' => true]);
 
     $this->get(route('branch.stock.import', $this->branch))->assertRedirect(route('login'));
+});
+
+test('branch stock transaction export stays scoped to this branch', function () {
+    $this->travelTo('2026-09-18 12:00:00');
+
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $other = Product::factory()->create(['sku' => 'BRANCH-EXPORT-OTHER']);
+
+    InventoryTransaction::factory()->create([
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'created_by' => $this->staff->id,
+    ]);
+    InventoryTransaction::factory()->create([
+        'branch_id' => $melbourne->id,
+        'product_id' => $other->id,
+        'created_by' => $this->staff->id,
+    ]);
+
+    $response = $this->actingAs($this->staff, 'branch')
+        ->get(route('branch.reports.stock-transactions.export', [
+            $this->branch,
+            'format' => 'csv',
+            'scope' => 'all',
+        ]));
+
+    $response->assertOk()->assertDownload('stock-transactions-all-2026-09-18.csv');
+
+    expect(file_get_contents($response->baseResponse->getFile()->getPathname()))
+        ->toContain($this->product->name)
+        ->not->toContain('BRANCH-EXPORT-OTHER')
+        ->not->toContain('Branch');
+});
+
+test('guests cannot export branch stock transactions', function () {
+    $this->get(route('branch.reports.stock-transactions.export', [
+        $this->branch,
+        'format' => 'csv',
+        'scope' => 'all',
+    ]))->assertRedirect(route('login'));
 });

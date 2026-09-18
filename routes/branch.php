@@ -78,8 +78,12 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.stock.price');
         Route::get('reports/stock-transactions', [BranchStockTransactionController::class, 'index'])
             ->name('branch.reports.stock-transactions');
+        Route::get('reports/stock-transactions/export', [BranchStockTransactionController::class, 'export'])
+            ->name('branch.reports.stock-transactions.export');
         Route::get('reports/price-history', [BranchPriceHistoryController::class, 'index'])
             ->name('branch.reports.price-history');
+        Route::get('reports/price-history/export', [BranchPriceHistoryController::class, 'export'])
+            ->name('branch.reports.price-history.export');
         Route::get('stock/product-options', [BranchStockController::class, 'productOptions'])
             ->name('branch.stock.product-options');
     });

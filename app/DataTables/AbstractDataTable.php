@@ -2,12 +2,14 @@
 
 namespace App\DataTables;
 
+use App\Enums\ExportScope;
 use App\Models\Concerns\HasDataTableConfig;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Laravel\Scout\Searchable;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -37,6 +39,39 @@ abstract class AbstractDataTable
     public static function make(Request $request): array
     {
         return (new static($request))->toArray();
+    }
+
+    /**
+     * @return Builder<Model>
+     */
+    public function exportQuery(ExportScope $scope): Builder
+    {
+        $request = $this->requestForExportScope($scope);
+        $previous = $this->request;
+        $this->request = $request;
+
+        try {
+            $query = $this->baseQuery();
+            $this->applyScoutSearchConstraint($query);
+
+            $builder = QueryBuilder::for($query, $request)
+                ->allowedFilters(...$this->allowedFilters())
+                ->allowedSorts(...$this->allowedSorts())
+                ->defaultSort($this->defaultSort());
+
+            $builder->orderBy($query->getModel()->getQualifiedKeyName());
+
+            if ($scope === ExportScope::Page) {
+                $builder->forPage(
+                    max(1, (int) $request->input('page', 1)),
+                    $this->resolvePerPage(),
+                );
+            }
+
+            return $builder->getEloquentBuilder();
+        } finally {
+            $this->request = $previous;
+        }
     }
 
     /**
@@ -244,6 +279,36 @@ abstract class AbstractDataTable
         return in_array($perPage, self::PER_PAGE_OPTIONS, true)
             ? $perPage
             : self::DEFAULT_PER_PAGE;
+    }
+
+    protected function requestForExportScope(ExportScope $scope): Request
+    {
+        $filters = $this->normalizedFilters();
+        $parameters = array_filter([
+            'sort' => $this->request->input('sort') ?: null,
+            'per_page' => $this->request->input('per_page'),
+            'page' => $this->request->input('page'),
+            'filter' => $filters === [] ? null : $filters,
+        ], fn (mixed $value): bool => $value !== null && $value !== '');
+
+        $parameters = match ($scope) {
+            ExportScope::All => Arr::except($parameters, ['filter', 'page']),
+            ExportScope::Period => [
+                ...Arr::except($parameters, ['filter', 'page']),
+                'filter' => array_filter([
+                    'from' => $filters['from'] ?? null,
+                    'to' => $filters['to'] ?? null,
+                ], fn (mixed $value): bool => $value !== null && $value !== ''),
+            ],
+            ExportScope::Filters => Arr::except($parameters, ['page']),
+            ExportScope::Page => $parameters,
+        };
+
+        if (($parameters['filter'] ?? null) === []) {
+            unset($parameters['filter']);
+        }
+
+        return Request::create($this->request->url(), 'GET', $parameters);
     }
 
     /**

@@ -165,8 +165,12 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.stock.price');
         Route::get('reports/stock-transactions', [PlatformStockTransactionController::class, 'index'])
             ->name('platform.reports.stock-transactions');
+        Route::get('reports/stock-transactions/export', [PlatformStockTransactionController::class, 'export'])
+            ->name('platform.reports.stock-transactions.export');
         Route::get('reports/price-history', [PlatformPriceHistoryController::class, 'index'])
             ->name('platform.reports.price-history');
+        Route::get('reports/price-history/export', [PlatformPriceHistoryController::class, 'export'])
+            ->name('platform.reports.price-history.export');
         Route::get('stock/branch-options', [PlatformStockController::class, 'branchOptions'])
             ->name('platform.stock.branch-options');
         Route::get('stock/product-options', [PlatformStockController::class, 'productOptions'])

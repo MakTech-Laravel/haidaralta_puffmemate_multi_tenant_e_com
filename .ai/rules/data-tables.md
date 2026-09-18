@@ -54,3 +54,6 @@ useDataTableQuery must not router.get on mount. React Strict Mode double-invokes
 
 ## User list avatars use users.avatar
 Image-first user columns (platform admins, drivers, and other user lists) read users.avatar and expose avatar_url via MediaUrl. Composite name+phone cells set meta.truncate: false. Do not read driver_profiles for avatars.
+
+## exportQuery unwraps Spatie QueryBuilder for Excel
+DataTable exportQuery() applies the same Spatie filter[]/sort contract as the list, then returns QueryBuilder::getEloquentBuilder() because Spatie QueryBuilder v7 does not extend Eloquent Builder and Laravel Excel FromQuery rejects the wrapper. Branch portal scopedBranchId is never stripped, including scope=all. Do not invent a second query API for exports.

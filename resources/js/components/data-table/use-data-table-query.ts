@@ -120,7 +120,7 @@ function appendQueryParam(
     params.append(prefix, String(value));
 }
 
-function queryToSearchParams(query: QueryParams): URLSearchParams {
+export function queryToSearchParams(query: QueryParams): URLSearchParams {
     const params = new URLSearchParams();
 
     Object.entries(query).forEach(([key, value]) => {

@@ -11,6 +11,7 @@ export { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
 export {
     buildArchivesDataTableQuery,
     buildDataTableQuery,
+    queryToSearchParams,
     useDataTableQuery,
 } from '@/components/data-table/use-data-table-query';
 export type {

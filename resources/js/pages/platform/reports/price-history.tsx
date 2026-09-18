@@ -12,6 +12,7 @@ export default function PlatformPriceHistory({
         <PriceHistoryPage
             table={table}
             indexUrl={PriceHistoryController.index.url()}
+            exportUrl={PriceHistoryController.export.url()}
             productOptionsUrl={StockController.productOptions.url()}
             branchOptionsUrl={StockController.branchOptions.url()}
         />

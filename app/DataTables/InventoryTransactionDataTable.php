@@ -33,7 +33,21 @@ class InventoryTransactionDataTable extends AbstractDataTable
         string $portal = 'platform',
         ?string $currentBranchSlug = null,
     ): array {
-        return (new static($request, $scopedBranchId, $portal, $currentBranchSlug))->toArray();
+        return static::instanceFor($request, $scopedBranchId, $portal, $currentBranchSlug)->toArray();
+    }
+
+    public static function instanceFor(
+        Request $request,
+        ?int $scopedBranchId = null,
+        string $portal = 'platform',
+        ?string $currentBranchSlug = null,
+    ): static {
+        return new static($request, $scopedBranchId, $portal, $currentBranchSlug);
+    }
+
+    public function includesBranchColumn(): bool
+    {
+        return $this->scopedBranchId === null;
     }
 
     /**

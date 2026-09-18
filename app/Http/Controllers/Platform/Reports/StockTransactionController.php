@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Platform\Reports;
 
 use App\DataTables\InventoryTransactionDataTable;
+use App\Exports\InventoryTransactionExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ExportSpreadsheetRequest;
 use App\Models\Branch;
 use App\Models\Product;
 use App\Support\StockPageContext;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class StockTransactionController extends Controller
 {
@@ -21,6 +25,21 @@ class StockTransactionController extends Controller
             'table' => InventoryTransactionDataTable::makeFor($request),
             'context' => StockPageContext::fromRequest($request),
         ]);
+    }
+
+    public function export(ExportSpreadsheetRequest $request): BinaryFileResponse
+    {
+        $this->mergeSelectionFilters($request);
+
+        $dataTable = InventoryTransactionDataTable::instanceFor($request);
+        $format = $request->exportFormat();
+        $scope = $request->exportScope();
+
+        return Excel::download(
+            new InventoryTransactionExport($dataTable->exportQuery($scope), $dataTable->includesBranchColumn()),
+            $request->filename('stock-transactions'),
+            $format->writerType(),
+        );
     }
 
     private function mergeSelectionFilters(Request $request): void

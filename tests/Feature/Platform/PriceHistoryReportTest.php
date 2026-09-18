@@ -199,3 +199,94 @@ test('staff without inventory permission cannot open price history', function ()
 test('guests cannot open the price history report', function () {
     $this->get(route('platform.reports.price-history'))->assertRedirect(route('login'));
 });
+
+test('guests cannot export price history', function () {
+    $this->get(route('platform.reports.price-history.export', [
+        'format' => 'csv',
+        'scope' => 'all',
+    ]))->assertRedirect(route('login'));
+});
+
+test('staff without inventory permission cannot export price history', function () {
+    $user = User::factory()->create([
+        'user_type' => UserType::PLATFORM,
+        'email_verified_at' => now(),
+    ]);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
+    $user->assignRole(RoleEnum::STAFF->value);
+    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+    $this->actingAs($user, 'platform')
+        ->get(route('platform.reports.price-history.export', [
+            'format' => 'csv',
+            'scope' => 'all',
+        ]))
+        ->assertForbidden();
+});
+
+test('price history csv export all ignores product filters and excel is a spreadsheet', function () {
+    $this->travelTo('2026-09-18 12:00:00');
+
+    $other = Product::factory()->create(['sku' => 'PH-EXPORT-OTHER']);
+
+    BranchProductPriceHistory::factory()->create([
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'created_by' => $this->admin->id,
+    ]);
+    BranchProductPriceHistory::factory()->create([
+        'branch_id' => $this->branch->id,
+        'product_id' => $other->id,
+        'created_by' => $this->admin->id,
+    ]);
+
+    $all = $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.reports.price-history.export', [
+            'format' => 'csv',
+            'scope' => 'all',
+            'filter' => ['product_id' => $this->product->id],
+        ]));
+
+    $all->assertOk()->assertDownload('price-history-all-2026-09-18.csv');
+    $allContents = file_get_contents($all->baseResponse->getFile()->getPathname());
+
+    expect($allContents)
+        ->toContain('Product')
+        ->toContain($this->product->name)
+        ->toContain('PH-EXPORT-OTHER');
+
+    $filtered = $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.reports.price-history.export', [
+            'format' => 'csv',
+            'scope' => 'filters',
+            'filter' => ['product_id' => $this->product->id],
+        ]));
+
+    $filtered->assertOk();
+
+    expect(file_get_contents($filtered->baseResponse->getFile()->getPathname()))
+        ->toContain($this->product->name)
+        ->not->toContain('PH-EXPORT-OTHER');
+
+    $page = $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.reports.price-history.export', [
+            'format' => 'xlsx',
+            'scope' => 'page',
+            'per_page' => 15,
+            'page' => 1,
+        ]));
+
+    $page->assertOk()->assertDownload('price-history-page-2026-09-18.xlsx');
+
+    expect(substr(file_get_contents($page->baseResponse->getFile()->getPathname()), 0, 2))->toBe('PK');
+
+    $this->actingAs($this->admin, 'platform')
+        ->from(route('platform.reports.price-history'))
+        ->get(route('platform.reports.price-history.export', [
+            'format' => 'csv',
+            'scope' => 'period',
+        ]))
+        ->assertRedirect(route('platform.reports.price-history'))
+        ->assertSessionHasErrors('filter.from');
+});

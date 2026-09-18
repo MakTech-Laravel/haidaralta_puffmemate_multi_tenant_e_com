@@ -34,6 +34,7 @@ export default function BranchPriceHistory({
         <PriceHistoryPage
             table={table}
             indexUrl={PriceHistoryController.index.url(branch.slug)}
+            exportUrl={PriceHistoryController.export.url(branch.slug)}
             productOptionsUrl={StockController.productOptions.url(branch.slug)}
             hideBranchFilter
         />

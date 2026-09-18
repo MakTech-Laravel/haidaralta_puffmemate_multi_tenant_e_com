@@ -10,7 +10,7 @@ import {
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
-import Heading from '@/components/heading';
+import { ExportDropdown } from '@/components/export/export-dropdown';
 import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
 import { Badge } from '@/components/ui/badge';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -117,6 +117,7 @@ function NameLink({
 export function StockTransactionsPage({
     table: tablePayload,
     indexUrl,
+    exportUrl,
     productOptionsUrl,
     branchOptionsUrl,
     hideBranchFilter = false,
@@ -129,6 +130,7 @@ export function StockTransactionsPage({
         };
     };
     indexUrl: string;
+    exportUrl: string;
     productOptionsUrl: string;
     branchOptionsUrl?: string;
     hideBranchFilter?: boolean;
@@ -342,6 +344,20 @@ export function StockTransactionsPage({
                                     : 'Search product, SKU, or branch…'
                             }
                             onClear={query.clearFilters}
+                            actions={
+                                <ExportDropdown
+                                    url={exportUrl}
+                                    query={{
+                                        filter: query.filters,
+                                        sort: query.sort,
+                                        per_page: query.perPage,
+                                        page: tablePayload.meta.current_page,
+                                    }}
+                                    hasDateRange={Boolean(
+                                        query.filters.from || query.filters.to,
+                                    )}
+                                />
+                            }
                             filters={
                                 <>
                                     <div className="grid gap-2">

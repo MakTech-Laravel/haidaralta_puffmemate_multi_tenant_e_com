@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Platform\Reports;
 
 use App\DataTables\BranchProductPriceHistoryDataTable;
+use App\Exports\PriceHistoryExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ExportSpreadsheetRequest;
 use App\Models\Branch;
 use App\Models\Product;
 use App\Support\StockPageContext;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class PriceHistoryController extends Controller
 {
@@ -21,6 +25,21 @@ class PriceHistoryController extends Controller
             'table' => BranchProductPriceHistoryDataTable::makeFor($request),
             'context' => StockPageContext::fromRequest($request),
         ]);
+    }
+
+    public function export(ExportSpreadsheetRequest $request): BinaryFileResponse
+    {
+        $this->mergeSelectionFilters($request);
+
+        $dataTable = BranchProductPriceHistoryDataTable::instanceFor($request);
+        $format = $request->exportFormat();
+        $scope = $request->exportScope();
+
+        return Excel::download(
+            new PriceHistoryExport($dataTable->exportQuery($scope), $dataTable->includesBranchColumn()),
+            $request->filename('price-history'),
+            $format->writerType(),
+        );
     }
 
     private function mergeSelectionFilters(Request $request): void
