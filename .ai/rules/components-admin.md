@@ -5,5 +5,5 @@ paths:
 
 # Components Admin
 
-## Permission catalog is a two-pane directory
-Permissions indexes stay a grouped client-search catalog (not Eloquent DataTable). Shared PermissionGroupsTable is a two-pane directory (group nav + dense rows with key and roles count), not stacked per-group TanStack tables. Platform and branch pages share it.
+## Permission catalog is a group-card grid
+Permissions indexes stay a grouped client-search catalog (not Eloquent DataTable). Shared PermissionGroupsTable is a stats strip plus masonry cards (`columns-*`, `break-inside-avoid`) so each group is only as tall as its permissions. Do not use equal-height CSS grid rows. Platform and branch pages share it.

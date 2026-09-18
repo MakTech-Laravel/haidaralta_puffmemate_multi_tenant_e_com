@@ -94,6 +94,7 @@ class PermissionController extends Controller
                 'group' => $group,
                 'permissions' => $permissions,
             ])
+            ->sortBy('group', SORT_NATURAL | SORT_FLAG_CASE)
             ->values()
             ->all();
     }
