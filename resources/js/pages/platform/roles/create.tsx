@@ -6,8 +6,10 @@ import type { PermissionGroup } from '@/components/permission-selector';
 
 export default function PlatformRolesCreate({
     permissionGroups,
+    existingNames,
 }: {
     permissionGroups: PermissionGroup[];
+    existingNames: string[];
 }) {
     return (
         <>
@@ -22,6 +24,7 @@ export default function PlatformRolesCreate({
                 <RoleForm
                     action={RoleController.store.form()}
                     groups={permissionGroups}
+                    existingNames={existingNames}
                     cancelHref={RoleController.index.url()}
                 />
             </div>

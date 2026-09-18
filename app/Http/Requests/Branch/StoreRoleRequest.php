@@ -15,6 +15,15 @@ class StoreRoleRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('name') && is_string($this->input('name'))) {
+            $this->merge([
+                'name' => trim($this->input('name')),
+            ]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -40,6 +49,16 @@ class StoreRoleRequest extends FormRequest
             ],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['string', Rule::in($branchPermissions)],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.unique' => 'A role with this name already exists.',
         ];
     }
 }

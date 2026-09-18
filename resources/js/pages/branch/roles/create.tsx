@@ -13,9 +13,11 @@ type Branch = {
 export default function BranchRolesCreate({
     branch,
     permissionGroups,
+    existingNames,
 }: {
     branch: Branch;
     permissionGroups: PermissionGroup[];
+    existingNames: string[];
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -44,6 +46,7 @@ export default function BranchRolesCreate({
                 <RoleForm
                     action={RoleController.store.form(branch.slug)}
                     groups={permissionGroups}
+                    existingNames={existingNames}
                     cancelHref={RoleController.index.url(branch.slug)}
                 />
             </div>

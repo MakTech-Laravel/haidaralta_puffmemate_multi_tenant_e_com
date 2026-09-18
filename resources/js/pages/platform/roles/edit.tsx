@@ -14,9 +14,11 @@ type Role = {
 export default function PlatformRolesEdit({
     role,
     permissionGroups,
+    existingNames,
 }: {
     role: Role;
     permissionGroups: PermissionGroup[];
+    existingNames: string[];
 }) {
     return (
         <>
@@ -35,6 +37,7 @@ export default function PlatformRolesEdit({
                 <RoleForm
                     action={RoleController.update.form(role.id)}
                     groups={permissionGroups}
+                    existingNames={existingNames}
                     isEdit
                     locked={role.is_super_admin}
                     defaults={{

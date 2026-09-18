@@ -30,7 +30,9 @@ export function PermissionSelector({
     disabled?: boolean;
 }) {
     const [query, setQuery] = useState('');
-    const [activeGroup, setActiveGroup] = useState<string | null>(null);
+    const [activeGroup, setActiveGroup] = useState<string | null>(
+        groups[0]?.group ?? null,
+    );
 
     const selectedSet = useMemo(() => new Set(selected), [selected]);
 
@@ -69,6 +71,10 @@ export function PermissionSelector({
         resolvedGroup === null
             ? filteredGroups
             : filteredGroups.filter((group) => group.group === resolvedGroup);
+
+    const visiblePermissions = visibleGroups.flatMap(
+        (group) => group.permissions,
+    );
 
     const groupState = (values: string[]): GroupState => {
         const count = values.filter((value) => selectedSet.has(value)).length;
@@ -126,6 +132,11 @@ export function PermissionSelector({
         onChange(checked ? [...allValues] : []);
     };
 
+    const activeValues =
+        resolvedGroup === null
+            ? []
+            : (visibleGroups[0]?.permissions.map((p) => p.value) ?? []);
+
     return (
         <div className="overflow-hidden rounded-xl border">
             {selected.map((permission) => (
@@ -149,7 +160,7 @@ export function PermissionSelector({
                         autoComplete="off"
                     />
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1">
                     <span className="text-muted-foreground px-1 text-xs tabular-nums">
                         {selected.length}/{allValues.length}
                     </span>
@@ -178,10 +189,10 @@ export function PermissionSelector({
                 </div>
             </div>
 
-            <div className="grid md:grid-cols-[11rem_minmax(0,1fr)]">
+            <div className="flex flex-col md:h-72 md:flex-row">
                 <nav
                     aria-label="Permission groups"
-                    className="flex gap-1 overflow-x-auto border-b p-1.5 md:h-72 md:flex-col md:overflow-y-auto md:border-r md:border-b-0 md:p-0"
+                    className="flex shrink-0 gap-1 overflow-x-auto border-b p-1.5 md:w-44 md:flex-col md:overflow-y-auto md:overflow-x-hidden md:border-r md:border-b-0 md:p-1"
                 >
                     <GroupTab
                         label="All"
@@ -209,90 +220,78 @@ export function PermissionSelector({
                     })}
                 </nav>
 
-                <div className="h-64 overflow-y-auto md:h-72">
-                    {visibleGroups.length === 0 ? (
+                <div className="min-w-0 flex-1 overflow-y-auto">
+                    {visiblePermissions.length === 0 ? (
                         <p className="text-muted-foreground px-3 py-10 text-center text-sm">
                             No permissions match “{query}”.
                         </p>
                     ) : (
-                        visibleGroups.map((group) => {
-                            const values = group.permissions.map(
-                                (p) => p.value,
-                            );
-                            const state = groupState(values);
-                            const granted = values.filter((value) =>
-                                selectedSet.has(value),
-                            ).length;
+                        <>
+                            {resolvedGroup !== null &&
+                            visibleGroups[0] !== undefined ? (
+                                <div className="bg-muted flex items-center gap-2 border-b px-3 py-1.5">
+                                    <TriStateCheckbox
+                                        state={groupState(activeValues)}
+                                        disabled={disabled}
+                                        onToggle={() =>
+                                            toggleGroup(activeValues)
+                                        }
+                                        label={`Toggle ${visibleGroups[0].group}`}
+                                    />
+                                    <span className="min-w-0 flex-1 truncate text-xs font-medium">
+                                        {visibleGroups[0].group}
+                                    </span>
+                                    <span className="text-muted-foreground text-xs tabular-nums">
+                                        {
+                                            activeValues.filter((value) =>
+                                                selectedSet.has(value),
+                                            ).length
+                                        }
+                                        /{activeValues.length}
+                                    </span>
+                                </div>
+                            ) : null}
+                            <ul>
+                                {visiblePermissions.map((permission) => {
+                                    const checked = selectedSet.has(
+                                        permission.value,
+                                    );
 
-                            return (
-                                <section key={group.group}>
-                                    <div className="bg-muted/40 sticky top-0 z-10 flex items-center gap-2 border-b px-3 py-1.5">
-                                        <TriStateCheckbox
-                                            state={state}
-                                            disabled={disabled}
-                                            onToggle={() => toggleGroup(values)}
-                                            label={`Toggle ${group.group}`}
-                                        />
-                                        <span className="min-w-0 flex-1 truncate text-xs font-medium">
-                                            {group.group}
-                                        </span>
-                                        <span className="text-muted-foreground text-xs tabular-nums">
-                                            {granted}/{values.length}
-                                        </span>
-                                    </div>
-                                    <ul>
-                                        {group.permissions.map(
-                                            (permission) => {
-                                                const checked =
-                                                    selectedSet.has(
-                                                        permission.value,
-                                                    );
-
-                                                return (
-                                                    <li key={permission.value}>
-                                                        <label
-                                                            htmlFor={`permission-${permission.value}`}
-                                                            className={cn(
-                                                                'flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm',
-                                                                checked
-                                                                    ? 'bg-primary/5'
-                                                                    : 'hover:bg-muted/40',
-                                                                disabled &&
-                                                                    'cursor-not-allowed opacity-60',
-                                                            )}
-                                                        >
-                                                            <Checkbox
-                                                                id={`permission-${permission.value}`}
-                                                                checked={
-                                                                    checked
-                                                                }
-                                                                disabled={
-                                                                    disabled
-                                                                }
-                                                                onCheckedChange={(
-                                                                    value,
-                                                                ) =>
-                                                                    toggleItem(
-                                                                        permission.value,
-                                                                        value ===
-                                                                            true,
-                                                                    )
-                                                                }
-                                                            />
-                                                            <span className="min-w-0 truncate">
-                                                                {
-                                                                    permission.label
-                                                                }
-                                                            </span>
-                                                        </label>
-                                                    </li>
-                                                );
-                                            },
-                                        )}
-                                    </ul>
-                                </section>
-                            );
-                        })
+                                    return (
+                                        <li key={permission.value}>
+                                            <label
+                                                htmlFor={`permission-${permission.value}`}
+                                                className={cn(
+                                                    'flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm',
+                                                    checked
+                                                        ? 'bg-primary/5'
+                                                        : 'hover:bg-muted/40',
+                                                    disabled &&
+                                                        'cursor-not-allowed opacity-60',
+                                                )}
+                                            >
+                                                <Checkbox
+                                                    id={`permission-${permission.value}`}
+                                                    checked={checked}
+                                                    disabled={disabled}
+                                                    onCheckedChange={(
+                                                        value,
+                                                    ) =>
+                                                        toggleItem(
+                                                            permission.value,
+                                                            value === true,
+                                                        )
+                                                    }
+                                                />
+                                                <span className="min-w-0 truncate">
+                                                    {permission.label}
+                                                </span>
+                                            </label>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </>
                     )}
                 </div>
             </div>
@@ -319,15 +318,15 @@ function GroupTab({
             disabled={disabled}
             onClick={onClick}
             className={cn(
-                'flex shrink-0 items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm whitespace-nowrap md:rounded-none md:px-3',
+                'flex w-full min-w-0 items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm md:rounded-md',
                 active
                     ? 'bg-muted font-medium'
                     : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                 disabled && 'cursor-not-allowed opacity-60',
             )}
         >
-            <span className="truncate">{label}</span>
-            <span className="text-muted-foreground text-xs tabular-nums">
+            <span className="min-w-0 truncate">{label}</span>
+            <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
                 {count}
             </span>
         </button>

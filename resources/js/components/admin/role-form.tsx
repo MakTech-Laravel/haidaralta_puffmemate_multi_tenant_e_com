@@ -20,9 +20,22 @@ type FormAction = {
     method?: string;
 };
 
+const TAKEN_ROLE_NAME_MESSAGE = 'A role with this name already exists.';
+
+function isRoleNameTaken(value: string, existingNames: string[]): boolean {
+    const needle = value.trim().toLowerCase();
+
+    if (needle === '') {
+        return false;
+    }
+
+    return existingNames.some((name) => name.toLowerCase() === needle);
+}
+
 interface RoleFormProps {
     action: FormAction;
     groups: PermissionGroup[];
+    existingNames?: string[];
     isEdit?: boolean;
     locked?: boolean;
     defaults?: { name: string; permissions: string[] };
@@ -40,6 +53,7 @@ function sectionClassName(): string {
 export function RoleForm({
     action,
     groups,
+    existingNames = [],
     isEdit = false,
     locked = false,
     defaults,
@@ -49,6 +63,7 @@ export function RoleForm({
     const [selected, setSelected] = useState<string[]>(
         defaults?.permissions ?? [],
     );
+    const [nameTaken, setNameTaken] = useState(false);
 
     return (
         <Form
@@ -79,7 +94,7 @@ export function RoleForm({
                             </h2>
                             <p className="text-muted-foreground text-sm">
                                 The name shown when assigning this role to an
-                                account.
+                                account. Names must be unique.
                             </p>
                         </div>
                         <div className="flex max-w-md flex-col gap-1.5">
@@ -93,10 +108,21 @@ export function RoleForm({
                                 readOnly={locked}
                                 placeholder="Store manager"
                                 autoComplete="off"
-                                onBlur={() => {
-                                    if (!locked) {
-                                        validate('name');
+                                aria-invalid={
+                                    Boolean(errors.name) || nameTaken
+                                }
+                                onBlur={(event) => {
+                                    if (locked) {
+                                        return;
                                     }
+
+                                    setNameTaken(
+                                        isRoleNameTaken(
+                                            event.currentTarget.value,
+                                            existingNames,
+                                        ),
+                                    );
+                                    validate('name');
                                 }}
                             />
                             {locked ? (
@@ -106,7 +132,14 @@ export function RoleForm({
                                     value={defaults?.name ?? ''}
                                 />
                             ) : null}
-                            <InputError message={errors.name} />
+                            <InputError
+                                message={
+                                    errors.name ??
+                                    (nameTaken
+                                        ? TAKEN_ROLE_NAME_MESSAGE
+                                        : undefined)
+                                }
+                            />
                         </div>
                     </section>
 
@@ -134,7 +167,10 @@ export function RoleForm({
                         <Button variant="outline" asChild>
                             <Link href={cancelHref}>Cancel</Link>
                         </Button>
-                        <Button type="submit" disabled={processing || locked}>
+                        <Button
+                            type="submit"
+                            disabled={processing || locked || nameTaken}
+                        >
                             {processing ? <Spinner /> : null}
                             {submitLabel ??
                                 (isEdit ? 'Save changes' : 'Create role')}

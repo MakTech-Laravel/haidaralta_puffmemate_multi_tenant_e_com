@@ -71,6 +71,7 @@ class RoleController extends Controller
         return Inertia::render('branch/roles/create', [
             'branch' => $branch->only(['id', 'name', 'slug']),
             'permissionGroups' => $this->branchPermissionGroups(),
+            'existingNames' => $this->existingRoleNames($branch),
         ]);
     }
 
@@ -143,6 +144,7 @@ class RoleController extends Controller
                 'permissions' => $role->permissions->pluck('name')->values(),
             ],
             'permissionGroups' => $this->branchPermissionGroups(),
+            'existingNames' => $this->existingRoleNames($branch, $role->id),
         ]);
     }
 
@@ -218,6 +220,26 @@ class RoleController extends Controller
         }
 
         return $role;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function existingRoleNames(Branch $branch, ?int $exceptId = null): array
+    {
+        $teamKey = config('permission.column_names.team_foreign_key');
+
+        return Role::query()
+            ->where('guard_name', 'branch')
+            ->where($teamKey, $branch->id)
+            ->when(
+                $exceptId !== null,
+                fn (Builder $query) => $query->whereKeyNot($exceptId),
+            )
+            ->orderBy('name')
+            ->pluck('name')
+            ->values()
+            ->all();
     }
 
     /**
