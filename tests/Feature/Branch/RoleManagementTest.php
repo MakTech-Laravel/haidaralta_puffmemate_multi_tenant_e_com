@@ -121,5 +121,15 @@ test('branch permissions catalog is readable by branch super admin', function ()
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/permissions/index')
-            ->has('permissionGroups'));
+            ->has('permissionGroups')
+            ->where(
+                'permissionGroups',
+                function ($groups): bool {
+                    $names = collect($groups)->pluck('group')->all();
+                    $sorted = $names;
+                    natcasesort($sorted);
+
+                    return array_values($names) === array_values($sorted);
+                },
+            ));
 });
