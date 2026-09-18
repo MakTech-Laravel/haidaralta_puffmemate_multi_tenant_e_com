@@ -88,8 +88,9 @@ test('platform super admin can create a branch with its first super admin atomic
             ->component('platform/branches/show')
             ->where('branch.slug', 'midtown')
             ->where('branch.needs_super_admin', false)
-            ->has('branch.super_admins', 1)
-            ->where('branch.super_admins.0.phone', '+61412000099'));
+            ->missing('branch.super_admins')
+            ->has('table.data', 1)
+            ->where('table.data.0.phone', '+61412000099'));
 });
 
 test('creating a branch without a super admin payload is rejected and creates no branch', function () {
@@ -314,5 +315,135 @@ test('platform can filter branches by inactive status and still open inactive br
         ->assertInertia(fn ($page) => $page
             ->component('platform/branches/show')
             ->where('branch.status', false)
+        );
+});
+
+test('platform branch show lists only that branch staff in a paginated table', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $uptown = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $other = User::factory()->create([
+        'name' => 'Other Branch Clerk',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $uptown->id,
+    ]);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId($uptown->id);
+    $other->assignRole(RoleEnum::STAFF->value);
+    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+    $downtownCount = User::query()
+        ->where('user_type', UserType::BRANCH)
+        ->where('branch_id', $downtown->id)
+        ->count();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.show', $downtown))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/show')
+            ->missing('branch.super_admins')
+            ->has('table.data', $downtownCount)
+            ->where('table.meta.total', $downtownCount)
+            ->has('table.links')
+            ->has('table.filterOptions.roles')
+            ->where('table.data', fn ($staff) => collect($staff)->every(
+                fn ($row) => $row['name'] !== 'Other Branch Clerk',
+            ))
+            ->where('table.data', fn ($staff) => collect($staff)->contains(
+                fn ($row) => $row['email'] === UserSeeder::BRANCH_1_SUPER_ADMIN,
+            ))
+        );
+});
+
+test('platform branch show can search staff by name', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $match = User::factory()->create([
+        'name' => 'Zelda Branch Finder',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $downtown->id,
+    ]);
+
+    User::factory()->create([
+        'name' => 'Other Branch Noise',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $downtown->id,
+    ]);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId($downtown->id);
+    $match->assignRole(RoleEnum::STAFF->value);
+    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.show', [
+            $downtown,
+            'filter' => ['search' => 'Zelda Branch'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/show')
+            ->where('table.filters.search', 'Zelda Branch')
+            ->has('table.data', 1)
+            ->where('table.data.0.name', 'Zelda Branch Finder')
+        );
+});
+
+test('platform branch show can filter staff by role and status', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $inactive = User::factory()->create([
+        'name' => 'Inactive Queen Clerk',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $downtown->id,
+        'is_active' => false,
+    ]);
+
+    $activeStaff = User::factory()->create([
+        'name' => 'Active Queen Clerk',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $downtown->id,
+        'is_active' => true,
+    ]);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId($downtown->id);
+    $inactive->assignRole(RoleEnum::STAFF->value);
+    $activeStaff->assignRole(RoleEnum::STAFF->value);
+    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.show', [
+            $downtown,
+            'filter' => ['role' => RoleEnum::STAFF->value],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/show')
+            ->where('table.filters.role', RoleEnum::STAFF->value)
+            ->where('table.data', fn ($staff) => collect($staff)->contains(
+                fn ($row) => $row['name'] === 'Active Queen Clerk',
+            ))
+            ->where('table.data', fn ($staff) => collect($staff)->every(
+                fn ($row) => in_array(RoleEnum::STAFF->value, $row['roles'], true),
+            ))
+            ->where('table.data', fn ($staff) => collect($staff)->every(
+                fn ($row) => $row['email'] !== UserSeeder::BRANCH_1_SUPER_ADMIN,
+            ))
+        );
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.show', [
+            $downtown,
+            'filter' => ['is_active' => 'inactive'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/show')
+            ->where('table.filters.is_active', 'inactive')
+            ->has('table.data', 1)
+            ->where('table.data.0.name', 'Inactive Queen Clerk')
         );
 });

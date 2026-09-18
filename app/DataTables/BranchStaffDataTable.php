@@ -3,9 +3,11 @@
 namespace App\DataTables;
 
 use App\DataTables\Filters\StatusBooleanFilter;
+use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\User;
+use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -53,7 +55,9 @@ class BranchStaffDataTable extends AbstractDataTable
     {
         return User::query()
             ->where('user_type', UserType::BRANCH)
-            ->when($this->scopedBranchId !== null, fn (Builder $query) => $query->where('branch_id', $this->scopedBranchId))
+            ->when($this->scopedBranchId !== null, function (Builder $query): void {
+                $query->where('branch_id', $this->scopedBranchId)->with('roles');
+            })
             ->when($this->includeBranch, fn (Builder $query) => $query->with('branch:id,name,slug'));
     }
 
@@ -66,6 +70,10 @@ class BranchStaffDataTable extends AbstractDataTable
             StatusBooleanFilter::make('is_active'),
             $this->searchFilter(),
         ];
+
+        if ($this->scopedBranchId !== null) {
+            $filters[] = $this->roleFilter();
+        }
 
         if ($this->scopedBranchId === null) {
             $filters[] = AllowedFilter::exact('branch_id');
@@ -102,7 +110,19 @@ class BranchStaffDataTable extends AbstractDataTable
     protected function filterOptions(): array
     {
         if ($this->scopedBranchId !== null) {
-            return [];
+            return [
+                'is_active' => [
+                    ['value' => 'all', 'label' => 'All statuses'],
+                    ['value' => 'active', 'label' => 'Active'],
+                    ['value' => 'inactive', 'label' => 'Inactive'],
+                ],
+                'roles' => collect(RoleEnum::cases())
+                    ->map(fn (RoleEnum $role): array => [
+                        'value' => $role->value,
+                        'label' => $this->roleLabel($role),
+                    ])
+                    ->all(),
+            ];
         }
 
         return [
@@ -116,6 +136,30 @@ class BranchStaffDataTable extends AbstractDataTable
                 ])
                 ->all(),
         ];
+    }
+
+    protected function roleFilter(): AllowedFilter
+    {
+        return AllowedFilter::callback('role', function (Builder $query, mixed $value): void {
+            $role = RoleEnum::tryFrom(is_string($value) ? $value : '');
+
+            if ($role === null) {
+                return;
+            }
+
+            app(PermissionRegistrar::class)->setPermissionsTeamId($this->scopedBranchId);
+            $query->role($role->value, 'branch');
+        });
+    }
+
+    protected function roleLabel(RoleEnum $role): string
+    {
+        return match ($role) {
+            RoleEnum::SUPER_ADMIN => 'Super admin',
+            RoleEnum::ADMIN => 'Admin',
+            RoleEnum::MANAGER => 'Manager',
+            RoleEnum::STAFF => 'Staff',
+        };
     }
 
     /**
@@ -137,6 +181,7 @@ class BranchStaffDataTable extends AbstractDataTable
             'name' => $model->name,
             'phone' => $model->phone,
             'email' => $model->email,
+            'avatar_url' => MediaUrl::resolve($model->avatar, fallback: null),
             'is_active' => (bool) $model->is_active,
             'roles' => $roles,
         ];
