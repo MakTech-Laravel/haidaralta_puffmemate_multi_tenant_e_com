@@ -235,7 +235,7 @@ class DemoCatalog
      */
     public static function bestSellingProducts(): array
     {
-        return array_values(array_slice(self::products(), 0, 4));
+        return array_values(array_slice(self::products(), 0, 8));
     }
 
     /**
@@ -243,7 +243,7 @@ class DemoCatalog
      */
     public static function newArrivalProducts(): array
     {
-        return array_values(array_slice(self::products(), 4, 4));
+        return array_values(array_slice(self::products(), 4, 8));
     }
 
     /**
@@ -810,5 +810,223 @@ class DemoCatalog
         $product = collect(self::productsToReview())->firstWhere('id', $id);
 
         return $product;
+    }
+
+    /**
+     * Demo orders assigned to the authenticated driver for the active-route UI.
+     *
+     * @return list<array{
+     *     id: string,
+     *     orderNumber: string,
+     *     status: string,
+     *     customerName: string,
+     *     addressSummary: string,
+     *     windowLabel: string,
+     *     productCount: int,
+     *     totalLabel: string
+     * }>
+     */
+    public static function driverAssignedOrders(): array
+    {
+        return array_map(
+            static fn (array $order): array => [
+                'id' => $order['id'],
+                'orderNumber' => $order['orderNumber'],
+                'status' => $order['status'],
+                'customerName' => $order['customerName'],
+                'addressSummary' => $order['addressSummary'],
+                'windowLabel' => $order['windowLabel'],
+                'productCount' => $order['productCount'],
+                'totalLabel' => $order['totalLabel'],
+            ],
+            self::driverOrderCatalog(),
+        );
+    }
+
+    /**
+     * Resolve one demo driver order for the detail + OTP deliver screen.
+     *
+     * @return array{
+     *     id: string,
+     *     orderNumber: string,
+     *     status: string,
+     *     statusLabel: string,
+     *     customerName: string,
+     *     addressSummary: string,
+     *     windowLabel: string,
+     *     productCount: int,
+     *     totalLabel: string,
+     *     phone: string,
+     *     notes: string|null,
+     *     demoOtpHint: string,
+     *     shippingAddress: array{line1: string, line2: string|null, city: string, region: string, postalCode: string, country: string},
+     *     products: list<array{name: string, quantityLabel: string, priceLabel: string}>
+     * }|null
+     */
+    public static function driverOrderDetail(string $id): ?array
+    {
+        foreach (self::driverOrderCatalog() as $order) {
+            if ($order['id'] === $id) {
+                return $order;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<array{
+     *     id: string,
+     *     orderNumber: string,
+     *     status: string,
+     *     statusLabel: string,
+     *     customerName: string,
+     *     addressSummary: string,
+     *     windowLabel: string,
+     *     productCount: int,
+     *     totalLabel: string,
+     *     phone: string,
+     *     notes: string|null,
+     *     demoOtpHint: string,
+     *     shippingAddress: array{line1: string, line2: string|null, city: string, region: string, postalCode: string, country: string},
+     *     products: list<array{name: string, quantityLabel: string, priceLabel: string}>
+     * }>
+     */
+    private static function driverOrderCatalog(): array
+    {
+        return [
+            [
+                'id' => 'drv-ord-1001',
+                'orderNumber' => 'POM-DRV-1001',
+                'status' => 'out_for_delivery',
+                'statusLabel' => 'Out for delivery',
+                'customerName' => 'Elena Vargas',
+                'addressSummary' => '418 Pine St, Sydney',
+                'windowLabel' => 'Today · 2:00–3:00 PM',
+                'productCount' => 3,
+                'totalLabel' => '$24.50',
+                'phone' => '+61411100200',
+                'notes' => 'Call on arrival; leave with concierge if no answer.',
+                'demoOtpHint' => '482913',
+                'shippingAddress' => [
+                    'line1' => '418 Pine Street',
+                    'line2' => 'Apartment 4B',
+                    'city' => 'Sydney',
+                    'region' => 'NSW',
+                    'postalCode' => '2000',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Marlboro Gold', 'quantityLabel' => '×2', 'priceLabel' => '$12.00'],
+                    ['name' => 'Dunhill Red', 'quantityLabel' => '×1', 'priceLabel' => '$7.50'],
+                    ['name' => 'Clipper Classic', 'quantityLabel' => '×1', 'priceLabel' => '$5.00'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1002',
+                'orderNumber' => 'POM-DRV-1002',
+                'status' => 'arrived',
+                'statusLabel' => 'Arrived',
+                'customerName' => 'Chris Thompson',
+                'addressSummary' => '90 Harbor Ave, Sydney',
+                'windowLabel' => 'Today · 3:15–4:00 PM',
+                'productCount' => 2,
+                'totalLabel' => '$16.80',
+                'phone' => '+61418123344',
+                'notes' => null,
+                'demoOtpHint' => '719204',
+                'shippingAddress' => [
+                    'line1' => '90 Harbor Avenue',
+                    'line2' => null,
+                    'city' => 'Sydney',
+                    'region' => 'NSW',
+                    'postalCode' => '2000',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Camel Blue', 'quantityLabel' => '×2', 'priceLabel' => '$9.80'],
+                    ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$7.00'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1003',
+                'orderNumber' => 'POM-DRV-1003',
+                'status' => 'out_for_delivery',
+                'statusLabel' => 'Out for delivery',
+                'customerName' => 'Priya Nair',
+                'addressSummary' => '12 Market Row, Surry Hills',
+                'windowLabel' => 'Today · 4:30–5:30 PM',
+                'productCount' => 4,
+                'totalLabel' => '$31.20',
+                'phone' => '+61419112233',
+                'notes' => 'Building access code 2048.',
+                'demoOtpHint' => '305871',
+                'shippingAddress' => [
+                    'line1' => '12 Market Row',
+                    'line2' => 'Unit 17',
+                    'city' => 'Surry Hills',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Benson & Hedges Gold', 'quantityLabel' => '×2', 'priceLabel' => '$14.00'],
+                    ['name' => 'Marlboro Gold', 'quantityLabel' => '×1', 'priceLabel' => '$6.00'],
+                    ['name' => 'Dunhill Red', 'quantityLabel' => '×1', 'priceLabel' => '$7.50'],
+                    ['name' => 'Clipper Classic', 'quantityLabel' => '×1', 'priceLabel' => '$3.70'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1004',
+                'orderNumber' => 'POM-DRV-1004',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'James Okonkwo',
+                'addressSummary' => '7 West Dock, Pyrmont',
+                'windowLabel' => 'Today · Completed',
+                'productCount' => 1,
+                'totalLabel' => '$8.90',
+                'phone' => '+61416115566',
+                'notes' => null,
+                'demoOtpHint' => '664021',
+                'shippingAddress' => [
+                    'line1' => '7 West Dock',
+                    'line2' => 'Level 3',
+                    'city' => 'Pyrmont',
+                    'region' => 'NSW',
+                    'postalCode' => '2009',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Camel Blue', 'quantityLabel' => '×1', 'priceLabel' => '$8.90'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1005',
+                'orderNumber' => 'POM-DRV-1005',
+                'status' => 'out_for_delivery',
+                'statusLabel' => 'Out for delivery',
+                'customerName' => 'Sabrina Walsh',
+                'addressSummary' => '41 Oxford St, Darlinghurst',
+                'windowLabel' => 'Today · 6:00–7:00 PM',
+                'productCount' => 2,
+                'totalLabel' => '$15.40',
+                'phone' => '+61415556677',
+                'notes' => 'Ring the second doorbell.',
+                'demoOtpHint' => '918273',
+                'shippingAddress' => [
+                    'line1' => '41 Oxford Street',
+                    'line2' => null,
+                    'city' => 'Darlinghurst',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$7.00'],
+                    ['name' => 'Marlboro Gold', 'quantityLabel' => '×1', 'priceLabel' => '$8.40'],
+                ],
+            ],
+        ];
     }
 }

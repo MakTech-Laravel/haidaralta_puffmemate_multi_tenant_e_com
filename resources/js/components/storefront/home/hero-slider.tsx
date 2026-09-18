@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Carousel,
+    type CarouselApi,
     CarouselContent,
     CarouselItem,
     CarouselNext,
@@ -15,10 +17,28 @@ type HomeHeroSliderProps = {
     className?: string;
 };
 
+const AUTOPLAY_MS = 4000;
+
 const navButtonClass =
     'border-primary-foreground/25 bg-foreground/30 text-primary-foreground hover:bg-foreground/50 hover:text-primary-foreground size-8 rounded-full border backdrop-blur-sm transition disabled:opacity-40 sm:size-10';
 
 export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
+    const [api, setApi] = useState<CarouselApi>();
+
+    useEffect(() => {
+        if (!api || slides.length <= 1) {
+            return;
+        }
+
+        const id = window.setInterval(() => {
+            api.scrollNext();
+        }, AUTOPLAY_MS);
+
+        return () => {
+            window.clearInterval(id);
+        };
+    }, [api, slides.length]);
+
     if (slides.length === 0) {
         return null;
     }
@@ -28,6 +48,7 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
     return (
         <Carousel
             opts={{ loop: true }}
+            setApi={setApi}
             className={cn(
                 'relative isolate w-full min-h-112 overflow-hidden sm:min-h-128 lg:min-h-144',
                 className,
@@ -114,13 +135,13 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
                     <CarouselPrevious
                         className={cn(
                             navButtonClass,
-                            'top-1/2 left-2 z-10 -translate-y-1/2 sm:left-6',
+                            'top-1/2 left-2 z-10 hidden -translate-y-1/2 sm:left-6 sm:flex',
                         )}
                     />
                     <CarouselNext
                         className={cn(
                             navButtonClass,
-                            'top-1/2 right-2 z-10 -translate-y-1/2 sm:right-6',
+                            'top-1/2 right-2 z-10 hidden -translate-y-1/2 sm:right-6 sm:flex',
                         )}
                     />
                 </>

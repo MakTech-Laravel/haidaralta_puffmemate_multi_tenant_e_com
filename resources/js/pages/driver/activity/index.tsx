@@ -38,7 +38,7 @@ export default function DriverActivityIndex({
         <>
             <Head title="My activity" />
 
-            <div className="space-y-4 p-2">
+            <div className="space-y-4">
                 <Heading
                     title="My activity"
                     description="Actions recorded for your driver account"
