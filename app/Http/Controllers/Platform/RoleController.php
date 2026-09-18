@@ -75,6 +75,7 @@ class RoleController extends Controller
 
         return Inertia::render('platform/roles/create', [
             'permissionGroups' => $this->platformPermissionGroups(),
+            'existingNames' => $this->existingRoleNames(),
         ]);
     }
 
@@ -151,6 +152,7 @@ class RoleController extends Controller
                 'permissions' => $role->permissions->pluck('name')->values(),
             ],
             'permissionGroups' => $this->platformPermissionGroups(),
+            'existingNames' => $this->existingRoleNames($role->id),
         ]);
     }
 
@@ -297,6 +299,22 @@ class RoleController extends Controller
             'users_count' => (int) $role->users_count,
             'is_super_admin' => $isSuperAdmin,
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function existingRoleNames(?int $exceptId = null): array
+    {
+        return $this->platformRolesQuery()
+            ->when(
+                $exceptId !== null,
+                fn (Builder $query) => $query->whereKeyNot($exceptId),
+            )
+            ->orderBy('name')
+            ->pluck('name')
+            ->values()
+            ->all();
     }
 
     private function usePlatformTeam(): void

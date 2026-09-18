@@ -12,13 +12,13 @@ Access-admin mutations must use App\Support\Toast (Inertia::flash toast) for suc
 
 ## Precognition live unique validation
 
-Use Inertia 3 built-in Precognition (`<Form>` validate / `useForm().withPrecognition()`), not a separate `laravel-precognition-react` package. Live-validate uniqueness fields only on blur (`email`, `slug`, `code`, role `name`) with `validationTimeout={500}`. Shared targets: `StaffForm`, `RoleForm`, `BranchForm`.
+Use Inertia 3 built-in Precognition (`<Form>` validate / `useForm().withPrecognition()`), not a separate `laravel-precognition-react` package. Live-validate uniqueness fields only on blur (`email`, `slug`, `code`, role `name`) with `validationTimeout={500}`. Shared targets: `AdminForm`, `StaffForm`, `RoleForm`, `BranchForm`.
 
 ## Branch status boolean; contact phone; staff search
 branches.status stays boolean (Active checkbox). Branch contact phone is optional, E.164-normalized, validated with laravel-phone AU (not mobile-only). Staff indexes (platform global, nested, portal) support Scout search via ?search= on name/phone.
 
 ## Atomic branch create with first super-admin
-Platform branch create is atomic: StoreBranchRequest requires nested super_admin (name/phone/password; email optional) and BranchService::createWithSuperAdmin runs branch + roles + first super-admin in one DB transaction, then redirects to show. Edit is details-only (full-width BranchForm). create-super-admin is recovery-only when needs_super_admin (create-new, no Skip). Promote/assign more admins via staff screens, not the create form.
+Platform branch create is atomic: StoreBranchRequest requires nested super_admin (name/phone/password; email optional) and BranchService::createWithSuperAdmin runs branch + roles + first super-admin in one DB transaction, then redirects to show. Edit is details-only (full-width BranchForm). create-super-admin is recovery-only when needs_super_admin (create-new, no Skip). Promote/assign more admins via admin screens, not the create form.
 
 ## Branch coords via map dialog picker
 Branch create/edit coords: Address then Map location with Set on map (BranchLocationPicker dialog) plus optional manual Latitude|Longitude. No inline live map on the form. Future Mapbox/Google only inside the dialog body; onConfirm writes latitude/longitude. Phase 1 confirm stays disabled until a provider can set a pin.

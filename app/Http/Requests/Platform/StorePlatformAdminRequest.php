@@ -12,7 +12,7 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
 use Spatie\Permission\PermissionRegistrar;
 
-class StorePlatformStaffRequest extends FormRequest
+class StorePlatformAdminRequest extends FormRequest
 {
     use NormalizesPhoneInput;
 
@@ -39,7 +39,7 @@ class StorePlatformStaffRequest extends FormRequest
             'phone' => ['required', 'string', ...Phone::validationRule(), Rule::unique('users', 'phone')],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'roles' => ['required', 'array', 'min:1'],
+            'roles' => ['required', 'array', 'min:1', 'max:1'],
             'roles.*' => [
                 'string',
                 Rule::exists('roles', 'name')
@@ -47,6 +47,7 @@ class StorePlatformStaffRequest extends FormRequest
                     ->where($teamKey, PlatformTeamResolver::PLATFORM_TEAM_ID),
             ],
             'is_active' => ['sometimes', 'boolean'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 

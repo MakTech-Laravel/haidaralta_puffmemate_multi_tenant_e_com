@@ -15,7 +15,7 @@ beforeEach(function () {
     $this->seed(UserSeeder::class);
 });
 
-test('platform super admin can view the permission catalog', function () {
+test('platform permission catalog groups are ordered by name', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
@@ -23,8 +23,16 @@ test('platform super admin can view the permission catalog', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/permissions/index')
-            ->has('permissionGroups')
-        );
+            ->where(
+                'permissionGroups',
+                function ($groups): bool {
+                    $names = collect($groups)->pluck('group')->all();
+                    $sorted = $names;
+                    natcasesort($sorted);
+
+                    return array_values($names) === array_values($sorted);
+                },
+            ));
 });
 
 test('platform staff without manage roles cannot view the permission catalog', function () {

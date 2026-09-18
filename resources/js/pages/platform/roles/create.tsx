@@ -6,14 +6,16 @@ import type { PermissionGroup } from '@/components/permission-selector';
 
 export default function PlatformRolesCreate({
     permissionGroups,
+    existingNames,
 }: {
     permissionGroups: PermissionGroup[];
+    existingNames: string[];
 }) {
     return (
         <>
             <Head title="Create role" />
 
-            <div className="mx-auto max-w-3xl space-y-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Create role"
                     description="Define a platform role and assign permissions"
@@ -22,6 +24,7 @@ export default function PlatformRolesCreate({
                 <RoleForm
                     action={RoleController.store.form()}
                     groups={permissionGroups}
+                    existingNames={existingNames}
                     cancelHref={RoleController.index.url()}
                 />
             </div>

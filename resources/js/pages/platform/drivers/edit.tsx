@@ -18,7 +18,7 @@ type Driver = {
     address: string | null;
     is_active: boolean;
     branch_ids: number[];
-    avatar_path: string | null;
+    avatar: string | null;
     avatar_url: string | null;
     vehicle_image_path: string | null;
     vehicle_image_url: string | null;
@@ -67,7 +67,7 @@ export default function PlatformDriversEdit({
                         address: driver.address,
                         is_active: driver.is_active,
                         branch_ids: driver.branch_ids,
-                        avatar: driver.avatar_path,
+                        avatar: driver.avatar,
                         avatar_url: driver.avatar_url,
                         vehicle_image: driver.vehicle_image_path,
                         vehicle_image_url: driver.vehicle_image_url,

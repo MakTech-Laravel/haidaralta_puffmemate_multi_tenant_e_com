@@ -96,6 +96,77 @@ test('platform super admin cannot rename or delete the super admin role', functi
     expect(Role::query()->whereKey($role->id)->exists())->toBeTrue();
 });
 
+test('platform role store rejects a duplicate name', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $before = Role::query()
+        ->where('guard_name', 'platform')
+        ->where(config('permission.column_names.team_foreign_key'), PlatformTeamResolver::PLATFORM_TEAM_ID)
+        ->count();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.roles.store'), [
+            'name' => RoleEnum::ADMIN->value,
+            'permissions' => [PermissionEnum::VIEW_DASHBOARD->value],
+        ])
+        ->assertInvalid([
+            'name' => 'A role with this name already exists.',
+        ]);
+
+    expect(Role::query()
+        ->where('guard_name', 'platform')
+        ->where(config('permission.column_names.team_foreign_key'), PlatformTeamResolver::PLATFORM_TEAM_ID)
+        ->count())->toBe($before);
+});
+
+test('platform role update rejects a duplicate name', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.roles.store'), [
+            'name' => 'unique-source',
+            'permissions' => [PermissionEnum::VIEW_DASHBOARD->value],
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.roles.store'), [
+            'name' => 'unique-target',
+            'permissions' => [PermissionEnum::VIEW_DASHBOARD->value],
+        ])
+        ->assertRedirect();
+
+    $role = Role::query()
+        ->where('name', 'unique-target')
+        ->where('guard_name', 'platform')
+        ->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.roles.update', $role), [
+            'name' => 'unique-source',
+            'permissions' => [PermissionEnum::VIEW_DASHBOARD->value],
+        ])
+        ->assertInvalid([
+            'name' => 'A role with this name already exists.',
+        ]);
+
+    expect($role->fresh()->name)->toBe('unique-target');
+});
+
+test('platform role create includes existing names for unique checks', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.roles.create'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/roles/create')
+            ->has('existingNames')
+            ->where(
+                'existingNames',
+                fn ($names): bool => collect($names)->contains(RoleEnum::ADMIN->value),
+            ));
+});
+
 test('platform role with assigned users cannot be deleted', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 

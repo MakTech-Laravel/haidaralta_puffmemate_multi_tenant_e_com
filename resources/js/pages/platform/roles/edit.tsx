@@ -14,15 +14,17 @@ type Role = {
 export default function PlatformRolesEdit({
     role,
     permissionGroups,
+    existingNames,
 }: {
     role: Role;
     permissionGroups: PermissionGroup[];
+    existingNames: string[];
 }) {
     return (
         <>
             <Head title={`Edit ${role.name}`} />
 
-            <div className="mx-auto max-w-3xl space-y-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${role.name}`}
                     description={
@@ -35,6 +37,7 @@ export default function PlatformRolesEdit({
                 <RoleForm
                     action={RoleController.update.form(role.id)}
                     groups={permissionGroups}
+                    existingNames={existingNames}
                     isEdit
                     locked={role.is_super_admin}
                     defaults={{

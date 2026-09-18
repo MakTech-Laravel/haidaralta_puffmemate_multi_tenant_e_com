@@ -62,7 +62,7 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
             items: [
                 navLink({
                     title: 'Admins',
-                    href: '/platform/staff',
+                    href: '/platform/admins',
                     icon: UserCog,
                     permissions: ['manage-users'],
                 }),

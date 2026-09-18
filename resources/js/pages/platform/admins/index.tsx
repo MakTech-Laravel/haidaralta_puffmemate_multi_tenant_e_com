@@ -2,17 +2,19 @@ import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import StaffController from '@/actions/App/Http/Controllers/Platform/StaffController';
+import AdminController from '@/actions/App/Http/Controllers/Platform/AdminController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import {
     DataTable,
     DataTableColumnHeader,
     DataTableRowActions,
     DataTableToolbar,
+    DataTableTruncated,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -24,25 +26,35 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
-type StaffRow = {
+type AdminRow = {
     id: number;
     name: string;
     phone: string;
     email: string | null;
+    avatar_url: string | null;
     is_active: boolean;
     roles: string[];
 };
 
-export default function PlatformStaffIndex({
+function initials(name: string): string {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
+}
+
+export default function PlatformAdminsIndex({
     table: tablePayload,
 }: {
-    table: DataTablePayload<StaffRow>;
+    table: DataTablePayload<AdminRow>;
 }) {
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
 
     const query = useDataTableQuery({
-        indexUrl: StaffController.index.url(),
+        indexUrl: AdminController.index.url(),
         initial: {
             filter: {
                 search: tablePayload.filters.search ?? '',
@@ -53,32 +65,32 @@ export default function PlatformStaffIndex({
         },
     });
 
-    const columns = useMemo<ColumnDef<StaffRow>[]>(
+    const columns = useMemo<ColumnDef<AdminRow>[]>(
         () => [
             {
-                accessorKey: 'name',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Name"
-                        sortable
-                        sortKey="name"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
-                ),
-            },
-            {
-                accessorKey: 'phone',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Phone"
-                        sortable
-                        sortKey="phone"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
+                id: 'avatar',
+                header: 'Admin',
+                meta: { truncate: false },
+                cell: ({ row }) => (
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Avatar className="size-10">
+                            <AvatarImage
+                                src={row.original.avatar_url ?? undefined}
+                                alt={row.original.name}
+                            />
+                            <AvatarFallback>
+                                {initials(row.original.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                            <DataTableTruncated className="font-medium">
+                                {row.original.name}
+                            </DataTableTruncated>
+                            <DataTableTruncated className="text-muted-foreground text-xs">
+                                {row.original.phone}
+                            </DataTableTruncated>
+                        </div>
+                    </div>
                 ),
             },
             {
@@ -88,16 +100,20 @@ export default function PlatformStaffIndex({
             },
             {
                 id: 'roles',
-                header: 'Roles',
-                cell: ({ row }) => (
-                    <div className="flex flex-wrap gap-1">
-                        {row.original.roles.map((role) => (
-                            <Badge key={role} variant="secondary">
-                                {role}
-                            </Badge>
-                        ))}
-                    </div>
-                ),
+                header: 'Role',
+                cell: ({ row }) => {
+                    const role = row.original.roles[0];
+
+                    if (!role) {
+                        return '—';
+                    }
+
+                    return (
+                        <Badge variant="secondary" className="capitalize">
+                            {role.replaceAll('-', ' ')}
+                        </Badge>
+                    );
+                },
             },
             {
                 accessorKey: 'is_active',
@@ -130,12 +146,12 @@ export default function PlatformStaffIndex({
                             {
                                 label: 'View',
                                 icon: Eye,
-                                href: StaffController.show.url(row.original.id),
+                                href: AdminController.show.url(row.original.id),
                             },
                             {
                                 label: 'Edit',
                                 icon: Pencil,
-                                href: StaffController.edit.url(row.original.id),
+                                href: AdminController.edit.url(row.original.id),
                             },
                             {
                                 label: 'Delete',
@@ -154,17 +170,17 @@ export default function PlatformStaffIndex({
 
     return (
         <>
-            <Head title="Staff" />
+            <Head title="Admins" />
 
             <div className="space-y-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
-                        title="Staff"
-                        description="Manage platform staff accounts and roles"
+                        title="Admins"
+                        description="Manage platform administrator accounts and roles"
                     />
                     <Button asChild>
-                        <Link href={StaffController.create.url()}>
-                            Add staff
+                        <Link href={AdminController.create.url()}>
+                            Add admin
                         </Link>
                     </Button>
                 </div>
@@ -174,7 +190,7 @@ export default function PlatformStaffIndex({
                     payload={tablePayload}
                     perPage={query.perPage}
                     onPerPageChange={query.changePerPage}
-                    emptyMessage="No staff found."
+                    emptyMessage="No admins found."
                     toolbar={
                         <DataTableToolbar
                             search={query.search}
@@ -224,7 +240,7 @@ export default function PlatformStaffIndex({
                         setDeletingId(null);
                     }
                 }}
-                description="This will permanently delete the staff account."
+                description="This will permanently delete the admin account."
                 processing={processing}
                 onConfirm={() => {
                     if (deletingId === null) {
@@ -232,7 +248,7 @@ export default function PlatformStaffIndex({
                     }
 
                     setProcessing(true);
-                    router.delete(StaffController.destroy.url(deletingId), {
+                    router.delete(AdminController.destroy.url(deletingId), {
                         onFinish: () => {
                             setProcessing(false);
                             setDeletingId(null);
@@ -244,9 +260,9 @@ export default function PlatformStaffIndex({
     );
 }
 
-PlatformStaffIndex.layout = {
+PlatformAdminsIndex.layout = {
     breadcrumbs: [
         { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Staff', href: '/platform/staff' },
+        { title: 'Admins', href: '/platform/admins' },
     ],
 };

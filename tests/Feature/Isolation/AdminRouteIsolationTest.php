@@ -27,7 +27,7 @@ test('non platform sessions cannot access platform admin routes', function (
         ->assertRedirect(route('login'));
 
     $this->actingAs($user, $guard)
-        ->get(route('platform.staff.index'))
+        ->get(route('platform.admins.index'))
         ->assertRedirect(route('login'));
 
     $this->actingAs($user, $guard)

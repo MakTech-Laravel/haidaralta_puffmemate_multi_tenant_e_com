@@ -25,7 +25,6 @@ class DriverProfile extends Model
         'availability_status',
         'notes',
         'address',
-        'avatar_path',
         'vehicle_image_path',
     ];
 

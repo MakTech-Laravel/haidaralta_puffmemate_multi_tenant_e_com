@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Platform\ActivityLogController as PlatformActivityLogController;
+use App\Http\Controllers\Platform\AdminController as PlatformAdminController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchDriverController as PlatformBranchDriverController;
 use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInventoryController;
@@ -19,7 +20,6 @@ use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVar
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
 use App\Http\Controllers\Platform\Reports\StockTransactionController as PlatformStockTransactionController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
-use App\Http\Controllers\Platform\StaffController as PlatformStaffController;
 use App\Http\Controllers\Platform\StockController as PlatformStockController;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
@@ -52,11 +52,16 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     });
 
     Route::middleware(['permission:manage-users'])->group(function () {
-        Route::resource('staff', PlatformStaffController::class)
-            ->parameters(['staff' => 'user'])
-            ->names('platform.staff')
+        Route::resource('admins', PlatformAdminController::class)
+            ->parameters(['admins' => 'user'])
+            ->names('platform.admins')
             ->middlewareFor(['store', 'update'], 'precognitive');
     });
+
+    Route::permanentRedirect('staff', '/platform/admins');
+    Route::permanentRedirect('staff/create', '/platform/admins/create');
+    Route::permanentRedirect('staff/{user}', '/platform/admins/{user}');
+    Route::permanentRedirect('staff/{user}/edit', '/platform/admins/{user}/edit');
 
     Route::middleware(['permission:manage-branch-users'])->group(function () {
         Route::resource('branch-staff', PlatformBranchStaffController::class)
