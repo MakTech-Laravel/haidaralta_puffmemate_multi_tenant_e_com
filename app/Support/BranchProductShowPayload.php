@@ -6,7 +6,6 @@ use App\Enums\DiscountType;
 use App\Enums\InventoryTransactionType;
 use App\Models\Branch;
 use App\Models\BranchProductPrice;
-use App\Models\BranchProductPriceHistory;
 use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\InventoryTransaction;
@@ -107,7 +106,6 @@ final class BranchProductShowPayload
             'price' => $basePrice ? self::mapPrice($basePrice) : null,
             'variant_inventories' => $variantInventories,
             'variant_prices' => $variantPrices,
-            'price_history' => self::mapPriceHistory($branch, $product),
         ];
     }
 
@@ -250,39 +248,5 @@ final class BranchProductShowPayload
             'end_date' => $price->end_date?->toDateString(),
             'status' => (bool) $price->status,
         ];
-    }
-
-    /**
-     * @return list<array{
-     *     id: int,
-     *     variant_id: int|null,
-     *     source: string,
-     *     source_label: string,
-     *     changes: array<string, array{from: ?string, to: ?string}>,
-     *     created_by_name: ?string,
-     *     created_at: ?string
-     * }>
-     */
-    private static function mapPriceHistory(Branch $branch, Product $product): array
-    {
-        return BranchProductPriceHistory::query()
-            ->where('branch_id', $branch->id)
-            ->where('product_id', $product->id)
-            ->with('creator:id,name')
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->limit(100)
-            ->get()
-            ->map(fn (BranchProductPriceHistory $row): array => [
-                'id' => $row->id,
-                'variant_id' => $row->variant_id,
-                'source' => $row->source->value,
-                'source_label' => $row->source->label(),
-                'changes' => $row->changes ?? [],
-                'created_by_name' => $row->creator?->name,
-                'created_at' => $row->created_at?->toIso8601String(),
-            ])
-            ->values()
-            ->all();
     }
 }

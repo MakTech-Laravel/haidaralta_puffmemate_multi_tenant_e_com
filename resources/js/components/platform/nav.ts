@@ -11,6 +11,7 @@ import {
     CreditCard,
     Database,
     Gauge,
+    History,
     IdCard,
     Inbox,
     KeyRound,
@@ -273,6 +274,12 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                     title: 'Stock transactions',
                     href: '/platform/reports/stock-transactions',
                     icon: ScrollText,
+                    permissions: ['manage-branch-inventories'],
+                }),
+                navLink({
+                    title: 'Price history',
+                    href: '/platform/reports/price-history',
+                    icon: History,
                     permissions: ['manage-branch-inventories'],
                 }),
                 navSoon({

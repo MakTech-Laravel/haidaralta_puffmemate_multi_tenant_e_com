@@ -18,6 +18,7 @@ use App\Http\Controllers\Platform\PermissionController as PlatformPermissionCont
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
+use App\Http\Controllers\Platform\Reports\PriceHistoryController as PlatformPriceHistoryController;
 use App\Http\Controllers\Platform\Reports\StockTransactionController as PlatformStockTransactionController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
 use App\Http\Controllers\Platform\StockController as PlatformStockController;
@@ -164,6 +165,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.stock.price');
         Route::get('reports/stock-transactions', [PlatformStockTransactionController::class, 'index'])
             ->name('platform.reports.stock-transactions');
+        Route::get('reports/price-history', [PlatformPriceHistoryController::class, 'index'])
+            ->name('platform.reports.price-history');
         Route::get('stock/branch-options', [PlatformStockController::class, 'branchOptions'])
             ->name('platform.stock.branch-options');
         Route::get('stock/product-options', [PlatformStockController::class, 'productOptions'])

@@ -43,6 +43,9 @@ Branch/platform product listings use quantity as Stock. No Enabled column or tog
 ## Stock transaction filters do not dump catalogs
 InventoryTransactionDataTable filterOptions carry types plus the currently selected branch/product only. Platform ledger columns are Product (name + SKU), then Branch, then type/reason/qty/buying. Product and branch pickers load pages from stock/*-options JSON. Branch portal omits the branch column, branch filter, and branch text search. The page is `*/reports/stock-transactions`.
 
+## Price history filters do not dump catalogs
+BranchProductPriceHistoryDataTable filterOptions carry sources plus the currently selected branch/product only. Platform columns are Product (name + SKU + variant), then Branch, then source/changes/when/by. Product and branch pickers load pages from stock/*-options JSON. Branch portal omits the branch column, branch filter, and branch text search. The page is `*/reports/price-history`.
+
 ## DataTable cells truncate with overflow tooltip
 Non-action/image DataTable cells truncate with max-w-[14rem] and DataTableTruncated (overflow-only Tooltip from innerText). Composite cells (avatar, name+subtitle, badges, price stacks) set meta.truncate: false and wrap each text line in DataTableTruncated instead of the whole block.
 

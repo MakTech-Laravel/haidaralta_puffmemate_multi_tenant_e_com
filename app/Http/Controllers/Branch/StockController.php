@@ -45,6 +45,7 @@ class StockController extends Controller
                 'inventoryUrl' => null,
                 'priceUrl' => null,
                 'transactionsUrl' => null,
+                'priceHistoryUrl' => null,
                 'allBranchesUrl' => null,
                 'branchProductsUrl' => null,
             ]);
@@ -63,6 +64,10 @@ class StockController extends Controller
             'inventoryUrl' => route('branch.products.inventory', [$branch, $product]),
             'priceUrl' => route('branch.products.prices', [$branch, $product]),
             'transactionsUrl' => route('branch.reports.stock-transactions', [
+                'branch' => $branch,
+                'product' => $product->id,
+            ]),
+            'priceHistoryUrl' => route('branch.reports.price-history', [
                 'branch' => $branch,
                 'product' => $product->id,
             ]),

@@ -32,6 +32,11 @@ test('manage stock page with a product renders inventory payload without transac
             ->where('context.locked', 'branch')
             ->where('product.id', $this->product->id)
             ->has('transactionsUrl')
+            ->where('priceHistoryUrl', route('branch.reports.price-history', [
+                'branch' => $this->branch,
+                'product' => $this->product->id,
+            ]))
+            ->missing('product.price_history')
             ->missing('transactions'));
 });
 

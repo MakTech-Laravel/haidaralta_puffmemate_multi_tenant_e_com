@@ -16,12 +16,14 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/**/permissions/**, resources/js/components/admin/permission-groups-table.tsx | .ai/rules/components-admin.md |
 | resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx | .ai/rules/components-branch.md |
 | resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx} | .ai/rules/components-driver.md |
+| resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/components-stock.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/Platform/AdminController.php | .ai/rules/controllers-platform.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
 | resources/css/app.css | .ai/rules/css.md |
 | resources/js/layouts/customer/** | .ai/rules/customer.md |
+| app/DataTables/**, resources/js/components/data-table/** | .ai/rules/data-table.md |
 | app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php, app/DataTables/BranchProductListingDataTable.php, app/DataTables/BranchCategoryDataTable.php, app/DataTables/ProductBranchInventoryDataTable.php | .ai/rules/data-tables.md |
 | resources/js/components/{ui/date-picker,branch/product-inventory-panel}.tsx | .ai/rules/date-pickerbranch.md |
 | resources/js/components/branch/product-inventory-panel.tsx, resources/js/pages/{platform,branch}/**/products/show.tsx, resources/js/pages/{platform,branch}/stock/manage.tsx, app/Support/ProductManageRedirect.php, routes/{platform,branch}.php, app/Support/BranchProductPriceDisplay.php | .ai/rules/discounts.md |
@@ -33,6 +35,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | package.json, vite.config.ts | .ai/rules/general.md |
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
 | resources/js/components/admin/role-*.tsx, resources/js/pages/{platform,branch}/roles/**, app/Http/Controllers/{Platform,Branch}/RoleController.php, app/Http/Requests/{Platform,Branch}/*RoleRequest.php | .ai/rules/http-requests-platform-branch.md |
+| resources/js/components/branch/**, resources/js/components/branch/product-inventory-panel.tsx | .ai/rules/js-components-branch.md |
 | resources/js/layouts/driver/** | .ai/rules/layouts-driver.md |
 | resources/js/layouts/{platform,branch}/** | .ai/rules/layoutsplatformbranch.md |
 | resources/js/lib/fcm.ts, resources/js/lib/color-picker.ts, resources/js/lib/stock-query.ts | .ai/rules/lib.md |
@@ -44,6 +47,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/platform/product-form.tsx, resources/js/components/platform/category-form.tsx, resources/js/components/platform/{category,product}-form.tsx, resources/js/components/platform/category-profile.tsx | .ai/rules/platform.md |
 | resources/js/components/{platform,admin}/*-form.tsx | .ai/rules/platformadmin.md |
 | resources/js/pages/{platform,branch}/catalog/products/show.tsx | .ai/rules/platformbranch-catalog-products.md |
+| app/Http/Controllers/{Platform,Branch}/Reports/**, resources/js/pages/{platform,branch}/reports/** | .ai/rules/platformbranch-reports.md |
 | resources/js/components/{platform,branch}/nav.ts | .ai/rules/platformbranch.md |
 | resources/js/components/portal/** | .ai/rules/portal.md |
 | resources/js/pages/platform/catalog/products/show.tsx, resources/js/pages/platform/catalog/products/**, resources/js/pages/branch/catalog/products/show.tsx | .ai/rules/products.md |

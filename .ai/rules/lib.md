@@ -22,3 +22,6 @@ Catalog create/edit default color_code is transparent. Listing/gallery tiles and
 
 ## Row stock actions are transactions only
 stockActionItems is Stock transactions only. Daily stock, selling price, and discounts stay on **Manage stock**. Catalog **Manage stock** with a known pair opens that page locked. Do not add Add stock, Update price, or Add discount row actions.
+
+## Row stock actions stay transactions only
+stockActionItems is Stock transactions only. Do not add Price history, Add stock, Update price, or Add discount to list-row menus. Price history is a show-header and Manage stock button plus the Reports sidebar item.

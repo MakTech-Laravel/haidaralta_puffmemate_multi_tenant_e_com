@@ -7,6 +7,7 @@ use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
+use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
 use App\Http\Controllers\Branch\Reports\StockTransactionController as BranchStockTransactionController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
 use App\Http\Controllers\Branch\StaffController as BranchStaffController;
@@ -77,6 +78,8 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.stock.price');
         Route::get('reports/stock-transactions', [BranchStockTransactionController::class, 'index'])
             ->name('branch.reports.stock-transactions');
+        Route::get('reports/price-history', [BranchPriceHistoryController::class, 'index'])
+            ->name('branch.reports.price-history');
         Route::get('stock/product-options', [BranchStockController::class, 'productOptions'])
             ->name('branch.stock.product-options');
     });

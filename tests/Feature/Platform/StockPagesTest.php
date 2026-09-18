@@ -51,6 +51,11 @@ test('manage stock page with a pair renders inventory payload without transactio
             ->where('product.id', $this->product->id)
             ->where('product.name', $this->product->name)
             ->has('transactionsUrl')
+            ->where('priceHistoryUrl', route('platform.reports.price-history', [
+                'branch' => $this->branch->id,
+                'product' => $this->product->id,
+            ]))
+            ->missing('product.price_history')
             ->missing('transactions'));
 });
 

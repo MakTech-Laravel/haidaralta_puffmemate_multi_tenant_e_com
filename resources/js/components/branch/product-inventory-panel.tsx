@@ -1,10 +1,8 @@
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { format, isValid, parseISO } from 'date-fns';
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
     Ban,
-    Clock,
     Minus,
     Package,
     Percent,
@@ -60,21 +58,6 @@ export type BranchPriceSnapshot = {
     status?: boolean;
 };
 
-export type PriceHistoryChange = {
-    from: string | null;
-    to: string | null;
-};
-
-export type PriceHistoryRow = {
-    id: number;
-    variant_id: number | null;
-    source: string;
-    source_label: string;
-    changes: Record<string, PriceHistoryChange>;
-    created_by_name: string | null;
-    created_at: string | null;
-};
-
 export type BranchProductVariantRow = {
     id: number;
     name: string;
@@ -94,7 +77,7 @@ type ProductInventoryPanelProps = {
     inventoryUrl: string;
     priceUrl: string;
     transactionsUrl: string;
-    priceHistory?: PriceHistoryRow[];
+    priceHistoryUrl: string;
 };
 
 function parseQuantity(value: string): number {
@@ -232,33 +215,6 @@ function effectivePrice(price: BranchPriceSnapshot | null): string {
     );
 }
 
-const PRICE_HISTORY_LABELS: Record<string, string> = {
-    buying_price: 'Buying',
-    regular_price: 'Regular',
-    selling_price: 'Selling',
-    discount_type: 'Discount',
-    discount_price: 'Discount value',
-    start_date: 'Start date',
-    end_date: 'End date',
-};
-
-function formatHistoryValue(field: string, value: string | null): string {
-    if (value == null || value === '') {
-        return '—';
-    }
-
-    if (
-        field === 'buying_price' ||
-        field === 'regular_price' ||
-        field === 'selling_price' ||
-        field === 'discount_price'
-    ) {
-        return formatMoney(value);
-    }
-
-    return value;
-}
-
 function SnapshotStat({
     label,
     value,
@@ -307,7 +263,7 @@ export function ProductInventoryPanel({
     inventoryUrl,
     priceUrl,
     transactionsUrl,
-    priceHistory = [],
+    priceHistoryUrl,
 }: ProductInventoryPanelProps) {
     const { catalog } = usePage().props;
     const showVariants = catalog.show_product_variants;
@@ -422,18 +378,6 @@ export function ProductInventoryPanel({
                 (isOtherReason &&
                     inventoryForm.data.reason_note.trim() === '')));
 
-    const scopedHistory = useMemo(
-        () =>
-            priceHistory
-                .filter((row) =>
-                    variantId === null
-                        ? row.variant_id === null
-                        : row.variant_id === variantId,
-                )
-                .slice(0, 20),
-        [priceHistory, variantId],
-    );
-
     const selectInventoryType = (next: string) => {
         if (next === 'adjustment') {
             inventoryForm.setData({
@@ -536,6 +480,11 @@ export function ProductInventoryPanel({
                         <Button variant="outline" size="sm" asChild>
                             <Link href={transactionsUrl}>
                                 View transactions
+                            </Link>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={priceHistoryUrl}>
+                                View price history
                             </Link>
                         </Button>
                         {showVariants ? (
@@ -1208,80 +1157,6 @@ export function ProductInventoryPanel({
                 </form>
                 </div>
             </Card>
-
-            {scopedHistory.length > 0 ? (
-                <Card className="gap-0 overflow-hidden py-0 shadow-sm">
-                    <CardHeader className="flex flex-row items-start justify-between gap-4 border-b px-5 py-4">
-                        <div className="min-w-0 space-y-1">
-                            <CardTitle className="flex items-center gap-2">
-                                <Clock className="text-muted-foreground size-4" />
-                                Price history
-                            </CardTitle>
-                            <CardDescription>
-                                Recent buying, regular, selling, and discount
-                                changes for {scopeLabel}
-                            </CardDescription>
-                        </div>
-                    </CardHeader>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>When</TableHead>
-                                <TableHead>Source</TableHead>
-                                <TableHead>Changes</TableHead>
-                                <TableHead>By</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {scopedHistory.map((row) => {
-                                const when = row.created_at
-                                    ? parseISO(row.created_at)
-                                    : null;
-
-                                return (
-                                    <TableRow key={row.id}>
-                                        <TableCell className="whitespace-nowrap tabular-nums">
-                                            {when && isValid(when)
-                                                ? format(when, 'dd MMM yyyy HH:mm')
-                                                : '—'}
-                                        </TableCell>
-                                        <TableCell>{row.source_label}</TableCell>
-                                        <TableCell>
-                                            <div className="flex min-w-0 flex-col gap-0.5 text-sm">
-                                                {Object.entries(row.changes).map(
-                                                    ([field, change]) => (
-                                                        <span
-                                                            key={field}
-                                                            className="tabular-nums"
-                                                        >
-                                                            {PRICE_HISTORY_LABELS[
-                                                                field
-                                                            ] ?? field}
-                                                            :{' '}
-                                                            {formatHistoryValue(
-                                                                field,
-                                                                change.from,
-                                                            )}{' '}
-                                                            →{' '}
-                                                            {formatHistoryValue(
-                                                                field,
-                                                                change.to,
-                                                            )}
-                                                        </span>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {row.created_by_name ?? '—'}
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })}
-                        </TableBody>
-                    </Table>
-                </Card>
-            ) : null}
         </div>
     );
 }

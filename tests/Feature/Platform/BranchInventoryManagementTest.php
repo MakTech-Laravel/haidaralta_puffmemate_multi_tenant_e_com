@@ -81,6 +81,8 @@ test('platform can set stock and price for any branch', function () {
             ->has('product.variant_prices')
             ->has('adjustmentReasons')
             ->has('transactionsUrl')
+            ->has('priceHistoryUrl')
+            ->missing('product.price_history')
             ->missing('transactions'));
 });
 
@@ -623,8 +625,8 @@ test('platform can save buying and regular prices on a branch sku', function () 
             ->where('product.price.buying_price', '12.50')
             ->where('product.price.regular_price', '24.99')
             ->where('product.price.selling_price', '19.99')
-            ->has('product.price_history', 1)
-            ->where('product.price_history.0.source', PriceChangeSource::PriceUpsert->value));
+            ->has('priceHistoryUrl')
+            ->missing('product.price_history'));
 });
 
 test('saving the same price again does not append price history', function () {

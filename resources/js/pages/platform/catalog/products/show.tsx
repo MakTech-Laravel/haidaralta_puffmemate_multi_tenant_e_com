@@ -1,12 +1,13 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { format, isValid, parseISO } from 'date-fns';
-import { Check, Copy, Network, Pencil, Plus, ScrollText, Settings2, Trash2 } from 'lucide-react';
+import { Check, Copy, History, Network, Pencil, Plus, ScrollText, Settings2, Trash2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import ProductVariantController from '@/actions/App/Http/Controllers/Platform/ProductVariantController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -560,6 +561,19 @@ export default function PlatformProductsShow({
                                 >
                                     <ScrollText className="size-4" />
                                     Stock transactions
+                                </Link>
+                            </Button>
+                        ) : null}
+                        {canManageBranches ? (
+                            <Button variant="outline" asChild>
+                                <Link
+                                    href={stockPageUrl(
+                                        PriceHistoryController.index.url(),
+                                        { productId: product.id },
+                                    )}
+                                >
+                                    <History className="size-4" />
+                                    Price history
                                 </Link>
                             </Button>
                         ) : null}

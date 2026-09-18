@@ -5,7 +5,6 @@ import {
     type BranchInventorySnapshot,
     type BranchPriceSnapshot,
     type BranchProductVariantRow,
-    type PriceHistoryRow,
 } from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
 import { StockPairFields } from '@/components/stock/stock-pair-fields';
@@ -45,7 +44,6 @@ export type StockManageProduct = {
     price: BranchPriceSnapshot | null;
     variant_inventories: Record<string, BranchInventorySnapshot>;
     variant_prices: Record<string, BranchPriceSnapshot>;
-    price_history?: PriceHistoryRow[];
 };
 
 export function ManageStockPage({
@@ -60,6 +58,7 @@ export function ManageStockPage({
     inventoryUrl,
     priceUrl,
     transactionsUrl,
+    priceHistoryUrl,
     allBranchesUrl,
     branchProductsUrl,
     detailsUrl,
@@ -78,6 +77,7 @@ export function ManageStockPage({
     inventoryUrl: string | null;
     priceUrl: string | null;
     transactionsUrl: string | null;
+    priceHistoryUrl: string | null;
     allBranchesUrl: string | null;
     branchProductsUrl: string | null;
     detailsUrl: string | null;
@@ -88,7 +88,7 @@ export function ManageStockPage({
     setLayoutProps({ breadcrumbs });
 
     const hasPair = Boolean(
-        product && inventoryUrl && priceUrl && transactionsUrl,
+        product && inventoryUrl && priceUrl && transactionsUrl && priceHistoryUrl,
     );
     const pairLocked =
         isBranchLocked(context.locked) && isProductLocked(context.locked);
@@ -175,7 +175,8 @@ export function ManageStockPage({
                 product &&
                 inventoryUrl &&
                 priceUrl &&
-                transactionsUrl ? (
+                transactionsUrl &&
+                priceHistoryUrl ? (
                     <>
                         {detailsUrl ? (
                             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -203,7 +204,7 @@ export function ManageStockPage({
                             inventoryUrl={inventoryUrl}
                             priceUrl={priceUrl}
                             transactionsUrl={transactionsUrl}
-                            priceHistory={product.price_history ?? []}
+                            priceHistoryUrl={priceHistoryUrl}
                         />
                     </>
                 ) : null}
