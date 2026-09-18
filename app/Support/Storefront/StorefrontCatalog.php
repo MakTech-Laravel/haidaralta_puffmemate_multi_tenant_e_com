@@ -248,7 +248,7 @@ class StorefrontCatalog
             ->values()
             ->all();
 
-        $compareAt = null;
+        $compareAt = $price['compare_at'] ?? null;
         $displayPrice = $price['label'] ?? 'Select a branch for pricing';
 
         return [
@@ -260,7 +260,7 @@ class StorefrontCatalog
             'badges' => array_values(array_unique(array_filter([$categoryName, ...$tagBadges]))),
             'images' => $gallery !== [] ? $gallery : [$image],
             'price' => $displayPrice,
-            'compareAtPrice' => $compareAt ?? '',
+            'compareAtPrice' => $compareAt === null ? '' : '$'.number_format((float) $compareAt, 2),
             'availability' => $branch === null
                 ? 'Select a branch'
                 : ($stock > 0 ? 'Available' : 'Out of stock'),
@@ -345,13 +345,16 @@ class StorefrontCatalog
         $categoryName = $product->categories->first()?->name ?? 'Catalog';
         $price = $branch !== null
             ? BranchProductPriceDisplay::forBranchProduct($branch, $product)
-            : ['label' => null];
+            : ['label' => null, 'compare_at' => null];
+
+        $compareAt = $price['compare_at'] ?? null;
 
         return [
             'id' => $product->slug,
             'name' => $product->name,
             'description' => self::cardDescription($product),
             'price' => $price['label'] ?? 'Select a branch',
+            'compareAtPrice' => $compareAt === null ? '' : '$'.number_format((float) $compareAt, 2),
             'stock' => $branch !== null ? self::stockFor($branch, $product) : 0,
             'category' => $categoryName,
             'image' => MediaUrl::resolve($product->image) ?? '/images/storefront/logo.png',

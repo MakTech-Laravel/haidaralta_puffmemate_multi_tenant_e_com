@@ -30,6 +30,7 @@ class InventoryTransaction extends Model
         'quantity',
         'before_quantity',
         'after_quantity',
+        'unit_cost',
         'reference_type',
         'reference_id',
         'created_by',
@@ -87,6 +88,7 @@ class InventoryTransaction extends Model
             'quantity' => 'integer',
             'before_quantity' => 'integer',
             'after_quantity' => 'integer',
+            'unit_cost' => 'decimal:2',
             'created_at' => 'datetime',
         ];
     }

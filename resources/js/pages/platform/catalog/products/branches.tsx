@@ -44,7 +44,9 @@ type BranchRow = {
     quantity: number;
     selling_price: string | number | null;
     effective_price: string | number | null;
+    regular_price?: string | number | null;
     has_discount: boolean;
+    has_compare_at?: boolean;
     discount_type: string;
     discount_price: string | number | null;
     manage_url: string;
@@ -75,6 +77,15 @@ function listingPrice(row: BranchRow): ReactNode {
         return (
             <span className="tabular-nums">
                 <s className="text-muted-foreground">{row.selling_price}</s>{' '}
+                {row.effective_price ?? row.selling_price}
+            </span>
+        );
+    }
+
+    if (row.has_compare_at && row.regular_price != null) {
+        return (
+            <span className="tabular-nums">
+                <s className="text-muted-foreground">{row.regular_price}</s>{' '}
                 {row.effective_price ?? row.selling_price}
             </span>
         );

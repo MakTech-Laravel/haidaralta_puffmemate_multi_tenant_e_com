@@ -10,7 +10,10 @@ paths:
 # Discounts
 
 ## Discounts live on Stock Manage
-There is no bulk Discounts workspace. Selling price and discount type/value/dates are edited on Stock Manage’s Inventory & pricing card (`ProductInventoryPanel`) for one branch + one SKU (including variants). Hydrate saved fixed/percent offers so Save is not destructive. Empty SKUs and prices with `discount_type` none/missing select None and hide value + dates.
+There is no bulk Discounts workspace. Buying, regular, selling, and discount type/value/dates are edited on Stock Manage’s Inventory & pricing card (`ProductInventoryPanel`) for one branch + one SKU (including variants). Discounts apply only to selling_price. Honor start/end dates in effective price (null dates = always on; outside the window = selling). Hydrate saved fixed/percent offers so Save is not destructive. Empty SKUs and prices with `discount_type` none/missing select None and hide value + dates.
+
+## Price history is append-only
+`branch_product_price_histories` is the operational trail (who, when, source, from/to). Spatie activity log remains generic. Skip no-op upserts. Do not put AuditsChanges on the history model. Coupons stay checkout-only (navSoon); do not add a Coupon model on the catalog SKU.
 
 ## Old discount URLs redirect
 GET/PUT `/discounts`, `/discounts/preview`, and legacy `/stock/discount` go through `App\Support\ProductManageRedirect`. Both IDs → `stock.manage` with query; platform product-only → Manage branches; otherwise products index. Branch portal product-only → that branch’s `stock.manage`. Empty still → products index (not unlocked manage). Do not restore DiscountController or `applyDiscount` / `previewSelectedPairs`.

@@ -34,3 +34,6 @@ reason_note is stored only when reason is Other. Named reasons (damaged, expired
 
 ## User avatars live on users.avatar
 Every user type stores the photo on users.avatar (public disk users/avatars, MediaUrl). Do not put avatar_path on driver_profiles; vehicle_image_path stays on the profile. Share auth.user.avatar as the resolved URL.
+
+## Last-purchase buying, regular compare-at, discount on selling
+buying_price is last purchase cost on branch_product_prices (internal, never storefront). regular_price is compare-at when greater than selling. Product discounts apply only to selling_price and honor start/end dates. New entry requires buying_price as inventory_transactions.unit_cost and updates last buying when a price row exists. Append-only branch_product_price_histories on dirty price fields (snapshot before save). Coupons stay checkout-only.

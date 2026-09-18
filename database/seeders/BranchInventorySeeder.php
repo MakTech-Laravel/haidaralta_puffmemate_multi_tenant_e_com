@@ -149,16 +149,22 @@ class BranchInventorySeeder extends Seeder
             $product = Product::query()->where('slug', $slug)->firstOrFail();
 
             $row = $inventory->firstOrCreate($branch, $product);
+            $selling = (float) $line['price'];
+            $buying = number_format(round($selling * 0.62, 2), 2, '.', '');
+            $regular = number_format(round($selling * 1.15, 2), 2, '.', '');
 
             if ($row->quantity === 0 && $line['qty'] > 0) {
                 $inventory->adjust(
                     $row,
                     InventoryTransactionType::StockIn,
                     $line['qty'],
+                    unitCost: $buying,
                 );
             }
 
             $pricing->upsert($branch, $product, [
+                'buying_price' => $buying,
+                'regular_price' => $regular,
                 'selling_price' => $line['price'],
                 'discount_type' => $line['discount_type'],
                 'discount_price' => $line['discount'],
@@ -188,6 +194,7 @@ class BranchInventorySeeder extends Seeder
                     $row,
                     InventoryTransactionType::StockIn,
                     $qty,
+                    unitCost: '10.00',
                 );
             }
         }
@@ -208,6 +215,8 @@ class BranchInventorySeeder extends Seeder
             $variant = ProductVariant::query()->where('sku', $sku)->firstOrFail();
 
             $pricing->upsert($branch, $product, [
+                'buying_price' => number_format(round(((float) $price) * 0.62, 2), 2, '.', ''),
+                'regular_price' => number_format(round(((float) $price) * 1.15, 2), 2, '.', ''),
                 'selling_price' => $price,
                 'discount_type' => 'none',
                 'discount_price' => null,

@@ -19,6 +19,10 @@ class BranchProductPriceFactory extends Factory
     public function definition(): array
     {
         $selling = fake()->randomFloat(2, 5, 200);
+        $buying = round($selling * fake()->randomFloat(2, 0.4, 0.75), 2);
+        $regular = fake()->boolean(40)
+            ? round($selling * fake()->randomFloat(2, 1.05, 1.3), 2)
+            : null;
         $discount = fake()->boolean(40)
             ? fake()->randomFloat(2, 1, $selling)
             : null;
@@ -27,6 +31,8 @@ class BranchProductPriceFactory extends Factory
             'branch_id' => Branch::factory(),
             'product_id' => Product::factory(),
             'variant_id' => null,
+            'buying_price' => $buying,
+            'regular_price' => $regular,
             'selling_price' => $selling,
             'discount_type' => $discount === null
                 ? DiscountType::None

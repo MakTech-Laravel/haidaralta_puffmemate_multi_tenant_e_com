@@ -1,7 +1,9 @@
 import { Link, useForm, usePage } from '@inertiajs/react';
+import { format, isValid, parseISO } from 'date-fns';
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
+    Clock,
     Minus,
     Package,
     Plus,
@@ -45,12 +47,29 @@ export type BranchInventorySnapshot = {
 };
 
 export type BranchPriceSnapshot = {
+    buying_price: string | number | null;
+    regular_price: string | number | null;
     selling_price: string | number;
     discount_type?: string;
     discount_price: string | number | null;
     start_date: string | null;
     end_date: string | null;
     status?: boolean;
+};
+
+export type PriceHistoryChange = {
+    from: string | null;
+    to: string | null;
+};
+
+export type PriceHistoryRow = {
+    id: number;
+    variant_id: number | null;
+    source: string;
+    source_label: string;
+    changes: Record<string, PriceHistoryChange>;
+    created_by_name: string | null;
+    created_at: string | null;
 };
 
 export type BranchProductVariantRow = {
@@ -72,6 +91,7 @@ type ProductInventoryPanelProps = {
     inventoryUrl: string;
     priceUrl: string;
     transactionsUrl: string;
+    priceHistory?: PriceHistoryRow[];
 };
 
 function parseQuantity(value: string): number {
@@ -148,6 +168,32 @@ function formatMoney(value: string | number | null | undefined): string {
     return Number.isFinite(amount) ? amount.toFixed(2) : String(value);
 }
 
+function todayDateString(): string {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    return `${now.getFullYear()}-${month}-${day}`;
+}
+
+function discountIsLive(price: BranchPriceSnapshot | null): boolean {
+    if (!price || resolveDiscountType(price) === 'none') {
+        return false;
+    }
+
+    const today = todayDateString();
+
+    if (price.start_date && today < price.start_date) {
+        return false;
+    }
+
+    if (price.end_date && today > price.end_date) {
+        return false;
+    }
+
+    return true;
+}
+
 function effectivePrice(price: BranchPriceSnapshot | null): string {
     if (!price) {
         return '—';
@@ -157,6 +203,7 @@ function effectivePrice(price: BranchPriceSnapshot | null): string {
     const type = resolveDiscountType(price);
 
     if (
+        !discountIsLive(price) ||
         type === 'none' ||
         price.discount_price == null ||
         price.discount_price === '' ||
@@ -178,6 +225,33 @@ function effectivePrice(price: BranchPriceSnapshot | null): string {
     }
 
     return formatMoney(Math.max(0, discount));
+}
+
+const PRICE_HISTORY_LABELS: Record<string, string> = {
+    buying_price: 'Buying',
+    regular_price: 'Regular',
+    selling_price: 'Selling',
+    discount_type: 'Discount',
+    discount_price: 'Discount value',
+    start_date: 'Start date',
+    end_date: 'End date',
+};
+
+function formatHistoryValue(field: string, value: string | null): string {
+    if (value == null || value === '') {
+        return '—';
+    }
+
+    if (
+        field === 'buying_price' ||
+        field === 'regular_price' ||
+        field === 'selling_price' ||
+        field === 'discount_price'
+    ) {
+        return formatMoney(value);
+    }
+
+    return value;
 }
 
 function SnapshotStat({
@@ -222,6 +296,7 @@ export function ProductInventoryPanel({
     inventoryUrl,
     priceUrl,
     transactionsUrl,
+    priceHistory = [],
 }: ProductInventoryPanelProps) {
     const { catalog } = usePage().props;
     const showVariants = catalog.show_product_variants;
@@ -248,12 +323,15 @@ export function ProductInventoryPanel({
     const inventoryForm = useForm({
         type: 'stock_in',
         quantity: '1',
+        buying_price: scopedPrice?.buying_price ?? '',
         reason: '',
         reason_note: '',
         variant_id: variantId as number | null,
     });
 
     const priceForm = useForm({
+        buying_price: scopedPrice?.buying_price ?? '',
+        regular_price: scopedPrice?.regular_price ?? '',
         selling_price: scopedPrice?.selling_price ?? '',
         discount_type: discountType,
         discount_price: scopedPrice?.discount_price ?? '',
@@ -272,12 +350,15 @@ export function ProductInventoryPanel({
         inventoryForm.setData({
             type: 'stock_in',
             quantity: '1',
+            buying_price: nextPrice?.buying_price ?? '',
             reason: '',
             reason_note: '',
             variant_id: nextVariantId,
         });
 
         priceForm.setData({
+            buying_price: nextPrice?.buying_price ?? '',
+            regular_price: nextPrice?.regular_price ?? '',
             selling_price: nextPrice?.selling_price ?? '',
             discount_type: nextDiscountType,
             discount_price: nextPrice?.discount_price ?? '',
@@ -305,11 +386,13 @@ export function ProductInventoryPanel({
 
     const showDiscountFields = priceForm.data.discount_type !== 'none';
     const sellingDisplay = formatMoney(scopedPrice?.selling_price);
+    const buyingDisplay = formatMoney(scopedPrice?.buying_price);
     const effectiveDisplay = effectivePrice(scopedPrice);
     const hasLiveDiscount =
         scopedPrice != null &&
-        resolveDiscountType(scopedPrice) !== 'none' &&
+        discountIsLive(scopedPrice) &&
         effectiveDisplay !== sellingDisplay;
+    const isStockIn = inventoryForm.data.type === 'stock_in';
     const isAdjustment = inventoryForm.data.type === 'adjustment';
     const isOtherReason = isAdjustment && inventoryForm.data.reason === 'other';
     const currentStock = scopedInventory?.quantity ?? 0;
@@ -320,11 +403,25 @@ export function ProductInventoryPanel({
         inventoryForm.processing ||
         quantityEmpty ||
         (!isAdjustment && quantityValue < 1) ||
+        (isStockIn &&
+            String(inventoryForm.data.buying_price ?? '').trim() === '') ||
         (isAdjustment &&
             (inventoryForm.data.reason === '' ||
                 variance === 0 ||
                 (isOtherReason &&
                     inventoryForm.data.reason_note.trim() === '')));
+
+    const scopedHistory = useMemo(
+        () =>
+            priceHistory
+                .filter((row) =>
+                    variantId === null
+                        ? row.variant_id === null
+                        : row.variant_id === variantId,
+                )
+                .slice(0, 20),
+        [priceHistory, variantId],
+    );
 
     const selectInventoryType = (next: string) => {
         if (next === 'adjustment') {
@@ -362,7 +459,7 @@ export function ProductInventoryPanel({
                             Inventory & pricing
                         </CardTitle>
                         <CardDescription>
-                            Stock and selling price for {scopeLabel}
+                            Stock, buying cost, and selling price for {scopeLabel}
                         </CardDescription>
                     </div>
                     <div className="flex flex-wrap items-start gap-3">
@@ -406,11 +503,20 @@ export function ProductInventoryPanel({
                     </div>
                 </CardHeader>
 
-                <div className="grid divide-y border-b sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                <div className="grid divide-y border-b sm:grid-cols-2 md:grid-cols-4 sm:divide-x sm:divide-y-0">
                     <SnapshotStat
                         label="Stock"
                         value={String(scopedInventory?.quantity ?? 0)}
                         hint="On-hand units"
+                    />
+                    <SnapshotStat
+                        label="Buying"
+                        value={buyingDisplay}
+                        hint={
+                            scopedPrice?.buying_price == null
+                                ? 'Last purchase cost'
+                                : 'Last cost · AUD'
+                        }
                     />
                     <SnapshotStat
                         label="Selling"
@@ -514,6 +620,12 @@ export function ProductInventoryPanel({
                                         data.quantity.trim() === ''
                                             ? ''
                                             : parseQuantity(data.quantity),
+                                    buying_price:
+                                        data.type === 'stock_in'
+                                            ? data.buying_price === ''
+                                                ? null
+                                                : data.buying_price
+                                            : null,
                                     reason:
                                         data.type === 'adjustment'
                                             ? data.reason
@@ -583,7 +695,11 @@ export function ProductInventoryPanel({
                         <div
                             className={cn(
                                 'grid items-start gap-4',
-                                isAdjustment ? 'sm:grid-cols-2' : 'grid-cols-1',
+                                isAdjustment
+                                    ? 'sm:grid-cols-2'
+                                    : isStockIn
+                                      ? 'sm:grid-cols-2'
+                                      : 'grid-cols-1',
                             )}
                         >
                             <div className="grid gap-2">
@@ -666,6 +782,38 @@ export function ProductInventoryPanel({
                                     message={inventoryForm.errors.quantity}
                                 />
                             </div>
+                            {isStockIn ? (
+                                <div className="grid content-start gap-2">
+                                    <Label htmlFor="buying_price">
+                                        Buying price{' '}
+                                        <span className="text-muted-foreground font-normal">
+                                            (AUD)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="buying_price"
+                                        type="number"
+                                        step="0.01"
+                                        min={0}
+                                        placeholder="e.g. 12.50"
+                                        value={inventoryForm.data.buying_price}
+                                        onChange={(event) =>
+                                            inventoryForm.setData(
+                                                'buying_price',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <p className="text-muted-foreground text-xs">
+                                        Unit cost for this New entry. Updates last buying price.
+                                    </p>
+                                    <InputError
+                                        message={
+                                            inventoryForm.errors.buying_price
+                                        }
+                                    />
+                                </div>
+                            ) : null}
                             {isAdjustment ? (
                                 <div className="grid content-start gap-2">
                                     <Label htmlFor="inventory-reason">
@@ -746,6 +894,14 @@ export function ProductInventoryPanel({
                                         : data.discount_price === ''
                                           ? null
                                           : data.discount_price,
+                                    buying_price:
+                                        data.buying_price === ''
+                                            ? null
+                                            : data.buying_price,
+                                    regular_price:
+                                        data.regular_price === ''
+                                            ? null
+                                            : data.regular_price,
                                     start_date: none
                                         ? null
                                         : data.start_date === ''
@@ -769,7 +925,7 @@ export function ProductInventoryPanel({
                                     Price
                                 </h3>
                                 <p className="text-muted-foreground text-xs">
-                                    Selling price and optional discount
+                                    Buying, regular, and selling price
                                 </p>
                             </div>
                             <Button
@@ -781,7 +937,63 @@ export function ProductInventoryPanel({
                             </Button>
                         </div>
 
-                        <div className="grid min-w-0 items-start gap-4 sm:grid-cols-2">
+                        <div className="grid min-w-0 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <div className="grid min-w-0 gap-2">
+                                <Label htmlFor="price_buying_price">
+                                    Buying price{' '}
+                                    <span className="text-muted-foreground font-normal">
+                                        (AUD)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="price_buying_price"
+                                    type="number"
+                                    step="0.01"
+                                    min={0}
+                                    placeholder="e.g. 12.50"
+                                    value={priceForm.data.buying_price}
+                                    onChange={(event) =>
+                                        priceForm.setData(
+                                            'buying_price',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <p className="text-muted-foreground text-xs">
+                                    Last purchase cost. Internal only.
+                                </p>
+                                <InputError
+                                    message={priceForm.errors.buying_price}
+                                />
+                            </div>
+                            <div className="grid min-w-0 gap-2">
+                                <Label htmlFor="regular_price">
+                                    Regular price{' '}
+                                    <span className="text-muted-foreground font-normal">
+                                        (AUD)
+                                    </span>
+                                </Label>
+                                <Input
+                                    id="regular_price"
+                                    type="number"
+                                    step="0.01"
+                                    min={0}
+                                    placeholder="e.g. 19.99"
+                                    value={priceForm.data.regular_price}
+                                    onChange={(event) =>
+                                        priceForm.setData(
+                                            'regular_price',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <p className="text-muted-foreground text-xs">
+                                    Compare-at / was. Shown when higher than selling.
+                                </p>
+                                <InputError
+                                    message={priceForm.errors.regular_price}
+                                />
+                            </div>
                             <div className="grid min-w-0 gap-2">
                                 <Label htmlFor="selling_price">
                                     Selling price{' '}
@@ -950,6 +1162,80 @@ export function ProductInventoryPanel({
                     </form>
                 </div>
             </Card>
+
+            {scopedHistory.length > 0 ? (
+                <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+                    <CardHeader className="flex flex-row items-start justify-between gap-4 border-b px-5 py-4">
+                        <div className="min-w-0 space-y-1">
+                            <CardTitle className="flex items-center gap-2">
+                                <Clock className="text-muted-foreground size-4" />
+                                Price history
+                            </CardTitle>
+                            <CardDescription>
+                                Recent buying, regular, selling, and discount
+                                changes for {scopeLabel}
+                            </CardDescription>
+                        </div>
+                    </CardHeader>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>When</TableHead>
+                                <TableHead>Source</TableHead>
+                                <TableHead>Changes</TableHead>
+                                <TableHead>By</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {scopedHistory.map((row) => {
+                                const when = row.created_at
+                                    ? parseISO(row.created_at)
+                                    : null;
+
+                                return (
+                                    <TableRow key={row.id}>
+                                        <TableCell className="whitespace-nowrap tabular-nums">
+                                            {when && isValid(when)
+                                                ? format(when, 'dd MMM yyyy HH:mm')
+                                                : '—'}
+                                        </TableCell>
+                                        <TableCell>{row.source_label}</TableCell>
+                                        <TableCell>
+                                            <div className="flex min-w-0 flex-col gap-0.5 text-sm">
+                                                {Object.entries(row.changes).map(
+                                                    ([field, change]) => (
+                                                        <span
+                                                            key={field}
+                                                            className="tabular-nums"
+                                                        >
+                                                            {PRICE_HISTORY_LABELS[
+                                                                field
+                                                            ] ?? field}
+                                                            :{' '}
+                                                            {formatHistoryValue(
+                                                                field,
+                                                                change.from,
+                                                            )}{' '}
+                                                            →{' '}
+                                                            {formatHistoryValue(
+                                                                field,
+                                                                change.to,
+                                                            )}
+                                                        </span>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            {row.created_by_name ?? '—'}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </Card>
+            ) : null}
         </div>
     );
 }

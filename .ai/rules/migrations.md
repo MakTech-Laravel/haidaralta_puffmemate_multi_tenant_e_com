@@ -21,4 +21,4 @@ Pre-handover: categories.featured boolean (default false) belongs on the origina
 Pre-handover: categories.slogan, show_in_nav, nav_sort (and products.brand, tags, specifications) belong on the original create_* migrations — never Schema::table greenfield mods.
 
 ## Inventory transaction reason belongs on create
-inventory_transactions.reason and reason_note belong on the original create_inventory_transactions migration. Do not add a Schema::table modification for greenfield columns on this table.
+inventory_transactions.reason, reason_note, and unit_cost belong on the original create_inventory_transactions migration. buying_price and regular_price belong on create_branch_product_prices. Do not add a Schema::table modification for greenfield columns on these tables. Price history is a new create_* table (`branch_product_price_histories`).

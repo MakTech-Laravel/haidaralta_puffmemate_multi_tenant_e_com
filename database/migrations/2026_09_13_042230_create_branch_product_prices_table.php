@@ -14,6 +14,8 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->foreignId('variant_id')->nullable()->constrained('product_variants')->nullOnDelete();
+            $table->decimal('buying_price', 12, 2)->nullable();
+            $table->decimal('regular_price', 12, 2)->nullable();
             $table->decimal('selling_price', 12, 2);
             $table->string('discount_type', 20)->default(DiscountType::None->value);
             $table->decimal('discount_price', 12, 2)->nullable();

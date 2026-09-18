@@ -21,6 +21,8 @@ class BranchProductPrice extends Model
         'branch_id',
         'product_id',
         'variant_id',
+        'buying_price',
+        'regular_price',
         'selling_price',
         'discount_type',
         'discount_price',
@@ -66,6 +68,8 @@ class BranchProductPrice extends Model
     protected function casts(): array
     {
         return [
+            'buying_price' => 'decimal:2',
+            'regular_price' => 'decimal:2',
             'selling_price' => 'decimal:2',
             'discount_type' => DiscountType::class,
             'discount_price' => 'decimal:2',

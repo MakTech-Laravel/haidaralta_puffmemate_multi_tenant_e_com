@@ -38,10 +38,10 @@ Platform catalog Manage branches uses ProductBranchInventoryDataTable::makeForPr
 Branch category index uses BranchCategoryDataTable without AllowedFilter::trashed — soft-delete UI stays platform-only.
 
 ## Listings use quantity and discounted price
-Branch/platform product listings use quantity as Stock. No Enabled column or toggle (route gone). No enabled/low_stock filters. Discounted prices show strikethrough selling_price plus effective_price when has_discount. Summary cards are { products, missing_price } or { branches, missing_price }.
+Branch/platform product listings use quantity as Stock. No Enabled column or toggle (route gone). No enabled/low_stock filters. Discounted prices show strikethrough selling_price plus effective_price when has_discount; otherwise strikethrough regular_price plus selling when has_compare_at. Do not show buying_price on listings. Summary cards are { products, missing_price } or { branches, missing_price }.
 
 ## Stock transaction filters do not dump catalogs
-InventoryTransactionDataTable filterOptions carry types plus the currently selected branch/product only. Platform ledger columns are Product (name + SKU), then Branch, then type/reason/qty. Product and branch pickers load pages from stock/*-options JSON. Branch portal omits the branch column, branch filter, and branch text search. The page is `*/reports/stock-transactions`.
+InventoryTransactionDataTable filterOptions carry types plus the currently selected branch/product only. Platform ledger columns are Product (name + SKU), then Branch, then type/reason/qty/buying. Product and branch pickers load pages from stock/*-options JSON. Branch portal omits the branch column, branch filter, and branch text search. The page is `*/reports/stock-transactions`.
 
 ## DataTable cells truncate with overflow tooltip
 Non-action/image DataTable cells truncate with max-w-[14rem] and DataTableTruncated (overflow-only Tooltip from innerText). Composite cells (avatar, name+subtitle, badges, price stacks) set meta.truncate: false and wrap each text line in DataTableTruncated instead of the whole block.

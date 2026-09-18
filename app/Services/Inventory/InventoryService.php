@@ -15,6 +15,8 @@ use InvalidArgumentException;
 
 class InventoryService
 {
+    public function __construct(private BranchPricingService $pricing) {}
+
     /**
      * @param  array{status?: bool}  $attributes
      */
@@ -58,8 +60,19 @@ class InventoryService
         ?int $referenceId = null,
         ?InventoryAdjustmentReason $reason = null,
         ?string $reasonNote = null,
+        float|string|null $unitCost = null,
     ): Inventory {
-        return DB::transaction(function () use ($inventory, $type, $quantity, $actor, $referenceType, $referenceId, $reason, $reasonNote): Inventory {
+        return DB::transaction(function () use (
+            $inventory,
+            $type,
+            $quantity,
+            $actor,
+            $referenceType,
+            $referenceId,
+            $reason,
+            $reasonNote,
+            $unitCost,
+        ): Inventory {
             /** @var Inventory $locked */
             $locked = Inventory::query()->whereKey($inventory->id)->lockForUpdate()->firstOrFail();
 
@@ -79,6 +92,10 @@ class InventoryService
             $locked->quantity = $after;
             $locked->save();
 
+            $storedCost = $type === InventoryTransactionType::StockIn
+                ? $this->normalizedMoney($unitCost)
+                : null;
+
             InventoryTransaction::query()->create([
                 'branch_id' => $locked->branch_id,
                 'product_id' => $locked->product_id,
@@ -89,11 +106,22 @@ class InventoryService
                 'quantity' => $storedQuantity,
                 'before_quantity' => $before,
                 'after_quantity' => $after,
+                'unit_cost' => $storedCost,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'created_by' => $actor?->id,
                 'created_at' => now(),
             ]);
+
+            if ($type === InventoryTransactionType::StockIn && $storedCost !== null) {
+                $this->pricing->updateBuyingPrice(
+                    $locked->branch,
+                    $locked->product,
+                    $storedCost,
+                    $locked->variant,
+                    $actor,
+                );
+            }
 
             return $locked->refresh();
         });
@@ -164,5 +192,14 @@ class InventoryService
         }
 
         return null;
+    }
+
+    private function normalizedMoney(float|string|null $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return number_format((float) $value, 2, '.', '');
     }
 }

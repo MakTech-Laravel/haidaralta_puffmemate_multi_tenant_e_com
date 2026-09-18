@@ -5,6 +5,7 @@ import {
     type BranchInventorySnapshot,
     type BranchPriceSnapshot,
     type BranchProductVariantRow,
+    type PriceHistoryRow,
 } from '@/components/branch/product-inventory-panel';
 import Heading from '@/components/heading';
 import { StockPairFields } from '@/components/stock/stock-pair-fields';
@@ -44,6 +45,7 @@ export type StockManageProduct = {
     price: BranchPriceSnapshot | null;
     variant_inventories: Record<string, BranchInventorySnapshot>;
     variant_prices: Record<string, BranchPriceSnapshot>;
+    price_history?: PriceHistoryRow[];
 };
 
 export function ManageStockPage({
@@ -201,6 +203,7 @@ export function ManageStockPage({
                             inventoryUrl={inventoryUrl}
                             priceUrl={priceUrl}
                             transactionsUrl={transactionsUrl}
+                            priceHistory={product.price_history ?? []}
                         />
                     </>
                 ) : null}

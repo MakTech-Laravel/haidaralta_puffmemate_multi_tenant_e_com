@@ -1,12 +1,15 @@
 <?php
 
+use App\Enums\DiscountType;
 use App\Models\Branch;
+use App\Models\BranchProductPrice;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\Inventory\BranchPricingService;
 use App\Support\BranchProductPriceDisplay;
+use App\Support\Storefront\StorefrontCatalog;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -114,4 +117,51 @@ test('branch product price display uses a single price label when only one activ
         ->and($display['amount'])->toBe(18.5)
         ->and($display['label'])->toBe('$18.50')
         ->and($display['count'])->toBe(1);
+});
+
+test('expired product discounts are not applied to the effective price', function () {
+    $this->travelTo('2026-10-15');
+
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $product = Product::factory()->create();
+    $price = BranchProductPrice::factory()->create([
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'variant_id' => null,
+        'selling_price' => 20,
+        'regular_price' => 25,
+        'discount_type' => DiscountType::Percent,
+        'discount_price' => 50,
+        'start_date' => '2026-09-01',
+        'end_date' => '2026-09-30',
+        'status' => true,
+    ]);
+
+    $display = BranchProductPriceDisplay::listDisplay($price);
+
+    expect($display['has_discount'])->toBeFalse()
+        ->and($display['has_compare_at'])->toBeTrue()
+        ->and($display['effective_price'])->toBe('20.00')
+        ->and($display['regular_price'])->toBe('25.00');
+});
+
+test('storefront compare-at uses selling when a live discount is on', function () {
+    $this->travelTo('2026-09-15');
+
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $product = Product::factory()->create();
+
+    app(BranchPricingService::class)->upsert($branch, $product, [
+        'selling_price' => '20.00',
+        'regular_price' => '30.00',
+        'discount_type' => 'percent',
+        'discount_price' => 25,
+        'start_date' => '2026-09-01',
+        'end_date' => '2026-09-30',
+    ]);
+
+    $detail = StorefrontCatalog::productDetail($product->slug, $branch);
+
+    expect($detail['price'])->toBe('$15.00')
+        ->and($detail['compareAtPrice'])->toBe('$20.00');
 });

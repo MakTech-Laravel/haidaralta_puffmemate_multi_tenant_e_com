@@ -144,6 +144,7 @@ test('branch stock transactions only list this branch ledger', function () {
     $this->actingAs($this->staff, 'branch')
         ->post(route('branch.products.inventory', [$this->branch, $this->product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 4,
         ])
         ->assertRedirect();
@@ -151,6 +152,7 @@ test('branch stock transactions only list this branch ledger', function () {
     $this->actingAs($melbourneStaff, 'branch')
         ->post(route('branch.products.inventory', [$melbourne, $this->product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 9,
         ])
         ->assertRedirect();

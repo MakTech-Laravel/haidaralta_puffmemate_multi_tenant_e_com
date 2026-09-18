@@ -228,6 +228,8 @@ export function ProductForm({
         ...(returnTo ? { return_to: returnTo } : {}),
         ...(branchOpsFields
             ? {
+                  buying_price: '',
+                  regular_price: '',
                   selling_price: '',
                   quantity: 0,
               }
@@ -378,10 +380,14 @@ export function ProductForm({
                 brand,
                 specifications,
                 selling_price,
+                buying_price,
+                regular_price,
                 quantity,
                 ...rest
             } = form as typeof form & {
                 selling_price?: string;
+                buying_price?: string;
+                regular_price?: string;
                 quantity?: number;
             };
 
@@ -407,6 +413,13 @@ export function ProductForm({
                           ...(selling_price !== undefined &&
                           selling_price !== ''
                               ? { selling_price }
+                              : {}),
+                          ...(buying_price !== undefined && buying_price !== ''
+                              ? { buying_price }
+                              : {}),
+                          ...(regular_price !== undefined &&
+                          regular_price !== ''
+                              ? { regular_price }
                               : {}),
                           quantity: quantity ?? 0,
                       }
@@ -752,6 +765,62 @@ export function ProductForm({
 
                         {branchOpsFields ? (
                             <div className="grid gap-5 sm:grid-cols-2">
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="buying_price">
+                                        Buying price
+                                    </Label>
+                                    <Input
+                                        id="buying_price"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={
+                                            (
+                                                data as typeof data & {
+                                                    buying_price?: string;
+                                                }
+                                            ).buying_price ?? ''
+                                        }
+                                        onChange={(event) =>
+                                            setData(
+                                                'buying_price' as never,
+                                                event.target.value as never,
+                                            )
+                                        }
+                                        placeholder="Optional"
+                                    />
+                                    <InputError
+                                        message={errors.buying_price}
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="regular_price">
+                                        Regular price
+                                    </Label>
+                                    <Input
+                                        id="regular_price"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={
+                                            (
+                                                data as typeof data & {
+                                                    regular_price?: string;
+                                                }
+                                            ).regular_price ?? ''
+                                        }
+                                        onChange={(event) =>
+                                            setData(
+                                                'regular_price' as never,
+                                                event.target.value as never,
+                                            )
+                                        }
+                                        placeholder="Optional compare-at"
+                                    />
+                                    <InputError
+                                        message={errors.regular_price}
+                                    />
+                                </div>
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="selling_price">
                                         Selling price

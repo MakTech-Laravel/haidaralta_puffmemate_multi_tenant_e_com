@@ -35,6 +35,7 @@ type TransactionRow = {
     type_label: string;
     reason_label: string | null;
     quantity: number;
+    unit_cost: string | null;
     before_quantity: number;
     after_quantity: number;
     created_by_name: string | null;
@@ -236,6 +237,24 @@ export function StockTransactionsPage({
                     >
                         {row.original.quantity}
                     </Badge>
+                ),
+            },
+            {
+                accessorKey: 'unit_cost',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Buying"
+                        sortable
+                        sortKey="unit_cost"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {row.original.unit_cost ?? '—'}
+                    </span>
                 ),
             },
             {

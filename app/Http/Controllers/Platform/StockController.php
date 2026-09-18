@@ -87,8 +87,9 @@ class StockController extends Controller
         $branches = StockPageContext::requireBranches($request->validated('branch_ids'));
         $products = StockPageContext::requireProducts($request->validated('product_ids'));
         $quantity = (int) $request->validated('quantity');
+        $unitCost = $request->validated('buying_price') ?? null;
 
-        DB::transaction(function () use ($branches, $products, $quantity, $request): void {
+        DB::transaction(function () use ($branches, $products, $quantity, $request, $unitCost): void {
             foreach ($branches as $branch) {
                 foreach ($products as $product) {
                     $inventory = $this->inventory->firstOrCreate($branch, $product);
@@ -97,6 +98,7 @@ class StockController extends Controller
                         InventoryTransactionType::StockIn,
                         $quantity,
                         $request->user('platform'),
+                        unitCost: $unitCost,
                     );
                 }
             }

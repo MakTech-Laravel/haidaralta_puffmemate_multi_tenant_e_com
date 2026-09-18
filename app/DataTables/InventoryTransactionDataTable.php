@@ -71,6 +71,7 @@ class InventoryTransactionDataTable extends AbstractDataTable
         return [
             'type',
             'quantity',
+            'unit_cost',
             'created_at',
             'before_quantity',
             'after_quantity',
@@ -197,6 +198,9 @@ class InventoryTransactionDataTable extends AbstractDataTable
             'reason_note' => $model->reason_note,
             'reason_label' => $model->reasonLabel(),
             'quantity' => $model->quantity,
+            'unit_cost' => $model->unit_cost === null
+                ? null
+                : number_format((float) $model->unit_cost, 2, '.', ''),
             'before_quantity' => $model->before_quantity,
             'after_quantity' => $model->after_quantity,
             'created_by_name' => $model->creator?->name,

@@ -44,7 +44,7 @@ Category listing-preview FileUpload card is max-w centered (mx-auto) with square
 Category listing preview: do not shrink FileUpload into a nested max-w card. Keep full-width transparent shell; center the image via cardImage object-contain (mx-auto max-h). FileUpload supports classNames.cardImage.
 
 ## Branch ProductForm ops fields keep gallery
-Branch create/edit use ProductForm with gallery enabled (same as platform). branchOpsFields adds selling_price/quantity on create only. createFromBranch / update persist gallery via ProductService.
+Branch create/edit use ProductForm with gallery enabled (same as platform). branchOpsFields adds buying_price, regular_price, selling_price, and quantity on create only. createFromBranch / update persist gallery via ProductService.
 
 ## Catalog forms suggestions + slug Precognition
 CategoryForm and ProductForm: enableSuggestions with portal-specific suggestionsUrl; slug uniqueness via Precognition on name/slug blur. Routes need precognitive middleware.
@@ -59,4 +59,4 @@ CategoryProfile is a single listing card: compact ProductGallery layout=tile (sq
 CategoryProfile Image background is a fact in the listing grid, not a full-width bar. Transparent is text only (no empty swatch). Solid/gradient show a size-5 swatch beside the summary.
 
 ## Branch ops fields omit minimum_stock
-branchOpsFields is selling_price + quantity only on branch create. Do not include minimum_stock.
+branchOpsFields is buying_price + regular_price + selling_price + quantity on branch create. Do not include minimum_stock.

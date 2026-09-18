@@ -94,6 +94,7 @@ export function ImportStockPage({
         branch_ids: context.branch ? [context.branch.id] : ([] as number[]),
         product_ids: context.product ? [context.product.id] : ([] as number[]),
         quantity: '1',
+        buying_price: '',
     });
     const quantityEmpty = form.data.quantity.trim() === '';
     const quantityValue = parseQuantity(form.data.quantity);
@@ -158,6 +159,10 @@ export function ImportStockPage({
                                         data.quantity.trim() === ''
                                             ? ''
                                             : parseQuantity(data.quantity),
+                                    buying_price:
+                                        data.buying_price.trim() === ''
+                                            ? null
+                                            : data.buying_price,
                                 }));
                                 form.post(storeUrl, { preserveScroll: true });
                             }}
@@ -318,6 +323,36 @@ export function ImportStockPage({
                                               : `${form.data.branch_ids.length} × ${form.data.product_ids.length} → ${pairCount} new ${pairCount === 1 ? 'entry' : 'entries'} of ${quantityValue}`}
                                     </p>
                                     <InputError message={form.errors.quantity} />
+                                </div>
+
+                                <div className="grid max-w-sm gap-2">
+                                    <Label htmlFor="buying_price">
+                                        Buying price{' '}
+                                        <span className="text-muted-foreground font-normal">
+                                            (AUD, optional)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="buying_price"
+                                        type="number"
+                                        step="0.01"
+                                        min={0}
+                                        placeholder="Applied to every selected pair"
+                                        value={form.data.buying_price}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'buying_price',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <p className="text-muted-foreground text-xs">
+                                        Same unit cost on each New entry. Leave
+                                        blank to skip.
+                                    </p>
+                                    <InputError
+                                        message={form.errors.buying_price}
+                                    />
                                 </div>
 
                                 <div>

@@ -157,7 +157,25 @@ test('import stock adds the same quantity to every branch and product pair', fun
         'type' => 'stock_in',
         'quantity' => 3,
         'reason' => null,
+        'unit_cost' => null,
     ]);
+});
+
+test('import stock writes an optional buying price onto each new entry', function () {
+    config(['catalog.show_bulk_import' => true]);
+
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.import.store'), [
+            'branch_ids' => [$this->branch->id, $melbourne->id],
+            'product_ids' => [$this->product->id],
+            'quantity' => 2,
+            'buying_price' => 6.4,
+        ])
+        ->assertRedirect();
+
+    expect(InventoryTransaction::query()->where('unit_cost', '6.40')->count())->toBe(2);
 });
 
 test('import stock rejects an empty product list', function () {
@@ -191,6 +209,7 @@ test('stock transactions ledger filters by the selected product', function () {
         $this->actingAs($this->admin, 'platform')
             ->post(route('platform.branches.products.inventory', [$this->branch, $product]), [
                 'type' => 'stock_in',
+                'buying_price' => 10,
                 'quantity' => 2,
             ])
             ->assertRedirect();
@@ -229,6 +248,7 @@ test('stock transactions ledger lists product and branch combinations and filter
     $this->actingAs($this->admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$this->branch, $this->product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 2,
         ])
         ->assertRedirect();
@@ -236,6 +256,7 @@ test('stock transactions ledger lists product and branch combinations and filter
     $this->actingAs($this->admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$melbourne, $other]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 5,
         ])
         ->assertRedirect();
@@ -273,6 +294,7 @@ test('stock transactions include the adjustment reason label and signed variance
     $this->actingAs($this->admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$this->branch, $this->product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 10,
         ])
         ->assertRedirect();

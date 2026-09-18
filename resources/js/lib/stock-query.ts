@@ -10,7 +10,9 @@ export type StockOption = {
 export type StockPrice = {
     selling_price: string | null;
     effective_price: string | null;
+    regular_price?: string | null;
     has_discount: boolean;
+    has_compare_at?: boolean;
     discount_type: string;
     discount_price: string | null;
     start_date?: string | null;
