@@ -169,6 +169,20 @@ test('platform can set percent discount and clear discount with none', function 
             ->where('product.price.end_date', null));
 });
 
+test('platform rejects a fixed discount greater than selling price', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.prices', [$branch, $product]), [
+            'selling_price' => 19.99,
+            'discount_type' => 'fixed',
+            'discount_price' => 20,
+        ])
+        ->assertInvalid(['discount_price']);
+});
+
 test('manage page hydrates a price without an offer as none', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();

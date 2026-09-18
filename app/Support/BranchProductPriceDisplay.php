@@ -175,7 +175,10 @@ class BranchProductPriceDisplay
         }
 
         return match ($price->discount_type) {
-            DiscountType::Fixed => max(0, (float) $price->discount_price),
+            DiscountType::Fixed => max(
+                0,
+                round($selling - (float) $price->discount_price, 2),
+            ),
             DiscountType::Percent => max(
                 0,
                 round($selling * (1 - ((float) $price->discount_price / 100)), 2),

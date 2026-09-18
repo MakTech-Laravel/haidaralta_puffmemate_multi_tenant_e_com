@@ -5,12 +5,13 @@ paths:
   - 'resources/js/pages/{platform,branch}/stock/manage.tsx'
   - app/Support/ProductManageRedirect.php
   - 'routes/{platform,branch}.php'
+  - app/Support/BranchProductPriceDisplay.php
 ---
 
 # Discounts
 
 ## Discounts live on Stock Manage
-There is no bulk Discounts workspace. Buying, regular, selling, and discount type/value/dates are edited on Stock Manage’s Inventory & pricing card (`ProductInventoryPanel`) for one branch + one SKU (including variants). Discount lives in a full-width bordered block below the Stock and Price sections, with a 3-button type row (not a select jammed into the price grid). Discounts apply only to selling_price. Honor start/end dates in effective price (null dates = always on; outside the window = selling). Hydrate saved fixed/percent offers so Save is not destructive. Empty SKUs and prices with `discount_type` none/missing select None and hide value + dates.
+There is no bulk Discounts workspace. Buying, regular, selling, and discount type/value/dates are edited on Stock Manage’s Inventory & pricing card (`ProductInventoryPanel`) for one branch + one SKU (including variants). Discount lives in a full-width bordered block below the Stock and Price sections, with a 3-button type row (None / Amount off / Percent). Discounts apply only to selling_price. `fixed` is amount off (`effective = selling − discount_value`), not a sale price. Honor start/end dates in effective price (null dates = always on; outside the window = selling). Hydrate saved fixed/percent offers so Save is not destructive. Empty SKUs and prices with `discount_type` none/missing select None and hide value + dates.
 
 ## Price history is append-only
 `branch_product_price_histories` is the operational trail (who, when, source, from/to). Spatie activity log remains generic. Skip no-op upserts. Do not put AuditsChanges on the history model. Coupons stay checkout-only (navSoon); do not add a Coupon model on the catalog SKU.
@@ -23,3 +24,6 @@ Old stock/price and /discounts URLs redirect here. Pair → `stock.manage` with 
 
 ## No stock/transactions redirect
 Do not keep a stock/transactions redirect. The ledger URL is reports/stock-transactions only (platform.reports.stock-transactions / branch.reports.stock-transactions).
+
+## Fixed discount is amount off
+`discount_type` fixed is amount off selling: effective = max(0, selling_price − discount_price). Do not treat discount_price as the sale price. Percent stays selling × (1 − % / 100). Storefront pay price is effective; strikethrough is selling while the offer is live.

@@ -227,7 +227,9 @@ function effectivePrice(price: BranchPriceSnapshot | null): string {
         );
     }
 
-    return formatMoney(Math.max(0, discount));
+    return formatMoney(
+        Math.max(0, Math.round((selling - discount) * 100) / 100),
+    );
 }
 
 const PRICE_HISTORY_LABELS: Record<string, string> = {
@@ -1123,7 +1125,9 @@ export function ProductInventoryPanel({
                                             priceForm.data.discount_type ===
                                             'percent'
                                                 ? 100
-                                                : undefined
+                                                : priceForm.data
+                                                      .selling_price ||
+                                                  undefined
                                         }
                                         placeholder={
                                             priceForm.data.discount_type ===
@@ -1143,7 +1147,7 @@ export function ProductInventoryPanel({
                                         {priceForm.data.discount_type ===
                                         'percent'
                                             ? 'Off the selling price (0–100).'
-                                            : 'Sale price, ≤ selling.'}
+                                            : 'Amount off selling, ≤ selling.'}
                                     </p>
                                     <InputError
                                         message={

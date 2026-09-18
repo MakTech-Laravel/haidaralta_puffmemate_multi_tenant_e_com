@@ -211,7 +211,7 @@ final class BranchProductShowPayload
     {
         return [
             ['value' => DiscountType::None->value, 'label' => 'None'],
-            ['value' => DiscountType::Fixed->value, 'label' => 'Fixed price'],
+            ['value' => DiscountType::Fixed->value, 'label' => 'Amount off'],
             ['value' => DiscountType::Percent->value, 'label' => 'Percent'],
         ];
     }

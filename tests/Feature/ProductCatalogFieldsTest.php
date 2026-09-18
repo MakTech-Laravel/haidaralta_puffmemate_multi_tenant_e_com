@@ -165,3 +165,47 @@ test('storefront compare-at uses selling when a live discount is on', function (
     expect($detail['price'])->toBe('$15.00')
         ->and($detail['compareAtPrice'])->toBe('$20.00');
 });
+
+test('fixed discount subtracts the value from selling price', function () {
+    $this->travelTo('2026-09-15');
+
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $product = Product::factory()->create();
+    $price = BranchProductPrice::factory()->create([
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'variant_id' => null,
+        'selling_price' => 19.99,
+        'regular_price' => 22.99,
+        'discount_type' => DiscountType::Fixed,
+        'discount_price' => 2,
+        'start_date' => null,
+        'end_date' => null,
+        'status' => true,
+    ]);
+
+    $display = BranchProductPriceDisplay::listDisplay($price);
+
+    expect($display['has_discount'])->toBeTrue()
+        ->and($display['effective_price'])->toBe('17.99')
+        ->and($display['selling_price'])->toBe('19.99');
+});
+
+test('storefront compare-at uses selling when a live fixed discount is on', function () {
+    $this->travelTo('2026-09-15');
+
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $product = Product::factory()->create();
+
+    app(BranchPricingService::class)->upsert($branch, $product, [
+        'selling_price' => '19.99',
+        'regular_price' => '22.99',
+        'discount_type' => 'fixed',
+        'discount_price' => 2,
+    ]);
+
+    $detail = StorefrontCatalog::productDetail($product->slug, $branch);
+
+    expect($detail['price'])->toBe('$17.99')
+        ->and($detail['compareAtPrice'])->toBe('$19.99');
+});
