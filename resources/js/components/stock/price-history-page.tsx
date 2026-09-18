@@ -11,6 +11,7 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import { ExportDropdown } from '@/components/export/export-dropdown';
+import Heading from '@/components/heading';
 import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
 import { Badge } from '@/components/ui/badge';
 import { DatePicker } from '@/components/ui/date-picker';
