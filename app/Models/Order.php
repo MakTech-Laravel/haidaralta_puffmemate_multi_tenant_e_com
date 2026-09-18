@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\DataTableConfigurable;
 use App\Enums\OrderStatus;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $driver_id
  * @property OrderStatus $status
  */
-class Order extends Model
+class Order extends Model implements DataTableConfigurable
 {
     /** @use HasFactory<OrderFactory> */
     use AuditsChanges, HasDataTableConfig, HasFactory;

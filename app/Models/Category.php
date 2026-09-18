@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Contracts\DataTableConfigurable;
+use App\Contracts\ScoutSearchable;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
 use App\Support\CatalogBackgroundColor;
@@ -33,7 +35,7 @@ use Laravel\Scout\Searchable;
  * @property-read Collection<int, Category> $children
  * @property-read Collection<int, Product> $products
  */
-class Category extends Model
+class Category extends Model implements DataTableConfigurable, ScoutSearchable
 {
     /** @use HasFactory<CategoryFactory> */
     use AuditsChanges, HasDataTableConfig, HasFactory, Searchable, SoftDeletes;

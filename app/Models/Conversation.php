@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\ScoutSearchable;
 use App\Enums\ConversationStatus;
 use App\Models\Concerns\AuditsChanges;
 use App\Support\SearchableTimestamp;
@@ -27,7 +28,7 @@ use Laravel\Scout\Searchable;
  * @property-read Branch|null $branch
  * @property-read Collection<int, ConversationParticipant> $participants
  */
-class Conversation extends Model
+class Conversation extends Model implements ScoutSearchable
 {
     /** @use HasFactory<ConversationFactory> */
     use AuditsChanges, HasFactory, Searchable;

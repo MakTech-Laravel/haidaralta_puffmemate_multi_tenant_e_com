@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Contracts\DataTableConfigurable;
+use App\Contracts\ScoutSearchable;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
 use App\Support\SearchableTimestamp;
@@ -34,7 +36,7 @@ use Laravel\Scout\Searchable;
  * @property-read Collection<int, DriverRoster> $driverRosters
  * @property-read Collection<int, Conversation> $conversations
  */
-class Branch extends Model
+class Branch extends Model implements DataTableConfigurable, ScoutSearchable
 {
     /** @use HasFactory<BranchFactory> */
     use AuditsChanges, HasDataTableConfig, HasFactory, Searchable;

@@ -220,12 +220,9 @@ abstract class AbstractDataTable
             return;
         }
 
-        $keys = $modelClass::search($term)->take(500)->keys();
-        $keys = $keys instanceof Collection ? $keys->all() : (array) $keys;
-
         $ids = [];
 
-        foreach ($keys as $key) {
+        foreach ($modelClass::search($term)->take(500)->keys() as $key) {
             $id = (int) $key;
 
             if ($id !== 0) {
