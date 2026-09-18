@@ -1,9 +1,11 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { CircleDollarSign, Package, Settings2 } from 'lucide-react';
+import { CircleDollarSign, Eye, Package } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
+import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
@@ -202,29 +204,43 @@ export default function PlatformBranchProductsIndex({
                 header: 'Actions',
                 cell: ({ row }) => (
                     <DataTableRowActions
-                        items={[
+                        contentClassName="w-56"
+                        groups={[
                             {
-                                label: 'Manage stock',
-                                icon: Settings2,
-                                href: stockPageUrl(
-                                    StockController.manage.url(),
+                                label: 'Catalog',
+                                items: [
+                                    {
+                                        label: 'View',
+                                        icon: Eye,
+                                        href: ProductController.show.url(
+                                            row.original.slug,
+                                        ),
+                                    },
+                                ],
+                            },
+                            {
+                                label: 'Stock',
+                                items: stockActionItems(
+                                    {
+                                        manage: stockPageUrl(
+                                            StockController.manage.url(),
+                                            {
+                                                productId: row.original.id,
+                                                branchId: branch.id,
+                                                locked: 'both',
+                                            },
+                                        ),
+                                        transactions:
+                                            StockTransactionController.index.url(),
+                                        priceHistory:
+                                            PriceHistoryController.index.url(),
+                                    },
                                     {
                                         productId: row.original.id,
                                         branchId: branch.id,
-                                        locked: 'both',
                                     },
                                 ),
                             },
-                            ...stockActionItems(
-                                {
-                                    transactions:
-                                        StockTransactionController.index.url(),
-                                },
-                                {
-                                    productId: row.original.id,
-                                    branchId: branch.id,
-                                },
-                            ),
                         ]}
                     />
                 ),

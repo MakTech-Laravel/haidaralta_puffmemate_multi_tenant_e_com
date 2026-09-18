@@ -1,9 +1,10 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Settings2 } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Branch/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Branch/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
@@ -198,20 +199,6 @@ export default function BranchProductsIndex({
                                         }),
                                     },
                                     {
-                                        label: 'Manage stock',
-                                        icon: Settings2,
-                                        href: stockPageUrl(
-                                            StockController.manage.url(
-                                                branch.slug,
-                                            ),
-                                            {
-                                                productId: row.original.id,
-                                                branchId: branch.id,
-                                                locked: 'both',
-                                            },
-                                        ),
-                                    },
-                                    {
                                         label: 'Edit',
                                         href: ProductController.edit.url({
                                             branch: branch.slug,
@@ -224,13 +211,28 @@ export default function BranchProductsIndex({
                                 label: 'Stock',
                                 items: stockActionItems(
                                     {
+                                        manage: stockPageUrl(
+                                            StockController.manage.url(
+                                                branch.slug,
+                                            ),
+                                            {
+                                                productId: row.original.id,
+                                                branchId: branch.id,
+                                                locked: 'both',
+                                            },
+                                        ),
                                         transactions:
                                             StockTransactionController.index.url(
+                                                branch.slug,
+                                            ),
+                                        priceHistory:
+                                            PriceHistoryController.index.url(
                                                 branch.slug,
                                             ),
                                     },
                                     {
                                         productId: row.original.id,
+                                        branchId: branch.id,
                                     },
                                 ),
                             },

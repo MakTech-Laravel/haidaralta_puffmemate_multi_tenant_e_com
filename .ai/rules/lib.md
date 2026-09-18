@@ -20,8 +20,5 @@ normalizeCatalogColorPickerValue and catalogFormColorPickerValue map empty/inval
 ## Catalog transparent inherits parent surface
 Catalog create/edit default color_code is transparent. Listing/gallery tiles and ColorPicker previews inherit the page or card color when transparent. COLOR_PICKER_CHECKERBOARD stays only on the hex swatch editor, not on catalog tiles.
 
-## Row stock actions are transactions only
-stockActionItems is Stock transactions only. Daily stock, selling price, and discounts stay on **Manage stock**. Catalog **Manage stock** with a known pair opens that page locked. Do not add Add stock, Update price, or Add discount row actions.
-
-## Row stock actions stay transactions only
-stockActionItems is Stock transactions only. Do not add Price history, Add stock, Update price, or Add discount to list-row menus. Price history is a show-header and Manage stock button plus the Reports sidebar item.
+## Row stock actions are Manage stock plus reports
+stockActionItems is the Stock group: optional Manage stock, then Stock transactions and Price history. Daily stock, selling price, and discounts stay on **Manage stock**. Catalog **Manage stock** with a known pair opens that page locked. Do not add Add stock, Update price, or Add discount row actions. List menus use labeled groups, never a flat ungrouped `items` list on branch product rows.

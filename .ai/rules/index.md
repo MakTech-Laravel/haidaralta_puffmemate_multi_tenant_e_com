@@ -9,6 +9,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/branch-form.tsx, resources/js/components/admin/driver-form.tsx, resources/js/components/admin/duty-days-picker.tsx, resources/js/components/admin/driver-roster-fields.tsx | .ai/rules/admin.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php | .ai/rules/backup.md |
 | app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php, app/Models/Driver*.php, app/Models/User.php | .ai/rules/branch.md |
+| resources/js/pages/platform/branches/index.tsx | .ai/rules/branches.md |
 | app/{Models,Services/Inventory,Services/Catalog,DataTables,Support}/** | .ai/rules/catalog-data-tables-support.md |
 | resources/js/pages/**/catalog/products/index.tsx, resources/js/pages/**/catalog/products/{index,show}.tsx | .ai/rules/catalog-products.md |
 | resources/js/pages/**/catalog/categories/index.tsx | .ai/rules/categories.md |
@@ -44,6 +45,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | app/Http/Controllers/{Platform,Branch}/**, app/Http/Controllers/{Platform,Branch}/*Driver*.php | .ai/rules/platform-branch.md |
+| resources/js/lib/stock-query.ts, resources/js/pages/**/products/index.tsx, resources/js/pages/platform/catalog/products/branches.tsx | .ai/rules/platform-catalog-products.md |
 | resources/js/components/platform/product-form.tsx, resources/js/components/platform/category-form.tsx, resources/js/components/platform/{category,product}-form.tsx, resources/js/components/platform/category-profile.tsx | .ai/rules/platform.md |
 | resources/js/components/{platform,admin}/*-form.tsx | .ai/rules/platformadmin.md |
 | resources/js/pages/{platform,branch}/catalog/products/show.tsx | .ai/rules/platformbranch-catalog-products.md |

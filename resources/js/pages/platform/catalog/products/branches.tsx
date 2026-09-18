@@ -1,9 +1,10 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Building2, CircleDollarSign, Settings2 } from 'lucide-react';
+import { Building2, CircleDollarSign } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import {
     DataTable,
@@ -195,21 +196,14 @@ export default function PlatformProductBranches({
                         contentClassName="w-56"
                         groups={[
                             {
-                                label: 'Catalog',
-                                items: [
-                                    {
-                                        label: 'Manage stock',
-                                        icon: Settings2,
-                                        href: row.original.manage_url,
-                                    },
-                                ],
-                            },
-                            {
                                 label: 'Stock',
                                 items: stockActionItems(
                                     {
+                                        manage: row.original.manage_url,
                                         transactions:
                                             StockTransactionController.index.url(),
+                                        priceHistory:
+                                            PriceHistoryController.index.url(),
                                     },
                                     {
                                         productId: product.id,

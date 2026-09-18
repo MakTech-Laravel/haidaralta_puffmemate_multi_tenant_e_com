@@ -6,6 +6,9 @@ import BranchController from '@/actions/App/Http/Controllers/Platform/BranchCont
 import BranchDriverController from '@/actions/App/Http/Controllers/Platform/BranchDriverController';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/PriceHistoryController';
+import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
+import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import {
     DataTable,
@@ -28,6 +31,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { usePermission } from '@/hooks/use-permissions';
+import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type BranchRow = {
     id: number;
@@ -159,29 +163,34 @@ export default function PlatformBranchesIndex({
                 header: 'Actions',
                 cell: ({ row }) => {
                     const branch = row.original;
-                    const items = [
+                    const canInventories = can('manage-branch-inventories');
+
+                    const branchItems = [
                         {
                             label: 'View',
                             icon: Eye,
                             href: BranchController.show.url(branch.slug),
                         },
+                        ...(can('edit-branches')
+                            ? [
+                                  {
+                                      label: 'Edit',
+                                      icon: Pencil,
+                                      href: BranchController.edit.url(
+                                          branch.slug,
+                                      ),
+                                  },
+                              ]
+                            : []),
+                    ];
+
+                    const peopleItems = [
                         ...(can('manage-branch-users')
                             ? [
                                   {
                                       label: 'Staff',
                                       icon: Users,
                                       href: BranchScopedStaffController.index.url(
-                                          branch.slug,
-                                      ),
-                                  },
-                              ]
-                            : []),
-                        ...(can('manage-branch-inventories')
-                            ? [
-                                  {
-                                      label: 'Products',
-                                      icon: Package,
-                                      href: BranchInventoryController.index.url(
                                           branch.slug,
                                       ),
                                   },
@@ -198,32 +207,59 @@ export default function PlatformBranchesIndex({
                                   },
                               ]
                             : []),
-                        ...(can('edit-branches')
-                            ? [
-                                  {
-                                      label: 'Edit',
-                                      icon: Pencil,
-                                      href: BranchController.edit.url(
-                                          branch.slug,
-                                      ),
-                                  },
-                              ]
-                            : []),
-                        ...(can('delete-branches')
-                            ? [
-                                  {
-                                      label: 'Delete',
-                                      icon: Trash2,
-                                      destructive: true,
-                                      separatorBefore: true,
-                                      onSelect: () =>
-                                          setDeletingSlug(branch.slug),
-                                  },
-                              ]
-                            : []),
                     ];
 
-                    return <DataTableRowActions items={items} />;
+                    const stockItems = canInventories
+                        ? [
+                              {
+                                  label: 'Products',
+                                  icon: Package,
+                                  href: BranchInventoryController.index.url(
+                                      branch.slug,
+                                  ),
+                              },
+                              ...stockActionItems(
+                                  {
+                                      manage: stockPageUrl(
+                                          StockController.manage.url(),
+                                          {
+                                              branchId: branch.id,
+                                              locked: 'branch',
+                                          },
+                                      ),
+                                      transactions:
+                                          StockTransactionController.index.url(),
+                                      priceHistory:
+                                          PriceHistoryController.index.url(),
+                                  },
+                                  { branchId: branch.id },
+                              ),
+                          ]
+                        : [];
+
+                    const dangerItems = can('delete-branches')
+                        ? [
+                              {
+                                  label: 'Delete',
+                                  icon: Trash2,
+                                  destructive: true,
+                                  onSelect: () =>
+                                      setDeletingSlug(branch.slug),
+                              },
+                          ]
+                        : [];
+
+                    return (
+                        <DataTableRowActions
+                            contentClassName="w-56"
+                            groups={[
+                                { label: 'Branch', items: branchItems },
+                                { label: 'People', items: peopleItems },
+                                { label: 'Stock', items: stockItems },
+                                { label: 'Danger zone', items: dangerItems },
+                            ]}
+                        />
+                    );
                 },
             },
         ],

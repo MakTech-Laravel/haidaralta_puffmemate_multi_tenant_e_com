@@ -340,22 +340,15 @@ export default function PlatformProductsShow({
                         contentClassName="w-56"
                         groups={[
                             {
-                                label: 'Catalog',
-                                items: [
-                                    {
-                                        label: 'Manage stock',
-                                        icon: Settings2,
-                                        href: row.original.manage_url,
-                                    },
-                                ],
-                            },
-                            {
                                 label: 'Stock',
                                 items: canManageBranches
                                     ? stockActionItems(
                                           {
+                                              manage: row.original.manage_url,
                                               transactions:
                                                   StockTransactionController.index.url(),
+                                              priceHistory:
+                                                  PriceHistoryController.index.url(),
                                           },
                                           {
                                               productId: product.id,
