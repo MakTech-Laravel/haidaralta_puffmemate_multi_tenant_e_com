@@ -15,3 +15,6 @@ Ledger rows expose reason / reason_label (em dash when null). Adjustment Qty may
 
 ## Ledger reason_label uses Other note
 reason_label uses InventoryTransaction::reasonLabel() (typed note when Other). Payload includes reason_note. in/out rows stay null.
+
+## BranchMap builds view-on-map URLs
+BranchMap::links builds google, open_street_map, and OSM embed URLs from latitude/longitude. Platform branch show passes branch.map (null when no pin). View-on-map uses those URLs in BranchLocationMapDialog. Do not inline a live map on show.

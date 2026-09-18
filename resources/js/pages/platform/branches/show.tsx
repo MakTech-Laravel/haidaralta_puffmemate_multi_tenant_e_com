@@ -10,11 +10,12 @@ import {
     Plus,
     Users,
 } from 'lucide-react';
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
 import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
+import { BranchLocationMapDialog } from '@/components/admin/branch-location-map-dialog';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -80,6 +81,11 @@ type Branch = {
     opening_time: string | null;
     closing_time: string | null;
     needs_super_admin: boolean;
+    map: {
+        google: string;
+        open_street_map: string;
+        embed: string;
+    } | null;
 };
 
 function initials(name: string): string {
@@ -138,13 +144,14 @@ export default function PlatformBranchesShow({
     const { can } = usePermission();
     const latitude = formatCoord(branch.latitude);
     const longitude = formatCoord(branch.longitude);
-    const hasPin = latitude !== null && longitude !== null;
+    const hasPin = branch.map !== null && latitude !== null && longitude !== null;
     const hours =
         branch.opening_time || branch.closing_time
             ? `${branch.opening_time ?? '—'} – ${branch.closing_time ?? '—'}`
             : null;
     const roles = tablePayload.filterOptions?.roles ?? [];
     const canManageStaff = can('manage-branch-users');
+    const [mapOpen, setMapOpen] = useState(false);
 
     const query = useDataTableQuery({
         indexUrl: BranchController.show.url(branch.slug),
@@ -413,24 +420,49 @@ export default function PlatformBranchesShow({
                         value={hours ?? 'Not set'}
                         hint="Opening hours"
                     />
-                    <StatCard
-                        icon={MapPin}
-                        label="Location"
-                        value={hasPin ? 'Pin set' : 'No pin'}
-                        hint={
-                            hasPin
-                                ? `${latitude}, ${longitude}`
-                                : 'Add coordinates from Edit'
-                        }
-                    />
+                    {hasPin ? (
+                        <button
+                            type="button"
+                            className="w-full cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            onClick={() => setMapOpen(true)}
+                        >
+                            <StatCard
+                                icon={MapPin}
+                                label="Location"
+                                value="Pin set"
+                                hint="View on map"
+                            />
+                        </button>
+                    ) : (
+                        <StatCard
+                            icon={MapPin}
+                            label="Location"
+                            value="No pin"
+                            hint="Add coordinates from Edit"
+                        />
+                    )}
                 </div>
 
                 <Card className="shadow-sm">
-                    <CardHeader className="pb-3">
-                        <CardTitle>Details</CardTitle>
-                        <CardDescription>
-                            Contact, hours, and coordinates for this location
-                        </CardDescription>
+                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 pb-3">
+                        <div className="space-y-1.5">
+                            <CardTitle>Details</CardTitle>
+                            <CardDescription>
+                                Contact, hours, and coordinates for this
+                                location
+                            </CardDescription>
+                        </div>
+                        {hasPin ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setMapOpen(true)}
+                            >
+                                <MapPin className="size-4" />
+                                View on map
+                            </Button>
+                        ) : null}
                     </CardHeader>
                     <CardContent>
                         <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -590,6 +622,18 @@ export default function PlatformBranchesShow({
                     }
                 />
             </div>
+
+            {hasPin && branch.map ? (
+                <BranchLocationMapDialog
+                    open={mapOpen}
+                    onOpenChange={setMapOpen}
+                    links={branch.map}
+                    latitude={latitude}
+                    longitude={longitude}
+                    name={branch.name}
+                    address={branch.address}
+                />
+            ) : null}
         </>
     );
 }

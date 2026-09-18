@@ -4,6 +4,7 @@ paths:
   - resources/js/components/admin/driver-form.tsx
   - resources/js/components/admin/duty-days-picker.tsx
   - resources/js/components/admin/driver-roster-fields.tsx
+  - resources/js/components/admin/branch-location-map-dialog.tsx
 ---
 
 # Admin
@@ -19,3 +20,6 @@ Duty shifts show whenever rosterStatuses is passed (nested create/edit lock the 
 
 ## DriverForm avatar caption and status cards
 Driver avatar uses FileUpload variant=avatar with showCaption={false} (no Photo/hint column). Profile & vehicle: license full width, then vehicle type | availability, then Active/Inactive card radios — those three rows sit beside and stretch to the vehicle image.
+
+## View-only branch map dialog uses OSM embed
+BranchLocationMapDialog is view-only. Preview uses an OpenStreetMap embed until Mapbox/Google is wired. Keep picking on BranchLocationPicker (create/edit). Do not put a live map inline on branch show or the branch form.

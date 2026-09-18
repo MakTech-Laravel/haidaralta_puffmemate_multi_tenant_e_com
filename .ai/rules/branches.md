@@ -14,3 +14,6 @@ People row actions Staff and Drivers go to the global lists with Spatie filter[b
 
 ## Platform branch show is compact plus staff DataTable
 Platform branch show is a compact profile (identity, fact grid, StatCards) plus BranchStaffDataTable::forBranch. Do not restore the dashed map placeholder or an unpaginated super_admins list. Staff search/role/status/pagination uses Spatie filter[]/sort/per_page/page on the show URL. needs_super_admin still comes from hasSuperAdmin(). No inline live map — coords are facts; Mapbox/Google stays in the Edit dialog.
+
+## Branch show View on map opens a dialog
+When a branch has coordinates, show View on map (details header and the Location tile). It opens BranchLocationMapDialog: OpenStreetMap embed in the dialog, plus Google Maps / OpenStreetMap links. Do not restore an inline dashed map placeholder. Hide the action when there is no pin.

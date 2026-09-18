@@ -11,6 +11,7 @@ use App\Http\Requests\Platform\StoreBranchSuperAdminRequest;
 use App\Http\Requests\Platform\UpdateBranchRequest;
 use App\Models\Branch;
 use App\Services\Branch\BranchService;
+use App\Support\BranchMap;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -111,6 +112,7 @@ class BranchController extends Controller
         return Inertia::render('platform/branches/show', [
             'branch' => [
                 ...$this->mapBranchDetail($branch),
+                'map' => BranchMap::links($branch->latitude, $branch->longitude),
                 'needs_super_admin' => ! $this->branches->hasSuperAdmin($branch),
             ],
             'table' => BranchStaffDataTable::forBranch($request, $branch),

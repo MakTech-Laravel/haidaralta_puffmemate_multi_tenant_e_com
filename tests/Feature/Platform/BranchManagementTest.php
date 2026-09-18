@@ -318,6 +318,43 @@ test('platform can filter branches by inactive status and still open inactive br
         );
 });
 
+test('platform branch show includes map links when the branch has a pin', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.show', $downtown))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/show')
+            ->where('branch.map.google', 'https://www.google.com/maps?q=-33.8708000,151.2073000')
+            ->where('branch.map.open_street_map', 'https://www.openstreetmap.org/?mlat=-33.8708000&mlon=151.2073000#map=16/-33.8708000/151.2073000')
+        );
+});
+
+test('platform branch show omits map links when the branch has no pin', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $branch = Branch::factory()->create([
+        'name' => 'No Pin Store',
+        'slug' => 'no-pin-store',
+        'code' => 'NPS-001',
+        'latitude' => null,
+        'longitude' => null,
+        'status' => true,
+    ]);
+
+    (new RolesAndPermissionsSeeder)->seedBranchRolesForBranch($branch);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.show', $branch))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/show')
+            ->where('branch.map', null)
+        );
+});
+
 test('platform branch show lists only that branch staff in a paginated table', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
