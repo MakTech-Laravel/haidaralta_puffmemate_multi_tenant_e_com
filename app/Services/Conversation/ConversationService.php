@@ -8,6 +8,7 @@ use App\Enums\MessageType;
 use App\Enums\OrderStatus;
 use App\Events\ConversationClosed;
 use App\Events\ConversationInboxUpdated;
+use App\Events\ConversationReceiptsUpdated;
 use App\Events\MessageCreated;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
@@ -156,26 +157,79 @@ class ConversationService
 
     /**
      * Move a participant's read marker forward. Never backwards.
+     *
+     * Reading implies delivery, so the delivered marker is dragged along.
      */
     public function markRead(Conversation $conversation, User $user, ?int $messageId = null): void
     {
+        $moved = $this->advanceMarkers($conversation, $user, $messageId, [
+            'last_delivered_message_id',
+            'last_read_message_id',
+        ]);
+
+        if (! $moved) {
+            return;
+        }
+
+        ConversationUnreadCounts::forget($user->id);
+
+        broadcast(new ConversationReceiptsUpdated($conversation->refresh()));
+    }
+
+    /**
+     * Acknowledge that a message reached this participant's client.
+     *
+     * Fired from the thread channel and from the per-user inbox channel, so a
+     * recipient who is not looking at the thread still ticks as delivered.
+     */
+    public function markDelivered(Conversation $conversation, User $user, ?int $messageId = null): void
+    {
+        if (! $this->advanceMarkers($conversation, $user, $messageId, ['last_delivered_message_id'])) {
+            return;
+        }
+
+        broadcast(new ConversationReceiptsUpdated($conversation->refresh()));
+    }
+
+    /**
+     * @param  list<string>  $columns
+     * @return bool Whether any marker actually moved.
+     */
+    private function advanceMarkers(
+        Conversation $conversation,
+        User $user,
+        ?int $messageId,
+        array $columns,
+    ): bool {
         $participant = $conversation->participants()
             ->where('user_id', $user->id)
             ->first();
 
         if ($participant === null) {
-            return;
+            return false;
         }
 
         $messageId ??= (int) $conversation->messages()->max('id');
 
-        if ($messageId <= 0 || $messageId <= (int) $participant->last_read_message_id) {
-            return;
+        if ($messageId <= 0) {
+            return false;
         }
 
-        $participant->forceFill(['last_read_message_id' => $messageId])->save();
+        $updates = [];
 
-        ConversationUnreadCounts::forget($user->id);
+        foreach ($columns as $column) {
+            if ($messageId > (int) $participant->{$column}) {
+                $updates[$column] = $messageId;
+            }
+        }
+
+        if ($updates === []) {
+            return false;
+        }
+
+        $participant->forceFill($updates)->save();
+
+        return true;
     }
 
     /**

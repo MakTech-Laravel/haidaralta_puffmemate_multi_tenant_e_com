@@ -160,6 +160,52 @@ test('unread counts exclude the viewers own messages and are cached per user', f
         ->toBe([$conversation->id => 5]);
 });
 
+test('the platform branch filter narrows the inbox to one branch', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $inSydney = seedThread($sydney, $admin);
+    seedThread($melbourne, $admin);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.conversations.index', ['branch_id' => $sydney->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('conversations', 1)
+            ->where('conversations.0.id', $inSydney->id)
+            // Only the platform portal offers the picker.
+            ->has('inboxMeta.branches', 2));
+});
+
+test('the branch portal is not offered a branch filter', function () {
+    $operator = User::query()->where('email', UserSeeder::BRANCH_1_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    seedThread($sydney, $operator);
+
+    $this->actingAs($operator, 'branch')
+        ->get(route('branch.conversations.index', $sydney))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('inboxMeta.branches', 0));
+});
+
+test('a branch operator cannot widen their scope with the branch filter', function () {
+    $operator = User::query()->where('email', UserSeeder::BRANCH_1_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $mine = seedThread($sydney, $operator);
+    seedThread($melbourne, $operator);
+
+    $this->actingAs($operator, 'branch')
+        ->get(route('branch.conversations.index', [$sydney, 'branch_id' => $melbourne->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('conversations', 1)
+            ->where('conversations.0.id', $mine->id));
+});
+
 test('opening a conversation for an order that already has one is rejected', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();

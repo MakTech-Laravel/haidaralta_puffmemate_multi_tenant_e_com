@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
  * @property int $conversation_id
  * @property int $user_id
  * @property ConversationParticipantRole $role
+ * @property int|null $last_delivered_message_id
  * @property int|null $last_read_message_id
  * @property Carbon|null $joined_at
  * @property-read User $user
@@ -30,6 +31,7 @@ class ConversationParticipant extends Model
         'conversation_id',
         'user_id',
         'role',
+        'last_delivered_message_id',
         'last_read_message_id',
         'joined_at',
     ];
@@ -55,6 +57,7 @@ class ConversationParticipant extends Model
         return [
             'role' => ConversationParticipantRole::class,
             'joined_at' => 'datetime',
+            'last_delivered_message_id' => 'integer',
             'last_read_message_id' => 'integer',
         ];
     }

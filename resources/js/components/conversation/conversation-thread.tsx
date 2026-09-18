@@ -1,36 +1,43 @@
 import { Link, router } from '@inertiajs/react';
-import { ChevronLeft, Lock, MessageSquareDashed } from 'lucide-react';
+import {
+    ArrowDown,
+    ChevronLeft,
+    Lock,
+    MessageSquareDashed,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    MessageScroller,
-    MessageScrollerButton,
-    MessageScrollerContent,
-    MessageScrollerItem,
-    MessageScrollerProvider,
-    MessageScrollerViewport,
-} from '@/components/ui/message-scroller';
 import { Spinner } from '@/components/ui/spinner';
+import { useChatScroll } from '@/hooks/use-chat-scroll';
 import { useConversationRealtime } from '@/hooks/use-conversation-realtime';
 import {
+    acknowledgeDelivery,
     fetchOlderMessages,
     markConversationRead,
     sendMessage,
 } from '@/lib/conversation';
+
 import { ConversationComposer } from './conversation-composer';
 import { ConversationMessageRow } from './conversation-message-row';
+import { receiptStateFor } from './message-receipt';
 import type {
     ConversationEndpoints,
     ConversationMessage,
     ConversationSummary,
+    ParticipantReceipt,
+    ReceiptState,
 } from './types';
 
 /**
- * Merge a message into the transcript, keeping it ordered by id and ignoring
- * duplicates. Both the optimistic send and the Reverb echo can deliver the same
- * row, and history loads prepend a whole page at once.
+ * Merge messages into the transcript, ordered by id and deduplicated. Both the
+ * optimistic send and the Reverb echo can deliver the same row, and history
+ * loads prepend a whole page at once.
+ *
+ * Optimistic rows carry negative ids, which sorts them after everything real —
+ * exactly where a message being sent belongs.
  */
 function mergeMessages(
     current: ConversationMessage[],
@@ -40,7 +47,22 @@ function mergeMessages(
 
     incoming.forEach((message) => byId.set(message.id, message));
 
-    return [...byId.values()].sort((a, b) => a.id - b.id);
+    return [...byId.values()].sort(sortForTranscript);
+}
+
+function sortForTranscript(
+    a: ConversationMessage,
+    b: ConversationMessage,
+): number {
+    if (a.pending && !b.pending) {
+        return 1;
+    }
+
+    if (b.pending && !a.pending) {
+        return -1;
+    }
+
+    return a.id - b.id;
 }
 
 function typingLabel(names: string[]): string {
@@ -54,6 +76,42 @@ function typingLabel(names: string[]): string {
 
     return 'Several people are typing…';
 }
+
+function sameDay(a: string | null, b: string | null): boolean {
+    if (!a || !b) {
+        return a === b;
+    }
+
+    return new Date(a).toDateString() === new Date(b).toDateString();
+}
+
+function dayLabel(iso: string | null): string {
+    if (!iso) {
+        return '';
+    }
+
+    const date = new Date(iso);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+        return 'Today';
+    }
+
+    if (date.toDateString() === yesterday.toDateString()) {
+        return 'Yesterday';
+    }
+
+    return date.toLocaleDateString(undefined, {
+        day: 'numeric',
+        month: 'long',
+        year:
+            date.getFullYear() === today.getFullYear() ? undefined : 'numeric',
+    });
+}
+
+let nextClientId = 1;
 
 export function ConversationThread({
     conversation,
@@ -79,9 +137,13 @@ export function ConversationThread({
     const [messages, setMessages] = useState(initialMessages);
     const [hasMore, setHasMore] = useState(initialHasMore);
     const [loadingOlder, setLoadingOlder] = useState(false);
-    const [sending, setSending] = useState(false);
     const [status, setStatus] = useState(conversation.status);
+    const [receipts, setReceipts] = useState<ParticipantReceipt[]>(
+        conversation.receipts,
+    );
+
     const lastReadRef = useRef(0);
+    const lastAckRef = useRef(0);
 
     const isClosed = status === 'closed';
 
@@ -97,38 +159,57 @@ export function ConversationThread({
         router.reload({ only: ['thread'] });
     }, []);
 
+    const onReceipts = useCallback(
+        ({ receipts: incoming }: { receipts: ParticipantReceipt[] }) => {
+            setReceipts(incoming);
+        },
+        [],
+    );
+
     const { online, typing, notifyTyping } = useConversationRealtime({
         channel: conversation.channel,
         viewerId,
         viewerName,
         onMessage,
         onClosed,
+        onReceipts,
     });
 
-    const newestId = messages.length > 0 ? messages[messages.length - 1].id : 0;
+    const persisted = useMemo(
+        () => messages.filter((message) => !message.pending),
+        [messages],
+    );
 
-    // Keep the server-side read marker in step with what has actually rendered.
+    const newestId =
+        persisted.length > 0 ? persisted[persisted.length - 1].id : 0;
+    const oldestId = persisted.length > 0 ? persisted[0].id : 0;
+
+    // Ack delivery first, then the read marker: a thread on screen is read.
     useEffect(() => {
-        if (newestId === 0 || newestId <= lastReadRef.current) {
+        if (newestId === 0) {
             return;
         }
 
-        lastReadRef.current = newestId;
-        void markConversationRead(endpoints.read, newestId);
-    }, [newestId, endpoints.read]);
+        if (newestId > lastAckRef.current) {
+            lastAckRef.current = newestId;
+            void acknowledgeDelivery(endpoints.delivered, newestId);
+        }
+
+        if (newestId > lastReadRef.current) {
+            lastReadRef.current = newestId;
+            void markConversationRead(endpoints.read, newestId);
+        }
+    }, [newestId, endpoints.delivered, endpoints.read]);
 
     const loadOlder = useCallback(async () => {
-        if (loadingOlder || !hasMore || messages.length === 0) {
+        if (loadingOlder || !hasMore || oldestId === 0) {
             return;
         }
 
         setLoadingOlder(true);
 
         try {
-            const page = await fetchOlderMessages(
-                endpoints.messages,
-                messages[0].id,
-            );
+            const page = await fetchOlderMessages(endpoints.messages, oldestId);
 
             setMessages((current) => mergeMessages(current, page.messages));
             setHasMore(page.hasMore);
@@ -137,41 +218,136 @@ export function ConversationThread({
         } finally {
             setLoadingOlder(false);
         }
-    }, [endpoints.messages, hasMore, loadingOlder, messages]);
+    }, [endpoints.messages, hasMore, loadingOlder, oldestId]);
 
-    const onSend = useCallback(
-        async (body: string, files: File[]): Promise<boolean> => {
-            setSending(true);
+    const { viewportRef, topSentinelRef, showJumpToLatest, scrollToBottom } =
+        useChatScroll({
+            newestId:
+                messages.length > 0 ? messages[messages.length - 1].id : 0,
+            oldestId,
+            hasMore,
+            onLoadOlder: () => void loadOlder(),
+        });
 
+    /**
+     * Push the optimistic row, then reconcile. The composer never blocks and
+     * never spins: the feedback lives on the bubble.
+     */
+    const deliver = useCallback(
+        async (clientId: number, body: string, files: File[]) => {
             try {
                 const message = await sendMessage(endpoints.send, body, files);
 
-                setMessages((current) => mergeMessages(current, [message]));
-
-                return true;
+                setMessages((current) =>
+                    mergeMessages(
+                        current.filter((one) => one.id !== clientId),
+                        [message],
+                    ),
+                );
             } catch (error) {
-                toast.error(
-                    error instanceof Error
-                        ? error.message
-                        : 'Could not send the message.',
+                setMessages((current) =>
+                    current.map((one) =>
+                        one.id === clientId && one.pending
+                            ? {
+                                  ...one,
+                                  pending: { ...one.pending, state: 'failed' },
+                              }
+                            : one,
+                    ),
                 );
 
-                return false;
-            } finally {
-                setSending(false);
+                if (error instanceof Error) {
+                    toast.error(error.message);
+                }
             }
         },
         [endpoints.send],
     );
 
+    const onSend = useCallback(
+        (body: string, files: File[]): boolean => {
+            const clientId = -nextClientId++;
+
+            setMessages((current) =>
+                mergeMessages(current, [
+                    {
+                        id: clientId,
+                        conversation_id: conversation.id,
+                        type: 'text',
+                        body,
+                        created_at: new Date().toISOString(),
+                        sender: {
+                            id: viewerId,
+                            name: viewerName,
+                            avatar_url: null,
+                        },
+                        attachments: [],
+                        pending: { clientId, state: 'sending', body, files },
+                    },
+                ]),
+            );
+
+            scrollToBottom();
+            void deliver(clientId, body, files);
+
+            return true;
+        },
+        [conversation.id, deliver, scrollToBottom, viewerId, viewerName],
+    );
+
+    const retry = useCallback(
+        (clientId: number) => {
+            setMessages((current) =>
+                current.map((one) =>
+                    one.id === clientId && one.pending
+                        ? {
+                              ...one,
+                              pending: { ...one.pending, state: 'sending' },
+                          }
+                        : one,
+                ),
+            );
+
+            const failed = messages.find((one) => one.id === clientId);
+
+            if (failed?.pending) {
+                void deliver(
+                    clientId,
+                    failed.pending.body,
+                    failed.pending.files,
+                );
+            }
+        },
+        [deliver, messages],
+    );
+
+    const discard = useCallback((clientId: number) => {
+        setMessages((current) => current.filter((one) => one.id !== clientId));
+    }, []);
+
     const rows = useMemo(
         () =>
             messages.map((message, index) => {
                 const previous = messages[index - 1];
+                const isOwn = message.sender?.id === viewerId;
+
+                let receipt: ReceiptState | null = null;
+
+                if (isOwn && message.type !== 'system') {
+                    receipt = message.pending
+                        ? message.pending.state
+                        : receiptStateFor(message.id, viewerId, receipts);
+                }
 
                 return {
                     message,
-                    isOwn: message.sender?.id === viewerId,
+                    isOwn,
+                    receipt,
+                    daySeparator:
+                        previous === undefined ||
+                        !sameDay(previous.created_at, message.created_at)
+                            ? dayLabel(message.created_at)
+                            : null,
                     // Start a fresh avatar + name block whenever the sender changes.
                     showHeader:
                         previous === undefined ||
@@ -179,13 +355,13 @@ export function ConversationThread({
                         previous.type === 'system',
                 };
             }),
-        [messages, viewerId],
+        [messages, receipts, viewerId],
     );
 
     return (
         <div className="bg-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border">
             <header className="flex flex-wrap items-center justify-between gap-3 border-b px-3 py-3 sm:px-4">
-                <div className="flex min-w-0 items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                     <Button
                         variant="ghost"
                         size="icon"
@@ -196,7 +372,7 @@ export function ConversationThread({
                             <ChevronLeft />
                         </Link>
                     </Button>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                             <h2 className="truncate font-semibold">
                                 Order{' '}
@@ -252,62 +428,89 @@ export function ConversationThread({
                 ) : null}
             </header>
 
-            <MessageScrollerProvider
-                autoScroll
-                defaultScrollPosition="last-anchor"
-                scrollPreviousItemPeek={64}
-            >
-                <MessageScroller className="min-h-0 flex-1">
-                    <MessageScrollerViewport>
-                        <MessageScrollerContent className="px-4 py-4">
-                            {hasMore ? (
-                                <MessageScrollerItem messageId="load-earlier">
-                                    <div className="flex justify-center pb-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            disabled={loadingOlder}
-                                            onClick={() => void loadOlder()}
-                                        >
-                                            {loadingOlder ? <Spinner /> : null}
-                                            Load earlier messages
-                                        </Button>
-                                    </div>
-                                </MessageScrollerItem>
-                            ) : null}
+            <div className="relative min-h-0 flex-1">
+                <div
+                    ref={viewportRef}
+                    role="log"
+                    aria-live="polite"
+                    aria-label="Conversation transcript"
+                    className="h-full scrollbar-thin overflow-y-auto overscroll-contain"
+                >
+                    {/*
+                     * `justify-end` inside a full-height track is what keeps a
+                     * short thread sitting on the composer instead of floating
+                     * with dead space beneath it.
+                     */}
+                    <div className="flex min-h-full flex-col justify-end gap-1 px-4 py-4">
+                        <div ref={topSentinelRef} aria-hidden />
 
-                            {rows.length === 0 ? (
-                                <div className="text-muted-foreground flex flex-col items-center gap-2 py-16 text-center">
-                                    <MessageSquareDashed className="size-8" />
-                                    <p className="text-sm">
-                                        No messages yet. Say hello to get the
-                                        thread started.
-                                    </p>
-                                </div>
-                            ) : null}
+                        {loadingOlder ? (
+                            <div className="flex justify-center py-3">
+                                <Spinner />
+                            </div>
+                        ) : null}
 
-                            {rows.map(({ message, isOwn, showHeader }) => (
-                                <MessageScrollerItem
-                                    key={message.id}
-                                    messageId={String(message.id)}
-                                    scrollAnchor={showHeader}
-                                >
+                        {!hasMore && rows.length > 0 ? (
+                            <p className="text-muted-foreground py-2 text-center text-xs">
+                                This is the beginning of the conversation.
+                            </p>
+                        ) : null}
+
+                        {rows.length === 0 ? (
+                            <div className="text-muted-foreground flex flex-col items-center gap-2 py-16 text-center">
+                                <MessageSquareDashed className="size-8" />
+                                <p className="text-sm">
+                                    No messages yet. Say hello to get the thread
+                                    started.
+                                </p>
+                            </div>
+                        ) : null}
+
+                        {rows.map(
+                            ({
+                                message,
+                                isOwn,
+                                showHeader,
+                                receipt,
+                                daySeparator,
+                            }) => (
+                                <div key={message.id}>
+                                    {daySeparator ? (
+                                        <div className="sticky top-0 z-10 flex justify-center py-2">
+                                            <span className="bg-muted text-muted-foreground rounded-full px-3 py-1 text-xs font-medium">
+                                                {daySeparator}
+                                            </span>
+                                        </div>
+                                    ) : null}
                                     <ConversationMessageRow
                                         message={message}
                                         isOwn={isOwn}
                                         showHeader={showHeader}
+                                        receipt={receipt}
+                                        onRetry={() => retry(message.id)}
+                                        onDiscard={() => discard(message.id)}
                                     />
-                                </MessageScrollerItem>
-                            ))}
-                        </MessageScrollerContent>
-                    </MessageScrollerViewport>
-                    <MessageScrollerButton />
-                </MessageScroller>
-            </MessageScrollerProvider>
+                                </div>
+                            ),
+                        )}
+                    </div>
+                </div>
+
+                {showJumpToLatest ? (
+                    <Button
+                        size="icon"
+                        variant="secondary"
+                        aria-label="Jump to latest message"
+                        onClick={() => scrollToBottom('smooth')}
+                        className="absolute right-4 bottom-4 rounded-full shadow-md"
+                    >
+                        <ArrowDown />
+                    </Button>
+                ) : null}
+            </div>
 
             <ConversationComposer
                 disabled={!canSend || isClosed}
-                sending={sending}
                 onSend={onSend}
                 onTyping={notifyTyping}
             />

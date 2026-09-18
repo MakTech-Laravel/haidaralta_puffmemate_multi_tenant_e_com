@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             CatalogSeeder::class,
             BranchInventorySeeder::class,
             OrderConversationSeeder::class,
+            ConversationVolumeSeeder::class,
         ]);
     }
 }

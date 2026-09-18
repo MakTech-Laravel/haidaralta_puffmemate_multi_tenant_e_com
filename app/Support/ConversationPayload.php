@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Events\ConversationReceiptsUpdated;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
@@ -78,7 +79,6 @@ final class ConversationPayload
             'role' => $participant->role->value,
             'role_label' => $participant->role->label(),
             'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
-            'last_read_message_id' => $participant->last_read_message_id,
         ];
     }
 
@@ -95,7 +95,7 @@ final class ConversationPayload
             'closed_at' => $conversation->closed_at?->toIso8601String(),
             'last_message_at' => $conversation->last_message_at?->toIso8601String(),
             'channel' => $conversation->channelName(),
-            'order' => $order === null ? null : [
+            'order' => [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
                 'status' => $order->status->value,
@@ -106,6 +106,9 @@ final class ConversationPayload
                 ->map(fn (ConversationParticipant $participant): array => self::participant($participant))
                 ->values()
                 ->all(),
+            // Tick state is derived client-side by comparing a message id
+            // against each participant's markers.
+            'receipts' => ConversationReceiptsUpdated::receiptsFor($conversation),
         ];
     }
 

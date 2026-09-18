@@ -107,6 +107,9 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->whereNumber('conversation')
             ->middleware('throttle:conversation-messages')
             ->name('branch.conversations.messages.store');
+        Route::post('conversations/{conversation}/delivered', [BranchConversationController::class, 'delivered'])
+            ->whereNumber('conversation')
+            ->name('branch.conversations.delivered');
         Route::post('conversations/{conversation}/read', [BranchConversationController::class, 'read'])
             ->whereNumber('conversation')
             ->name('branch.conversations.read');

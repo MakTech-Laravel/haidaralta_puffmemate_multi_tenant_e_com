@@ -58,6 +58,9 @@ class ConversationInboxUpdated implements ShouldBroadcast, ShouldDispatchAfterCo
     {
         return [
             'conversation_id' => $this->conversation->id,
+            // Lets a recipient who is not in the thread still ack delivery,
+            // which is what separates one tick from two.
+            'last_message_id' => (int) $this->conversation->messages()->max('id'),
             'status' => $this->conversation->status->value,
             'last_message_preview' => $this->conversation->last_message_preview,
             'last_message_at' => $this->conversation->last_message_at?->toIso8601String(),

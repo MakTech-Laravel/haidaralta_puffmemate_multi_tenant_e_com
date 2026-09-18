@@ -104,6 +104,22 @@ export async function markConversationRead(
     }).catch(() => undefined);
 }
 
+/**
+ * Acknowledge that a message reached this client, which is what turns the
+ * sender's single tick into a double tick. Fire-and-forget.
+ */
+export async function acknowledgeDelivery(
+    endpoint: string,
+    messageId: number,
+): Promise<void> {
+    await fetch(endpoint, {
+        method: 'POST',
+        headers: { ...jsonHeaders(), 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ message_id: messageId }),
+    }).catch(() => undefined);
+}
+
 export async function fetchOrderOptions(
     endpoint: string,
     search: string,

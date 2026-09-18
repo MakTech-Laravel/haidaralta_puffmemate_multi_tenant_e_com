@@ -68,7 +68,7 @@ export default function StorefrontProduct({
         router.cancelAll();
         router.get(
             productShow.url(product.id),
-            (nextBranchId ? { branch: nextBranchId } : {}),
+            nextBranchId ? { branch: nextBranchId } : {},
             {
                 preserveState: true,
                 replace: true,

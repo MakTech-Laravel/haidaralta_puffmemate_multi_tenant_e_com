@@ -100,6 +100,20 @@ class ConversationController extends Controller
         return response()->json($this->sentMessageResponse($message), 201);
     }
 
+    /**
+     * Client acknowledgement that a message reached this operator.
+     */
+    public function delivered(Request $request, Branch $branch, Conversation $conversation): JsonResponse
+    {
+        $this->branch = $branch;
+        $viewer = $this->viewer($request);
+        $this->authorizeConversation($conversation, $viewer);
+
+        $this->conversations->markDelivered($conversation, $viewer, $request->integer('message_id') ?: null);
+
+        return response()->json(['status' => 'ok']);
+    }
+
     public function read(Request $request, Branch $branch, Conversation $conversation): JsonResponse
     {
         $this->branch = $branch;
@@ -153,6 +167,7 @@ class ConversationController extends Controller
             'self' => route('branch.conversations.show', [$branch, $conversation]),
             'messages' => route('branch.conversations.messages', [$branch, $conversation]),
             'send' => route('branch.conversations.messages.store', [$branch, $conversation]),
+            'delivered' => route('branch.conversations.delivered', [$branch, $conversation]),
             'read' => route('branch.conversations.read', [$branch, $conversation]),
             'close' => route('branch.conversations.close', [$branch, $conversation]),
         ];

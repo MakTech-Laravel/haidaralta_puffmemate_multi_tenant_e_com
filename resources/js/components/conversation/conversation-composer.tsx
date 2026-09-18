@@ -2,37 +2,38 @@ import { Lock, Paperclip, SendHorizonal, X } from 'lucide-react';
 import { useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 
 const MAX_ATTACHMENTS = 5;
 
+/**
+ * The composer is deliberately never busy.
+ *
+ * `onSend` hands the message to the transcript as an optimistic row and returns
+ * immediately, so the input clears at once and the sending, failed, and
+ * delivered states are shown on the bubble where a messenger shows them.
+ */
 export function ConversationComposer({
     disabled,
-    sending,
     onSend,
     onTyping,
 }: {
     disabled: boolean;
-    sending: boolean;
-    onSend: (body: string, files: File[]) => Promise<boolean>;
+    onSend: (body: string, files: File[]) => boolean;
     onTyping: () => void;
 }) {
     const [body, setBody] = useState('');
     const [files, setFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const canSubmit =
-        !disabled && !sending && (body.trim() !== '' || files.length > 0);
+    const canSubmit = !disabled && (body.trim() !== '' || files.length > 0);
 
-    const submit = async () => {
+    const submit = () => {
         if (!canSubmit) {
             return;
         }
 
-        const sent = await onSend(body, files);
-
-        if (sent) {
+        if (onSend(body.trim(), files)) {
             setBody('');
             setFiles([]);
         }
@@ -41,7 +42,7 @@ export function ConversationComposer({
     const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            void submit();
+            submit();
         }
     };
 
@@ -99,7 +100,7 @@ export function ConversationComposer({
                     variant="ghost"
                     size="icon"
                     aria-label="Attach files"
-                    disabled={sending || files.length >= MAX_ATTACHMENTS}
+                    disabled={files.length >= MAX_ATTACHMENTS}
                     onClick={() => fileInputRef.current?.click()}
                 >
                     <Paperclip />
@@ -129,9 +130,9 @@ export function ConversationComposer({
                     size="icon"
                     aria-label="Send message"
                     disabled={!canSubmit}
-                    onClick={() => void submit()}
+                    onClick={submit}
                 >
-                    {sending ? <Spinner /> : <SendHorizonal />}
+                    <SendHorizonal />
                 </Button>
             </div>
         </div>

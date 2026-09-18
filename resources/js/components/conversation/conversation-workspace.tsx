@@ -3,6 +3,7 @@ import { MessagesSquare } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useConversationInboxRealtime } from '@/hooks/use-conversation-inbox-realtime';
+import { acknowledgeDelivery } from '@/lib/conversation';
 import { cn } from '@/lib/utils';
 
 import { ConversationList } from './conversation-list';
@@ -41,6 +42,7 @@ export function ConversationWorkspace({
     orderOptionsUrl,
     storeUrl,
     hrefFor,
+    deliveredUrlFor,
 }: {
     conversations: ConversationRow[];
     inboxMeta: InboxMeta;
@@ -52,9 +54,11 @@ export function ConversationWorkspace({
     orderOptionsUrl: string;
     storeUrl: string;
     hrefFor: (row: ConversationRow) => string;
+    deliveredUrlFor: (conversationId: number) => string;
 }) {
     const [search, setSearch] = useState(inboxMeta.filters.search);
     const [status, setStatus] = useState(inboxMeta.filters.status);
+    const [branchId, setBranchId] = useState(inboxMeta.filters.branch_id);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     // Realtime bumps are client-only overlays on the server's merge-prop list.
@@ -80,13 +84,18 @@ export function ConversationWorkspace({
             router.reload({
                 only: INBOX_PROPS,
                 reset: ['conversations'],
-                data: { search, status, cursor: undefined },
+                data: {
+                    search,
+                    status,
+                    branch_id: branchId,
+                    cursor: undefined,
+                },
                 onFinish: () => setLoading(false),
             });
         }, SEARCH_DEBOUNCE_MS);
 
         return () => window.clearTimeout(timer);
-    }, [search, status]);
+    }, [search, status, branchId]);
 
     const loadMore = useCallback(() => {
         if (
@@ -100,15 +109,40 @@ export function ConversationWorkspace({
         setLoadingMore(true);
         router.reload({
             only: INBOX_PROPS,
-            data: { search, status, cursor: inboxMeta.nextCursor },
+            data: {
+                search,
+                status,
+                branch_id: branchId,
+                cursor: inboxMeta.nextCursor,
+            },
             onFinish: () => setLoadingMore(false),
         });
-    }, [inboxMeta.hasMore, inboxMeta.nextCursor, loadingMore, search, status]);
+    }, [
+        branchId,
+        inboxMeta.hasMore,
+        inboxMeta.nextCursor,
+        loadingMore,
+        search,
+        status,
+    ]);
 
     // A thread the operator is not looking at still re-badges and re-previews
     // the moment someone posts to it.
     const onInboxUpdate = useCallback(
         (payload: InboxUpdatedPayload) => {
+            // The thread being open handles its own ack; this covers the case
+            // where the operator is elsewhere in the inbox but still received
+            // the message, which is exactly what "delivered" means.
+            if (
+                payload.conversation_id !== activeId &&
+                payload.last_message_id > 0
+            ) {
+                void acknowledgeDelivery(
+                    deliveredUrlFor(payload.conversation_id),
+                    payload.last_message_id,
+                );
+            }
+
             setOverlay((current) => {
                 const previous = current[payload.conversation_id];
                 const isOpenHere = payload.conversation_id === activeId;
@@ -126,7 +160,7 @@ export function ConversationWorkspace({
                 };
             });
         },
-        [activeId],
+        [activeId, deliveredUrlFor],
     );
 
     useConversationInboxRealtime(inboxChannel, onInboxUpdate);
@@ -165,12 +199,15 @@ export function ConversationWorkspace({
                     activeId={activeId}
                     search={search}
                     status={status}
+                    branchId={branchId}
+                    branches={inboxMeta.branches}
                     loading={loading}
                     loadingMore={loadingMore}
                     hasMore={inboxMeta.hasMore}
                     hrefFor={hrefFor}
                     onSearchChange={setSearch}
                     onStatusChange={setStatus}
+                    onBranchChange={setBranchId}
                     onLoadMore={loadMore}
                 />
             </aside>

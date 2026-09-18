@@ -1,17 +1,23 @@
 import { Link } from '@inertiajs/react';
 import { MessagesSquare, Search } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 
 import { relativeTime } from './format';
-import type { ConversationRow, InboxParticipant } from './types';
+import type { ConversationRow, FilterOption, InboxParticipant } from './types';
 
 const STATUS_TABS = [
     { value: 'all', label: 'All' },
@@ -24,24 +30,30 @@ export function ConversationList({
     activeId,
     search,
     status,
+    branchId,
+    branches,
     loading,
     loadingMore,
     hasMore,
     hrefFor,
     onSearchChange,
     onStatusChange,
+    onBranchChange,
     onLoadMore,
 }: {
     rows: ConversationRow[];
     activeId: number | null;
     search: string;
     status: string;
+    branchId: string;
+    branches: FilterOption[];
     loading: boolean;
     loadingMore: boolean;
     hasMore: boolean;
     hrefFor: (row: ConversationRow) => string;
     onSearchChange: (value: string) => void;
     onStatusChange: (value: string) => void;
+    onBranchChange: (value: string) => void;
     onLoadMore: () => void;
 }) {
     const sentinel = useRef<HTMLDivElement>(null);
@@ -104,9 +116,38 @@ export function ConversationList({
                         </button>
                     ))}
                 </div>
+
+                {/* Branch operators are already scoped by route, so this is
+                    only populated on the platform portal. */}
+                {branches.length > 0 ? (
+                    <Select value={branchId} onValueChange={onBranchChange}>
+                        <SelectTrigger
+                            className="w-full"
+                            aria-label="Filter by branch"
+                        >
+                            <SelectValue placeholder="All branches" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All branches</SelectItem>
+                            {branches.map((branch) => (
+                                <SelectItem
+                                    key={branch.value}
+                                    value={branch.value}
+                                >
+                                    {branch.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : null}
             </div>
 
-            <ScrollArea className="min-h-0 flex-1">
+            {/*
+             * A plain scroller, not ScrollArea: the Radix viewport wraps its
+             * child in a `display: table` element, which makes the flex child
+             * grow to the text width and defeats `truncate` on the preview.
+             */}
+            <div className="min-h-0 flex-1 scrollbar-thin overflow-y-auto overscroll-contain">
                 <div className="p-2">
                     {loading ? <ConversationListSkeleton /> : null}
 
@@ -140,7 +181,7 @@ export function ConversationList({
                         </div>
                     ) : null}
                 </div>
-            </ScrollArea>
+            </div>
         </div>
     );
 }
@@ -166,7 +207,7 @@ function ConversationListItem({
             only={['thread']}
             aria-current={active ? 'page' : undefined}
             className={cn(
-                'flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                'flex w-full min-w-0 items-start gap-3 overflow-hidden rounded-lg px-3 py-2.5 transition-colors',
                 active ? 'bg-muted' : 'hover:bg-muted/60',
             )}
         >
@@ -180,8 +221,8 @@ function ConversationListItem({
                 <AvatarFallback>{initials(counterpart?.name)}</AvatarFallback>
             </Avatar>
 
-            <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
+            <div className="min-w-0 flex-1 overflow-hidden">
+                <div className="flex min-w-0 items-baseline gap-2">
                     <span
                         className={cn(
                             'truncate text-sm',
@@ -195,7 +236,7 @@ function ConversationListItem({
                     </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                     <p
                         className={cn(
                             'min-w-0 flex-1 truncate text-sm',

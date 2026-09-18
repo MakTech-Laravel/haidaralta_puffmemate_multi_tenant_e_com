@@ -53,6 +53,9 @@ export default function PlatformConversations({
                     orderOptionsUrl={ConversationController.orderOptions.url()}
                     storeUrl={ConversationController.store.url()}
                     hrefFor={(row) => ConversationController.show.url(row.id)}
+                    deliveredUrlFor={(id) =>
+                        ConversationController.delivered.url(id)
+                    }
                 />
             </div>
         </>

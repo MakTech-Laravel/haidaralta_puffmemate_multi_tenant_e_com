@@ -31,6 +31,30 @@ export type ConversationMessage = {
     created_at: string | null;
     sender: MessageSender | null;
     attachments: MessageAttachment[];
+    /**
+     * Client-only. Optimistic rows carry a negative id and live in the
+     * transcript until the server replaces or rejects them.
+     */
+    pending?: {
+        clientId: number;
+        state: 'sending' | 'failed';
+        body: string;
+        files: File[];
+    };
+};
+
+/**
+ * Tick state for one of the viewer's own messages.
+ *
+ * Derived by comparing the message id against every other participant's
+ * markers, so it costs nothing per message on the wire.
+ */
+export type ReceiptState = 'sending' | 'failed' | 'sent' | 'delivered' | 'read';
+
+export type ParticipantReceipt = {
+    user_id: number;
+    last_delivered_message_id: number;
+    last_read_message_id: number;
 };
 
 export type ConversationParticipant = {
@@ -40,7 +64,6 @@ export type ConversationParticipant = {
     role: ParticipantRole;
     role_label: string;
     avatar_url: string | null;
-    last_read_message_id: number | null;
 };
 
 export type ConversationOrder = {
@@ -59,6 +82,7 @@ export type ConversationSummary = {
     order: ConversationOrder | null;
     branch: { id: number; name: string; slug: string } | null;
     participants: ConversationParticipant[];
+    receipts: ParticipantReceipt[];
 };
 
 export type InboxParticipant = {
@@ -80,11 +104,15 @@ export type ConversationRow = {
     participants: InboxParticipant[];
 };
 
+export type FilterOption = { value: string; label: string };
+
 export type InboxMeta = {
     hasMore: boolean;
     nextCursor: string | null;
-    filters: { search: string; status: string };
-    statuses: { value: string; label: string }[];
+    filters: { search: string; status: string; branch_id: string };
+    statuses: FilterOption[];
+    /** Empty on the branch portal, which is already scoped by route. */
+    branches: FilterOption[];
 };
 
 export type ConversationThreadProps = {
@@ -116,6 +144,7 @@ export type OrderOption = {
 export type ConversationEndpoints = {
     self: string;
     messages: string;
+    delivered: string;
     send: string;
     read: string;
     close: string;
@@ -133,6 +162,7 @@ export type ConversationClosedPayload = {
 
 export type InboxUpdatedPayload = {
     conversation_id: number;
+    last_message_id: number;
     status: ConversationStatus;
     last_message_preview: string | null;
     last_message_at: string | null;
@@ -141,4 +171,9 @@ export type InboxUpdatedPayload = {
 export type TypingWhisper = {
     id: number;
     name: string;
+};
+
+export type ReceiptsUpdatedPayload = {
+    conversation_id: number;
+    receipts: ParticipantReceipt[];
 };

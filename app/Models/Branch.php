@@ -90,6 +90,14 @@ class Branch extends Model
     }
 
     /**
+     * @return HasMany<Conversation, $this>
+     */
+    public function conversations(): HasMany
+    {
+        return $this->hasMany(Conversation::class);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toSearchableArray(): array

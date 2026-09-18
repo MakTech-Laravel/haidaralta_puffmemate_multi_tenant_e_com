@@ -4,12 +4,14 @@ import type {
     ConversationClosedPayload,
     MessageCreatedPayload,
     PresenceMember,
+    ReceiptsUpdatedPayload,
     TypingWhisper,
 } from '@/components/conversation/types';
 import { getEcho, getEchoGeneration } from '@/echo';
 
 const MESSAGE_EVENT = '.conversation.message-created';
 const CLOSED_EVENT = '.conversation.closed';
+const RECEIPTS_EVENT = '.conversation.receipts-updated';
 const TYPING_WHISPER = 'typing';
 
 /** How long a peer stays in the "typing…" line after their last keystroke. */
@@ -21,6 +23,7 @@ type Options = {
     viewerName: string;
     onMessage: (payload: MessageCreatedPayload) => void;
     onClosed: (payload: ConversationClosedPayload) => void;
+    onReceipts: (payload: ReceiptsUpdatedPayload) => void;
 };
 
 type Result = {
@@ -46,6 +49,7 @@ export function useConversationRealtime({
     viewerName,
     onMessage,
     onClosed,
+    onReceipts,
 }: Options): Result {
     const [echoGeneration, setEchoGeneration] = useState(() =>
         getEchoGeneration(),
@@ -111,6 +115,7 @@ export function useConversationRealtime({
                 onMessage(payload);
             })
             .listen(CLOSED_EVENT, onClosed)
+            .listen(RECEIPTS_EVENT, onReceipts)
             .listenForWhisper(TYPING_WHISPER, (peer: TypingWhisper) => {
                 if (peer.id === viewerId) {
                     return;
@@ -136,13 +141,14 @@ export function useConversationRealtime({
             try {
                 presence.stopListening(MESSAGE_EVENT);
                 presence.stopListening(CLOSED_EVENT);
+                presence.stopListening(RECEIPTS_EVENT);
             } catch {
                 // Echo may already be torn down during reconnect.
             }
 
             echo.leave(channel);
         };
-    }, [channel, echoGeneration, viewerId, onMessage, onClosed]);
+    }, [channel, echoGeneration, viewerId, onMessage, onClosed, onReceipts]);
 
     // Throttled so a fast typist sends one whisper per second, not one per key.
     const notifyTyping = useCallback(() => {

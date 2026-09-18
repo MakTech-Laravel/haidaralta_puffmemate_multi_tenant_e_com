@@ -60,6 +60,9 @@ export default function BranchConversations({
                     hrefFor={(row) =>
                         ConversationController.show.url([branch.slug, row.id])
                     }
+                    deliveredUrlFor={(id) =>
+                        ConversationController.delivered.url([branch.slug, id])
+                    }
                 />
             </div>
         </>

@@ -13,6 +13,8 @@ return new class extends Migration
             $table->foreignId('conversation_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('role', 32);
+            // Monotonic receipt markers: delivery ticks and read ticks.
+            $table->unsignedBigInteger('last_delivered_message_id')->nullable();
             $table->unsignedBigInteger('last_read_message_id')->nullable();
             $table->timestamp('joined_at')->nullable();
             $table->timestamps();

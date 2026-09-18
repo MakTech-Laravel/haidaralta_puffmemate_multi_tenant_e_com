@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\ConversationStatus;
+use App\Models\Branch;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\User;
@@ -43,6 +44,11 @@ final class ConversationInbox
         $status = (string) $this->request->string('status', 'all');
         $cursor = trim((string) $this->request->string('cursor'));
 
+        // Branch operators are scoped by route; only the platform picker sends this.
+        $branchFilter = $this->scopedBranchId === null
+            ? (int) $this->request->integer('branch_id')
+            : 0;
+
         $query = Conversation::query()
             ->with([
                 'order:id,order_number,status',
@@ -52,6 +58,10 @@ final class ConversationInbox
             ->when(
                 $this->scopedBranchId !== null,
                 fn (Builder $builder) => $builder->where('branch_id', $this->scopedBranchId),
+            )
+            ->when(
+                $branchFilter > 0,
+                fn (Builder $builder) => $builder->where('branch_id', $branchFilter),
             )
             ->when(
                 ConversationStatus::tryFrom($status) !== null,
@@ -77,9 +87,41 @@ final class ConversationInbox
             'filters' => [
                 'search' => $search,
                 'status' => $status,
+                'branch_id' => $branchFilter > 0 ? (string) $branchFilter : 'all',
             ],
             'statuses' => ConversationStatus::options(),
+            'branches' => $this->branchOptions(),
         ];
+    }
+
+    /**
+     * Branches that actually have a thread, for the platform filter.
+     *
+     * Empty on the branch portal: those operators are already scoped.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    private function branchOptions(): array
+    {
+        if ($this->scopedBranchId !== null) {
+            return [];
+        }
+
+        $options = [];
+
+        $branches = Branch::query()
+            ->whereHas('conversations')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        foreach ($branches as $branch) {
+            $options[] = [
+                'value' => (string) $branch->id,
+                'label' => $branch->name,
+            ];
+        }
+
+        return $options;
     }
 
     /**

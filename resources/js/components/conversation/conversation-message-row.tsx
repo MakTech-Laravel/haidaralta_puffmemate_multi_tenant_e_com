@@ -19,7 +19,13 @@ import {
     MessageFooter,
     MessageHeader,
 } from '@/components/ui/message';
-import type { ConversationMessage, MessageAttachment } from './types';
+import { cn } from '@/lib/utils';
+import { MessageReceipt } from './message-receipt';
+import type {
+    ConversationMessage,
+    MessageAttachment,
+    ReceiptState,
+} from './types';
 
 function initials(name: string): string {
     return name
@@ -101,10 +107,16 @@ export function ConversationMessageRow({
     message,
     isOwn,
     showHeader,
+    receipt,
+    onRetry,
+    onDiscard,
 }: {
     message: ConversationMessage;
     isOwn: boolean;
     showHeader: boolean;
+    receipt: ReceiptState | null;
+    onRetry?: () => void;
+    onDiscard?: () => void;
 }) {
     if (message.type === 'system' || message.sender === null) {
         return (
@@ -138,7 +150,10 @@ export function ConversationMessageRow({
                 {showHeader && !isOwn ? (
                     <MessageHeader>{sender.name}</MessageHeader>
                 ) : null}
-                <Bubble variant={isOwn ? 'default' : 'muted'}>
+                <Bubble
+                    variant={isOwn ? 'default' : 'muted'}
+                    className={cn(receipt === 'sending' && 'opacity-70')}
+                >
                     <BubbleContent>
                         {message.body ? (
                             <p className="break-words whitespace-pre-wrap">
@@ -150,7 +165,31 @@ export function ConversationMessageRow({
                         ) : null}
                     </BubbleContent>
                 </Bubble>
-                <MessageFooter>{formatTime(message.created_at)}</MessageFooter>
+                <MessageFooter>
+                    <span className="inline-flex items-center gap-1">
+                        {formatTime(message.created_at)}
+                        {receipt ? <MessageReceipt state={receipt} /> : null}
+                    </span>
+                </MessageFooter>
+                {receipt === 'failed' ? (
+                    <div className="text-destructive flex items-center gap-2 text-xs">
+                        <span>Not sent.</span>
+                        <button
+                            type="button"
+                            onClick={onRetry}
+                            className="font-medium underline underline-offset-2"
+                        >
+                            Retry
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onDiscard}
+                            className="text-muted-foreground underline underline-offset-2"
+                        >
+                            Discard
+                        </button>
+                    </div>
+                ) : null}
             </MessageContent>
         </Message>
     );
