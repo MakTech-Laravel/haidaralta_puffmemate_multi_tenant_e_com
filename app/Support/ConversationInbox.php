@@ -90,38 +90,12 @@ final class ConversationInbox
                 'branch_id' => $branchFilter > 0 ? (string) $branchFilter : 'all',
             ],
             'statuses' => ConversationStatus::options(),
-            'branches' => $this->branchOptions(),
+            // The combobox pages its own options; this is only the label for
+            // whatever is currently selected, which may not be on page one.
+            'branchLabel' => $branchFilter > 0
+                ? Branch::query()->whereKey($branchFilter)->value('name')
+                : null,
         ];
-    }
-
-    /**
-     * Branches that actually have a thread, for the platform filter.
-     *
-     * Empty on the branch portal: those operators are already scoped.
-     *
-     * @return list<array{value: string, label: string}>
-     */
-    private function branchOptions(): array
-    {
-        if ($this->scopedBranchId !== null) {
-            return [];
-        }
-
-        $options = [];
-
-        $branches = Branch::query()
-            ->whereHas('conversations')
-            ->orderBy('name')
-            ->get(['id', 'name']);
-
-        foreach ($branches as $branch) {
-            $options[] = [
-                'value' => (string) $branch->id,
-                'label' => $branch->name,
-            ];
-        }
-
-        return $options;
     }
 
     /**

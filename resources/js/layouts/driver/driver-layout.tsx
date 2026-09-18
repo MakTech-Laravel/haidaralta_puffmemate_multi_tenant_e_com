@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { DriverHeader } from '@/components/driver/driver-header';
 import { DriverSidebar } from '@/components/driver/driver-sidebar';
+import { toUrl } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
 
 export default function DriverLayout({
@@ -38,7 +39,7 @@ export default function DriverLayout({
 
                                 return (
                                     <li
-                                        key={`${item.href}-${item.title}`}
+                                        key={`${toUrl(item.href)}-${item.title}`}
                                         className="flex items-center gap-1.5"
                                     >
                                         {index > 0 ? (

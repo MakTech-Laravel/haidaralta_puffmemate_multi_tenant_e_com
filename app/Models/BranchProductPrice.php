@@ -8,7 +8,25 @@ use Database\Factories\BranchProductPriceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $branch_id
+ * @property int $product_id
+ * @property int|null $variant_id
+ * @property string|null $buying_price
+ * @property string|null $regular_price
+ * @property string $selling_price
+ * @property DiscountType $discount_type
+ * @property string|null $discount_price
+ * @property Carbon|null $start_date
+ * @property Carbon|null $end_date
+ * @property bool $status
+ * @property-read Branch|null $branch
+ * @property-read Product|null $product
+ * @property-read ProductVariant|null $variant
+ */
 class BranchProductPrice extends Model
 {
     /** @use HasFactory<BranchProductPriceFactory> */

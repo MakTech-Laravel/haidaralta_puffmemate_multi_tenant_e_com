@@ -56,6 +56,7 @@ export default function PlatformConversations({
                     deliveredUrlFor={(id) =>
                         ConversationController.delivered.url(id)
                     }
+                    branchOptionsUrl={ConversationController.branchOptions.url()}
                 />
             </div>
         </>

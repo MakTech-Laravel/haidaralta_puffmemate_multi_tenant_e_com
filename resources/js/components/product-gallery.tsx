@@ -121,19 +121,22 @@ export function ProductGallery({
                 plugins={[Zoom]}
                 zoom={{ maxZoomPixelRatio: 4 }}
                 render={{
-                    slide: ({ slide }) => (
-                        <div
-                            className="relative flex h-full w-full items-center justify-center p-6"
-                            style={tileStyle}
-                        >
-                            <img
-                                src={slide.src}
-                                alt=""
-                                className="max-h-full max-w-full object-contain"
-                                draggable={false}
-                            />
-                        </div>
-                    ),
+                    // The gallery only ever builds image slides, but the
+                    // lightbox slide union also covers video.
+                    slide: ({ slide }) =>
+                        'src' in slide ? (
+                            <div
+                                className="relative flex h-full w-full items-center justify-center p-6"
+                                style={tileStyle}
+                            >
+                                <img
+                                    src={slide.src}
+                                    alt=""
+                                    className="max-h-full max-w-full object-contain"
+                                    draggable={false}
+                                />
+                            </div>
+                        ) : null,
                 }}
             />
         ) : null;

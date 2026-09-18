@@ -238,6 +238,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->whereNumber('conversation')
             ->middleware('throttle:conversation-messages')
             ->name('platform.conversations.messages.store');
+        Route::get('conversation-branch-options', [PlatformConversationController::class, 'branchOptions'])
+            ->name('platform.conversations.branch-options');
         Route::post('conversations/{conversation}/delivered', [PlatformConversationController::class, 'delivered'])
             ->whereNumber('conversation')
             ->name('platform.conversations.delivered');

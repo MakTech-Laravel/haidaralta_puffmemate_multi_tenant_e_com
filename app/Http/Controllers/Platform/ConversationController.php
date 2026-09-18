@@ -94,6 +94,16 @@ class ConversationController extends Controller
     }
 
     /**
+     * Paged branch options for the inbox filter combobox.
+     *
+     * Platform only: branch operators are already scoped by route.
+     */
+    public function branchOptions(Request $request): JsonResponse
+    {
+        return response()->json($this->conversationBranchOptions($request));
+    }
+
+    /**
      * Client acknowledgement that a message reached this operator.
      */
     public function delivered(Request $request, Conversation $conversation): JsonResponse

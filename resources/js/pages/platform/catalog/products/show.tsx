@@ -902,6 +902,7 @@ export default function PlatformProductsShow({
 
             {catalog.show_product_variants ? (
                 <Dialog
+                    open={variantDialogOpen}
                     onOpenChange={(open) => {
                         setVariantDialogOpen(open);
 

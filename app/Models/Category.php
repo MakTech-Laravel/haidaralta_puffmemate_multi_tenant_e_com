@@ -8,6 +8,7 @@ use App\Support\CatalogBackgroundColor;
 use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
 use Database\Factories\CategoryFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +17,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
 
+/**
+ * @property int $id
+ * @property int|null $parent_id
+ * @property string $name
+ * @property string $slug
+ * @property string|null $image
+ * @property string|null $slogan
+ * @property array<string, mixed>|null $color_code
+ * @property bool $status
+ * @property bool $featured
+ * @property bool $show_in_nav
+ * @property int|null $nav_sort
+ * @property-read Category|null $parent
+ * @property-read Collection<int, Category> $children
+ * @property-read Collection<int, Product> $products
+ */
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */

@@ -8,6 +8,7 @@ use App\Support\CatalogBackgroundColor;
 use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
 use Database\Factories\ProductFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +17,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $slug
+ * @property string|null $sku
+ * @property string|null $description
+ * @property string|null $brand
+ * @property string|null $image
+ * @property array<mixed>|null $tags
+ * @property array<string, mixed>|null $specifications
+ * @property array<string, mixed>|null $color_code
+ * @property bool $status
+ * @property int|null $created_by
+ * @property-read Collection<int, Category> $categories
+ * @property-read User|null $creator
+ * @property-read Collection<int, ProductVariant> $variants
+ * @property-read Collection<int, ProductImage> $images
+ * @property-read Collection<int, Inventory> $inventories
+ * @property-read Collection<int, BranchProductPrice> $branchPrices
+ */
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */

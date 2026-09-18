@@ -4,6 +4,7 @@ import { AccountMobileNav } from '@/components/customer/account-mobile-nav';
 import { AccountSidebar } from '@/components/customer/account-sidebar';
 import { StorefrontFooter } from '@/components/storefront/storefront-footer';
 import { StorefrontHeader } from '@/components/storefront/storefront-header';
+import { toUrl } from '@/lib/utils';
 import { home } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -40,7 +41,7 @@ export default function CustomerLayout({
 
                                 return (
                                     <li
-                                        key={`${item.href}-${item.title}`}
+                                        key={`${toUrl(item.href)}-${item.title}`}
                                         className="flex items-center gap-1.5"
                                     >
                                         {index > 0 ? (

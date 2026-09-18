@@ -6,11 +6,34 @@ use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
 use App\Support\SearchableTimestamp;
 use Database\Factories\BranchFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Laravel\Scout\Searchable;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $slug
+ * @property string $code
+ * @property string|null $logo
+ * @property string|null $phone
+ * @property string|null $email
+ * @property string|null $address
+ * @property string|null $latitude
+ * @property string|null $longitude
+ * @property Carbon|null $opening_time
+ * @property Carbon|null $closing_time
+ * @property bool $status
+ * @property-read Collection<int, User> $users
+ * @property-read Collection<int, Inventory> $inventories
+ * @property-read Collection<int, BranchProductPrice> $productPrices
+ * @property-read Collection<int, DriverBranchAssignment> $driverBranchAssignments
+ * @property-read Collection<int, DriverRoster> $driverRosters
+ * @property-read Collection<int, Conversation> $conversations
+ */
 class Branch extends Model
 {
     /** @use HasFactory<BranchFactory> */

@@ -237,6 +237,7 @@ export function AdminForm({
                       id: 'avatar',
                       path: defaults.avatar,
                       url: defaults.avatar_url,
+                      mime_type: 'image/*',
                       size: 0,
                       name: defaults.avatar.split('/').pop() ?? 'avatar',
                   },

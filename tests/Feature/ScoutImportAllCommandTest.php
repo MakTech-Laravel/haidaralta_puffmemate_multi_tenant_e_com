@@ -2,6 +2,7 @@
 
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\Conversation;
 use App\Models\Product;
 use App\Models\User;
 
@@ -11,7 +12,8 @@ it('imports every searchable model under app models', function () {
         ->expectsOutputToContain(Branch::class)
         ->expectsOutputToContain(Category::class)
         ->expectsOutputToContain(Product::class)
-        ->expectsOutputToContain('Imported 4 searchable model(s).')
+        ->expectsOutputToContain(Conversation::class)
+        ->expectsOutputToContain('Imported 5 searchable model(s).')
         ->assertSuccessful();
 });
 

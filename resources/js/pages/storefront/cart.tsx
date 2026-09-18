@@ -7,6 +7,7 @@ import type {
     CartBranchOption,
     CartGroup,
     CartSummary,
+    CartSummaryBranch,
 } from '@/lib/storefront-cart';
 import { category as shopCategory } from '@/routes/shop';
 
@@ -22,7 +23,7 @@ const DELIVERY_FEE = 3.5;
 const FIRST_DELIVERY_DISCOUNT = -3.5;
 
 function buildSummary(groups: CartGroup[]): CartSummary {
-    const branches = groups.flatMap((group) => {
+    const branches = groups.flatMap((group): CartSummaryBranch[] => {
         const subtotal = group.items.reduce((itemTotal, item) => {
             if (!item.selected || item.unavailable) {
                 return itemTotal;

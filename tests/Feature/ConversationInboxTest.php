@@ -174,11 +174,40 @@ test('the platform branch filter narrows the inbox to one branch', function () {
         ->assertInertia(fn ($page) => $page
             ->has('conversations', 1)
             ->where('conversations.0.id', $inSydney->id)
-            // Only the platform portal offers the picker.
-            ->has('inboxMeta.branches', 2));
+            // Only the label travels in the props; the combobox pages the
+            // rest of the options itself.
+            ->where('inboxMeta.branchLabel', $sydney->name));
 });
 
-test('the branch portal is not offered a branch filter', function () {
+test('the branch options endpoint pages and searches branches that have threads', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    seedThread($sydney, $admin);
+    seedThread($melbourne, $admin);
+
+    // Brisbane has no thread, so it must not be offered as a filter.
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.conversations.branch-options'))
+        ->assertOk()
+        ->assertJsonCount(2, 'data')
+        ->assertJsonPath('meta.last_page', 1);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.conversations.branch-options', ['filter' => ['search' => 'Melbourne']]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $melbourne->id);
+
+    // One row per page proves the combobox has something to scroll for.
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.conversations.branch-options', ['per_page' => 10]))
+        ->assertOk()
+        ->assertJsonPath('meta.per_page', 10);
+});
+
+test('the branch portal has no branch filter label and no options route', function () {
     $operator = User::query()->where('email', UserSeeder::BRANCH_1_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
@@ -187,7 +216,7 @@ test('the branch portal is not offered a branch filter', function () {
     $this->actingAs($operator, 'branch')
         ->get(route('branch.conversations.index', $sydney))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->has('inboxMeta.branches', 0));
+        ->assertInertia(fn ($page) => $page->where('inboxMeta.branchLabel', null));
 });
 
 test('a branch operator cannot widen their scope with the branch filter', function () {

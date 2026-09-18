@@ -7,7 +7,22 @@ use Database\Factories\BranchProductPriceHistoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $branch_id
+ * @property int $product_id
+ * @property int|null $variant_id
+ * @property PriceChangeSource $source
+ * @property array<string, mixed> $changes
+ * @property int|null $created_by
+ * @property Carbon|null $created_at
+ * @property-read Branch|null $branch
+ * @property-read Product|null $product
+ * @property-read ProductVariant|null $variant
+ * @property-read User|null $creator
+ */
 class BranchProductPriceHistory extends Model
 {
     /** @use HasFactory<BranchProductPriceHistoryFactory> */

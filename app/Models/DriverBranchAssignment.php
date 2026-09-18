@@ -9,6 +9,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $driver_id
+ * @property int $branch_id
+ * @property DriverAssignmentStatus $status
+ * @property int|null $assigned_by
+ * @property-read User|null $driver
+ * @property-read Branch|null $branch
+ * @property-read User|null $assignedBy
+ */
 class DriverBranchAssignment extends Model
 {
     /** @use HasFactory<DriverBranchAssignmentFactory> */

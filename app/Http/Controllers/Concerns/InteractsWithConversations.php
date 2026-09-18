@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Events\ConversationInboxUpdated;
+use App\Models\Branch;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Order;
@@ -161,6 +162,54 @@ trait InteractsWithConversations
         $message->load(['sender:id,name,avatar', 'attachments']);
 
         return ['message' => ConversationPayload::message($message)];
+    }
+
+    /**
+     * Branches that have at least one thread, paginated for the inbox filter.
+     *
+     * Same `{data, meta}` contract as the stock and category option endpoints,
+     * so the shared `InfiniteScrollCombobox` consumes it without adaptation.
+     *
+     * @return array{
+     *     data: list<array{id: int, name: string, slug: string}>,
+     *     meta: array{current_page: int, last_page: int, per_page: int, total: int}
+     * }
+     */
+    protected function conversationBranchOptions(Request $request): array
+    {
+        $term = trim((string) $request->string('filter.search', $request->string('search')));
+        $perPage = max(10, min(50, (int) $request->integer('per_page', 20)));
+
+        $paginator = Branch::query()
+            ->whereHas('conversations')
+            ->when($term !== '', fn (Builder $query) => $query->where(
+                fn (Builder $inner) => $inner
+                    ->where('name', 'like', '%'.$term.'%')
+                    ->orWhere('slug', 'like', '%'.$term.'%'),
+            ))
+            ->orderBy('name')
+            ->orderBy('id')
+            ->paginate($perPage);
+
+        $data = [];
+
+        foreach ($paginator->items() as $branch) {
+            $data[] = [
+                'id' => (int) $branch->id,
+                'name' => $branch->name,
+                'slug' => $branch->slug,
+            ];
+        }
+
+        return [
+            'data' => $data,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ];
     }
 
     /**

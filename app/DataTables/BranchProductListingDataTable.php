@@ -14,8 +14,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
+/**
+ * @extends AbstractDataTable<Product>
+ */
 class BranchProductListingDataTable extends AbstractDataTable
 {
     /** @var Collection<int, Inventory> */

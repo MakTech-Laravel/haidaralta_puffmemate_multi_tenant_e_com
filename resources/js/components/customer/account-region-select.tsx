@@ -32,11 +32,7 @@ export function AccountRegionSelect({
             <Label htmlFor={id} className={accountLabelClass}>
                 {label}
             </Label>
-            <Select
-                modal={false}
-                value={value || undefined}
-                onValueChange={onValueChange}
-            >
+            <Select value={value || undefined} onValueChange={onValueChange}>
                 <SelectTrigger id={id} className={accountSelectTriggerClass}>
                     <SelectValue placeholder="Select" />
                 </SelectTrigger>

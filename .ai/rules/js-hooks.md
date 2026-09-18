@@ -1,11 +1,12 @@
 ---
 paths:
-  - 'app/Services/Conversation/**,app/Events/Conversation*,resources/js/components/conversation/**,resources/js/hooks/use-chat-scroll.ts'
+    - 'app/Services/Conversation/**,app/Events/Conversation*,resources/js/components/conversation/**,resources/js/hooks/use-chat-scroll.ts'
 ---
 
 # Js Hooks
 
 ## Conversation receipts and transcript scrolling
+
 Delivery/read state is NOT stored per message. `conversation_participants` holds two monotonic markers (`last_delivered_message_id`, `last_read_message_id`) and the client derives a message's tick by comparing its id against every other participant's markers. That keeps the payload O(participants). `ConversationReceiptsUpdated` broadcasts the whole marker set on the presence channel, and only when a marker actually moved -- a no-op ack must not broadcast. Reading implies delivery, so `markRead` drags the delivered marker forward too.
 
 Recipients ack delivery from the thread channel AND from the per-user inbox channel, so someone who is online but looking at a different thread still produces a double tick.

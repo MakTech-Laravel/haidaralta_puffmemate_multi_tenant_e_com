@@ -61,6 +61,23 @@ function slugify(value: string): string {
 
 type FormErrors = Record<string, string | undefined>;
 
+/** Only collected while creating a branch, never while editing one. */
+type SuperAdminFields = {
+    name: string;
+    phone: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+};
+
+const SUPER_ADMIN_DEFAULTS: SuperAdminFields = {
+    name: '',
+    phone: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+};
+
 function fieldError(errors: FormErrors, key: string): string | undefined {
     return errors[key];
 }
@@ -128,20 +145,26 @@ export function BranchForm({
         closing_time: defaults?.closing_time ?? '',
         status: defaults?.status ?? true,
         ...(includeSuperAdmin
-            ? {
-                  super_admin: {
-                      name: '',
-                      phone: '',
-                      email: '',
-                      password: '',
-                      password_confirmation: '',
-                  },
-              }
+            ? { super_admin: { ...SUPER_ADMIN_DEFAULTS } }
             : {}),
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
     const formErrors = errors as FormErrors;
+
+    /**
+     * `super_admin` is only present when creating a branch, so the conditional
+     * spread above leaves it optional. Reading through a defaulted copy keeps
+     * every field a plain string for the controlled inputs below.
+     */
+    const superAdmin: SuperAdminFields =
+        'super_admin' in data && data.super_admin
+            ? { ...SUPER_ADMIN_DEFAULTS, ...data.super_admin }
+            : SUPER_ADMIN_DEFAULTS;
+
+    const setSuperAdmin = (patch: Partial<SuperAdminFields>): void => {
+        setData('super_admin', { ...superAdmin, ...patch });
+    };
 
     useEffect(() => {
         setValidationTimeout(500);
@@ -535,10 +558,9 @@ export function BranchForm({
                                 </Label>
                                 <Input
                                     id="super_admin_name"
-                                    value={data.super_admin.name}
+                                    value={superAdmin.name}
                                     onChange={(event) =>
-                                        setData('super_admin', {
-                                            ...data.super_admin,
+                                        setSuperAdmin({
                                             name: event.target.value,
                                         })
                                     }
@@ -561,10 +583,9 @@ export function BranchForm({
                                 <Input
                                     id="super_admin_phone"
                                     type="tel"
-                                    value={data.super_admin.phone}
+                                    value={superAdmin.phone}
                                     onChange={(event) =>
-                                        setData('super_admin', {
-                                            ...data.super_admin,
+                                        setSuperAdmin({
                                             phone: event.target.value,
                                         })
                                     }
@@ -591,15 +612,12 @@ export function BranchForm({
                             <Input
                                 id="super_admin_email"
                                 type="email"
-                                value={data.super_admin.email}
+                                value={superAdmin.email}
                                 onChange={(event) =>
-                                    setData('super_admin', {
-                                        ...data.super_admin,
-                                        email: event.target.value,
-                                    })
+                                    setSuperAdmin({ email: event.target.value })
                                 }
                                 onBlur={() => {
-                                    if (data.super_admin.email.trim() !== '') {
+                                    if (superAdmin.email.trim() !== '') {
                                         validate('super_admin.email');
                                     }
                                 }}
@@ -620,10 +638,9 @@ export function BranchForm({
                                 </Label>
                                 <PasswordInput
                                     id="super_admin_password"
-                                    value={data.super_admin.password}
+                                    value={superAdmin.password}
                                     onChange={(event) =>
-                                        setData('super_admin', {
-                                            ...data.super_admin,
+                                        setSuperAdmin({
                                             password: event.target.value,
                                         })
                                     }
@@ -645,12 +662,9 @@ export function BranchForm({
                                 </Label>
                                 <PasswordInput
                                     id="super_admin_password_confirmation"
-                                    value={
-                                        data.super_admin.password_confirmation
-                                    }
+                                    value={superAdmin.password_confirmation}
                                     onChange={(event) =>
-                                        setData('super_admin', {
-                                            ...data.super_admin,
+                                        setSuperAdmin({
                                             password_confirmation:
                                                 event.target.value,
                                         })

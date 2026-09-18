@@ -43,6 +43,7 @@ export function ConversationWorkspace({
     storeUrl,
     hrefFor,
     deliveredUrlFor,
+    branchOptionsUrl = null,
 }: {
     conversations: ConversationRow[];
     inboxMeta: InboxMeta;
@@ -55,6 +56,8 @@ export function ConversationWorkspace({
     storeUrl: string;
     hrefFor: (row: ConversationRow) => string;
     deliveredUrlFor: (conversationId: number) => string;
+    /** Platform only; branch operators cannot widen their scope. */
+    branchOptionsUrl?: string | null;
 }) {
     const [search, setSearch] = useState(inboxMeta.filters.search);
     const [status, setStatus] = useState(inboxMeta.filters.status);
@@ -200,7 +203,8 @@ export function ConversationWorkspace({
                     search={search}
                     status={status}
                     branchId={branchId}
-                    branches={inboxMeta.branches}
+                    branchLabel={inboxMeta.branchLabel}
+                    branchOptionsUrl={branchOptionsUrl}
                     loading={loading}
                     loadingMore={loadingMore}
                     hasMore={inboxMeta.hasMore}

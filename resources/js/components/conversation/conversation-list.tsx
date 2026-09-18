@@ -5,19 +5,13 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 
 import { relativeTime } from './format';
-import type { ConversationRow, FilterOption, InboxParticipant } from './types';
+import type { ConversationRow, InboxParticipant } from './types';
 
 const STATUS_TABS = [
     { value: 'all', label: 'All' },
@@ -31,7 +25,8 @@ export function ConversationList({
     search,
     status,
     branchId,
-    branches,
+    branchLabel,
+    branchOptionsUrl,
     loading,
     loadingMore,
     hasMore,
@@ -46,7 +41,8 @@ export function ConversationList({
     search: string;
     status: string;
     branchId: string;
-    branches: FilterOption[];
+    branchLabel: string | null;
+    branchOptionsUrl: string | null;
     loading: boolean;
     loadingMore: boolean;
     hasMore: boolean;
@@ -117,28 +113,24 @@ export function ConversationList({
                     ))}
                 </div>
 
-                {/* Branch operators are already scoped by route, so this is
-                    only populated on the platform portal. */}
-                {branches.length > 0 ? (
-                    <Select value={branchId} onValueChange={onBranchChange}>
-                        <SelectTrigger
-                            className="w-full"
-                            aria-label="Filter by branch"
-                        >
-                            <SelectValue placeholder="All branches" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All branches</SelectItem>
-                            {branches.map((branch) => (
-                                <SelectItem
-                                    key={branch.value}
-                                    value={branch.value}
-                                >
-                                    {branch.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                {/* Branch operators are already scoped by route, so the URL is
+                    only supplied on the platform portal. Options page in as you
+                    scroll rather than shipping every branch in the props. */}
+                {branchOptionsUrl ? (
+                    <InfiniteScrollCombobox
+                        id="conversation-branch-filter"
+                        optionsUrl={branchOptionsUrl}
+                        value={branchId === 'all' ? null : branchId}
+                        onValueChange={(value) =>
+                            onBranchChange(value ?? 'all')
+                        }
+                        selectedLabel={branchLabel}
+                        placeholder="All branches"
+                        searchPlaceholder="Search branches…"
+                        emptyText="No branches with conversations."
+                        noneLabel="All branches"
+                        descriptionKey={null}
+                    />
                 ) : null}
             </div>
 

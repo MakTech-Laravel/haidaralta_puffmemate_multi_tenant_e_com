@@ -111,8 +111,11 @@ export type InboxMeta = {
     nextCursor: string | null;
     filters: { search: string; status: string; branch_id: string };
     statuses: FilterOption[];
-    /** Empty on the branch portal, which is already scoped by route. */
-    branches: FilterOption[];
+    /**
+     * Label for the selected branch only. The filter combobox pages its own
+     * options, so the full branch list is never shipped in the props.
+     */
+    branchLabel: string | null;
 };
 
 export type ConversationThreadProps = {
