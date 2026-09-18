@@ -162,13 +162,12 @@ export function DataTableRowActions({
                         <MoreHorizontal className="size-4" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                    align="end"
-                    className={contentClassName}
-                >
+                <DropdownMenuContent align="end" className={contentClassName}>
                     <DropdownMenuLabel>{label}</DropdownMenuLabel>
                     {resolvedGroups.map((group, groupIndex) => (
-                        <Fragment key={`${group.label ?? 'group'}-${groupIndex}`}>
+                        <Fragment
+                            key={`${group.label ?? 'group'}-${groupIndex}`}
+                        >
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>
                                 {group.label ? (

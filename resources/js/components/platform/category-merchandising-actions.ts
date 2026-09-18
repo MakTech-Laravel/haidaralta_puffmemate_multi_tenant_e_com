@@ -1,5 +1,12 @@
 import { router } from '@inertiajs/react';
-import { ListOrdered, PanelTop, Power, PowerOff, Star, StarOff } from 'lucide-react';
+import {
+    ListOrdered,
+    PanelTop,
+    Power,
+    PowerOff,
+    Star,
+    StarOff,
+} from 'lucide-react';
 import type { DataTableActionItem } from '@/components/data-table';
 
 export type CategoryMerchandisingRow = {

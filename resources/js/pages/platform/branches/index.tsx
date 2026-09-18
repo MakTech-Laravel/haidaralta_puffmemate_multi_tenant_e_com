@@ -29,7 +29,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { usePermission } from '@/hooks/use-permissions';
-import { filteredBranchDriversUrl, filteredBranchStaffUrl } from '@/lib/branch-people-query';
+import {
+    filteredBranchDriversUrl,
+    filteredBranchStaffUrl,
+} from '@/lib/branch-people-query';
 import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type BranchRow = {
@@ -238,8 +241,7 @@ export default function PlatformBranchesIndex({
                                   label: 'Delete',
                                   icon: Trash2,
                                   destructive: true,
-                                  onSelect: () =>
-                                      setDeletingSlug(branch.slug),
+                                  onSelect: () => setDeletingSlug(branch.slug),
                               },
                           ]
                         : [];

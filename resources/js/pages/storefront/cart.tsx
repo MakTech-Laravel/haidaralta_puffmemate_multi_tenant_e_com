@@ -88,7 +88,7 @@ export default function StorefrontCart({
             <Head title="Cart" />
 
             <div className="bg-muted/50 flex-1">
-                <div className="mx-auto container px-4 py-8 sm:px-6 sm:py-10">
+                <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
                     <Link
                         href={shopCategory.url('cigarettes')}
                         prefetch
@@ -241,7 +241,10 @@ export default function StorefrontCart({
                             }}
                         />
 
-                        <CartOrderSummary className="min-w-0" summary={summary} />
+                        <CartOrderSummary
+                            className="min-w-0"
+                            summary={summary}
+                        />
                     </div>
                 </div>
             </div>

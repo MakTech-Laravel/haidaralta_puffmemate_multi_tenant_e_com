@@ -8,6 +8,7 @@ use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInv
 use App\Http\Controllers\Platform\BranchScopedStaffController as PlatformBranchScopedStaffController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
 use App\Http\Controllers\Platform\CategoryController as PlatformCategoryController;
+use App\Http\Controllers\Platform\ConversationController as PlatformConversationController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
@@ -217,6 +218,32 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.products.variants.update');
         Route::delete('products/{product}/variants/{variant}', [PlatformProductVariantController::class, 'destroy'])
             ->name('platform.products.variants.destroy');
+    });
+
+    Route::middleware(['permission:manage-conversations'])->group(function () {
+        Route::get('conversations', [PlatformConversationController::class, 'index'])
+            ->name('platform.conversations.index');
+        Route::get('conversations/order-options', [PlatformConversationController::class, 'orderOptions'])
+            ->name('platform.conversations.order-options');
+        Route::post('conversations', [PlatformConversationController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.conversations.store');
+        Route::get('conversations/{conversation}', [PlatformConversationController::class, 'show'])
+            ->whereNumber('conversation')
+            ->name('platform.conversations.show');
+        Route::get('conversations/{conversation}/messages', [PlatformConversationController::class, 'messages'])
+            ->whereNumber('conversation')
+            ->name('platform.conversations.messages');
+        Route::post('conversations/{conversation}/messages', [PlatformConversationController::class, 'storeMessage'])
+            ->whereNumber('conversation')
+            ->middleware('throttle:conversation-messages')
+            ->name('platform.conversations.messages.store');
+        Route::post('conversations/{conversation}/read', [PlatformConversationController::class, 'read'])
+            ->whereNumber('conversation')
+            ->name('platform.conversations.read');
+        Route::post('conversations/{conversation}/close', [PlatformConversationController::class, 'close'])
+            ->whereNumber('conversation')
+            ->name('platform.conversations.close');
     });
 
     Route::middleware(['permission:view-activity-logs'])->group(function () {

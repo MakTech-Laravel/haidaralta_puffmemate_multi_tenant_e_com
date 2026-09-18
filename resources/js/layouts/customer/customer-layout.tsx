@@ -29,7 +29,7 @@ export default function CustomerLayout({
                 <h1 className="bg-accent text-foreground py-4 text-center text-2xl font-bold tracking-tight sm:py-8 sm:text-3xl md:text-[40px]">
                     My Account
                 </h1>
-                <div className="mx-auto container px-4 py-8 sm:px-6 sm:py-10">
+                <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
                     <nav
                         aria-label="Breadcrumb"
                         className="text-muted-foreground mb-6 text-base sm:mb-10 md:mb-20"

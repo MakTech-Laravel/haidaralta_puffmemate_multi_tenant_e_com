@@ -1,7 +1,17 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { format, isValid, parseISO } from 'date-fns';
-import { Check, Copy, History, Network, Pencil, Plus, ScrollText, Settings2, Trash2 } from 'lucide-react';
+import {
+    Check,
+    Copy,
+    History,
+    Network,
+    Pencil,
+    Plus,
+    ScrollText,
+    Settings2,
+    Trash2,
+} from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
@@ -267,10 +277,7 @@ export default function PlatformProductsShow({
     const canManageBranches = can('manage-branch-inventories');
     const colorCode = normalizeCatalogColorPickerValue(product.color_code);
     const transparent = isTransparentColorPickerValue(colorCode);
-    const categories =
-        product.categories.length > 0
-            ? product.categories
-            : [];
+    const categories = product.categories.length > 0 ? product.categories : [];
 
     const branchQuery = useDataTableQuery({
         indexUrl: ProductController.show.url(product.slug),
@@ -418,9 +425,7 @@ export default function PlatformProductsShow({
                 header: 'Status',
                 cell: ({ row }) => (
                     <Badge
-                        variant={
-                            row.original.status ? 'default' : 'secondary'
-                        }
+                        variant={row.original.status ? 'default' : 'secondary'}
                     >
                         {row.original.status ? 'Active' : 'Inactive'}
                     </Badge>
@@ -680,7 +685,7 @@ export default function PlatformProductsShow({
                                             <span className="inline-flex items-center gap-2">
                                                 {transparent ? null : (
                                                     <span
-                                                        className="size-5 shrink-0 rounded-md border border-border/70"
+                                                        className="border-border/70 size-5 shrink-0 rounded-md border"
                                                         style={colorPickerStyle(
                                                             colorCode,
                                                         )}
@@ -866,81 +871,84 @@ export default function PlatformProductsShow({
                 </Card>
 
                 {catalog.show_product_variants ? (
-                <Card className="gap-4 py-5 shadow-sm">
-                    <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-5">
-                        <div className="flex flex-col gap-1.5">
-                            <CardTitle>Variants</CardTitle>
-                            <CardDescription>
-                                Purchasable SKUs and attribute combinations
-                            </CardDescription>
-                        </div>
-                        {canManageCatalog ? (
-                            <Button size="sm" onClick={openCreateVariant}>
-                                <Plus className="size-4" />
-                                Add variant
-                            </Button>
-                        ) : null}
-                    </CardHeader>
-                    <CardContent className="px-5">
-                        <DataTable
-                            columns={variantColumns}
-                            payload={variantsPayload}
-                            perPage={variantsPayload.per_page}
-                            onPerPageChange={() => undefined}
-                            showPagination={false}
-                            emptyMessage="No variants yet. Add one to define purchasable SKUs."
-                        />
-                    </CardContent>
-                </Card>
+                    <Card className="gap-4 py-5 shadow-sm">
+                        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-5">
+                            <div className="flex flex-col gap-1.5">
+                                <CardTitle>Variants</CardTitle>
+                                <CardDescription>
+                                    Purchasable SKUs and attribute combinations
+                                </CardDescription>
+                            </div>
+                            {canManageCatalog ? (
+                                <Button size="sm" onClick={openCreateVariant}>
+                                    <Plus className="size-4" />
+                                    Add variant
+                                </Button>
+                            ) : null}
+                        </CardHeader>
+                        <CardContent className="px-5">
+                            <DataTable
+                                columns={variantColumns}
+                                payload={variantsPayload}
+                                perPage={variantsPayload.per_page}
+                                onPerPageChange={() => undefined}
+                                showPagination={false}
+                                emptyMessage="No variants yet. Add one to define purchasable SKUs."
+                            />
+                        </CardContent>
+                    </Card>
                 ) : null}
             </div>
 
             {catalog.show_product_variants ? (
-            <Dialog
-                onOpenChange={(open) => {
-                    setVariantDialogOpen(open);
+                <Dialog
+                    onOpenChange={(open) => {
+                        setVariantDialogOpen(open);
 
-                    if (!open) {
-                        setEditingVariant(null);
-                    }
-                }}
-            >
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {editingVariant ? 'Edit variant' : 'Add variant'}
-                        </DialogTitle>
-                        <DialogDescription>
-                            Variants define purchasable SKUs for {product.name}.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <VariantForm
-                        action={
-                            editingVariant
-                                ? ProductVariantController.update.form({
-                                      product: product.slug,
-                                      variant: editingVariant.id,
-                                  })
-                                : ProductVariantController.store.form(
-                                      product.slug,
-                                  )
+                        if (!open) {
+                            setEditingVariant(null);
                         }
-                        isEdit={editingVariant !== null}
-                        defaults={
-                            editingVariant
-                                ? {
-                                      name: editingVariant.name,
-                                      sku: editingVariant.sku,
-                                      attributes: editingVariant.attributes,
-                                      status: editingVariant.status,
-                                  }
-                                : undefined
-                        }
-                        onCancel={closeVariantDialog}
-                        onSuccess={closeVariantDialog}
-                    />
-                </DialogContent>
-            </Dialog>
+                    }}
+                >
+                    <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle>
+                                {editingVariant
+                                    ? 'Edit variant'
+                                    : 'Add variant'}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Variants define purchasable SKUs for{' '}
+                                {product.name}.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <VariantForm
+                            action={
+                                editingVariant
+                                    ? ProductVariantController.update.form({
+                                          product: product.slug,
+                                          variant: editingVariant.id,
+                                      })
+                                    : ProductVariantController.store.form(
+                                          product.slug,
+                                      )
+                            }
+                            isEdit={editingVariant !== null}
+                            defaults={
+                                editingVariant
+                                    ? {
+                                          name: editingVariant.name,
+                                          sku: editingVariant.sku,
+                                          attributes: editingVariant.attributes,
+                                          status: editingVariant.status,
+                                      }
+                                    : undefined
+                            }
+                            onCancel={closeVariantDialog}
+                            onSuccess={closeVariantDialog}
+                        />
+                    </DialogContent>
+                </Dialog>
             ) : null}
 
             <ConfirmDeleteDialog

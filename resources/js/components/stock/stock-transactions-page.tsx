@@ -231,7 +231,7 @@ export function StockTransactionsPage({
                     <Badge
                         variant="outline"
                         className={cn(
-                            'tabular-nums font-medium',
+                            'font-medium tabular-nums',
                             quantityBadgeClass(
                                 row.original.type,
                                 row.original.quantity,
@@ -386,7 +386,8 @@ export function StockTransactionsPage({
                                             className="w-56"
                                         />
                                     </div>
-                                    {hideBranchFilter || !branchOptionsUrl ? null : (
+                                    {hideBranchFilter ||
+                                    !branchOptionsUrl ? null : (
                                         <div className="grid gap-2">
                                             <Label>Branch</Label>
                                             <InfiniteScrollCombobox
@@ -418,8 +419,7 @@ export function StockTransactionsPage({
                                         <Label>Type</Label>
                                         <Select
                                             value={String(
-                                                query.filters.type ??
-                                                    'all',
+                                                query.filters.type ?? 'all',
                                             )}
                                             onValueChange={(value) =>
                                                 query.setFilter(
@@ -454,8 +454,8 @@ export function StockTransactionsPage({
                                         <Label>From</Label>
                                         <DatePicker
                                             value={
-                                                (query.filters.from as string) ||
-                                                null
+                                                (query.filters
+                                                    .from as string) || null
                                             }
                                             onChange={(value) =>
                                                 query.setFilter(

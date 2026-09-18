@@ -429,15 +429,12 @@ export default function PlatformProductsIndex({
                     }
 
                     setProcessing(true);
-                    router.delete(
-                        ProductController.destroy.url(deletingSlug),
-                        {
-                            onFinish: () => {
-                                setProcessing(false);
-                                setDeletingSlug(null);
-                            },
+                    router.delete(ProductController.destroy.url(deletingSlug), {
+                        onFinish: () => {
+                            setProcessing(false);
+                            setDeletingSlug(null);
                         },
-                    );
+                    });
                 }}
             />
         </>

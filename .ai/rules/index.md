@@ -22,6 +22,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/Platform/AdminController.php, app/Http/Controllers/Platform/BranchStaffController.php | .ai/rules/controllers-platform.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
+| {app/Support/ConversationInbox.php,app/Http/Controllers/*/ConversationController.php,resources/js/components/conversation/**,resources/js/pages/*/conversations/**} | .ai/rules/conversations.md |
 | resources/css/app.css | .ai/rules/css.md |
 | resources/js/layouts/customer/** | .ai/rules/customer.md |
 | app/DataTables/**, resources/js/components/data-table/** | .ai/rules/data-table.md |

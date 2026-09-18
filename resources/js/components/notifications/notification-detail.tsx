@@ -43,7 +43,9 @@ export function NotificationDetail({
                             {notification.title}
                         </h1>
                         <Badge
-                            variant={notification.read ? 'secondary' : 'default'}
+                            variant={
+                                notification.read ? 'secondary' : 'default'
+                            }
                             className="rounded-sm"
                         >
                             {notification.read ? 'Read' : 'Unread'}

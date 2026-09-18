@@ -16,7 +16,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
             href={productShow(product.id)}
             prefetch
             className={cn(
-                'border-border bg-card flex flex-col overflow-hidden rounded-xl border transition hover:border-primary/40',
+                'border-border bg-card hover:border-primary/40 flex flex-col overflow-hidden rounded-xl border transition',
                 className,
             )}
         >
@@ -37,10 +37,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 />
             </div>
             <div className="flex flex-1 flex-col gap-1 p-4">
-                <h3 className="text-foreground text-base font-semibold sm:text-lg truncate">
+                <h3 className="text-foreground truncate text-base font-semibold sm:text-lg">
                     {product.name}
                 </h3>
-                <p className="text-muted-foreground text-sm font-normal truncate">
+                <p className="text-muted-foreground truncate text-sm font-normal">
                     {product.description}
                 </p>
                 <div className="mt-2 flex flex-wrap items-baseline gap-2">

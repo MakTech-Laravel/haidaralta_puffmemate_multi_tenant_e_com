@@ -89,9 +89,12 @@ export function BranchForm({
             : [],
     );
 
-    const formMethod = (
-        action.method ?? 'post'
-    ).toLowerCase() as 'get' | 'post' | 'put' | 'patch' | 'delete';
+    const formMethod = (action.method ?? 'post').toLowerCase() as
+        | 'get'
+        | 'post'
+        | 'put'
+        | 'patch'
+        | 'delete';
 
     const {
         data,
@@ -179,7 +182,7 @@ export function BranchForm({
         <form onSubmit={submit} className="space-y-6">
             <section
                 className={cn(
-                    'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                    'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
                     'sm:p-6',
                 )}
             >
@@ -188,7 +191,8 @@ export function BranchForm({
                         Branch details
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                        Name, contact details, hours, and logo for this location.
+                        Name, contact details, hours, and logo for this
+                        location.
                     </p>
                 </div>
 
@@ -234,9 +238,7 @@ export function BranchForm({
                                     uploadProgress={
                                         progress?.percentage ?? null
                                     }
-                                    onCancel={
-                                        processing ? cancel : undefined
-                                    }
+                                    onCancel={processing ? cancel : undefined}
                                     placeholder="Add a logo"
                                     hint="PNG, JPG, or WebP · up to 2MB"
                                     error={errors.logo}
@@ -282,10 +284,7 @@ export function BranchForm({
                                         value={data.slug}
                                         onChange={(event) => {
                                             setSlugTouched(true);
-                                            setData(
-                                                'slug',
-                                                event.target.value,
-                                            );
+                                            setData('slug', event.target.value);
                                         }}
                                         onBlur={() => validate('slug')}
                                         required
@@ -300,10 +299,7 @@ export function BranchForm({
                                         id="code"
                                         value={data.code}
                                         onChange={(event) =>
-                                            setData(
-                                                'code',
-                                                event.target.value,
-                                            )
+                                            setData('code', event.target.value)
                                         }
                                         onBlur={() => validate('code')}
                                         required
@@ -321,10 +317,7 @@ export function BranchForm({
                                         type="tel"
                                         value={data.phone}
                                         onChange={(event) =>
-                                            setData(
-                                                'phone',
-                                                event.target.value,
-                                            )
+                                            setData('phone', event.target.value)
                                         }
                                         onBlur={() => {
                                             if (data.phone.trim() !== '') {
@@ -348,10 +341,7 @@ export function BranchForm({
                                         type="email"
                                         value={data.email}
                                         onChange={(event) =>
-                                            setData(
-                                                'email',
-                                                event.target.value,
-                                            )
+                                            setData('email', event.target.value)
                                         }
                                         onBlur={() => {
                                             if (data.email.trim() !== '') {
@@ -383,7 +373,7 @@ export function BranchForm({
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="space-y-1">
-                                <p className="text-sm font-medium leading-none">
+                                <p className="text-sm leading-none font-medium">
                                     Map location
                                 </p>
                                 <p className="text-muted-foreground text-sm">
@@ -423,10 +413,7 @@ export function BranchForm({
                                     step="any"
                                     value={data.latitude}
                                     onChange={(event) =>
-                                        setData(
-                                            'latitude',
-                                            event.target.value,
-                                        )
+                                        setData('latitude', event.target.value)
                                     }
                                     placeholder="-33.8688"
                                 />
@@ -446,10 +433,7 @@ export function BranchForm({
                                     step="any"
                                     value={data.longitude}
                                     onChange={(event) =>
-                                        setData(
-                                            'longitude',
-                                            event.target.value,
-                                        )
+                                        setData('longitude', event.target.value)
                                     }
                                     placeholder="151.2093"
                                 />
@@ -529,7 +513,7 @@ export function BranchForm({
             {includeSuperAdmin && 'super_admin' in data ? (
                 <section
                     className={cn(
-                        'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                        'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
                         'sm:p-6',
                     )}
                 >
@@ -584,9 +568,7 @@ export function BranchForm({
                                             phone: event.target.value,
                                         })
                                     }
-                                    onBlur={() =>
-                                        validate('super_admin.phone')
-                                    }
+                                    onBlur={() => validate('super_admin.phone')}
                                     required
                                     placeholder="0412 345 678"
                                 />
@@ -683,7 +665,7 @@ export function BranchForm({
                 </section>
             ) : null}
 
-            <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t px-2 py-4 backdrop-blur">
                 <Button variant="secondary" asChild>
                     <Link href={cancelHref}>Cancel</Link>
                 </Button>

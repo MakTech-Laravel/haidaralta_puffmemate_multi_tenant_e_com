@@ -74,10 +74,7 @@ export function ExportDropdown({
                                 }
 
                                 return (
-                                    <DropdownMenuItem
-                                        key={scope.value}
-                                        asChild
-                                    >
+                                    <DropdownMenuItem key={scope.value} asChild>
                                         <a
                                             href={buildExportHref(
                                                 url,

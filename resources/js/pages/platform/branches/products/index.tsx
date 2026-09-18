@@ -191,7 +191,9 @@ export default function PlatformBranchProductsIndex({
                 accessorKey: 'quantity',
                 header: 'Stock',
                 cell: ({ row }) => (
-                    <span className="tabular-nums">{row.original.quantity}</span>
+                    <span className="tabular-nums">
+                        {row.original.quantity}
+                    </span>
                 ),
             },
             {

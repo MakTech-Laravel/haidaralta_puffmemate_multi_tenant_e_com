@@ -88,7 +88,7 @@ export function RoleProfile({
                 </div>
 
                 <div className="grid items-start gap-6 xl:grid-cols-[19rem_minmax(0,1fr)]">
-                    <aside className="rounded-2xl border bg-card">
+                    <aside className="bg-card rounded-2xl border">
                         <div className="flex flex-col items-center gap-3 px-6 pt-8 pb-6 text-center">
                             <div className="bg-muted flex size-24 items-center justify-center rounded-2xl border shadow-sm">
                                 <Shield className="text-muted-foreground size-10" />
@@ -141,7 +141,7 @@ export function RoleProfile({
                     </aside>
 
                     <div className="flex min-w-0 flex-col gap-6">
-                        <section className="overflow-hidden rounded-2xl border bg-card">
+                        <section className="bg-card overflow-hidden rounded-2xl border">
                             <div className="flex items-center justify-between gap-3 px-5 py-4">
                                 <div>
                                     <h2 className="text-base font-semibold tracking-tight">
@@ -198,7 +198,7 @@ export function RoleProfile({
                             </div>
                         </section>
 
-                        <section className="overflow-hidden rounded-2xl border bg-card">
+                        <section className="bg-card overflow-hidden rounded-2xl border">
                             <div className="px-5 py-4">
                                 <h2 className="text-base font-semibold tracking-tight">
                                     Assigned users

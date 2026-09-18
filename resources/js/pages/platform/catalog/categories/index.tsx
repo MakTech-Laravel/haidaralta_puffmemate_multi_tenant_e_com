@@ -72,8 +72,9 @@ export default function PlatformCategoriesIndex({
     const { catalog } = usePage().props;
     const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
-    const [navSortCategory, setNavSortCategory] =
-        useState<CategoryRow | null>(null);
+    const [navSortCategory, setNavSortCategory] = useState<CategoryRow | null>(
+        null,
+    );
 
     const query = useDataTableQuery({
         indexUrl: CategoryController.index.url(),
@@ -159,8 +160,7 @@ export default function PlatformCategoriesIndex({
                                   onSort={query.toggleSort}
                               />
                           ),
-                          cell: ({ row }) =>
-                              row.original.parent_name ?? '—',
+                          cell: ({ row }) => row.original.parent_name ?? '—',
                       } satisfies ColumnDef<CategoryRow>,
                   ]
                 : []),
@@ -263,25 +263,24 @@ export default function PlatformCategoriesIndex({
                 header: 'Actions',
                 cell: ({ row }) => {
                     const category = row.original;
-                    const merchandising =
-                        can('manage-catalog')
-                            ? categoryMerchandisingItems(
-                                  category,
-                                  {
-                                      status: CategoryController.toggleStatus.url(
+                    const merchandising = can('manage-catalog')
+                        ? categoryMerchandisingItems(
+                              category,
+                              {
+                                  status: CategoryController.toggleStatus.url(
+                                      category.slug,
+                                  ),
+                                  featured:
+                                      CategoryController.toggleFeatured.url(
                                           category.slug,
                                       ),
-                                      featured:
-                                          CategoryController.toggleFeatured.url(
-                                              category.slug,
-                                          ),
-                                      nav: CategoryController.toggleNav.url(
-                                          category.slug,
-                                      ),
-                                  },
-                                  () => setNavSortCategory(category),
-                              )
-                            : [];
+                                  nav: CategoryController.toggleNav.url(
+                                      category.slug,
+                                  ),
+                              },
+                              () => setNavSortCategory(category),
+                          )
+                        : [];
 
                     const catalogItems = [
                         {
@@ -488,42 +487,42 @@ export default function PlatformCategoriesIndex({
                                         </Select>
                                     </div>
                                     {catalog.show_parent_category ? (
-                                    <div className="grid gap-2">
-                                        <Label>Parent</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.parent_id ??
-                                                    'all',
-                                            )}
-                                            onValueChange={(value) =>
-                                                query.setFilter(
-                                                    'parent_id',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-[12rem]">
-                                                <SelectValue placeholder="Parent" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All parents
-                                                </SelectItem>
-                                                {parents.map((parent) => (
-                                                    <SelectItem
-                                                        key={parent.id}
-                                                        value={String(
-                                                            parent.id,
-                                                        )}
-                                                    >
-                                                        {parent.name}
+                                        <div className="grid gap-2">
+                                            <Label>Parent</Label>
+                                            <Select
+                                                value={String(
+                                                    query.filters.parent_id ??
+                                                        'all',
+                                                )}
+                                                onValueChange={(value) =>
+                                                    query.setFilter(
+                                                        'parent_id',
+                                                        value === 'all'
+                                                            ? null
+                                                            : value,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger className="w-[12rem]">
+                                                    <SelectValue placeholder="Parent" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">
+                                                        All parents
                                                     </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                                    {parents.map((parent) => (
+                                                        <SelectItem
+                                                            key={parent.id}
+                                                            value={String(
+                                                                parent.id,
+                                                            )}
+                                                        >
+                                                            {parent.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     ) : null}
                                     <div className="grid gap-2">
                                         <Label>Trash</Label>

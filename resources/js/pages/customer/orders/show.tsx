@@ -26,7 +26,7 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
 
             <div className="bg-accent space-y-5 p-4 sm:p-6">
                 <div className="">
-                    <h2 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl md:text-3xl mb-2">
+                    <h2 className="text-foreground mb-2 text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
                         Order Information {order.orderNumber}
                     </h2>
                     <Badge

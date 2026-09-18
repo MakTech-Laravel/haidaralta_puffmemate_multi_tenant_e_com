@@ -165,9 +165,7 @@ export function StaffForm({
                                     <SelectTrigger
                                         id="branch_id"
                                         className="w-full"
-                                        aria-invalid={Boolean(
-                                            errors.branch_id,
-                                        )}
+                                        aria-invalid={Boolean(errors.branch_id)}
                                     >
                                         <SelectValue placeholder="Select a branch" />
                                     </SelectTrigger>
@@ -221,9 +219,7 @@ export function StaffForm({
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="email">
-                                Email (optional)
-                            </Label>
+                            <Label htmlFor="email">Email (optional)</Label>
                             <Input
                                 id="email"
                                 name="email"

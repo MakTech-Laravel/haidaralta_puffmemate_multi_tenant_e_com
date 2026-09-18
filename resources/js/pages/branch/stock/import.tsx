@@ -18,7 +18,10 @@ export default function BranchImportStock({
     setLayoutProps({
         breadcrumbs: [
             { title: 'Dashboard', href: `/branch/${branch.slug}/dashboard` },
-            { title: 'Products', href: ProductController.index.url(branch.slug) },
+            {
+                title: 'Products',
+                href: ProductController.index.url(branch.slug),
+            },
             {
                 title: 'Import stock',
                 href: StockController.import.url(branch.slug),

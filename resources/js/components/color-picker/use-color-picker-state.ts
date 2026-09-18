@@ -50,7 +50,9 @@ type UseColorPickerStateOptions = Pick<
     mode: ColorPickerPresentationMode;
 };
 
-function mergeLabels(overrides?: Partial<ColorPickerLabels>): ColorPickerLabels {
+function mergeLabels(
+    overrides?: Partial<ColorPickerLabels>,
+): ColorPickerLabels {
     return { ...DEFAULT_COLOR_PICKER_LABELS, ...overrides };
 }
 
@@ -86,7 +88,10 @@ export function useColorPickerState({
     );
 
     const enabledModes = useMemo(
-        () => resolveEnabledModes(enabledModesKey.split(',') as ColorPickerMode[]),
+        () =>
+            resolveEnabledModes(
+                enabledModesKey.split(',') as ColorPickerMode[],
+            ),
         [enabledModesKey],
     );
 
@@ -160,7 +165,10 @@ export function useColorPickerState({
 
     const commitValue = useCallback(
         (next: ColorPickerValue) => {
-            const normalized = normalizeColorPickerValue(next, normalizeOptions);
+            const normalized = normalizeColorPickerValue(
+                next,
+                normalizeOptions,
+            );
 
             if (!isControlledValue) {
                 setUncontrolledValue(normalized);
@@ -173,7 +181,10 @@ export function useColorPickerState({
 
     const updateWorkingValue = useCallback(
         (next: ColorPickerValue) => {
-            const normalized = normalizeColorPickerValue(next, normalizeOptions);
+            const normalized = normalizeColorPickerValue(
+                next,
+                normalizeOptions,
+            );
 
             if (confirmSelection) {
                 setPendingValue(normalized);

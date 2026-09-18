@@ -4,7 +4,12 @@ import { DriverForm } from '@/components/admin/driver-form';
 import Heading from '@/components/heading';
 
 type Option = { value: string; label: string };
-type BranchOption = { id: number; name: string; slug: string; code?: string | null };
+type BranchOption = {
+    id: number;
+    name: string;
+    slug: string;
+    code?: string | null;
+};
 
 type Driver = {
     id: number;

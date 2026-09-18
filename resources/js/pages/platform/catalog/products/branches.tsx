@@ -165,9 +165,7 @@ export default function PlatformProductBranches({
                             ) : null}
                         </div>
                         <DataTableTruncated className="text-muted-foreground text-xs">
-                            {row.original.code
-                                ? `${row.original.code} · `
-                                : ''}
+                            {row.original.code ? `${row.original.code} · ` : ''}
                             /{row.original.slug}
                         </DataTableTruncated>
                     </div>
@@ -227,7 +225,7 @@ export default function PlatformProductBranches({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <Avatar
-                            className="size-14 rounded-xl border border-border/70"
+                            className="border-border/70 size-14 rounded-xl border"
                             style={
                                 transparent
                                     ? undefined

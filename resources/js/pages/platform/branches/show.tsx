@@ -97,13 +97,7 @@ function initials(name: string): string {
         .join('');
 }
 
-function Fact({
-    label,
-    value,
-}: {
-    label: string;
-    value: ReactNode;
-}) {
+function Fact({ label, value }: { label: string; value: ReactNode }) {
     return (
         <div className="flex min-w-0 flex-col gap-1">
             <dt className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
@@ -144,7 +138,8 @@ export default function PlatformBranchesShow({
     const { can } = usePermission();
     const latitude = formatCoord(branch.latitude);
     const longitude = formatCoord(branch.longitude);
-    const hasPin = branch.map !== null && latitude !== null && longitude !== null;
+    const hasPin =
+        branch.map !== null && latitude !== null && longitude !== null;
     const hours =
         branch.opening_time || branch.closing_time
             ? `${branch.opening_time ?? '—'} – ${branch.closing_time ?? '—'}`
@@ -423,7 +418,7 @@ export default function PlatformBranchesShow({
                     {hasPin ? (
                         <button
                             type="button"
-                            className="w-full cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            className="focus-visible:ring-ring w-full cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:outline-none"
                             onClick={() => setMapOpen(true)}
                         >
                             <StatCard

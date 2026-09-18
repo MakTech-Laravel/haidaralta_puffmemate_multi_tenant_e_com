@@ -133,7 +133,10 @@ function slugify(value: string): string {
 }
 
 function skuFromSlug(slug: string, prefix: string): string {
-    const body = slug.trim().replace(/^-+|-+$/g, '').toUpperCase();
+    const body = slug
+        .trim()
+        .replace(/^-+|-+$/g, '')
+        .toUpperCase();
     const tag = prefix.trim().toUpperCase() || 'PMM';
 
     if (body === '') {
@@ -173,28 +176,31 @@ export function ProductForm({
                           url: defaults.image_url,
                           mime_type: 'image/jpeg',
                           name:
-                              defaults.image.split('/').pop() ?? 'primary-image',
+                              defaults.image.split('/').pop() ??
+                              'primary-image',
                       },
                   ]
                 : [],
     );
-    const [existingGallery, setExistingGallery] = useState<ExistingFile[]>(
-        () =>
-            (defaults?.gallery ?? []).map((image) => ({
-                id: image.id,
-                path: image.path,
-                url: image.url,
-                mime_type: image.mime_type ?? 'image/jpeg',
-                name: image.path.split('/').pop() ?? `image-${image.id}`,
-            })),
+    const [existingGallery, setExistingGallery] = useState<ExistingFile[]>(() =>
+        (defaults?.gallery ?? []).map((image) => ({
+            id: image.id,
+            path: image.path,
+            url: image.url,
+            mime_type: image.mime_type ?? 'image/jpeg',
+            name: image.path.split('/').pop() ?? `image-${image.id}`,
+        })),
     );
     const [removeGalleryIds, setRemoveGalleryIds] = useState<number[]>([]);
     const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
     const [categoryOpen, setCategoryOpen] = useState(false);
 
-    const formMethod = (
-        action.method ?? 'post'
-    ).toLowerCase() as 'get' | 'post' | 'put' | 'patch' | 'delete';
+    const formMethod = (action.method ?? 'post').toLowerCase() as
+        | 'get'
+        | 'post'
+        | 'put'
+        | 'patch'
+        | 'delete';
 
     const {
         data,
@@ -220,10 +226,7 @@ export function ProductForm({
         gallery: [] as File[],
         remove_image: false,
         remove_gallery_ids: [] as number[],
-        color_code: catalogFormColorPickerValue(
-            defaults?.color_code,
-            isEdit,
-        ),
+        color_code: catalogFormColorPickerValue(defaults?.color_code, isEdit),
         status: defaults?.status ?? true,
         ...(returnTo ? { return_to: returnTo } : {}),
         ...(branchOpsFields
@@ -305,7 +308,7 @@ export function ProductForm({
             return;
         }
 
-            const nextSlug = slugify(data.name);
+        const nextSlug = slugify(data.name);
 
         if (nextSlug !== data.slug) {
             setData('slug', nextSlug);
@@ -337,8 +340,7 @@ export function ProductForm({
             return;
         }
 
-        const endpoint =
-            suggestionsUrl ?? ProductController.suggestions.url();
+        const endpoint = suggestionsUrl ?? ProductController.suggestions.url();
 
         const timer = window.setTimeout(() => {
             const url = new URL(endpoint, window.location.origin);
@@ -360,12 +362,7 @@ export function ProductForm({
         }, 300);
 
         return () => window.clearTimeout(timer);
-    }, [
-        enableSuggestions,
-        excludeProductId,
-        suggestionQuery,
-        suggestionsUrl,
-    ]);
+    }, [enableSuggestions, excludeProductId, suggestionQuery, suggestionsUrl]);
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -435,20 +432,21 @@ export function ProductForm({
 
     return (
         <form onSubmit={submit} className="space-y-6">
-                    {showBranchNotice ? (
+            {showBranchNotice ? (
                 <Alert className="border-primary/20 bg-primary/5">
                     <AlertTitle>Shared catalog</AlertTitle>
-                            <AlertDescription>
+                    <AlertDescription>
                         Active products are available at every branch. Set stock
-                        and price from Catalog Manage after creating the listing.
-                            </AlertDescription>
-                        </Alert>
-                    ) : null}
+                        and price from Catalog Manage after creating the
+                        listing.
+                    </AlertDescription>
+                </Alert>
+            ) : null}
 
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]">
                 <section
                     className={cn(
-                        'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                        'border-border/80 bg-card self-start rounded-2xl border p-5 shadow-sm',
                         'sm:p-6',
                     )}
                 >
@@ -477,7 +475,7 @@ export function ProductForm({
                                         aria-expanded={categoryOpen}
                                         aria-invalid={Boolean(
                                             errors.category_ids ??
-                                                errors['category_ids.0'],
+                                            errors['category_ids.0'],
                                         )}
                                         className="h-auto min-h-9 w-full min-w-0 justify-between gap-2 px-3 py-1.5 font-normal"
                                     >
@@ -526,7 +524,7 @@ export function ProductForm({
                                                         return (
                                                             <CommandItem
                                                                 key={option.id}
-                            value={
+                                                                value={
                                                                     option.name
                                                                 }
                                                                 onSelect={() =>
@@ -543,7 +541,7 @@ export function ProductForm({
                                                                             : 'opacity-0',
                                                                     )}
                                                                 />
-                                            {option.name}
+                                                                {option.name}
                                                             </CommandItem>
                                                         );
                                                     },
@@ -559,7 +557,7 @@ export function ProductForm({
                                     errors['category_ids.0']
                                 }
                             />
-                    </div>
+                        </div>
 
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="name">Name</Label>
@@ -583,9 +581,9 @@ export function ProductForm({
                         </div>
 
                         <div className="grid gap-5 sm:grid-cols-2">
-                        <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-2">
                                 <div className="flex items-center justify-between gap-2">
-                            <Label htmlFor="slug">Slug</Label>
+                                    <Label htmlFor="slug">Slug</Label>
                                     <Button
                                         type="button"
                                         variant="ghost"
@@ -607,28 +605,28 @@ export function ProductForm({
                                         Generate
                                     </Button>
                                 </div>
-                            <Input
-                                id="slug"
-                                value={data.slug}
-                                onChange={(event) => {
-                                    setSlugTouched(true);
+                                <Input
+                                    id="slug"
+                                    value={data.slug}
+                                    onChange={(event) => {
+                                        setSlugTouched(true);
                                         setSuggestionQuery(event.target.value);
-                                    setData('slug', event.target.value);
-                                }}
+                                        setData('slug', event.target.value);
+                                    }}
                                     onBlur={() => {
                                         if (data.slug.trim() !== '') {
                                             validate('slug');
                                         }
                                     }}
-                                required
+                                    required
                                     placeholder="e.g. air-pro-kit"
-                            />
-                            <InputError message={errors.slug} />
-                    </div>
+                                />
+                                <InputError message={errors.slug} />
+                            </div>
 
-                    <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-2">
                                 <div className="flex items-center justify-between gap-2">
-                        <Label htmlFor="sku">SKU</Label>
+                                    <Label htmlFor="sku">SKU</Label>
                                     <Button
                                         type="button"
                                         variant="ghost"
@@ -652,21 +650,21 @@ export function ProductForm({
                                         Generate
                                     </Button>
                                 </div>
-                        <Input
-                            id="sku"
-                            value={data.sku}
+                                <Input
+                                    id="sku"
+                                    value={data.sku}
                                     onChange={(event) => {
                                         setSkuTouched(true);
                                         setData('sku', event.target.value);
                                     }}
-                            onBlur={() => {
-                                if (data.sku.trim() !== '') {
-                                    validate('sku');
-                                }
-                            }}
+                                    onBlur={() => {
+                                        if (data.sku.trim() !== '') {
+                                            validate('sku');
+                                        }
+                                    }}
                                     placeholder={`e.g. ${catalog.sku_prefix}-AIR-PRO`}
-                        />
-                        <InputError message={errors.sku} />
+                                />
+                                <InputError message={errors.sku} />
                             </div>
                         </div>
 
@@ -682,7 +680,7 @@ export function ProductForm({
                                     {suggestions.map((suggestion) => (
                                         <li
                                             key={suggestion.id}
-                                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-background px-3 py-2"
+                                            className="border-border/70 bg-background flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
                                         >
                                             <div className="flex min-w-0 items-center gap-3">
                                                 {suggestion.image_url ? (
@@ -743,25 +741,22 @@ export function ProductForm({
                                 placeholder="e.g. PuffMeMate"
                             />
                             <InputError message={errors.brand} />
-                    </div>
+                        </div>
 
-                    <div className="flex flex-col gap-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                            id="description"
-                            value={data.description}
-                            onChange={(event) =>
-                                    setData(
-                                        'description',
-                                        event.target.value,
-                                    )
-                            }
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                                id="description"
+                                value={data.description}
+                                onChange={(event) =>
+                                    setData('description', event.target.value)
+                                }
                                 placeholder="Tell customers what makes this product stand out"
-                            rows={4}
+                                rows={4}
                                 className="min-h-28 resize-y"
-                        />
-                        <InputError message={errors.description} />
-                    </div>
+                            />
+                            <InputError message={errors.description} />
+                        </div>
 
                         {branchOpsFields ? (
                             <div className="grid gap-5 sm:grid-cols-2">
@@ -789,9 +784,7 @@ export function ProductForm({
                                         }
                                         placeholder="Optional"
                                     />
-                                    <InputError
-                                        message={errors.buying_price}
-                                    />
+                                    <InputError message={errors.buying_price} />
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="regular_price">
@@ -882,7 +875,7 @@ export function ProductForm({
                 <aside className="flex min-w-0 flex-col xl:row-span-2">
                     <section
                         className={cn(
-                            'rounded-2xl border border-border/80 bg-card p-4 shadow-sm',
+                            'border-border/80 bg-card rounded-2xl border p-4 shadow-sm',
                             'sm:p-5',
                         )}
                     >
@@ -895,426 +888,432 @@ export function ProductForm({
                             </p>
                         </div>
 
-                    <div className="space-y-4">
-                        <div className="overflow-hidden rounded-xl border border-border/80">
-                            <div
-                                className="aspect-square p-3"
-                                style={
-                                    imageTileTransparent
-                                        ? undefined
-                                        : imageTileStyle
-                                }
-                            >
-                                <FileUpload
-                                    value={data.image}
-                                    onChange={(file) => {
-                                        const next = Array.isArray(file)
-                                            ? (file[0] ?? null)
-                                            : file;
-                                        setExistingPrimary([]);
-                                        setData((current) => ({
-                                            ...current,
-                                            image: next,
-                                            remove_image: next
-                                                ? false
-                                                : current.remove_image,
-                                        }));
-                                    }}
-                                    existingFiles={
-                                        data.image || data.remove_image
-                                            ? []
-                                            : existingPrimary
+                        <div className="space-y-4">
+                            <div className="border-border/80 overflow-hidden rounded-xl border">
+                                <div
+                                    className="aspect-square p-3"
+                                    style={
+                                        imageTileTransparent
+                                            ? undefined
+                                            : imageTileStyle
                                     }
-                                    onRemoveExisting={() => {
-                                        setExistingPrimary([]);
-                                        setData((current) => ({
-                                            ...current,
-                                            image: null,
-                                            remove_image: true,
-                                        }));
-                                    }}
-                                    accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
-                                    maxSize={2}
-                                    lightbox
-                                    isUploading={processing}
-                                    uploadProgress={
-                                        progress?.percentage ?? null
-                                    }
-                                    onCancel={
-                                        processing ? cancel : undefined
-                                    }
-                                    placeholder="Drop or click"
-                                    hint="PNG, JPG, SVG, or WebP · Max 2MB"
-                                    compactCards
-                                    classNames={{
-                                        wrapper:
-                                            'flex h-full min-h-0 w-full flex-col',
-                                        dropzone:
-                                            'h-full min-h-0 border-dashed border-border/60 bg-transparent px-3 py-6',
-                                        dropzoneContent: 'gap-1',
-                                        card: 'h-full overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
-                                        cardMedia: 'h-full bg-transparent',
-                                        cardImage:
-                                            '!h-auto !w-auto max-h-full max-w-full object-contain object-center',
-                                    }}
-                                    error={errors.image}
-                                />
-                            </div>
-
-                            <div className="border-border/60 bg-card flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2">
-                                <p className="text-sm font-medium">
-                                    Background
-                                </p>
-                                <ColorPicker
-                                    mode="dialog"
-                                    triggerVariant="button"
-                                    enabledModes={[
-                                        ...CATALOG_COLOR_PICKER_MODES,
-                                    ]}
-                                    defaultMode="transparent"
-                                    value={data.color_code}
-                                    onChange={(color_code) =>
-                                        setData('color_code', color_code)
-                                    }
-                                    label="Image background"
-                                    description="Fill behind product imagery"
-                                    dialogTitle="Image background"
-                                    dialogDescription="None is the default. The listing uses the page or card color until you pick a solid or gradient fill."
-                                    error={
-                                        errors.color_code ??
-                                        errors['color_code.mode'] ??
-                                        errors['color_code.color'] ??
-                                        errors['color_code.from'] ??
-                                        errors['color_code.to']
-                                    }
-                                />
-                            </div>
-                        </div>
-
-                        {showGallery ? (
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between gap-3">
-                                    <Label>Gallery</Label>
-                                    <span className="text-muted-foreground text-xs">
-                                        {existingGallery.length +
-                                            data.gallery.length}
-                                        /12
-                                    </span>
+                                >
+                                    <FileUpload
+                                        value={data.image}
+                                        onChange={(file) => {
+                                            const next = Array.isArray(file)
+                                                ? (file[0] ?? null)
+                                                : file;
+                                            setExistingPrimary([]);
+                                            setData((current) => ({
+                                                ...current,
+                                                image: next,
+                                                remove_image: next
+                                                    ? false
+                                                    : current.remove_image,
+                                            }));
+                                        }}
+                                        existingFiles={
+                                            data.image || data.remove_image
+                                                ? []
+                                                : existingPrimary
+                                        }
+                                        onRemoveExisting={() => {
+                                            setExistingPrimary([]);
+                                            setData((current) => ({
+                                                ...current,
+                                                image: null,
+                                                remove_image: true,
+                                            }));
+                                        }}
+                                        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
+                                        maxSize={2}
+                                        lightbox
+                                        isUploading={processing}
+                                        uploadProgress={
+                                            progress?.percentage ?? null
+                                        }
+                                        onCancel={
+                                            processing ? cancel : undefined
+                                        }
+                                        placeholder="Drop or click"
+                                        hint="PNG, JPG, SVG, or WebP · Max 2MB"
+                                        compactCards
+                                        classNames={{
+                                            wrapper:
+                                                'flex h-full min-h-0 w-full flex-col',
+                                            dropzone:
+                                                'h-full min-h-0 border-dashed border-border/60 bg-transparent px-3 py-6',
+                                            dropzoneContent: 'gap-1',
+                                            card: 'h-full overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
+                                            cardMedia: 'h-full bg-transparent',
+                                            cardImage:
+                                                '!h-auto !w-auto max-h-full max-w-full object-contain object-center',
+                                        }}
+                                        error={errors.image}
+                                    />
                                 </div>
-                                <FileUpload
-                                    multiple
-                                    dropzoneVisibility="empty"
-                                    compactCards
-                                    value={data.gallery}
-                                    onChange={(files) => {
-                                        const next = Array.isArray(files)
-                                            ? files
-                                            : files
-                                              ? [files]
-                                              : [];
-                                        setData('gallery', next);
-                                    }}
-                                    existingFiles={existingGallery}
-                                    onRemoveExisting={(id) => {
-                                        const numericId = Number(id);
-                                        setExistingGallery((current) =>
-                                            current.filter(
-                                                (file) => file.id !== id,
-                                            ),
-                                        );
-                                        setRemoveGalleryIds((current) => {
-                                            const next = current.includes(
-                                                numericId,
-                                            )
-                                                ? current
-                                                : [...current, numericId];
-                                            setData(
-                                                'remove_gallery_ids',
-                                                next,
+
+                                <div className="border-border/60 bg-card flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2">
+                                    <p className="text-sm font-medium">
+                                        Background
+                                    </p>
+                                    <ColorPicker
+                                        mode="dialog"
+                                        triggerVariant="button"
+                                        enabledModes={[
+                                            ...CATALOG_COLOR_PICKER_MODES,
+                                        ]}
+                                        defaultMode="transparent"
+                                        value={data.color_code}
+                                        onChange={(color_code) =>
+                                            setData('color_code', color_code)
+                                        }
+                                        label="Image background"
+                                        description="Fill behind product imagery"
+                                        dialogTitle="Image background"
+                                        dialogDescription="None is the default. The listing uses the page or card color until you pick a solid or gradient fill."
+                                        error={
+                                            errors.color_code ??
+                                            errors['color_code.mode'] ??
+                                            errors['color_code.color'] ??
+                                            errors['color_code.from'] ??
+                                            errors['color_code.to']
+                                        }
+                                    />
+                                </div>
+                            </div>
+
+                            {showGallery ? (
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <Label>Gallery</Label>
+                                        <span className="text-muted-foreground text-xs">
+                                            {existingGallery.length +
+                                                data.gallery.length}
+                                            /12
+                                        </span>
+                                    </div>
+                                    <FileUpload
+                                        multiple
+                                        dropzoneVisibility="empty"
+                                        compactCards
+                                        value={data.gallery}
+                                        onChange={(files) => {
+                                            const next = Array.isArray(files)
+                                                ? files
+                                                : files
+                                                  ? [files]
+                                                  : [];
+                                            setData('gallery', next);
+                                        }}
+                                        existingFiles={existingGallery}
+                                        onRemoveExisting={(id) => {
+                                            const numericId = Number(id);
+                                            setExistingGallery((current) =>
+                                                current.filter(
+                                                    (file) => file.id !== id,
+                                                ),
                                             );
-                                            return next;
-                                        });
-                                    }}
-                                    accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
-                                    maxSize={2}
-                                    maxFiles={12}
-                                    lightbox
-                                    isUploading={processing}
-                                    uploadProgress={
-                                        progress?.percentage ?? null
-                                    }
-                                    onCancel={
-                                        processing ? cancel : undefined
-                                    }
-                                    placeholder="Add gallery images"
-                                    hint="Up to 12 · PNG, JPG, SVG, or WebP"
-                                    classNames={{
-                                        dropzone: 'py-5',
-                                        grid: 'grid-cols-3 gap-2 sm:grid-cols-3 lg:grid-cols-3',
-                                        card: 'aspect-square overflow-hidden',
-                                        cardMedia: 'h-full bg-muted/20',
-                                        cardImage: 'object-contain p-1',
-                                    }}
-                                    error={
-                                        errors.gallery ??
-                                        errors['gallery.0'] ??
-                                        errors['gallery.1']
-                                    }
-                                />
-                            <InputError
-                                message={
-                                    errors.gallery ??
-                                    errors['gallery.0'] ??
-                                    errors.remove_gallery_ids
-                                }
-                            />
-                            {removeGalleryIds.length > 0 ? (
-                                <p className="text-muted-foreground text-xs">
-                                    {removeGalleryIds.length} gallery image
-                                    {removeGalleryIds.length === 1 ? '' : 's'}{' '}
-                                    marked for removal on save.
-                                </p>
+                                            setRemoveGalleryIds((current) => {
+                                                const next = current.includes(
+                                                    numericId,
+                                                )
+                                                    ? current
+                                                    : [...current, numericId];
+                                                setData(
+                                                    'remove_gallery_ids',
+                                                    next,
+                                                );
+                                                return next;
+                                            });
+                                        }}
+                                        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
+                                        maxSize={2}
+                                        maxFiles={12}
+                                        lightbox
+                                        isUploading={processing}
+                                        uploadProgress={
+                                            progress?.percentage ?? null
+                                        }
+                                        onCancel={
+                                            processing ? cancel : undefined
+                                        }
+                                        placeholder="Add gallery images"
+                                        hint="Up to 12 · PNG, JPG, SVG, or WebP"
+                                        classNames={{
+                                            dropzone: 'py-5',
+                                            grid: 'grid-cols-3 gap-2 sm:grid-cols-3 lg:grid-cols-3',
+                                            card: 'aspect-square overflow-hidden',
+                                            cardMedia: 'h-full bg-muted/20',
+                                            cardImage: 'object-contain p-1',
+                                        }}
+                                        error={
+                                            errors.gallery ??
+                                            errors['gallery.0'] ??
+                                            errors['gallery.1']
+                                        }
+                                    />
+                                    <InputError
+                                        message={
+                                            errors.gallery ??
+                                            errors['gallery.0'] ??
+                                            errors.remove_gallery_ids
+                                        }
+                                    />
+                                    {removeGalleryIds.length > 0 ? (
+                                        <p className="text-muted-foreground text-xs">
+                                            {removeGalleryIds.length} gallery
+                                            image
+                                            {removeGalleryIds.length === 1
+                                                ? ''
+                                                : 's'}{' '}
+                                            marked for removal on save.
+                                        </p>
+                                    ) : null}
+                                </div>
                             ) : null}
                         </div>
-                        ) : null}
-                    </div>
                     </section>
                 </aside>
 
-            <section
-                className={cn(
-                    'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
-                    'sm:p-6',
-                )}
-            >
-                <div className="mb-5 space-y-1">
-                    <h2 className="text-base font-semibold tracking-tight">
-                        Storefront merchandising
-                    </h2>
-                    <p className="text-muted-foreground text-sm">
-                        Tags drive home collections; specifications appear on
-                        the product page table.
-                    </p>
-                </div>
-
-                <div className="flex flex-col gap-8">
-                    <div className="grid items-start gap-6 lg:grid-cols-2 lg:gap-8">
-                        <div className="flex flex-col gap-3">
-                            <div className="space-y-1">
-                                <Label>Tags</Label>
-                                <p className="text-muted-foreground text-xs">
-                                    Highlight this product in storefront
-                                    collections.
-                                </p>
-                            </div>
-                            <div className="grid gap-2 sm:grid-cols-2">
-                                {PRODUCT_TAG_OPTIONS.map((option) => {
-                                    const checked = data.tags.includes(
-                                        option.value,
-                                    );
-
-                                    return (
-                                        <label
-                                            key={option.value}
-                                            htmlFor={`tag-${option.value}`}
-                                            className={cn(
-                                                'inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors',
-                                                checked
-                                                    ? 'border-primary/40 bg-primary/5'
-                                                    : 'border-border/70 bg-muted/20 hover:bg-muted/40',
-                                            )}
-                                        >
-                        <Checkbox
-                                                id={`tag-${option.value}`}
-                                                checked={checked}
-                                                onCheckedChange={() =>
-                                                    toggleTag(option.value)
-                                                }
-                                            />
-                                            <span className="font-normal">
-                                                {option.label}
-                                            </span>
-                                        </label>
-                                    );
-                                })}
-                            </div>
-                            <InputError message={errors.tags} />
-                        </div>
-
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <Label>Status</Label>
-                                <p className="text-muted-foreground text-xs">
-                                    Inactive products stay hidden from browsing.
-                                </p>
-                            </div>
-                            <div
-                                className="grid gap-3 sm:grid-cols-2"
-                                role="radiogroup"
-                                aria-label="Status"
-                            >
-                                <button
-                                    type="button"
-                                    role="radio"
-                                    aria-checked={data.status}
-                                    className={cn(
-                                        'flex flex-col gap-1 rounded-xl border px-4 py-3 text-left transition-colors',
-                                        data.status
-                                            ? 'border-primary/40 bg-primary/5'
-                                            : 'border-border/70 bg-muted/20 hover:bg-muted/40',
-                                    )}
-                                    onClick={() => setData('status', true)}
-                                >
-                                    <span className="text-sm font-medium">
-                            Active
-                                    </span>
-                                    <span className="text-muted-foreground text-xs">
-                                        Visible in the catalog and storefront.
-                                    </span>
-                                </button>
-                                <button
-                                    type="button"
-                                    role="radio"
-                                    aria-checked={!data.status}
-                                    className={cn(
-                                        'flex flex-col gap-1 rounded-xl border px-4 py-3 text-left transition-colors',
-                                        !data.status
-                                            ? 'border-primary/40 bg-primary/5'
-                                            : 'border-border/70 bg-muted/20 hover:bg-muted/40',
-                                    )}
-                                    onClick={() => setData('status', false)}
-                                >
-                                    <span className="text-sm font-medium">
-                                        Inactive
-                                    </span>
-                                    <span className="text-muted-foreground text-xs">
-                                        Hidden from storefront browsing.
-                                    </span>
-                                </button>
-                            </div>
-                        <InputError message={errors.status} />
-                        </div>
+                <section
+                    className={cn(
+                        'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
+                        'sm:p-6',
+                    )}
+                >
+                    <div className="mb-5 space-y-1">
+                        <h2 className="text-base font-semibold tracking-tight">
+                            Storefront merchandising
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                            Tags drive home collections; specifications appear
+                            on the product page table.
+                        </p>
                     </div>
 
-                    <div className="flex flex-col gap-2">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                            <div className="space-y-1">
-                                <Label>Specifications</Label>
-                                <p className="text-muted-foreground text-xs">
-                                    Label and value pairs for the product page.
-                                    Brand is added automatically from the brand
-                                    field on the storefront.
-                                </p>
+                    <div className="flex flex-col gap-8">
+                        <div className="grid items-start gap-6 lg:grid-cols-2 lg:gap-8">
+                            <div className="flex flex-col gap-3">
+                                <div className="space-y-1">
+                                    <Label>Tags</Label>
+                                    <p className="text-muted-foreground text-xs">
+                                        Highlight this product in storefront
+                                        collections.
+                                    </p>
+                                </div>
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                    {PRODUCT_TAG_OPTIONS.map((option) => {
+                                        const checked = data.tags.includes(
+                                            option.value,
+                                        );
+
+                                        return (
+                                            <label
+                                                key={option.value}
+                                                htmlFor={`tag-${option.value}`}
+                                                className={cn(
+                                                    'inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors',
+                                                    checked
+                                                        ? 'border-primary/40 bg-primary/5'
+                                                        : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                                )}
+                                            >
+                                                <Checkbox
+                                                    id={`tag-${option.value}`}
+                                                    checked={checked}
+                                                    onCheckedChange={() =>
+                                                        toggleTag(option.value)
+                                                    }
+                                                />
+                                                <span className="font-normal">
+                                                    {option.label}
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                                <InputError message={errors.tags} />
                             </div>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={addSpecification}
-                            >
-                                <Plus className="size-4" />
-                                Add row
-                            </Button>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-center gap-3 px-1">
-                                <span className="text-muted-foreground text-xs font-medium">
-                                    Label
-                                </span>
-                                <span className="text-muted-foreground text-xs font-medium">
-                                    Value
-                                </span>
-                                <span className="size-9" aria-hidden />
-                            </div>
-                            <div className="max-h-80 space-y-3 overflow-y-auto p-1">
-                                {data.specifications.map((row, index) => (
-                                    <div
-                                        key={`specification-${index}`}
-                                        className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-start gap-3"
+
+                            <div className="space-y-3">
+                                <div className="space-y-1">
+                                    <Label>Status</Label>
+                                    <p className="text-muted-foreground text-xs">
+                                        Inactive products stay hidden from
+                                        browsing.
+                                    </p>
+                                </div>
+                                <div
+                                    className="grid gap-3 sm:grid-cols-2"
+                                    role="radiogroup"
+                                    aria-label="Status"
+                                >
+                                    <button
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={data.status}
+                                        className={cn(
+                                            'flex flex-col gap-1 rounded-xl border px-4 py-3 text-left transition-colors',
+                                            data.status
+                                                ? 'border-primary/40 bg-primary/5'
+                                                : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                        )}
+                                        onClick={() => setData('status', true)}
                                     >
-                                        <div className="flex flex-col gap-1">
-                                            <Label
-                                                htmlFor={`specification-label-${index}`}
-                                                className="sr-only"
-                                            >
-                                                Label
-                                            </Label>
-                                            <Input
-                                                id={`specification-label-${index}`}
-                                                value={row.label}
-                                                onChange={(event) =>
-                                                    updateSpecification(
-                                                        index,
-                                                        'label',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                placeholder="e.g. Pack Format"
-                                            />
-                                            <InputError
-                                                message={
-                                                    errors[
-                                                        `specifications.${index}.label`
-                                                    ]
-                                                }
-                                            />
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <Label
-                                                htmlFor={`specification-value-${index}`}
-                                                className="sr-only"
-                                            >
-                                                Value
-                                            </Label>
-                                            <Input
-                                                id={`specification-value-${index}`}
-                                                value={row.value}
-                                                onChange={(event) =>
-                                                    updateSpecification(
-                                                        index,
-                                                        'value',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                placeholder="e.g. Soft Pack"
-                                            />
-                                            <InputError
-                                                message={
-                                                    errors[
-                                                        `specifications.${index}.value`
-                                                    ]
-                                                }
-                                            />
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="icon"
-                                            className="size-9 shrink-0"
-                                            onClick={() =>
-                                                removeSpecification(index)
-                                            }
-                                            aria-label="Remove specification row"
-                                        >
-                                            <Trash2 className="size-4" />
-                    </Button>
-                                    </div>
-                                ))}
+                                        <span className="text-sm font-medium">
+                                            Active
+                                        </span>
+                                        <span className="text-muted-foreground text-xs">
+                                            Visible in the catalog and
+                                            storefront.
+                                        </span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={!data.status}
+                                        className={cn(
+                                            'flex flex-col gap-1 rounded-xl border px-4 py-3 text-left transition-colors',
+                                            !data.status
+                                                ? 'border-primary/40 bg-primary/5'
+                                                : 'border-border/70 bg-muted/20 hover:bg-muted/40',
+                                        )}
+                                        onClick={() => setData('status', false)}
+                                    >
+                                        <span className="text-sm font-medium">
+                                            Inactive
+                                        </span>
+                                        <span className="text-muted-foreground text-xs">
+                                            Hidden from storefront browsing.
+                                        </span>
+                                    </button>
+                                </div>
+                                <InputError message={errors.status} />
                             </div>
                         </div>
-                        <InputError message={errors.specifications} />
+
+                        <div className="flex flex-col gap-2">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                                <div className="space-y-1">
+                                    <Label>Specifications</Label>
+                                    <p className="text-muted-foreground text-xs">
+                                        Label and value pairs for the product
+                                        page. Brand is added automatically from
+                                        the brand field on the storefront.
+                                    </p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={addSpecification}
+                                >
+                                    <Plus className="size-4" />
+                                    Add row
+                                </Button>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-center gap-3 px-1">
+                                    <span className="text-muted-foreground text-xs font-medium">
+                                        Label
+                                    </span>
+                                    <span className="text-muted-foreground text-xs font-medium">
+                                        Value
+                                    </span>
+                                    <span className="size-9" aria-hidden />
+                                </div>
+                                <div className="max-h-80 space-y-3 overflow-y-auto p-1">
+                                    {data.specifications.map((row, index) => (
+                                        <div
+                                            key={`specification-${index}`}
+                                            className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_auto] items-start gap-3"
+                                        >
+                                            <div className="flex flex-col gap-1">
+                                                <Label
+                                                    htmlFor={`specification-label-${index}`}
+                                                    className="sr-only"
+                                                >
+                                                    Label
+                                                </Label>
+                                                <Input
+                                                    id={`specification-label-${index}`}
+                                                    value={row.label}
+                                                    onChange={(event) =>
+                                                        updateSpecification(
+                                                            index,
+                                                            'label',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="e.g. Pack Format"
+                                                />
+                                                <InputError
+                                                    message={
+                                                        errors[
+                                                            `specifications.${index}.label`
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <Label
+                                                    htmlFor={`specification-value-${index}`}
+                                                    className="sr-only"
+                                                >
+                                                    Value
+                                                </Label>
+                                                <Input
+                                                    id={`specification-value-${index}`}
+                                                    value={row.value}
+                                                    onChange={(event) =>
+                                                        updateSpecification(
+                                                            index,
+                                                            'value',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="e.g. Soft Pack"
+                                                />
+                                                <InputError
+                                                    message={
+                                                        errors[
+                                                            `specifications.${index}.value`
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                className="size-9 shrink-0"
+                                                onClick={() =>
+                                                    removeSpecification(index)
+                                                }
+                                                aria-label="Remove specification row"
+                                            >
+                                                <Trash2 className="size-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <InputError message={errors.specifications} />
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
             </div>
 
-            <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-                    <Button variant="secondary" asChild>
-                        <Link href={cancelHref}>Cancel</Link>
-                    </Button>
+            <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t px-2 py-4 backdrop-blur">
+                <Button variant="secondary" asChild>
+                    <Link href={cancelHref}>Cancel</Link>
+                </Button>
                 <Button type="submit" disabled={processing}>
                     {processing ? <Spinner /> : null}
-                    {submitLabel ?? (isEdit ? 'Save changes' : 'Create product')}
+                    {submitLabel ??
+                        (isEdit ? 'Save changes' : 'Create product')}
                 </Button>
             </div>
         </form>

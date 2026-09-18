@@ -249,9 +249,7 @@ export default function PlatformDriversShow({
                                 <div className="mt-5">
                                     <DetailItem
                                         label="Notes"
-                                        icon={
-                                            <StickyNote className="size-4" />
-                                        }
+                                        icon={<StickyNote className="size-4" />}
                                         value={driver.notes}
                                     />
                                 </div>
@@ -312,36 +310,34 @@ export default function PlatformDriversShow({
                             </p>
                         ) : (
                             <div className="flex flex-col">
-                                {driver.assignments.map(
-                                    (assignment, index) => (
-                                        <div key={assignment.id}>
-                                            {index > 0 ? (
-                                                <Separator className="my-4" />
-                                            ) : null}
-                                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                                {assignment.branch_slug ? (
-                                                    <Link
-                                                        href={BranchController.show.url(
-                                                            assignment.branch_slug,
-                                                        )}
-                                                        className="font-medium hover:underline"
-                                                    >
-                                                        {assignment.branch_name ??
-                                                            'Unknown branch'}
-                                                    </Link>
-                                                ) : (
-                                                    <span className="font-medium">
-                                                        {assignment.branch_name ??
-                                                            'Unknown branch'}
-                                                    </span>
-                                                )}
-                                                <Badge variant="secondary">
-                                                    {assignment.status_label}
-                                                </Badge>
-                                            </div>
+                                {driver.assignments.map((assignment, index) => (
+                                    <div key={assignment.id}>
+                                        {index > 0 ? (
+                                            <Separator className="my-4" />
+                                        ) : null}
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                            {assignment.branch_slug ? (
+                                                <Link
+                                                    href={BranchController.show.url(
+                                                        assignment.branch_slug,
+                                                    )}
+                                                    className="font-medium hover:underline"
+                                                >
+                                                    {assignment.branch_name ??
+                                                        'Unknown branch'}
+                                                </Link>
+                                            ) : (
+                                                <span className="font-medium">
+                                                    {assignment.branch_name ??
+                                                        'Unknown branch'}
+                                                </span>
+                                            )}
+                                            <Badge variant="secondary">
+                                                {assignment.status_label}
+                                            </Badge>
                                         </div>
-                                    ),
-                                )}
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </CardContent>
@@ -356,9 +352,7 @@ export default function PlatformDriversShow({
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <Form
-                            action={DriverController.storeRoster.url(
-                                driver.id,
-                            )}
+                            action={DriverController.storeRoster.url(driver.id)}
                             method="post"
                             className="space-y-3 rounded-xl border p-3"
                             options={{ preserveScroll: true }}
@@ -457,8 +451,7 @@ export default function PlatformDriversShow({
                                                             },
                                                         ),
                                                         {
-                                                            preserveScroll:
-                                                                true,
+                                                            preserveScroll: true,
                                                         },
                                                     )
                                                 }

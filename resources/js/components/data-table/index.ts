@@ -6,7 +6,10 @@ export {
     DataTableRowActions,
     defaultDataTableActionIcons,
 } from '@/components/data-table/data-table-row-actions';
-export type { DataTableActionGroup, DataTableActionItem } from '@/components/data-table/data-table-row-actions';
+export type {
+    DataTableActionGroup,
+    DataTableActionItem,
+} from '@/components/data-table/data-table-row-actions';
 export { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
 export {
     buildArchivesDataTableQuery,

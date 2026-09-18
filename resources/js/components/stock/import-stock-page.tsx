@@ -98,7 +98,8 @@ export function ImportStockPage({
     });
     const quantityEmpty = form.data.quantity.trim() === '';
     const quantityValue = parseQuantity(form.data.quantity);
-    const pairCount = form.data.branch_ids.length * form.data.product_ids.length;
+    const pairCount =
+        form.data.branch_ids.length * form.data.product_ids.length;
     const saveDisabled =
         form.processing ||
         quantityEmpty ||
@@ -148,7 +149,7 @@ export function ImportStockPage({
                 />
 
                 <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]">
-                    <section className="self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6">
+                    <section className="border-border/80 bg-card self-start rounded-2xl border p-5 shadow-sm sm:p-6">
                         <form
                             className="flex flex-col gap-5"
                             onSubmit={(event) => {
@@ -254,7 +255,7 @@ export function ImportStockPage({
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-5 border-t border-border/70 pt-6">
+                            <div className="border-border/70 flex flex-col gap-5 border-t pt-6">
                                 <div className="space-y-1">
                                     <h2 className="text-base font-semibold tracking-tight">
                                         New entry
@@ -267,11 +268,11 @@ export function ImportStockPage({
 
                                 <div className="grid max-w-sm gap-2">
                                     <Label htmlFor="quantity">Quantity</Label>
-                                    <div className="flex items-stretch overflow-hidden rounded-xl border border-border/80 bg-background shadow-xs">
+                                    <div className="border-border/80 bg-background flex items-stretch overflow-hidden rounded-xl border shadow-xs">
                                         <Button
                                             type="button"
                                             variant="ghost"
-                                            className="text-foreground h-12 w-12 shrink-0 rounded-none border-r border-border/80"
+                                            className="text-foreground border-border/80 h-12 w-12 shrink-0 rounded-none border-r"
                                             aria-label="Decrease quantity"
                                             disabled={quantityValue <= 0}
                                             onClick={() =>
@@ -306,7 +307,7 @@ export function ImportStockPage({
                                         <Button
                                             type="button"
                                             variant="ghost"
-                                            className="text-foreground h-12 w-12 shrink-0 rounded-none border-l border-border/80"
+                                            className="text-foreground border-border/80 h-12 w-12 shrink-0 rounded-none border-l"
                                             aria-label="Increase quantity"
                                             onClick={() =>
                                                 setQuantity(quantityValue + 1)
@@ -322,7 +323,9 @@ export function ImportStockPage({
                                               ? 'Added to on-hand stock on every selected pair.'
                                               : `${form.data.branch_ids.length} × ${form.data.product_ids.length} → ${pairCount} new ${pairCount === 1 ? 'entry' : 'entries'} of ${quantityValue}`}
                                     </p>
-                                    <InputError message={form.errors.quantity} />
+                                    <InputError
+                                        message={form.errors.quantity}
+                                    />
                                 </div>
 
                                 <div className="grid max-w-sm gap-2">

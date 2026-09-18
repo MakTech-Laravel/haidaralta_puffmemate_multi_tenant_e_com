@@ -399,8 +399,8 @@ export function PriceHistoryPage({
                                         <Label>From</Label>
                                         <DatePicker
                                             value={
-                                                (query.filters.from as string) ||
-                                                null
+                                                (query.filters
+                                                    .from as string) || null
                                             }
                                             onChange={(value) =>
                                                 query.setFilter(

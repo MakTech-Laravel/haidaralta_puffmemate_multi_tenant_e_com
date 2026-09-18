@@ -45,7 +45,7 @@ interface RoleFormProps {
 
 function sectionClassName(): string {
     return cn(
-        'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+        'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
         'sm:p-6',
     );
 }
@@ -108,9 +108,7 @@ export function RoleForm({
                                 readOnly={locked}
                                 placeholder="Store manager"
                                 autoComplete="off"
-                                aria-invalid={
-                                    Boolean(errors.name) || nameTaken
-                                }
+                                aria-invalid={Boolean(errors.name) || nameTaken}
                                 onBlur={(event) => {
                                     if (locked) {
                                         return;

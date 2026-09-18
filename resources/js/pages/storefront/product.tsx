@@ -68,9 +68,7 @@ export default function StorefrontProduct({
         router.cancelAll();
         router.get(
             productShow.url(product.id),
-            {
-                ...(nextBranchId ? { branch: nextBranchId } : {}),
-            },
+            (nextBranchId ? { branch: nextBranchId } : {}),
             {
                 preserveState: true,
                 replace: true,
@@ -83,7 +81,7 @@ export default function StorefrontProduct({
         <>
             <Head title={product.name} />
 
-            <div className="mx-auto container px-4 py-8 sm:px-6 sm:py-10">
+            <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
                 <Link
                     href={backHref}
                     prefetch
@@ -153,7 +151,7 @@ export default function StorefrontProduct({
                         <h2 className="text-foreground mb-6 text-2xl font-bold tracking-tight">
                             Similar Products
                         </h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                             {similarProducts.map((item) => (
                                 <ProductCard key={item.id} product={item} />
                             ))}

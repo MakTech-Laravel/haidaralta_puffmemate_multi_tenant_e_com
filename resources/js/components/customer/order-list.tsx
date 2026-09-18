@@ -117,8 +117,7 @@ export function OrderList({
                                             <span
                                                 className={cn(
                                                     'inline-flex shrink-0 rounded-full px-2.5 py-1 text-sm font-normal',
-                                                    order.status ===
-                                                        'delivered'
+                                                    order.status === 'delivered'
                                                         ? 'bg-muted-foreground/15 text-foreground'
                                                         : 'bg-primary/10 text-primary',
                                                 )}

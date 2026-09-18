@@ -137,7 +137,10 @@ function resolvePrice(
 }
 
 function resolveDiscountType(price: BranchPriceSnapshot | null): string {
-    if (price?.discount_type === 'fixed' || price?.discount_type === 'percent') {
+    if (
+        price?.discount_type === 'fixed' ||
+        price?.discount_type === 'percent'
+    ) {
         return price.discount_type;
     }
 
@@ -473,7 +476,8 @@ export function ProductInventoryPanel({
                             Inventory & pricing
                         </CardTitle>
                         <CardDescription>
-                            Stock, buying cost, and selling price for {scopeLabel}
+                            Stock, buying cost, and selling price for{' '}
+                            {scopeLabel}
                         </CardDescription>
                     </div>
                     <div className="flex flex-wrap items-start gap-3">
@@ -488,41 +492,41 @@ export function ProductInventoryPanel({
                             </Link>
                         </Button>
                         {showVariants ? (
-                        <div className="grid w-full min-w-0 gap-1.5 sm:max-w-[16rem]">
-                            <Label htmlFor="inventory-scope">Scope</Label>
-                            <Select
-                                value={activeScope}
-                                onValueChange={setScope}
-                            >
-                                <SelectTrigger
-                                    id="inventory-scope"
-                                    className="w-full"
+                            <div className="grid w-full min-w-0 gap-1.5 sm:max-w-[16rem]">
+                                <Label htmlFor="inventory-scope">Scope</Label>
+                                <Select
+                                    value={activeScope}
+                                    onValueChange={setScope}
                                 >
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value={BASE_SCOPE}>
-                                        Base product
-                                    </SelectItem>
-                                    {activeVariants.map((variant) => (
-                                        <SelectItem
-                                            key={variant.id}
-                                            value={String(variant.id)}
-                                        >
-                                            {variant.name}
-                                            {variant.sku
-                                                ? ` · ${variant.sku}`
-                                                : ''}
+                                    <SelectTrigger
+                                        id="inventory-scope"
+                                        className="w-full"
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={BASE_SCOPE}>
+                                            Base product
                                         </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    ) : null}
+                                        {activeVariants.map((variant) => (
+                                            <SelectItem
+                                                key={variant.id}
+                                                value={String(variant.id)}
+                                            >
+                                                {variant.name}
+                                                {variant.sku
+                                                    ? ` · ${variant.sku}`
+                                                    : ''}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ) : null}
                     </div>
                 </CardHeader>
 
-                <div className="grid divide-y border-b sm:grid-cols-2 md:grid-cols-4 sm:divide-x sm:divide-y-0">
+                <div className="grid divide-y border-b sm:grid-cols-2 sm:divide-x sm:divide-y-0 md:grid-cols-4">
                     <SnapshotStat
                         label="Stock"
                         value={String(scopedInventory?.quantity ?? 0)}
@@ -540,9 +544,7 @@ export function ProductInventoryPanel({
                     <SnapshotStat
                         label="Selling"
                         value={sellingDisplay}
-                        hint={
-                            scopedPrice == null ? 'No price on file' : 'AUD'
-                        }
+                        hint={scopedPrice == null ? 'No price on file' : 'AUD'}
                     />
                     <SnapshotStat
                         label="Effective"
@@ -577,9 +579,7 @@ export function ProductInventoryPanel({
                             <TableBody>
                                 {activeVariants.map((variant) => {
                                     const rowInventory =
-                                        variantInventories[
-                                            String(variant.id)
-                                        ];
+                                        variantInventories[String(variant.id)];
                                     const rowPrice =
                                         variantPrices[String(variant.id)];
 
@@ -597,8 +597,7 @@ export function ProductInventoryPanel({
                                                 {rowInventory?.quantity ?? 0}
                                             </TableCell>
                                             <TableCell className="tabular-nums">
-                                                {rowPrice?.selling_price ??
-                                                    '—'}
+                                                {rowPrice?.selling_price ?? '—'}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Button
@@ -607,9 +606,7 @@ export function ProductInventoryPanel({
                                                     size="sm"
                                                     onClick={() =>
                                                         setScope(
-                                                            String(
-                                                                variant.id,
-                                                            ),
+                                                            String(variant.id),
                                                         )
                                                     }
                                                 >
@@ -625,384 +622,300 @@ export function ProductInventoryPanel({
                 ) : null}
 
                 <div>
-                <div className="grid lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x border-b">
-                    <form
-                        className="grid h-full content-start gap-4 p-5"
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        inventoryForm.transform((data) => ({
-                            ...data,
-                            variant_id:
-                                activeScope === BASE_SCOPE
-                                    ? null
-                                    : Number(activeScope),
-                            quantity:
-                                data.quantity.trim() === ''
-                                    ? ''
-                                    : parseQuantity(data.quantity),
-                            buying_price:
-                                data.type === 'stock_in'
-                                    ? data.buying_price === ''
-                                        ? null
-                                        : data.buying_price
-                                    : null,
-                            reason:
-                                data.type === 'adjustment'
-                                    ? data.reason
-                                    : null,
-                            reason_note:
-                                data.type === 'adjustment' &&
-                                data.reason === 'other'
-                                    ? data.reason_note
-                                    : null,
-                        }));
-                        inventoryForm.post(inventoryUrl, {
-                            preserveScroll: true,
-                        });
-                    }}
-                >
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                            <h3 className="text-sm font-semibold">Stock</h3>
-                            <p className="text-muted-foreground text-xs">
-                                New entry, reduce, or counted on-hand
-                            </p>
-                        </div>
-                        <Button
-                            type="submit"
-                            size="sm"
-                            disabled={inventorySaveDisabled}
+                    <div className="grid divide-y border-b lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+                        <form
+                            className="grid h-full content-start gap-4 p-5"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                inventoryForm.transform((data) => ({
+                                    ...data,
+                                    variant_id:
+                                        activeScope === BASE_SCOPE
+                                            ? null
+                                            : Number(activeScope),
+                                    quantity:
+                                        data.quantity.trim() === ''
+                                            ? ''
+                                            : parseQuantity(data.quantity),
+                                    buying_price:
+                                        data.type === 'stock_in'
+                                            ? data.buying_price === ''
+                                                ? null
+                                                : data.buying_price
+                                            : null,
+                                    reason:
+                                        data.type === 'adjustment'
+                                            ? data.reason
+                                            : null,
+                                    reason_note:
+                                        data.type === 'adjustment' &&
+                                        data.reason === 'other'
+                                            ? data.reason_note
+                                            : null,
+                                }));
+                                inventoryForm.post(inventoryUrl, {
+                                    preserveScroll: true,
+                                });
+                            }}
                         >
-                            Save
-                        </Button>
-                    </div>
-
-                    <div className="grid gap-2">
-                        <Label>Type</Label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {transactionTypes.map((type) => {
-                                const Icon =
-                                    INVENTORY_TYPE_ICONS[type.value] ?? Package;
-                                const selected =
-                                    inventoryForm.data.type === type.value;
-
-                                return (
-                                    <Button
-                                        key={type.value}
-                                        type="button"
-                                        variant={
-                                            selected ? 'default' : 'outline'
-                                        }
-                                        className={cn(
-                                            'h-auto min-h-9 flex-col gap-1 px-1 py-2 text-[11px] sm:h-9 sm:flex-row sm:gap-1.5 sm:px-2 sm:py-0 sm:text-xs',
-                                            !selected && 'text-foreground',
-                                        )}
-                                        onClick={() =>
-                                            selectInventoryType(type.value)
-                                        }
-                                    >
-                                        <Icon className="size-3.5" />
-                                        {type.label}
-                                    </Button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <div
-                        className={cn(
-                            'grid items-start gap-4',
-                            isAdjustment || isStockIn
-                                ? 'sm:grid-cols-2'
-                                : 'grid-cols-1',
-                        )}
-                    >
-                        <div className="grid gap-2">
-                            <Label htmlFor="quantity">
-                                {isAdjustment ? 'Counted quantity' : 'Quantity'}
-                            </Label>
-                            <div className="flex items-stretch overflow-hidden rounded-md border border-border/80 bg-background">
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                    <h3 className="text-sm font-semibold">
+                                        Stock
+                                    </h3>
+                                    <p className="text-muted-foreground text-xs">
+                                        New entry, reduce, or counted on-hand
+                                    </p>
+                                </div>
                                 <Button
-                                    type="button"
-                                    variant="ghost"
-                                    className="text-foreground h-9 w-10 shrink-0 rounded-none border-r border-border/80"
-                                    aria-label="Decrease quantity"
-                                    disabled={quantityValue <= 0}
-                                    onClick={() =>
-                                        inventoryForm.setData(
-                                            'quantity',
-                                            String(
-                                                Math.max(0, quantityValue - 1),
-                                            ),
-                                        )
-                                    }
+                                    type="submit"
+                                    size="sm"
+                                    disabled={inventorySaveDisabled}
                                 >
-                                    <Minus className="size-4" />
-                                </Button>
-                                <Input
-                                    id="quantity"
-                                    type="text"
-                                    inputMode="numeric"
-                                    autoComplete="off"
-                                    placeholder="0"
-                                    className="h-9 flex-1 rounded-none border-0 bg-transparent text-center font-semibold tabular-nums shadow-none focus-visible:ring-0"
-                                    value={inventoryForm.data.quantity}
-                                    onChange={(event) => {
-                                        const next = event.target.value;
-
-                                        if (next === '' || /^\d+$/.test(next)) {
-                                            inventoryForm.setData(
-                                                'quantity',
-                                                next,
-                                            );
-                                        }
-                                    }}
-                                />
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    className="text-foreground h-9 w-10 shrink-0 rounded-none border-l border-border/80"
-                                    aria-label="Increase quantity"
-                                    onClick={() =>
-                                        inventoryForm.setData(
-                                            'quantity',
-                                            String(quantityValue + 1),
-                                        )
-                                    }
-                                >
-                                    <Plus className="size-4" />
+                                    Save
                                 </Button>
                             </div>
-                            <p className="text-muted-foreground text-xs">
-                                {isAdjustment
-                                    ? countedPreview(
-                                          currentStock,
-                                          quantityValue,
-                                          quantityEmpty,
-                                      )
-                                    : inventoryForm.data.type === 'stock_out'
-                                      ? 'Removed from on-hand stock'
-                                      : 'Added to on-hand stock'}
-                            </p>
-                            <InputError
-                                message={inventoryForm.errors.quantity}
-                            />
-                        </div>
-                        {isStockIn ? (
-                            <div className="grid content-start gap-2">
-                                <Label htmlFor="buying_price">
-                                    Buying price{' '}
-                                    <span className="text-muted-foreground font-normal">
-                                        (AUD)
-                                    </span>
-                                </Label>
-                                <Input
-                                    id="buying_price"
-                                    type="number"
-                                    step="0.01"
-                                    min={0}
-                                    placeholder="e.g. 12.50"
-                                    value={inventoryForm.data.buying_price}
-                                    onChange={(event) =>
-                                        inventoryForm.setData(
-                                            'buying_price',
-                                            event.target.value,
-                                        )
-                                    }
-                                />
-                                <p className="text-muted-foreground text-xs">
-                                    Unit cost for this New entry. Updates last
-                                    buying price.
-                                </p>
-                                <InputError
-                                    message={inventoryForm.errors.buying_price}
-                                />
-                            </div>
-                        ) : null}
-                        {isAdjustment ? (
-                            <div className="grid content-start gap-2">
-                                <Label htmlFor="inventory-reason">Reason</Label>
-                                <Select
-                                    value={
-                                        inventoryForm.data.reason || undefined
-                                    }
-                                    onValueChange={(value) =>
-                                        inventoryForm.setData({
-                                            ...inventoryForm.data,
-                                            reason: value,
-                                            reason_note:
-                                                value === 'other'
-                                                    ? inventoryForm.data
-                                                          .reason_note
-                                                    : '',
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger
-                                        id="inventory-reason"
-                                        className="h-9 min-h-9 w-full data-[size=default]:h-9"
-                                    >
-                                        <SelectValue placeholder="Select a reason" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {adjustmentReasons.map((reason) => (
-                                            <SelectItem
-                                                key={reason.value}
-                                                value={reason.value}
+
+                            <div className="grid gap-2">
+                                <Label>Type</Label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {transactionTypes.map((type) => {
+                                        const Icon =
+                                            INVENTORY_TYPE_ICONS[type.value] ??
+                                            Package;
+                                        const selected =
+                                            inventoryForm.data.type ===
+                                            type.value;
+
+                                        return (
+                                            <Button
+                                                key={type.value}
+                                                type="button"
+                                                variant={
+                                                    selected
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                                className={cn(
+                                                    'h-auto min-h-9 flex-col gap-1 px-1 py-2 text-[11px] sm:h-9 sm:flex-row sm:gap-1.5 sm:px-2 sm:py-0 sm:text-xs',
+                                                    !selected &&
+                                                        'text-foreground',
+                                                )}
+                                                onClick={() =>
+                                                    selectInventoryType(
+                                                        type.value,
+                                                    )
+                                                }
                                             >
-                                                {reason.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <InputError
-                                    message={inventoryForm.errors.reason}
+                                                <Icon className="size-3.5" />
+                                                {type.label}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div
+                                className={cn(
+                                    'grid items-start gap-4',
+                                    isAdjustment || isStockIn
+                                        ? 'sm:grid-cols-2'
+                                        : 'grid-cols-1',
+                                )}
+                            >
+                                <div className="grid gap-2">
+                                    <Label htmlFor="quantity">
+                                        {isAdjustment
+                                            ? 'Counted quantity'
+                                            : 'Quantity'}
+                                    </Label>
+                                    <div className="border-border/80 bg-background flex items-stretch overflow-hidden rounded-md border">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="text-foreground border-border/80 h-9 w-10 shrink-0 rounded-none border-r"
+                                            aria-label="Decrease quantity"
+                                            disabled={quantityValue <= 0}
+                                            onClick={() =>
+                                                inventoryForm.setData(
+                                                    'quantity',
+                                                    String(
+                                                        Math.max(
+                                                            0,
+                                                            quantityValue - 1,
+                                                        ),
+                                                    ),
+                                                )
+                                            }
+                                        >
+                                            <Minus className="size-4" />
+                                        </Button>
+                                        <Input
+                                            id="quantity"
+                                            type="text"
+                                            inputMode="numeric"
+                                            autoComplete="off"
+                                            placeholder="0"
+                                            className="h-9 flex-1 rounded-none border-0 bg-transparent text-center font-semibold tabular-nums shadow-none focus-visible:ring-0"
+                                            value={inventoryForm.data.quantity}
+                                            onChange={(event) => {
+                                                const next = event.target.value;
+
+                                                if (
+                                                    next === '' ||
+                                                    /^\d+$/.test(next)
+                                                ) {
+                                                    inventoryForm.setData(
+                                                        'quantity',
+                                                        next,
+                                                    );
+                                                }
+                                            }}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="text-foreground border-border/80 h-9 w-10 shrink-0 rounded-none border-l"
+                                            aria-label="Increase quantity"
+                                            onClick={() =>
+                                                inventoryForm.setData(
+                                                    'quantity',
+                                                    String(quantityValue + 1),
+                                                )
+                                            }
+                                        >
+                                            <Plus className="size-4" />
+                                        </Button>
+                                    </div>
+                                    <p className="text-muted-foreground text-xs">
+                                        {isAdjustment
+                                            ? countedPreview(
+                                                  currentStock,
+                                                  quantityValue,
+                                                  quantityEmpty,
+                                              )
+                                            : inventoryForm.data.type ===
+                                                'stock_out'
+                                              ? 'Removed from on-hand stock'
+                                              : 'Added to on-hand stock'}
+                                    </p>
+                                    <InputError
+                                        message={inventoryForm.errors.quantity}
+                                    />
+                                </div>
+                                {isStockIn ? (
+                                    <div className="grid content-start gap-2">
+                                        <Label htmlFor="buying_price">
+                                            Buying price{' '}
+                                            <span className="text-muted-foreground font-normal">
+                                                (AUD)
+                                            </span>
+                                        </Label>
+                                        <Input
+                                            id="buying_price"
+                                            type="number"
+                                            step="0.01"
+                                            min={0}
+                                            placeholder="e.g. 12.50"
+                                            value={
+                                                inventoryForm.data.buying_price
+                                            }
+                                            onChange={(event) =>
+                                                inventoryForm.setData(
+                                                    'buying_price',
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        <p className="text-muted-foreground text-xs">
+                                            Unit cost for this New entry.
+                                            Updates last buying price.
+                                        </p>
+                                        <InputError
+                                            message={
+                                                inventoryForm.errors
+                                                    .buying_price
+                                            }
+                                        />
+                                    </div>
+                                ) : null}
+                                {isAdjustment ? (
+                                    <div className="grid content-start gap-2">
+                                        <Label htmlFor="inventory-reason">
+                                            Reason
+                                        </Label>
+                                        <Select
+                                            value={
+                                                inventoryForm.data.reason ||
+                                                undefined
+                                            }
+                                            onValueChange={(value) =>
+                                                inventoryForm.setData({
+                                                    ...inventoryForm.data,
+                                                    reason: value,
+                                                    reason_note:
+                                                        value === 'other'
+                                                            ? inventoryForm.data
+                                                                  .reason_note
+                                                            : '',
+                                                })
+                                            }
+                                        >
+                                            <SelectTrigger
+                                                id="inventory-reason"
+                                                className="h-9 min-h-9 w-full data-[size=default]:h-9"
+                                            >
+                                                <SelectValue placeholder="Select a reason" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {adjustmentReasons.map(
+                                                    (reason) => (
+                                                        <SelectItem
+                                                            key={reason.value}
+                                                            value={reason.value}
+                                                        >
+                                                            {reason.label}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError
+                                            message={
+                                                inventoryForm.errors.reason
+                                            }
+                                        />
+                                    </div>
+                                ) : null}
+                            </div>
+                            {isOtherReason ? (
+                                <AdjustmentReasonNote
+                                    id="inventory-reason-note"
+                                    value={inventoryForm.data.reason_note}
+                                    error={inventoryForm.errors.reason_note}
+                                    onChange={(value) =>
+                                        inventoryForm.setData(
+                                            'reason_note',
+                                            value,
+                                        )
+                                    }
                                 />
-                            </div>
-                        ) : null}
-                    </div>
-                    {isOtherReason ? (
-                        <AdjustmentReasonNote
-                            id="inventory-reason-note"
-                            value={inventoryForm.data.reason_note}
-                            error={inventoryForm.errors.reason_note}
-                            onChange={(value) =>
-                                inventoryForm.setData('reason_note', value)
-                            }
-                        />
-                    ) : null}
-                </form>
+                            ) : null}
+                        </form>
 
-                <form
-                    className="grid h-full min-w-0 content-start gap-4 p-5"
-                    onSubmit={submitPrice}
-                >
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                            <h3 className="text-sm font-semibold">Price</h3>
-                            <p className="text-muted-foreground text-xs">
-                                Buying, regular, and selling price
-                            </p>
-                        </div>
-                        <Button
-                            type="submit"
-                            size="sm"
-                            disabled={priceForm.processing}
+                        <form
+                            className="grid h-full min-w-0 content-start gap-4 p-5"
+                            onSubmit={submitPrice}
                         >
-                            Save
-                        </Button>
-                    </div>
-
-                    <div className="grid min-w-0 items-start gap-4 sm:grid-cols-3">
-                        <div className="grid min-w-0 gap-2">
-                            <Label htmlFor="price_buying_price">
-                                Buying price{' '}
-                                <span className="text-muted-foreground font-normal">
-                                    (AUD)
-                                </span>
-                            </Label>
-                            <Input
-                                id="price_buying_price"
-                                type="number"
-                                step="0.01"
-                                min={0}
-                                placeholder="e.g. 12.50"
-                                value={priceForm.data.buying_price}
-                                onChange={(event) =>
-                                    priceForm.setData(
-                                        'buying_price',
-                                        event.target.value,
-                                    )
-                                }
-                            />
-                            <p className="text-muted-foreground text-xs">
-                                Last purchase cost. Internal only.
-                            </p>
-                            <InputError
-                                message={priceForm.errors.buying_price}
-                            />
-                        </div>
-                        <div className="grid min-w-0 gap-2">
-                            <Label htmlFor="regular_price">
-                                Regular price{' '}
-                                <span className="text-muted-foreground font-normal">
-                                    (AUD)
-                                </span>
-                            </Label>
-                            <Input
-                                id="regular_price"
-                                type="number"
-                                step="0.01"
-                                min={0}
-                                placeholder="e.g. 19.99"
-                                value={priceForm.data.regular_price}
-                                onChange={(event) =>
-                                    priceForm.setData(
-                                        'regular_price',
-                                        event.target.value,
-                                    )
-                                }
-                            />
-                            <p className="text-muted-foreground text-xs">
-                                Compare-at / was. Shown when higher than
-                                selling.
-                            </p>
-                            <InputError
-                                message={priceForm.errors.regular_price}
-                            />
-                        </div>
-                        <div className="grid min-w-0 gap-2">
-                            <Label htmlFor="selling_price">
-                                Selling price{' '}
-                                <span className="text-muted-foreground font-normal">
-                                    (AUD)
-                                </span>
-                            </Label>
-                            <Input
-                                id="selling_price"
-                                type="number"
-                                step="0.01"
-                                min={0}
-                                placeholder="e.g. 16.50"
-                                value={priceForm.data.selling_price}
-                                onChange={(event) =>
-                                    priceForm.setData(
-                                        'selling_price',
-                                        event.target.value,
-                                    )
-                                }
-                            />
-                            <p className="text-muted-foreground text-xs">
-                                Ticket price before a catalog discount.
-                            </p>
-                            <InputError
-                                message={priceForm.errors.selling_price}
-                            />
-                        </div>
-                    </div>
-                </form>
-                </div>
-
-                <form className="p-5" onSubmit={submitPrice}>
-                    <div className="bg-muted/40 grid min-w-0 gap-4 rounded-lg border p-4">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div className="min-w-0">
-                                <h4 className="text-sm font-medium">
-                                    Discount
-                                </h4>
-                                <p className="text-muted-foreground text-xs">
-                                    Applies to selling only. Empty dates keep
-                                    the offer always on.
-                                </p>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-3">
-                                <p className="text-muted-foreground text-xs tabular-nums">
-                                    Shoppers pay{' '}
-                                    <span className="text-foreground font-medium">
-                                        {liveEffectiveDisplay}
-                                    </span>{' '}
-                                    AUD
-                                </p>
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                    <h3 className="text-sm font-semibold">
+                                        Price
+                                    </h3>
+                                    <p className="text-muted-foreground text-xs">
+                                        Buying, regular, and selling price
+                                    </p>
+                                </div>
                                 <Button
                                     type="submit"
                                     size="sm"
@@ -1011,150 +924,284 @@ export function ProductInventoryPanel({
                                     Save
                                 </Button>
                             </div>
-                        </div>
 
-                        <div className="grid max-w-xl gap-2">
-                            <Label id="discount_type_label">Type</Label>
-                            <div
-                                role="group"
-                                aria-labelledby="discount_type_label"
-                                className="grid grid-cols-3 gap-2"
-                            >
-                                {discountTypes.map((type) => {
-                                    const Icon =
-                                        DISCOUNT_TYPE_ICONS[type.value] ?? Tag;
-                                    const selected =
-                                        priceForm.data.discount_type ===
-                                        type.value;
-
-                                    return (
-                                        <Button
-                                            key={type.value}
-                                            type="button"
-                                            variant={
-                                                selected ? 'default' : 'outline'
-                                            }
-                                            className={cn(
-                                                'h-auto min-h-9 flex-col gap-1 px-1 py-2 text-[11px] sm:h-9 sm:flex-row sm:gap-1.5 sm:px-2 sm:py-0 sm:text-xs',
-                                                !selected && 'text-foreground',
-                                            )}
-                                            onClick={() =>
-                                                selectDiscountType(type.value)
-                                            }
-                                        >
-                                            <Icon className="size-3.5" />
-                                            {type.label}
-                                        </Button>
-                                    );
-                                })}
-                            </div>
-                            <InputError
-                                message={priceForm.errors.discount_type}
-                            />
-                        </div>
-
-                        {showDiscountFields ? (
-                            <div className="grid min-w-0 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid min-w-0 items-start gap-4 sm:grid-cols-3">
                                 <div className="grid min-w-0 gap-2">
-                                    <Label htmlFor="discount_price">
-                                        Discount value{' '}
+                                    <Label htmlFor="price_buying_price">
+                                        Buying price{' '}
                                         <span className="text-muted-foreground font-normal">
-                                            {priceForm.data.discount_type ===
-                                            'percent'
-                                                ? '(%)'
-                                                : '(AUD)'}
+                                            (AUD)
                                         </span>
                                     </Label>
                                     <Input
-                                        id="discount_price"
+                                        id="price_buying_price"
                                         type="number"
                                         step="0.01"
                                         min={0}
-                                        max={
-                                            priceForm.data.discount_type ===
-                                            'percent'
-                                                ? 100
-                                                : priceForm.data
-                                                      .selling_price ||
-                                                  undefined
-                                        }
-                                        placeholder={
-                                            priceForm.data.discount_type ===
-                                            'percent'
-                                                ? 'e.g. 10'
-                                                : 'e.g. 5.00'
-                                        }
-                                        value={priceForm.data.discount_price}
+                                        placeholder="e.g. 12.50"
+                                        value={priceForm.data.buying_price}
                                         onChange={(event) =>
                                             priceForm.setData(
-                                                'discount_price',
+                                                'buying_price',
                                                 event.target.value,
                                             )
                                         }
                                     />
                                     <p className="text-muted-foreground text-xs">
-                                        {priceForm.data.discount_type ===
-                                        'percent'
-                                            ? 'Off the selling price (0–100).'
-                                            : 'Amount off selling, ≤ selling.'}
+                                        Last purchase cost. Internal only.
                                     </p>
                                     <InputError
-                                        message={
-                                            priceForm.errors.discount_price
-                                        }
+                                        message={priceForm.errors.buying_price}
                                     />
                                 </div>
                                 <div className="grid min-w-0 gap-2">
-                                    <Label htmlFor="start_date">
-                                        Start date
+                                    <Label htmlFor="regular_price">
+                                        Regular price{' '}
+                                        <span className="text-muted-foreground font-normal">
+                                            (AUD)
+                                        </span>
                                     </Label>
-                                    <DatePicker
-                                        id="start_date"
-                                        value={priceForm.data.start_date}
-                                        onChange={(next) =>
+                                    <Input
+                                        id="regular_price"
+                                        type="number"
+                                        step="0.01"
+                                        min={0}
+                                        placeholder="e.g. 19.99"
+                                        value={priceForm.data.regular_price}
+                                        onChange={(event) =>
                                             priceForm.setData(
-                                                'start_date',
-                                                next,
+                                                'regular_price',
+                                                event.target.value,
                                             )
                                         }
-                                        max={
-                                            priceForm.data.end_date ||
-                                            undefined
-                                        }
-                                        placeholder="Optional start"
-                                        aria-invalid={Boolean(
-                                            priceForm.errors.start_date,
-                                        )}
                                     />
+                                    <p className="text-muted-foreground text-xs">
+                                        Compare-at / was. Shown when higher than
+                                        selling.
+                                    </p>
                                     <InputError
-                                        message={priceForm.errors.start_date}
+                                        message={priceForm.errors.regular_price}
                                     />
                                 </div>
                                 <div className="grid min-w-0 gap-2">
-                                    <Label htmlFor="end_date">End date</Label>
-                                    <DatePicker
-                                        id="end_date"
-                                        value={priceForm.data.end_date}
-                                        onChange={(next) =>
-                                            priceForm.setData('end_date', next)
+                                    <Label htmlFor="selling_price">
+                                        Selling price{' '}
+                                        <span className="text-muted-foreground font-normal">
+                                            (AUD)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="selling_price"
+                                        type="number"
+                                        step="0.01"
+                                        min={0}
+                                        placeholder="e.g. 16.50"
+                                        value={priceForm.data.selling_price}
+                                        onChange={(event) =>
+                                            priceForm.setData(
+                                                'selling_price',
+                                                event.target.value,
+                                            )
                                         }
-                                        min={
-                                            priceForm.data.start_date ||
-                                            undefined
-                                        }
-                                        placeholder="Optional end"
-                                        aria-invalid={Boolean(
-                                            priceForm.errors.end_date,
-                                        )}
                                     />
+                                    <p className="text-muted-foreground text-xs">
+                                        Ticket price before a catalog discount.
+                                    </p>
                                     <InputError
-                                        message={priceForm.errors.end_date}
+                                        message={priceForm.errors.selling_price}
                                     />
                                 </div>
                             </div>
-                        ) : null}
+                        </form>
                     </div>
-                </form>
+
+                    <form className="p-5" onSubmit={submitPrice}>
+                        <div className="bg-muted/40 grid min-w-0 gap-4 rounded-lg border p-4">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <h4 className="text-sm font-medium">
+                                        Discount
+                                    </h4>
+                                    <p className="text-muted-foreground text-xs">
+                                        Applies to selling only. Empty dates
+                                        keep the offer always on.
+                                    </p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <p className="text-muted-foreground text-xs tabular-nums">
+                                        Shoppers pay{' '}
+                                        <span className="text-foreground font-medium">
+                                            {liveEffectiveDisplay}
+                                        </span>{' '}
+                                        AUD
+                                    </p>
+                                    <Button
+                                        type="submit"
+                                        size="sm"
+                                        disabled={priceForm.processing}
+                                    >
+                                        Save
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="grid max-w-xl gap-2">
+                                <Label id="discount_type_label">Type</Label>
+                                <div
+                                    role="group"
+                                    aria-labelledby="discount_type_label"
+                                    className="grid grid-cols-3 gap-2"
+                                >
+                                    {discountTypes.map((type) => {
+                                        const Icon =
+                                            DISCOUNT_TYPE_ICONS[type.value] ??
+                                            Tag;
+                                        const selected =
+                                            priceForm.data.discount_type ===
+                                            type.value;
+
+                                        return (
+                                            <Button
+                                                key={type.value}
+                                                type="button"
+                                                variant={
+                                                    selected
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                                className={cn(
+                                                    'h-auto min-h-9 flex-col gap-1 px-1 py-2 text-[11px] sm:h-9 sm:flex-row sm:gap-1.5 sm:px-2 sm:py-0 sm:text-xs',
+                                                    !selected &&
+                                                        'text-foreground',
+                                                )}
+                                                onClick={() =>
+                                                    selectDiscountType(
+                                                        type.value,
+                                                    )
+                                                }
+                                            >
+                                                <Icon className="size-3.5" />
+                                                {type.label}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                                <InputError
+                                    message={priceForm.errors.discount_type}
+                                />
+                            </div>
+
+                            {showDiscountFields ? (
+                                <div className="grid min-w-0 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    <div className="grid min-w-0 gap-2">
+                                        <Label htmlFor="discount_price">
+                                            Discount value{' '}
+                                            <span className="text-muted-foreground font-normal">
+                                                {priceForm.data
+                                                    .discount_type === 'percent'
+                                                    ? '(%)'
+                                                    : '(AUD)'}
+                                            </span>
+                                        </Label>
+                                        <Input
+                                            id="discount_price"
+                                            type="number"
+                                            step="0.01"
+                                            min={0}
+                                            max={
+                                                priceForm.data.discount_type ===
+                                                'percent'
+                                                    ? 100
+                                                    : priceForm.data
+                                                          .selling_price ||
+                                                      undefined
+                                            }
+                                            placeholder={
+                                                priceForm.data.discount_type ===
+                                                'percent'
+                                                    ? 'e.g. 10'
+                                                    : 'e.g. 5.00'
+                                            }
+                                            value={
+                                                priceForm.data.discount_price
+                                            }
+                                            onChange={(event) =>
+                                                priceForm.setData(
+                                                    'discount_price',
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        <p className="text-muted-foreground text-xs">
+                                            {priceForm.data.discount_type ===
+                                            'percent'
+                                                ? 'Off the selling price (0–100).'
+                                                : 'Amount off selling, ≤ selling.'}
+                                        </p>
+                                        <InputError
+                                            message={
+                                                priceForm.errors.discount_price
+                                            }
+                                        />
+                                    </div>
+                                    <div className="grid min-w-0 gap-2">
+                                        <Label htmlFor="start_date">
+                                            Start date
+                                        </Label>
+                                        <DatePicker
+                                            id="start_date"
+                                            value={priceForm.data.start_date}
+                                            onChange={(next) =>
+                                                priceForm.setData(
+                                                    'start_date',
+                                                    next,
+                                                )
+                                            }
+                                            max={
+                                                priceForm.data.end_date ||
+                                                undefined
+                                            }
+                                            placeholder="Optional start"
+                                            aria-invalid={Boolean(
+                                                priceForm.errors.start_date,
+                                            )}
+                                        />
+                                        <InputError
+                                            message={
+                                                priceForm.errors.start_date
+                                            }
+                                        />
+                                    </div>
+                                    <div className="grid min-w-0 gap-2">
+                                        <Label htmlFor="end_date">
+                                            End date
+                                        </Label>
+                                        <DatePicker
+                                            id="end_date"
+                                            value={priceForm.data.end_date}
+                                            onChange={(next) =>
+                                                priceForm.setData(
+                                                    'end_date',
+                                                    next,
+                                                )
+                                            }
+                                            min={
+                                                priceForm.data.start_date ||
+                                                undefined
+                                            }
+                                            placeholder="Optional end"
+                                            aria-invalid={Boolean(
+                                                priceForm.errors.end_date,
+                                            )}
+                                        />
+                                        <InputError
+                                            message={priceForm.errors.end_date}
+                                        />
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
+                    </form>
                 </div>
             </Card>
         </div>

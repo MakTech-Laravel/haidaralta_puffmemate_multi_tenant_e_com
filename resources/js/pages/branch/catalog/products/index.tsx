@@ -172,7 +172,9 @@ export default function BranchProductsIndex({
                 accessorKey: 'quantity',
                 header: 'Stock',
                 cell: ({ row }) => (
-                    <span className="tabular-nums">{row.original.quantity}</span>
+                    <span className="tabular-nums">
+                        {row.original.quantity}
+                    </span>
                 ),
             },
             {
