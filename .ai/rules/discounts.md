@@ -10,7 +10,7 @@ paths:
 # Discounts
 
 ## Discounts live on Stock Manage
-There is no bulk Discounts workspace. Buying, regular, selling, and discount type/value/dates are edited on Stock Manage’s Inventory & pricing card (`ProductInventoryPanel`) for one branch + one SKU (including variants). Discounts apply only to selling_price. Honor start/end dates in effective price (null dates = always on; outside the window = selling). Hydrate saved fixed/percent offers so Save is not destructive. Empty SKUs and prices with `discount_type` none/missing select None and hide value + dates.
+There is no bulk Discounts workspace. Buying, regular, selling, and discount type/value/dates are edited on Stock Manage’s Inventory & pricing card (`ProductInventoryPanel`) for one branch + one SKU (including variants). Discount lives in a full-width bordered block below the Stock and Price sections, with a 3-button type row (not a select jammed into the price grid). Discounts apply only to selling_price. Honor start/end dates in effective price (null dates = always on; outside the window = selling). Hydrate saved fixed/percent offers so Save is not destructive. Empty SKUs and prices with `discount_type` none/missing select None and hide value + dates.
 
 ## Price history is append-only
 `branch_product_price_histories` is the operational trail (who, when, source, from/to). Spatie activity log remains generic. Skip no-op upserts. Do not put AuditsChanges on the history model. Coupons stay checkout-only (navSoon); do not add a Coupon model on the catalog SKU.
