@@ -3,9 +3,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, Package, Pencil, Trash2, Truck, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
-import BranchDriverController from '@/actions/App/Http/Controllers/Platform/BranchDriverController';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
-import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
 import PriceHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
@@ -31,6 +29,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { usePermission } from '@/hooks/use-permissions';
+import { filteredBranchDriversUrl, filteredBranchStaffUrl } from '@/lib/branch-people-query';
 import { stockActionItems, stockPageUrl } from '@/lib/stock-query';
 
 type BranchRow = {
@@ -190,9 +189,7 @@ export default function PlatformBranchesIndex({
                                   {
                                       label: 'Staff',
                                       icon: Users,
-                                      href: BranchScopedStaffController.index.url(
-                                          branch.slug,
-                                      ),
+                                      href: filteredBranchStaffUrl(branch.id),
                                   },
                               ]
                             : []),
@@ -201,9 +198,7 @@ export default function PlatformBranchesIndex({
                                   {
                                       label: 'Drivers',
                                       icon: Truck,
-                                      href: BranchDriverController.index.url(
-                                          branch.slug,
-                                      ),
+                                      href: filteredBranchDriversUrl(branch.id),
                                   },
                               ]
                             : []),

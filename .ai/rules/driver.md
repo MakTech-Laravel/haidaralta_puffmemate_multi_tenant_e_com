@@ -20,3 +20,6 @@ Platform driver assign UI is DriverBranchAssignSheet (right Sheet + server searc
 
 ## Roster overlap is period plus weekday plus time
 One driver_rosters row is a date period (start_date–end_date inclusive) with the same start_time/end_time on days_of_week (ISO 1–7, default all days). Overlap is per driver: date ranges overlap AND weekdays intersect AND times overlap. Weekday-only vs weekend-only on the same dates is allowed. Overnight shifts are invalid. Effective availability: on_break/busy win, else a scheduled period covering today’s date + weekday + clock → available, else offline.
+
+## Nested platform staff/driver indexes redirect to filtered lists
+Platform nested staff and drivers INDEX actions redirect to platform.branch-staff.index and platform.drivers.index with filter[branch_id] for that branch (preserving other filter[] query keys). Nested create/show/edit may remain. Do not restore platform/branches/staff/index or platform/branches/drivers/index Inertia pages. Branch portal lists stay on branch.staff / branch.drivers.

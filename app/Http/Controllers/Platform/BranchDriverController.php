@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
-use App\DataTables\BranchDriverDataTable;
 use App\Enums\DriverAssignmentStatus;
-use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\AssignDriverRequest;
 use App\Http\Requests\Branch\StoreDriverRequest;
@@ -24,13 +22,12 @@ class BranchDriverController extends Controller
 {
     public function __construct(private DriverService $drivers) {}
 
-    public function index(Request $request, Branch $branch): Response
+    public function index(Request $request, Branch $branch): RedirectResponse
     {
-        return Inertia::render('platform/branches/drivers/index', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
-            'table' => BranchDriverDataTable::makeForBranch($request, $branch),
-            'assignableDrivers' => $this->assignableDrivers($branch),
-        ]);
+        return redirect()->route('platform.drivers.index', array_replace_recursive(
+            $request->query(),
+            ['filter' => ['branch_id' => $branch->id]],
+        ));
     }
 
     public function create(Branch $branch): Response
@@ -124,30 +121,6 @@ class BranchDriverController extends Controller
         Toast::success('Driver assigned to branch.');
 
         return redirect()->back();
-    }
-
-    /**
-     * @return list<array{id: int, name: string, phone: string}>
-     */
-    private function assignableDrivers(Branch $branch): array
-    {
-        return User::query()
-            ->where('user_type', UserType::DRIVER)
-            ->where('is_active', true)
-            ->whereDoesntHave(
-                'driverBranchAssignments',
-                fn ($query) => $query
-                    ->where('branch_id', $branch->id)
-                    ->where('status', DriverAssignmentStatus::Active->value),
-            )
-            ->orderBy('name')
-            ->get(['id', 'name', 'phone'])
-            ->map(fn (User $driver): array => [
-                'id' => $driver->id,
-                'name' => $driver->name,
-                'phone' => $driver->phone,
-            ])
-            ->all();
     }
 
     private function resolveAssignedDriver(Branch $branch, User $user): User

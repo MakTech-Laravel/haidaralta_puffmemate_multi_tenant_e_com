@@ -8,9 +8,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
-import BranchDriverController from '@/actions/App/Http/Controllers/Platform/BranchDriverController';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
-import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,6 +23,10 @@ import {
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { usePermission } from '@/hooks/use-permissions';
+import {
+    filteredBranchDriversUrl,
+    filteredBranchStaffUrl,
+} from '@/lib/branch-people-query';
 import { cn } from '@/lib/utils';
 
 type SuperAdmin = {
@@ -166,9 +168,7 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                         {can('manage-branch-users') ? (
                             <Button variant="outline" asChild>
                                 <Link
-                                    href={BranchScopedStaffController.index.url(
-                                        branch.slug,
-                                    )}
+                                    href={filteredBranchStaffUrl(branch.id)}
                                 >
                                     Staff
                                 </Link>
@@ -188,9 +188,7 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                         {can('manage-drivers') ? (
                             <Button variant="outline" asChild>
                                 <Link
-                                    href={BranchDriverController.index.url(
-                                        branch.slug,
-                                    )}
+                                    href={filteredBranchDriversUrl(branch.id)}
                                 >
                                     Drivers
                                 </Link>
@@ -347,9 +345,7 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                         ) : can('manage-branch-users') ? (
                             <Button size="sm" variant="outline" asChild>
                                 <Link
-                                    href={BranchScopedStaffController.index.url(
-                                        branch.slug,
-                                    )}
+                                    href={filteredBranchStaffUrl(branch.id)}
                                 >
                                     Manage staff
                                 </Link>

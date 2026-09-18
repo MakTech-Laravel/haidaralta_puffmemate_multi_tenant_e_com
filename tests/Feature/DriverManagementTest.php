@@ -225,17 +225,41 @@ test('branch can create driver auto assigned to current branch', function () {
             ->exists())->toBeTrue();
 });
 
-test('platform nested branch drivers index lists assigned drivers', function () {
+test('platform nested branch drivers index redirects to the drivers list filtered by branch', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $melbourneOnly = User::factory()->create([
+        'name' => 'Melbourne Only Courier',
+        'user_type' => UserType::DRIVER,
+        'branch_id' => null,
+    ]);
+
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $melbourneOnly->id,
+        'branch_id' => $melbourne->id,
+    ]);
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branches.drivers.index', $sydney))
+        ->assertRedirect(route('platform.drivers.index', [
+            'filter' => ['branch_id' => $sydney->id],
+        ]));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.drivers.index', [
+            'filter' => ['branch_id' => $sydney->id],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('platform/branches/drivers/index')
+            ->component('platform/drivers/index')
+            ->where('table.filters.branch_id', (string) $sydney->id)
             ->where('table.data', fn ($rows) => collect($rows)->contains(
                 fn ($row) => $row['phone'] === UserSeeder::DRIVER_PHONE,
+            ))
+            ->where('table.data', fn ($rows) => collect($rows)->doesntContain(
+                fn ($row) => $row['id'] === $melbourneOnly->id,
             )));
 
     $this->actingAs($admin, 'platform')

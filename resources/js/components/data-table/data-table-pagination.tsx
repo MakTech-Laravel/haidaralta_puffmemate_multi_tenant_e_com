@@ -9,7 +9,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
-const PER_PAGE_OPTIONS = [15, 25, 50];
+const PER_PAGE_OPTIONS = [15, 25, 50, 100];
 
 export function DataTablePagination({
     meta,

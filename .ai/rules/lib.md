@@ -3,6 +3,7 @@ paths:
   - resources/js/lib/fcm.ts
   - resources/js/lib/color-picker.ts
   - resources/js/lib/stock-query.ts
+  - resources/js/lib/branch-people-query.ts
 ---
 
 # Lib
@@ -22,3 +23,6 @@ Catalog create/edit default color_code is transparent. Listing/gallery tiles and
 
 ## Row stock actions are Manage stock plus reports
 stockActionItems is the Stock group: optional Manage stock, then Stock transactions and Price history. Daily stock, selling price, and discounts stay on **Manage stock**. Catalog **Manage stock** with a known pair opens that page locked. Do not add Add stock, Update price, or Add discount row actions. List menus use labeled groups, never a flat ungrouped `items` list on branch product rows.
+
+## Branch people list URLs use filter[branch_id]
+filteredBranchStaffUrl / filteredBranchDriversUrl in branch-people-query.ts build Wayfinder global list URLs with filter[branch_id]. Use those from the platform Branches list and show page instead of nested index routes.
