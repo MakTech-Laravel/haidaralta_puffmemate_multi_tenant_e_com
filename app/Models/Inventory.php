@@ -4,11 +4,24 @@ namespace App\Models;
 
 use App\Models\Concerns\AuditsChanges;
 use Database\Factories\InventoryFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $branch_id
+ * @property int $product_id
+ * @property int|null $variant_id
+ * @property int $quantity
+ * @property bool $status
+ * @property-read Branch|null $branch
+ * @property-read Product|null $product
+ * @property-read ProductVariant|null $variant
+ * @property-read Collection<int, InventoryTransaction> $transactions
+ */
 class Inventory extends Model
 {
     /** @use HasFactory<InventoryFactory> */

@@ -89,13 +89,15 @@ export const aboutHowItWorks = {
         {
             number: '05',
             title: 'Checkout',
-            description: 'Confirm details, delivery method and payment at door.',
+            description:
+                'Confirm details, delivery method and payment at door.',
             icon: Wallet,
         },
         {
             number: '06',
             title: 'Order Processing',
-            description: 'Your branch prepares the order carefully and quickly.',
+            description:
+                'Your branch prepares the order carefully and quickly.',
             icon: Package,
         },
         {
@@ -113,7 +115,8 @@ export const aboutHowItWorks = {
         {
             number: '09',
             title: 'Order Delivered',
-            description: 'Receive your order with discreet packaging and ID check.',
+            description:
+                'Receive your order with discreet packaging and ID check.',
             icon: CheckCircle2,
         },
     ] satisfies AboutStep[],
@@ -123,8 +126,7 @@ export const aboutMultiBranch = {
     eyebrow: 'Multi branch inventory',
     heading: 'Your Order. The Right Branch. The Right Stock.',
     body: 'We weight distance, delivery location and live inventory so every order routes to a branch that can fulfil it — not a generic warehouse promise.',
-    promise:
-        'Product availability and pricing can vary by branch.',
+    promise: 'Product availability and pricing can vary by branch.',
     factors: [
         {
             number: '01',

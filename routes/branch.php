@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Branch\ActivityLogController as BranchActivityLogController;
 use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
+use App\Http\Controllers\Branch\ConversationController as BranchConversationController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
+use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
 use App\Http\Controllers\Branch\Reports\StockTransactionController as BranchStockTransactionController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
 use App\Http\Controllers\Branch\StaffController as BranchStaffController;
@@ -77,8 +79,43 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.stock.price');
         Route::get('reports/stock-transactions', [BranchStockTransactionController::class, 'index'])
             ->name('branch.reports.stock-transactions');
+        Route::get('reports/stock-transactions/export', [BranchStockTransactionController::class, 'export'])
+            ->name('branch.reports.stock-transactions.export');
+        Route::get('reports/price-history', [BranchPriceHistoryController::class, 'index'])
+            ->name('branch.reports.price-history');
+        Route::get('reports/price-history/export', [BranchPriceHistoryController::class, 'export'])
+            ->name('branch.reports.price-history.export');
         Route::get('stock/product-options', [BranchStockController::class, 'productOptions'])
             ->name('branch.stock.product-options');
+    });
+
+    Route::middleware(['permission:manage-branch-conversations'])->group(function () {
+        Route::get('conversations', [BranchConversationController::class, 'index'])
+            ->name('branch.conversations.index');
+        Route::get('conversations/order-options', [BranchConversationController::class, 'orderOptions'])
+            ->name('branch.conversations.order-options');
+        Route::post('conversations', [BranchConversationController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('branch.conversations.store');
+        Route::get('conversations/{conversation}', [BranchConversationController::class, 'show'])
+            ->whereNumber('conversation')
+            ->name('branch.conversations.show');
+        Route::get('conversations/{conversation}/messages', [BranchConversationController::class, 'messages'])
+            ->whereNumber('conversation')
+            ->name('branch.conversations.messages');
+        Route::post('conversations/{conversation}/messages', [BranchConversationController::class, 'storeMessage'])
+            ->whereNumber('conversation')
+            ->middleware('throttle:conversation-messages')
+            ->name('branch.conversations.messages.store');
+        Route::post('conversations/{conversation}/delivered', [BranchConversationController::class, 'delivered'])
+            ->whereNumber('conversation')
+            ->name('branch.conversations.delivered');
+        Route::post('conversations/{conversation}/read', [BranchConversationController::class, 'read'])
+            ->whereNumber('conversation')
+            ->name('branch.conversations.read');
+        Route::post('conversations/{conversation}/close', [BranchConversationController::class, 'close'])
+            ->whereNumber('conversation')
+            ->name('branch.conversations.close');
     });
 
     Route::middleware(['permission:view-branch-activity-logs'])->group(function () {

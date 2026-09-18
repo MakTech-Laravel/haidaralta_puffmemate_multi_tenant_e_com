@@ -70,8 +70,9 @@ export default function BranchCategoriesIndex({
     };
 }) {
     const { catalog } = usePage().props;
-    const [navSortCategory, setNavSortCategory] =
-        useState<CategoryRow | null>(null);
+    const [navSortCategory, setNavSortCategory] = useState<CategoryRow | null>(
+        null,
+    );
 
     setLayoutProps({
         breadcrumbs: [
@@ -169,8 +170,7 @@ export default function BranchCategoriesIndex({
                                   onSort={query.toggleSort}
                               />
                           ),
-                          cell: ({ row }) =>
-                              row.original.parent_name ?? '—',
+                          cell: ({ row }) => row.original.parent_name ?? '—',
                       } satisfies ColumnDef<CategoryRow>,
                   ]
                 : []),
@@ -201,9 +201,7 @@ export default function BranchCategoriesIndex({
                 ),
                 cell: ({ row }) => (
                     <Badge
-                        variant={
-                            row.original.status ? 'default' : 'secondary'
-                        }
+                        variant={row.original.status ? 'default' : 'secondary'}
                     >
                         {row.original.status ? 'Active' : 'Inactive'}
                     </Badge>
@@ -337,7 +335,12 @@ export default function BranchCategoriesIndex({
                 },
             },
         ],
-        [branch.slug, catalog.show_parent_category, query.sort, query.toggleSort],
+        [
+            branch.slug,
+            catalog.show_parent_category,
+            query.sort,
+            query.toggleSort,
+        ],
     );
 
     return (
@@ -351,13 +354,15 @@ export default function BranchCategoriesIndex({
                         description="Edit global catalog categories for this branch"
                     />
                     {catalog.branch_can_create_categories ? (
-                    <Button asChild>
-                        <Link
-                            href={CategoryController.create.url(branch.slug)}
-                        >
-                            Add category
-                        </Link>
-                    </Button>
+                        <Button asChild>
+                            <Link
+                                href={CategoryController.create.url(
+                                    branch.slug,
+                                )}
+                            >
+                                Add category
+                            </Link>
+                        </Button>
                     ) : null}
                 </div>
 
@@ -470,42 +475,42 @@ export default function BranchCategoriesIndex({
                                         </Select>
                                     </div>
                                     {catalog.show_parent_category ? (
-                                    <div className="grid gap-2">
-                                        <Label>Parent</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.parent_id ??
-                                                    'all',
-                                            )}
-                                            onValueChange={(value) =>
-                                                query.setFilter(
-                                                    'parent_id',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-[12rem]">
-                                                <SelectValue placeholder="Parent" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All parents
-                                                </SelectItem>
-                                                {parents.map((parent) => (
-                                                    <SelectItem
-                                                        key={parent.id}
-                                                        value={String(
-                                                            parent.id,
-                                                        )}
-                                                    >
-                                                        {parent.name}
+                                        <div className="grid gap-2">
+                                            <Label>Parent</Label>
+                                            <Select
+                                                value={String(
+                                                    query.filters.parent_id ??
+                                                        'all',
+                                                )}
+                                                onValueChange={(value) =>
+                                                    query.setFilter(
+                                                        'parent_id',
+                                                        value === 'all'
+                                                            ? null
+                                                            : value,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger className="w-[12rem]">
+                                                    <SelectValue placeholder="Parent" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">
+                                                        All parents
                                                     </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                                    {parents.map((parent) => (
+                                                        <SelectItem
+                                                            key={parent.id}
+                                                            value={String(
+                                                                parent.id,
+                                                            )}
+                                                        >
+                                                            {parent.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     ) : null}
                                 </>
                             }

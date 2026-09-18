@@ -2,11 +2,17 @@ import { Link } from '@inertiajs/react';
 import {
     Download,
     Eye,
+    History,
     MoreHorizontal,
+    Network,
+    Package,
     Pencil,
     RotateCcw,
+    ScrollText,
     Settings2,
     Trash2,
+    Truck,
+    Users,
     type LucideIcon,
 } from 'lucide-react';
 import { Fragment, type ReactNode } from 'react';
@@ -47,6 +53,13 @@ export const defaultDataTableActionIcons: Record<string, LucideIcon> = {
     Restore: RotateCcw,
     Download: Download,
     Manage: Settings2,
+    Staff: Users,
+    Products: Package,
+    Drivers: Truck,
+    'Manage stock': Settings2,
+    'Manage branches': Network,
+    'Stock transactions': ScrollText,
+    'Price history': History,
     'Restore DB': RotateCcw,
     'Delete zip': Trash2,
 };
@@ -149,13 +162,12 @@ export function DataTableRowActions({
                         <MoreHorizontal className="size-4" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                    align="end"
-                    className={contentClassName}
-                >
+                <DropdownMenuContent align="end" className={contentClassName}>
                     <DropdownMenuLabel>{label}</DropdownMenuLabel>
                     {resolvedGroups.map((group, groupIndex) => (
-                        <Fragment key={`${group.label ?? 'group'}-${groupIndex}`}>
+                        <Fragment
+                            key={`${group.label ?? 'group'}-${groupIndex}`}
+                        >
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>
                                 {group.label ? (

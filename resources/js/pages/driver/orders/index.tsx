@@ -46,7 +46,10 @@ export default function DriverOrdersIndex({
             ? orders
             : orders.filter((order) => order.status === statusFilter);
 
-    const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredOrders.length / PAGE_SIZE),
+    );
     const currentPage = Math.min(Math.max(page, 1), totalPages);
     const pageOrders = filteredOrders.slice(
         (currentPage - 1) * PAGE_SIZE,
@@ -176,9 +179,7 @@ export default function DriverOrdersIndex({
                                             )}
                                             onClick={(event) => {
                                                 event.preventDefault();
-                                                if (
-                                                    currentPage < totalPages
-                                                ) {
+                                                if (currentPage < totalPages) {
                                                     setPage(currentPage + 1);
                                                 }
                                             }}

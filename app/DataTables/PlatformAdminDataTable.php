@@ -12,7 +12,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 
+/**
+ * @extends AbstractDataTable<User>
+ */
 class PlatformAdminDataTable extends AbstractDataTable
 {
     public function __construct(Request $request)

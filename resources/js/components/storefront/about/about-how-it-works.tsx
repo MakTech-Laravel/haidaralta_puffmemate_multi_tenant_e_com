@@ -8,7 +8,7 @@ type AboutHowItWorksProps = {
 export function AboutHowItWorks({ className }: AboutHowItWorksProps) {
     return (
         <section className={cn('bg-muted/40 py-16 sm:py-20', className)}>
-            <div className="mx-auto container px-4 sm:px-6">
+            <div className="container mx-auto px-4 sm:px-6">
                 <div className="mx-auto max-w-2xl text-center">
                     <p className="text-primary text-xs font-semibold tracking-[0.14em] uppercase">
                         {aboutHowItWorks.eyebrow}
@@ -16,7 +16,7 @@ export function AboutHowItWorks({ className }: AboutHowItWorksProps) {
                     <h2 className="text-foreground mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
                         {aboutHowItWorks.heading}
                     </h2>
-                    <p className="text-muted-foreground mt-4 text-sm leading-relaxed sm:text-lg font-inter font-normal">
+                    <p className="text-muted-foreground font-inter mt-4 text-sm leading-relaxed font-normal sm:text-lg">
                         {aboutHowItWorks.body}
                     </p>
                 </div>
@@ -41,10 +41,10 @@ export function AboutHowItWorks({ className }: AboutHowItWorksProps) {
                                         {step.number}
                                     </span>
                                 </div>
-                                <h3 className="text-foreground mt-4 text-lg font-bold font-inter">
-                                     {step.title}
+                                <h3 className="text-foreground font-inter mt-4 text-lg font-bold">
+                                    {step.title}
                                 </h3>
-                                <p className="text-muted-foreground mt-2 text-sm leading-relaxed font-inter font-normal">
+                                <p className="text-muted-foreground font-inter mt-2 text-sm leading-relaxed font-normal">
                                     {step.description}
                                 </p>
                             </li>

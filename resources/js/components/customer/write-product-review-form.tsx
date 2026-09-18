@@ -67,7 +67,7 @@ export function WriteProductReviewForm({
                                 role="radio"
                                 aria-checked={rating === value}
                                 aria-label={`${value} star${value === 1 ? '' : 's'}`}
-                                className="text-muted-foreground hover:text-review-star rounded-sm p-0.5 transition-colors focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
+                                className="text-muted-foreground hover:text-review-star focus-visible:ring-ring rounded-sm p-0.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                 onMouseEnter={() => setHoveredRating(value)}
                                 onClick={() => setRating(value)}
                             >

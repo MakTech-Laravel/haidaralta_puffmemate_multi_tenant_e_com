@@ -62,7 +62,11 @@ function activePricePresetId(
     return match?.id ?? 'custom';
 }
 
-function toggleSlug(selected: string[], slug: string, checked: boolean): string[] {
+function toggleSlug(
+    selected: string[],
+    slug: string,
+    checked: boolean,
+): string[] {
     if (checked) {
         return selected.includes(slug) ? selected : [...selected, slug];
     }
@@ -121,8 +125,10 @@ export function ShopFiltersSidebar({
         const nextMax = maxDraft === '' ? null : Number(maxDraft);
 
         onChange({
-            minPrice: nextMin !== null && Number.isFinite(nextMin) ? nextMin : null,
-            maxPrice: nextMax !== null && Number.isFinite(nextMax) ? nextMax : null,
+            minPrice:
+                nextMin !== null && Number.isFinite(nextMin) ? nextMin : null,
+            maxPrice:
+                nextMax !== null && Number.isFinite(nextMax) ? nextMax : null,
         });
     };
 
@@ -167,7 +173,7 @@ export function ShopFiltersSidebar({
                         }}
                         onPointerUp={finishSliding}
                         onKeyUp={finishSliding}
-                        className="pointer-events-none absolute inset-0 z-10 h-6 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-background [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-background"
+                        className="[&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-background [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-background pointer-events-none absolute inset-0 z-10 h-6 w-full appearance-none bg-transparent [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2"
                     />
                     <input
                         type="range"
@@ -189,13 +195,16 @@ export function ShopFiltersSidebar({
                         }}
                         onPointerUp={finishSliding}
                         onKeyUp={finishSliding}
-                        className="pointer-events-none absolute inset-0 z-20 h-6 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-background [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-background"
+                        className="[&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:bg-background [&::-moz-range-thumb]:border-primary [&::-moz-range-thumb]:bg-background pointer-events-none absolute inset-0 z-20 h-6 w-full appearance-none bg-transparent [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2"
                     />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                        <Label htmlFor="shop-min-price" className="text-muted-foreground text-xs">
+                        <Label
+                            htmlFor="shop-min-price"
+                            className="text-muted-foreground text-xs"
+                        >
                             Min price
                         </Label>
                         <Input
@@ -205,7 +214,9 @@ export function ShopFiltersSidebar({
                             inputMode="numeric"
                             placeholder="0"
                             value={minDraft}
-                            onChange={(event) => setMinDraft(event.target.value)}
+                            onChange={(event) =>
+                                setMinDraft(event.target.value)
+                            }
                             onBlur={commitPriceDrafts}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter') {
@@ -216,7 +227,10 @@ export function ShopFiltersSidebar({
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <Label htmlFor="shop-max-price" className="text-muted-foreground text-xs">
+                        <Label
+                            htmlFor="shop-max-price"
+                            className="text-muted-foreground text-xs"
+                        >
                             Max price
                         </Label>
                         <Input
@@ -226,7 +240,9 @@ export function ShopFiltersSidebar({
                             inputMode="numeric"
                             placeholder="Any"
                             value={maxDraft}
-                            onChange={(event) => setMaxDraft(event.target.value)}
+                            onChange={(event) =>
+                                setMaxDraft(event.target.value)
+                            }
                             onBlur={commitPriceDrafts}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter') {
@@ -335,7 +351,9 @@ export function ShopFiltersSidebar({
             </section>
 
             <section className="space-y-4">
-                <h2 className="text-foreground text-base font-semibold">Type</h2>
+                <h2 className="text-foreground text-base font-semibold">
+                    Type
+                </h2>
                 <ul className="space-y-2.5">
                     <li className="flex items-center gap-2.5">
                         <Checkbox

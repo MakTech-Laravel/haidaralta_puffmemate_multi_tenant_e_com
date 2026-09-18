@@ -27,6 +27,13 @@ class AdjustStockRequest extends FormRequest
         ];
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('buying_price') === '') {
+            $this->merge(['buying_price' => null]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -34,6 +41,7 @@ class AdjustStockRequest extends FormRequest
     {
         $input = $request ?? request();
         $isAdjustment = $input->input('type') === InventoryTransactionType::Adjustment->value;
+        $isStockIn = $input->input('type') === InventoryTransactionType::StockIn->value;
         $isOther = $isAdjustment
             && $input->input('reason') === InventoryAdjustmentReason::Other->value;
 
@@ -45,6 +53,13 @@ class AdjustStockRequest extends FormRequest
                 'required',
                 'integer',
                 $isAdjustment ? 'min:0' : 'min:1',
+            ],
+            'buying_price' => [
+                Rule::requiredIf($isStockIn),
+                Rule::prohibitedIf(! $isStockIn),
+                'nullable',
+                'numeric',
+                'min:0',
             ],
             'reason' => [
                 Rule::requiredIf($isAdjustment),

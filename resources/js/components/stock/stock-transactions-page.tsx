@@ -10,6 +10,7 @@ import {
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
+import { ExportDropdown } from '@/components/export/export-dropdown';
 import Heading from '@/components/heading';
 import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ type TransactionRow = {
     type_label: string;
     reason_label: string | null;
     quantity: number;
+    unit_cost: string | null;
     before_quantity: number;
     after_quantity: number;
     created_by_name: string | null;
@@ -116,6 +118,7 @@ function NameLink({
 export function StockTransactionsPage({
     table: tablePayload,
     indexUrl,
+    exportUrl,
     productOptionsUrl,
     branchOptionsUrl,
     hideBranchFilter = false,
@@ -128,6 +131,7 @@ export function StockTransactionsPage({
         };
     };
     indexUrl: string;
+    exportUrl: string;
     productOptionsUrl: string;
     branchOptionsUrl?: string;
     hideBranchFilter?: boolean;
@@ -227,7 +231,7 @@ export function StockTransactionsPage({
                     <Badge
                         variant="outline"
                         className={cn(
-                            'tabular-nums font-medium',
+                            'font-medium tabular-nums',
                             quantityBadgeClass(
                                 row.original.type,
                                 row.original.quantity,
@@ -236,6 +240,24 @@ export function StockTransactionsPage({
                     >
                         {row.original.quantity}
                     </Badge>
+                ),
+            },
+            {
+                accessorKey: 'unit_cost',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Buying"
+                        sortable
+                        sortKey="unit_cost"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {row.original.unit_cost ?? '—'}
+                    </span>
                 ),
             },
             {
@@ -323,6 +345,20 @@ export function StockTransactionsPage({
                                     : 'Search product, SKU, or branch…'
                             }
                             onClear={query.clearFilters}
+                            actions={
+                                <ExportDropdown
+                                    url={exportUrl}
+                                    query={{
+                                        filter: query.filters,
+                                        sort: query.sort,
+                                        per_page: query.perPage,
+                                        page: tablePayload.meta.current_page,
+                                    }}
+                                    hasDateRange={Boolean(
+                                        query.filters.from || query.filters.to,
+                                    )}
+                                />
+                            }
                             filters={
                                 <>
                                     <div className="grid gap-2">
@@ -350,7 +386,8 @@ export function StockTransactionsPage({
                                             className="w-56"
                                         />
                                     </div>
-                                    {hideBranchFilter || !branchOptionsUrl ? null : (
+                                    {hideBranchFilter ||
+                                    !branchOptionsUrl ? null : (
                                         <div className="grid gap-2">
                                             <Label>Branch</Label>
                                             <InfiniteScrollCombobox
@@ -382,8 +419,7 @@ export function StockTransactionsPage({
                                         <Label>Type</Label>
                                         <Select
                                             value={String(
-                                                query.filters.type ??
-                                                    'all',
+                                                query.filters.type ?? 'all',
                                             )}
                                             onValueChange={(value) =>
                                                 query.setFilter(
@@ -418,8 +454,8 @@ export function StockTransactionsPage({
                                         <Label>From</Label>
                                         <DatePicker
                                             value={
-                                                (query.filters.from as string) ||
-                                                null
+                                                (query.filters
+                                                    .from as string) || null
                                             }
                                             onChange={(value) =>
                                                 query.setFilter(

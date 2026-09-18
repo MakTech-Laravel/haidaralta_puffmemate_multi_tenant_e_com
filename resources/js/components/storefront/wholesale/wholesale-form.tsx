@@ -53,9 +53,7 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                             onChange={(event) =>
                                 setFirstName(event.target.value)
                             }
-                            placeholder={
-                                wholesaleFormCopy.firstNamePlaceholder
-                            }
+                            placeholder={wholesaleFormCopy.firstNamePlaceholder}
                             className={boxedFieldClass}
                         />
                     </div>
@@ -69,9 +67,7 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                             onChange={(event) =>
                                 setLastName(event.target.value)
                             }
-                            placeholder={
-                                wholesaleFormCopy.lastNamePlaceholder
-                            }
+                            placeholder={wholesaleFormCopy.lastNamePlaceholder}
                             className={boxedFieldClass}
                         />
                     </div>
@@ -110,12 +106,8 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                         <Input
                             id="wholesale-company"
                             value={company}
-                            onChange={(event) =>
-                                setCompany(event.target.value)
-                            }
-                            placeholder={
-                                wholesaleFormCopy.companyPlaceholder
-                            }
+                            onChange={(event) => setCompany(event.target.value)}
+                            placeholder={wholesaleFormCopy.companyPlaceholder}
                             className={boxedFieldClass}
                         />
                     </div>

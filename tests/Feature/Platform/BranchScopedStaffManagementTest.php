@@ -22,11 +22,9 @@ test('platform super admin can list and create staff for a nested branch', funct
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branches.staff.index', $downtown))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('platform/branches/staff/index')
-            ->where('branch.slug', BranchSeeder::SYDNEY_CBD)
-        );
+        ->assertRedirect(route('platform.branch-staff.index', [
+            'filter' => ['branch_id' => $downtown->id],
+        ]));
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.staff.store', $downtown), [
@@ -139,41 +137,26 @@ test('platform admin can update and delete nested branch staff', function () {
 
     $this->actingAs($admin, 'platform')
         ->delete(route('platform.branches.staff.destroy', [$downtown, $clerk]))
-        ->assertRedirect(route('platform.branches.staff.index', $downtown));
+        ->assertRedirect(route('platform.branch-staff.index', [
+            'filter' => ['branch_id' => $downtown->id],
+        ]));
 
     expect(User::query()->whereKey($clerk->id)->exists())->toBeFalse();
 });
 
-test('nested branch staff index can search by name', function () {
+test('nested branch staff index redirects to the global staff list with the branch filter', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-
-    $match = User::factory()->create([
-        'name' => 'Nested Zelda Clerk',
-        'user_type' => UserType::BRANCH,
-        'branch_id' => $downtown->id,
-    ]);
-
-    User::factory()->create([
-        'name' => 'Nested Other Clerk',
-        'user_type' => UserType::BRANCH,
-        'branch_id' => $downtown->id,
-    ]);
-
-    app(PermissionRegistrar::class)->setPermissionsTeamId($downtown->id);
-    $match->assignRole(RoleEnum::STAFF->value);
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branches.staff.index', [
             $downtown,
             'filter' => ['search' => 'Nested Zelda'],
         ]))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('platform/branches/staff/index')
-            ->where('table.filters.search', 'Nested Zelda')
-            ->has('table.data', 1)
-            ->where('table.data.0.name', 'Nested Zelda Clerk')
-        );
+        ->assertRedirect(route('platform.branch-staff.index', [
+            'filter' => [
+                'search' => 'Nested Zelda',
+                'branch_id' => $downtown->id,
+            ],
+        ]));
 });

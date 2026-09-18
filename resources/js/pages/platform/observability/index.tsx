@@ -47,10 +47,14 @@ export default function PlatformObservabilityIndex({
                         <AlertTitle>Horizon needs Redis queues</AlertTitle>
                         <AlertDescription>
                             Current queue connection is{' '}
-                            <Badge variant="secondary">{queueConnection}</Badge>.
-                            Horizon only consumes Redis. Local Windows typically
-                            uses database/sync; production Coolify should set{' '}
-                            <code className="text-xs">QUEUE_CONNECTION=redis</code>.
+                            <Badge variant="secondary">{queueConnection}</Badge>
+                            . Horizon only consumes Redis. Local Windows
+                            typically uses database/sync; production Coolify
+                            should set{' '}
+                            <code className="text-xs">
+                                QUEUE_CONNECTION=redis
+                            </code>
+                            .
                         </AlertDescription>
                     </Alert>
                 ) : null}
@@ -64,16 +68,17 @@ export default function PlatformObservabilityIndex({
                                     <CardTitle>Horizon</CardTitle>
                                 </div>
                                 <CardDescription>
-                                    Queue monitoring for Redis workers — throughput,
-                                    pending and failed jobs, metrics, tags, pause /
-                                    continue, and retries.
+                                    Queue monitoring for Redis workers —
+                                    throughput, pending and failed jobs,
+                                    metrics, tags, pause / continue, and
+                                    retries.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
+                            <CardContent className="text-muted-foreground flex flex-col gap-2 text-sm">
                                 <p>
-                                    Opens the official Horizon Vue dashboard in a new
-                                    tab. Use Clear Queue only when you intend to drop
-                                    pending jobs.
+                                    Opens the official Horizon Vue dashboard in
+                                    a new tab. Use Clear Queue only when you
+                                    intend to drop pending jobs.
                                 </p>
                             </CardContent>
                             <CardFooter>
@@ -99,16 +104,18 @@ export default function PlatformObservabilityIndex({
                                     <CardTitle>Pulse</CardTitle>
                                 </div>
                                 <CardDescription>
-                                    Application health — servers, usage, exceptions,
-                                    queues, slow requests/jobs/queries, outgoing
-                                    HTTP, and cache.
+                                    Application health — servers, usage,
+                                    exceptions, queues, slow
+                                    requests/jobs/queries, outgoing HTTP, and
+                                    cache.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
+                            <CardContent className="text-muted-foreground flex flex-col gap-2 text-sm">
                                 <p>
-                                    Opens the official Pulse Livewire dashboard in a
-                                    new tab. Cards update while traffic and{' '}
-                                    <code className="text-xs">pulse:check</code> run.
+                                    Opens the official Pulse Livewire dashboard
+                                    in a new tab. Cards update while traffic and{' '}
+                                    <code className="text-xs">pulse:check</code>{' '}
+                                    run.
                                 </p>
                             </CardContent>
                             <CardFooter>
@@ -130,8 +137,8 @@ export default function PlatformObservabilityIndex({
                 <Separator />
 
                 <p className="text-muted-foreground text-sm">
-                    Access is limited to the platform portal. Platform super-admins
-                    always have access; other roles need{' '}
+                    Access is limited to the platform portal. Platform
+                    super-admins always have access; other roles need{' '}
                     <code className="text-xs">view-horizon</code> and/or{' '}
                     <code className="text-xs">view-pulse</code>.
                 </p>

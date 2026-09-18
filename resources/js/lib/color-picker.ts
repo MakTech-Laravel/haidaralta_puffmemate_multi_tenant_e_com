@@ -1,10 +1,6 @@
 import type { CSSProperties } from 'react';
 
-export type ColorPickerMode =
-    | 'transparent'
-    | 'solid'
-    | 'gradient'
-    | 'radial';
+export type ColorPickerMode = 'transparent' | 'solid' | 'gradient' | 'radial';
 
 export type ColorPickerValue =
     | { mode: 'transparent' }

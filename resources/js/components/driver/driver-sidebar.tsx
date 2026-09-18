@@ -30,7 +30,7 @@ export function DriverSidebar({ className }: DriverSidebarProps) {
                             as="button"
                             aria-label={item.label}
                             className={cn(
-                                'text-foreground hover:text-primary flex cursor-pointer items-center justify-center gap-2 rounded-md p-3 transition-colors lg:justify-start lg:rounded-none lg:border-b lg:border-border lg:px-0 lg:py-3 lg:first:border-t',
+                                'text-foreground hover:text-primary lg:border-border flex cursor-pointer items-center justify-center gap-2 rounded-md p-3 transition-colors lg:justify-start lg:rounded-none lg:border-b lg:px-0 lg:py-3 lg:first:border-t',
                             )}
                             data-test="driver-logout"
                         >
@@ -49,7 +49,7 @@ export function DriverSidebar({ className }: DriverSidebarProps) {
                         prefetch
                         aria-label={item.label}
                         className={cn(
-                            'flex items-center justify-center gap-2 rounded-md p-3 transition-colors lg:justify-start lg:rounded-none lg:border-b lg:border-border lg:px-0 lg:py-3 lg:first:border-t',
+                            'lg:border-border flex items-center justify-center gap-2 rounded-md p-3 transition-colors lg:justify-start lg:rounded-none lg:border-b lg:px-0 lg:py-3 lg:first:border-t',
                             active
                                 ? 'text-primary lg:border-primary'
                                 : 'text-foreground hover:text-primary',

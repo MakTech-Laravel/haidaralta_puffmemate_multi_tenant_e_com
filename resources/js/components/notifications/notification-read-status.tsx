@@ -4,7 +4,9 @@ type NotificationUnreadDotProps = {
     className?: string;
 };
 
-export function NotificationUnreadDot({ className }: NotificationUnreadDotProps) {
+export function NotificationUnreadDot({
+    className,
+}: NotificationUnreadDotProps) {
     return (
         <span
             className={cn('bg-primary size-2 shrink-0 rounded-full', className)}

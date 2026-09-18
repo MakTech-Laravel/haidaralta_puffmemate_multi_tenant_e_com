@@ -23,8 +23,8 @@ export function DriverDeliverOtpForm({
                     Deliver with OTP
                 </h2>
                 <p className="text-muted-foreground text-base leading-relaxed">
-                    Ask the customer for their delivery code, then submit to mark
-                    this stop complete.
+                    Ask the customer for their delivery code, then submit to
+                    mark this stop complete.
                 </p>
                 <p className="text-muted-foreground text-sm">
                     Demo code: <span className="font-mono">{demoOtpHint}</span>
@@ -64,9 +64,7 @@ export function DriverDeliverOtpForm({
                                 className="h-12 w-full"
                                 disabled={processing}
                             >
-                                {processing
-                                    ? 'Submitting…'
-                                    : 'Mark delivered'}
+                                {processing ? 'Submitting…' : 'Mark delivered'}
                             </Button>
                         </>
                     )}

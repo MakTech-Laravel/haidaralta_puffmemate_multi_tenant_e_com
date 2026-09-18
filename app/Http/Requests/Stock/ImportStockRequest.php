@@ -25,6 +25,7 @@ class ImportStockRequest extends FormRequest
             'product_ids' => ['required', 'array', 'min:1'],
             'product_ids.*' => ['integer', Rule::exists('products', 'id')->whereNull('deleted_at')],
             'quantity' => ['required', 'integer', 'min:1'],
+            'buying_price' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -34,6 +35,10 @@ class ImportStockRequest extends FormRequest
             $this->merge([
                 'branch_ids' => [app('currentBranch')->id],
             ]);
+        }
+
+        if ($this->input('buying_price') === '') {
+            $this->merge(['buying_price' => null]);
         }
     }
 }

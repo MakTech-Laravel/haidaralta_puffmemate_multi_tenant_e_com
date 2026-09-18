@@ -1,9 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { CheckCircle2, MapPin, Navigation, Phone, Package } from 'lucide-react';
 import type { DriverAssignedOrder } from '@/components/driver/driver-order-types';
-import {
-    driverOrderStatusLabel,
-} from '@/components/driver/driver-order-types';
+import { driverOrderStatusLabel } from '@/components/driver/driver-order-types';
 import { DemoDataBadge } from '@/components/portal/demo-data-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -152,7 +150,10 @@ export default function DriverDashboard({ summary }: DriverDashboardProps) {
                                 className="h-12 w-full"
                                 asChild
                             >
-                                <Link href={orderShow.url(nextStop.id)} prefetch>
+                                <Link
+                                    href={orderShow.url(nextStop.id)}
+                                    prefetch
+                                >
                                     <Navigation data-icon="inline-start" />
                                     Open order
                                 </Link>
@@ -183,11 +184,7 @@ export default function DriverDashboard({ summary }: DriverDashboardProps) {
                             </CardDescription>
                         </CardHeader>
                         <CardFooter className="px-4">
-                            <Button
-                                size="lg"
-                                className="h-12 w-full"
-                                asChild
-                            >
+                            <Button size="lg" className="h-12 w-full" asChild>
                                 <Link href={ordersIndex.url()} prefetch>
                                     View orders
                                 </Link>

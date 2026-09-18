@@ -119,7 +119,9 @@ export default function StorefrontShop({
         <ShopFiltersSidebar
             value={sidebarFilters}
             onChange={updateSidebarFilters}
-            className={isBelowLg ? undefined : 'lg:sticky lg:top-28 lg:self-start'}
+            className={
+                isBelowLg ? undefined : 'lg:sticky lg:top-28 lg:self-start'
+            }
         />
     );
 
@@ -127,7 +129,7 @@ export default function StorefrontShop({
         <>
             <Head title="Shop" />
 
-            <div className="mx-auto container px-4 py-8 sm:px-6 sm:py-10">
+            <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <h1 className="text-foreground text-2xl font-medium tracking-tight uppercase sm:text-[40px]">
@@ -160,7 +162,9 @@ export default function StorefrontShop({
                                 <SheetHeader>
                                     <SheetTitle>Filters</SheetTitle>
                                 </SheetHeader>
-                                <div className="mt-6 px-4 pb-6">{filtersSidebar}</div>
+                                <div className="mt-6 px-4 pb-6">
+                                    {filtersSidebar}
+                                </div>
                             </SheetContent>
                         </Sheet>
                     ) : null}

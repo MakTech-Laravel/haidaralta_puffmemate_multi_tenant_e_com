@@ -42,8 +42,7 @@ export function PermissionGroupsTable({
         return {
             permissions: permissions.length,
             groups: orderedGroups.length,
-            assigned: permissions.filter((item) => item.roles_count > 0)
-                .length,
+            assigned: permissions.filter((item) => item.roles_count > 0).length,
         };
     }, [orderedGroups]);
 
@@ -97,7 +96,7 @@ export function PermissionGroupsTable({
                     {filteredGroups.map((group) => (
                         <article
                             key={group.group}
-                            className="mb-4 w-full break-inside-avoid overflow-hidden rounded-2xl border bg-card shadow-sm"
+                            className="bg-card mb-4 w-full break-inside-avoid overflow-hidden rounded-2xl border shadow-sm"
                         >
                             <header className="flex items-center gap-3 border-b px-4 py-3">
                                 <span
@@ -156,7 +155,7 @@ export function PermissionGroupsTable({
 
 function Stat({ label, value }: { label: string; value: number }) {
     return (
-        <div className="rounded-2xl border bg-card px-4 py-3 shadow-sm">
+        <div className="bg-card rounded-2xl border px-4 py-3 shadow-sm">
             <dt className="text-muted-foreground text-xs">{label}</dt>
             <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
                 {value}

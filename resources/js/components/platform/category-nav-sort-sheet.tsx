@@ -36,51 +36,52 @@ export function CategoryNavSortSheet({
         >
             <SheetContent side="right" className="sm:max-w-md">
                 {category && actionUrl ? (
-                <Form
-                    key={category.slug}
-                    action={actionUrl}
-                    method="put"
-                    options={{ preserveScroll: true }}
-                    onSuccess={() => onOpenChange(false)}
-                    className="flex h-full flex-col"
-                >
-                    {({ errors, processing }) => (
-                        <>
-                            <SheetHeader>
-                                <SheetTitle>Set nav position</SheetTitle>
-                                <SheetDescription>
-                                    Choose the header order for {category.name}.
-                                    Lower numbers appear first.
-                                </SheetDescription>
-                            </SheetHeader>
-                            <div className="flex flex-1 flex-col gap-2 px-4">
-                                <Label htmlFor="nav_sort">Position</Label>
-                                <Input
-                                    id="nav_sort"
-                                    name="nav_sort"
-                                    type="number"
-                                    min={0}
-                                    max={65535}
-                                    defaultValue={category.nav_sort ?? 0}
-                                    required
-                                />
-                                <InputError message={errors.nav_sort} />
-                            </div>
-                            <SheetFooter>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => onOpenChange(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" disabled={processing}>
-                                    Save position
-                                </Button>
-                            </SheetFooter>
-                        </>
-                    )}
-                </Form>
+                    <Form
+                        key={category.slug}
+                        action={actionUrl}
+                        method="put"
+                        options={{ preserveScroll: true }}
+                        onSuccess={() => onOpenChange(false)}
+                        className="flex h-full flex-col"
+                    >
+                        {({ errors, processing }) => (
+                            <>
+                                <SheetHeader>
+                                    <SheetTitle>Set nav position</SheetTitle>
+                                    <SheetDescription>
+                                        Choose the header order for{' '}
+                                        {category.name}. Lower numbers appear
+                                        first.
+                                    </SheetDescription>
+                                </SheetHeader>
+                                <div className="flex flex-1 flex-col gap-2 px-4">
+                                    <Label htmlFor="nav_sort">Position</Label>
+                                    <Input
+                                        id="nav_sort"
+                                        name="nav_sort"
+                                        type="number"
+                                        min={0}
+                                        max={65535}
+                                        defaultValue={category.nav_sort ?? 0}
+                                        required
+                                    />
+                                    <InputError message={errors.nav_sort} />
+                                </div>
+                                <SheetFooter>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => onOpenChange(false)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" disabled={processing}>
+                                        Save position
+                                    </Button>
+                                </SheetFooter>
+                            </>
+                        )}
+                    </Form>
                 ) : null}
             </SheetContent>
         </Sheet>

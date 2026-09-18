@@ -17,21 +17,24 @@ export function ProductSpecifications({ rows }: ProductSpecificationsProps) {
                 <table className="w-full text-left text-sm">
                     <thead className="bg-primary/15">
                         <tr>
-                            <th className="text-primary px-4 py-3 font-bold font-inter">
+                            <th className="text-primary font-inter px-4 py-3 font-bold">
                                 Specification
                             </th>
-                            <th className="text-primary px-4 py-3 font-bold font-inter">
+                            <th className="text-primary font-inter px-4 py-3 font-bold">
                                 Details
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         {rows.map((row) => (
-                            <tr key={row.label} className="border-border border-t">
-                                <td className="text-muted-foreground px-4 py-3 font-normal font-inter text-sm">
+                            <tr
+                                key={row.label}
+                                className="border-border border-t"
+                            >
+                                <td className="text-muted-foreground font-inter px-4 py-3 text-sm font-normal">
                                     {row.label}
                                 </td>
-                                <td className="text-foreground px-4 py-3 font-medium font-inter text-sm">
+                                <td className="text-foreground font-inter px-4 py-3 text-sm font-medium">
                                     {row.value}
                                 </td>
                             </tr>

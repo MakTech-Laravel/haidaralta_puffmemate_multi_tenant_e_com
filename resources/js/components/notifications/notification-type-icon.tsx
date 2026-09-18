@@ -19,7 +19,7 @@ const iconByType: Record<NotificationType, LucideIcon> = {
 };
 
 type NotificationTypeIconProps = {
-    type?: NotificationType | string | null;
+    type?: NotificationType | null;
     className?: string;
     iconClassName?: string;
 };
@@ -29,10 +29,7 @@ export function NotificationTypeIcon({
     className,
     iconClassName,
 }: NotificationTypeIconProps) {
-    const Icon =
-        type && type in iconByType
-            ? iconByType[type as NotificationType]
-            : Bell;
+    const Icon = type ? iconByType[type] : Bell;
 
     return (
         <span

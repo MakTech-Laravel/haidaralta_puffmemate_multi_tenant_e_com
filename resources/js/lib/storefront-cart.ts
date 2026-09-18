@@ -29,7 +29,7 @@ export type CartGroup = {
 export type CartSummaryLine = {
     label: string;
     amount: number;
-    tone: 'default' | 'discount' | string;
+    tone: 'default' | 'discount';
 };
 
 export type CartSummaryBranch = {

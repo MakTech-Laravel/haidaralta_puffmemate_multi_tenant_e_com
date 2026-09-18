@@ -1,4 +1,4 @@
-import { Link } from "@inertiajs/react";
+import { Link } from '@inertiajs/react';
 import {
     storefrontFooterBlurb,
     storefrontFooterBrand,
@@ -6,9 +6,9 @@ import {
     storefrontFooterShop,
     storefrontLogoSrc,
     type StorefrontChromeItem,
-} from "@/lib/storefront-chrome";
-import { about, contact, faqs, home, privacy, shop, wholesale } from "@/routes";
-import { category as shopCategory } from "@/routes/shop";
+} from '@/lib/storefront-chrome';
+import { about, contact, faqs, home, privacy, shop, wholesale } from '@/routes';
+import { category as shopCategory } from '@/routes/shop';
 
 function resolveHref(item: StorefrontChromeItem): string {
     if (item.categorySlug) {
@@ -16,19 +16,19 @@ function resolveHref(item: StorefrontChromeItem): string {
     }
 
     switch (item.route) {
-        case "home":
+        case 'home':
             return home.url();
-        case "shop":
+        case 'shop':
             return shop.url();
-        case "about":
+        case 'about':
             return about.url();
-        case "faqs":
+        case 'faqs':
             return faqs.url();
-        case "contact":
+        case 'contact':
             return contact.url();
-        case "wholesale":
+        case 'wholesale':
             return wholesale.url();
-        case "privacy":
+        case 'privacy':
             return privacy.url();
         default:
             return shop.url();
@@ -40,7 +40,7 @@ function FooterLink({ item }: { item: StorefrontChromeItem }) {
         <Link
             href={resolveHref(item)}
             prefetch
-            className="text-muted-foreground text-sm font-normal leading-relaxed transition-colors hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground text-sm leading-relaxed font-normal transition-colors"
         >
             {item.label}
         </Link>
@@ -73,7 +73,7 @@ function FooterColumn({
 export function StorefrontFooter() {
     return (
         <footer className="border-border bg-muted mt-auto border-t">
-            <div className="mx-auto grid container gap-10 px-4 py-12 sm:px-6 sm:py-14 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+            <div className="container mx-auto grid gap-10 px-4 py-12 sm:px-6 sm:py-14 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
                 <div className="flex flex-col gap-3 md:col-span-2 lg:col-span-1">
                     <Link
                         href={home()}
