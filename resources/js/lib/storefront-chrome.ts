@@ -7,7 +7,14 @@ export const storefrontLogoSrc = '/images/storefront/logo.png';
 export type StorefrontChromeItem = {
     label: string;
     /** Named route when it exists; otherwise links fall back to shop. */
-    route?: 'home' | 'shop' | 'about' | 'faqs' | 'contact' | 'wholesale' | 'privacy';
+    route?:
+        | 'home'
+        | 'shop'
+        | 'about'
+        | 'faqs'
+        | 'contact'
+        | 'wholesale'
+        | 'privacy';
     /** Category slug for /shop/{category} links. */
     categorySlug?: string;
 };

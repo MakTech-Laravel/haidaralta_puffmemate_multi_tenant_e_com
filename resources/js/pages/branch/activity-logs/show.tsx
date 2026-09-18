@@ -17,9 +17,7 @@ export default function BranchActivityLogsShow({
     );
 }
 
-BranchActivityLogsShow.layout = (props: {
-    branch: { slug: string };
-}) => ({
+BranchActivityLogsShow.layout = (props: { branch: { slug: string } }) => ({
     breadcrumbs: [
         {
             title: 'Dashboard',

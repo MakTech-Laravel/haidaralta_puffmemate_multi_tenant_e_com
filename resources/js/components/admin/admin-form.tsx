@@ -47,7 +47,7 @@ const MEDIA_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
 
 function sectionClassName(): string {
     return cn(
-        'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+        'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
         'sm:p-6',
     );
 }
@@ -105,7 +105,8 @@ function RoleRadioList({
                 ) : (
                     filtered.map((role) => {
                         const isSelected = selected === role.value;
-                        const disabled = locked && role.value !== SUPER_ADMIN_ROLE;
+                        const disabled =
+                            locked && role.value !== SUPER_ADMIN_ROLE;
 
                         return (
                             <button
@@ -194,7 +195,7 @@ function AccountStatusCards({
                         className={cn(
                             'flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors',
                             selected
-                                ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                                ? 'border-primary bg-primary/5 ring-primary/20 ring-1'
                                 : 'border-border/80 bg-card hover:bg-muted/40',
                             locked && 'cursor-not-allowed opacity-60',
                         )}
@@ -236,6 +237,7 @@ export function AdminForm({
                       id: 'avatar',
                       path: defaults.avatar,
                       url: defaults.avatar_url,
+                      mime_type: 'image/*',
                       size: 0,
                       name: defaults.avatar.split('/').pop() ?? 'avatar',
                   },
@@ -243,9 +245,12 @@ export function AdminForm({
             : [],
     );
 
-    const formMethod = (
-        action.method ?? 'post'
-    ).toLowerCase() as 'get' | 'post' | 'put' | 'patch' | 'delete';
+    const formMethod = (action.method ?? 'post').toLowerCase() as
+        | 'get'
+        | 'post'
+        | 'put'
+        | 'patch'
+        | 'delete';
 
     const {
         data,
@@ -314,11 +319,7 @@ export function AdminForm({
     };
 
     return (
-        <form
-            onSubmit={submit}
-            className="w-full space-y-6"
-            autoComplete="off"
-        >
+        <form onSubmit={submit} className="w-full space-y-6" autoComplete="off">
             {lockedSuperAdmin ? (
                 <Alert>
                     <Lock />
@@ -529,8 +530,7 @@ export function AdminForm({
                 </Button>
                 <Button type="submit" disabled={processing}>
                     {processing ? <Spinner /> : null}
-                    {submitLabel ??
-                        (isEdit ? 'Save changes' : 'Create admin')}
+                    {submitLabel ?? (isEdit ? 'Save changes' : 'Create admin')}
                 </Button>
             </div>
         </form>

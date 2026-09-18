@@ -6,7 +6,7 @@ import {
     Server,
     TriangleAlert,
 } from 'lucide-react';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
+import { StatCard } from '@/components/portal/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -91,28 +91,28 @@ export default function PlatformDashboard() {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <DemoStatCard
+                    <StatCard
                         className="gap-2 py-3"
                         icon={Building2}
                         label="Active branches"
                         value="12"
                         hint="4 reporting this hour"
                     />
-                    <DemoStatCard
+                    <StatCard
                         className="gap-2 py-3"
                         icon={Activity}
                         label="Orders today"
                         value="337"
                         hint="+8% vs yesterday"
                     />
-                    <DemoStatCard
+                    <StatCard
                         className="gap-2 py-3"
                         icon={TriangleAlert}
                         label="Open tickets"
                         value="6"
                         hint="2 marked urgent"
                     />
-                    <DemoStatCard
+                    <StatCard
                         className="gap-2 py-3"
                         icon={Radio}
                         label="Queue depth"

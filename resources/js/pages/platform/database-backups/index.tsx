@@ -287,9 +287,7 @@ export default function PlatformDatabaseBackupsIndex({
                 accessorKey: 'type',
                 header: 'Type',
                 cell: ({ row }) => (
-                    <Badge
-                        variant={backupTypeBadgeVariant(row.original.type)}
-                    >
+                    <Badge variant={backupTypeBadgeVariant(row.original.type)}>
                         {row.original.type}
                     </Badge>
                 ),
@@ -317,8 +315,7 @@ export default function PlatformDatabaseBackupsIndex({
             {
                 id: 'triggered_by',
                 header: 'Triggered by',
-                cell: ({ row }) =>
-                    row.original.triggered_by?.name ?? 'System',
+                cell: ({ row }) => row.original.triggered_by?.name ?? 'System',
             },
             {
                 accessorKey: 'message',

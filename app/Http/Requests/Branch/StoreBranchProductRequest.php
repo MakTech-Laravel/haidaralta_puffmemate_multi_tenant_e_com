@@ -42,6 +42,8 @@ class StoreBranchProductRequest extends FormRequest
             'gallery.*' => $this->catalogImageFileRules(required: true),
             'status' => ['sometimes', 'boolean'],
             'selling_price' => ['nullable', 'numeric', 'min:0'],
+            'buying_price' => ['nullable', 'numeric', 'min:0'],
+            'regular_price' => ['nullable', 'numeric', 'min:0'],
             'discount_price' => ['nullable', 'numeric', 'min:0'],
             'quantity' => ['nullable', 'integer'],
             ...$this->colorCodeRules(),

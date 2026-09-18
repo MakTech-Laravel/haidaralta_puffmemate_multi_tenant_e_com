@@ -9,10 +9,13 @@ use App\Services\Sms\FakeSmsSender;
 use App\Services\Sms\LogSmsSender;
 use App\Support\OpsDashboardAccess;
 use Carbon\CarbonImmutable;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Auth\Access\Gate as GateContract;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Fortify;
@@ -54,8 +57,23 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureActivityLogContext();
         $this->configureOpsDashboards();
+        $this->configureRateLimiters();
 
         Event::subscribe(AuthActivitySubscriber::class);
+    }
+
+    /**
+     * Cap chat sends so a stuck client cannot flood a thread.
+     */
+    protected function configureRateLimiters(): void
+    {
+        RateLimiter::for('conversation-messages', function (Request $request): Limit {
+            $user = $request->user();
+
+            return $user === null
+                ? Limit::perMinute(10)->by($request->ip())
+                : Limit::perMinute(30)->by((string) $user->getAuthIdentifier());
+        });
     }
 
     protected function configureOpsDashboards(): void

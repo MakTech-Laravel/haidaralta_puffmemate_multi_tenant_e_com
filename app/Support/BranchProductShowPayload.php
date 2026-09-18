@@ -209,7 +209,7 @@ final class BranchProductShowPayload
     {
         return [
             ['value' => DiscountType::None->value, 'label' => 'None'],
-            ['value' => DiscountType::Fixed->value, 'label' => 'Fixed price'],
+            ['value' => DiscountType::Fixed->value, 'label' => 'Amount off'],
             ['value' => DiscountType::Percent->value, 'label' => 'Percent'],
         ];
     }
@@ -226,6 +226,8 @@ final class BranchProductShowPayload
 
     /**
      * @return array{
+     *     buying_price: mixed,
+     *     regular_price: mixed,
      *     selling_price: mixed,
      *     discount_type: string,
      *     discount_price: mixed,
@@ -237,6 +239,8 @@ final class BranchProductShowPayload
     private static function mapPrice(BranchProductPrice $price): array
     {
         return [
+            'buying_price' => $price->buying_price,
+            'regular_price' => $price->regular_price,
             'selling_price' => $price->selling_price,
             'discount_type' => $price->discount_type?->value ?? DiscountType::None->value,
             'discount_price' => $price->discount_price,

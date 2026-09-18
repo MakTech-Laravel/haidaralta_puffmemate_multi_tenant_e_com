@@ -29,17 +29,17 @@ class BranchInventorySeeder extends Seeder
         $this->seedBranch($sydney, $inventory, $pricing, [
             'marlboro-gold-soft-pack-20s' => ['qty' => 120, 'min' => 24, 'price' => '48.95', 'discount_type' => 'none', 'discount' => null],
             'winfield-blue-soft-pack-20s' => ['qty' => 140, 'min' => 30, 'price' => '46.50', 'discount_type' => 'none', 'discount' => null],
-            'horizon-red-soft-pack-25s' => ['qty' => 80, 'min' => 20, 'price' => '52.90', 'discount_type' => 'fixed', 'discount' => '49.90'],
+            'horizon-red-soft-pack-25s' => ['qty' => 80, 'min' => 20, 'price' => '52.90', 'discount_type' => 'fixed', 'discount' => '3.00'],
             'peter-jackson-menthol-20s' => ['qty' => 60, 'min' => 15, 'price' => '47.20', 'discount_type' => 'none', 'discount' => null],
             'iqos-iluma-starter-kit' => ['qty' => 18, 'min' => 4, 'price' => '89.00', 'discount_type' => 'percent', 'discount' => '10'],
             'terea-tobacco-sticks-20' => ['qty' => 90, 'min' => 20, 'price' => '28.00', 'discount_type' => 'none', 'discount' => null],
-            'vuse-go-5000-disposable' => ['qty' => 64, 'min' => 16, 'price' => '39.95', 'discount_type' => 'fixed', 'discount' => '34.95'],
-            'puffmemate-pulse-5000' => ['qty' => 48, 'min' => 12, 'price' => '34.99', 'discount_type' => 'fixed', 'discount' => '29.99'],
+            'vuse-go-5000-disposable' => ['qty' => 64, 'min' => 16, 'price' => '39.95', 'discount_type' => 'fixed', 'discount' => '5.00'],
+            'puffmemate-pulse-5000' => ['qty' => 48, 'min' => 12, 'price' => '34.99', 'discount_type' => 'fixed', 'discount' => '5.00'],
             'puffmemate-mini-bar-1200' => ['qty' => 72, 'min' => 18, 'price' => '14.99', 'discount_type' => 'none', 'discount' => null],
-            'puffmemate-core-kit' => ['qty' => 24, 'min' => 6, 'price' => '39.99', 'discount_type' => 'fixed', 'discount' => '34.99'],
+            'puffmemate-core-kit' => ['qty' => 24, 'min' => 6, 'price' => '39.99', 'discount_type' => 'fixed', 'discount' => '5.00'],
             'puffmemate-air-pro' => ['qty' => 18, 'min' => 4, 'price' => '44.99', 'discount_type' => 'none', 'discount' => null],
             'harbor-fruit-blend-60ml' => ['qty' => 36, 'min' => 8, 'price' => '24.99', 'discount_type' => 'none', 'discount' => null],
-            'citrus-surge-salt-30ml' => ['qty' => 40, 'min' => 10, 'price' => '19.99', 'discount_type' => 'fixed', 'discount' => '17.99'],
+            'citrus-surge-salt-30ml' => ['qty' => 40, 'min' => 10, 'price' => '19.99', 'discount_type' => 'fixed', 'discount' => '2.00'],
             'vanilla-custard-reserve-60ml' => ['qty' => 28, 'min' => 6, 'price' => '24.99', 'discount_type' => 'none', 'discount' => null],
             'classic-leaf-tobacco-60ml' => ['qty' => 32, 'min' => 8, 'price' => '22.99', 'discount_type' => 'none', 'discount' => null],
             'nordic-mint-pouches' => ['qty' => 55, 'min' => 12, 'price' => '18.50', 'discount_type' => 'none', 'discount' => null],
@@ -50,7 +50,7 @@ class BranchInventorySeeder extends Seeder
             'raw-classic-rolling-papers-ks' => ['qty' => 80, 'min' => 20, 'price' => '2.80', 'discount_type' => 'none', 'discount' => null],
             'usb-c-charge-cable-1m' => ['qty' => 50, 'min' => 10, 'price' => '9.99', 'discount_type' => 'none', 'discount' => null],
             'silicone-device-sleeve' => ['qty' => 35, 'min' => 8, 'price' => '7.99', 'discount_type' => 'none', 'discount' => null],
-            'travel-hard-case' => ['qty' => 22, 'min' => 5, 'price' => '19.99', 'discount_type' => 'fixed', 'discount' => '16.99'],
+            'travel-hard-case' => ['qty' => 22, 'min' => 5, 'price' => '19.99', 'discount_type' => 'fixed', 'discount' => '3.00'],
             'lanyard-clip' => ['qty' => 40, 'min' => 10, 'price' => '4.99', 'discount_type' => 'none', 'discount' => null],
         ]);
 
@@ -60,11 +60,11 @@ class BranchInventorySeeder extends Seeder
             'winfield-blue-soft-pack-20s' => ['qty' => 110, 'min' => 25, 'price' => '47.00', 'discount_type' => 'none', 'discount' => null],
             'horizon-red-soft-pack-25s' => ['qty' => 40, 'min' => 15, 'price' => '53.40', 'discount_type' => 'none', 'discount' => null],
             'iqos-iluma-starter-kit' => ['qty' => 12, 'min' => 3, 'price' => '92.00', 'discount_type' => 'none', 'discount' => null],
-            'terea-tobacco-sticks-20' => ['qty' => 70, 'min' => 15, 'price' => '28.50', 'discount_type' => 'fixed', 'discount' => '26.50'],
+            'terea-tobacco-sticks-20' => ['qty' => 70, 'min' => 15, 'price' => '28.50', 'discount_type' => 'fixed', 'discount' => '2.00'],
             'vuse-go-5000-disposable' => ['qty' => 30, 'min' => 10, 'price' => '40.95', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-pulse-5000' => ['qty' => 20, 'min' => 10, 'price' => '35.99', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-mini-bar-1200' => ['qty' => 8, 'min' => 12, 'price' => '15.49', 'discount_type' => 'none', 'discount' => null],
-            'puffmemate-core-kit' => ['qty' => 12, 'min' => 5, 'price' => '41.99', 'discount_type' => 'fixed', 'discount' => '37.99'],
+            'puffmemate-core-kit' => ['qty' => 12, 'min' => 5, 'price' => '41.99', 'discount_type' => 'fixed', 'discount' => '4.00'],
             'harbor-fruit-blend-60ml' => ['qty' => 15, 'min' => 6, 'price' => '25.49', 'discount_type' => 'none', 'discount' => null],
             'citrus-surge-salt-30ml' => ['qty' => 4, 'min' => 8, 'price' => '20.49', 'discount_type' => 'none', 'discount' => null],
             'nordic-mint-pouches' => ['qty' => 28, 'min' => 8, 'price' => '18.95', 'discount_type' => 'none', 'discount' => null],
@@ -85,7 +85,7 @@ class BranchInventorySeeder extends Seeder
             'puffmemate-air-pro' => ['qty' => 10, 'min' => 4, 'price' => '43.99', 'discount_type' => 'none', 'discount' => null],
             'citrus-surge-salt-30ml' => ['qty' => 24, 'min' => 8, 'price' => '19.50', 'discount_type' => 'none', 'discount' => null],
             'classic-leaf-tobacco-60ml' => ['qty' => 18, 'min' => 6, 'price' => '22.50', 'discount_type' => 'none', 'discount' => null],
-            'nordic-mint-pouches' => ['qty' => 44, 'min' => 12, 'price' => '17.95', 'discount_type' => 'fixed', 'discount' => '15.95'],
+            'nordic-mint-pouches' => ['qty' => 44, 'min' => 12, 'price' => '17.95', 'discount_type' => 'fixed', 'discount' => '2.00'],
             'citrus-chill-pouches' => ['qty' => 36, 'min' => 10, 'price' => '17.95', 'discount_type' => 'none', 'discount' => null],
             'air-pro-mesh-coils-5-pack' => ['qty' => 20, 'min' => 6, 'price' => '16.50', 'discount_type' => 'none', 'discount' => null],
             'clipper-classic-lighter' => ['qty' => 60, 'min' => 15, 'price' => '3.20', 'discount_type' => 'none', 'discount' => null],
@@ -149,16 +149,22 @@ class BranchInventorySeeder extends Seeder
             $product = Product::query()->where('slug', $slug)->firstOrFail();
 
             $row = $inventory->firstOrCreate($branch, $product);
+            $selling = (float) $line['price'];
+            $buying = number_format(round($selling * 0.62, 2), 2, '.', '');
+            $regular = number_format(round($selling * 1.15, 2), 2, '.', '');
 
             if ($row->quantity === 0 && $line['qty'] > 0) {
                 $inventory->adjust(
                     $row,
                     InventoryTransactionType::StockIn,
                     $line['qty'],
+                    unitCost: $buying,
                 );
             }
 
             $pricing->upsert($branch, $product, [
+                'buying_price' => $buying,
+                'regular_price' => $regular,
                 'selling_price' => $line['price'],
                 'discount_type' => $line['discount_type'],
                 'discount_price' => $line['discount'],
@@ -188,6 +194,7 @@ class BranchInventorySeeder extends Seeder
                     $row,
                     InventoryTransactionType::StockIn,
                     $qty,
+                    unitCost: '10.00',
                 );
             }
         }
@@ -208,6 +215,8 @@ class BranchInventorySeeder extends Seeder
             $variant = ProductVariant::query()->where('sku', $sku)->firstOrFail();
 
             $pricing->upsert($branch, $product, [
+                'buying_price' => number_format(round(((float) $price) * 0.62, 2), 2, '.', ''),
+                'regular_price' => number_format(round(((float) $price) * 1.15, 2), 2, '.', ''),
                 'selling_price' => $price,
                 'discount_type' => 'none',
                 'discount_price' => null,

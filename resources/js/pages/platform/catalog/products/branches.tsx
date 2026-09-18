@@ -1,9 +1,10 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Building2, CircleDollarSign, Settings2 } from 'lucide-react';
+import { Building2, CircleDollarSign } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import {
     DataTable,
@@ -15,7 +16,7 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
+import { StatCard } from '@/components/portal/stat-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,7 +45,9 @@ type BranchRow = {
     quantity: number;
     selling_price: string | number | null;
     effective_price: string | number | null;
+    regular_price?: string | number | null;
     has_discount: boolean;
+    has_compare_at?: boolean;
     discount_type: string;
     discount_price: string | number | null;
     manage_url: string;
@@ -75,6 +78,15 @@ function listingPrice(row: BranchRow): ReactNode {
         return (
             <span className="tabular-nums">
                 <s className="text-muted-foreground">{row.selling_price}</s>{' '}
+                {row.effective_price ?? row.selling_price}
+            </span>
+        );
+    }
+
+    if (row.has_compare_at && row.regular_price != null) {
+        return (
+            <span className="tabular-nums">
+                <s className="text-muted-foreground">{row.regular_price}</s>{' '}
                 {row.effective_price ?? row.selling_price}
             </span>
         );
@@ -153,9 +165,7 @@ export default function PlatformProductBranches({
                             ) : null}
                         </div>
                         <DataTableTruncated className="text-muted-foreground text-xs">
-                            {row.original.code
-                                ? `${row.original.code} · `
-                                : ''}
+                            {row.original.code ? `${row.original.code} · ` : ''}
                             /{row.original.slug}
                         </DataTableTruncated>
                     </div>
@@ -184,21 +194,14 @@ export default function PlatformProductBranches({
                         contentClassName="w-56"
                         groups={[
                             {
-                                label: 'Catalog',
-                                items: [
-                                    {
-                                        label: 'Manage stock',
-                                        icon: Settings2,
-                                        href: row.original.manage_url,
-                                    },
-                                ],
-                            },
-                            {
                                 label: 'Stock',
                                 items: stockActionItems(
                                     {
+                                        manage: row.original.manage_url,
                                         transactions:
                                             StockTransactionController.index.url(),
+                                        priceHistory:
+                                            PriceHistoryController.index.url(),
                                     },
                                     {
                                         productId: product.id,
@@ -222,7 +225,7 @@ export default function PlatformProductBranches({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <Avatar
-                            className="size-14 rounded-xl border border-border/70"
+                            className="border-border/70 size-14 rounded-xl border"
                             style={
                                 transparent
                                     ? undefined
@@ -284,13 +287,13 @@ export default function PlatformProductBranches({
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <DemoStatCard
+                    <StatCard
                         icon={Building2}
                         label="Branches"
                         value={String(summary.branches)}
                         hint="Locations in the network"
                     />
-                    <DemoStatCard
+                    <StatCard
                         icon={CircleDollarSign}
                         label="Missing price"
                         value={String(summary.missing_price)}

@@ -11,6 +11,8 @@ use Spatie\QueryBuilder\AllowedSort;
 
 /**
  * Branch catalog category index — no soft-delete / trashed filters.
+ *
+ * @extends AbstractDataTable<Category>
  */
 class BranchCategoryDataTable extends AbstractDataTable
 {

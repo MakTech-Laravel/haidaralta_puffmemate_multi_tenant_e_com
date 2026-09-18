@@ -84,7 +84,7 @@ export function CheckoutForm({
                                     onChange('firstName', event.target.value)
                                 }
                                 placeholder="First name"
-                                className="h-11 rounded-none border-none bg-background"
+                                className="bg-background h-11 rounded-none border-none"
                             />
                         </div>
                         <div className="space-y-1.5">
@@ -101,7 +101,7 @@ export function CheckoutForm({
                                     onChange('lastName', event.target.value)
                                 }
                                 placeholder="Last name or alias"
-                                className="h-11 rounded-none border-none bg-background"
+                                className="bg-background h-11 rounded-none border-none"
                             />
                         </div>
                     </div>
@@ -120,7 +120,7 @@ export function CheckoutForm({
                                 onChange('mobile', event.target.value)
                             }
                             placeholder="04XX XXX XXX"
-                            className="h-11 rounded-none border-none bg-background"
+                            className="bg-background h-11 rounded-none border-none"
                         />
                     </div>
                     <p className="text-muted-foreground text-xs leading-relaxed">
@@ -139,10 +139,7 @@ export function CheckoutForm({
                 </CardHeader>
                 <CardContent className="px-0">
                     <div className="space-y-1.5">
-                        <Label
-                            htmlFor="checkout-location"
-                            className="sr-only"
-                        >
+                        <Label htmlFor="checkout-location" className="sr-only">
                             Search location
                         </Label>
                         <Input
@@ -152,7 +149,7 @@ export function CheckoutForm({
                                 onChange('location', event.target.value)
                             }
                             placeholder="Search Location"
-                            className="h-11 rounded-none border-none bg-background"
+                            className="bg-background h-11 rounded-none border-none"
                         />
                     </div>
                 </CardContent>
@@ -272,7 +269,7 @@ export function CheckoutForm({
                                         >
                                             <SelectTrigger
                                                 id="checkout-time-slot"
-                                                className="h-11 min-h-11 w-full rounded-none border-none bg-background data-[size=default]:h-11"
+                                                className="bg-background h-11 min-h-11 w-full rounded-none border-none data-[size=default]:h-11"
                                             >
                                                 <SelectValue placeholder="Select a time" />
                                             </SelectTrigger>

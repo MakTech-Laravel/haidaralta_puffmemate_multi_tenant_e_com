@@ -57,7 +57,7 @@ export default function StorefrontCategory({
         <>
             <Head title={category.name} />
 
-            <div className="mx-auto container px-4 py-8 sm:px-6 sm:py-10">
+            <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
                 <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-stretch">
                     <StorefrontSearchBar
                         value={search}

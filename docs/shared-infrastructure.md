@@ -79,11 +79,11 @@ Set `TELESCOPE_ENABLED=true` in your local `.env` (see `.env.example`). If it is
 
 **Packages:** `laravel/horizon`, `laravel/pulse` (Livewire is a Pulse dependency)
 
-| Concern | Behavior |
-| --- | --- |
-| Process model | Same Coolify app container: Horizon replaces `queue:work`; `pulse:check` runs under Supervisor; schedule runs `horizon:snapshot` |
-| Dashboards | Official UIs at `/horizon` (Vue) and `/pulse` (Blade/Livewire). Platform Inertia hub at `/platform/observability` |
-| Authorization | Platform only — `view-horizon` / `view-pulse`, or platform `super-admin` bypass (`App\Support\OpsDashboardAccess`) |
-| Testing | `phpunit.xml` keeps `PULSE_ENABLED=false`; feature coverage in `OpsDashboardAccessTest` |
-| Local Windows | Keep `QUEUE_CONNECTION=database`; Horizon needs Redis + pcntl (Linux image / Coolify) |
-| Cache | Laravel 13 `cache.serializable_classes` must allow-list `Collection`, `stdClass`, and `CarbonImmutable` or Pulse Livewire polls fatal with incomplete objects |
+| Concern       | Behavior                                                                                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Process model | Same Coolify app container: Horizon replaces `queue:work`; `pulse:check` runs under Supervisor; schedule runs `horizon:snapshot`                              |
+| Dashboards    | Official UIs at `/horizon` (Vue) and `/pulse` (Blade/Livewire). Platform Inertia hub at `/platform/observability`                                             |
+| Authorization | Platform only — `view-horizon` / `view-pulse`, or platform `super-admin` bypass (`App\Support\OpsDashboardAccess`)                                            |
+| Testing       | `phpunit.xml` keeps `PULSE_ENABLED=false`; feature coverage in `OpsDashboardAccessTest`                                                                       |
+| Local Windows | Keep `QUEUE_CONNECTION=database`; Horizon needs Redis + pcntl (Linux image / Coolify)                                                                         |
+| Cache         | Laravel 13 `cache.serializable_classes` must allow-list `Collection`, `stdClass`, and `CarbonImmutable` or Pulse Livewire polls fatal with incomplete objects |

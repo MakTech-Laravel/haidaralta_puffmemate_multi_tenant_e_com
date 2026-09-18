@@ -2,6 +2,7 @@ import { Head, setLayoutProps } from '@inertiajs/react';
 import BranchDriverController from '@/actions/App/Http/Controllers/Platform/BranchDriverController';
 import { DriverForm } from '@/components/admin/driver-form';
 import Heading from '@/components/heading';
+import { filteredBranchDriversUrl } from '@/lib/branch-people-query';
 
 type Option = { value: string; label: string };
 type Branch = { id: number; name: string; slug: string };
@@ -46,7 +47,7 @@ export default function PlatformBranchDriversEdit({
             },
             {
                 title: 'Drivers',
-                href: BranchDriverController.index.url(branch.slug),
+                href: filteredBranchDriversUrl(branch.id),
             },
             {
                 title: driver.name,

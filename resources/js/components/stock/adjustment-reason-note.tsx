@@ -27,9 +27,7 @@ export function AdjustmentReasonNote({
                     id={`${id}-count`}
                     className={cn(
                         'text-xs tabular-nums',
-                        atLimit
-                            ? 'text-destructive'
-                            : 'text-muted-foreground',
+                        atLimit ? 'text-destructive' : 'text-muted-foreground',
                     )}
                 >
                     {count}/{ADJUSTMENT_REASON_NOTE_MAX}

@@ -10,7 +10,12 @@ type CategoryOption = { id: number; name: string; slug?: string };
 function normalizeCategoryIds(
     value: string | number | boolean | string[] | number[] | null | undefined,
 ): string[] {
-    if (value === null || value === undefined || value === '' || value === 'all') {
+    if (
+        value === null ||
+        value === undefined ||
+        value === '' ||
+        value === 'all'
+    ) {
         return [];
     }
 

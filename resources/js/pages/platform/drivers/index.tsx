@@ -131,7 +131,11 @@ export default function PlatformDriversIndex({
                             </span>
                         ) : (
                             row.original.branches.map((branch) => (
-                                <Badge key={branch.id} variant="secondary" asChild>
+                                <Badge
+                                    key={branch.id}
+                                    variant="secondary"
+                                    asChild
+                                >
                                     <Link
                                         href={BranchController.show.url(
                                             branch.slug,
@@ -182,8 +186,7 @@ export default function PlatformDriversIndex({
                             {
                                 label: 'Manage branches',
                                 icon: Building2,
-                                onSelect: () =>
-                                    setManagingDriver(row.original),
+                                onSelect: () => setManagingDriver(row.original),
                             },
                             {
                                 label: 'Deactivate',
@@ -363,13 +366,16 @@ export default function PlatformDriversIndex({
                     }
 
                     setProcessing(true);
-                    router.delete(DriverController.destroy.url(deactivatingId), {
-                        preserveScroll: true,
-                        onFinish: () => {
-                            setProcessing(false);
-                            setDeactivatingId(null);
+                    router.delete(
+                        DriverController.destroy.url(deactivatingId),
+                        {
+                            preserveScroll: true,
+                            onFinish: () => {
+                                setProcessing(false);
+                                setDeactivatingId(null);
+                            },
                         },
-                    });
+                    );
                 }}
             />
 

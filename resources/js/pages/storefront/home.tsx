@@ -24,8 +24,12 @@ export default function StorefrontHome({
     bestSellingProducts,
     newArrivalProducts,
 }: HomePageProps) {
-    const topCategories = featuredCategories.filter((category) => !category.wide);
-    const wideCategories = featuredCategories.filter((category) => category.wide);
+    const topCategories = featuredCategories.filter(
+        (category) => !category.wide,
+    );
+    const wideCategories = featuredCategories.filter(
+        (category) => category.wide,
+    );
 
     return (
         <>
@@ -33,7 +37,7 @@ export default function StorefrontHome({
 
             <HomeHeroSlider slides={storefrontHeroSlides} />
 
-            <section className="mx-auto container px-4 py-14 sm:px-6 sm:py-16">
+            <section className="container mx-auto px-4 py-14 sm:px-6 sm:py-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
                         <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
@@ -53,7 +57,7 @@ export default function StorefrontHome({
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 [&>:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-3 lg:[&>:last-child:nth-child(odd)]:col-span-1">
+                <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 [&>:last-child:nth-child(odd)]:col-span-2 lg:[&>:last-child:nth-child(odd)]:col-span-1">
                     {topCategories.map((category) => (
                         <CategoryCard key={category.id} category={category} />
                     ))}
@@ -65,7 +69,7 @@ export default function StorefrontHome({
                 </div>
             </section>
 
-            <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">
+            <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
                         <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
@@ -88,11 +92,11 @@ export default function StorefrontHome({
                 <ProductCarousel products={newArrivalProducts} />
             </section>
 
-            <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">
+            <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
                 <HomeDealsBanner />
             </section>
 
-            <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">
+            <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
                         <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">

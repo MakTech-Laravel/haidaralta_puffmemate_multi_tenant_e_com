@@ -34,12 +34,16 @@ export function ProductToReviewList({
     const showPagination = products.length > PAGE_SIZE;
 
     return (
-        <div className={cn('flex flex-col gap-6 border rounded-xs', className)}>
+        <div className={cn('flex flex-col gap-6 rounded-xs border', className)}>
             <div>
                 <div className="bg-muted text-muted-foreground hidden grid-cols-[minmax(0,1fr)_10rem_11rem] gap-6 px-4 py-3 text-xs font-semibold tracking-wide uppercase sm:grid">
                     <span className="text-xs font-medium">Products</span>
-                    <span className="text-center text-xs font-medium">Shipping Status</span>
-                    <span className="text-right text-xs font-medium">Action</span>
+                    <span className="text-center text-xs font-medium">
+                        Shipping Status
+                    </span>
+                    <span className="text-right text-xs font-medium">
+                        Action
+                    </span>
                 </div>
 
                 <ul className="px-2 sm:px-4">

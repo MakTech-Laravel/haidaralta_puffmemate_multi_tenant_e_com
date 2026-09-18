@@ -14,8 +14,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
+/**
+ * @extends AbstractDataTable<Product>
+ */
 class BranchProductListingDataTable extends AbstractDataTable
 {
     /** @var Collection<int, Inventory> */
@@ -253,7 +257,9 @@ class BranchProductListingDataTable extends AbstractDataTable
             'quantity' => $inventory?->quantity ?? 0,
             'selling_price' => $priceDisplay['selling_price'],
             'effective_price' => $priceDisplay['effective_price'],
+            'regular_price' => $priceDisplay['regular_price'],
             'has_discount' => $priceDisplay['has_discount'],
+            'has_compare_at' => $priceDisplay['has_compare_at'],
             'discount_type' => $priceDisplay['discount_type'],
             'discount_price' => $priceDisplay['discount_price'],
         ];

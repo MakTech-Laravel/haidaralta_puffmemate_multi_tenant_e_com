@@ -1,5 +1,4 @@
 import { Head } from '@inertiajs/react';
-import { AccountAddressSection } from '@/components/customer/account-address-section';
 import { AccountPasswordSection } from '@/components/customer/account-password-section';
 import { AccountSettingSection } from '@/components/customer/account-setting-section';
 import { AccountTwoFactorSection } from '@/components/customer/account-two-factor-section';

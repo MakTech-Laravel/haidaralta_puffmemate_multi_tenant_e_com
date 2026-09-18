@@ -33,7 +33,7 @@ export function ContactForm({ className }: ContactFormProps) {
         >
             <form
                 onSubmit={onSubmit}
-                className="relative z-10 flex flex-1 flex-col gap-6 "
+                className="relative z-10 flex flex-1 flex-col gap-6"
             >
                 <div className="grid gap-6 sm:grid-cols-2">
                     <div className="space-y-2">
@@ -100,7 +100,7 @@ export function ContactForm({ className }: ContactFormProps) {
                         onChange={(event) => setMessage(event.target.value)}
                         placeholder={contactFormCopy.messagePlaceholder}
                         rows={3}
-                        className="border-border min-h-20 resize-none rounded-none border-0 border-b bg-transparent px-0 shadow-none focus-visible:border-foreground focus-visible:ring-0"
+                        className="border-border focus-visible:border-foreground min-h-20 resize-none rounded-none border-0 border-b bg-transparent px-0 shadow-none focus-visible:ring-0"
                     />
                 </div>
 

@@ -12,6 +12,7 @@ export default function PlatformStockTransactions({
         <StockTransactionsPage
             table={table}
             indexUrl={StockTransactionController.index.url()}
+            exportUrl={StockTransactionController.export.url()}
             productOptionsUrl={StockController.productOptions.url()}
             branchOptionsUrl={StockController.branchOptions.url()}
         />
