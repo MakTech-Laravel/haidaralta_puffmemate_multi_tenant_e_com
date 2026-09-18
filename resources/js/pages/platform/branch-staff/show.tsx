@@ -62,9 +62,7 @@ export default function PlatformBranchStaffShow({
 
                 <section className="flex flex-col gap-2">
                     <h2 className="text-sm font-medium">Branch</h2>
-                    <p className="text-sm">
-                        {staffMember.branch?.name ?? '—'}
-                    </p>
+                    <p className="text-sm">{staffMember.branch?.name ?? '—'}</p>
                 </section>
 
                 <section className="flex flex-col gap-2">

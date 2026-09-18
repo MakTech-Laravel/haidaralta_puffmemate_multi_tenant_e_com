@@ -168,7 +168,7 @@ function GradientQuickSelect({
                             disabled={disabled}
                             onClick={() => onSelect(preset)}
                             className={cn(
-                                'group relative overflow-hidden rounded-xl border border-border/70 p-2 text-left shadow-xs transition-all hover:border-border disabled:opacity-50',
+                                'group border-border/70 hover:border-border relative overflow-hidden rounded-xl border p-2 text-left shadow-xs transition-all disabled:opacity-50',
                                 isSelected &&
                                     'ring-foreground/80 border-transparent ring-2 ring-offset-2',
                             )}
@@ -219,7 +219,7 @@ export function ColorPickerPanel({
     return (
         <div className={cn('space-y-5', className)}>
             <div
-                className="relative overflow-hidden rounded-2xl border border-border/70 shadow-inner"
+                className="border-border/70 relative overflow-hidden rounded-2xl border shadow-inner"
                 style={transparent ? undefined : previewStyle}
             >
                 <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/5" />
@@ -228,7 +228,7 @@ export function ColorPickerPanel({
                         <div className="bg-muted/80 size-10 rounded-xl sm:size-12" />
                     </div>
                 </div>
-                <div className="absolute right-3 bottom-3 rounded-full border border-border/60 bg-background/85 px-2.5 py-1 text-[11px] font-medium tracking-wide shadow-xs backdrop-blur-sm">
+                <div className="border-border/60 bg-background/85 absolute right-3 bottom-3 rounded-full border px-2.5 py-1 text-[11px] font-medium tracking-wide shadow-xs backdrop-blur-sm">
                     {colorPickerSummary(value)}
                 </div>
             </div>
@@ -241,7 +241,8 @@ export function ColorPickerPanel({
                         'grid gap-2',
                         enabledModes.length === 2 && 'grid-cols-2',
                         enabledModes.length === 3 && 'grid-cols-3',
-                        enabledModes.length >= 4 && 'grid-cols-2 sm:grid-cols-4',
+                        enabledModes.length >= 4 &&
+                            'grid-cols-2 sm:grid-cols-4',
                     )}
                 >
                     {MODE_META.filter((option) =>
@@ -336,7 +337,7 @@ export function ColorPickerPanel({
             {value.mode === 'gradient' ? (
                 <div className="space-y-4">
                     <div
-                        className="h-3 overflow-hidden rounded-full border border-border/60 shadow-inner"
+                        className="border-border/60 h-3 overflow-hidden rounded-full border shadow-inner"
                         style={{
                             backgroundImage: `linear-gradient(${value.angle}deg, ${value.from}, ${value.to})`,
                         }}
@@ -451,7 +452,7 @@ export function ColorPickerPanel({
             {value.mode === 'radial' ? (
                 <div className="space-y-4">
                     <div
-                        className="h-3 overflow-hidden rounded-full border border-border/60 shadow-inner"
+                        className="border-border/60 h-3 overflow-hidden rounded-full border shadow-inner"
                         style={{
                             backgroundImage: `radial-gradient(${value.position ?? 'circle at center'}, ${value.from}, ${value.to})`,
                         }}
@@ -476,7 +477,7 @@ export function ColorPickerPanel({
             ) : null}
 
             {value.mode === 'transparent' ? (
-                <p className="text-muted-foreground rounded-xl border border-dashed border-border/70 bg-muted/20 px-3 py-2.5 text-xs leading-relaxed">
+                <p className="text-muted-foreground border-border/70 bg-muted/20 rounded-xl border border-dashed px-3 py-2.5 text-xs leading-relaxed">
                     {labels.transparentHint}
                 </p>
             ) : null}

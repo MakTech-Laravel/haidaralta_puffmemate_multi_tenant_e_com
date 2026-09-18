@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\ScoutSearchable;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserType;
 use App\Models\Concerns\AuditsChanges;
@@ -45,7 +46,7 @@ use Spatie\Permission\Traits\HasRoles;
  */
 #[Fillable(['name', 'phone', 'email', 'password', 'user_type', 'branch_id', 'is_active', 'avatar', 'phone_verified_at', 'email_verified_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
-class User extends Authenticatable implements PasskeyUser
+class User extends Authenticatable implements PasskeyUser, ScoutSearchable
 {
     /** @use HasFactory<UserFactory> */
     use AuditsChanges, HasFactory, HasFcmDeviceTokens, HasRoles, Notifiable, PasskeyAuthenticatable, Searchable, TwoFactorAuthenticatable;

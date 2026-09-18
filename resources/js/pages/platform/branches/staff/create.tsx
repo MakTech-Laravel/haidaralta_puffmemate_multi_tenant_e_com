@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
 import { StaffForm } from '@/components/admin/staff-form';
 import Heading from '@/components/heading';
+import { filteredBranchStaffUrl } from '@/lib/branch-people-query';
 
 type Branch = {
     id: number;
@@ -45,9 +46,7 @@ export default function PlatformBranchScopedStaffCreate({
                     rolesByBranch={rolesByBranch}
                     branchLocked
                     defaults={{ branch_id: branch.id }}
-                    cancelHref={BranchScopedStaffController.index.url(
-                        branch.slug,
-                    )}
+                    cancelHref={filteredBranchStaffUrl(branch.id)}
                     submitLabel="Create staff"
                 />
             </div>

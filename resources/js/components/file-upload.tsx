@@ -387,8 +387,7 @@ function buildPreview(file: File): FilePreview {
  */
 function filesMatch(a: File, b: File): boolean {
     return (
-        a === b ||
-        (a.name === b.name && a.size === b.size && a.type === b.type)
+        a === b || (a.name === b.name && a.size === b.size && a.type === b.type)
     );
 }
 
@@ -938,18 +937,13 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
         // Inertia string-key setData cloneDeep's Files — reuse Object URLs when
         // name/size/type still match so typing other fields does not blink thumbs.
         useEffect(() => {
-            const files = Array.isArray(value)
-                ? value
-                : value
-                  ? [value]
-                  : [];
+            const files = Array.isArray(value) ? value : value ? [value] : [];
 
             setFilePreviews((prev) => {
                 if (
                     prev.length === files.length &&
-                    prev.every(
-                        (preview, index) =>
-                            filesMatch(preview.file, files[index]!),
+                    prev.every((preview, index) =>
+                        filesMatch(preview.file, files[index]!),
                     )
                 ) {
                     if (
@@ -1324,8 +1318,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
         ) : null;
 
         const showLargeDropzone =
-            canAddMore &&
-            !(dropzoneVisibility === 'empty' && totalFiles > 0);
+            canAddMore && !(dropzoneVisibility === 'empty' && totalFiles > 0);
 
         const DropZoneEl = showLargeDropzone && (
             <div

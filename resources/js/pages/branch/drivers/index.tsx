@@ -106,8 +106,7 @@ export default function BranchDriversIndex({
             {
                 id: 'assignment',
                 header: 'Assignment',
-                cell: ({ row }) =>
-                    row.original.assignment_status_label ?? '—',
+                cell: ({ row }) => row.original.assignment_status_label ?? '—',
             },
             {
                 accessorKey: 'is_active',

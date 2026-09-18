@@ -5,6 +5,7 @@ import BranchDriverController from '@/actions/App/Http/Controllers/Platform/Bran
 import PlatformDriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
 import { formatRosterPeriodLine } from '@/components/admin/driver-roster-fields';
 import Heading from '@/components/heading';
+import { filteredBranchDriversUrl } from '@/lib/branch-people-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -102,7 +103,7 @@ export default function PlatformBranchDriversShow({
             },
             {
                 title: 'Drivers',
-                href: BranchDriverController.index.url(branch.slug),
+                href: filteredBranchDriversUrl(branch.id),
             },
             {
                 title: driver.name,

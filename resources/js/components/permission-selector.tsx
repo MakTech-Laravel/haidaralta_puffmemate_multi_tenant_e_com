@@ -192,7 +192,7 @@ export function PermissionSelector({
             <div className="flex flex-col md:h-72 md:flex-row">
                 <nav
                     aria-label="Permission groups"
-                    className="flex shrink-0 gap-1 overflow-x-auto border-b p-1.5 md:w-44 md:flex-col md:overflow-y-auto md:overflow-x-hidden md:border-r md:border-b-0 md:p-1"
+                    className="flex shrink-0 gap-1 overflow-x-auto border-b p-1.5 md:w-44 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:border-r md:border-b-0 md:p-1"
                 >
                     <GroupTab
                         label="All"
@@ -274,9 +274,7 @@ export function PermissionSelector({
                                                     id={`permission-${permission.value}`}
                                                     checked={checked}
                                                     disabled={disabled}
-                                                    onCheckedChange={(
-                                                        value,
-                                                    ) =>
+                                                    onCheckedChange={(value) =>
                                                         toggleItem(
                                                             permission.value,
                                                             value === true,

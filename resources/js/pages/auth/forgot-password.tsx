@@ -64,6 +64,5 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
 ForgotPassword.layout = {
     title: 'Forgot password',
-    description:
-        'Enter your phone number to receive a verification code',
+    description: 'Enter your phone number to receive a verification code',
 };

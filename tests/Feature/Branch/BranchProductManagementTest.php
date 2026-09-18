@@ -36,6 +36,8 @@ test('branch create stores stock and price for the creating branch only', functi
             'sku' => 'SKU-SYD-1',
             'status' => true,
             'selling_price' => 19.99,
+            'buying_price' => 11.5,
+            'regular_price' => 22.99,
             'quantity' => 5,
         ]);
 
@@ -66,6 +68,8 @@ test('branch create stores stock and price for the creating branch only', functi
             ->where('product_id', $product->id)
             ->whereNull('variant_id')
             ->where('status', true)
+            ->where('buying_price', '11.50')
+            ->where('regular_price', '22.99')
             ->exists(),
     )->toBeTrue();
 });
@@ -201,6 +205,7 @@ test('branch can adjust inventory and price for a variant', function () {
     $this->actingAs($staff, 'branch')
         ->post(route('branch.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 7,
             'variant_id' => $variant->id,
         ])
@@ -233,6 +238,7 @@ test('branch product inventory adjustment sets counted on-hand with a reason', f
     $this->actingAs($staff, 'branch')
         ->post(route('branch.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 10,
         ])
         ->assertRedirect();

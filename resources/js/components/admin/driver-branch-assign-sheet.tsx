@@ -41,10 +41,7 @@ type DriverBranchAssignSheetProps = {
     /** When set, Confirm syncs via platform.drivers.branches.sync */
     driverId?: number | null;
     selectedIds: number[];
-    onConfirm?: (
-        branchIds: number[],
-        branches: DriverBranchOption[],
-    ) => void;
+    onConfirm?: (branchIds: number[], branches: DriverBranchOption[]) => void;
     title?: string;
     description?: string;
 };
@@ -126,7 +123,8 @@ export function DriverBranchAssignSheet({
                     throw new Error('Failed to load branches');
                 }
 
-                const payload = (await response.json()) as BranchOptionsResponse;
+                const payload =
+                    (await response.json()) as BranchOptionsResponse;
                 setOptions(payload.data);
                 setMeta(payload.meta);
                 setKnownBranches((current) => {
@@ -316,7 +314,9 @@ export function DriverBranchAssignSheet({
                             type="button"
                             variant="outline"
                             size="sm"
-                            disabled={!meta || meta.current_page <= 1 || loading}
+                            disabled={
+                                !meta || meta.current_page <= 1 || loading
+                            }
                             onClick={() => setPage((current) => current - 1)}
                         >
                             Previous

@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 
+/**
+ * @extends AbstractDataTable<Category>
+ */
 class CategoryDataTable extends AbstractDataTable
 {
     /**

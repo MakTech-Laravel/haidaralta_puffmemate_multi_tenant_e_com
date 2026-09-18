@@ -16,10 +16,10 @@ Roles and permissions are always team-scoped. Platform admin users have `users.b
 | Permission            | Guard    | What it unlocks                                          |
 | --------------------- | -------- | -------------------------------------------------------- |
 | `manage-roles`        | platform | Platform roles CRUD, permission catalog, CSV export      |
-| `manage-users`         | platform | Platform admins CRUD                                     |
-| `manage-branch-users`  | platform | Branch staff CRUD across all branches (platform portal)  |
-| `manage-branch-roles`  | branch   | Branch roles CRUD, branch permission catalog, CSV export |
-| `manage-branch-staff`  | branch   | Branch staff CRUD (within own branch portal)             |
+| `manage-users`        | platform | Platform admins CRUD                                     |
+| `manage-branch-users` | platform | Branch staff CRUD across all branches (platform portal)  |
+| `manage-branch-roles` | branch   | Branch roles CRUD, branch permission catalog, CSV export |
+| `manage-branch-staff` | branch   | Branch staff CRUD (within own branch portal)             |
 
 Branch managers are seeded **without** `manage-branch-staff` and `manage-branch-roles`.
 Platform managers are seeded **without** `manage-branch-users`, `manage-roles`, and `manage-database-backups`.

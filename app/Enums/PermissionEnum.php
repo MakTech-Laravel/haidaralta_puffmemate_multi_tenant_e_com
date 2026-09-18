@@ -21,6 +21,7 @@ enum PermissionEnum: string
     case MANAGE_CATALOG = 'manage-catalog';
     case MANAGE_BRANCH_INVENTORIES = 'manage-branch-inventories';
     case MANAGE_DRIVERS = 'manage-drivers';
+    case MANAGE_CONVERSATIONS = 'manage-conversations';
 
     case VIEW_BRANCH_DASHBOARD = 'view-branch-dashboard';
     case MANAGE_BRANCH_PRODUCTS = 'manage-branch-products';
@@ -29,6 +30,7 @@ enum PermissionEnum: string
     case MANAGE_BRANCH_ROLES = 'manage-branch-roles';
     case VIEW_BRANCH_ACTIVITY_LOGS = 'view-branch-activity-logs';
     case MANAGE_BRANCH_DRIVERS = 'manage-branch-drivers';
+    case MANAGE_BRANCH_CONVERSATIONS = 'manage-branch-conversations';
 
     /**
      * The auth guard this permission belongs to.
@@ -52,7 +54,8 @@ enum PermissionEnum: string
             self::MANAGE_BRANCHES,
             self::MANAGE_CATALOG,
             self::MANAGE_BRANCH_INVENTORIES,
-            self::MANAGE_DRIVERS => 'platform',
+            self::MANAGE_DRIVERS,
+            self::MANAGE_CONVERSATIONS => 'platform',
 
             self::VIEW_BRANCH_DASHBOARD,
             self::MANAGE_BRANCH_PRODUCTS,
@@ -60,7 +63,8 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_STAFF,
             self::MANAGE_BRANCH_ROLES,
             self::VIEW_BRANCH_ACTIVITY_LOGS,
-            self::MANAGE_BRANCH_DRIVERS => 'branch',
+            self::MANAGE_BRANCH_DRIVERS,
+            self::MANAGE_BRANCH_CONVERSATIONS => 'branch',
         };
     }
 
@@ -98,6 +102,8 @@ enum PermissionEnum: string
             self::VIEW_PULSE => 'Observability',
             self::MANAGE_DRIVERS,
             self::MANAGE_BRANCH_DRIVERS => 'Drivers',
+            self::MANAGE_CONVERSATIONS,
+            self::MANAGE_BRANCH_CONVERSATIONS => 'Conversations',
         };
     }
 
@@ -124,6 +130,7 @@ enum PermissionEnum: string
             self::MANAGE_CATALOG => 'Manage catalog',
             self::MANAGE_BRANCH_INVENTORIES => 'Manage branch inventories',
             self::MANAGE_DRIVERS => 'Manage drivers',
+            self::MANAGE_CONVERSATIONS => 'Manage conversations',
             self::VIEW_BRANCH_DASHBOARD => 'View branch dashboard',
             self::MANAGE_BRANCH_PRODUCTS => 'Manage branch products',
             self::MANAGE_BRANCH_ORDERS => 'Manage branch orders',
@@ -131,6 +138,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_ROLES => 'Manage branch roles',
             self::VIEW_BRANCH_ACTIVITY_LOGS => 'View branch activity logs',
             self::MANAGE_BRANCH_DRIVERS => 'Manage branch drivers',
+            self::MANAGE_BRANCH_CONVERSATIONS => 'Manage branch conversations',
         };
     }
 

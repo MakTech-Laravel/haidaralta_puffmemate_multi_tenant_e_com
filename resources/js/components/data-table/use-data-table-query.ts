@@ -69,16 +69,12 @@ export function buildArchivesDataTableQuery(
     const search = state.filter.search;
 
     return {
-        ...(search !== null &&
-        search !== undefined &&
-        search !== ''
+        ...(search !== null && search !== undefined && search !== ''
             ? { archives_search: String(search) }
             : {}),
         ...(state.sort ? { archives_sort: state.sort } : {}),
         archives_per_page: state.per_page,
-        ...(state.page && state.page > 1
-            ? { archives_page: state.page }
-            : {}),
+        ...(state.page && state.page > 1 ? { archives_page: state.page } : {}),
     };
 }
 
@@ -120,7 +116,7 @@ function appendQueryParam(
     params.append(prefix, String(value));
 }
 
-function queryToSearchParams(query: QueryParams): URLSearchParams {
+export function queryToSearchParams(query: QueryParams): URLSearchParams {
     const params = new URLSearchParams();
 
     Object.entries(query).forEach(([key, value]) => {
@@ -130,9 +126,12 @@ function queryToSearchParams(query: QueryParams): URLSearchParams {
     return params;
 }
 
-function sameSearchParams(left: URLSearchParams, right: URLSearchParams): boolean {
-    const leftKeys = [...new Set([...left.keys()])].sort();
-    const rightKeys = [...new Set([...right.keys()])].sort();
+function sameSearchParams(
+    left: URLSearchParams,
+    right: URLSearchParams,
+): boolean {
+    const leftKeys = [...new Set(left.keys())].sort();
+    const rightKeys = [...new Set(right.keys())].sort();
 
     if (
         leftKeys.length !== rightKeys.length ||
@@ -168,7 +167,9 @@ function queryMatchesCurrentUrl(indexUrl: string, query: QueryParams): boolean {
     const current = new URL(window.location.href);
     const next = new URL(indexUrl, window.location.origin);
 
-    if (normalizePathname(current.pathname) !== normalizePathname(next.pathname)) {
+    if (
+        normalizePathname(current.pathname) !== normalizePathname(next.pathname)
+    ) {
         return false;
     }
 

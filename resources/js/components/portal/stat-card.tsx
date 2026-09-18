@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-export function DemoStatCard({
+export function StatCard({
     className,
     hint,
     icon: Icon,

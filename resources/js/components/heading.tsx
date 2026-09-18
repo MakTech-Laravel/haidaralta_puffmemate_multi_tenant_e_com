@@ -13,10 +13,7 @@ export default function Heading({
 }) {
     return (
         <header
-            className={cn(
-                variant === 'small' ? '' : 'space-y-0.5',
-                className,
-            )}
+            className={cn(variant === 'small' ? '' : 'space-y-0.5', className)}
         >
             <h2
                 className={

@@ -6,7 +6,11 @@ use App\Models\DatabaseBackupHistory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 
+/**
+ * @extends AbstractDataTable<DatabaseBackupHistory>
+ */
 class DatabaseBackupHistoryDataTable extends AbstractDataTable
 {
     /**

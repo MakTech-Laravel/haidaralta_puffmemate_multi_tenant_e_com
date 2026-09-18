@@ -1,9 +1,11 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { CircleDollarSign, Package, Settings2 } from 'lucide-react';
+import { CircleDollarSign, Eye, Package } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
+import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
@@ -17,7 +19,7 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
+import { StatCard } from '@/components/portal/stat-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import {
@@ -39,7 +41,9 @@ type ProductRow = {
     quantity: number;
     selling_price: string | number | null;
     effective_price: string | number | null;
+    regular_price?: string | number | null;
     has_discount: boolean;
+    has_compare_at?: boolean;
     discount_type: string;
     discount_price: string | number | null;
 };
@@ -66,6 +70,15 @@ function listingPrice(row: ProductRow): ReactNode {
         return (
             <span className="tabular-nums">
                 <s className="text-muted-foreground">{row.selling_price}</s>{' '}
+                {row.effective_price ?? row.selling_price}
+            </span>
+        );
+    }
+
+    if (row.has_compare_at && row.regular_price != null) {
+        return (
+            <span className="tabular-nums">
+                <s className="text-muted-foreground">{row.regular_price}</s>{' '}
                 {row.effective_price ?? row.selling_price}
             </span>
         );
@@ -178,7 +191,9 @@ export default function PlatformBranchProductsIndex({
                 accessorKey: 'quantity',
                 header: 'Stock',
                 cell: ({ row }) => (
-                    <span className="tabular-nums">{row.original.quantity}</span>
+                    <span className="tabular-nums">
+                        {row.original.quantity}
+                    </span>
                 ),
             },
             {
@@ -191,29 +206,43 @@ export default function PlatformBranchProductsIndex({
                 header: 'Actions',
                 cell: ({ row }) => (
                     <DataTableRowActions
-                        items={[
+                        contentClassName="w-56"
+                        groups={[
                             {
-                                label: 'Manage stock',
-                                icon: Settings2,
-                                href: stockPageUrl(
-                                    StockController.manage.url(),
+                                label: 'Catalog',
+                                items: [
+                                    {
+                                        label: 'View',
+                                        icon: Eye,
+                                        href: ProductController.show.url(
+                                            row.original.slug,
+                                        ),
+                                    },
+                                ],
+                            },
+                            {
+                                label: 'Stock',
+                                items: stockActionItems(
+                                    {
+                                        manage: stockPageUrl(
+                                            StockController.manage.url(),
+                                            {
+                                                productId: row.original.id,
+                                                branchId: branch.id,
+                                                locked: 'both',
+                                            },
+                                        ),
+                                        transactions:
+                                            StockTransactionController.index.url(),
+                                        priceHistory:
+                                            PriceHistoryController.index.url(),
+                                    },
                                     {
                                         productId: row.original.id,
                                         branchId: branch.id,
-                                        locked: 'both',
                                     },
                                 ),
                             },
-                            ...stockActionItems(
-                                {
-                                    transactions:
-                                        StockTransactionController.index.url(),
-                                },
-                                {
-                                    productId: row.original.id,
-                                    branchId: branch.id,
-                                },
-                            ),
                         ]}
                     />
                 ),
@@ -233,13 +262,13 @@ export default function PlatformBranchProductsIndex({
                 />
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <DemoStatCard
+                    <StatCard
                         icon={Package}
                         label="Catalog"
                         value={String(summary.products)}
                         hint="Products in master catalog"
                     />
-                    <DemoStatCard
+                    <StatCard
                         icon={CircleDollarSign}
                         label="Missing price"
                         value={String(summary.missing_price)}

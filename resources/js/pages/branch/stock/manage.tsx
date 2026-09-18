@@ -18,6 +18,7 @@ export default function BranchManageStock({
     inventoryUrl,
     priceUrl,
     transactionsUrl,
+    priceHistoryUrl,
     allBranchesUrl,
     branchProductsUrl,
 }: {
@@ -30,6 +31,7 @@ export default function BranchManageStock({
     inventoryUrl: string | null;
     priceUrl: string | null;
     transactionsUrl: string | null;
+    priceHistoryUrl: string | null;
     allBranchesUrl: string | null;
     branchProductsUrl: string | null;
 }) {
@@ -48,6 +50,7 @@ export default function BranchManageStock({
             inventoryUrl={inventoryUrl}
             priceUrl={priceUrl}
             transactionsUrl={transactionsUrl}
+            priceHistoryUrl={priceHistoryUrl}
             allBranchesUrl={allBranchesUrl}
             branchProductsUrl={branchProductsUrl}
             detailsUrl={

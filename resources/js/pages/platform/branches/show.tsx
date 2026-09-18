@@ -1,17 +1,32 @@
 import { Head, Link } from '@inertiajs/react';
+import { type ColumnDef } from '@tanstack/react-table';
 import {
     Clock,
+    Eye,
     Mail,
     MapPin,
+    Pencil,
     Phone,
+    Plus,
     Users,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
-import BranchDriverController from '@/actions/App/Http/Controllers/Platform/BranchDriverController';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
+import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
+import { BranchLocationMapDialog } from '@/components/admin/branch-location-map-dialog';
+import {
+    DataTable,
+    DataTableColumnHeader,
+    DataTableRowActions,
+    DataTableToolbar,
+    DataTableTruncated,
+    useDataTableQuery,
+    type DataTablePayload,
+} from '@/components/data-table';
 import Heading from '@/components/heading';
+import { StatCard } from '@/components/portal/stat-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -23,17 +38,31 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { usePermission } from '@/hooks/use-permissions';
-import { cn } from '@/lib/utils';
+import {
+    filteredBranchDriversUrl,
+    filteredBranchStaffUrl,
+} from '@/lib/branch-people-query';
 
-type SuperAdmin = {
+type StaffRow = {
     id: number;
     name: string;
     phone: string;
     email: string | null;
+    avatar_url: string | null;
     is_active: boolean;
+    roles: string[];
 };
+
+type RoleOption = { value: string; label: string };
 
 type Branch = {
     id: number;
@@ -52,31 +81,29 @@ type Branch = {
     opening_time: string | null;
     closing_time: string | null;
     needs_super_admin: boolean;
-    super_admins: SuperAdmin[];
+    map: {
+        google: string;
+        open_street_map: string;
+        embed: string;
+    } | null;
 };
 
-function DetailItem({
-    label,
-    value,
-    icon,
-}: {
-    label: string;
-    value: ReactNode;
-    icon?: ReactNode;
-}) {
+function initials(name: string): string {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
+}
+
+function Fact({ label, value }: { label: string; value: ReactNode }) {
     return (
-        <div className="flex gap-3">
-            {icon ? (
-                <div className="bg-muted text-muted-foreground mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg">
-                    {icon}
-                </div>
-            ) : null}
-            <div className="flex min-w-0 flex-col gap-1">
-                <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                    {label}
-                </dt>
-                <dd className="text-sm font-medium wrap-break-word">{value}</dd>
-            </div>
+        <div className="flex min-w-0 flex-col gap-1">
+            <dt className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                {label}
+            </dt>
+            <dd className="text-sm font-medium wrap-break-word">{value}</dd>
         </div>
     );
 }
@@ -95,15 +122,173 @@ function formatCoord(value: string | number | null): string | null {
     return String(value);
 }
 
-export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
+function formatRole(role: string): string {
+    return role.replaceAll('-', ' ');
+}
+
+export default function PlatformBranchesShow({
+    branch,
+    table: tablePayload,
+}: {
+    branch: Branch;
+    table: DataTablePayload<StaffRow> & {
+        filterOptions?: { roles?: RoleOption[] };
+    };
+}) {
     const { can } = usePermission();
     const latitude = formatCoord(branch.latitude);
     const longitude = formatCoord(branch.longitude);
-    const hasPin = latitude !== null && longitude !== null;
+    const hasPin =
+        branch.map !== null && latitude !== null && longitude !== null;
     const hours =
         branch.opening_time || branch.closing_time
             ? `${branch.opening_time ?? '—'} – ${branch.closing_time ?? '—'}`
             : null;
+    const roles = tablePayload.filterOptions?.roles ?? [];
+    const canManageStaff = can('manage-branch-users');
+    const [mapOpen, setMapOpen] = useState(false);
+
+    const query = useDataTableQuery({
+        indexUrl: BranchController.show.url(branch.slug),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
+                role: tablePayload.filters.role ?? 'all',
+                is_active: tablePayload.filters.is_active ?? 'all',
+            },
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
+    });
+
+    const columns = useMemo<ColumnDef<StaffRow>[]>(
+        () => [
+            {
+                id: 'person',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Person"
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                meta: { truncate: false },
+                cell: ({ row }) => (
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Avatar className="size-9">
+                            <AvatarImage
+                                src={row.original.avatar_url ?? undefined}
+                                alt={row.original.name}
+                            />
+                            <AvatarFallback>
+                                {initials(row.original.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                            <DataTableTruncated className="font-medium">
+                                {row.original.name}
+                            </DataTableTruncated>
+                            <DataTableTruncated className="text-muted-foreground text-xs">
+                                {row.original.phone}
+                            </DataTableTruncated>
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'email',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Email"
+                        sortable
+                        sortKey="email"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => row.original.email ?? '—',
+            },
+            {
+                id: 'roles',
+                header: 'Role',
+                meta: { truncate: false },
+                cell: ({ row }) => {
+                    if (row.original.roles.length === 0) {
+                        return '—';
+                    }
+
+                    return (
+                        <div className="flex flex-wrap gap-1">
+                            {row.original.roles.map((role) => (
+                                <Badge
+                                    key={role}
+                                    variant="secondary"
+                                    className="capitalize"
+                                >
+                                    {formatRole(role)}
+                                </Badge>
+                            ))}
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'is_active',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Status"
+                        sortable
+                        sortKey="is_active"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Badge
+                        variant={
+                            row.original.is_active ? 'default' : 'secondary'
+                        }
+                    >
+                        {row.original.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                ),
+            },
+            ...(canManageStaff
+                ? [
+                      {
+                          id: 'actions',
+                          header: 'Actions',
+                          cell: ({ row }) => (
+                              <DataTableRowActions
+                                  items={[
+                                      {
+                                          label: 'View',
+                                          icon: Eye,
+                                          href: BranchStaffController.show.url(
+                                              row.original.id,
+                                          ),
+                                      },
+                                      {
+                                          label: 'Edit',
+                                          icon: Pencil,
+                                          href: BranchStaffController.edit.url(
+                                              row.original.id,
+                                          ),
+                                      },
+                                  ]}
+                              />
+                          ),
+                      } satisfies ColumnDef<StaffRow>,
+                  ]
+                : []),
+        ],
+        [canManageStaff, query.sort, query.toggleSort],
+    );
 
     return (
         <>
@@ -112,7 +297,7 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-4">
-                        <Avatar className="size-16 rounded-2xl border shadow-sm">
+                        <Avatar className="size-14 rounded-2xl border shadow-sm">
                             {branch.logo_url ? (
                                 <AvatarImage
                                     src={branch.logo_url}
@@ -121,7 +306,7 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                                 />
                             ) : null}
                             <AvatarFallback className="rounded-2xl text-base font-semibold">
-                                {branch.name.slice(0, 2).toUpperCase()}
+                                {initials(branch.name)}
                             </AvatarFallback>
                         </Avatar>
                         <div className="flex min-w-0 flex-col gap-2">
@@ -138,20 +323,11 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                                     {branch.status ? 'Active' : 'Inactive'}
                                 </Badge>
                                 <Badge variant="outline">{branch.code}</Badge>
-                                <Badge variant="outline" className="gap-1">
-                                    <Users className="size-3" />
-                                    {branch.users_count} staff
-                                </Badge>
                             </div>
                         </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="secondary" asChild>
-                            <Link href={BranchController.index.url()}>
-                                Back
-                            </Link>
-                        </Button>
                         {can('edit-branches') ? (
                             <Button asChild>
                                 <Link
@@ -163,14 +339,10 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                                 </Link>
                             </Button>
                         ) : null}
-                        {can('manage-branch-users') ? (
+                        {canManageStaff ? (
                             <Button variant="outline" asChild>
-                                <Link
-                                    href={BranchScopedStaffController.index.url(
-                                        branch.slug,
-                                    )}
-                                >
-                                    Staff
+                                <Link href={filteredBranchStaffUrl(branch.id)}>
+                                    All staff
                                 </Link>
                             </Button>
                         ) : null}
@@ -188,9 +360,7 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                         {can('manage-drivers') ? (
                             <Button variant="outline" asChild>
                                 <Link
-                                    href={BranchDriverController.index.url(
-                                        branch.slug,
-                                    )}
+                                    href={filteredBranchDriversUrl(branch.id)}
                                 >
                                     Drivers
                                 </Link>
@@ -232,182 +402,233 @@ export default function PlatformBranchesShow({ branch }: { branch: Branch }) {
                     </Alert>
                 ) : null}
 
-                <div className="grid items-start gap-4 xl:grid-cols-2">
-                    <Card className="shadow-sm">
-                        <CardHeader>
-                            <CardTitle>Contact</CardTitle>
-                            <CardDescription>
-                                How customers and staff reach this location
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <dl className="grid gap-5">
-                                <DetailItem
-                                    label="Phone"
-                                    icon={<Phone className="size-4" />}
-                                    value={branch.phone ?? '—'}
-                                />
-                                <DetailItem
-                                    label="Email"
-                                    icon={<Mail className="size-4" />}
-                                    value={branch.email ?? '—'}
-                                />
-                                <DetailItem
-                                    label="Hours"
-                                    icon={<Clock className="size-4" />}
-                                    value={hours ?? '—'}
-                                />
-                            </dl>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="shadow-sm">
-                        <CardHeader>
-                            <CardTitle>Map location</CardTitle>
-                            <CardDescription>
-                                Address and coordinates for this branch
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-5">
-                            <DetailItem
-                                label="Address"
-                                icon={<MapPin className="size-4" />}
-                                value={branch.address ?? '—'}
+                <div className="grid gap-3 sm:grid-cols-3">
+                    <StatCard
+                        icon={Users}
+                        label="Staff"
+                        value={String(branch.users_count)}
+                        hint="People assigned to this branch"
+                    />
+                    <StatCard
+                        icon={Clock}
+                        label="Hours"
+                        value={hours ?? 'Not set'}
+                        hint="Opening hours"
+                    />
+                    {hasPin ? (
+                        <button
+                            type="button"
+                            className="focus-visible:ring-ring w-full cursor-pointer rounded-xl text-left focus-visible:ring-2 focus-visible:outline-none"
+                            onClick={() => setMapOpen(true)}
+                        >
+                            <StatCard
+                                icon={MapPin}
+                                label="Location"
+                                value="Pin set"
+                                hint="View on map"
                             />
-
-                            <div
-                                className={cn(
-                                    'border-border/70 bg-muted/30 flex min-h-36 flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-8 text-center',
-                                )}
-                            >
-                                <MapPin
-                                    className="text-muted-foreground size-7 opacity-70"
-                                    aria-hidden
-                                />
-                                {hasPin ? (
-                                    <>
-                                        <p className="text-sm font-medium">
-                                            Pin set
-                                        </p>
-                                        <p className="text-muted-foreground text-xs tabular-nums">
-                                            {latitude}, {longitude}
-                                        </p>
-                                        <p className="text-muted-foreground max-w-xs text-xs">
-                                            A live map preview will appear here
-                                            when Mapbox or Google Maps is
-                                            connected.
-                                        </p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <p className="text-sm font-medium">
-                                            No pin yet
-                                        </p>
-                                        <p className="text-muted-foreground max-w-xs text-xs">
-                                            Add coordinates from Edit → Map
-                                            location when you are ready.
-                                        </p>
-                                    </>
-                                )}
-                            </div>
-
-                            <dl className="grid gap-4 sm:grid-cols-2">
-                                <DetailItem
-                                    label="Latitude"
-                                    value={latitude ?? '—'}
-                                />
-                                <DetailItem
-                                    label="Longitude"
-                                    value={longitude ?? '—'}
-                                />
-                            </dl>
-                        </CardContent>
-                    </Card>
+                        </button>
+                    ) : (
+                        <StatCard
+                            icon={MapPin}
+                            label="Location"
+                            value="No pin"
+                            hint="Add coordinates from Edit"
+                        />
+                    )}
                 </div>
 
                 <Card className="shadow-sm">
-                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 pb-3">
                         <div className="space-y-1.5">
-                            <CardTitle>Branch admins</CardTitle>
+                            <CardTitle>Details</CardTitle>
                             <CardDescription>
-                                People who can sign in and manage this branch
-                                portal
+                                Contact, hours, and coordinates for this
+                                location
                             </CardDescription>
                         </div>
-                        {branch.needs_super_admin && can('create-branches') ? (
-                            <Button size="sm" asChild>
-                                <Link
-                                    href={BranchController.createSuperAdmin.url(
-                                        branch.slug,
-                                    )}
-                                >
-                                    Add branch admin
-                                </Link>
-                            </Button>
-                        ) : can('manage-branch-users') ? (
-                            <Button size="sm" variant="outline" asChild>
-                                <Link
-                                    href={BranchScopedStaffController.index.url(
-                                        branch.slug,
-                                    )}
-                                >
-                                    Manage staff
-                                </Link>
+                        {hasPin ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setMapOpen(true)}
+                            >
+                                <MapPin className="size-4" />
+                                View on map
                             </Button>
                         ) : null}
                     </CardHeader>
                     <CardContent>
-                        {branch.super_admins.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
-                                No branch admins yet.
-                            </p>
-                        ) : (
-                            <div className="flex flex-col">
-                                {branch.super_admins.map((admin, index) => (
-                                    <div key={admin.id}>
-                                        {index > 0 ? (
-                                            <Separator className="my-4" />
-                                        ) : null}
-                                        <div className="flex flex-wrap items-center justify-between gap-3">
-                                            <div className="flex min-w-0 items-center gap-3">
-                                                <Avatar className="size-10">
-                                                    <AvatarFallback>
-                                                        {admin.name
-                                                            .slice(0, 2)
-                                                            .toUpperCase()}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="min-w-0">
-                                                    <p className="truncate text-sm font-medium">
-                                                        {admin.name}
-                                                    </p>
-                                                    <p className="text-muted-foreground truncate text-sm">
-                                                        {admin.phone}
-                                                        {admin.email
-                                                            ? ` · ${admin.email}`
-                                                            : null}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <Badge
-                                                variant={
-                                                    admin.is_active
-                                                        ? 'default'
-                                                        : 'secondary'
-                                                }
-                                            >
-                                                {admin.is_active
-                                                    ? 'Active'
-                                                    : 'Inactive'}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <Fact
+                                label="Phone"
+                                value={
+                                    <span className="inline-flex items-center gap-2">
+                                        <Phone className="text-muted-foreground size-3.5 shrink-0" />
+                                        {branch.phone ?? '—'}
+                                    </span>
+                                }
+                            />
+                            <Fact
+                                label="Email"
+                                value={
+                                    <span className="inline-flex items-center gap-2">
+                                        <Mail className="text-muted-foreground size-3.5 shrink-0" />
+                                        {branch.email ?? '—'}
+                                    </span>
+                                }
+                            />
+                            <Fact
+                                label="Hours"
+                                value={
+                                    <span className="inline-flex items-center gap-2">
+                                        <Clock className="text-muted-foreground size-3.5 shrink-0" />
+                                        {hours ?? '—'}
+                                    </span>
+                                }
+                            />
+                            <Fact
+                                label="Address"
+                                value={branch.address ?? '—'}
+                            />
+                            <Fact
+                                label="Latitude"
+                                value={
+                                    <span className="tabular-nums">
+                                        {latitude ?? '—'}
+                                    </span>
+                                }
+                            />
+                            <Fact
+                                label="Longitude"
+                                value={
+                                    <span className="tabular-nums">
+                                        {longitude ?? '—'}
+                                    </span>
+                                }
+                            />
+                        </dl>
                     </CardContent>
                 </Card>
+
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <Heading
+                        variant="small"
+                        title="Staff"
+                        description="Search, filter, and page through everyone assigned to this branch"
+                    />
+                    {canManageStaff ? (
+                        <Button size="sm" asChild>
+                            <Link
+                                href={BranchScopedStaffController.create.url(
+                                    branch.slug,
+                                )}
+                            >
+                                <Plus className="size-4" />
+                                Add staff
+                            </Link>
+                        </Button>
+                    ) : null}
+                </div>
+
+                <DataTable
+                    columns={columns}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
+                    emptyMessage="No staff match this filter."
+                    toolbar={
+                        <DataTableToolbar
+                            search={query.search}
+                            onSearchChange={query.setSearch}
+                            searchPlaceholder="Search name, phone, or email…"
+                            onClear={query.clearFilters}
+                            filters={
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label>Role</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.role ?? 'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'role',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-48">
+                                                <SelectValue placeholder="Role" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All roles
+                                                </SelectItem>
+                                                {roles.map((role) => (
+                                                    <SelectItem
+                                                        key={role.value}
+                                                        value={role.value}
+                                                    >
+                                                        {role.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Status</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.is_active ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'is_active',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-40">
+                                                <SelectValue placeholder="Status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All statuses
+                                                </SelectItem>
+                                                <SelectItem value="active">
+                                                    Active
+                                                </SelectItem>
+                                                <SelectItem value="inactive">
+                                                    Inactive
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
+                            }
+                        />
+                    }
+                />
             </div>
+
+            {hasPin && branch.map ? (
+                <BranchLocationMapDialog
+                    open={mapOpen}
+                    onOpenChange={setMapOpen}
+                    links={branch.map}
+                    latitude={latitude}
+                    longitude={longitude}
+                    name={branch.name}
+                    address={branch.address}
+                />
+            ) : null}
         </>
     );
 }

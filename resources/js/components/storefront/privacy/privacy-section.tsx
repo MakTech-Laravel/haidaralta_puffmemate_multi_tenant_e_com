@@ -51,10 +51,7 @@ function SectionBlocks({ blocks }: { blocks: PrivacyBlock[] }) {
 
                 if (block.type === 'paragraph') {
                     return (
-                        <p
-                            key={`p-${index}`}
-                            className="text-muted-foreground"
-                        >
+                        <p key={`p-${index}`} className="text-muted-foreground">
                             {linkifyEmails(block.text)}
                         </p>
                     );

@@ -67,7 +67,11 @@ export function StockPairFields({
     };
 
     return (
-        <div className={lockBranch ? 'grid min-w-0 gap-4' : 'grid gap-4 sm:grid-cols-2'}>
+        <div
+            className={
+                lockBranch ? 'grid min-w-0 gap-4' : 'grid gap-4 sm:grid-cols-2'
+            }
+        >
             {lockBranch ? null : (
                 <div className="grid min-w-0 gap-2">
                     <div className="flex h-8 items-center">
@@ -80,7 +84,9 @@ export function StockPairFields({
                             id="stock-manage-branch"
                             optionsUrl={branchOptionsUrl ?? ''}
                             value={
-                                context.branch ? String(context.branch.id) : null
+                                context.branch
+                                    ? String(context.branch.id)
+                                    : null
                             }
                             selectedLabel={context.branch?.name}
                             onValueChange={(value) =>
@@ -118,9 +124,7 @@ export function StockPairFields({
                         id="stock-manage-product"
                         optionsUrl={productOptionsUrl}
                         value={
-                            context.product
-                                ? String(context.product.id)
-                                : null
+                            context.product ? String(context.product.id) : null
                         }
                         selectedLabel={context.product?.name}
                         onValueChange={(value) =>

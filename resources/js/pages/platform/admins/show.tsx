@@ -95,7 +95,9 @@ function VerifiedMark({ ok }: { ok: boolean }) {
         <span
             className={cn(
                 'inline-flex items-center gap-1 text-xs font-medium',
-                ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground',
+                ok
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-muted-foreground',
             )}
         >
             {ok ? (
@@ -147,7 +149,7 @@ export default function PlatformAdminsShow({ admin }: { admin: Admin }) {
                 </div>
 
                 <div className="grid items-start gap-6 xl:grid-cols-[19rem_minmax(0,1fr)]">
-                    <aside className="rounded-2xl border bg-card">
+                    <aside className="bg-card rounded-2xl border">
                         <div className="flex flex-col items-center gap-3 px-6 pt-8 pb-6 text-center">
                             <Avatar className="size-24 border shadow-sm">
                                 {admin.avatar_url ? (
@@ -210,9 +212,7 @@ export default function PlatformAdminsShow({ admin }: { admin: Admin }) {
                                 icon={<ShieldCheck className="size-4" />}
                                 label="Two-factor"
                                 value={
-                                    admin.two_factor_enabled
-                                        ? 'Enabled'
-                                        : 'Off'
+                                    admin.two_factor_enabled ? 'Enabled' : 'Off'
                                 }
                             />
                         </div>
@@ -238,7 +238,7 @@ export default function PlatformAdminsShow({ admin }: { admin: Admin }) {
                     </aside>
 
                     <div className="flex min-w-0 flex-col gap-6">
-                        <section className="overflow-hidden rounded-2xl border bg-card">
+                        <section className="bg-card overflow-hidden rounded-2xl border">
                             <div className="px-5 py-4">
                                 <h2 className="text-base font-semibold tracking-tight">
                                     Role
@@ -272,7 +272,7 @@ export default function PlatformAdminsShow({ admin }: { admin: Admin }) {
                             </ul>
                         </section>
 
-                        <section className="overflow-hidden rounded-2xl border bg-card">
+                        <section className="bg-card overflow-hidden rounded-2xl border">
                             <div className="flex items-center justify-between gap-3 px-5 py-4">
                                 <div>
                                     <h2 className="text-base font-semibold tracking-tight">

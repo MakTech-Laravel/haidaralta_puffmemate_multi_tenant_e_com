@@ -155,7 +155,10 @@ export function AccountAddressSection({
                 />
             </div>
 
-            <Button type="button" className={cn(accountButtonClass, 'mt-auto w-fit')}>
+            <Button
+                type="button"
+                className={cn(accountButtonClass, 'mt-auto w-fit')}
+            >
                 Save Changes
             </Button>
         </section>

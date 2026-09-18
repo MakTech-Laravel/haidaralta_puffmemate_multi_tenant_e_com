@@ -21,7 +21,10 @@ export function DataTableToolbar({
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="grid min-w-0 flex-1 gap-2">
-                    <label className="text-sm font-medium" htmlFor="data-table-search">
+                    <label
+                        className="text-sm font-medium"
+                        htmlFor="data-table-search"
+                    >
                         Search
                     </label>
                     <Input

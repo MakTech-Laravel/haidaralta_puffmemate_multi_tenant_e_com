@@ -10,7 +10,7 @@ import {
 import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import { DemoStatCard } from '@/components/portal/demo-stat-card';
+import { StatCard } from '@/components/portal/stat-card';
 import {
     InfiniteScrollMultiCombobox,
     type MultiComboboxOption,
@@ -94,10 +94,12 @@ export function ImportStockPage({
         branch_ids: context.branch ? [context.branch.id] : ([] as number[]),
         product_ids: context.product ? [context.product.id] : ([] as number[]),
         quantity: '1',
+        buying_price: '',
     });
     const quantityEmpty = form.data.quantity.trim() === '';
     const quantityValue = parseQuantity(form.data.quantity);
-    const pairCount = form.data.branch_ids.length * form.data.product_ids.length;
+    const pairCount =
+        form.data.branch_ids.length * form.data.product_ids.length;
     const saveDisabled =
         form.processing ||
         quantityEmpty ||
@@ -147,7 +149,7 @@ export function ImportStockPage({
                 />
 
                 <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]">
-                    <section className="self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6">
+                    <section className="border-border/80 bg-card self-start rounded-2xl border p-5 shadow-sm sm:p-6">
                         <form
                             className="flex flex-col gap-5"
                             onSubmit={(event) => {
@@ -158,6 +160,10 @@ export function ImportStockPage({
                                         data.quantity.trim() === ''
                                             ? ''
                                             : parseQuantity(data.quantity),
+                                    buying_price:
+                                        data.buying_price.trim() === ''
+                                            ? null
+                                            : data.buying_price,
                                 }));
                                 form.post(storeUrl, { preserveScroll: true });
                             }}
@@ -249,7 +255,7 @@ export function ImportStockPage({
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-5 border-t border-border/70 pt-6">
+                            <div className="border-border/70 flex flex-col gap-5 border-t pt-6">
                                 <div className="space-y-1">
                                     <h2 className="text-base font-semibold tracking-tight">
                                         New entry
@@ -262,11 +268,11 @@ export function ImportStockPage({
 
                                 <div className="grid max-w-sm gap-2">
                                     <Label htmlFor="quantity">Quantity</Label>
-                                    <div className="flex items-stretch overflow-hidden rounded-xl border border-border/80 bg-background shadow-xs">
+                                    <div className="border-border/80 bg-background flex items-stretch overflow-hidden rounded-xl border shadow-xs">
                                         <Button
                                             type="button"
                                             variant="ghost"
-                                            className="text-foreground h-12 w-12 shrink-0 rounded-none border-r border-border/80"
+                                            className="text-foreground border-border/80 h-12 w-12 shrink-0 rounded-none border-r"
                                             aria-label="Decrease quantity"
                                             disabled={quantityValue <= 0}
                                             onClick={() =>
@@ -301,7 +307,7 @@ export function ImportStockPage({
                                         <Button
                                             type="button"
                                             variant="ghost"
-                                            className="text-foreground h-12 w-12 shrink-0 rounded-none border-l border-border/80"
+                                            className="text-foreground border-border/80 h-12 w-12 shrink-0 rounded-none border-l"
                                             aria-label="Increase quantity"
                                             onClick={() =>
                                                 setQuantity(quantityValue + 1)
@@ -317,7 +323,39 @@ export function ImportStockPage({
                                               ? 'Added to on-hand stock on every selected pair.'
                                               : `${form.data.branch_ids.length} × ${form.data.product_ids.length} → ${pairCount} new ${pairCount === 1 ? 'entry' : 'entries'} of ${quantityValue}`}
                                     </p>
-                                    <InputError message={form.errors.quantity} />
+                                    <InputError
+                                        message={form.errors.quantity}
+                                    />
+                                </div>
+
+                                <div className="grid max-w-sm gap-2">
+                                    <Label htmlFor="buying_price">
+                                        Buying price{' '}
+                                        <span className="text-muted-foreground font-normal">
+                                            (AUD, optional)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="buying_price"
+                                        type="number"
+                                        step="0.01"
+                                        min={0}
+                                        placeholder="Applied to every selected pair"
+                                        value={form.data.buying_price}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'buying_price',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <p className="text-muted-foreground text-xs">
+                                        Same unit cost on each New entry. Leave
+                                        blank to skip.
+                                    </p>
+                                    <InputError
+                                        message={form.errors.buying_price}
+                                    />
                                 </div>
 
                                 <div>
@@ -333,14 +371,14 @@ export function ImportStockPage({
                     </section>
 
                     <aside className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-                        <DemoStatCard
+                        <StatCard
                             label="Type"
                             value="New entry"
                             hint="Always added to on-hand stock"
                             icon={ArrowDownToLine}
                             valueClassName="text-lg"
                         />
-                        <DemoStatCard
+                        <StatCard
                             label="Pairs"
                             value={pairCount === 0 ? '—' : String(pairCount)}
                             hint={
@@ -351,7 +389,7 @@ export function ImportStockPage({
                             icon={Layers}
                         />
                         {lockBranch ? null : (
-                            <DemoStatCard
+                            <StatCard
                                 label="Branches"
                                 value={
                                     form.data.branch_ids.length === 0
@@ -368,7 +406,7 @@ export function ImportStockPage({
                                 valueClassName="truncate text-lg"
                             />
                         )}
-                        <DemoStatCard
+                        <StatCard
                             label="Products"
                             value={
                                 form.data.product_ids.length === 0

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Platform;
 
-use App\DataTables\BranchStaffDataTable;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreScopedPlatformBranchStaffRequest;
 use App\Http\Requests\Platform\UpdatePlatformBranchStaffRequest;
@@ -20,14 +19,14 @@ class BranchScopedStaffController extends Controller
     public function __construct(private BranchStaffService $branchStaffService) {}
 
     /**
-     * Display staff for a single branch.
+     * Send nested staff indexes to the global Staff list filtered by this branch.
      */
-    public function index(Request $request, Branch $branch): Response
+    public function index(Request $request, Branch $branch): RedirectResponse
     {
-        return Inertia::render('platform/branches/staff/index', [
-            'branch' => $branch->only(['id', 'name', 'slug', 'code']),
-            'table' => BranchStaffDataTable::forBranch($request, $branch),
-        ]);
+        return redirect()->route('platform.branch-staff.index', array_replace_recursive(
+            $request->query(),
+            ['filter' => ['branch_id' => $branch->id]],
+        ));
     }
 
     /**
@@ -174,6 +173,8 @@ class BranchScopedStaffController extends Controller
 
         Toast::success('Branch staff member deleted.');
 
-        return redirect()->route('platform.branches.staff.index', $branch);
+        return redirect()->route('platform.branch-staff.index', [
+            'filter' => ['branch_id' => $branch->id],
+        ]);
     }
 }

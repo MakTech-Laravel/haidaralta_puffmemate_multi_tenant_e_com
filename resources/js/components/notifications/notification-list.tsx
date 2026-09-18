@@ -8,10 +8,7 @@ import {
 import { NotificationTypeIcon } from '@/components/notifications/notification-type-icon';
 import type { NotificationItem } from '@/components/notifications/types';
 import { Button } from '@/components/ui/button';
-import {
-    ToggleGroup,
-    ToggleGroupItem,
-} from '@/components/ui/toggle-group';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 
 type NotificationFilter = 'all' | 'read' | 'unread';
@@ -97,7 +94,7 @@ export function NotificationList({
                                 <Link
                                     href={getItemHref(item)}
                                     prefetch
-                                    className="hover:opacity-90 min-w-0 flex-1"
+                                    className="min-w-0 flex-1 hover:opacity-90"
                                 >
                                     <div className="flex items-center gap-2">
                                         {!item.read ? (

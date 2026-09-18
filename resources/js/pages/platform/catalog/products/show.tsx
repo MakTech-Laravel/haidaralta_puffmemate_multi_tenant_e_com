@@ -1,12 +1,23 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { format, isValid, parseISO } from 'date-fns';
-import { Check, Copy, Network, Pencil, Plus, ScrollText, Settings2, Trash2 } from 'lucide-react';
+import {
+    Check,
+    Copy,
+    History,
+    Network,
+    Pencil,
+    Plus,
+    ScrollText,
+    Settings2,
+    Trash2,
+} from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
 import ProductVariantController from '@/actions/App/Http/Controllers/Platform/ProductVariantController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -112,7 +123,9 @@ type BranchRow = {
     quantity: number;
     selling_price: string | number | null;
     effective_price: string | number | null;
+    regular_price?: string | number | null;
     has_discount: boolean;
+    has_compare_at?: boolean;
     discount_type: string;
     discount_price: string | number | null;
     manage_url: string;
@@ -127,6 +140,15 @@ function listingPrice(row: BranchRow): ReactNode {
         return (
             <span className="tabular-nums">
                 <s className="text-muted-foreground">{row.selling_price}</s>{' '}
+                {row.effective_price ?? row.selling_price}
+            </span>
+        );
+    }
+
+    if (row.has_compare_at && row.regular_price != null) {
+        return (
+            <span className="tabular-nums">
+                <s className="text-muted-foreground">{row.regular_price}</s>{' '}
                 {row.effective_price ?? row.selling_price}
             </span>
         );
@@ -255,10 +277,7 @@ export default function PlatformProductsShow({
     const canManageBranches = can('manage-branch-inventories');
     const colorCode = normalizeCatalogColorPickerValue(product.color_code);
     const transparent = isTransparentColorPickerValue(colorCode);
-    const categories =
-        product.categories.length > 0
-            ? product.categories
-            : [];
+    const categories = product.categories.length > 0 ? product.categories : [];
 
     const branchQuery = useDataTableQuery({
         indexUrl: ProductController.show.url(product.slug),
@@ -328,22 +347,15 @@ export default function PlatformProductsShow({
                         contentClassName="w-56"
                         groups={[
                             {
-                                label: 'Catalog',
-                                items: [
-                                    {
-                                        label: 'Manage stock',
-                                        icon: Settings2,
-                                        href: row.original.manage_url,
-                                    },
-                                ],
-                            },
-                            {
                                 label: 'Stock',
                                 items: canManageBranches
                                     ? stockActionItems(
                                           {
+                                              manage: row.original.manage_url,
                                               transactions:
                                                   StockTransactionController.index.url(),
+                                              priceHistory:
+                                                  PriceHistoryController.index.url(),
                                           },
                                           {
                                               productId: product.id,
@@ -413,9 +425,7 @@ export default function PlatformProductsShow({
                 header: 'Status',
                 cell: ({ row }) => (
                     <Badge
-                        variant={
-                            row.original.status ? 'default' : 'secondary'
-                        }
+                        variant={row.original.status ? 'default' : 'secondary'}
                     >
                         {row.original.status ? 'Active' : 'Inactive'}
                     </Badge>
@@ -552,6 +562,19 @@ export default function PlatformProductsShow({
                                 </Link>
                             </Button>
                         ) : null}
+                        {canManageBranches ? (
+                            <Button variant="outline" asChild>
+                                <Link
+                                    href={stockPageUrl(
+                                        PriceHistoryController.index.url(),
+                                        { productId: product.id },
+                                    )}
+                                >
+                                    <History className="size-4" />
+                                    Price history
+                                </Link>
+                            </Button>
+                        ) : null}
                         {canManageCatalog ? (
                             <Button
                                 variant="outline"
@@ -662,7 +685,7 @@ export default function PlatformProductsShow({
                                             <span className="inline-flex items-center gap-2">
                                                 {transparent ? null : (
                                                     <span
-                                                        className="size-5 shrink-0 rounded-md border border-border/70"
+                                                        className="border-border/70 size-5 shrink-0 rounded-md border"
                                                         style={colorPickerStyle(
                                                             colorCode,
                                                         )}
@@ -848,81 +871,85 @@ export default function PlatformProductsShow({
                 </Card>
 
                 {catalog.show_product_variants ? (
-                <Card className="gap-4 py-5 shadow-sm">
-                    <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-5">
-                        <div className="flex flex-col gap-1.5">
-                            <CardTitle>Variants</CardTitle>
-                            <CardDescription>
-                                Purchasable SKUs and attribute combinations
-                            </CardDescription>
-                        </div>
-                        {canManageCatalog ? (
-                            <Button size="sm" onClick={openCreateVariant}>
-                                <Plus className="size-4" />
-                                Add variant
-                            </Button>
-                        ) : null}
-                    </CardHeader>
-                    <CardContent className="px-5">
-                        <DataTable
-                            columns={variantColumns}
-                            payload={variantsPayload}
-                            perPage={variantsPayload.per_page}
-                            onPerPageChange={() => undefined}
-                            showPagination={false}
-                            emptyMessage="No variants yet. Add one to define purchasable SKUs."
-                        />
-                    </CardContent>
-                </Card>
+                    <Card className="gap-4 py-5 shadow-sm">
+                        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 px-5">
+                            <div className="flex flex-col gap-1.5">
+                                <CardTitle>Variants</CardTitle>
+                                <CardDescription>
+                                    Purchasable SKUs and attribute combinations
+                                </CardDescription>
+                            </div>
+                            {canManageCatalog ? (
+                                <Button size="sm" onClick={openCreateVariant}>
+                                    <Plus className="size-4" />
+                                    Add variant
+                                </Button>
+                            ) : null}
+                        </CardHeader>
+                        <CardContent className="px-5">
+                            <DataTable
+                                columns={variantColumns}
+                                payload={variantsPayload}
+                                perPage={variantsPayload.per_page}
+                                onPerPageChange={() => undefined}
+                                showPagination={false}
+                                emptyMessage="No variants yet. Add one to define purchasable SKUs."
+                            />
+                        </CardContent>
+                    </Card>
                 ) : null}
             </div>
 
             {catalog.show_product_variants ? (
-            <Dialog
-                onOpenChange={(open) => {
-                    setVariantDialogOpen(open);
+                <Dialog
+                    open={variantDialogOpen}
+                    onOpenChange={(open) => {
+                        setVariantDialogOpen(open);
 
-                    if (!open) {
-                        setEditingVariant(null);
-                    }
-                }}
-            >
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {editingVariant ? 'Edit variant' : 'Add variant'}
-                        </DialogTitle>
-                        <DialogDescription>
-                            Variants define purchasable SKUs for {product.name}.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <VariantForm
-                        action={
-                            editingVariant
-                                ? ProductVariantController.update.form({
-                                      product: product.slug,
-                                      variant: editingVariant.id,
-                                  })
-                                : ProductVariantController.store.form(
-                                      product.slug,
-                                  )
+                        if (!open) {
+                            setEditingVariant(null);
                         }
-                        isEdit={editingVariant !== null}
-                        defaults={
-                            editingVariant
-                                ? {
-                                      name: editingVariant.name,
-                                      sku: editingVariant.sku,
-                                      attributes: editingVariant.attributes,
-                                      status: editingVariant.status,
-                                  }
-                                : undefined
-                        }
-                        onCancel={closeVariantDialog}
-                        onSuccess={closeVariantDialog}
-                    />
-                </DialogContent>
-            </Dialog>
+                    }}
+                >
+                    <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle>
+                                {editingVariant
+                                    ? 'Edit variant'
+                                    : 'Add variant'}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Variants define purchasable SKUs for{' '}
+                                {product.name}.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <VariantForm
+                            action={
+                                editingVariant
+                                    ? ProductVariantController.update.form({
+                                          product: product.slug,
+                                          variant: editingVariant.id,
+                                      })
+                                    : ProductVariantController.store.form(
+                                          product.slug,
+                                      )
+                            }
+                            isEdit={editingVariant !== null}
+                            defaults={
+                                editingVariant
+                                    ? {
+                                          name: editingVariant.name,
+                                          sku: editingVariant.sku,
+                                          attributes: editingVariant.attributes,
+                                          status: editingVariant.status,
+                                      }
+                                    : undefined
+                            }
+                            onCancel={closeVariantDialog}
+                            onSuccess={closeVariantDialog}
+                        />
+                    </DialogContent>
+                </Dialog>
             ) : null}
 
             <ConfirmDeleteDialog

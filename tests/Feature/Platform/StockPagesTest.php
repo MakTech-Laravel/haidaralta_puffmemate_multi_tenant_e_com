@@ -51,6 +51,11 @@ test('manage stock page with a pair renders inventory payload without transactio
             ->where('product.id', $this->product->id)
             ->where('product.name', $this->product->name)
             ->has('transactionsUrl')
+            ->where('priceHistoryUrl', route('platform.reports.price-history', [
+                'branch' => $this->branch->id,
+                'product' => $this->product->id,
+            ]))
+            ->missing('product.price_history')
             ->missing('transactions'));
 });
 
@@ -157,7 +162,25 @@ test('import stock adds the same quantity to every branch and product pair', fun
         'type' => 'stock_in',
         'quantity' => 3,
         'reason' => null,
+        'unit_cost' => null,
     ]);
+});
+
+test('import stock writes an optional buying price onto each new entry', function () {
+    config(['catalog.show_bulk_import' => true]);
+
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.stock.import.store'), [
+            'branch_ids' => [$this->branch->id, $melbourne->id],
+            'product_ids' => [$this->product->id],
+            'quantity' => 2,
+            'buying_price' => 6.4,
+        ])
+        ->assertRedirect();
+
+    expect(InventoryTransaction::query()->where('unit_cost', '6.40')->count())->toBe(2);
 });
 
 test('import stock rejects an empty product list', function () {
@@ -191,6 +214,7 @@ test('stock transactions ledger filters by the selected product', function () {
         $this->actingAs($this->admin, 'platform')
             ->post(route('platform.branches.products.inventory', [$this->branch, $product]), [
                 'type' => 'stock_in',
+                'buying_price' => 10,
                 'quantity' => 2,
             ])
             ->assertRedirect();
@@ -229,6 +253,7 @@ test('stock transactions ledger lists product and branch combinations and filter
     $this->actingAs($this->admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$this->branch, $this->product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 2,
         ])
         ->assertRedirect();
@@ -236,6 +261,7 @@ test('stock transactions ledger lists product and branch combinations and filter
     $this->actingAs($this->admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$melbourne, $other]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 5,
         ])
         ->assertRedirect();
@@ -273,6 +299,7 @@ test('stock transactions include the adjustment reason label and signed variance
     $this->actingAs($this->admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$this->branch, $this->product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 10,
         ])
         ->assertRedirect();
@@ -379,4 +406,146 @@ test('guests cannot open stock pages', function () {
     $this->get(route('platform.stock.import'))->assertRedirect(route('login'));
     $this->getJson(route('platform.stock.product-options'))->assertRedirect(route('login'));
     $this->getJson(route('platform.stock.branch-options'))->assertRedirect(route('login'));
+});
+
+test('guests cannot export stock transactions', function () {
+    $this->get(route('platform.reports.stock-transactions.export', [
+        'format' => 'csv',
+        'scope' => 'all',
+    ]))->assertRedirect(route('login'));
+});
+
+test('staff without inventory permission cannot export stock transactions', function () {
+    $user = User::factory()->create([
+        'user_type' => UserType::PLATFORM,
+        'email_verified_at' => now(),
+    ]);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
+    $user->assignRole(RoleEnum::STAFF->value);
+    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+    $this->actingAs($user, 'platform')
+        ->get(route('platform.reports.stock-transactions.export', [
+            'format' => 'csv',
+            'scope' => 'all',
+        ]))
+        ->assertForbidden();
+});
+
+test('stock transaction csv export all ignores product filters and excel is a spreadsheet', function () {
+    $this->travelTo('2026-09-18 12:00:00');
+
+    $other = Product::factory()->create(['sku' => 'EXPORT-OTHER']);
+
+    InventoryTransaction::factory()->create([
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'created_by' => $this->admin->id,
+    ]);
+    InventoryTransaction::factory()->create([
+        'branch_id' => $this->branch->id,
+        'product_id' => $other->id,
+        'created_by' => $this->admin->id,
+    ]);
+
+    $all = $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.reports.stock-transactions.export', [
+            'format' => 'csv',
+            'scope' => 'all',
+            'filter' => ['product_id' => $this->product->id],
+        ]));
+
+    $all->assertOk()->assertDownload('stock-transactions-all-2026-09-18.csv');
+    $allContents = file_get_contents($all->baseResponse->getFile()->getPathname());
+
+    expect($allContents)
+        ->toContain('Product')
+        ->toContain($this->product->name)
+        ->toContain('EXPORT-OTHER');
+
+    $filtered = $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.reports.stock-transactions.export', [
+            'format' => 'csv',
+            'scope' => 'filters',
+            'filter' => ['product_id' => $this->product->id],
+        ]));
+
+    $filtered->assertOk()->assertDownload('stock-transactions-filters-2026-09-18.csv');
+    $filteredContents = file_get_contents($filtered->baseResponse->getFile()->getPathname());
+
+    expect($filteredContents)
+        ->toContain($this->product->name)
+        ->not->toContain('EXPORT-OTHER');
+
+    $excel = $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.reports.stock-transactions.export', [
+            'format' => 'xlsx',
+            'scope' => 'page',
+            'per_page' => 15,
+            'page' => 1,
+        ]));
+
+    $excel->assertOk()->assertDownload('stock-transactions-page-2026-09-18.xlsx');
+
+    expect(substr(file_get_contents($excel->baseResponse->getFile()->getPathname()), 0, 2))->toBe('PK');
+});
+
+test('stock transaction csv export page respects per page and period requires dates', function () {
+    $this->travelTo('2026-09-18 12:00:00');
+
+    InventoryTransaction::factory()
+        ->count(16)
+        ->create([
+            'branch_id' => $this->branch->id,
+            'product_id' => $this->product->id,
+            'created_by' => $this->admin->id,
+            'created_at' => now(),
+        ]);
+
+    $page = $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.reports.stock-transactions.export', [
+            'format' => 'csv',
+            'scope' => 'page',
+            'per_page' => 15,
+            'page' => 1,
+        ]));
+
+    $page->assertOk();
+    $lines = preg_split("/\r\n|\n|\r/", trim(preg_replace('/^\xEF\xBB\xBF/', '', file_get_contents($page->baseResponse->getFile()->getPathname()))));
+
+    expect($lines)->toHaveCount(16);
+
+    $this->actingAs($this->admin, 'platform')
+        ->from(route('platform.reports.stock-transactions'))
+        ->get(route('platform.reports.stock-transactions.export', [
+            'format' => 'csv',
+            'scope' => 'period',
+        ]))
+        ->assertRedirect(route('platform.reports.stock-transactions'))
+        ->assertSessionHasErrors('filter.from');
+
+    InventoryTransaction::query()->update(['created_at' => now()->subDay()]);
+    InventoryTransaction::factory()->create([
+        'branch_id' => $this->branch->id,
+        'product_id' => $this->product->id,
+        'created_by' => $this->admin->id,
+        'created_at' => now(),
+    ]);
+
+    $period = $this->actingAs($this->admin, 'platform')
+        ->get(route('platform.reports.stock-transactions.export', [
+            'format' => 'csv',
+            'scope' => 'period',
+            'filter' => [
+                'from' => '2026-09-18',
+                'to' => '2026-09-18',
+                'product_id' => 999999,
+            ],
+        ]));
+
+    $period->assertOk();
+    $periodLines = preg_split("/\r\n|\n|\r/", trim(preg_replace('/^\xEF\xBB\xBF/', '', file_get_contents($period->baseResponse->getFile()->getPathname()))));
+
+    expect($periodLines)->toHaveCount(2);
 });

@@ -9,7 +9,30 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $branch_id
+ * @property int $product_id
+ * @property int|null $variant_id
+ * @property InventoryTransactionType $type
+ * @property InventoryAdjustmentReason|null $reason
+ * @property string|null $reason_note
+ * @property int $quantity
+ * @property int $before_quantity
+ * @property int $after_quantity
+ * @property string|null $unit_cost
+ * @property string|null $reference_type
+ * @property int|null $reference_id
+ * @property int|null $created_by
+ * @property Carbon|null $created_at
+ * @property-read Branch|null $branch
+ * @property-read Product|null $product
+ * @property-read ProductVariant|null $variant
+ * @property-read User|null $creator
+ * @property-read Model|null $reference
+ */
 class InventoryTransaction extends Model
 {
     /** @use HasFactory<InventoryTransactionFactory> */
@@ -30,6 +53,7 @@ class InventoryTransaction extends Model
         'quantity',
         'before_quantity',
         'after_quantity',
+        'unit_cost',
         'reference_type',
         'reference_id',
         'created_by',
@@ -87,6 +111,7 @@ class InventoryTransaction extends Model
             'quantity' => 'integer',
             'before_quantity' => 'integer',
             'after_quantity' => 'integer',
+            'unit_cost' => 'decimal:2',
             'created_at' => 'datetime',
         ];
     }

@@ -15,7 +15,7 @@ use Illuminate\Support\Collection;
 class DatabaseBackupZipDataTable
 {
     /** @var list<int> */
-    private const PER_PAGE_OPTIONS = [15, 25, 50];
+    private const PER_PAGE_OPTIONS = [15, 25, 50, 100];
 
     private const DEFAULT_PER_PAGE = 15;
 

@@ -22,21 +22,21 @@ export function ContactHero({ className }: ContactHeroProps) {
             )}
         >
             <div
-                className="absolute inset-0 bg-foreground bg-cover bg-center"
+                className="bg-foreground absolute inset-0 bg-cover bg-center"
                 style={{ backgroundImage: `url(${contactHero.image})` }}
                 aria-hidden
             />
             <div
-                className="absolute inset-0 bg-linear-to-r from-foreground/85 via-foreground/60 to-foreground/40"
+                className="from-foreground/85 via-foreground/60 to-foreground/40 absolute inset-0 bg-linear-to-r"
                 aria-hidden
             />
 
-            <div className="relative mx-auto flex min-h-[36vh] container items-center justify-between gap-8 px-4 py-14 sm:min-h-[42vh] sm:px-6 sm:py-16">
+            <div className="relative container mx-auto flex min-h-[36vh] items-center justify-between gap-8 px-4 py-14 sm:min-h-[42vh] sm:px-6 sm:py-16">
                 <div className="text-primary-foreground max-w-xl">
                     <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
                         {contactHero.title}
                     </h1>
-                    <p className="mt-4 max-w-md text-sm leading-relaxed opacity-90 sm:text-base font-normal font-inter">
+                    <p className="font-inter mt-4 max-w-md text-sm leading-relaxed font-normal opacity-90 sm:text-base">
                         {contactHero.subtitle}
                     </p>
                 </div>

@@ -53,8 +53,7 @@ export default function CustomerDashboard() {
             <div className="flex flex-col gap-8">
                 <div className="space-y-4">
                     <p className="text-foreground text-base">
-                        Hello{' '}
-                        <span className="font-semibold">{firstName}</span>
+                        Hello <span className="font-semibold">{firstName}</span>
                         <span className="hidden sm:inline">
                             {' '}
                             (Not {firstName}?{' '}
@@ -78,9 +77,7 @@ export default function CustomerDashboard() {
                             Shipping And Billing Addresses
                         </span>
                         , And Track Your{' '}
-                        <span className="text-primary font-medium">
-                            Orders
-                        </span>
+                        <span className="text-primary font-medium">Orders</span>
                         .
                     </p>
                 </div>

@@ -1,7 +1,8 @@
 import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
-import { Pencil, ScrollText, Settings2 } from 'lucide-react';
+import { History, Pencil, ScrollText, Settings2 } from 'lucide-react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Branch/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Branch/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import { BranchProductSummary } from '@/components/branch/branch-product-summary';
@@ -163,6 +164,22 @@ export default function BranchProductShow({
                             >
                                 <ScrollText className="size-4" />
                                 Stock transactions
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link
+                                href={stockPageUrl(
+                                    PriceHistoryController.index.url(
+                                        branch.slug,
+                                    ),
+                                    {
+                                        productId: product.id,
+                                        branchId: branch.id,
+                                    },
+                                )}
+                            >
+                                <History className="size-4" />
+                                Price history
                             </Link>
                         </Button>
                         <Button asChild>
