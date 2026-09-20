@@ -3,18 +3,12 @@ import { useState } from 'react';
 import { DriverOrderCard } from '@/components/driver/driver-order-card';
 import {
     driverOrderStatusLabel,
+    groupDriverAssignedOrdersByArea,
     type DriverAssignedOrder,
     type DriverOrderStatus,
 } from '@/components/driver/driver-order-types';
+import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from '@/components/ui/pagination';
 import {
     Select,
     SelectContent,
@@ -22,10 +16,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import { index as ordersIndex } from '@/routes/driver/orders';
-
-const PAGE_SIZE = 4;
 
 type StatusFilter = 'all' | DriverOrderStatus;
 
@@ -39,23 +30,12 @@ export default function DriverOrdersIndex({
     status = null,
 }: DriverOrdersIndexProps) {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-    const [page, setPage] = useState(1);
 
     const filteredOrders =
         statusFilter === 'all'
             ? orders
             : orders.filter((order) => order.status === statusFilter);
-
-    const totalPages = Math.max(
-        1,
-        Math.ceil(filteredOrders.length / PAGE_SIZE),
-    );
-    const currentPage = Math.min(Math.max(page, 1), totalPages);
-    const pageOrders = filteredOrders.slice(
-        (currentPage - 1) * PAGE_SIZE,
-        currentPage * PAGE_SIZE,
-    );
-    const showPagination = filteredOrders.length > PAGE_SIZE;
+    const areas = groupDriverAssignedOrdersByArea(filteredOrders);
 
     return (
         <>
@@ -66,6 +46,10 @@ export default function DriverOrdersIndex({
                     <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
                         Assigned orders
                     </h1>
+                    <p className="text-muted-foreground text-base">
+                        Admins batch a neighbourhood to one driver. Work one
+                        suburb at a time.
+                    </p>
                 </div>
 
                 {status ? (
@@ -80,7 +64,6 @@ export default function DriverOrdersIndex({
                         value={statusFilter}
                         onValueChange={(value) => {
                             setStatusFilter(value as StatusFilter);
-                            setPage(1);
                         }}
                     >
                         <SelectTrigger
@@ -113,82 +96,39 @@ export default function DriverOrdersIndex({
                         No orders with this status.
                     </p>
                 ) : (
-                    <>
-                        <ul className="flex flex-col gap-4">
-                            {pageOrders.map((order) => (
-                                <li key={order.id}>
-                                    <DriverOrderCard order={order} />
-                                </li>
-                            ))}
-                        </ul>
-
-                        {showPagination ? (
-                            <Pagination>
-                                <PaginationContent>
-                                    <PaginationItem>
-                                        <PaginationPrevious
-                                            href="#"
-                                            aria-disabled={currentPage <= 1}
-                                            className={cn(
-                                                currentPage <= 1 &&
-                                                    'pointer-events-none opacity-50',
-                                            )}
-                                            onClick={(event) => {
-                                                event.preventDefault();
-                                                if (currentPage > 1) {
-                                                    setPage(currentPage - 1);
-                                                }
-                                            }}
-                                        />
-                                    </PaginationItem>
-                                    {Array.from(
-                                        { length: totalPages },
-                                        (_, index) => {
-                                            const pageNumber = index + 1;
-
-                                            return (
-                                                <PaginationItem
-                                                    key={pageNumber}
-                                                >
-                                                    <PaginationLink
-                                                        href="#"
-                                                        isActive={
-                                                            pageNumber ===
-                                                            currentPage
-                                                        }
-                                                        onClick={(event) => {
-                                                            event.preventDefault();
-                                                            setPage(pageNumber);
-                                                        }}
-                                                    >
-                                                        {pageNumber}
-                                                    </PaginationLink>
-                                                </PaginationItem>
-                                            );
-                                        },
-                                    )}
-                                    <PaginationItem>
-                                        <PaginationNext
-                                            href="#"
-                                            aria-disabled={
-                                                currentPage >= totalPages
-                                            }
-                                            className={cn(
-                                                currentPage >= totalPages &&
-                                                    'pointer-events-none opacity-50',
-                                            )}
-                                            onClick={(event) => {
-                                                event.preventDefault();
-                                                if (currentPage < totalPages) {
-                                                    setPage(currentPage + 1);
-                                                }
-                                            }}
-                                        />
-                                    </PaginationItem>
-                                </PaginationContent>
-                            </Pagination>
-                        ) : null}
-                    </>
+                    <div className="flex flex-col gap-8">
+                        {areas.map((area) => (
+                            <section
+                                key={area.id}
+                                className="flex flex-col gap-3"
+                            >
+                                <div className="flex flex-wrap items-end justify-between gap-2">
+                                    <div className="space-y-0.5">
+                                        <h2 className="text-foreground text-lg font-semibold">
+                                            {area.label}
+                                        </h2>
+                                        <p className="text-muted-foreground text-sm">
+                                            {area.remainingCount} left ·{' '}
+                                            {area.orderCount} assigned
+                                        </p>
+                                    </div>
+                                    <Badge variant="secondary">
+                                        {area.orderCount}{' '}
+                                        {area.orderCount === 1
+                                            ? 'drop'
+                                            : 'drops'}
+                                    </Badge>
+                                </div>
+                                <ul className="flex flex-col gap-4">
+                                    {area.orders.map((order) => (
+                                        <li key={order.id}>
+                                            <DriverOrderCard order={order} />
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        ))}
+                    </div>
                 )}
             </div>
         </>

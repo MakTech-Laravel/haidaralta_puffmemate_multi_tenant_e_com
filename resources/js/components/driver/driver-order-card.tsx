@@ -32,16 +32,19 @@ export function DriverOrderCard({ order }: DriverOrderCardProps) {
                             {order.customerName}
                         </h2>
                     </div>
-                    <Badge
-                        className={cn(
-                            'rounded-sm px-2.5 py-0.5 text-base font-medium',
-                            isDelivered
-                                ? 'bg-muted-foreground/15 text-foreground border-transparent'
-                                : 'bg-primary text-primary-foreground border-transparent',
-                        )}
-                    >
-                        {driverOrderStatusLabel[order.status]}
-                    </Badge>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                        <Badge variant="outline">{order.areaLabel}</Badge>
+                        <Badge
+                            className={cn(
+                                'rounded-sm px-2.5 py-0.5 text-base font-medium',
+                                isDelivered
+                                    ? 'bg-muted-foreground/15 text-foreground border-transparent'
+                                    : 'bg-primary text-primary-foreground border-transparent',
+                            )}
+                        >
+                            {driverOrderStatusLabel[order.status]}
+                        </Badge>
+                    </div>
                 </div>
 
                 <p className="text-muted-foreground text-base leading-snug">

@@ -202,6 +202,7 @@ export function DriverOrderChatPanel({
                             <h1 className="text-foreground truncate text-lg font-semibold tracking-tight sm:text-xl">
                                 {order.customerName}
                             </h1>
+                            <Badge variant="outline">{order.areaLabel}</Badge>
                             <Badge
                                 className={cn(
                                     'rounded-sm px-2 py-0.5 text-sm font-medium',

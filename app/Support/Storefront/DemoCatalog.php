@@ -820,6 +820,8 @@ class DemoCatalog
      *     orderNumber: string,
      *     status: string,
      *     customerName: string,
+     *     areaId: string,
+     *     areaLabel: string,
      *     addressSummary: string,
      *     windowLabel: string,
      *     productCount: int,
@@ -834,6 +836,8 @@ class DemoCatalog
                 'orderNumber' => $order['orderNumber'],
                 'status' => $order['status'],
                 'customerName' => $order['customerName'],
+                'areaId' => $order['areaId'],
+                'areaLabel' => $order['areaLabel'],
                 'addressSummary' => $order['addressSummary'],
                 'windowLabel' => $order['windowLabel'],
                 'productCount' => $order['productCount'],
@@ -841,6 +845,110 @@ class DemoCatalog
             ],
             self::driverOrderCatalog(),
         );
+    }
+
+    /**
+     * One driver carries every drop in an area. Admins do not split
+     * same-neighbourhood orders across riders.
+     *
+     * @return list<array{
+     *     id: string,
+     *     label: string,
+     *     orderCount: int,
+     *     remainingCount: int,
+     *     deliveredCount: int,
+     *     remaining: list<array<string, mixed>>,
+     *     delivered: list<array<string, mixed>>,
+     *     orders: list<array<string, mixed>>
+     * }>
+     */
+    public static function driverAssignedAreas(): array
+    {
+        $buckets = [];
+
+        foreach (self::driverAssignedOrders() as $order) {
+            $areaId = $order['areaId'];
+
+            if (! isset($buckets[$areaId])) {
+                $buckets[$areaId] = [
+                    'id' => $areaId,
+                    'label' => $order['areaLabel'],
+                    'orders' => [],
+                ];
+            }
+
+            $buckets[$areaId]['orders'][] = $order;
+        }
+
+        return array_values(array_map(static function (array $area): array {
+            $orders = $area['orders'];
+            $remaining = array_values(array_filter(
+                $orders,
+                static fn (array $order): bool => $order['status'] !== 'delivered',
+            ));
+            $delivered = array_values(array_filter(
+                $orders,
+                static fn (array $order): bool => $order['status'] === 'delivered',
+            ));
+
+            return [
+                'id' => $area['id'],
+                'label' => $area['label'],
+                'orderCount' => count($orders),
+                'remainingCount' => count($remaining),
+                'deliveredCount' => count($delivered),
+                'remaining' => $remaining,
+                'delivered' => $delivered,
+                'orders' => $orders,
+            ];
+        }, $buckets));
+    }
+
+    /**
+     * @param  list<array{remaining: list<array<string, mixed>>, delivered: list<array<string, mixed>>}>  $areas
+     * @return list<array<string, mixed>>
+     */
+    public static function flattenDriverAreaOrders(array $areas, string $key): array
+    {
+        $orders = [];
+
+        foreach ($areas as $area) {
+            foreach ($area[$key] as $order) {
+                $orders[] = $order;
+            }
+        }
+
+        return $orders;
+    }
+
+    /**
+     * Neighbourhood still in progress, then later suburbs on the same run.
+     *
+     * @return array{current: array<string, mixed>|null, later: list<array<string, mixed>>}
+     */
+    public static function driverRunAreas(): array
+    {
+        $current = null;
+        $later = [];
+
+        foreach (self::driverAssignedAreas() as $area) {
+            if ($area['remainingCount'] === 0) {
+                continue;
+            }
+
+            if ($current === null) {
+                $current = $area;
+
+                continue;
+            }
+
+            $later[] = $area;
+        }
+
+        return [
+            'current' => $current,
+            'later' => $later,
+        ];
     }
 
     /**
@@ -864,8 +972,8 @@ class DemoCatalog
     {
         return [
             'online' => true,
-            'etaNext' => '8 min',
-            'kmToday' => '18.4 km',
+            'etaNext' => '6 min',
+            'kmToday' => '8.1 km',
             'supportPhone' => '+61418001100',
             'branchPhone' => '+61290001200',
             'shift' => [
@@ -875,8 +983,8 @@ class DemoCatalog
                 'branch' => 'Sydney CBD',
             ],
             'earnings' => [
-                'todayLabel' => '$86.40',
-                'weekLabel' => '$412.10',
+                'todayLabel' => '$194.40',
+                'weekLabel' => '$612.10',
                 'tipsLabel' => '$18.00',
                 'perStopLabel' => '$21.60',
             ],
@@ -895,6 +1003,11 @@ class DemoCatalog
                 'docsOk' => true,
             ],
             'alerts' => [
+                [
+                    'id' => 'area',
+                    'title' => 'Surry Hills is one run',
+                    'body' => 'Seven drops in the same suburb are yours — finish Surry Hills before Darlinghurst.',
+                ],
                 [
                     'id' => 'weather',
                     'title' => 'Light rain after 4 PM',
@@ -918,6 +1031,8 @@ class DemoCatalog
      *     status: string,
      *     statusLabel: string,
      *     customerName: string,
+     *     areaId: string,
+     *     areaLabel: string,
      *     addressSummary: string,
      *     windowLabel: string,
      *     productCount: int,
@@ -1052,6 +1167,8 @@ class DemoCatalog
      *     status: string,
      *     statusLabel: string,
      *     customerName: string,
+     *     areaId: string,
+     *     areaLabel: string,
      *     addressSummary: string,
      *     windowLabel: string,
      *     productCount: int,
@@ -1065,6 +1182,9 @@ class DemoCatalog
      */
     private static function driverOrderCatalog(): array
     {
+        $surryHills = 'area-surry-hills';
+        $darlinghurst = 'area-darlinghurst';
+
         return [
             [
                 'id' => 'drv-ord-1001',
@@ -1072,7 +1192,9 @@ class DemoCatalog
                 'status' => 'out_for_delivery',
                 'statusLabel' => 'Out for delivery',
                 'customerName' => 'Elena Vargas',
-                'addressSummary' => '418 Pine St, Sydney',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '418 Crown St, Surry Hills',
                 'windowLabel' => 'Today · 2:00–3:00 PM',
                 'productCount' => 3,
                 'totalLabel' => '$24.50',
@@ -1080,11 +1202,11 @@ class DemoCatalog
                 'notes' => 'Call on arrival; leave with concierge if no answer.',
                 'demoOtpHint' => '482913',
                 'shippingAddress' => [
-                    'line1' => '418 Pine Street',
+                    'line1' => '418 Crown Street',
                     'line2' => 'Apartment 4B',
-                    'city' => 'Sydney',
+                    'city' => 'Surry Hills',
                     'region' => 'NSW',
-                    'postalCode' => '2000',
+                    'postalCode' => '2010',
                     'country' => 'Australia',
                 ],
                 'products' => [
@@ -1099,19 +1221,21 @@ class DemoCatalog
                 'status' => 'arrived',
                 'statusLabel' => 'Arrived',
                 'customerName' => 'Chris Thompson',
-                'addressSummary' => '90 Harbor Ave, Sydney',
-                'windowLabel' => 'Today · 3:15–4:00 PM',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '90 Foveaux St, Surry Hills',
+                'windowLabel' => 'Today · 2:15–3:00 PM',
                 'productCount' => 2,
                 'totalLabel' => '$16.80',
                 'phone' => '+61418123344',
                 'notes' => null,
                 'demoOtpHint' => '719204',
                 'shippingAddress' => [
-                    'line1' => '90 Harbor Avenue',
+                    'line1' => '90 Foveaux Street',
                     'line2' => null,
-                    'city' => 'Sydney',
+                    'city' => 'Surry Hills',
                     'region' => 'NSW',
-                    'postalCode' => '2000',
+                    'postalCode' => '2010',
                     'country' => 'Australia',
                 ],
                 'products' => [
@@ -1125,8 +1249,10 @@ class DemoCatalog
                 'status' => 'out_for_delivery',
                 'statusLabel' => 'Out for delivery',
                 'customerName' => 'Priya Nair',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
                 'addressSummary' => '12 Market Row, Surry Hills',
-                'windowLabel' => 'Today · 4:30–5:30 PM',
+                'windowLabel' => 'Today · 2:30–3:30 PM',
                 'productCount' => 4,
                 'totalLabel' => '$31.20',
                 'phone' => '+61419112233',
@@ -1153,7 +1279,9 @@ class DemoCatalog
                 'status' => 'delivered',
                 'statusLabel' => 'Delivered',
                 'customerName' => 'James Okonkwo',
-                'addressSummary' => '7 West Dock, Pyrmont',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '18 Fitzroy St, Surry Hills',
                 'windowLabel' => 'Today · Completed',
                 'productCount' => 1,
                 'totalLabel' => '$8.90',
@@ -1161,15 +1289,98 @@ class DemoCatalog
                 'notes' => null,
                 'demoOtpHint' => '664021',
                 'shippingAddress' => [
-                    'line1' => '7 West Dock',
+                    'line1' => '18 Fitzroy Street',
                     'line2' => 'Level 3',
-                    'city' => 'Pyrmont',
+                    'city' => 'Surry Hills',
                     'region' => 'NSW',
-                    'postalCode' => '2009',
+                    'postalCode' => '2010',
                     'country' => 'Australia',
                 ],
                 'products' => [
                     ['name' => 'Camel Blue', 'quantityLabel' => '×1', 'priceLabel' => '$8.90'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1006',
+                'orderNumber' => 'POM-DRV-1006',
+                'status' => 'out_for_delivery',
+                'statusLabel' => 'Out for delivery',
+                'customerName' => 'Liam Nguyen',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '24 Albion St, Surry Hills',
+                'windowLabel' => 'Today · 3:00–4:00 PM',
+                'productCount' => 2,
+                'totalLabel' => '$18.20',
+                'phone' => '+61413224455',
+                'notes' => 'Leave with the cafe if the shop is closed.',
+                'demoOtpHint' => '551902',
+                'shippingAddress' => [
+                    'line1' => '24 Albion Street',
+                    'line2' => 'Unit 8',
+                    'city' => 'Surry Hills',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Marlboro Gold', 'quantityLabel' => '×2', 'priceLabel' => '$12.00'],
+                    ['name' => 'Clipper Classic', 'quantityLabel' => '×1', 'priceLabel' => '$6.20'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1007',
+                'orderNumber' => 'POM-DRV-1007',
+                'status' => 'out_for_delivery',
+                'statusLabel' => 'Out for delivery',
+                'customerName' => 'Sophie Bennett',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '55 Devonshire St, Surry Hills',
+                'windowLabel' => 'Today · 3:30–4:30 PM',
+                'productCount' => 2,
+                'totalLabel' => '$22.40',
+                'phone' => '+61417667788',
+                'notes' => null,
+                'demoOtpHint' => '774310',
+                'shippingAddress' => [
+                    'line1' => '55 Devonshire Street',
+                    'line2' => null,
+                    'city' => 'Surry Hills',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Dunhill Red', 'quantityLabel' => '×2', 'priceLabel' => '$15.00'],
+                    ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$7.40'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1008',
+                'orderNumber' => 'POM-DRV-1008',
+                'status' => 'arrived',
+                'statusLabel' => 'Arrived',
+                'customerName' => 'Tom Richter',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '7 Davies St, Surry Hills',
+                'windowLabel' => 'Today · 4:00–4:45 PM',
+                'productCount' => 1,
+                'totalLabel' => '$9.50',
+                'phone' => '+61419880011',
+                'notes' => 'Buzzer labelled Richter.',
+                'demoOtpHint' => '229184',
+                'shippingAddress' => [
+                    'line1' => '7 Davies Street',
+                    'line2' => null,
+                    'city' => 'Surry Hills',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Camel Blue', 'quantityLabel' => '×1', 'priceLabel' => '$9.50'],
                 ],
             ],
             [
@@ -1178,6 +1389,8 @@ class DemoCatalog
                 'status' => 'out_for_delivery',
                 'statusLabel' => 'Out for delivery',
                 'customerName' => 'Sabrina Walsh',
+                'areaId' => $darlinghurst,
+                'areaLabel' => 'Darlinghurst',
                 'addressSummary' => '41 Oxford St, Darlinghurst',
                 'windowLabel' => 'Today · 6:00–7:00 PM',
                 'productCount' => 2,
@@ -1196,6 +1409,63 @@ class DemoCatalog
                 'products' => [
                     ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$7.00'],
                     ['name' => 'Marlboro Gold', 'quantityLabel' => '×1', 'priceLabel' => '$8.40'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1009',
+                'orderNumber' => 'POM-DRV-1009',
+                'status' => 'out_for_delivery',
+                'statusLabel' => 'Out for delivery',
+                'customerName' => 'Daniel Rossi',
+                'areaId' => $darlinghurst,
+                'areaLabel' => 'Darlinghurst',
+                'addressSummary' => '28 Flinders St, Darlinghurst',
+                'windowLabel' => 'Today · 6:15–7:00 PM',
+                'productCount' => 2,
+                'totalLabel' => '$14.80',
+                'phone' => '+61414443322',
+                'notes' => null,
+                'demoOtpHint' => '640821',
+                'shippingAddress' => [
+                    'line1' => '28 Flinders Street',
+                    'line2' => null,
+                    'city' => 'Darlinghurst',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Benson & Hedges Gold', 'quantityLabel' => '×1', 'priceLabel' => '$7.00'],
+                    ['name' => 'Clipper Classic', 'quantityLabel' => '×1', 'priceLabel' => '$7.80'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1010',
+                'orderNumber' => 'POM-DRV-1010',
+                'status' => 'out_for_delivery',
+                'statusLabel' => 'Out for delivery',
+                'customerName' => 'Hannah Clarke',
+                'areaId' => $darlinghurst,
+                'areaLabel' => 'Darlinghurst',
+                'addressSummary' => '6 Burton St, Darlinghurst',
+                'windowLabel' => 'Today · 6:30–7:15 PM',
+                'productCount' => 3,
+                'totalLabel' => '$19.60',
+                'phone' => '+61412229900',
+                'notes' => 'Park on Burton; loading zone after 6.',
+                'demoOtpHint' => '337560',
+                'shippingAddress' => [
+                    'line1' => '6 Burton Street',
+                    'line2' => 'Apartment 2',
+                    'city' => 'Darlinghurst',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Marlboro Gold', 'quantityLabel' => '×1', 'priceLabel' => '$6.00'],
+                    ['name' => 'Dunhill Red', 'quantityLabel' => '×1', 'priceLabel' => '$7.50'],
+                    ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$6.10'],
                 ],
             ],
         ];

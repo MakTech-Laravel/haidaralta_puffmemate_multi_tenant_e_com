@@ -15,12 +15,16 @@ class DashboardController extends Controller
     public function index(): Response
     {
         $orders = DemoCatalog::driverAssignedOrders();
+        $areas = DemoCatalog::driverAssignedAreas();
+        $run = DemoCatalog::driverRunAreas();
+        $currentArea = $run['current'];
         $activeOrders = array_values(array_filter(
             $orders,
             static fn (array $order): bool => $order['status'] !== 'delivered',
         ));
-        $deliveredCount = count($orders) - count($activeOrders);
-        $nextStop = $activeOrders[0] ?? null;
+        $nextStop = $currentArea !== null
+            ? ($currentArea['remaining'][0] ?? null)
+            : ($activeOrders[0] ?? null);
         $nextDetail = $nextStop !== null
             ? DemoCatalog::driverOrderDetail($nextStop['id'])
             : null;
@@ -28,10 +32,15 @@ class DashboardController extends Controller
         return Inertia::render('driver/dashboard', [
             'summary' => [
                 'activeCount' => count($activeOrders),
-                'deliveredCount' => $deliveredCount,
+                'deliveredCount' => count($orders) - count($activeOrders),
                 'assignedCount' => count($orders),
+                'areaCount' => count($areas),
                 'nextStop' => $nextStop,
-                'activeOrders' => array_slice($activeOrders, 0, 4),
+                'activeOrders' => $currentArea !== null
+                    ? $currentArea['remaining']
+                    : array_slice($activeOrders, 0, 6),
+                'currentArea' => $currentArea,
+                'laterAreas' => $run['later'],
             ],
             'hub' => [
                 ...DemoCatalog::driverDashboardHub(),

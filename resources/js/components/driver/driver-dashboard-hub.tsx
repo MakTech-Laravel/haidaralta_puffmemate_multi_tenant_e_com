@@ -19,6 +19,7 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 import {
+    driverAreaMapsQuery,
     driverOrderStatusLabel,
     type DriverDashboardHub,
     type DriverDashboardSummary,
@@ -78,17 +79,24 @@ export function DriverDashboardHub({
     const [online, setOnline] = useState(hub.online);
     const firstName = user?.name.split(/\s+/u)[0] ?? 'there';
     const nextStop = summary.nextStop;
+    const currentArea = summary.currentArea;
     const assignedCount = summary.assignedCount;
     const progressPercent =
         assignedCount > 0
             ? Math.round((summary.deliveredCount / assignedCount) * 100)
+            : 0;
+    const areaProgressPercent =
+        currentArea && currentArea.orderCount > 0
+            ? Math.round(
+                  (currentArea.deliveredCount / currentArea.orderCount) * 100,
+              )
             : 0;
 
     const quickActions = [
         {
             id: 'route',
             label: 'Route',
-            hint: 'Today’s stops',
+            hint: 'Suburb sequence',
             href: routeIndex.url(),
             icon: Navigation,
         },
@@ -195,42 +203,71 @@ export function DriverDashboardHub({
             <div className="flex flex-col gap-3">
                 {hub.alerts.map((alert) => (
                     <Alert key={alert.id}>
-                        {alert.id === 'weather' ? <CloudRain /> : <Shield />}
+                        {alert.id === 'weather' ? (
+                            <CloudRain />
+                        ) : alert.id === 'area' ? (
+                            <MapPin />
+                        ) : (
+                            <Shield />
+                        )}
                         <AlertTitle>{alert.title}</AlertTitle>
                         <AlertDescription>{alert.body}</AlertDescription>
                     </Alert>
                 ))}
             </div>
 
-            {nextStop ? (
+            {currentArea && nextStop ? (
                 <Card className="ring-primary gap-4 py-4 shadow-none ring-2">
                     <CardHeader className="gap-2 px-4">
                         <div className="flex flex-wrap items-center gap-2">
-                            <Badge>Next stop</Badge>
-                            <Badge variant="outline">
-                                {driverOrderStatusLabel[nextStop.status]}
-                            </Badge>
-                            <Badge variant="secondary">{hub.etaNext} away</Badge>
+                            <Badge>Current area</Badge>
+                            <Badge variant="secondary">{hub.etaNext} to first drop</Badge>
                         </div>
                         <CardTitle className="text-lg leading-snug sm:text-xl">
-                            {nextStop.customerName}
+                            {currentArea.label}
                         </CardTitle>
                         <CardDescription className="flex items-start gap-1.5 text-sm">
                             <MapPin className="mt-0.5 size-3.5 shrink-0" />
-                            {nextStop.addressSummary}
+                            {currentArea.remainingCount} of {currentArea.orderCount}{' '}
+                            {currentArea.orderCount === 1 ? 'drop' : 'drops'} still
+                            in this suburb
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 px-4">
-                        <p className="text-muted-foreground text-sm">
-                            {nextStop.windowLabel} · {nextStop.productCount}{' '}
-                            {nextStop.productCount === 1 ? 'item' : 'items'} ·{' '}
-                            {nextStop.totalLabel}
-                        </p>
+                        <div className="bg-muted/60 space-y-1 rounded-lg p-3">
+                            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                                First drop
+                            </p>
+                            <p className="text-foreground font-medium">
+                                {nextStop.customerName}
+                            </p>
+                            <p className="text-muted-foreground text-sm leading-snug">
+                                {nextStop.addressSummary}
+                            </p>
+                            <p className="text-muted-foreground text-sm">
+                                {nextStop.windowLabel} · {nextStop.productCount}{' '}
+                                {nextStop.productCount === 1 ? 'item' : 'items'} ·{' '}
+                                {nextStop.totalLabel}
+                            </p>
+                        </div>
                         {hub.nextNotes ? (
                             <p className="text-foreground text-sm leading-relaxed">
                                 Note: {hub.nextNotes}
                             </p>
                         ) : null}
+                        <div className="space-y-1.5">
+                            <div className="text-muted-foreground flex items-center justify-between text-xs">
+                                <span>{currentArea.label} progress</span>
+                                <span>
+                                    {currentArea.deliveredCount} of{' '}
+                                    {currentArea.orderCount} delivered
+                                </span>
+                            </div>
+                            <Progress
+                                value={areaProgressPercent}
+                                aria-label={`${currentArea.label} delivery progress`}
+                            />
+                        </div>
                         <div className="space-y-1.5">
                             <div className="text-muted-foreground flex items-center justify-between text-xs">
                                 <span>Shift progress</span>
@@ -254,7 +291,7 @@ export function DriverDashboardHub({
                         >
                             <Link href={orderShow.url(nextStop.id)} prefetch>
                                 <Navigation data-icon="inline-start" />
-                                Open order
+                                Open first drop
                             </Link>
                         </Button>
                         <Button
@@ -265,12 +302,14 @@ export function DriverDashboardHub({
                             asChild
                         >
                             <a
-                                href={mapsSearchUrl(nextStop.addressSummary)}
+                                href={mapsSearchUrl(
+                                    driverAreaMapsQuery(currentArea.label),
+                                )}
                                 target="_blank"
                                 rel="noreferrer"
                             >
                                 <MapPin data-icon="inline-start" />
-                                Navigate
+                                Navigate to area
                             </a>
                         </Button>
                         <Button
@@ -351,7 +390,7 @@ export function DriverDashboardHub({
                         icon: MapPin,
                         label: 'Stops left',
                         value: String(summary.activeCount),
-                        hint: `${assignedCount} assigned`,
+                        hint: `${summary.areaCount} ${summary.areaCount === 1 ? 'area' : 'areas'}`,
                     },
                     {
                         icon: Navigation,
@@ -439,10 +478,14 @@ export function DriverDashboardHub({
 
             <Card className="gap-3 py-4 shadow-none">
                 <CardHeader className="gap-1 px-4">
-                    <CardTitle className="text-base">Upcoming stops</CardTitle>
+                    <CardTitle className="text-base">
+                        {currentArea
+                            ? `Drops in ${currentArea.label}`
+                            : 'Upcoming stops'}
+                    </CardTitle>
                     <CardDescription>
-                        Next in your assigned run. Open Route for the full
-                        sequence.
+                        Same-suburb orders stay on your run. Finish this
+                        neighbourhood before the next one.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col px-4">
@@ -510,6 +553,41 @@ export function DriverDashboardHub({
                     </Button>
                 </CardFooter>
             </Card>
+
+            {summary.laterAreas.length > 0 ? (
+                <Card className="gap-3 py-4 shadow-none">
+                    <CardHeader className="gap-1 px-4">
+                        <CardTitle className="text-base">Later areas</CardTitle>
+                        <CardDescription>
+                            Stay in the current suburb until these batches
+                            start.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-3 px-4">
+                        {summary.laterAreas.map((area) => (
+                            <div
+                                key={area.id}
+                                className="border-border space-y-2 rounded-lg border p-3"
+                            >
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <p className="font-medium">{area.label}</p>
+                                    <Badge variant="secondary">
+                                        {area.remainingCount}{' '}
+                                        {area.remainingCount === 1
+                                            ? 'drop'
+                                            : 'drops'}
+                                    </Badge>
+                                </div>
+                                <p className="text-muted-foreground text-sm leading-snug">
+                                    {area.remaining
+                                        .map((order) => order.customerName)
+                                        .join(' · ')}
+                                </p>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            ) : null}
 
             <div className="grid gap-3 xl:grid-cols-2">
                 <Card className="gap-3 py-4 shadow-none">

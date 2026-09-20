@@ -16,10 +16,11 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/color-picker/** | .ai/rules/color-picker.md |
 | resources/js/pages/**/permissions/**, resources/js/components/admin/permission-groups-table.tsx | .ai/rules/components-admin.md |
 | resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx | .ai/rules/components-branch.md |
-| resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx} | .ai/rules/components-driver.md |
+| resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx}, resources/js/components/driver/** | .ai/rules/components-driver.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/components-stock.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
 | config/scout.php | .ai/rules/config.md |
+| app/Http/Controllers/Driver/** | .ai/rules/controllers-driver.md |
 | app/Http/Controllers/Platform/AdminController.php, app/Http/Controllers/Platform/BranchStaffController.php | .ai/rules/controllers-platform.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
 | app/Services/Conversation/**,resources/js/components/conversation/** | .ai/rules/conversation.md |
@@ -51,6 +52,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Models/**.php | .ai/rules/models.md |
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx | .ai/rules/orders.md |
+| resources/js/pages/driver/** | .ai/rules/pages-driver.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | app/Http/Controllers/{Platform,Branch}/**, app/Http/Controllers/{Platform,Branch}/*Driver*.php | .ai/rules/platform-branch.md |
 | resources/js/lib/stock-query.ts, resources/js/pages/**/products/index.tsx, resources/js/pages/platform/catalog/products/branches.tsx | .ai/rules/platform-catalog-products.md |
@@ -72,5 +74,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/stock.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts | .ai/rules/storefront.md |
+| app/Support/Storefront/DemoCatalog.php | .ai/rules/support-storefront.md |
 | app/Support/OpsDashboardAccess.php, config/cache.php | .ai/rules/support.md |
 | resources/js/components/ui/{time-picker,wheel-picker}.tsx | .ai/rules/ui.md |

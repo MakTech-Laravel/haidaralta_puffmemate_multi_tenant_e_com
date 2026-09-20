@@ -36,17 +36,20 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                         <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
                             {order.customerName}
                         </h1>
-                        <Badge
-                            className={cn(
-                                'rounded-sm px-2.5 py-0.5 text-base font-medium',
-                                isDelivered
-                                    ? 'bg-muted-foreground/15 text-foreground border-transparent'
-                                    : 'bg-primary text-primary-foreground border-transparent',
-                            )}
-                        >
-                            {order.statusLabel ??
-                                driverOrderStatusLabel[order.status]}
-                        </Badge>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline">{order.areaLabel}</Badge>
+                            <Badge
+                                className={cn(
+                                    'rounded-sm px-2.5 py-0.5 text-base font-medium',
+                                    isDelivered
+                                        ? 'bg-muted-foreground/15 text-foreground border-transparent'
+                                        : 'bg-primary text-primary-foreground border-transparent',
+                                )}
+                            >
+                                {order.statusLabel ??
+                                    driverOrderStatusLabel[order.status]}
+                            </Badge>
+                        </div>
                     </div>
                     <Button
                         type="button"

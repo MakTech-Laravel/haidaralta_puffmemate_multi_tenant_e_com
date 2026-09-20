@@ -24,7 +24,10 @@ test('drivers can view assigned orders index', function () {
             ->has('orders.0.id')
             ->has('orders.0.orderNumber')
             ->has('orders.0.status')
-            ->has('orders.0.customerName'));
+            ->has('orders.0.customerName')
+            ->has('orders.0.areaId')
+            ->where('orders.0.areaLabel', 'Surry Hills')
+            ->has('orders', 10));
 });
 
 test('drivers can view an assigned order detail', function () {
@@ -40,6 +43,7 @@ test('drivers can view an assigned order detail', function () {
             ->component('driver/orders/show')
             ->where('order.id', 'drv-ord-1001')
             ->where('order.orderNumber', 'POM-DRV-1001')
+            ->where('order.areaLabel', 'Surry Hills')
             ->has('order.products')
             ->has('order.demoOtpHint')
             ->has('order.shippingAddress'));
@@ -64,6 +68,7 @@ test('drivers can open chat for an assigned order', function () {
             ->where('order.id', 'drv-ord-1001')
             ->where('order.orderNumber', 'POM-DRV-1001')
             ->where('order.customerName', 'Elena Vargas')
+            ->where('order.areaLabel', 'Surry Hills')
             ->where('viewerId', $driver->id)
             ->where('canSend', true)
             ->has('messages')
@@ -155,8 +160,14 @@ test('driver dashboard receives assigned order summary', function () {
             ->has('summary.activeCount')
             ->has('summary.deliveredCount')
             ->has('summary.assignedCount')
+            ->has('summary.areaCount')
             ->has('summary.activeOrders')
             ->has('summary.nextStop')
+            ->where('summary.currentArea.label', 'Surry Hills')
+            ->where('summary.currentArea.remainingCount', 6)
+            ->where('summary.laterAreas.0.label', 'Darlinghurst')
+            ->where('summary.nextStop.customerName', 'Elena Vargas')
+            ->where('summary.nextStop.areaLabel', 'Surry Hills')
             ->has('hub.shift.label')
             ->has('hub.earnings.todayLabel')
             ->has('hub.performance.rating')

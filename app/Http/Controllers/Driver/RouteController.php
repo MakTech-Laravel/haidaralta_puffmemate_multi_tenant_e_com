@@ -10,24 +10,21 @@ use Inertia\Response;
 class RouteController extends Controller
 {
     /**
-     * Sequenced stops for this shift. The center field tab — not a GPS map yet.
+     * Sequenced neighbourhood batches for this shift. The center field tab — not a GPS map yet.
      */
     public function index(): Response
     {
-        $orders = DemoCatalog::driverAssignedOrders();
-        $remaining = array_values(array_filter(
-            $orders,
-            static fn (array $order): bool => $order['status'] !== 'delivered',
-        ));
-        $completed = array_values(array_filter(
-            $orders,
-            static fn (array $order): bool => $order['status'] === 'delivered',
-        ));
+        $areas = DemoCatalog::driverAssignedAreas();
+        $run = DemoCatalog::driverRunAreas();
+        $remaining = DemoCatalog::flattenDriverAreaOrders($areas, 'remaining');
+        $completed = DemoCatalog::flattenDriverAreaOrders($areas, 'delivered');
 
         return Inertia::render('driver/route/index', [
+            'areas' => $areas,
             'remaining' => $remaining,
             'completed' => $completed,
             'nextStop' => $remaining[0] ?? null,
+            'currentArea' => $run['current'],
         ]);
     }
 }
