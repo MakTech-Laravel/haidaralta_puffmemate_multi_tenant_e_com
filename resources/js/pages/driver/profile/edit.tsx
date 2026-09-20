@@ -1,16 +1,9 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Bike, Camera, IdCard, Mail, MapPin, Phone } from 'lucide-react';
-import {
-    useEffect,
-    useRef,
-    useState,
-    type ChangeEvent,
-    type FormEvent,
-    type ReactNode,
-} from 'react';
+import { Bike, IdCard, Mail, MapPin, Phone } from 'lucide-react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Driver/ProfileController';
+import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,7 +30,9 @@ type DriverEditProfile = {
     license_number: string | null;
     vehicle_type: string | null;
     address: string | null;
+    avatar: string | null;
     avatar_url: string | null;
+    vehicle_image_path: string | null;
     vehicle_image_url: string | null;
 };
 
@@ -83,22 +78,24 @@ function EditField({
     );
 }
 
-function pickImage(file: File | undefined): string | File {
-    if (!file) {
-        return 'Choose an image file.';
+function existingImage(
+    id: string,
+    path: string | null,
+    url: string | null,
+): ExistingFile[] {
+    if (!path || !url) {
+        return [];
     }
 
-    const allowedType =
-        file.type === 'image/jpeg' ||
-        file.type === 'image/png' ||
-        file.type === 'image/webp' ||
-        /\.(jpe?g|png|webp)$/iu.test(file.name);
-
-    if (!allowedType) {
-        return 'Use a PNG, JPG, or WebP image.';
-    }
-
-    return file;
+    return [
+        {
+            id,
+            path,
+            url,
+            mime_type: 'image/jpeg',
+            name: path.split('/').pop() ?? id,
+        },
+    ];
 }
 
 export default function DriverProfileEdit({
@@ -112,16 +109,16 @@ export default function DriverProfileEdit({
 }) {
     const getInitials = useInitials();
     const action = ProfileController.update.form();
-    const avatarObjectUrl = useRef<string | null>(null);
-    const vehicleObjectUrl = useRef<string | null>(null);
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(
-        driver.avatar_url,
+    const [existingAvatar, setExistingAvatar] = useState<ExistingFile[]>(() =>
+        existingImage('avatar', driver.avatar, driver.avatar_url),
     );
-    const [vehiclePreview, setVehiclePreview] = useState<string | null>(
-        driver.vehicle_image_url,
+    const [existingVehicle, setExistingVehicle] = useState<ExistingFile[]>(() =>
+        existingImage(
+            'vehicle',
+            driver.vehicle_image_path,
+            driver.vehicle_image_url,
+        ),
     );
-    const [avatarReject, setAvatarReject] = useState<string | undefined>();
-    const [vehicleReject, setVehicleReject] = useState<string | undefined>();
 
     const {
         data,
@@ -147,97 +144,7 @@ export default function DriverProfileEdit({
 
     useEffect(() => {
         setValidationTimeout(500);
-
-        return () => {
-            if (avatarObjectUrl.current) {
-                URL.revokeObjectURL(avatarObjectUrl.current);
-            }
-
-            if (vehicleObjectUrl.current) {
-                URL.revokeObjectURL(vehicleObjectUrl.current);
-            }
-        };
     }, [setValidationTimeout]);
-
-    const replacePreview = (
-        store: typeof avatarObjectUrl,
-        setPreview: (url: string | null) => void,
-        next: File | null,
-        fallback: string | null,
-    ): void => {
-        if (store.current) {
-            URL.revokeObjectURL(store.current);
-            store.current = null;
-        }
-
-        if (next) {
-            const url = URL.createObjectURL(next);
-            store.current = url;
-            setPreview(url);
-
-            return;
-        }
-
-        setPreview(fallback);
-    };
-
-    const onAvatarChange = (event: ChangeEvent<HTMLInputElement>): void => {
-        const picked = pickImage(event.target.files?.[0]);
-        event.target.value = '';
-
-        if (typeof picked === 'string') {
-            setAvatarReject(picked);
-
-            return;
-        }
-
-        setAvatarReject(undefined);
-        replacePreview(avatarObjectUrl, setAvatarPreview, picked, null);
-        setData((current) => ({
-            ...current,
-            avatar: picked,
-            remove_avatar: false,
-        }));
-    };
-
-    const removeAvatar = (): void => {
-        setAvatarReject(undefined);
-        replacePreview(avatarObjectUrl, setAvatarPreview, null, null);
-        setData((current) => ({
-            ...current,
-            avatar: null,
-            remove_avatar: true,
-        }));
-    };
-
-    const onVehicleChange = (event: ChangeEvent<HTMLInputElement>): void => {
-        const picked = pickImage(event.target.files?.[0]);
-        event.target.value = '';
-
-        if (typeof picked === 'string') {
-            setVehicleReject(picked);
-
-            return;
-        }
-
-        setVehicleReject(undefined);
-        replacePreview(vehicleObjectUrl, setVehiclePreview, picked, null);
-        setData((current) => ({
-            ...current,
-            vehicle_image: picked,
-            remove_vehicle_image: false,
-        }));
-    };
-
-    const removeVehicle = (): void => {
-        setVehicleReject(undefined);
-        replacePreview(vehicleObjectUrl, setVehiclePreview, null, null);
-        setData((current) => ({
-            ...current,
-            vehicle_image: null,
-            remove_vehicle_image: true,
-        }));
-    };
 
     const submit = (event: FormEvent): void => {
         event.preventDefault();
@@ -277,31 +184,49 @@ export default function DriverProfileEdit({
             >
                 <section className="bg-accent flex flex-col gap-4 rounded-xl p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-center gap-3">
-                        <div className="relative size-20 shrink-0">
-                            <Avatar className="size-full">
-                                {avatarPreview ? (
-                                    <AvatarImage
-                                        src={avatarPreview}
-                                        alt={data.name}
-                                    />
-                                ) : null}
-                                <AvatarFallback className="text-base sm:text-lg">
-                                    {getInitials(data.name)}
-                                </AvatarFallback>
-                            </Avatar>
-                            <span
-                                className="bg-primary text-primary-foreground pointer-events-none absolute right-0 bottom-0 flex size-7 items-center justify-center rounded-full ring-2 ring-background"
-                                aria-hidden
-                            >
-                                <Camera className="size-3.5" />
-                            </span>
-                            <input
-                                type="file"
+                        <div className="w-20 shrink-0">
+                            <FileUpload
+                                variant="avatar"
+                                avatarSize={80}
+                                avatarFallback={
+                                    <span className="text-base font-semibold sm:text-lg">
+                                        {getInitials(data.name)}
+                                    </span>
+                                }
+                                value={data.avatar}
+                                onChange={(file) => {
+                                    const next = Array.isArray(file)
+                                        ? (file[0] ?? null)
+                                        : file;
+                                    setExistingAvatar([]);
+                                    setData((current) => ({
+                                        ...current,
+                                        avatar: next,
+                                        remove_avatar: next
+                                            ? false
+                                            : current.remove_avatar,
+                                    }));
+                                }}
+                                existingFiles={
+                                    data.avatar || data.remove_avatar
+                                        ? []
+                                        : existingAvatar
+                                }
+                                onRemoveExisting={() => {
+                                    setExistingAvatar([]);
+                                    setData((current) => ({
+                                        ...current,
+                                        avatar: null,
+                                        remove_avatar: true,
+                                    }));
+                                }}
                                 accept={MEDIA_ACCEPT}
+                                maxSize={Number.POSITIVE_INFINITY}
+                                maxFiles={1}
+                                multiple={false}
                                 disabled={processing}
-                                className="absolute inset-0 z-10 cursor-pointer opacity-0"
-                                aria-label="Change profile photo"
-                                onChange={onAvatarChange}
+                                showCaption={false}
+                                error={errors.avatar}
                             />
                         </div>
                         <div className="min-w-0 flex-1 space-y-1">
@@ -326,34 +251,18 @@ export default function DriverProfileEdit({
                             <p className="text-muted-foreground text-sm">
                                 Change your photo
                             </p>
-                            <InputError
-                                message={errors.name ?? errors.avatar ?? avatarReject}
-                            />
+                            <InputError message={errors.name} />
                         </div>
                     </div>
-                    <div className="flex flex-col gap-2 sm:items-end">
-   
-                        {avatarPreview ? (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                disabled={processing}
-                                onClick={removeAvatar}
-                            >
-                                Remove photo
-                            </Button>
-                        ) : null}
-                        <Button
-                            type="submit"
-                            size="lg"
-                            disabled={processing}
-                            className="hidden h-12 w-full sm:inline-flex sm:w-auto"
-                        >
-                            {processing ? <Spinner /> : null}
-                            Save
-                        </Button>
-                    </div>
+                    <Button
+                        type="submit"
+                        size="lg"
+                        disabled={processing}
+                        className="hidden h-12 w-full sm:inline-flex sm:w-auto"
+                    >
+                        {processing ? <Spinner /> : null}
+                        Save
+                    </Button>
                 </section>
 
                 <section className="border-border space-y-4 rounded-xl border p-4">
@@ -457,52 +366,55 @@ export default function DriverProfileEdit({
                 </section>
 
                 <section className="border-border space-y-4 rounded-xl border p-4">
-                    <div className="flex items-center justify-between gap-3">
-                        <h2 className="text-foreground text-base font-semibold">
-                            Vehicle
-                        </h2>
-                        {vehiclePreview ? (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                disabled={processing}
-                                onClick={removeVehicle}
-                            >
-                                Remove photo
-                            </Button>
-                        ) : null}
-                    </div>
-                    <div className="relative">
-                        {vehiclePreview ? (
-                            <img
-                                src={vehiclePreview}
-                                alt="Your vehicle"
-                                className="border-border h-40 w-full rounded-lg border object-cover sm:h-52"
-                            />
-                        ) : (
-                            <div className="bg-muted text-muted-foreground flex h-28 items-center justify-center gap-2 rounded-lg text-sm">
-                                <Bike className="size-4" aria-hidden />
-                                Add a vehicle photo
-                            </div>
-                        )}
-                        <span
-                            className="bg-primary text-primary-foreground pointer-events-none absolute right-3 bottom-3 flex size-9 items-center justify-center rounded-full shadow-sm"
-                            aria-hidden
-                        >
-                            <Camera className="size-4" />
-                        </span>
-                        <input
-                            type="file"
-                            accept={MEDIA_ACCEPT}
-                            disabled={processing}
-                            className="absolute inset-0 z-10 cursor-pointer opacity-0"
-                            aria-label="Change vehicle photo"
-                            onChange={onVehicleChange}
-                        />
-                    </div>
-                    <InputError
-                        message={errors.vehicle_image ?? vehicleReject}
+                    <h2 className="text-foreground text-base font-semibold">
+                        Vehicle
+                    </h2>
+                    <FileUpload
+                        value={data.vehicle_image}
+                        onChange={(file) => {
+                            const next = Array.isArray(file)
+                                ? (file[0] ?? null)
+                                : file;
+                            setExistingVehicle([]);
+                            setData((current) => ({
+                                ...current,
+                                vehicle_image: next,
+                                remove_vehicle_image: next
+                                    ? false
+                                    : current.remove_vehicle_image,
+                            }));
+                        }}
+                        existingFiles={
+                            data.vehicle_image || data.remove_vehicle_image
+                                ? []
+                                : existingVehicle
+                        }
+                        onRemoveExisting={() => {
+                            setExistingVehicle([]);
+                            setData((current) => ({
+                                ...current,
+                                vehicle_image: null,
+                                remove_vehicle_image: true,
+                            }));
+                        }}
+                        accept={MEDIA_ACCEPT}
+                        maxSize={Number.POSITIVE_INFINITY}
+                        maxFiles={1}
+                        multiple={false}
+                        dropzoneVisibility="empty"
+                        lightbox
+                        disabled={processing}
+                        placeholder="Add a vehicle photo"
+                        hint="PNG, JPG, or WebP"
+                        error={errors.vehicle_image}
+                        classNames={{
+                            dropzone:
+                                'min-h-28 rounded-lg border-0 bg-muted px-3 py-6 hover:bg-muted/80 hover:border-0',
+                            dropzoneContent: 'gap-1',
+                            card: 'overflow-hidden shadow-none',
+                            cardMedia: 'h-40 w-full aspect-auto sm:h-52',
+                            cardInfo: 'hidden',
+                        }}
                     />
                     <EditField
                         icon={Bike}
