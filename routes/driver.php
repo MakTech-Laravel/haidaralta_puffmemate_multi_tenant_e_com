@@ -20,6 +20,10 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::get('orders/{order}', [DriverOrderController::class, 'show'])->name('driver.orders.show');
     Route::get('notifications', [DriverNotificationController::class, 'index'])->name('driver.notifications.index');
     Route::get('profile', [DriverProfileController::class, 'index'])->name('driver.profile.index');
+    Route::get('profile/edit', [DriverProfileController::class, 'edit'])->name('driver.profile.edit');
+    Route::patch('profile', [DriverProfileController::class, 'update'])
+        ->middleware('precognitive')
+        ->name('driver.profile.update');
     Route::redirect('account', '/driver/profile');
     Route::get('activity', [DriverActivityLogController::class, 'index'])->name('driver.activity.index');
     Route::get('activity/{activity}', [DriverActivityLogController::class, 'show'])

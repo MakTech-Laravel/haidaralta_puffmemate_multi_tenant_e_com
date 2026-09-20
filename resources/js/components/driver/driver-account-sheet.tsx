@@ -19,8 +19,7 @@ import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
 import { index as activityIndex } from '@/routes/driver/activity';
-import { index as profileIndex } from '@/routes/driver/profile';
-import { edit as editProfile } from '@/routes/profile';
+import { edit as editProfile, index as profileIndex } from '@/routes/driver/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { User } from '@/types';
 

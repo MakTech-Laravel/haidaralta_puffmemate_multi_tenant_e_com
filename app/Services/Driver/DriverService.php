@@ -93,9 +93,12 @@ class DriverService
             $userPayload = array_filter([
                 'name' => $data['name'] ?? null,
                 'phone' => $data['phone'] ?? null,
-                'email' => $data['email'] ?? null,
                 'is_active' => $data['is_active'] ?? null,
             ], fn (mixed $value): bool => $value !== null);
+
+            if (array_key_exists('email', $data)) {
+                $userPayload['email'] = $data['email'];
+            }
 
             if (filled($data['password'] ?? null)) {
                 $userPayload['password'] = $data['password'];

@@ -32,10 +32,16 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
     const { portal } = usePage().props;
     const appearanceHref = toUrl(editAppearance());
-    const items = sidebarNavItems.filter(
-        (item) =>
-            portal !== 'driver' || toUrl(item.href) !== appearanceHref,
-    );
+    const profileHref = toUrl(edit());
+    const items = sidebarNavItems.filter((item) => {
+        if (portal !== 'driver') {
+            return true;
+        }
+
+        const href = toUrl(item.href);
+
+        return href !== appearanceHref && href !== profileHref;
+    });
 
     return (
         <div className="space-y-6 px-4 py-6">

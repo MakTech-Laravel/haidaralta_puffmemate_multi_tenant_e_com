@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,10 +18,16 @@ class ProfileController extends Controller
     /**
      * Show the user's profile settings page.
      */
-    public function edit(Request $request): Response
+    public function edit(Request $request): Response|RedirectResponse
     {
+        $user = $request->user();
+
+        if ($user instanceof User && $user->user_type === UserType::DRIVER) {
+            return redirect()->route('driver.profile.edit');
+        }
+
         return Inertia::render('settings/profile', [
-            'mustVerifyPhone' => $request->user()->phone_verified_at === null,
+            'mustVerifyPhone' => $user?->phone_verified_at === null,
             'status' => $request->session()->get('status'),
         ]);
     }

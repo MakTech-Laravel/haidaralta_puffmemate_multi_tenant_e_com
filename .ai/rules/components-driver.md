@@ -24,3 +24,6 @@ The fifth field tab is Profile at GET /driver/profile. It is the signed-in drive
 
 ## Driver footer tab is Profile not Account
 Footer tabs are Dashboard, Orders, Route, Earnings, Profile. Move edit details, security, activity, support, safety, and log out into DriverAccountSheet. Do not restore an Account footer tab.
+
+## Account sheet edit details goes to field editor
+DriverAccountSheet Edit details links to driver.profile.edit, not settings/profile. Security stays on settings/security.

@@ -73,6 +73,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/{platform,branch}/nav.ts | .ai/rules/platformbranch.md |
 | resources/js/components/portal/** | .ai/rules/portal.md |
 | resources/js/pages/platform/catalog/products/show.tsx, resources/js/pages/platform/catalog/products/**, resources/js/pages/branch/catalog/products/show.tsx | .ai/rules/products.md |
+| resources/js/pages/driver/profile/** | .ai/rules/profile.md |
 | app/Http/Controllers/{Platform,Branch}/Reports/**, resources/js/pages/{platform,branch}/reports/** | .ai/rules/reports.md |
 | app/Http/Requests/{Platform,Branch}/*Product*Request.php | .ai/rules/requests-platform-branch.md |
 | app/Http/Requests/Platform/*Category*Request.php | .ai/rules/requests-platform.md |

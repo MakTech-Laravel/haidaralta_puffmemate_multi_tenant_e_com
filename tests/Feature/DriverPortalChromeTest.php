@@ -95,7 +95,7 @@ test('customers do not receive driver support contacts', function () {
         ->assertInertia(fn (Assert $page) => $page->where('driverSupport', null));
 });
 
-test('drivers can open profile settings from the account sheet destination', function () {
+test('drivers opening settings profile are sent to the field editor', function () {
     $driver = User::factory()->create([
         'user_type' => UserType::DRIVER,
         'email_verified_at' => now(),
@@ -103,10 +103,7 @@ test('drivers can open profile settings from the account sheet destination', fun
 
     $this->actingAs($driver, 'driver')
         ->get(route('profile.edit'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('settings/profile')
-            ->where('portal', 'driver'));
+        ->assertRedirect(route('driver.profile.edit'));
 });
 
 test('drivers receive identity vehicle and branch facts on the profile tab', function () {

@@ -13,8 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useInitials } from '@/hooks/use-initials';
-import { index as profileIndex } from '@/routes/driver/profile';
-import { edit as editProfile } from '@/routes/profile';
+import { edit as editProfile, index as profileIndex } from '@/routes/driver/profile';
 
 type DriverAssignment = {
     id: number;
