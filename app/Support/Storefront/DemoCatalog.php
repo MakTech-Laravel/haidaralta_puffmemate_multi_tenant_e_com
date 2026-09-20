@@ -844,6 +844,72 @@ class DemoCatalog
     }
 
     /**
+     * Static field-hub copy for the driver dashboard until earnings,
+     * roster, ratings, and vehicle live on real tables.
+     *
+     * @return array{
+     *     online: bool,
+     *     etaNext: string,
+     *     kmToday: string,
+     *     supportPhone: string,
+     *     branchPhone: string,
+     *     shift: array{label: string, window: string, endsIn: string, branch: string},
+     *     earnings: array{todayLabel: string, weekLabel: string, tipsLabel: string, perStopLabel: string},
+     *     performance: array{rating: string, ratingCount: int, onTimePercent: int, acceptancePercent: int, completionPercent: int},
+     *     vehicle: array{name: string, plate: string, fuel: string, insuranceUntil: string, docsOk: bool},
+     *     alerts: list<array{id: string, title: string, body: string}>
+     * }
+     */
+    public static function driverDashboardHub(): array
+    {
+        return [
+            'online' => true,
+            'etaNext' => '8 min',
+            'kmToday' => '18.4 km',
+            'supportPhone' => '+61418001100',
+            'branchPhone' => '+61290001200',
+            'shift' => [
+                'label' => 'Afternoon run',
+                'window' => '1:00–7:00 PM',
+                'endsIn' => '4h 12m',
+                'branch' => 'Sydney CBD',
+            ],
+            'earnings' => [
+                'todayLabel' => '$86.40',
+                'weekLabel' => '$412.10',
+                'tipsLabel' => '$18.00',
+                'perStopLabel' => '$21.60',
+            ],
+            'performance' => [
+                'rating' => '4.92',
+                'ratingCount' => 128,
+                'onTimePercent' => 97,
+                'acceptancePercent' => 94,
+                'completionPercent' => 99,
+            ],
+            'vehicle' => [
+                'name' => 'Honda Scooter',
+                'plate' => 'NSW · DVR-204',
+                'fuel' => 'Range good',
+                'insuranceUntil' => '12 Nov 2026',
+                'docsOk' => true,
+            ],
+            'alerts' => [
+                [
+                    'id' => 'weather',
+                    'title' => 'Light rain after 4 PM',
+                    'body' => 'Allow extra time on Oxford St and keep parcels dry.',
+                ],
+                [
+                    'id' => 'branch',
+                    'title' => 'CBD desk note',
+                    'body' => 'OTP is required for every cash-on-delivery stop today.',
+                ],
+            ],
+        ];
+    }
+
+    /**
      * Resolve one demo driver order for the detail + OTP deliver screen.
      *
      * @return array{

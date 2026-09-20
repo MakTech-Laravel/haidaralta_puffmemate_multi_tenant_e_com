@@ -156,5 +156,10 @@ test('driver dashboard receives assigned order summary', function () {
             ->has('summary.deliveredCount')
             ->has('summary.assignedCount')
             ->has('summary.activeOrders')
-            ->has('summary.nextStop'));
+            ->has('summary.nextStop')
+            ->has('hub.shift.label')
+            ->has('hub.earnings.todayLabel')
+            ->has('hub.performance.rating')
+            ->has('hub.vehicle.name')
+            ->has('hub.alerts'));
 });

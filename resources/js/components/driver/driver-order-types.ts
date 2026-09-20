@@ -36,3 +36,48 @@ export const driverOrderStatusLabel: Record<DriverOrderStatus, string> = {
     arrived: 'Arrived',
     delivered: 'Delivered',
 };
+
+export type DriverDashboardHub = {
+    online: boolean;
+    etaNext: string;
+    kmToday: string;
+    supportPhone: string;
+    branchPhone: string;
+    nextCustomerPhone: string | null;
+    nextNotes: string | null;
+    shift: {
+        label: string;
+        window: string;
+        endsIn: string;
+        branch: string;
+    };
+    earnings: {
+        todayLabel: string;
+        weekLabel: string;
+        tipsLabel: string;
+        perStopLabel: string;
+    };
+    performance: {
+        rating: string;
+        ratingCount: number;
+        onTimePercent: number;
+        acceptancePercent: number;
+        completionPercent: number;
+    };
+    vehicle: {
+        name: string;
+        plate: string;
+        fuel: string;
+        insuranceUntil: string;
+        docsOk: boolean;
+    };
+    alerts: Array<{ id: string; title: string; body: string }>;
+};
+
+export type DriverDashboardSummary = {
+    activeCount: number;
+    deliveredCount: number;
+    assignedCount: number;
+    nextStop: DriverAssignedOrder | null;
+    activeOrders: DriverAssignedOrder[];
+};

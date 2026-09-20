@@ -21,6 +21,9 @@ class DashboardController extends Controller
         ));
         $deliveredCount = count($orders) - count($activeOrders);
         $nextStop = $activeOrders[0] ?? null;
+        $nextDetail = $nextStop !== null
+            ? DemoCatalog::driverOrderDetail($nextStop['id'])
+            : null;
 
         return Inertia::render('driver/dashboard', [
             'summary' => [
@@ -29,6 +32,11 @@ class DashboardController extends Controller
                 'assignedCount' => count($orders),
                 'nextStop' => $nextStop,
                 'activeOrders' => array_slice($activeOrders, 0, 4),
+            ],
+            'hub' => [
+                ...DemoCatalog::driverDashboardHub(),
+                'nextCustomerPhone' => $nextDetail['phone'] ?? null,
+                'nextNotes' => $nextDetail['notes'] ?? null,
             ],
         ]);
     }
