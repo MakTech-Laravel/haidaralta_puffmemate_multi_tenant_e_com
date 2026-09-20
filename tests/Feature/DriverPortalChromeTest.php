@@ -45,13 +45,10 @@ test('drivers receive sequenced remaining and completed stops on the route tab',
             ->component('driver/route/index')
             ->has('remaining')
             ->has('completed')
-            ->has('areas')
+            ->missing('areas')
+            ->missing('currentArea')
             ->has('nextStop.id')
-            ->where('areas.0.label', 'Surry Hills')
-            ->where('areas.1.label', 'Darlinghurst')
-            ->where('currentArea.label', 'Surry Hills')
-            ->where('remaining.0.areaLabel', 'Surry Hills')
-            ->has('remaining.0.customerName')
+            ->where('remaining.0.customerName', 'Elena Vargas')
             ->has('remaining.0.addressSummary')
             ->where('highlightId', null));
 });

@@ -2,7 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { MessageCircle, Package, Phone } from 'lucide-react';
 import { DriverDeliverOtpForm } from '@/components/driver/driver-deliver-otp-form';
 import {
-    driverAreaMapsQuery,
+    driverMapsQuery,
     driverOrderStatusLabel,
     type DriverOrderDetail,
 } from '@/components/driver/driver-order-types';
@@ -141,7 +141,7 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                         highlightId={order.id}
                         areaLabel={order.areaLabel}
                         navigateHref={mapsSearchUrl(
-                            `${order.addressSummary}, ${driverAreaMapsQuery(order.areaLabel)}`,
+                            driverMapsQuery(order.addressSummary),
                         )}
                     />
                     <Button

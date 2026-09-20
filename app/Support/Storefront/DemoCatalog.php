@@ -877,107 +877,29 @@ class DemoCatalog
     }
 
     /**
-     * One driver carries every drop in an area. Admins do not split
-     * same-neighbourhood orders across riders.
+     * Assigned drops still to deliver, in the order the desk handed them over.
      *
-     * @return list<array{
-     *     id: string,
-     *     label: string,
-     *     orderCount: int,
-     *     remainingCount: int,
-     *     deliveredCount: int,
-     *     remaining: list<array<string, mixed>>,
-     *     delivered: list<array<string, mixed>>,
-     *     orders: list<array<string, mixed>>
-     * }>
-     */
-    public static function driverAssignedAreas(): array
-    {
-        $buckets = [];
-
-        foreach (self::driverAssignedOrders() as $order) {
-            $areaId = $order['areaId'];
-
-            if (! isset($buckets[$areaId])) {
-                $buckets[$areaId] = [
-                    'id' => $areaId,
-                    'label' => $order['areaLabel'],
-                    'orders' => [],
-                ];
-            }
-
-            $buckets[$areaId]['orders'][] = $order;
-        }
-
-        return array_values(array_map(static function (array $area): array {
-            $orders = $area['orders'];
-            $remaining = array_values(array_filter(
-                $orders,
-                static fn (array $order): bool => $order['status'] !== 'delivered',
-            ));
-            $delivered = array_values(array_filter(
-                $orders,
-                static fn (array $order): bool => $order['status'] === 'delivered',
-            ));
-
-            return [
-                'id' => $area['id'],
-                'label' => $area['label'],
-                'orderCount' => count($orders),
-                'remainingCount' => count($remaining),
-                'deliveredCount' => count($delivered),
-                'remaining' => $remaining,
-                'delivered' => $delivered,
-                'orders' => $orders,
-            ];
-        }, $buckets));
-    }
-
-    /**
-     * @param  list<array{remaining: list<array<string, mixed>>, delivered: list<array<string, mixed>>}>  $areas
      * @return list<array<string, mixed>>
      */
-    public static function flattenDriverAreaOrders(array $areas, string $key): array
+    public static function driverRemainingOrders(): array
     {
-        $orders = [];
-
-        foreach ($areas as $area) {
-            foreach ($area[$key] as $order) {
-                $orders[] = $order;
-            }
-        }
-
-        return $orders;
+        return array_values(array_filter(
+            self::driverAssignedOrders(),
+            static fn (array $order): bool => $order['status'] !== 'delivered',
+        ));
     }
 
     /**
-     * Neighbourhood still in progress, then later suburbs on the same run.
+     * Assigned drops already completed on this shift.
      *
-     * @return array{current: array<string, mixed>|null, later: list<array<string, mixed>>}
+     * @return list<array<string, mixed>>
      */
-    public static function driverRunAreas(): array
+    public static function driverCompletedOrders(): array
     {
-        $current = null;
-        $later = [];
-
-        foreach (self::driverAssignedAreas() as $area) {
-            if ($area['remainingCount'] === 0) {
-                continue;
-            }
-
-            if ($current === null) {
-                $current = $area;
-
-                continue;
-            }
-
-            $later[] = $area;
-        }
-
-        return [
-            'current' => $current,
-            'later' => $later,
-        ];
+        return array_values(array_filter(
+            self::driverAssignedOrders(),
+            static fn (array $order): bool => $order['status'] === 'delivered',
+        ));
     }
 
     /**
@@ -1033,9 +955,9 @@ class DemoCatalog
             ],
             'alerts' => [
                 [
-                    'id' => 'area',
-                    'title' => 'Surry Hills is one run',
-                    'body' => 'Seven drops in the same suburb are yours — finish Surry Hills before Darlinghurst.',
+                    'id' => 'load',
+                    'title' => 'Ten drops on this run',
+                    'body' => 'The desk assigned a mixed set within your load. Other riders can cover the same streets if the pile grows.',
                 ],
                 [
                     'id' => 'weather',

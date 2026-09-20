@@ -5,5 +5,5 @@ paths:
 
 # Controllers Driver
 
-## Driver controllers pass neighbourhood batches
-Driver dashboard and route treat assigned orders as neighbourhood batches. Pass currentArea, laterAreas, and areaCount from DemoCatalog::driverAssignedAreas()/driverRunAreas(). Do not present the run as one trip per customer.
+## Driver controllers pass remaining and completed stops
+Driver dashboard and route pass remaining/completed assigned stops from DemoCatalog::driverRemainingOrders()/driverCompletedOrders(). Do not pass currentArea, laterAreas, areaCount, or suburb batches. Admins assign by load: mix places on one driver, or split a busy street across drivers.

@@ -24,17 +24,6 @@ export type DriverAssignedOrder = {
     completedLabel: string | null;
 };
 
-export type DriverAssignedArea = {
-    id: string;
-    label: string;
-    orderCount: number;
-    remainingCount: number;
-    deliveredCount: number;
-    remaining: DriverAssignedOrder[];
-    delivered: DriverAssignedOrder[];
-    orders: DriverAssignedOrder[];
-};
-
 export type DriverOrderDetail = DriverAssignedOrder & {
     statusLabel: string;
     phone: string;
@@ -102,51 +91,6 @@ export function driverOrderFilterCounts(
     };
 }
 
-export function groupDriverAssignedOrdersByArea(
-    orders: DriverAssignedOrder[],
-): DriverAssignedArea[] {
-    const buckets: DriverAssignedArea[] = [];
-    const indexById = new Map<string, number>();
-
-    for (const order of orders) {
-        let index = indexById.get(order.areaId);
-
-        if (index === undefined) {
-            index = buckets.length;
-            indexById.set(order.areaId, index);
-            buckets.push({
-                id: order.areaId,
-                label: order.areaLabel,
-                orderCount: 0,
-                remainingCount: 0,
-                deliveredCount: 0,
-                remaining: [],
-                delivered: [],
-                orders: [],
-            });
-        }
-
-        const area = buckets[index];
-
-        if (!area) {
-            continue;
-        }
-
-        area.orders.push(order);
-        area.orderCount += 1;
-
-        if (order.status === 'delivered') {
-            area.delivered.push(order);
-            area.deliveredCount += 1;
-        } else {
-            area.remaining.push(order);
-            area.remainingCount += 1;
-        }
-    }
-
-    return buckets;
-}
-
 export function searchDriverAssignedOrders(
     orders: DriverAssignedOrder[],
     query: string,
@@ -197,8 +141,8 @@ export function groupDriverAssignedOrdersByCompletedLabel(
     return groups;
 }
 
-export function driverAreaMapsQuery(label: string): string {
-    return `${label}, NSW, Australia`;
+export function driverMapsQuery(place: string): string {
+    return `${place}, NSW, Australia`;
 }
 
 export type DriverDashboardHub = {
@@ -271,9 +215,6 @@ export type DriverDashboardSummary = {
     activeCount: number;
     deliveredCount: number;
     assignedCount: number;
-    areaCount: number;
     nextStop: DriverAssignedOrder | null;
     activeOrders: DriverAssignedOrder[];
-    currentArea: DriverAssignedArea | null;
-    laterAreas: DriverAssignedArea[];
 };

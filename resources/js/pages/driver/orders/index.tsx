@@ -8,12 +8,10 @@ import {
     driverOrderFilterCounts,
     driverOrderStatusFilterLabel,
     filterDriverAssignedOrders,
-    groupDriverAssignedOrdersByArea,
     searchDriverAssignedOrders,
     type DriverAssignedOrder,
     type DriverOrderStatusFilter,
 } from '@/components/driver/driver-order-types';
-import { Badge } from '@/components/ui/badge';
 import {
     ToggleGroup,
     ToggleGroupItem,
@@ -47,7 +45,6 @@ export default function DriverOrdersIndex({
             search,
         );
     }, [orders, search, statusFilter]);
-    const areas = groupDriverAssignedOrdersByArea(filteredOrders);
 
     const submitSearch = (event: FormEvent<HTMLFormElement>): void => {
         event.preventDefault();
@@ -136,41 +133,13 @@ export default function DriverOrdersIndex({
                         }
                     />
                 ) : (
-                    <div className="flex flex-col gap-6">
-                        {areas.map((area) => (
-                            <section
-                                key={area.id}
-                                className="flex flex-col gap-2.5"
-                            >
-                                <div className="flex flex-wrap items-end justify-between gap-2">
-                                    <div className="space-y-0.5">
-                                        <h2 className="text-foreground text-base font-semibold">
-                                            {area.label}
-                                        </h2>
-                                        <p className="text-muted-foreground text-sm">
-                                            {statusFilter === 'all' ||
-                                            statusFilter === 'active'
-                                                ? `${area.remainingCount} left · ${area.orderCount} assigned`
-                                                : `${area.orderCount} ${area.orderCount === 1 ? 'stop' : 'stops'}`}
-                                        </p>
-                                    </div>
-                                    <Badge variant="secondary">
-                                        {area.orderCount}{' '}
-                                        {area.orderCount === 1
-                                            ? 'drop'
-                                            : 'drops'}
-                                    </Badge>
-                                </div>
-                                <ul className="flex flex-col gap-2.5">
-                                    {area.orders.map((order) => (
-                                        <li key={order.id}>
-                                            <DriverOrderCard order={order} />
-                                        </li>
-                                    ))}
-                                </ul>
-                            </section>
+                    <ul className="flex flex-col gap-2.5">
+                        {filteredOrders.map((order) => (
+                            <li key={order.id}>
+                                <DriverOrderCard order={order} />
+                            </li>
                         ))}
-                    </div>
+                    </ul>
                 )}
             </div>
         </>

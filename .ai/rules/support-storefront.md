@@ -5,5 +5,5 @@ paths:
 
 # Support Storefront
 
-## Driver demo orders are suburb batches
-Driver demo orders are area-batched Australian neighbourhoods. Each catalog row needs areaId/areaLabel. Cluster same-suburb drops on one driver (Surry Hills then Darlinghurst). Do not split a neighbourhood across riders or use non-Australian place names.
+## Driver catalog assignment is capacity not suburb batches
+Driver demo orders keep Australian areaId/areaLabel on each address for maps and search. Do not batch the catalog or UI by suburb, treat a suburb as one run, or refuse splitting the same streets across drivers. Place names stay Australian.

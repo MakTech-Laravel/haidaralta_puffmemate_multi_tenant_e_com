@@ -15,16 +15,8 @@ class DashboardController extends Controller
     public function index(): Response
     {
         $orders = DemoCatalog::driverAssignedOrders();
-        $areas = DemoCatalog::driverAssignedAreas();
-        $run = DemoCatalog::driverRunAreas();
-        $currentArea = $run['current'];
-        $activeOrders = array_values(array_filter(
-            $orders,
-            static fn (array $order): bool => $order['status'] !== 'delivered',
-        ));
-        $nextStop = $currentArea !== null
-            ? ($currentArea['remaining'][0] ?? null)
-            : ($activeOrders[0] ?? null);
+        $activeOrders = DemoCatalog::driverRemainingOrders();
+        $nextStop = $activeOrders[0] ?? null;
         $nextDetail = $nextStop !== null
             ? DemoCatalog::driverOrderDetail($nextStop['id'])
             : null;
@@ -34,13 +26,8 @@ class DashboardController extends Controller
                 'activeCount' => count($activeOrders),
                 'deliveredCount' => count($orders) - count($activeOrders),
                 'assignedCount' => count($orders),
-                'areaCount' => count($areas),
                 'nextStop' => $nextStop,
-                'activeOrders' => $currentArea !== null
-                    ? $currentArea['remaining']
-                    : array_slice($activeOrders, 0, 6),
-                'currentArea' => $currentArea,
-                'laterAreas' => $run['later'],
+                'activeOrders' => array_slice($activeOrders, 0, 6),
             ],
             'hub' => [
                 ...DemoCatalog::driverDashboardHub(),
