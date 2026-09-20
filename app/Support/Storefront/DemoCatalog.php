@@ -875,6 +875,111 @@ class DemoCatalog
     }
 
     /**
+     * Demo transcript for the order-scoped driver chat screen.
+     *
+     * Sender ids: customer = 1, branch = 2, driver = $viewerId so own bubbles
+     * match the signed-in driver when they send locally.
+     *
+     * @return list<array{
+     *     id: int,
+     *     conversation_id: int,
+     *     type: string,
+     *     body: string|null,
+     *     created_at: string,
+     *     sender: array{id: int, name: string, avatar_url: string|null}|null,
+     *     attachments: list<array{}>
+     * }>|null
+     */
+    public static function driverOrderChatMessages(string $orderId, int $viewerId): ?array
+    {
+        $order = self::driverOrderDetail($orderId);
+
+        if ($order === null) {
+            return null;
+        }
+
+        $now = now();
+        $customerName = $order['customerName'];
+        $orderNumber = $order['orderNumber'];
+        $conversationId = abs(crc32($orderId)) ?: 1;
+
+        return [
+            [
+                'id' => 1,
+                'conversation_id' => $conversationId,
+                'type' => 'system',
+                'body' => "Thread opened for order {$orderNumber}.",
+                'created_at' => $now->copy()->subMinutes(42)->toIso8601String(),
+                'sender' => null,
+                'attachments' => [],
+            ],
+            [
+                'id' => 2,
+                'conversation_id' => $conversationId,
+                'type' => 'text',
+                'body' => 'Hi — package is packed and ready. Customer asked for a call on arrival.',
+                'created_at' => $now->copy()->subMinutes(38)->toIso8601String(),
+                'sender' => [
+                    'id' => 2,
+                    'name' => 'Branch desk',
+                    'avatar_url' => null,
+                ],
+                'attachments' => [],
+            ],
+            [
+                'id' => 3,
+                'conversation_id' => $conversationId,
+                'type' => 'text',
+                'body' => 'Got it. Heading out now — ETA inside the delivery window.',
+                'created_at' => $now->copy()->subMinutes(35)->toIso8601String(),
+                'sender' => [
+                    'id' => $viewerId,
+                    'name' => 'You',
+                    'avatar_url' => null,
+                ],
+                'attachments' => [],
+            ],
+            [
+                'id' => 4,
+                'conversation_id' => $conversationId,
+                'type' => 'text',
+                'body' => "Hi, I'm {$customerName}. The intercom is broken — please call when you're downstairs.",
+                'created_at' => $now->copy()->subMinutes(12)->toIso8601String(),
+                'sender' => [
+                    'id' => 1,
+                    'name' => $customerName,
+                    'avatar_url' => null,
+                ],
+                'attachments' => [],
+            ],
+            [
+                'id' => 5,
+                'conversation_id' => $conversationId,
+                'type' => 'text',
+                'body' => 'Will do. About 10 minutes out.',
+                'created_at' => $now->copy()->subMinutes(10)->toIso8601String(),
+                'sender' => [
+                    'id' => $viewerId,
+                    'name' => 'You',
+                    'avatar_url' => null,
+                ],
+                'attachments' => [],
+            ],
+            [
+                'id' => 6,
+                'conversation_id' => $conversationId,
+                'type' => 'system',
+                'body' => $order['notes'] !== null
+                    ? "Delivery note: {$order['notes']}"
+                    : 'No special delivery notes on this stop.',
+                'created_at' => $now->copy()->subMinutes(8)->toIso8601String(),
+                'sender' => null,
+                'attachments' => [],
+            ],
+        ];
+    }
+
+    /**
      * @return list<array{
      *     id: string,
      *     orderNumber: string,

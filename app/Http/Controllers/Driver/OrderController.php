@@ -33,14 +33,19 @@ class OrderController extends Controller
     /**
      * Order-scoped thread. Drivers enter from the stop, never a global inbox.
      */
-    public function chat(string $order): Response
+    public function chat(Request $request, string $order): Response
     {
         $detail = DemoCatalog::driverOrderDetail($order);
 
         abort_if($detail === null, 404);
 
+        $viewerId = (int) $request->user()->id;
+
         return Inertia::render('driver/orders/chat', [
             'order' => $detail,
+            'messages' => DemoCatalog::driverOrderChatMessages($order, $viewerId),
+            'viewerId' => $viewerId,
+            'canSend' => $detail['status'] !== 'delivered',
         ]);
     }
 

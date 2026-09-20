@@ -19,6 +19,7 @@ import {
     index as ordersIndex,
     show as orderShow,
 } from '@/routes/driver/orders';
+import { index as routeIndex } from '@/routes/driver/route';
 import type { Auth } from '@/types';
 
 type DriverDashboardSummary = {
@@ -98,7 +99,15 @@ export default function DriverDashboard({ summary }: DriverDashboardProps) {
                         >
                             Activity
                         </Link>
-                        , Review Today&apos;s Route, And Track{' '}
+                        , Review{' '}
+                        <Link
+                            href={routeIndex.url()}
+                            prefetch
+                            className="text-primary font-medium underline underline-offset-2"
+                        >
+                            Today&apos;s Route
+                        </Link>
+                        , And Track{' '}
                         <Link
                             href={ordersIndex.url()}
                             prefetch

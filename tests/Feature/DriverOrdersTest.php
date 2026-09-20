@@ -63,7 +63,13 @@ test('drivers can open chat for an assigned order', function () {
             ->component('driver/orders/chat')
             ->where('order.id', 'drv-ord-1001')
             ->where('order.orderNumber', 'POM-DRV-1001')
-            ->where('order.customerName', 'Elena Vargas'));
+            ->where('order.customerName', 'Elena Vargas')
+            ->where('viewerId', $driver->id)
+            ->where('canSend', true)
+            ->has('messages')
+            ->has('messages.0.id')
+            ->has('messages.0.type')
+            ->has('messages.0.body'));
 });
 
 test('unknown driver order chats return 404', function () {
@@ -75,6 +81,22 @@ test('unknown driver order chats return 404', function () {
     $this->actingAs($driver, 'driver')
         ->get(route('driver.orders.chat', 'missing-order'))
         ->assertNotFound();
+});
+
+test('delivered order chat is read-only', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.orders.chat', 'drv-ord-1004'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('driver/orders/chat')
+            ->where('order.status', 'delivered')
+            ->where('canSend', false)
+            ->has('messages'));
 });
 
 test('unknown driver orders return 404', function () {

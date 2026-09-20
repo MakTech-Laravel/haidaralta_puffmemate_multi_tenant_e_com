@@ -3,6 +3,7 @@ import {
     Bell,
     LayoutDashboard,
     LogOut,
+    Navigation,
     Package,
     UserRound,
     type LucideIcon,
@@ -12,6 +13,7 @@ import { index as accountIndex } from '@/routes/driver/account';
 import { index as activityIndex } from '@/routes/driver/activity';
 import { index as notificationsIndex } from '@/routes/driver/notifications';
 import { index as ordersIndex } from '@/routes/driver/orders';
+import { index as routeIndex } from '@/routes/driver/route';
 
 export type DriverNavItem = {
     id: string;
@@ -22,7 +24,7 @@ export type DriverNavItem = {
     logout?: boolean;
     /** Shown in the phone/tablet tab bar. Desktop sidebar lists every item. */
     tab?: boolean;
-    /** Short label for the tab bar when `label` is too long for four columns. */
+    /** Short label for the tab bar when `label` is too long for five columns. */
     tabLabel?: string;
 };
 
@@ -34,7 +36,7 @@ function matchesPath(url: string, path: string, nested = false): boolean {
     return nested && url.startsWith(`${path}/`);
 }
 
-/** Four field tabs. Order chat is opened from a stop, not from nav. */
+/** Five field tabs. Route is today's sequenced stops; chat stays on the order. */
 export const driverNavItems: DriverNavItem[] = [
     {
         id: 'dashboard',
@@ -51,6 +53,14 @@ export const driverNavItems: DriverNavItem[] = [
         href: ordersIndex.url(),
         tab: true,
         match: (url) => matchesPath(url, ordersIndex.url(), true),
+    },
+    {
+        id: 'route',
+        label: 'Route',
+        icon: Navigation,
+        href: routeIndex.url(),
+        tab: true,
+        match: (url) => matchesPath(url, routeIndex.url(), true),
     },
     {
         id: 'notifications',

@@ -14,7 +14,7 @@ export function DriverMobileNav() {
             className="border-border bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-sm xl:hidden"
             aria-label="Driver"
         >
-            <ul className="grid h-16 grid-cols-4">
+            <ul className="grid h-16 grid-cols-5">
                 {driverTabItems.map((item) => {
                     const active = item.match(url);
                     const Icon = item.icon;
