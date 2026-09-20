@@ -8,6 +8,7 @@ test('guests cannot open driver field tabs', function (string $route) {
     $this->get(route($route))->assertRedirect();
 })->with([
     'route' => 'driver.route.index',
+    'activity' => 'driver.activity.index',
     'notifications' => 'driver.notifications.index',
     'account' => 'driver.account.index',
 ]);
@@ -24,6 +25,7 @@ test('drivers can open the field tab destinations', function (string $route, str
         ->assertInertia(fn (Assert $page) => $page->component($component));
 })->with([
     'route' => ['driver.route.index', 'driver/route/index'],
+    'activity' => ['driver.activity.index', 'driver/activity/index'],
     'notifications' => ['driver.notifications.index', 'driver/notifications/index'],
     'account' => ['driver.account.index', 'driver/account/index'],
 ]);

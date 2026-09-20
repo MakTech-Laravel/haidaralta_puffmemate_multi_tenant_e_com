@@ -20,9 +20,10 @@ export function DriverHeader() {
     const getInitials = useInitials();
     const notificationsHref = notificationsIndex.url();
     const accountHref = accountIndex.url();
-    const notificationsActive = Boolean(
-        driverNavItems.find((item) => item.id === 'notifications')?.match(url),
-    );
+    const notificationsActive =
+        url === notificationsHref ||
+        url.startsWith(`${notificationsHref}?`) ||
+        url.startsWith(`${notificationsHref}/`);
     const accountActive = Boolean(
         driverNavItems.find((item) => item.id === 'account')?.match(url),
     );

@@ -1,6 +1,5 @@
 import {
     Activity,
-    Bell,
     LayoutDashboard,
     LogOut,
     Navigation,
@@ -11,7 +10,6 @@ import {
 import { dashboard } from '@/routes/driver';
 import { index as accountIndex } from '@/routes/driver/account';
 import { index as activityIndex } from '@/routes/driver/activity';
-import { index as notificationsIndex } from '@/routes/driver/notifications';
 import { index as ordersIndex } from '@/routes/driver/orders';
 import { index as routeIndex } from '@/routes/driver/route';
 
@@ -36,7 +34,10 @@ function matchesPath(url: string, path: string, nested = false): boolean {
     return nested && url.startsWith(`${path}/`);
 }
 
-/** Five field tabs. Route is today's sequenced stops; chat stays on the order. */
+/**
+ * Five field tabs. Notifications live on the header bell, not the tab bar.
+ * Route stays center; chat stays on the order.
+ */
 export const driverNavItems: DriverNavItem[] = [
     {
         id: 'dashboard',
@@ -63,13 +64,12 @@ export const driverNavItems: DriverNavItem[] = [
         match: (url) => matchesPath(url, routeIndex.url(), true),
     },
     {
-        id: 'notifications',
-        label: 'Notifications',
-        tabLabel: 'Alerts',
-        icon: Bell,
-        href: notificationsIndex.url(),
+        id: 'activity',
+        label: 'Activity',
+        icon: Activity,
+        href: activityIndex.url(),
         tab: true,
-        match: (url) => matchesPath(url, notificationsIndex.url(), true),
+        match: (url) => matchesPath(url, activityIndex.url(), true),
     },
     {
         id: 'account',
@@ -78,13 +78,6 @@ export const driverNavItems: DriverNavItem[] = [
         href: accountIndex.url(),
         tab: true,
         match: (url) => matchesPath(url, accountIndex.url(), true),
-    },
-    {
-        id: 'activity',
-        label: 'My activity',
-        icon: Activity,
-        href: activityIndex.url(),
-        match: (url) => matchesPath(url, activityIndex.url(), true),
     },
     {
         id: 'logout',

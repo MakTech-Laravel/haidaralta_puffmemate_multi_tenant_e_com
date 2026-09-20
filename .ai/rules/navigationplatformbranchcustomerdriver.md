@@ -11,3 +11,6 @@ Define portal sidebar trees with navLink / navGroup / navSection from resources/
 
 ## Driver field chrome is not PortalShell
 Driver navigation is driverNavItems + DriverHeader + DriverMobileNav (below xl) + DriverSidebar (xl+). Do not put driver on PortalShell SidebarNav or StorefrontHeader menu/cart. Phone and tablet must keep the five-tab bar (Dashboard, Orders, Route, Alerts, Account). Route is the center tab. Chat is order-scoped at driver.orders.chat, not a nav destination.
+
+## Driver field tabs include Activity
+Phone and tablet must keep the five-tab bar Dashboard, Orders, Route, Activity, Account. Notifications stay on the header bell. Do not restore an Alerts footer tab.

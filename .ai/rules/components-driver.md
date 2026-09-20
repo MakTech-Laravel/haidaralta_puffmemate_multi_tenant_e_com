@@ -12,3 +12,6 @@ driverNavItems is the single source: tab:true items (Dashboard/Orders/Route/Aler
 
 ## Driver UI types include area batches
 DriverAssignedOrder includes areaId/areaLabel. Group lists with groupDriverAssignedOrdersByArea. Show a suburb badge and treat same-area drops as one assignment.
+
+## Driver footer uses Activity not Alerts
+Driver tab bar is Dashboard, Orders, Route, Activity, Account. Notifications stay on the header bell only — do not restore an Alerts tab. Chat stays order-scoped. Sidebar lists the five tabs plus Log Out.
