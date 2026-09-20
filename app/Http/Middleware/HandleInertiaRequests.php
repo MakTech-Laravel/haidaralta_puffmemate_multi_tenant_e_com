@@ -67,6 +67,9 @@ class HandleInertiaRequests extends Middleware
             'customerNotifications' => $portal === 'customer'
                 ? array_slice(DemoCatalog::customerNotifications(), 0, 5)
                 : [],
+            'driverSupport' => $portal === 'driver'
+                ? DemoCatalog::driverSupportContacts()
+                : null,
         ];
     }
 

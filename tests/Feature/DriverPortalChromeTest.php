@@ -52,3 +52,40 @@ test('drivers receive sequenced remaining and completed stops on the route tab',
             ->has('remaining.0.customerName')
             ->has('remaining.0.addressSummary'));
 });
+
+test('drivers receive support contacts for the header account sheet', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('driverSupport.supportPhone', '+61418001100')
+            ->where('driverSupport.branchPhone', '+61290001200'));
+});
+
+test('customers do not receive driver support contacts', function () {
+    $customer = User::factory()->create();
+
+    $this->actingAs($customer, 'customer')
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('driverSupport', null));
+});
+
+test('drivers can open profile settings from the account sheet destination', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('profile.edit'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('settings/profile')
+            ->where('portal', 'driver'));
+});

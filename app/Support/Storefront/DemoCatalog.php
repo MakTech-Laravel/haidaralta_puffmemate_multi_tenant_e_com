@@ -1023,6 +1023,21 @@ class DemoCatalog
     }
 
     /**
+     * Field-header contact numbers shared with every driver page.
+     *
+     * @return array{supportPhone: string, branchPhone: string}
+     */
+    public static function driverSupportContacts(): array
+    {
+        $hub = self::driverDashboardHub();
+
+        return [
+            'supportPhone' => $hub['supportPhone'],
+            'branchPhone' => $hub['branchPhone'],
+        ];
+    }
+
+    /**
      * Resolve one demo driver order for the detail + OTP deliver screen.
      *
      * @return array{

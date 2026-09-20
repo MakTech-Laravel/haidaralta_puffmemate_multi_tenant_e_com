@@ -23,6 +23,10 @@ declare module '@inertiajs/core' {
                 show_bulk_import: boolean;
                 sku_prefix: string;
             };
+            driverSupport: {
+                supportPhone: string;
+                branchPhone: string;
+            } | null;
             [key: string]: unknown;
         };
     }
