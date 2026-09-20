@@ -13,99 +13,67 @@ import { index as routeIndex } from '@/routes/driver/route';
 type DriverOrderCardProps = {
     order: DriverAssignedOrder;
     highlighted?: boolean;
+    showRoutePin?: boolean;
 };
 
 export function DriverOrderCard({
     order,
     highlighted = false,
+    showRoutePin = true,
 }: DriverOrderCardProps) {
     const isDelivered = order.status === 'delivered';
-    const productPreview = order.productPreview.join(' · ');
+    const addressLine = [order.addressSummary, order.unitLabel]
+        .filter(Boolean)
+        .join(' · ');
+    const meta = [
+        order.orderNumber,
+        order.completedLabel ?? order.windowLabel,
+        order.totalLabel,
+        order.paymentMethod === 'cod' ? 'COD' : null,
+    ]
+        .filter(Boolean)
+        .join(' · ');
 
     return (
         <article
             className={cn(
-                'bg-accent flex flex-col gap-3 rounded-xl p-4 sm:p-5',
+                'bg-accent flex items-start gap-2 rounded-xl p-3 sm:p-4',
                 highlighted && 'ring-primary ring-2',
             )}
         >
             <Link
                 href={orderShow.url(order.id)}
                 prefetch
-                className="flex flex-col gap-3 transition-opacity hover:opacity-95"
+                className="flex min-w-0 flex-1 flex-col gap-0.5 transition-opacity hover:opacity-95"
             >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div className="min-w-0 space-y-1">
-                        <p className="text-muted-foreground text-sm font-medium">
-                            Order {order.orderNumber}
-                        </p>
-                        <h2 className="text-foreground text-xl font-semibold tracking-tight">
-                            {order.customerName}
-                        </h2>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-end gap-2">
-                        <Badge variant="outline">{order.areaLabel}</Badge>
-                        <Badge
-                            className={cn(
-                                'rounded-sm px-2.5 py-0.5 text-base font-medium',
-                                isDelivered
-                                    ? 'bg-muted-foreground/15 text-foreground border-transparent'
-                                    : 'bg-primary text-primary-foreground border-transparent',
-                            )}
-                        >
-                            {driverOrderStatusLabel[order.status]}
-                        </Badge>
-                    </div>
+                <div className="flex items-center gap-2">
+                    <h2 className="text-foreground min-w-0 truncate text-sm font-semibold tracking-tight sm:text-base">
+                        {order.customerName}
+                    </h2>
+                    <Badge
+                        className={cn(
+                            'shrink-0 rounded-sm px-1.5 py-0 text-[11px] font-medium',
+                            isDelivered
+                                ? 'bg-muted-foreground/15 text-foreground border-transparent'
+                                : 'bg-primary text-primary-foreground border-transparent',
+                        )}
+                    >
+                        {driverOrderStatusLabel[order.status]}
+                    </Badge>
                 </div>
-
-                <div className="space-y-1">
-                    <p className="text-muted-foreground text-base leading-snug">
-                        {order.addressSummary}
-                    </p>
-                    {order.unitLabel ? (
-                        <p className="text-muted-foreground text-sm">
-                            {order.unitLabel}
-                        </p>
-                    ) : null}
-                </div>
-
-                <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                    <span>{order.windowLabel}</span>
-                    {order.etaLabel ? <span>ETA {order.etaLabel}</span> : null}
-                    <span>
-                        {order.productCount}{' '}
-                        {order.productCount === 1 ? 'item' : 'items'}
-                    </span>
-                    <span className="text-foreground font-medium">
-                        {order.totalLabel}
-                    </span>
-                    <span>
-                        {order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Paid'}
-                    </span>
-                </div>
-
-                {productPreview ? (
-                    <p className="text-muted-foreground truncate text-sm">
-                        {productPreview}
-                        {order.productCount > order.productPreview.length
-                            ? ' · + more'
-                            : ''}
-                    </p>
-                ) : null}
-
-                {order.notes ? (
-                    <p className="text-foreground text-sm leading-snug">
-                        Note: {order.notes}
-                    </p>
-                ) : null}
+                <p className="text-muted-foreground truncate text-sm">
+                    {addressLine}
+                </p>
+                <p className="text-muted-foreground truncate text-xs">
+                    {meta}
+                </p>
             </Link>
 
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-0.5">
                 <Button
                     type="button"
-                    variant="outline"
-                    size="lg"
-                    className="h-12 min-w-0 flex-1"
+                    variant="ghost"
+                    size="icon-sm"
                     asChild
                 >
                     <Link
@@ -114,28 +82,28 @@ export function DriverOrderCard({
                         aria-label={`Chat about order ${order.orderNumber}`}
                         data-test="driver-order-chat"
                     >
-                        <MessageCircle data-icon="inline-start" />
-                        Chat
+                        <MessageCircle className="size-4" />
                     </Link>
                 </Button>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="size-12 shrink-0"
-                    asChild
-                >
-                    <Link
-                        href={routeIndex.url({
-                            query: { highlight: order.id },
-                        })}
-                        prefetch
-                        aria-label={`Show ${order.customerName} on the route map`}
-                        data-test="driver-order-map"
+                {showRoutePin ? (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        asChild
                     >
-                        <MapPin className="size-5" />
-                    </Link>
-                </Button>
+                        <Link
+                            href={routeIndex.url({
+                                query: { highlight: order.id },
+                            })}
+                            prefetch
+                            aria-label={`Show ${order.customerName} on the route map`}
+                            data-test="driver-order-map"
+                        >
+                            <MapPin className="size-4" />
+                        </Link>
+                    </Button>
+                ) : null}
             </div>
         </article>
     );

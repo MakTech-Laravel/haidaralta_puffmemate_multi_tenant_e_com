@@ -6,7 +6,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 test('guests are redirected from driver orders', function () {
     $this->get(route('driver.orders.index'))
-        ->assertRedirect();
+        ->assertRedirect(route('login'));
 });
 
 test('drivers can view assigned orders index', function () {
@@ -49,12 +49,13 @@ test('drivers can view an assigned order detail', function () {
             ->where('order.areaLabel', 'Surry Hills')
             ->has('order.products')
             ->has('order.demoOtpHint')
+            ->where('order.paymentMethod', 'cod')
             ->has('order.shippingAddress'));
 });
 
 test('guests are redirected from driver order chat', function () {
     $this->get(route('driver.orders.chat', 'drv-ord-1001'))
-        ->assertRedirect();
+        ->assertRedirect(route('login'));
 });
 
 test('drivers can open chat for an assigned order', function () {
@@ -105,6 +106,46 @@ test('delivered order chat is read-only', function () {
             ->where('order.status', 'delivered')
             ->where('canSend', false)
             ->has('messages'));
+});
+
+test('drivers can view old orders history', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.history.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('driver/history')
+            ->has('orders', 6)
+            ->where('orders.0.customerName', 'Maya Patel')
+            ->where('orders.0.areaLabel', 'Paddington')
+            ->where('orders.0.status', 'delivered')
+            ->where('orders.0.completedLabel', 'Yesterday'));
+});
+
+test('guests are redirected from old orders', function () {
+    $this->get(route('driver.history.index'))
+        ->assertRedirect(route('login'));
+});
+
+test('drivers can view a past order detail', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.orders.show', 'drv-ord-0901'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('driver/orders/show')
+            ->where('order.id', 'drv-ord-0901')
+            ->where('order.orderNumber', 'POM-DRV-0901')
+            ->where('order.areaLabel', 'Paddington')
+            ->where('order.status', 'delivered'));
 });
 
 test('unknown driver orders return 404', function () {

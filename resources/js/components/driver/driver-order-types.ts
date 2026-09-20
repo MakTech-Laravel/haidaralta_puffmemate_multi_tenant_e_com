@@ -21,6 +21,7 @@ export type DriverAssignedOrder = {
     productPreview: string[];
     paymentMethod: DriverOrderPaymentMethod;
     etaLabel: string | null;
+    completedLabel: string | null;
 };
 
 export type DriverAssignedArea = {
@@ -144,6 +145,56 @@ export function groupDriverAssignedOrdersByArea(
     }
 
     return buckets;
+}
+
+export function searchDriverAssignedOrders(
+    orders: DriverAssignedOrder[],
+    query: string,
+): DriverAssignedOrder[] {
+    const needle = query.trim().toLowerCase();
+
+    if (needle === '') {
+        return orders;
+    }
+
+    return orders.filter((order) => {
+        const haystack = [
+            order.orderNumber,
+            order.id,
+            order.customerName,
+            order.addressSummary,
+            order.areaLabel,
+            order.phone,
+            order.unitLabel,
+            order.notes,
+            ...order.productPreview,
+        ]
+            .filter((value): value is string => Boolean(value))
+            .join(' ')
+            .toLowerCase();
+
+        return haystack.includes(needle);
+    });
+}
+
+export function groupDriverAssignedOrdersByCompletedLabel(
+    orders: DriverAssignedOrder[],
+): Array<{ label: string; orders: DriverAssignedOrder[] }> {
+    const groups: Array<{ label: string; orders: DriverAssignedOrder[] }> = [];
+
+    for (const order of orders) {
+        const label = order.completedLabel ?? 'Earlier';
+        const last = groups.at(-1);
+
+        if (last && last.label === label) {
+            last.orders.push(order);
+            continue;
+        }
+
+        groups.push({ label, orders: [order] });
+    }
+
+    return groups;
 }
 
 export function driverAreaMapsQuery(label: string): string {

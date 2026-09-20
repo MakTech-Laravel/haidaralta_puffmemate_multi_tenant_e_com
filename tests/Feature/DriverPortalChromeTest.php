@@ -5,7 +5,7 @@ use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('guests cannot open driver field tabs', function (string $route) {
-    $this->get(route($route))->assertRedirect();
+    $this->get(route($route))->assertRedirect(route('login'));
 })->with([
     'route' => 'driver.route.index',
     'activity' => 'driver.activity.index',

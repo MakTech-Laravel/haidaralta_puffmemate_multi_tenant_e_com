@@ -831,7 +831,8 @@ class DemoCatalog
      *     unitLabel: string|null,
      *     productPreview: list<string>,
      *     paymentMethod: string,
-     *     etaLabel: string|null
+     *     etaLabel: string|null,
+     *     completedLabel: string|null
      * }>
      */
     public static function driverAssignedOrders(): array
@@ -868,6 +869,7 @@ class DemoCatalog
                     'productPreview' => $productPreview,
                     'paymentMethod' => in_array($order['id'], $codOrderIds, true) ? 'cod' : 'paid',
                     'etaLabel' => $etaLabel,
+                    'completedLabel' => $order['completedLabel'] ?? null,
                 ];
             },
             self::driverOrderCatalog(),
@@ -1088,9 +1090,22 @@ class DemoCatalog
      */
     public static function driverOrderDetail(string $id): ?array
     {
-        foreach (self::driverOrderCatalog() as $order) {
+        $assigned = null;
+
+        foreach ([...self::driverAssignedOrders(), ...self::driverPastOrders()] as $order) {
             if ($order['id'] === $id) {
-                return $order;
+                $assigned = $order;
+                break;
+            }
+        }
+
+        if ($assigned === null) {
+            return null;
+        }
+
+        foreach ([...self::driverOrderCatalog(), ...self::driverPastOrderCatalog()] as $order) {
+            if ($order['id'] === $id) {
+                return array_merge($order, $assigned);
             }
         }
 
@@ -1508,6 +1523,243 @@ class DemoCatalog
                     ['name' => 'Marlboro Gold', 'quantityLabel' => '×1', 'priceLabel' => '$6.00'],
                     ['name' => 'Dunhill Red', 'quantityLabel' => '×1', 'priceLabel' => '$7.50'],
                     ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$6.10'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Earlier delivered stops. Shown on Old orders, not on today's run.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function driverPastOrders(): array
+    {
+        return array_map(
+            static function (array $order): array {
+                $productPreview = array_values(array_map(
+                    static fn (array $product): string => $product['name'],
+                    array_slice($order['products'], 0, 2),
+                ));
+
+                return [
+                    'id' => $order['id'],
+                    'orderNumber' => $order['orderNumber'],
+                    'status' => 'delivered',
+                    'customerName' => $order['customerName'],
+                    'areaId' => $order['areaId'],
+                    'areaLabel' => $order['areaLabel'],
+                    'addressSummary' => $order['addressSummary'],
+                    'windowLabel' => $order['windowLabel'],
+                    'productCount' => $order['productCount'],
+                    'totalLabel' => $order['totalLabel'],
+                    'phone' => $order['phone'],
+                    'notes' => $order['notes'],
+                    'unitLabel' => $order['shippingAddress']['line2'],
+                    'productPreview' => $productPreview,
+                    'paymentMethod' => $order['id'] === 'drv-ord-0901' ? 'cod' : 'paid',
+                    'etaLabel' => null,
+                    'completedLabel' => $order['completedLabel'],
+                ];
+            },
+            self::driverPastOrderCatalog(),
+        );
+    }
+
+    /**
+     * @return list<array{
+     *     id: string,
+     *     orderNumber: string,
+     *     status: string,
+     *     statusLabel: string,
+     *     customerName: string,
+     *     areaId: string,
+     *     areaLabel: string,
+     *     addressSummary: string,
+     *     windowLabel: string,
+     *     productCount: int,
+     *     totalLabel: string,
+     *     phone: string,
+     *     notes: string|null,
+     *     demoOtpHint: string,
+     *     completedLabel: string,
+     *     shippingAddress: array{line1: string, line2: string|null, city: string, region: string, postalCode: string, country: string},
+     *     products: list<array{name: string, quantityLabel: string, priceLabel: string}>
+     * }>
+     */
+    private static function driverPastOrderCatalog(): array
+    {
+        return [
+            [
+                'id' => 'drv-ord-0901',
+                'orderNumber' => 'POM-DRV-0901',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Maya Patel',
+                'areaId' => 'area-paddington',
+                'areaLabel' => 'Paddington',
+                'addressSummary' => '22 Oxford St, Paddington',
+                'windowLabel' => 'Yesterday · 5:10 PM',
+                'completedLabel' => 'Yesterday',
+                'productCount' => 2,
+                'totalLabel' => '$17.40',
+                'phone' => '+61413001122',
+                'notes' => null,
+                'demoOtpHint' => '551001',
+                'shippingAddress' => [
+                    'line1' => '22 Oxford Street',
+                    'line2' => 'Shop 3',
+                    'city' => 'Paddington',
+                    'region' => 'NSW',
+                    'postalCode' => '2021',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Marlboro Gold', 'quantityLabel' => '×1', 'priceLabel' => '$6.00'],
+                    ['name' => 'Camel Blue', 'quantityLabel' => '×2', 'priceLabel' => '$11.40'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-0902',
+                'orderNumber' => 'POM-DRV-0902',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Jack Brennan',
+                'areaId' => 'area-paddington',
+                'areaLabel' => 'Paddington',
+                'addressSummary' => '8 Glenmore Rd, Paddington',
+                'windowLabel' => 'Yesterday · 6:02 PM',
+                'completedLabel' => 'Yesterday',
+                'productCount' => 1,
+                'totalLabel' => '$9.50',
+                'phone' => '+61419880011',
+                'notes' => 'Left with reception.',
+                'demoOtpHint' => '551002',
+                'shippingAddress' => [
+                    'line1' => '8 Glenmore Road',
+                    'line2' => null,
+                    'city' => 'Paddington',
+                    'region' => 'NSW',
+                    'postalCode' => '2021',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Dunhill Red', 'quantityLabel' => '×1', 'priceLabel' => '$9.50'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-0903',
+                'orderNumber' => 'POM-DRV-0903',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Olivia Hart',
+                'areaId' => 'area-potts-point',
+                'areaLabel' => 'Potts Point',
+                'addressSummary' => '14 Macleay St, Potts Point',
+                'windowLabel' => 'Yesterday · 7:21 PM',
+                'completedLabel' => 'Yesterday',
+                'productCount' => 2,
+                'totalLabel' => '$15.80',
+                'phone' => '+61417665500',
+                'notes' => null,
+                'demoOtpHint' => '551003',
+                'shippingAddress' => [
+                    'line1' => '14 Macleay Street',
+                    'line2' => 'Level 6',
+                    'city' => 'Potts Point',
+                    'region' => 'NSW',
+                    'postalCode' => '2011',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$7.00'],
+                    ['name' => 'Clipper Classic', 'quantityLabel' => '×1', 'priceLabel' => '$8.80'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-0881',
+                'orderNumber' => 'POM-DRV-0881',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Noah Ellis',
+                'areaId' => 'area-redfern',
+                'areaLabel' => 'Redfern',
+                'addressSummary' => '31 Redfern St, Redfern',
+                'windowLabel' => 'Fri · 4:40 PM',
+                'completedLabel' => 'Friday',
+                'productCount' => 3,
+                'totalLabel' => '$22.10',
+                'phone' => '+61415550990',
+                'notes' => null,
+                'demoOtpHint' => '448801',
+                'shippingAddress' => [
+                    'line1' => '31 Redfern Street',
+                    'line2' => null,
+                    'city' => 'Redfern',
+                    'region' => 'NSW',
+                    'postalCode' => '2016',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Marlboro Gold', 'quantityLabel' => '×2', 'priceLabel' => '$12.00'],
+                    ['name' => 'Benson & Hedges Gold', 'quantityLabel' => '×1', 'priceLabel' => '$10.10'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-0882',
+                'orderNumber' => 'POM-DRV-0882',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Grace Liu',
+                'areaId' => 'area-redfern',
+                'areaLabel' => 'Redfern',
+                'addressSummary' => '102 Chalmers St, Redfern',
+                'windowLabel' => 'Fri · 5:18 PM',
+                'completedLabel' => 'Friday',
+                'productCount' => 1,
+                'totalLabel' => '$8.90',
+                'phone' => '+61416667788',
+                'notes' => null,
+                'demoOtpHint' => '448802',
+                'shippingAddress' => [
+                    'line1' => '102 Chalmers Street',
+                    'line2' => 'Unit 12',
+                    'city' => 'Redfern',
+                    'region' => 'NSW',
+                    'postalCode' => '2016',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Camel Blue', 'quantityLabel' => '×1', 'priceLabel' => '$8.90'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-0870',
+                'orderNumber' => 'POM-DRV-0870',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Leo Walsh',
+                'areaId' => 'area-newtown',
+                'areaLabel' => 'Newtown',
+                'addressSummary' => '255 King St, Newtown',
+                'windowLabel' => 'Thu · 3:55 PM',
+                'completedLabel' => 'Thursday',
+                'productCount' => 2,
+                'totalLabel' => '$16.20',
+                'phone' => '+61419990001',
+                'notes' => 'Buzzer 14.',
+                'demoOtpHint' => '337001',
+                'shippingAddress' => [
+                    'line1' => '255 King Street',
+                    'line2' => null,
+                    'city' => 'Newtown',
+                    'region' => 'NSW',
+                    'postalCode' => '2042',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Dunhill Red', 'quantityLabel' => '×1', 'priceLabel' => '$7.50'],
+                    ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$8.70'],
                 ],
             ],
         ];

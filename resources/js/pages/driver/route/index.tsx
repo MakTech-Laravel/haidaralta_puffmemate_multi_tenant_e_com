@@ -1,16 +1,17 @@
 import { Head, Link } from '@inertiajs/react';
-import { CheckCircle2, MapPin, Navigation } from 'lucide-react';
+import { CheckCircle2, MapPin, Navigation, Package } from 'lucide-react';
 import { useEffect } from 'react';
-import { OrderTrackMap } from '@/components/customer/order-track-map';
+import { DriverEmptyState } from '@/components/driver/driver-empty-state';
 import {
     driverAreaMapsQuery,
     driverOrderStatusLabel,
     type DriverAssignedArea,
     type DriverAssignedOrder,
 } from '@/components/driver/driver-order-types';
-import { DemoDataBadge } from '@/components/portal/demo-data-badge';
+import { DriverRouteMapPanel } from '@/components/driver/driver-route-map-panel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { show as orderShow } from '@/routes/driver/orders';
 import { index as routeIndex } from '@/routes/driver/route';
@@ -38,6 +39,17 @@ export default function DriverRouteIndex({
 }: DriverRouteProps) {
     const remainingAreas = areas.filter((area) => area.remainingCount > 0);
     const completedAreas = areas.filter((area) => area.deliveredCount > 0);
+    const assignedCount = remaining.length + completed.length;
+    const progress =
+        assignedCount === 0
+            ? 0
+            : Math.round((completed.length / assignedCount) * 100);
+    const mapStops =
+        currentArea && currentArea.remaining.length > 0
+            ? currentArea.remaining
+            : remaining.length > 0
+              ? remaining
+              : completed;
     const highlightedStop =
         remaining.find((order) => order.id === highlightId) ??
         completed.find((order) => order.id === highlightId) ??
@@ -58,25 +70,31 @@ export default function DriverRouteIndex({
             <Head title="Today's route" />
 
             <div className="flex flex-col gap-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-3">
                     <div className="space-y-1">
                         <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
-                            Today&apos;s route
+                            Route
                         </h1>
                         <p className="text-muted-foreground text-base">
-                            {remaining.length}{' '}
-                            {remaining.length === 1 ? 'stop' : 'stops'} left
-                            across {remainingAreas.length}{' '}
+                            {remaining.length} left · {completed.length} done ·{' '}
+                            {remainingAreas.length}{' '}
                             {remainingAreas.length === 1 ? 'area' : 'areas'}
-                            {completed.length > 0
-                                ? ` · ${completed.length} done`
-                                : ''}
                         </p>
                     </div>
-                    <DemoDataBadge />
+                    <Progress value={progress} className="h-2" />
                 </div>
 
-                <OrderTrackMap />
+                <DriverRouteMapPanel
+                    stops={mapStops}
+                    nextStop={nextStop}
+                    highlightId={highlightId}
+                    areaLabel={currentArea?.label ?? null}
+                    navigateHref={mapsSearchUrl(
+                        driverAreaMapsQuery(
+                            currentArea?.label ?? nextStop?.areaLabel ?? '',
+                        ),
+                    )}
+                />
 
                 {highlightedStop ? (
                     <div
@@ -86,7 +104,7 @@ export default function DriverRouteIndex({
                         <MapPin className="text-primary mt-0.5 size-5 shrink-0" />
                         <div className="min-w-0 space-y-0.5">
                             <p className="text-foreground font-medium">
-                                Highlighted drop · {highlightedStop.customerName}
+                                Selected · {highlightedStop.customerName}
                             </p>
                             <p className="text-muted-foreground text-sm leading-snug">
                                 {highlightedStop.addressSummary}
@@ -98,10 +116,42 @@ export default function DriverRouteIndex({
                     </div>
                 ) : null}
 
+                {nextStop ? (
+                    <section className="border-border bg-card space-y-3 rounded-2xl border p-4 sm:p-5">
+                        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                            Next stop
+                        </p>
+                        <div className="space-y-1">
+                            <h2 className="text-foreground text-xl font-semibold tracking-tight">
+                                {nextStop.customerName}
+                            </h2>
+                            <p className="text-muted-foreground text-base">
+                                {nextStop.addressSummary}
+                            </p>
+                            <p className="text-muted-foreground text-sm">
+                                {nextStop.windowLabel} · {nextStop.totalLabel}
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            size="lg"
+                            className="h-12 w-full"
+                            asChild
+                        >
+                            <Link href={orderShow.url(nextStop.id)} prefetch>
+                                <Navigation data-icon="inline-start" />
+                                Start this stop
+                            </Link>
+                        </Button>
+                    </section>
+                ) : null}
+
                 {remaining.length === 0 ? (
-                    <p className="text-muted-foreground text-base">
-                        No remaining stops on this run.
-                    </p>
+                    <DriverEmptyState
+                        icon={Package}
+                        title="Route complete"
+                        description="All assigned drops for this run are delivered."
+                    />
                 ) : (
                     remainingAreas.map((area) => {
                         const isCurrent = currentArea?.id === area.id;
@@ -118,7 +168,7 @@ export default function DriverRouteIndex({
                                                 {area.label}
                                             </h2>
                                             {isCurrent ? (
-                                                <Badge>Current area</Badge>
+                                                <Badge>Current</Badge>
                                             ) : (
                                                 <Badge variant="secondary">
                                                     Later
@@ -144,7 +194,7 @@ export default function DriverRouteIndex({
                                             rel="noreferrer"
                                         >
                                             <MapPin data-icon="inline-start" />
-                                            Navigate to area
+                                            Navigate
                                         </a>
                                     </Button>
                                 </div>
@@ -165,10 +215,9 @@ export default function DriverRouteIndex({
                                                     prefetch
                                                     className={cn(
                                                         'bg-accent flex items-start gap-3 rounded-xl p-4 transition-opacity hover:opacity-95 sm:p-5',
-                                                        isNext &&
-                                                            'ring-primary ring-2',
-                                                        highlightId ===
-                                                            order.id &&
+                                                        (isNext ||
+                                                            highlightId ===
+                                                                order.id) &&
                                                             'ring-primary ring-2',
                                                     )}
                                                 >
@@ -197,7 +246,7 @@ export default function DriverRouteIndex({
                                                             {highlightId ===
                                                             order.id ? (
                                                                 <Badge>
-                                                                    On map
+                                                                    Selected
                                                                 </Badge>
                                                             ) : null}
                                                             <Badge
@@ -213,7 +262,9 @@ export default function DriverRouteIndex({
                                                             </Badge>
                                                         </span>
                                                         <span className="text-muted-foreground block text-base leading-snug">
-                                                            {order.addressSummary}
+                                                            {
+                                                                order.addressSummary
+                                                            }
                                                         </span>
                                                         <span className="text-muted-foreground block text-sm">
                                                             {order.windowLabel}{' '}
@@ -235,20 +286,6 @@ export default function DriverRouteIndex({
                         );
                     })
                 )}
-
-                {nextStop ? (
-                    <Button
-                        type="button"
-                        size="lg"
-                        className="h-12 w-full"
-                        asChild
-                    >
-                        <Link href={orderShow.url(nextStop.id)} prefetch>
-                            <Navigation data-icon="inline-start" />
-                            Open next stop
-                        </Link>
-                    </Button>
-                ) : null}
 
                 {completedAreas.length > 0 ? (
                     <section className="space-y-4">

@@ -1,11 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
-import { MessageCircle, MapPin } from 'lucide-react';
-import { OrderTrackMap } from '@/components/customer/order-track-map';
+import { MessageCircle, Package, Phone } from 'lucide-react';
 import { DriverDeliverOtpForm } from '@/components/driver/driver-deliver-otp-form';
 import {
+    driverAreaMapsQuery,
     driverOrderStatusLabel,
     type DriverOrderDetail,
 } from '@/components/driver/driver-order-types';
+import { DriverRouteMapPanel } from '@/components/driver/driver-route-map-panel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -15,6 +16,11 @@ import {
     index as ordersIndex,
     show as orderShow,
 } from '@/routes/driver/orders';
+import { index as routeIndex } from '@/routes/driver/route';
+
+function mapsSearchUrl(query: string): string {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
 
 type DriverOrderShowProps = {
     order: DriverOrderDetail;
@@ -51,21 +57,39 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                             </Badge>
                         </div>
                     </div>
-                    <Button
-                        type="button"
-                        size="lg"
-                        className="h-12 shrink-0"
-                        asChild
-                    >
-                        <Link
-                            href={orderChat.url(order.id)}
-                            prefetch
-                            data-test="driver-order-chat"
+                    <div className="flex shrink-0 items-center gap-2">
+                        {order.phone ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="size-12"
+                                asChild
+                            >
+                                <a
+                                    href={`tel:${order.phone}`}
+                                    aria-label={`Call ${order.customerName}`}
+                                >
+                                    <Phone className="size-5" />
+                                </a>
+                            </Button>
+                        ) : null}
+                        <Button
+                            type="button"
+                            size="lg"
+                            className="h-12"
+                            asChild
                         >
-                            <MessageCircle data-icon="inline-start" />
-                            Chat
-                        </Link>
-                    </Button>
+                            <Link
+                                href={orderChat.url(order.id)}
+                                prefetch
+                                data-test="driver-order-chat"
+                            >
+                                <MessageCircle data-icon="inline-start" />
+                                Chat
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <section className="bg-accent space-y-4 rounded-xl p-4 sm:p-5">
@@ -76,8 +100,17 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                         <p className="text-muted-foreground text-base leading-snug">
                             {order.addressSummary}
                         </p>
+                        {order.unitLabel ? (
+                            <p className="text-muted-foreground text-sm">
+                                {order.unitLabel}
+                            </p>
+                        ) : null}
                         <p className="text-muted-foreground text-sm">
                             {order.windowLabel}
+                            {order.etaLabel ? ` · ETA ${order.etaLabel}` : ''}
+                            {order.paymentMethod === 'cod'
+                                ? ' · Cash on delivery'
+                                : ' · Paid'}
                         </p>
                     </div>
 
@@ -101,11 +134,38 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                     ) : null}
                 </section>
 
-                <OrderTrackMap />
+                <div className="space-y-3">
+                    <DriverRouteMapPanel
+                        stops={[order]}
+                        nextStop={order}
+                        highlightId={order.id}
+                        areaLabel={order.areaLabel}
+                        navigateHref={mapsSearchUrl(
+                            `${order.addressSummary}, ${driverAreaMapsQuery(order.areaLabel)}`,
+                        )}
+                    />
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="lg"
+                        className="h-12 w-full"
+                        asChild
+                    >
+                        <Link
+                            href={routeIndex.url({
+                                query: { highlight: order.id },
+                            })}
+                            prefetch
+                            data-test="driver-order-map"
+                        >
+                            Show on route
+                        </Link>
+                    </Button>
+                </div>
 
-                <section className="border-border space-y-3 border p-4 sm:p-5">
+                <section className="border-border space-y-3 rounded-xl border p-4 sm:p-5">
                     <div className="flex items-center gap-2">
-                        <MapPin className="text-foreground size-4" />
+                        <Package className="text-foreground size-4" />
                         <h2 className="text-foreground text-xl font-semibold">
                             Products
                         </h2>
@@ -145,7 +205,6 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
 
                 <DriverDeliverOtpForm
                     orderId={order.id}
-                    demoOtpHint={order.demoOtpHint}
                     disabled={isDelivered}
                 />
 

@@ -12,6 +12,7 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::get('dashboard', [DriverDashboardController::class, 'index'])->name('driver.dashboard');
     Route::get('route', [DriverRouteController::class, 'index'])->name('driver.route.index');
     Route::get('orders', [DriverOrderController::class, 'index'])->name('driver.orders.index');
+    Route::get('history', [DriverOrderController::class, 'history'])->name('driver.history.index');
     Route::get('orders/{order}/chat', [DriverOrderController::class, 'chat'])->name('driver.orders.chat');
     Route::post('orders/{order}/deliver', [DriverOrderController::class, 'deliver'])->name('driver.orders.deliver');
     Route::get('orders/{order}', [DriverOrderController::class, 'show'])->name('driver.orders.show');

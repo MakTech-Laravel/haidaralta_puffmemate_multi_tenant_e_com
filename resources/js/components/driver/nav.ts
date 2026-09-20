@@ -1,5 +1,6 @@
 import {
     Activity,
+    History,
     LayoutDashboard,
     LogOut,
     Navigation,
@@ -10,6 +11,7 @@ import {
 import { dashboard } from '@/routes/driver';
 import { index as accountIndex } from '@/routes/driver/account';
 import { index as activityIndex } from '@/routes/driver/activity';
+import { index as historyIndex } from '@/routes/driver/history';
 import { index as ordersIndex } from '@/routes/driver/orders';
 import { index as routeIndex } from '@/routes/driver/route';
 
@@ -54,6 +56,13 @@ export const driverNavItems: DriverNavItem[] = [
         href: ordersIndex.url(),
         tab: true,
         match: (url) => matchesPath(url, ordersIndex.url(), true),
+    },
+    {
+        id: 'history',
+        label: 'Old orders',
+        icon: History,
+        href: historyIndex.url(),
+        match: (url) => matchesPath(url, historyIndex.url(), true),
     },
     {
         id: 'route',

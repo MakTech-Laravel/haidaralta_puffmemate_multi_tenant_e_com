@@ -120,3 +120,12 @@ test('sixth failed login attempt within a minute is rate limited', function () {
 
     $response->assertTooManyRequests();
 });
+
+test('portal prefixed login paths redirect to the shared login page', function (string $path) {
+    $this->get($path)->assertRedirect(route('login'));
+})->with([
+    'driver' => ['/driver/login'],
+    'platform' => ['/platform/login'],
+    'branch' => ['/branch/login'],
+    'customer' => ['/customer/login'],
+]);

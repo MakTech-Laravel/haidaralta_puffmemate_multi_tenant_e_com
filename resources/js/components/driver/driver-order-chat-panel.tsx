@@ -16,7 +16,6 @@ import {
     driverOrderStatusLabel,
     type DriverOrderDetail,
 } from '@/components/driver/driver-order-types';
-import { DemoDataBadge } from '@/components/portal/demo-data-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -214,7 +213,6 @@ export function DriverOrderChatPanel({
                                 {order.statusLabel ??
                                     driverOrderStatusLabel[order.status]}
                             </Badge>
-                            <DemoDataBadge />
                         </div>
                         <p className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                             <span className="inline-flex items-center gap-1">

@@ -19,6 +19,13 @@ class OrderController extends Controller
         ]);
     }
 
+    public function history(): Response
+    {
+        return Inertia::render('driver/history', [
+            'orders' => DemoCatalog::driverPastOrders(),
+        ]);
+    }
+
     public function show(string $order): Response
     {
         $detail = DemoCatalog::driverOrderDetail($order);
