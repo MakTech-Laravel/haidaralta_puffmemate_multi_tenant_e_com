@@ -1,13 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
     formatMoney,
     type CheckoutItem,
     type CheckoutSummary,
-} from "@/lib/storefront-checkout";
-import { cn } from "@/lib/utils";
+} from '@/lib/storefront-checkout';
+import { cn } from '@/lib/utils';
 
 type CheckoutOrderSummaryProps = {
     items: CheckoutItem[];
@@ -26,24 +25,24 @@ export function CheckoutOrderSummary({
     items,
     itemCount,
     summary,
-    trustBadges,
+    trustBadges: _trustBadges,
     legalNote,
-    coupon,
+    coupon: _coupon,
     termsAccepted,
-    onCouponChange,
+    onCouponChange: _onCouponChange,
     onTermsChange,
     className,
 }: CheckoutOrderSummaryProps) {
     return (
         <aside
-            className={cn("bg-accent h-fit p-5 lg:sticky lg:top-28", className)}
+            className={cn('bg-accent h-fit p-5 lg:sticky lg:top-28', className)}
         >
             <div className="flex items-center justify-between gap-3">
                 <h2 className="text-foreground text-2xl font-bold tracking-tight">
                     Your order
                 </h2>
                 <span className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
-                    {itemCount} item{itemCount === 1 ? "" : "s"}
+                    {itemCount} item{itemCount === 1 ? '' : 's'}
                 </span>
             </div>
 
@@ -51,7 +50,7 @@ export function CheckoutOrderSummary({
                 {items.map((item, index) => (
                     <li
                         key={item.id}
-                        className={`flex flex-col gap-1.5 ${index > 0 ? "mt-8" : ""}`}
+                        className={`flex flex-col gap-1.5 ${index > 0 ? 'mt-8' : ''}`}
                     >
                         <p className="text-foreground text-sm font-bold break-words">
                             {item.branchName}

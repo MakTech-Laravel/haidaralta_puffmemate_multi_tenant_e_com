@@ -21,10 +21,12 @@ export default function BranchRolesEdit({
     branch,
     role,
     permissionGroups,
+    existingNames,
 }: {
     branch: Branch;
     role: Role;
     permissionGroups: PermissionGroup[];
+    existingNames: string[];
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -41,7 +43,7 @@ export default function BranchRolesEdit({
         <>
             <Head title={`Edit ${role.name}`} />
 
-            <div className="mx-auto max-w-3xl space-y-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${role.name}`}
                     description={
@@ -57,6 +59,7 @@ export default function BranchRolesEdit({
                         role: role.id,
                     })}
                     groups={permissionGroups}
+                    existingNames={existingNames}
                     isEdit
                     locked={role.is_super_admin}
                     defaults={{

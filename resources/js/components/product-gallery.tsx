@@ -107,34 +107,39 @@ export function ProductGallery({
         colorCode,
     });
 
-    const activeIndex = items.length === 0 ? 0 : Math.min(index, items.length - 1);
+    const activeIndex =
+        items.length === 0 ? 0 : Math.min(index, items.length - 1);
     const active = items[activeIndex];
 
-    const lightbox = slides.length > 0 ? (
-        <Lightbox
-            open={open}
-            close={() => setOpen(false)}
-            index={activeIndex}
-            slides={slides}
-            plugins={[Zoom]}
-            zoom={{ maxZoomPixelRatio: 4 }}
-            render={{
-                slide: ({ slide }) => (
-                    <div
-                        className="relative flex h-full w-full items-center justify-center p-6"
-                        style={tileStyle}
-                    >
-                        <img
-                            src={slide.src}
-                            alt=""
-                            className="max-h-full max-w-full object-contain"
-                            draggable={false}
-                        />
-                    </div>
-                ),
-            }}
-        />
-    ) : null;
+    const lightbox =
+        slides.length > 0 ? (
+            <Lightbox
+                open={open}
+                close={() => setOpen(false)}
+                index={activeIndex}
+                slides={slides}
+                plugins={[Zoom]}
+                zoom={{ maxZoomPixelRatio: 4 }}
+                render={{
+                    // The gallery only ever builds image slides, but the
+                    // lightbox slide union also covers video.
+                    slide: ({ slide }) =>
+                        'src' in slide ? (
+                            <div
+                                className="relative flex h-full w-full items-center justify-center p-6"
+                                style={tileStyle}
+                            >
+                                <img
+                                    src={slide.src}
+                                    alt=""
+                                    className="max-h-full max-w-full object-contain"
+                                    draggable={false}
+                                />
+                            </div>
+                        ) : null,
+                }}
+            />
+        ) : null;
 
     const openAt = (nextIndex: number): void => {
         setIndex(nextIndex);
@@ -163,7 +168,7 @@ export function ProductGallery({
                 <>
                     <button
                         type="button"
-                        className="group relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        className="group border-border/70 hover:border-primary/40 focus-visible:border-ring focus-visible:ring-ring/50 relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border transition outline-none focus-visible:ring-[3px]"
                         style={tileStyle}
                         onClick={() => openAt(activeIndex)}
                         aria-label={`Preview ${active?.label ?? productName}`}
@@ -193,9 +198,9 @@ export function ProductGallery({
                                     key={item.key}
                                     type="button"
                                     className={cn(
-                                        'size-14 shrink-0 overflow-hidden rounded-lg border outline-none transition sm:size-16',
+                                        'size-14 shrink-0 overflow-hidden rounded-lg border transition outline-none sm:size-16',
                                         imageIndex === activeIndex
-                                            ? 'border-primary ring-1 ring-primary/30'
+                                            ? 'border-primary ring-primary/30 ring-1'
                                             : 'border-border/70 hover:border-primary/40',
                                     )}
                                     style={tileStyle}
@@ -237,7 +242,7 @@ export function ProductGallery({
                 <>
                     <button
                         type="button"
-                        className="group relative aspect-square w-full overflow-hidden rounded-xl border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        className="group border-border/70 hover:border-primary/40 focus-visible:border-ring focus-visible:ring-ring/50 relative aspect-square w-full overflow-hidden rounded-xl border transition outline-none focus-visible:ring-[3px]"
                         style={tileStyle}
                         onClick={() => openAt(activeIndex)}
                         aria-label={`Preview ${active?.label ?? productName}`}
@@ -257,9 +262,9 @@ export function ProductGallery({
                                     key={item.key}
                                     type="button"
                                     className={cn(
-                                        'size-10 shrink-0 overflow-hidden rounded-md border outline-none transition',
+                                        'size-10 shrink-0 overflow-hidden rounded-md border transition outline-none',
                                         imageIndex === activeIndex
-                                            ? 'border-primary ring-1 ring-primary/30'
+                                            ? 'border-primary ring-primary/30 ring-1'
                                             : 'border-border/70 hover:border-primary/40',
                                     )}
                                     style={tileStyle}
@@ -301,7 +306,7 @@ export function ProductGallery({
                         <button
                             key={image.id}
                             type="button"
-                            className="group overflow-hidden rounded-lg border border-border/70 outline-none transition hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                            className="group border-border/70 hover:border-primary/40 focus-visible:border-ring focus-visible:ring-ring/50 overflow-hidden rounded-lg border transition outline-none focus-visible:ring-[3px]"
                             style={tileStyle}
                             onClick={() => openAt(imageIndex)}
                             aria-label={`Preview gallery image ${imageIndex + 1}`}
@@ -320,8 +325,7 @@ export function ProductGallery({
         </>
     );
 
-    const body =
-        layout === 'hero' ? hero : layout === 'tile' ? tile : grid;
+    const body = layout === 'hero' ? hero : layout === 'tile' ? tile : grid;
 
     if (!card) {
         return body;
@@ -343,7 +347,9 @@ export function ProductGallery({
                         : 'Extra images — click a thumbnail to preview'}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="flex min-h-0 flex-1 flex-col px-5">{body}</CardContent>
+            <CardContent className="flex min-h-0 flex-1 flex-col px-5">
+                {body}
+            </CardContent>
         </Card>
     );
 }

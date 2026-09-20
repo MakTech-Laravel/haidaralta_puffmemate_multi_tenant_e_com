@@ -12,7 +12,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 
+/**
+ * @extends AbstractDataTable<InventoryTransaction>
+ */
 class InventoryTransactionDataTable extends AbstractDataTable
 {
     public function __construct(
@@ -33,7 +37,21 @@ class InventoryTransactionDataTable extends AbstractDataTable
         string $portal = 'platform',
         ?string $currentBranchSlug = null,
     ): array {
-        return (new static($request, $scopedBranchId, $portal, $currentBranchSlug))->toArray();
+        return static::instanceFor($request, $scopedBranchId, $portal, $currentBranchSlug)->toArray();
+    }
+
+    public static function instanceFor(
+        Request $request,
+        ?int $scopedBranchId = null,
+        string $portal = 'platform',
+        ?string $currentBranchSlug = null,
+    ): static {
+        return new static($request, $scopedBranchId, $portal, $currentBranchSlug);
+    }
+
+    public function includesBranchColumn(): bool
+    {
+        return $this->scopedBranchId === null;
     }
 
     /**
@@ -71,6 +89,7 @@ class InventoryTransactionDataTable extends AbstractDataTable
         return [
             'type',
             'quantity',
+            'unit_cost',
             'created_at',
             'before_quantity',
             'after_quantity',
@@ -197,6 +216,9 @@ class InventoryTransactionDataTable extends AbstractDataTable
             'reason_note' => $model->reason_note,
             'reason_label' => $model->reasonLabel(),
             'quantity' => $model->quantity,
+            'unit_cost' => $model->unit_cost === null
+                ? null
+                : number_format((float) $model->unit_cost, 2, '.', ''),
             'before_quantity' => $model->before_quantity,
             'after_quantity' => $model->after_quantity,
             'created_by_name' => $model->creator?->name,
@@ -293,7 +315,7 @@ class InventoryTransactionDataTable extends AbstractDataTable
 
         if ($this->portal === 'platform') {
             return match ($creator->user_type) {
-                UserType::PLATFORM => route('platform.staff.show', $creator),
+                UserType::PLATFORM => route('platform.admins.show', $creator),
                 UserType::BRANCH => route('platform.branch-staff.show', $creator),
                 default => null,
             };

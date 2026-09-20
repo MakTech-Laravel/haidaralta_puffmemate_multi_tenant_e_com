@@ -9,7 +9,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 
+/**
+ * @extends AbstractDataTable<Branch>
+ */
 class BranchDataTable extends AbstractDataTable
 {
     protected BranchService $branchService;

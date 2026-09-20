@@ -10,7 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 
+/**
+ * @extends AbstractDataTable<Activity>
+ */
 class ActivityLogDataTable extends AbstractDataTable
 {
     protected ActivityLogService $activityLogs;

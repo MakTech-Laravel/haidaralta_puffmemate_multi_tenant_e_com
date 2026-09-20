@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 
+/**
+ * @extends AbstractDataTable<Product>
+ */
 class ProductDataTable extends AbstractDataTable
 {
     /**

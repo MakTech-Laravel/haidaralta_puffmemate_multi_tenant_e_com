@@ -10,7 +10,10 @@ type CartOrderSummaryProps = {
     className?: string;
 };
 
-export function CartOrderSummary({ summary, className }: CartOrderSummaryProps) {
+export function CartOrderSummary({
+    summary,
+    className,
+}: CartOrderSummaryProps) {
     return (
         <aside
             className={cn(
@@ -74,7 +77,9 @@ export function CartOrderSummary({ summary, className }: CartOrderSummaryProps) 
             </div>
 
             <div className="border-border mt-5 flex min-w-0 items-end justify-between gap-3 border-t pt-4">
-                <span className="text-foreground text-base font-bold">Total</span>
+                <span className="text-foreground text-base font-bold">
+                    Total
+                </span>
                 <span className="text-primary shrink-0 text-2xl font-bold">
                     {formatMoney(summary.total)}
                 </span>

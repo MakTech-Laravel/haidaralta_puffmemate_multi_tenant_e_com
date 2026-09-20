@@ -1,6 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Menu, ShoppingCart, User } from 'lucide-react';
 import { useState } from 'react';
+import { NotificationsPopover } from '@/components/notifications/notifications-popover';
+import type { NotificationItem } from '@/components/notifications/types';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -16,7 +18,21 @@ import {
     type StorefrontChromeItem,
 } from '@/lib/storefront-chrome';
 import { cn } from '@/lib/utils';
-import { about, cart, contact, dashboard, faqs, home, login, shop, wholesale } from '@/routes';
+import {
+    about,
+    cart,
+    contact,
+    dashboard,
+    faqs,
+    home,
+    login,
+    shop,
+    wholesale,
+} from '@/routes';
+import {
+    index as notificationsIndex,
+    show as notificationsShow,
+} from '@/routes/customer/notifications';
 import { category as shopCategory } from '@/routes/shop';
 
 function resolveHref(item: StorefrontChromeItem): string {
@@ -96,6 +112,17 @@ function isAccountArea(url: string): boolean {
     return (
         url === '/dashboard' ||
         url.startsWith('/dashboard?') ||
+        url === '/orders' ||
+        url.startsWith('/orders?') ||
+        url.startsWith('/orders/') ||
+        url === '/notifications' ||
+        url.startsWith('/notifications?') ||
+        url.startsWith('/notifications/') ||
+        url === '/account' ||
+        url.startsWith('/account?') ||
+        url === '/product-to-review' ||
+        url.startsWith('/product-to-review?') ||
+        url.startsWith('/product-to-review/') ||
         url === '/activity' ||
         url.startsWith('/activity?') ||
         url.startsWith('/activity/') ||
@@ -105,7 +132,15 @@ function isAccountArea(url: string): boolean {
 
 export function StorefrontHeader() {
     const page = usePage();
-    const { auth, name } = page.props;
+    const {
+        auth,
+        name,
+        customerNotifications = [],
+    } = page.props as {
+        auth: { user: { avatar?: string } | null };
+        name: string;
+        customerNotifications?: NotificationItem[];
+    };
     const url = page.url;
     const [mobileOpen, setMobileOpen] = useState(false);
     const accountHref = auth.user ? dashboard() : login();
@@ -127,7 +162,7 @@ export function StorefrontHeader() {
             </div>
 
             <header className="border-border bg-background border-b">
-                <div className="mx-auto flex h-16 container items-center gap-4 px-4 sm:h-[4.5rem] sm:px-6">
+                <div className="container mx-auto flex h-16 items-center gap-4 px-4 sm:h-[4.5rem] sm:px-6">
                     <Link
                         href={home()}
                         prefetch
@@ -159,8 +194,21 @@ export function StorefrontHeader() {
                             aria-label="Cart"
                             aria-current={cartActive ? 'page' : undefined}
                         >
-                            <ShoppingCart className="size-6 md:size-8" strokeWidth={1.75} />
+                            <ShoppingCart
+                                className="size-6 md:size-8"
+                                strokeWidth={1.75}
+                            />
                         </Link>
+
+                        <NotificationsPopover
+                            items={customerNotifications}
+                            viewAllHref={notificationsIndex.url()}
+                            getItemHref={(item) =>
+                                notificationsShow.url(item.id)
+                            }
+                            isGuest={!auth.user}
+                            guestHref={login.url()}
+                        />
 
                         <Link
                             href={accountHref}
@@ -181,7 +229,10 @@ export function StorefrontHeader() {
                                     className="size-8 rounded-full object-cover"
                                 />
                             ) : (
-                                <User className="size-6 md:size-8" strokeWidth={1.75} />
+                                <User
+                                    className="size-6 md:size-8"
+                                    strokeWidth={1.75}
+                                />
                             )}
                         </Link>
 
@@ -196,7 +247,10 @@ export function StorefrontHeader() {
                                     <Menu className="size-5" />
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="right" className="w-[min(100%,20rem)]">
+                            <SheetContent
+                                side="right"
+                                className="w-[min(100%,20rem)]"
+                            >
                                 <SheetHeader>
                                     <SheetTitle>Menu</SheetTitle>
                                 </SheetHeader>
@@ -207,7 +261,9 @@ export function StorefrontHeader() {
                                             item={item}
                                             url={url}
                                             className="text-base"
-                                            onNavigate={() => setMobileOpen(false)}
+                                            onNavigate={() =>
+                                                setMobileOpen(false)
+                                            }
                                         />
                                     ))}
                                 </nav>

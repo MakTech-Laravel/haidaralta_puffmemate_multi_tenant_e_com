@@ -1,10 +1,11 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Network, Pencil, RotateCcw, Settings2, Trash2 } from 'lucide-react';
+import { Eye, Network, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Platform/ProductController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Platform/StockController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -218,17 +219,6 @@ export default function PlatformProductsIndex({
                         ...(canInventories
                             ? [
                                   {
-                                      label: 'Manage stock',
-                                      icon: Settings2,
-                                      href: stockPageUrl(
-                                          StockController.manage.url(),
-                                          {
-                                              productId: product.id,
-                                              locked: 'product',
-                                          },
-                                      ),
-                                  },
-                                  {
                                       label: 'Manage branches',
                                       icon: Network,
                                       href: BranchInventoryController.forProduct.url(
@@ -268,8 +258,17 @@ export default function PlatformProductsIndex({
                     const stockItems = canInventories
                         ? stockActionItems(
                               {
+                                  manage: stockPageUrl(
+                                      StockController.manage.url(),
+                                      {
+                                          productId: product.id,
+                                          locked: 'product',
+                                      },
+                                  ),
                                   transactions:
                                       StockTransactionController.index.url(),
+                                  priceHistory:
+                                      PriceHistoryController.index.url(),
                               },
                               { productId: product.id },
                           )
@@ -430,15 +429,12 @@ export default function PlatformProductsIndex({
                     }
 
                     setProcessing(true);
-                    router.delete(
-                        ProductController.destroy.url(deletingSlug),
-                        {
-                            onFinish: () => {
-                                setProcessing(false);
-                                setDeletingSlug(null);
-                            },
+                    router.delete(ProductController.destroy.url(deletingSlug), {
+                        onFinish: () => {
+                            setProcessing(false);
+                            setDeletingSlug(null);
                         },
-                    );
+                    });
                 }}
             />
         </>

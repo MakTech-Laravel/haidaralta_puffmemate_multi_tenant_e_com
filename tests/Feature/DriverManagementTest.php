@@ -225,17 +225,41 @@ test('branch can create driver auto assigned to current branch', function () {
             ->exists())->toBeTrue();
 });
 
-test('platform nested branch drivers index lists assigned drivers', function () {
+test('platform nested branch drivers index redirects to the drivers list filtered by branch', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $melbourneOnly = User::factory()->create([
+        'name' => 'Melbourne Only Courier',
+        'user_type' => UserType::DRIVER,
+        'branch_id' => null,
+    ]);
+
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $melbourneOnly->id,
+        'branch_id' => $melbourne->id,
+    ]);
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branches.drivers.index', $sydney))
+        ->assertRedirect(route('platform.drivers.index', [
+            'filter' => ['branch_id' => $sydney->id],
+        ]));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.drivers.index', [
+            'filter' => ['branch_id' => $sydney->id],
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('platform/branches/drivers/index')
+            ->component('platform/drivers/index')
+            ->where('table.filters.branch_id', (string) $sydney->id)
             ->where('table.data', fn ($rows) => collect($rows)->contains(
                 fn ($row) => $row['phone'] === UserSeeder::DRIVER_PHONE,
+            ))
+            ->where('table.data', fn ($rows) => collect($rows)->doesntContain(
+                fn ($row) => $row['id'] === $melbourneOnly->id,
             )));
 
     $this->actingAs($admin, 'platform')
@@ -273,9 +297,9 @@ test('platform can store driver with address and avatar and sync branches', func
     $profile = $driver->driverProfile;
 
     expect($profile?->address)->toBe('12 Delivery Lane, Sydney')
-        ->and($profile?->avatar_path)->not->toBeNull();
+        ->and($driver->avatar)->not->toBeNull();
 
-    Storage::disk('public')->assertExists($profile->avatar_path);
+    Storage::disk('public')->assertExists($driver->avatar);
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.drivers.branches.sync', $driver), [
@@ -287,6 +311,31 @@ test('platform can store driver with address and avatar and sync branches', func
         ->where('driver_id', $driver->id)
         ->where('status', DriverAssignmentStatus::Active)
         ->count())->toBe(2);
+});
+
+test('platform can update a driver avatar onto users.avatar', function () {
+    Storage::fake('public');
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $profile = $driver->driverProfile;
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.drivers.update', $driver), [
+            'name' => $driver->name,
+            'phone' => $driver->phone,
+            'email' => $driver->email,
+            'vehicle_type' => $profile?->vehicle_type?->value ?? DriverVehicleType::Car->value,
+            'availability_status' => $profile?->availability_status?->value ?? DriverAvailabilityStatus::Offline->value,
+            'is_active' => true,
+            'avatar' => UploadedFile::fake()->image('driver-avatar.jpg'),
+        ])
+        ->assertRedirect();
+
+    $driver->refresh();
+
+    expect($driver->avatar)->not->toBeNull();
+    Storage::disk('public')->assertExists($driver->avatar);
 });
 
 test('driver list payload includes branch slug and effective availability from roster', function () {

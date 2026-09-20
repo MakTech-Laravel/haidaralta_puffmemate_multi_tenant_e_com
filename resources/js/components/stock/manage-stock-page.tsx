@@ -58,6 +58,7 @@ export function ManageStockPage({
     inventoryUrl,
     priceUrl,
     transactionsUrl,
+    priceHistoryUrl,
     allBranchesUrl,
     branchProductsUrl,
     detailsUrl,
@@ -76,6 +77,7 @@ export function ManageStockPage({
     inventoryUrl: string | null;
     priceUrl: string | null;
     transactionsUrl: string | null;
+    priceHistoryUrl: string | null;
     allBranchesUrl: string | null;
     branchProductsUrl: string | null;
     detailsUrl: string | null;
@@ -86,7 +88,11 @@ export function ManageStockPage({
     setLayoutProps({ breadcrumbs });
 
     const hasPair = Boolean(
-        product && inventoryUrl && priceUrl && transactionsUrl,
+        product &&
+        inventoryUrl &&
+        priceUrl &&
+        transactionsUrl &&
+        priceHistoryUrl,
     );
     const pairLocked =
         isBranchLocked(context.locked) && isProductLocked(context.locked);
@@ -140,7 +146,7 @@ export function ManageStockPage({
                     ) : null}
                 </div>
 
-                <section className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-6">
+                <section className="border-border/80 bg-card rounded-2xl border p-5 shadow-sm sm:p-6">
                     <div className="space-y-1">
                         <h2 className="text-base font-semibold tracking-tight">
                             {lockBranch ? 'Product' : 'Branch and product'}
@@ -173,7 +179,8 @@ export function ManageStockPage({
                 product &&
                 inventoryUrl &&
                 priceUrl &&
-                transactionsUrl ? (
+                transactionsUrl &&
+                priceHistoryUrl ? (
                     <>
                         {detailsUrl ? (
                             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -201,6 +208,7 @@ export function ManageStockPage({
                             inventoryUrl={inventoryUrl}
                             priceUrl={priceUrl}
                             transactionsUrl={transactionsUrl}
+                            priceHistoryUrl={priceHistoryUrl}
                         />
                     </>
                 ) : null}

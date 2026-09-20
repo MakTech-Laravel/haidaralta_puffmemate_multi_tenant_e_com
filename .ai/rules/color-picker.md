@@ -1,15 +1,18 @@
 ---
 paths:
-  - 'resources/js/components/color-picker/**'
+    - 'resources/js/components/color-picker/**'
 ---
 
 # Color Picker
 
 ## Global ColorPicker facade and shells
+
 Use ColorPicker from @/components/color-picker (icon-picker style): mode dialog|sheet|collapsible; default enabledModes=['solid']; defaultMode must be in enabledModes. Radial is types+UI-ready but off unless enabled. No new color npm package unless approved. Helpers live in @/lib/color-picker (colorPickerStyle, normalizeColorPickerValue).
 
 ## Button trigger swatch needs inset padding
+
 ColorPicker triggerVariant=button uses h-10 with size-6 swatch and px-2.5 so the preview is not flush against the border (never size-9 inside h-9).
 
 ## Transparent picker previews inherit parent
+
 Transparent ColorPicker previews inherit the parent surface. Do not use COLOR_PICKER_CHECKERBOARD on triggers or panel previews. Keep checkerboard only on the hex swatch editor.

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Branch;
 use App\DataTables\BranchProductListingDataTable;
 use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryTransactionType;
+use App\Enums\PriceChangeSource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\AdjustBranchInventoryRequest;
 use App\Http\Requests\Branch\ReuseBranchProductRequest;
@@ -16,6 +17,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
+use App\Models\User;
 use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductSuggestionService;
 use App\Services\Inventory\BranchPricingService;
@@ -86,7 +88,7 @@ class ProductController extends Controller
     public function store(StoreBranchProductRequest $request): RedirectResponse
     {
         $branch = $this->currentBranch();
-        $data = $request->safe()->except(['image', 'gallery', 'selling_price', 'discount_price', 'quantity']);
+        $data = $request->safe()->except(['image', 'gallery', 'selling_price', 'buying_price', 'regular_price', 'discount_price', 'quantity']);
         $data['status'] = $request->boolean('status', true);
 
         $product = $this->products->createFromBranch(
@@ -97,7 +99,7 @@ class ProductController extends Controller
             $request->user('branch'),
         );
 
-        $this->applyOptionalStockAndPrice($branch, $product, $request->validated());
+        $this->applyOptionalStockAndPrice($branch, $product, $request->validated(), $request->user('branch'));
 
         Toast::success('Product created.');
 
@@ -118,7 +120,7 @@ class ProductController extends Controller
         $branch = $this->currentBranch();
         $product = Product::query()->findOrFail($request->validated('product_id'));
 
-        $this->applyOptionalStockAndPrice($branch, $product, $request->validated());
+        $this->applyOptionalStockAndPrice($branch, $product, $request->validated(), $request->user('branch'));
 
         Toast::success('Existing product stock and price updated for this branch.');
 
@@ -220,6 +222,7 @@ class ProductController extends Controller
                 $request->user('branch'),
                 reason: InventoryAdjustmentReason::fromNullable($request->validated('reason')),
                 reasonNote: InventoryAdjustmentReason::noteFrom($request->validated('reason_note')),
+                unitCost: $request->validated('buying_price'),
             );
         } catch (InvalidArgumentException $exception) {
             Toast::error($exception->getMessage());
@@ -240,7 +243,7 @@ class ProductController extends Controller
         $branch = $this->currentBranch();
         $variant = $this->resolveVariant($product, $request->validated('variant_id'));
 
-        $this->pricing->upsert($branch, $product, $request->validated(), $variant);
+        $this->pricing->upsert($branch, $product, $request->validated(), $variant, $request->user('branch'));
 
         Toast::success('Price updated.');
 
@@ -250,7 +253,7 @@ class ProductController extends Controller
     /**
      * @param  array<string, mixed>  $data
      */
-    private function applyOptionalStockAndPrice(Branch $branch, Product $product, array $data): void
+    private function applyOptionalStockAndPrice(Branch $branch, Product $product, array $data, ?User $actor = null): void
     {
         if (array_key_exists('quantity', $data)) {
             $inventory = $this->inventory->firstOrCreate($branch, $product);
@@ -262,16 +265,26 @@ class ProductController extends Controller
                     $inventory->refresh(),
                     $qty > 0 ? InventoryTransactionType::StockIn : InventoryTransactionType::StockOut,
                     abs($qty),
+                    $actor,
+                    unitCost: $qty > 0 ? ($data['buying_price'] ?? null) : null,
                 );
             }
         }
 
         if (! empty($data['selling_price'])) {
-            $this->pricing->upsert($branch, $product, [
-                'selling_price' => $data['selling_price'],
-                'discount_type' => ! empty($data['discount_price']) ? 'fixed' : 'none',
-                'discount_price' => $data['discount_price'] ?? null,
-            ]);
+            $this->pricing->upsert(
+                $branch,
+                $product,
+                [
+                    'selling_price' => $data['selling_price'],
+                    'buying_price' => $data['buying_price'] ?? null,
+                    'regular_price' => $data['regular_price'] ?? null,
+                    'discount_type' => ! empty($data['discount_price']) ? 'fixed' : 'none',
+                    'discount_price' => $data['discount_price'] ?? null,
+                ],
+                actor: $actor,
+                source: PriceChangeSource::ProductCreate,
+            );
         }
     }
 

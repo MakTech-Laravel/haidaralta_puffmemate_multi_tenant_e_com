@@ -14,7 +14,11 @@ type ProductGalleryProps = {
     className?: string;
 };
 
-export function ProductGallery({ images, alt, className }: ProductGalleryProps) {
+export function ProductGallery({
+    images,
+    alt,
+    className,
+}: ProductGalleryProps) {
     const gallery =
         images.length > 0
             ? images
@@ -51,7 +55,7 @@ export function ProductGallery({ images, alt, className }: ProductGalleryProps) 
                                     'bg-muted relative mx-auto aspect-square w-full max-w-16 overflow-hidden border-2 transition sm:max-w-20',
                                     index === activeIndex
                                         ? 'border-primary'
-                                        : 'border-transparent hover:border-border',
+                                        : 'hover:border-border border-transparent',
                                 )}
                                 aria-label={`View image ${index + 1}`}
                                 aria-current={

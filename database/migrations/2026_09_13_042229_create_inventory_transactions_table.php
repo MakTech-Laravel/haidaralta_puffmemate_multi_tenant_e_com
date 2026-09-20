@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('quantity');
             $table->integer('before_quantity');
             $table->integer('after_quantity');
+            $table->decimal('unit_cost', 12, 2)->nullable();
             $table->nullableMorphs('reference');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('created_at')->useCurrent();

@@ -20,6 +20,7 @@
         "laravel/scout": "^11.6",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
+        "maatwebsite/excel": "^4.0",
         "meilisearch/meilisearch-php": "^1.17",
         "propaganistas/laravel-phone": "^6.0",
         "pusher/pusher-php-server": "^7.3",

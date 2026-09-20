@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Carousel,
+    type CarouselApi,
     CarouselContent,
     CarouselItem,
     CarouselNext,
@@ -15,10 +17,28 @@ type HomeHeroSliderProps = {
     className?: string;
 };
 
+const AUTOPLAY_MS = 4000;
+
 const navButtonClass =
     'border-primary-foreground/25 bg-foreground/30 text-primary-foreground hover:bg-foreground/50 hover:text-primary-foreground size-8 rounded-full border backdrop-blur-sm transition disabled:opacity-40 sm:size-10';
 
 export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
+    const [api, setApi] = useState<CarouselApi>();
+
+    useEffect(() => {
+        if (!api || slides.length <= 1) {
+            return;
+        }
+
+        const id = window.setInterval(() => {
+            api.scrollNext();
+        }, AUTOPLAY_MS);
+
+        return () => {
+            window.clearInterval(id);
+        };
+    }, [api, slides.length]);
+
     if (slides.length === 0) {
         return null;
     }
@@ -28,8 +48,9 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
     return (
         <Carousel
             opts={{ loop: true }}
+            setApi={setApi}
             className={cn(
-                'relative isolate w-full min-h-112 overflow-hidden sm:min-h-128 lg:min-h-144',
+                'relative isolate min-h-112 w-full overflow-hidden sm:min-h-128 lg:min-h-144',
                 className,
             )}
         >
@@ -37,19 +58,19 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
                 {slides.map((slide) => (
                     <CarouselItem
                         key={slide.id}
-                        className="relative isolate min-h-112 pl-0 basis-full sm:min-h-128 lg:min-h-144"
+                        className="relative isolate min-h-112 basis-full pl-0 sm:min-h-128 lg:min-h-144"
                     >
                         <div
-                            className="absolute inset-0 bg-foreground bg-cover bg-center"
+                            className="bg-foreground absolute inset-0 bg-cover bg-center"
                             style={{ backgroundImage: `url(${slide.image})` }}
                             aria-hidden
                         />
                         <div
-                            className="absolute inset-0 bg-linear-to-r from-foreground/72 via-foreground/45 to-foreground/25"
+                            className="from-foreground/72 via-foreground/45 to-foreground/25 absolute inset-0 bg-linear-to-r"
                             aria-hidden
                         />
 
-                        <div className="relative mx-auto flex h-full min-h-112 container flex-col justify-center px-4 py-12 sm:min-h-128 sm:px-6 sm:py-16 lg:min-h-144">
+                        <div className="relative container mx-auto flex h-full min-h-112 flex-col justify-center px-4 py-12 sm:min-h-128 sm:px-6 sm:py-16 lg:min-h-144">
                             <div className="text-primary-foreground max-w-md sm:max-w-lg lg:max-w-xl">
                                 <p className="font-inter mb-2 text-xs font-normal tracking-[0.12em] uppercase opacity-90 sm:mb-3 sm:text-sm md:text-base lg:text-xl lg:tracking-normal">
                                     {slide.eyebrow}
@@ -114,13 +135,13 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
                     <CarouselPrevious
                         className={cn(
                             navButtonClass,
-                            'top-1/2 left-2 z-10 -translate-y-1/2 sm:left-6',
+                            'top-1/2 left-2 z-10 hidden -translate-y-1/2 sm:left-6 sm:flex',
                         )}
                     />
                     <CarouselNext
                         className={cn(
                             navButtonClass,
-                            'top-1/2 right-2 z-10 -translate-y-1/2 sm:right-6',
+                            'top-1/2 right-2 z-10 hidden -translate-y-1/2 sm:right-6 sm:flex',
                         )}
                     />
                 </>

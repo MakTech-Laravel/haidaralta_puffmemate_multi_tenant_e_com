@@ -62,7 +62,7 @@ export function DataTableTruncated({
                     {children}
                 </div>
             </TooltipTrigger>
-            <TooltipContent className="max-w-sm whitespace-normal wrap-break-word">
+            <TooltipContent className="max-w-sm wrap-break-word whitespace-normal">
                 {label}
             </TooltipContent>
         </Tooltip>

@@ -124,15 +124,19 @@ export function CategoryForm({
                           url: defaults.image_url,
                           mime_type: 'image/jpeg',
                           name:
-                              defaults.image.split('/').pop() ?? 'category-image',
+                              defaults.image.split('/').pop() ??
+                              'category-image',
                       },
                   ]
                 : [],
     );
 
-    const formMethod = (
-        action.method ?? 'post'
-    ).toLowerCase() as 'get' | 'post' | 'put' | 'patch' | 'delete';
+    const formMethod = (action.method ?? 'post').toLowerCase() as
+        | 'get'
+        | 'post'
+        | 'put'
+        | 'patch'
+        | 'delete';
 
     const {
         data,
@@ -151,10 +155,7 @@ export function CategoryForm({
         parent_id: defaults?.parent_id ?? null,
         image: null as File | null,
         remove_image: false,
-        color_code: catalogFormColorPickerValue(
-            defaults?.color_code,
-            isEdit,
-        ),
+        color_code: catalogFormColorPickerValue(defaults?.color_code, isEdit),
         status: defaults?.status ?? true,
         featured: defaults?.featured ?? false,
         slogan: defaults?.slogan ?? '',
@@ -181,8 +182,9 @@ export function CategoryForm({
         () =>
             data.parent_id === null
                 ? null
-                : (parentOptions.find((option) => option.id === data.parent_id) ??
-                  null),
+                : (parentOptions.find(
+                      (option) => option.id === data.parent_id,
+                  ) ?? null),
         [data.parent_id, parentOptions],
     );
 
@@ -235,12 +237,7 @@ export function CategoryForm({
         }, 300);
 
         return () => window.clearTimeout(timer);
-    }, [
-        data.name,
-        enableSuggestions,
-        excludeCategoryId,
-        suggestionsUrl,
-    ]);
+    }, [data.name, enableSuggestions, excludeCategoryId, suggestionsUrl]);
 
     const validateSlug = () => {
         if (data.slug.trim() === '') {
@@ -277,7 +274,7 @@ export function CategoryForm({
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)]">
                 <section
                     className={cn(
-                        'self-start rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                        'border-border/80 bg-card self-start rounded-2xl border p-5 shadow-sm',
                         'sm:p-6',
                     )}
                 >
@@ -337,7 +334,7 @@ export function CategoryForm({
                                     {suggestions.map((suggestion) => (
                                         <li
                                             key={suggestion.id}
-                                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-background px-3 py-2"
+                                            className="border-border/70 bg-background flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
                                         >
                                             <div className="flex min-w-0 items-center gap-3">
                                                 {suggestion.image_url ? (
@@ -383,104 +380,119 @@ export function CategoryForm({
                         ) : null}
 
                         {catalog.show_parent_category ? (
-                        <div className="flex w-full min-w-0 flex-col gap-2">
-                            <Label htmlFor="parent_id">Parent category</Label>
-                            <Popover
-                                open={parentOpen}
-                                onOpenChange={setParentOpen}
-                            >
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        id="parent_id"
-                                        type="button"
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={parentOpen}
-                                        aria-invalid={Boolean(errors.parent_id)}
-                                        className="h-9 w-full min-w-0 justify-between gap-2 px-3 font-normal"
-                                    >
-                                        <span
-                                            className={cn(
-                                                'truncate text-left',
-                                                !selectedParent &&
-                                                    'text-muted-foreground',
-                                            )}
-                                        >
-                                            {selectedParent?.name ?? 'No parent'}
-                                        </span>
-                                        <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent
-                                    className="w-[var(--radix-popover-trigger-width)] p-0"
-                                    align="start"
+                            <div className="flex w-full min-w-0 flex-col gap-2">
+                                <Label htmlFor="parent_id">
+                                    Parent category
+                                </Label>
+                                <Popover
+                                    open={parentOpen}
+                                    onOpenChange={setParentOpen}
                                 >
-                                    <Command>
-                                        <CommandInput placeholder="Search categories…" />
-                                        <CommandList>
-                                            <CommandEmpty>
-                                                No category found.
-                                            </CommandEmpty>
-                                            <CommandGroup>
-                                                <CommandItem
-                                                    value="No parent"
-                                                    onSelect={() => {
-                                                        setData(
-                                                            'parent_id',
-                                                            null,
-                                                        );
-                                                        setParentOpen(false);
-                                                    }}
-                                                >
-                                                    <Check
-                                                        className={cn(
-                                                            'size-4',
-                                                            data.parent_id ===
-                                                                null
-                                                                ? 'opacity-100'
-                                                                : 'opacity-0',
-                                                        )}
-                                                    />
-                                                    No parent
-                                                </CommandItem>
-                                                {parentOptions.map((option) => {
-                                                    const selected =
-                                                        data.parent_id ===
-                                                        option.id;
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            id="parent_id"
+                                            type="button"
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={parentOpen}
+                                            aria-invalid={Boolean(
+                                                errors.parent_id,
+                                            )}
+                                            className="h-9 w-full min-w-0 justify-between gap-2 px-3 font-normal"
+                                        >
+                                            <span
+                                                className={cn(
+                                                    'truncate text-left',
+                                                    !selectedParent &&
+                                                        'text-muted-foreground',
+                                                )}
+                                            >
+                                                {selectedParent?.name ??
+                                                    'No parent'}
+                                            </span>
+                                            <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        className="w-[var(--radix-popover-trigger-width)] p-0"
+                                        align="start"
+                                    >
+                                        <Command>
+                                            <CommandInput placeholder="Search categories…" />
+                                            <CommandList>
+                                                <CommandEmpty>
+                                                    No category found.
+                                                </CommandEmpty>
+                                                <CommandGroup>
+                                                    <CommandItem
+                                                        value="No parent"
+                                                        onSelect={() => {
+                                                            setData(
+                                                                'parent_id',
+                                                                null,
+                                                            );
+                                                            setParentOpen(
+                                                                false,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                'size-4',
+                                                                data.parent_id ===
+                                                                    null
+                                                                    ? 'opacity-100'
+                                                                    : 'opacity-0',
+                                                            )}
+                                                        />
+                                                        No parent
+                                                    </CommandItem>
+                                                    {parentOptions.map(
+                                                        (option) => {
+                                                            const selected =
+                                                                data.parent_id ===
+                                                                option.id;
 
-                                                    return (
-                                                        <CommandItem
-                                                            key={option.id}
-                                                            value={option.name}
-                                                            onSelect={() => {
-                                                                setData(
-                                                                    'parent_id',
-                                                                    option.id,
-                                                                );
-                                                                setParentOpen(
-                                                                    false,
-                                                                );
-                                                            }}
-                                                        >
-                                                            <Check
-                                                                className={cn(
-                                                                    'size-4',
-                                                                    selected
-                                                                        ? 'opacity-100'
-                                                                        : 'opacity-0',
-                                                                )}
-                                                            />
-                                                            {option.name}
-                                                        </CommandItem>
-                                                    );
-                                                })}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-                            <InputError message={errors.parent_id} />
-                        </div>
+                                                            return (
+                                                                <CommandItem
+                                                                    key={
+                                                                        option.id
+                                                                    }
+                                                                    value={
+                                                                        option.name
+                                                                    }
+                                                                    onSelect={() => {
+                                                                        setData(
+                                                                            'parent_id',
+                                                                            option.id,
+                                                                        );
+                                                                        setParentOpen(
+                                                                            false,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            'size-4',
+                                                                            selected
+                                                                                ? 'opacity-100'
+                                                                                : 'opacity-0',
+                                                                        )}
+                                                                    />
+                                                                    {
+                                                                        option.name
+                                                                    }
+                                                                </CommandItem>
+                                                            );
+                                                        },
+                                                    )}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <InputError message={errors.parent_id} />
+                            </div>
                         ) : null}
 
                         <div className="flex flex-col gap-2">
@@ -505,7 +517,7 @@ export function CategoryForm({
                         </div>
 
                         <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                            <div className="border-border/70 bg-muted/20 flex items-center gap-2 rounded-xl border px-4 py-3">
                                 <Checkbox
                                     id="status"
                                     checked={data.status}
@@ -528,7 +540,7 @@ export function CategoryForm({
                                 <InputError message={errors.status} />
                             </div>
 
-                            <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                            <div className="border-border/70 bg-muted/20 flex items-center gap-2 rounded-xl border px-4 py-3">
                                 <Checkbox
                                     id="featured"
                                     checked={data.featured}
@@ -558,15 +570,12 @@ export function CategoryForm({
                                 <InputError message={errors.featured} />
                             </div>
 
-                            <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                            <div className="border-border/70 bg-muted/20 flex items-center gap-2 rounded-xl border px-4 py-3">
                                 <Checkbox
                                     id="show_in_nav"
                                     checked={data.show_in_nav}
                                     onCheckedChange={(value) =>
-                                        setData(
-                                            'show_in_nav',
-                                            value === true,
-                                        )
+                                        setData('show_in_nav', value === true)
                                     }
                                 />
                                 <div className="space-y-0.5">
@@ -585,7 +594,7 @@ export function CategoryForm({
                                 <InputError message={errors.show_in_nav} />
                             </div>
 
-                            <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                            <div className="border-border/70 bg-muted/20 flex flex-col gap-2 rounded-xl border px-4 py-3">
                                 <Label htmlFor="nav_sort">Nav order</Label>
                                 <Input
                                     id="nav_sort"
@@ -602,9 +611,7 @@ export function CategoryForm({
                                         const raw = event.target.value;
                                         setData(
                                             'nav_sort',
-                                            raw === ''
-                                                ? null
-                                                : Number(raw),
+                                            raw === '' ? null : Number(raw),
                                         );
                                     }}
                                     placeholder="0"
@@ -622,7 +629,7 @@ export function CategoryForm({
                 <aside className="flex min-w-0 flex-col">
                     <section
                         className={cn(
-                            'rounded-2xl border border-border/80 bg-card p-4 shadow-sm',
+                            'border-border/80 bg-card rounded-2xl border p-4 shadow-sm',
                             'sm:p-5',
                         )}
                     >
@@ -635,7 +642,7 @@ export function CategoryForm({
                             </p>
                         </div>
 
-                        <div className="overflow-hidden rounded-xl border border-border/80">
+                        <div className="border-border/80 overflow-hidden rounded-xl border">
                             <div
                                 className="aspect-square p-3"
                                 style={
@@ -680,9 +687,7 @@ export function CategoryForm({
                                     uploadProgress={
                                         progress?.percentage ?? null
                                     }
-                                    onCancel={
-                                        processing ? cancel : undefined
-                                    }
+                                    onCancel={processing ? cancel : undefined}
                                     placeholder="Drop or click"
                                     hint="PNG, JPG, SVG, or WebP · Max 2MB"
                                     classNames={{
@@ -733,7 +738,7 @@ export function CategoryForm({
                 </aside>
             </div>
 
-            <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t px-2 py-4 backdrop-blur">
                 <Button variant="secondary" asChild>
                     <Link href={cancelHref}>Cancel</Link>
                 </Button>

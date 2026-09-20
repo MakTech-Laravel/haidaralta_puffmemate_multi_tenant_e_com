@@ -4,7 +4,7 @@ import { CategoryCard } from '@/components/storefront/category-card';
 import { FeaturesBar } from '@/components/storefront/features-bar';
 import { HomeDealsBanner } from '@/components/storefront/home/deals-banner';
 import { HomeHeroSlider } from '@/components/storefront/home/hero-slider';
-import { ProductCard } from '@/components/storefront/product-card';
+import { ProductCarousel } from '@/components/storefront/home/product-carousel';
 import {
     storefrontFeatures,
     storefrontHeroSlides,
@@ -24,8 +24,12 @@ export default function StorefrontHome({
     bestSellingProducts,
     newArrivalProducts,
 }: HomePageProps) {
-    const topCategories = featuredCategories.filter((category) => !category.wide);
-    const wideCategories = featuredCategories.filter((category) => category.wide);
+    const topCategories = featuredCategories.filter(
+        (category) => !category.wide,
+    );
+    const wideCategories = featuredCategories.filter(
+        (category) => category.wide,
+    );
 
     return (
         <>
@@ -33,13 +37,13 @@ export default function StorefrontHome({
 
             <HomeHeroSlider slides={storefrontHeroSlides} />
 
-            <section className="mx-auto container px-4 py-14 sm:px-6 sm:py-16">
+            <section className="container mx-auto px-4 py-14 sm:px-6 sm:py-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
-                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal  uppercase">
+                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
                             Browse the collection
                         </p>
-                        <h2 className="text-foreground text-2xl font-medium tracking-tight sm:text-[40px] uppercase">
+                        <h2 className="text-foreground text-2xl font-medium tracking-tight uppercase sm:text-[40px]">
                             Shop by category
                         </h2>
                     </div>
@@ -53,25 +57,25 @@ export default function StorefrontHome({
                     </Link>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2 sm:[&>:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-3 lg:[&>:last-child:nth-child(odd)]:col-span-1">
+                <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 [&>:last-child:nth-child(odd)]:col-span-2 lg:[&>:last-child:nth-child(odd)]:col-span-1">
                     {topCategories.map((category) => (
                         <CategoryCard key={category.id} category={category} />
                     ))}
                 </div>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:[&>:last-child:nth-child(odd)]:col-span-2">
+                <div className="mt-4 grid grid-cols-2 gap-4">
                     {wideCategories.map((category) => (
                         <CategoryCard key={category.id} category={category} />
                     ))}
                 </div>
             </section>
 
-            <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">
+            <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
-                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal  uppercase">
+                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
                             Just landed
                         </p>
-                        <h2 className="text-foreground text-2xl font-medium tracking-tight sm:text-[40px] uppercase">
+                        <h2 className="text-foreground text-2xl font-medium tracking-tight uppercase sm:text-[40px]">
                             New arrivals
                         </h2>
                     </div>
@@ -85,24 +89,20 @@ export default function StorefrontHome({
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-                    {newArrivalProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
+                <ProductCarousel products={newArrivalProducts} />
             </section>
 
-            <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">
+            <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
                 <HomeDealsBanner />
             </section>
 
-            <section className="mx-auto container px-4 pb-14 sm:px-6 sm:pb-16">
+            <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
-                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal  uppercase">
+                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
                             Hand-picked for you
                         </p>
-                        <h2 className="text-foreground text-2xl font-medium tracking-tight sm:text-[40px] uppercase">
+                        <h2 className="text-foreground text-2xl font-medium tracking-tight uppercase sm:text-[40px]">
                             Best selling products
                         </h2>
                     </div>
@@ -116,11 +116,7 @@ export default function StorefrontHome({
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-                    {bestSellingProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
+                <ProductCarousel products={bestSellingProducts} />
             </section>
 
             <FeaturesBar features={storefrontFeatures} />

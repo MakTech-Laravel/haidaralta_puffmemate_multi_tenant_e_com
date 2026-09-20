@@ -1,4 +1,4 @@
-import { Link } from "@inertiajs/react";
+import { Link } from '@inertiajs/react';
 import {
     Check,
     Clock,
@@ -7,18 +7,18 @@ import {
     Plus,
     ShoppingCart,
     Star,
-} from "lucide-react";
-import { useState } from "react";
-import type { StorefrontBranchOption } from "@/components/storefront/storefront-branch-select";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react';
+import { useState } from 'react';
+import type { StorefrontBranchOption } from '@/components/storefront/storefront-branch-select';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import { cart } from "@/routes";
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+import { cart } from '@/routes';
 
 type ProductSummaryProps = {
     name: string;
@@ -56,12 +56,17 @@ export function ProductSummary({
     const [quantity, setQuantity] = useState(1);
 
     return (
-        <div className={cn("flex min-w-0 w-full max-w-full flex-col gap-5", className)}>
+        <div
+            className={cn(
+                'flex w-full max-w-full min-w-0 flex-col gap-5',
+                className,
+            )}
+        >
             <div className="mt-5 flex flex-wrap gap-2">
                 {badges.map((badge) => (
                     <span
                         key={badge}
-                        className="bg-foreground text-background rounded-md px-3 py-2 text-xs font-semibold font-inter"
+                        className="bg-foreground text-background font-inter rounded-md px-3 py-2 text-xs font-semibold"
                     >
                         {badge}
                     </span>
@@ -86,10 +91,10 @@ export function ProductSummary({
                         <Star
                             key={index}
                             className={cn(
-                                "size-4",
+                                'size-4',
                                 index < Math.round(rating)
-                                    ? "fill-review-star text-review-star"
-                                    : "text-muted-foreground",
+                                    ? 'fill-review-star text-review-star'
+                                    : 'text-muted-foreground',
                             )}
                         />
                     ))}
@@ -113,7 +118,7 @@ export function ProductSummary({
                 </span>
             </div>
 
-            <div className="border-primary/25 bg-accent/40 mt-5 flex min-w-0 w-full max-w-full items-center justify-between gap-2 border px-3 py-3 sm:gap-3 sm:px-4">
+            <div className="border-primary/25 bg-accent/40 mt-5 flex w-full max-w-full min-w-0 items-center justify-between gap-2 border px-3 py-3 sm:gap-3 sm:px-4">
                 <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
                     <span className="bg-accent text-primary flex size-10 shrink-0 items-center justify-center rounded-full">
                         <MapPin
@@ -151,8 +156,8 @@ export function ProductSummary({
                                 <DropdownMenuItem
                                     key={option.id}
                                     className={cn(
-                                        "font-inter",
-                                        isSelected && "font-semibold",
+                                        'font-inter',
+                                        isSelected && 'font-semibold',
                                     )}
                                     onSelect={() => onBranchChange(option.id)}
                                 >
@@ -181,8 +186,8 @@ export function ProductSummary({
                 </p>
             </div>
 
-            <div className="flex w-full min-w-0 max-w-full flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="border-border flex h-12 w-full min-w-0 max-w-full items-center rounded-none border sm:w-auto sm:max-w-none">
+            <div className="flex w-full max-w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="border-border flex h-12 w-full max-w-full min-w-0 items-center rounded-none border sm:w-auto sm:max-w-none">
                     <button
                         type="button"
                         className="text-foreground flex size-12 shrink-0 items-center justify-center"
@@ -208,7 +213,7 @@ export function ProductSummary({
                 <Button
                     asChild
                     size="lg"
-                    className="h-12 w-full min-w-0 max-w-full shrink rounded-none text-sm font-bold tracking-wide uppercase sm:flex-1"
+                    className="h-12 w-full max-w-full min-w-0 shrink rounded-none text-sm font-bold tracking-wide uppercase sm:flex-1"
                 >
                     <Link href={cart()} prefetch>
                         <ShoppingCart className="size-4" />
@@ -221,7 +226,7 @@ export function ProductSummary({
                 <div className="flex min-w-0 items-start gap-2.5">
                     <Clock className="text-primary mt-0.5 size-4 shrink-0" />
                     <div className="min-w-0">
-                        <p className="text-foreground font-inter text-base font-bold leading-snug break-words">
+                        <p className="text-foreground font-inter text-base leading-snug font-bold break-words">
                             Fast delivery from West Village
                         </p>
                         <p className="text-muted-foreground font-inter mt-0.5 text-xs font-normal">
@@ -232,7 +237,7 @@ export function ProductSummary({
                 <div className="flex min-w-0 items-start gap-2.5">
                     <Check className="text-primary mt-0.5 size-4 shrink-0" />
                     <div className="min-w-0">
-                        <p className="text-foreground font-inter text-base font-bold leading-snug break-words">
+                        <p className="text-foreground font-inter text-base leading-snug font-bold break-words">
                             Branch-accurate pricing
                         </p>
                         <p className="text-muted-foreground font-inter mt-0.5 text-xs font-normal">

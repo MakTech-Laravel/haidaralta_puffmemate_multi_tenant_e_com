@@ -2,22 +2,29 @@
 
 namespace App\DataTables;
 
-use App\Models\Concerns\HasDataTableConfig;
+use App\Contracts\DataTableConfigurable;
+use App\Contracts\ScoutSearchable;
+use App\Enums\ExportScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
-use Laravel\Scout\Searchable;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
+/**
+ * @template TModel of Model
+ *
+ * @phpstan-consistent-constructor
+ */
 abstract class AbstractDataTable
 {
     /** @var list<int> */
-    protected const PER_PAGE_OPTIONS = [15, 25, 50];
+    protected const PER_PAGE_OPTIONS = [15, 25, 50, 100];
 
     protected const DEFAULT_PER_PAGE = 15;
 
@@ -40,16 +47,50 @@ abstract class AbstractDataTable
     }
 
     /**
-     * @return class-string<Model>
+     * @return Builder<TModel>
+     */
+    public function exportQuery(ExportScope $scope): Builder
+    {
+        $request = $this->requestForExportScope($scope);
+        $previous = $this->request;
+        $this->request = $request;
+
+        try {
+            $query = $this->baseQuery();
+            $this->applyScoutSearchConstraint($query);
+
+            $builder = QueryBuilder::for($query, $request)
+                ->allowedFilters(...$this->allowedFilters())
+                ->allowedSorts(...$this->allowedSorts())
+                ->defaultSort($this->defaultSort());
+
+            $builder->orderBy($query->getModel()->getQualifiedKeyName());
+
+            if ($scope === ExportScope::Page) {
+                $builder->forPage(
+                    max(1, (int) $request->input('page', 1)),
+                    $this->resolvePerPage(),
+                );
+            }
+
+            return $builder->getEloquentBuilder();
+        } finally {
+            $this->request = $previous;
+        }
+    }
+
+    /**
+     * @return class-string<TModel>
      */
     abstract protected function modelClass(): string;
 
     /**
-     * @return Builder<Model>
+     * @return Builder<TModel>
      */
     abstract protected function baseQuery(): Builder;
 
     /**
+     * @param  TModel  $model
      * @return array<string, mixed>
      */
     abstract protected function mapRow(Model $model): array;
@@ -120,11 +161,13 @@ abstract class AbstractDataTable
             ->paginate($perPage)
             ->appends($this->request->query());
 
-        $paginator->setCollection(
-            $paginator->getCollection()->map(fn (Model $model): array => $this->mapRow($model)),
-        );
+        $rows = [];
 
-        return $this->formatPaginator($paginator);
+        foreach ($paginator->getCollection() as $model) {
+            $rows[] = $this->mapRow($model);
+        }
+
+        return $this->formatPaginator($paginator, $rows);
     }
 
     protected function searchFilter(): AllowedFilter
@@ -157,7 +200,7 @@ abstract class AbstractDataTable
     }
 
     /**
-     * @param  Builder<Model>  $query
+     * @param  Builder<TModel>  $query
      */
     protected function applyScoutSearchConstraint(Builder $query): void
     {
@@ -171,16 +214,21 @@ abstract class AbstractDataTable
             return;
         }
 
-        /** @var class-string<Model&Searchable> $modelClass */
         $modelClass = $this->modelClass();
 
-        $ids = $modelClass::search($term)->take(500)->keys();
-
-        if ($ids instanceof Collection) {
-            $ids = $ids->all();
+        if (! is_a($modelClass, ScoutSearchable::class, true)) {
+            return;
         }
 
-        $ids = array_values(array_filter(array_map('intval', (array) $ids)));
+        $ids = [];
+
+        foreach ($modelClass::search($term)->take(500)->keys() as $key) {
+            $id = (int) $key;
+
+            if ($id !== 0) {
+                $ids[] = $id;
+            }
+        }
 
         if ($ids === []) {
             $query->whereRaw('1 = 0');
@@ -192,7 +240,8 @@ abstract class AbstractDataTable
     }
 
     /**
-     * @param  LengthAwarePaginator<int, array<string, mixed>>  $paginator
+     * @param  LengthAwarePaginator<int, TModel>  $paginator
+     * @param  list<array<string, mixed>>  $rows  Already mapped page rows.
      * @return array{
      *     data: list<array<string, mixed>>,
      *     meta: array{current_page: int, last_page: int, per_page: int, total: int, from: ?int, to: ?int},
@@ -203,10 +252,22 @@ abstract class AbstractDataTable
      *     per_page: int
      * }
      */
-    protected function formatPaginator(LengthAwarePaginator $paginator): array
+    protected function formatPaginator(LengthAwarePaginator $paginator, array $rows): array
     {
+        $links = [];
+
+        foreach ($paginator->linkCollection() as $link) {
+            $url = $link['url'] ?? null;
+
+            $links[] = [
+                'url' => is_string($url) ? $url : null,
+                'label' => (string) ($link['label'] ?? ''),
+                'active' => (bool) ($link['active'] ?? false),
+            ];
+        }
+
         return [
-            'data' => array_values($paginator->items()),
+            'data' => $rows,
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
@@ -215,11 +276,7 @@ abstract class AbstractDataTable
                 'from' => $paginator->firstItem(),
                 'to' => $paginator->lastItem(),
             ],
-            'links' => collect($paginator->toArray()['links'] ?? [])->map(fn (array $link): array => [
-                'url' => $link['url'] ?? null,
-                'label' => (string) ($link['label'] ?? ''),
-                'active' => (bool) ($link['active'] ?? false),
-            ])->values()->all(),
+            'links' => $links,
             'filters' => $this->normalizedFilters(),
             'filterOptions' => $this->filterOptions(),
             'sort' => $this->request->string('sort')->toString() ?: null,
@@ -246,6 +303,36 @@ abstract class AbstractDataTable
             : self::DEFAULT_PER_PAGE;
     }
 
+    protected function requestForExportScope(ExportScope $scope): Request
+    {
+        $filters = $this->normalizedFilters();
+        $parameters = array_filter([
+            'sort' => $this->request->input('sort') ?: null,
+            'per_page' => $this->request->input('per_page'),
+            'page' => $this->request->input('page'),
+            'filter' => $filters === [] ? null : $filters,
+        ], fn (mixed $value): bool => $value !== null && $value !== '');
+
+        $parameters = match ($scope) {
+            ExportScope::All => Arr::except($parameters, ['filter', 'page']),
+            ExportScope::Period => [
+                ...Arr::except($parameters, ['filter', 'page']),
+                'filter' => array_filter([
+                    'from' => $filters['from'] ?? null,
+                    'to' => $filters['to'] ?? null,
+                ], fn (mixed $value): bool => $value !== null && $value !== ''),
+            ],
+            ExportScope::Filters => Arr::except($parameters, ['page']),
+            ExportScope::Page => $parameters,
+        };
+
+        if (($parameters['filter'] ?? null) === []) {
+            unset($parameters['filter']);
+        }
+
+        return Request::create($this->request->url(), 'GET', $parameters);
+    }
+
     /**
      * @return list<string>
      */
@@ -253,11 +340,9 @@ abstract class AbstractDataTable
     {
         $modelClass = $this->modelClass();
 
-        if (in_array(HasDataTableConfig::class, class_uses_recursive($modelClass), true)) {
-            return $modelClass::dataTableSearchableColumns();
-        }
-
-        return [];
+        return is_a($modelClass, DataTableConfigurable::class, true)
+            ? $modelClass::dataTableSearchableColumns()
+            : [];
     }
 
     /**
@@ -267,11 +352,9 @@ abstract class AbstractDataTable
     {
         $modelClass = $this->modelClass();
 
-        if (in_array(HasDataTableConfig::class, class_uses_recursive($modelClass), true)) {
-            return $modelClass::dataTableSortableColumns();
-        }
-
-        return [];
+        return is_a($modelClass, DataTableConfigurable::class, true)
+            ? $modelClass::dataTableSortableColumns()
+            : [];
     }
 
     /**
@@ -281,16 +364,14 @@ abstract class AbstractDataTable
     {
         $modelClass = $this->modelClass();
 
-        if (in_array(HasDataTableConfig::class, class_uses_recursive($modelClass), true)) {
-            return $modelClass::dataTableFilterableColumns();
-        }
-
-        return [];
+        return is_a($modelClass, DataTableConfigurable::class, true)
+            ? $modelClass::dataTableFilterableColumns()
+            : [];
     }
 
     protected function modelUsesScout(): bool
     {
-        return in_array(Searchable::class, class_uses_recursive($this->modelClass()), true);
+        return is_a($this->modelClass(), ScoutSearchable::class, true);
     }
 
     protected function modelUsesSoftDeletes(): bool

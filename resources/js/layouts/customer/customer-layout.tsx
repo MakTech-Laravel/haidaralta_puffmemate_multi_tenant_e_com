@@ -1,10 +1,12 @@
-import { Link } from "@inertiajs/react";
-import type { ReactNode } from "react";
-import { AccountSidebar } from "@/components/customer/account-sidebar";
-import { StorefrontFooter } from "@/components/storefront/storefront-footer";
-import { StorefrontHeader } from "@/components/storefront/storefront-header";
-import { home } from "@/routes";
-import type { BreadcrumbItem } from "@/types";
+import { Link } from '@inertiajs/react';
+import type { ReactNode } from 'react';
+import { AccountMobileNav } from '@/components/customer/account-mobile-nav';
+import { AccountSidebar } from '@/components/customer/account-sidebar';
+import { StorefrontFooter } from '@/components/storefront/storefront-footer';
+import { StorefrontHeader } from '@/components/storefront/storefront-header';
+import { toUrl } from '@/lib/utils';
+import { home } from '@/routes';
+import type { BreadcrumbItem } from '@/types';
 
 export default function CustomerLayout({
     breadcrumbs = [],
@@ -14,24 +16,24 @@ export default function CustomerLayout({
     children: ReactNode;
 }) {
     const trail: BreadcrumbItem[] = [
-        { title: "Home", href: home.url() },
+        { title: 'Home', href: home.url() },
         ...(breadcrumbs.length > 0
             ? breadcrumbs
-            : [{ title: "Dashboard", href: "/dashboard" }]),
+            : [{ title: 'Dashboard', href: '/dashboard' }]),
     ];
 
     return (
         <div className="bg-background text-foreground flex min-h-svh flex-col">
             <StorefrontHeader />
 
-            <main className="flex-1">
-                <h1 className="text-foreground text-center text-2xl sm:text-3xl font-bold tracking-tight md:text-[40px] py-4 sm:py-8 bg-accent">
+            <main className="flex-1 pb-20 lg:pb-0">
+                <h1 className="bg-accent text-foreground py-4 text-center text-2xl font-bold tracking-tight sm:py-8 sm:text-3xl md:text-[40px]">
                     My Account
                 </h1>
-                <div className="mx-auto container px-4 py-8 sm:px-6 sm:py-10">
+                <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
                     <nav
                         aria-label="Breadcrumb"
-                        className="text-muted-foreground text-base mb-6 sm:mb-10 md:mb-20"
+                        className="text-muted-foreground mb-6 text-base sm:mb-10 md:mb-20"
                     >
                         <ol className="flex flex-wrap items-center gap-1.5">
                             {trail.map((item, index) => {
@@ -39,7 +41,7 @@ export default function CustomerLayout({
 
                                 return (
                                     <li
-                                        key={`${item.href}-${item.title}`}
+                                        key={`${toUrl(item.href)}-${item.title}`}
                                         className="flex items-center gap-1.5"
                                     >
                                         {index > 0 ? (
@@ -62,16 +64,20 @@ export default function CustomerLayout({
                                 );
                             })}
                         </ol>
-                        <div className="hidden lg:block h-0.5 w-full bg-border"></div>
+                        <div className="bg-border mt-4 hidden h-0.5 w-full lg:block" />
                     </nav>
 
                     <div className="grid gap-10 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-14">
-                        <AccountSidebar className="lg:sticky lg:top-28 lg:self-start lg:pt-1" />
+                        <AccountSidebar className="hidden lg:sticky lg:top-28 lg:block lg:self-start lg:pt-1" />
                         <div className="min-w-0">{children}</div>
                     </div>
                 </div>
             </main>
-            <StorefrontFooter />
+
+            <div className="mb-16 lg:mb-0">
+                <StorefrontFooter />
+            </div>
+            <AccountMobileNav />
         </div>
     );
 }

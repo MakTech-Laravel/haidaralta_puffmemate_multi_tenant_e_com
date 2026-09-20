@@ -4,6 +4,7 @@ import {
     CalendarClock,
     ChartColumn,
     Clock,
+    History,
     Inbox,
     KeyRound,
     LayoutGrid,
@@ -182,13 +183,18 @@ export function buildBranchNav(
             }),
             navGroup({
                 title: 'Conversations',
+                href: `/branch/${slug}/conversations`,
                 icon: MessagesSquare,
-                permissions: ['manage-branch-orders', 'manage-branch-drivers'],
+                permissions: [
+                    'manage-branch-conversations',
+                    'manage-branch-drivers',
+                ],
                 items: [
-                    navSoon({
-                        title: 'Support inbox',
+                    navLink({
+                        title: 'Order chats',
+                        href: `/branch/${slug}/conversations`,
                         icon: Inbox,
-                        permissions: ['manage-branch-orders'],
+                        permissions: ['manage-branch-conversations'],
                     }),
                     navSoon({
                         title: 'Driver chat',
@@ -211,6 +217,12 @@ export function buildBranchNav(
                         title: 'Stock transactions',
                         href: `/branch/${slug}/reports/stock-transactions`,
                         icon: ScrollText,
+                        permissions: ['manage-branch-products'],
+                    }),
+                    navLink({
+                        title: 'Price history',
+                        href: `/branch/${slug}/reports/price-history`,
+                        icon: History,
                         permissions: ['manage-branch-products'],
                     }),
                 ],

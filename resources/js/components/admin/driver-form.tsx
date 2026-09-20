@@ -32,7 +32,12 @@ type FormAction = {
 };
 
 type Option = { value: string; label: string };
-type BranchOption = { id: number; name: string; slug: string; code?: string | null };
+type BranchOption = {
+    id: number;
+    name: string;
+    slug: string;
+    code?: string | null;
+};
 
 type RosterDraft = DriverRosterFieldsValue & {
     key: string;
@@ -73,7 +78,7 @@ const MEDIA_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
 
 function sectionClassName(): string {
     return cn(
-        'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+        'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
         'sm:p-6',
     );
 }
@@ -109,7 +114,7 @@ function AccountStatusCards({
                         className={cn(
                             'flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors',
                             selected
-                                ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                                ? 'border-primary bg-primary/5 ring-primary/20 ring-1'
                                 : 'border-border/80 bg-card hover:bg-muted/40',
                         )}
                     >
@@ -151,39 +156,42 @@ export function DriverForm({
     const [existingAvatar, setExistingAvatar] = useState<ExistingFile[]>(() =>
         defaults?.avatar && defaults?.avatar_url
             ? [
-                {
-                    id: 'avatar',
-                    path: defaults.avatar,
-                    url: defaults.avatar_url,
-                    mime_type: 'image/jpeg',
-                    name: defaults.avatar.split('/').pop() ?? 'avatar',
-                },
-            ]
+                  {
+                      id: 'avatar',
+                      path: defaults.avatar,
+                      url: defaults.avatar_url,
+                      mime_type: 'image/jpeg',
+                      name: defaults.avatar.split('/').pop() ?? 'avatar',
+                  },
+              ]
             : [],
     );
     const [existingVehicle, setExistingVehicle] = useState<ExistingFile[]>(
         () =>
             defaults?.vehicle_image && defaults?.vehicle_image_url
                 ? [
-                    {
-                        id: 'vehicle',
-                        path: defaults.vehicle_image,
-                        url: defaults.vehicle_image_url,
-                        mime_type: 'image/jpeg',
-                        name:
-                            defaults.vehicle_image.split('/').pop() ??
-                            'vehicle',
-                    },
-                ]
+                      {
+                          id: 'vehicle',
+                          path: defaults.vehicle_image,
+                          url: defaults.vehicle_image_url,
+                          mime_type: 'image/jpeg',
+                          name:
+                              defaults.vehicle_image.split('/').pop() ??
+                              'vehicle',
+                      },
+                  ]
                 : [],
     );
     const [rosters, setRosters] = useState<RosterDraft[]>([]);
     const [extraBranches, setExtraBranches] = useState<BranchOption[]>([]);
     const pendingShiftRef = useRef(false);
 
-    const formMethod = (
-        action.method ?? 'post'
-    ).toLowerCase() as 'get' | 'post' | 'put' | 'patch' | 'delete';
+    const formMethod = (action.method ?? 'post').toLowerCase() as
+        | 'get'
+        | 'post'
+        | 'put'
+        | 'patch'
+        | 'delete';
 
     const defaultRosterStatus =
         rosterStatuses.find((item) => item.value === 'scheduled')?.value ??
@@ -255,7 +263,9 @@ export function DriverForm({
 
     const lockedBranch = lockBranch ? branches[0] : undefined;
 
-    const addShift = (branchesForShift: BranchOption[] = assignedBranches): void => {
+    const addShift = (
+        branchesForShift: BranchOption[] = assignedBranches,
+    ): void => {
         const firstBranch = lockedBranch ?? branchesForShift[0];
 
         if (firstBranch === undefined) {
@@ -523,7 +533,7 @@ export function DriverForm({
                                         }}
                                         existingFiles={
                                             data.vehicle_image ||
-                                                data.remove_vehicle_image
+                                            data.remove_vehicle_image
                                                 ? []
                                                 : existingVehicle
                                         }

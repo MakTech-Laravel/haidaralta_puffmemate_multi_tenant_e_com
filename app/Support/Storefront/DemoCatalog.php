@@ -235,7 +235,7 @@ class DemoCatalog
      */
     public static function bestSellingProducts(): array
     {
-        return array_values(array_slice(self::products(), 0, 4));
+        return array_values(array_slice(self::products(), 0, 8));
     }
 
     /**
@@ -243,7 +243,7 @@ class DemoCatalog
      */
     public static function newArrivalProducts(): array
     {
-        return array_values(array_slice(self::products(), 4, 4));
+        return array_values(array_slice(self::products(), 4, 8));
     }
 
     /**
@@ -1028,5 +1028,80 @@ class DemoCatalog
                 ],
             ],
         ];
+    }
+
+    /**
+     * Demo customer notifications, newest first.
+     *
+     * @return list<array{id: string, title: string, description: string, createdAt: string, read: bool, type: string, body: string}>
+     */
+    public static function customerNotifications(): array
+    {
+        return [
+            [
+                'id' => 'notif-1',
+                'title' => 'Order shipped',
+                'description' => 'Your order #ORD-CP2026-001 is on the way from Williamsburg Branch.',
+                'createdAt' => '2 hours ago',
+                'read' => false,
+                'type' => 'order',
+                'body' => "Your order #ORD-CP2026-001 has left Williamsburg Branch and is heading your way.\n\nYou can track delivery progress from your Orders page. Keep your phone nearby for driver updates.",
+            ],
+            [
+                'id' => 'notif-2',
+                'title' => 'Payment received',
+                'description' => 'We confirmed payment for order #ORD-CP2026-002.',
+                'createdAt' => 'Yesterday',
+                'read' => true,
+                'type' => 'payment',
+                'body' => "Thanks — payment for order #ORD-CP2026-002 was received successfully.\n\nThe branch is preparing your items. You will get another update when a driver is assigned.",
+            ],
+            [
+                'id' => 'notif-3',
+                'title' => 'Driver assigned',
+                'description' => 'A driver has been assigned to your delivery window today.',
+                'createdAt' => '2 days ago',
+                'read' => false,
+                'type' => 'delivery',
+                'body' => "A driver is assigned for your upcoming delivery.\n\nEstimated window: today between 4:00–6:00 PM. You can message or call from the order tracking page once the delivery is out for delivery.",
+            ],
+            [
+                'id' => 'notif-4',
+                'title' => 'Order delivered',
+                'description' => 'Order #ORD-CP2026-003 was delivered. Leave a product review?',
+                'createdAt' => '3 days ago',
+                'read' => true,
+                'type' => 'delivery',
+                'body' => "Order #ORD-CP2026-003 was marked delivered.\n\nIf everything looks good, you can leave a product review from Product to review in your account menu.",
+            ],
+            [
+                'id' => 'notif-5',
+                'title' => 'Promo: packs & saves',
+                'description' => 'Limited packs are back in stock near your branch this week.',
+                'createdAt' => '5 days ago',
+                'read' => false,
+                'type' => 'promo',
+                'body' => "Selected packs & saves are available again at nearby branches.\n\nOpen Shop → Packs & Saves to browse current offers. Age verification still applies at delivery.",
+            ],
+            [
+                'id' => 'notif-6',
+                'title' => 'Account security',
+                'description' => 'A new sign-in was recorded on your customer account.',
+                'createdAt' => '1 week ago',
+                'read' => true,
+                'type' => 'security',
+                'body' => "We noticed a new sign-in on your customer account.\n\nIf this was you, no action is needed. If you do not recognize it, reset your password from Account settings.",
+            ],
+        ];
+    }
+
+    /**
+     * @return array{id: string, title: string, description: string, createdAt: string, read: bool, type: string, body: string}|null
+     */
+    public static function customerNotificationDetail(string $id): ?array
+    {
+        $notification = collect(self::customerNotifications())->firstWhere('id', $id);
+
+        return $notification;
     }
 }

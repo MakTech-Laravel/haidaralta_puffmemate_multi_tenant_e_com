@@ -16,16 +16,13 @@ export function ProductCard({ product, className }: ProductCardProps) {
             href={productShow(product.id)}
             prefetch
             className={cn(
-                'border-border bg-card flex flex-col overflow-hidden rounded-xl border transition hover:border-primary/40',
+                'border-border bg-card hover:border-primary/40 flex flex-col overflow-hidden rounded-xl border transition',
                 className,
             )}
         >
-            <div className="bg-muted relative aspect-[4/3]">
-                <span className="bg-background/80 text-foreground absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
-                    {product.category}
-                </span>
+            <div className="bg-muted relative aspect-[3/2]">
                 {hasOffer ? (
-                    <span className="absolute top-3 right-3 z-10 rounded-full bg-black/50 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                    <span className="absolute top-2 right-2 z-10 rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm sm:top-3 sm:right-3 sm:px-2.5 sm:py-1">
                         Offer Product
                     </span>
                 ) : null}
@@ -40,10 +37,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 />
             </div>
             <div className="flex flex-1 flex-col gap-1 p-4">
-                <h3 className="text-foreground text-base font-semibold sm:text-lg">
+                <h3 className="text-foreground truncate text-base font-semibold sm:text-lg">
                     {product.name}
                 </h3>
-                <p className="text-muted-foreground text-sm font-normal">
+                <p className="text-muted-foreground truncate text-sm font-normal">
                     {product.description}
                 </p>
                 <div className="mt-2 flex flex-wrap items-baseline gap-2">

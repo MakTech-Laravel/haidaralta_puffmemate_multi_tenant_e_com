@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { CancelOrderDialog } from '@/components/customer/cancel-order-dialog';
 import { Button } from '@/components/ui/button';
@@ -73,11 +73,31 @@ export function OrderList({
                     );
                     const hasMoreProducts =
                         order.products.length > VISIBLE_PRODUCT_COUNT;
+                    const detailsUrl = orderShow.url(order.id);
+
+                    const openOrderDetails = () => {
+                        router.visit(detailsUrl);
+                    };
 
                     return (
                         <li key={order.id}>
-                            <article className="bg-accent relative flex flex-col gap-4 rounded-xl p-4 sm:flex-row sm:items-stretch sm:gap-5 sm:p-5">
-                                <div className="bg-accent relative aspect-square w-full shrink-0 overflow-hidden rounded-sm sm:size-36 md:size-40">
+                            <article
+                                role="link"
+                                tabIndex={0}
+                                aria-label={`View order ${order.orderNumber}`}
+                                className="bg-accent relative flex cursor-pointer flex-col gap-3 rounded-xl p-3 sm:flex-row sm:items-start sm:gap-5 sm:p-5"
+                                onClick={openOrderDetails}
+                                onKeyDown={(event) => {
+                                    if (
+                                        event.key === 'Enter' ||
+                                        event.key === ' '
+                                    ) {
+                                        event.preventDefault();
+                                        openOrderDetails();
+                                    }
+                                }}
+                            >
+                                <div className="bg-accent relative aspect-[2/1] w-full shrink-0 overflow-hidden rounded-sm sm:aspect-auto sm:size-36 sm:w-auto md:size-40">
                                     <div
                                         className="absolute inset-0 bg-cover bg-center"
                                         style={{
@@ -88,11 +108,23 @@ export function OrderList({
                                     />
                                 </div>
 
-                                <div className="flex min-w-0 flex-1 flex-col gap-3 pr-0 sm:pr-28">
+                                <div className="flex min-w-0 flex-1 flex-col gap-3">
                                     <div className="min-w-0 space-y-2">
-                                        <p className="text-muted-foreground text-xs font-medium">
-                                            Order ID: {order.orderNumber}
-                                        </p>
+                                        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                                            <p className="text-muted-foreground min-w-0 text-xs font-medium">
+                                                Order ID: {order.orderNumber}
+                                            </p>
+                                            <span
+                                                className={cn(
+                                                    'inline-flex shrink-0 rounded-full px-2.5 py-1 text-sm font-normal',
+                                                    order.status === 'delivered'
+                                                        ? 'bg-muted-foreground/15 text-foreground'
+                                                        : 'bg-primary/10 text-primary',
+                                                )}
+                                            >
+                                                {statusLabel[order.status]}
+                                            </span>
+                                        </div>
                                         <h2 className="text-foreground text-lg font-semibold tracking-tight sm:text-xl">
                                             {order.branchName}
                                         </h2>
@@ -106,15 +138,9 @@ export function OrderList({
                                                 </span>
                                             ))}
                                             {hasMoreProducts ? (
-                                                <Link
-                                                    href={orderShow.url(
-                                                        order.id,
-                                                    )}
-                                                    prefetch
-                                                    className="bg-foreground text-background hover:bg-foreground/90 rounded-md px-2.5 py-1 text-sm font-medium transition-colors"
-                                                >
+                                                <span className="bg-foreground text-background rounded-md px-2.5 py-1 text-sm font-medium">
                                                     More
-                                                </Link>
+                                                </span>
                                             ) : null}
                                         </div>
                                         <p className="text-foreground text-base font-bold">
@@ -128,9 +154,11 @@ export function OrderList({
                                                 type="button"
                                                 size="sm"
                                                 className="bg-muted-foreground text-background hover:bg-muted-foreground/90 h-9 rounded-md px-4 text-sm font-semibold"
-                                                onClick={() =>
-                                                    setCancelOrderId(order.id)
-                                                }
+                                                onClick={(event) => {
+                                                    event.preventDefault();
+                                                    event.stopPropagation();
+                                                    setCancelOrderId(order.id);
+                                                }}
                                             >
                                                 {actionLabel[order.status]}
                                             </Button>
@@ -150,10 +178,11 @@ export function OrderList({
                                                 asChild
                                             >
                                                 <Link
-                                                    href={orderShow.url(
-                                                        order.id,
-                                                    )}
+                                                    href={detailsUrl}
                                                     prefetch
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                    }}
                                                 >
                                                     {actionLabel[order.status]}
                                                 </Link>
@@ -161,17 +190,6 @@ export function OrderList({
                                         )}
                                     </div>
                                 </div>
-
-                                <span
-                                    className={cn(
-                                        'absolute top-4 right-4 inline-flex rounded-full px-2.5 py-1 text-sm font-normal sm:top-5 sm:right-5',
-                                        order.status === 'delivered'
-                                            ? 'bg-muted-foreground/15 text-foreground'
-                                            : 'bg-primary/10 text-primary',
-                                    )}
-                                >
-                                    {statusLabel[order.status]}
-                                </span>
                             </article>
                         </li>
                     );

@@ -31,6 +31,7 @@ class InventoryTransactionFactory extends Factory
             'quantity' => $delta,
             'before_quantity' => $before,
             'after_quantity' => $before + $delta,
+            'unit_cost' => fake()->optional(0.6)->randomFloat(2, 1, 40),
             'reference_type' => null,
             'reference_id' => null,
             'created_by' => null,

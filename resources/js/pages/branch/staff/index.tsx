@@ -239,10 +239,7 @@ export default function BranchStaffIndex({
 
                     setProcessing(true);
                     router.delete(
-                        StaffController.destroy.url([
-                            branch.slug,
-                            deletingId,
-                        ]),
+                        StaffController.destroy.url([branch.slug, deletingId]),
                         {
                             onFinish: () => {
                                 setProcessing(false);

@@ -9,6 +9,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $product_id
+ * @property string $path
+ * @property int $sort_order
+ * @property-read Product|null $product
+ */
 class ProductImage extends Model
 {
     /** @use HasFactory<ProductImageFactory> */

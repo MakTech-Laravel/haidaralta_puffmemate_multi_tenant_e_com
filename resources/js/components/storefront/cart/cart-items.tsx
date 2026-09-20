@@ -21,7 +21,11 @@ type CartItemsProps = {
     branches: CartBranchOption[];
     onToggleGroup: (groupId: string, selected: boolean) => void;
     onToggleItem: (groupId: string, itemId: string, selected: boolean) => void;
-    onQuantityChange: (groupId: string, itemId: string, quantity: number) => void;
+    onQuantityChange: (
+        groupId: string,
+        itemId: string,
+        quantity: number,
+    ) => void;
     onBranchChange: (groupId: string, itemId: string, branchId: string) => void;
     onRemoveItem: (groupId: string, itemId: string) => void;
     className?: string;
@@ -137,7 +141,7 @@ export function CartItems({
                                             </p>
                                         </div>
                                         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                                            <div className="min-w-0 w-full flex-1">
+                                            <div className="w-full min-w-0 flex-1">
                                                 <Select
                                                     value={item.branchId}
                                                     onValueChange={(value) =>

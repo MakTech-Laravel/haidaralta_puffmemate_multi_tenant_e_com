@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Controllers\Platform\ActivityLogController as PlatformActivityLogController;
+use App\Http\Controllers\Platform\AdminController as PlatformAdminController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchDriverController as PlatformBranchDriverController;
 use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInventoryController;
 use App\Http\Controllers\Platform\BranchScopedStaffController as PlatformBranchScopedStaffController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
 use App\Http\Controllers\Platform\CategoryController as PlatformCategoryController;
+use App\Http\Controllers\Platform\ConversationController as PlatformConversationController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
@@ -17,9 +19,9 @@ use App\Http\Controllers\Platform\PermissionController as PlatformPermissionCont
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
+use App\Http\Controllers\Platform\Reports\PriceHistoryController as PlatformPriceHistoryController;
 use App\Http\Controllers\Platform\Reports\StockTransactionController as PlatformStockTransactionController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
-use App\Http\Controllers\Platform\StaffController as PlatformStaffController;
 use App\Http\Controllers\Platform\StockController as PlatformStockController;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
@@ -52,11 +54,16 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     });
 
     Route::middleware(['permission:manage-users'])->group(function () {
-        Route::resource('staff', PlatformStaffController::class)
-            ->parameters(['staff' => 'user'])
-            ->names('platform.staff')
+        Route::resource('admins', PlatformAdminController::class)
+            ->parameters(['admins' => 'user'])
+            ->names('platform.admins')
             ->middlewareFor(['store', 'update'], 'precognitive');
     });
+
+    Route::permanentRedirect('staff', '/platform/admins');
+    Route::permanentRedirect('staff/create', '/platform/admins/create');
+    Route::permanentRedirect('staff/{user}', '/platform/admins/{user}');
+    Route::permanentRedirect('staff/{user}/edit', '/platform/admins/{user}/edit');
 
     Route::middleware(['permission:manage-branch-users'])->group(function () {
         Route::resource('branch-staff', PlatformBranchStaffController::class)
@@ -159,6 +166,12 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.stock.price');
         Route::get('reports/stock-transactions', [PlatformStockTransactionController::class, 'index'])
             ->name('platform.reports.stock-transactions');
+        Route::get('reports/stock-transactions/export', [PlatformStockTransactionController::class, 'export'])
+            ->name('platform.reports.stock-transactions.export');
+        Route::get('reports/price-history', [PlatformPriceHistoryController::class, 'index'])
+            ->name('platform.reports.price-history');
+        Route::get('reports/price-history/export', [PlatformPriceHistoryController::class, 'export'])
+            ->name('platform.reports.price-history.export');
         Route::get('stock/branch-options', [PlatformStockController::class, 'branchOptions'])
             ->name('platform.stock.branch-options');
         Route::get('stock/product-options', [PlatformStockController::class, 'productOptions'])
@@ -205,6 +218,37 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.products.variants.update');
         Route::delete('products/{product}/variants/{variant}', [PlatformProductVariantController::class, 'destroy'])
             ->name('platform.products.variants.destroy');
+    });
+
+    Route::middleware(['permission:manage-conversations'])->group(function () {
+        Route::get('conversations', [PlatformConversationController::class, 'index'])
+            ->name('platform.conversations.index');
+        Route::get('conversations/order-options', [PlatformConversationController::class, 'orderOptions'])
+            ->name('platform.conversations.order-options');
+        Route::post('conversations', [PlatformConversationController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.conversations.store');
+        Route::get('conversations/{conversation}', [PlatformConversationController::class, 'show'])
+            ->whereNumber('conversation')
+            ->name('platform.conversations.show');
+        Route::get('conversations/{conversation}/messages', [PlatformConversationController::class, 'messages'])
+            ->whereNumber('conversation')
+            ->name('platform.conversations.messages');
+        Route::post('conversations/{conversation}/messages', [PlatformConversationController::class, 'storeMessage'])
+            ->whereNumber('conversation')
+            ->middleware('throttle:conversation-messages')
+            ->name('platform.conversations.messages.store');
+        Route::get('conversation-branch-options', [PlatformConversationController::class, 'branchOptions'])
+            ->name('platform.conversations.branch-options');
+        Route::post('conversations/{conversation}/delivered', [PlatformConversationController::class, 'delivered'])
+            ->whereNumber('conversation')
+            ->name('platform.conversations.delivered');
+        Route::post('conversations/{conversation}/read', [PlatformConversationController::class, 'read'])
+            ->whereNumber('conversation')
+            ->name('platform.conversations.read');
+        Route::post('conversations/{conversation}/close', [PlatformConversationController::class, 'close'])
+            ->whereNumber('conversation')
+            ->name('platform.conversations.close');
     });
 
     Route::middleware(['permission:view-activity-logs'])->group(function () {

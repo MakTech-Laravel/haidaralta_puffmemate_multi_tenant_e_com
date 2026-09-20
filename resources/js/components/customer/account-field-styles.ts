@@ -3,8 +3,7 @@ export const accountSectionTitleClass =
 
 export const accountLabelClass = 'text-sm font-normal';
 
-export const accountInputClass =
-    'h-11 rounded-none text-sm font-normal';
+export const accountInputClass = 'h-11 rounded-none text-sm font-normal';
 
 export const accountSelectTriggerClass =
     'h-11 data-[size=default]:h-11 w-full min-w-0 rounded-none bg-transparent text-sm font-normal shadow-xs';

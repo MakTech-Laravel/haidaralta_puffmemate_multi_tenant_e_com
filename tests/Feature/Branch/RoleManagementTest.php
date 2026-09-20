@@ -48,6 +48,30 @@ test('branch super admin can create a branch role with permissions', function ()
         ->toContain(PermissionEnum::MANAGE_BRANCH_ORDERS->value);
 });
 
+test('branch role store rejects a duplicate name', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $teamKey = config('permission.column_names.team_foreign_key');
+    $before = Role::query()
+        ->where('guard_name', 'branch')
+        ->where($teamKey, $downtown->id)
+        ->count();
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.roles.store', $downtown), [
+            'name' => RoleEnum::STAFF->value,
+            'permissions' => [PermissionEnum::VIEW_BRANCH_DASHBOARD->value],
+        ])
+        ->assertInvalid([
+            'name' => 'A role with this name already exists.',
+        ]);
+
+    expect(Role::query()
+        ->where('guard_name', 'branch')
+        ->where($teamKey, $downtown->id)
+        ->count())->toBe($before);
+});
+
 test('branch role cannot be deleted when users are assigned', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -97,5 +121,15 @@ test('branch permissions catalog is readable by branch super admin', function ()
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/permissions/index')
-            ->has('permissionGroups'));
+            ->has('permissionGroups')
+            ->where(
+                'permissionGroups',
+                function ($groups): bool {
+                    $names = collect($groups)->pluck('group')->all();
+                    $sorted = $names;
+                    natcasesort($sorted);
+
+                    return array_values($names) === array_values($sorted);
+                },
+            ));
 });

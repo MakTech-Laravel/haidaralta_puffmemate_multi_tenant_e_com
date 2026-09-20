@@ -10,6 +10,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string|null $license_number
+ * @property DriverVehicleType $vehicle_type
+ * @property DriverAvailabilityStatus $availability_status
+ * @property string|null $notes
+ * @property string|null $address
+ * @property string|null $vehicle_image_path
+ * @property-read User|null $user
+ */
 class DriverProfile extends Model
 {
     /** @use HasFactory<DriverProfileFactory> */
@@ -25,7 +36,6 @@ class DriverProfile extends Model
         'availability_status',
         'notes',
         'address',
-        'avatar_path',
         'vehicle_image_path',
     ];
 
