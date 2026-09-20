@@ -1,11 +1,11 @@
 <?php
 
-use App\Http\Controllers\Driver\AccountController as DriverAccountController;
 use App\Http\Controllers\Driver\ActivityLogController as DriverActivityLogController;
 use App\Http\Controllers\Driver\DashboardController as DriverDashboardController;
 use App\Http\Controllers\Driver\EarningsController as DriverEarningsController;
 use App\Http\Controllers\Driver\NotificationController as DriverNotificationController;
 use App\Http\Controllers\Driver\OrderController as DriverOrderController;
+use App\Http\Controllers\Driver\ProfileController as DriverProfileController;
 use App\Http\Controllers\Driver\RouteController as DriverRouteController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,7 +19,8 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::post('orders/{order}/deliver', [DriverOrderController::class, 'deliver'])->name('driver.orders.deliver');
     Route::get('orders/{order}', [DriverOrderController::class, 'show'])->name('driver.orders.show');
     Route::get('notifications', [DriverNotificationController::class, 'index'])->name('driver.notifications.index');
-    Route::get('account', [DriverAccountController::class, 'index'])->name('driver.account.index');
+    Route::get('profile', [DriverProfileController::class, 'index'])->name('driver.profile.index');
+    Route::redirect('account', '/driver/profile');
     Route::get('activity', [DriverActivityLogController::class, 'index'])->name('driver.activity.index');
     Route::get('activity/{activity}', [DriverActivityLogController::class, 'show'])
         ->whereNumber('activity')

@@ -20,8 +20,8 @@ import {
     ToggleGroup,
     ToggleGroupItem,
 } from '@/components/ui/toggle-group';
-import { index as accountIndex } from '@/routes/driver/account';
 import { index as activityIndex, show as activityShow } from '@/routes/driver/activity';
+import { index as profileIndex } from '@/routes/driver/profile';
 
 function visitActivity(options: {
     event: DriverActivityEventFilter;
@@ -265,7 +265,7 @@ export default function DriverActivityIndex({
 
 DriverActivityIndex.layout = {
     breadcrumbs: [
-        { title: 'Account', href: accountIndex.url() },
+        { title: 'Profile', href: profileIndex.url() },
         { title: 'Activity', href: activityIndex.url() },
     ],
 };

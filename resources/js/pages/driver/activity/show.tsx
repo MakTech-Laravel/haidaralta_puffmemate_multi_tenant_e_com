@@ -9,8 +9,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { eventBadgeVariant } from '@/lib/activity-log';
-import { index as accountIndex } from '@/routes/driver/account';
 import { index as activityIndex, show as activityShow } from '@/routes/driver/activity';
+import { index as profileIndex } from '@/routes/driver/profile';
 
 function formatWhen(value: string | null): string {
     if (!value) {
@@ -161,7 +161,7 @@ export default function DriverActivityShow({
 
 DriverActivityShow.layout = (props: { activity: ActivityDetail }) => ({
     breadcrumbs: [
-        { title: 'Account', href: accountIndex.url() },
+        { title: 'Profile', href: profileIndex.url() },
         { title: 'Activity', href: activityIndex.url() },
         {
             title: props.activity.description,

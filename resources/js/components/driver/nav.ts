@@ -9,10 +9,10 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 import { dashboard } from '@/routes/driver';
-import { index as accountIndex } from '@/routes/driver/account';
 import { index as earningsIndex } from '@/routes/driver/earnings';
 import { index as historyIndex } from '@/routes/driver/history';
 import { index as ordersIndex } from '@/routes/driver/orders';
+import { index as profileIndex } from '@/routes/driver/profile';
 import { index as routeIndex } from '@/routes/driver/route';
 
 export type DriverNavItem = {
@@ -38,7 +38,7 @@ function matchesPath(url: string, path: string, nested = false): boolean {
 
 /**
  * Five field tabs. Notifications live on the header bell, not the tab bar.
- * Route stays center; activity lives under Account; chat stays on the order.
+ * Route stays center; account options live in the header sheet; chat stays on the order.
  */
 export const driverNavItems: DriverNavItem[] = [
     {
@@ -81,12 +81,12 @@ export const driverNavItems: DriverNavItem[] = [
         match: (url) => matchesPath(url, earningsIndex.url(), true),
     },
     {
-        id: 'account',
-        label: 'Account',
+        id: 'profile',
+        label: 'Profile',
         icon: UserRound,
-        href: accountIndex.url(),
+        href: profileIndex.url(),
         tab: true,
-        match: (url) => matchesPath(url, accountIndex.url(), true),
+        match: (url) => matchesPath(url, profileIndex.url(), true),
     },
     {
         id: 'logout',

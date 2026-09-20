@@ -42,7 +42,6 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
-import { index as accountIndex } from '@/routes/driver/account';
 import { index as earningsIndex } from '@/routes/driver/earnings';
 import { index as notificationsIndex } from '@/routes/driver/notifications';
 import {
@@ -50,6 +49,7 @@ import {
     index as ordersIndex,
     show as orderShow,
 } from '@/routes/driver/orders';
+import { index as profileIndex } from '@/routes/driver/profile';
 import { index as routeIndex } from '@/routes/driver/route';
 import type { User } from '@/types';
 
@@ -114,10 +114,10 @@ export function DriverDashboardHub({
             icon: Wallet,
         },
         {
-            id: 'account',
-            label: 'Account',
-            hint: 'Profile',
-            href: accountIndex.url(),
+            id: 'profile',
+            label: 'Profile',
+            hint: 'You and your vehicle',
+            href: profileIndex.url(),
             icon: UserRound,
         },
         {

@@ -5,5 +5,5 @@ paths:
 
 # Driver Activity Js Components Driver
 
-## Driver activity lives under Account
-Driver activity is optional under Account (Account hub + header sheet). Keep GET /driver/activity, but do not promote it back into the tab bar or sidebar.
+## Driver activity lives under the header sheet
+Driver activity is optional from the header account sheet (and Profile breadcrumbs). Keep GET /driver/activity, but do not promote it back into the tab bar or sidebar.

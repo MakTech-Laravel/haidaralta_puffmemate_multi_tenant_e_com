@@ -18,8 +18,8 @@ import { useInitials } from '@/hooks/use-initials';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
-import { index as accountIndex } from '@/routes/driver/account';
 import { index as activityIndex } from '@/routes/driver/activity';
+import { index as profileIndex } from '@/routes/driver/profile';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { User } from '@/types';
@@ -148,28 +148,28 @@ export function DriverAccountSheet({ user }: DriverAccountSheetProps) {
                             Account
                         </p>
                         <AccountSheetItem
-                            href={accountIndex.url()}
+                            href={profileIndex.url()}
                             icon={CircleUser}
                         >
-                            Account
+                            Profile
                         </AccountSheetItem>
                         <AccountSheetItem
                             href={editProfile.url()}
                             icon={UserRound}
                         >
-                            Profile
+                            Edit details
                         </AccountSheetItem>
                         <AccountSheetItem
                             href={editSecurity.url()}
                             icon={Settings}
                         >
-                            Settings
+                            Security
                         </AccountSheetItem>
                         <AccountSheetItem
                             href={activityIndex.url()}
                             icon={ScrollText}
                         >
-                            Activity
+                            My activity
                         </AccountSheetItem>
                     </section>
 
