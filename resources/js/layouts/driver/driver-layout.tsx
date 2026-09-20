@@ -1,8 +1,10 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { DriverHeader } from '@/components/driver/driver-header';
+import { DriverMobileNav } from '@/components/driver/driver-mobile-nav';
 import { DriverSidebar } from '@/components/driver/driver-sidebar';
 import { toUrl } from '@/lib/utils';
+import { dashboard } from '@/routes/driver';
 import type { BreadcrumbItem } from '@/types';
 
 export default function DriverLayout({
@@ -13,25 +15,21 @@ export default function DriverLayout({
     children: ReactNode;
 }) {
     const trail: BreadcrumbItem[] = [
-        { title: 'Home', href: '/driver/dashboard' },
+        { title: 'Home', href: dashboard.url() },
         ...(breadcrumbs.length > 0
             ? breadcrumbs
-            : [{ title: 'Dashboard', href: '/driver/dashboard' }]),
+            : [{ title: 'Dashboard', href: dashboard.url() }]),
     ];
 
     return (
         <div className="bg-background text-foreground flex min-h-svh flex-col">
             <DriverHeader />
 
-            <main className="flex-1">
-                <h1 className="bg-accent text-foreground py-4 text-center text-2xl font-bold tracking-tight sm:py-8 sm:text-3xl md:text-[40px]">
-                    Driver
-                </h1>
-
-                <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
+            <main className="flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom))] xl:pb-0">
+                <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 sm:py-8 xl:max-w-6xl xl:py-10">
                     <nav
                         aria-label="Breadcrumb"
-                        className="text-muted-foreground mb-6 text-base sm:mb-10 md:mb-14"
+                        className="text-muted-foreground mb-8 hidden text-base xl:mb-10 xl:block"
                     >
                         <ol className="flex flex-wrap items-center gap-1.5">
                             {trail.map((item, index) => {
@@ -62,19 +60,17 @@ export default function DriverLayout({
                                 );
                             })}
                         </ol>
-                        <div className="border-border bg-border mt-4 hidden h-0.5 w-full lg:block" />
+                        <div className="border-border bg-border mt-4 h-0.5 w-full" />
                     </nav>
 
-                    <div className="grid gap-8 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-12">
-                        <DriverSidebar className="lg:sticky lg:top-28 lg:self-start lg:pt-1" />
+                    <div className="grid gap-8 xl:grid-cols-[13rem_minmax(0,1fr)] xl:gap-12">
+                        <DriverSidebar className="xl:sticky xl:top-24 xl:self-start" />
                         <div className="min-w-0">{children}</div>
                     </div>
                 </div>
             </main>
 
-            <footer className="border-border text-muted-foreground border-t py-4 text-center text-xs">
-                PuffMeMate Driver · Field deliveries
-            </footer>
+            <DriverMobileNav />
         </div>
     );
 }

@@ -1,13 +1,10 @@
 ---
 paths:
   - resources/js/components/driver/nav.ts
-  - 'resources/js/components/driver/{nav.ts,driver-sidebar.tsx}'
+  - 'resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx}'
 ---
 
 # Components Driver
 
-## Driver sidebar includes Orders
-driverNavItems lists Dashboard, Orders (/driver/orders), My activity, Log Out. Keep Orders match covering /driver/orders and /driver/orders/*.
-
-## Driver nav Lucide icons and mobile bar
-driverNavItems each carry a LucideIcon (LayoutDashboard, Package, Activity, LogOut). DriverSidebar: <lg horizontal icon-only with aria-label; lg+ vertical icon+text borders. Not PortalShell or fixed bottom tabs.
+## Driver nav is five field tabs plus desktop extras
+driverNavItems is the single source: tab:true items (Home/Chats/Orders/Alerts/Account) render in DriverMobileNav; the full list including My activity and Log Out renders in DriverSidebar. Keep Orders match covering /driver/orders/*. Use Wayfinder URLs. Header icons link to notifications and account — do not put cart, shop menu, or End shift in the driver header.
