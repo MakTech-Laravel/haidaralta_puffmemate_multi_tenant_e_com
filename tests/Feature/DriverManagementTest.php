@@ -9,6 +9,7 @@ use App\Models\DriverBranchAssignment;
 use App\Models\DriverProfile;
 use App\Models\DriverRoster;
 use App\Models\User;
+use App\Services\Driver\DriverService;
 use App\Support\DriverAvailability;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -17,6 +18,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
+    config(['drivers.single_active_branch' => true]);
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(BranchSeeder::class);
     $this->seed(UserSeeder::class);
@@ -25,7 +27,6 @@ beforeEach(function () {
 test('platform can list and create drivers with branch assignments', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.drivers.index'))
@@ -44,7 +45,8 @@ test('platform can list and create drivers with branch assignments', function ()
             ->has('branches')
             ->has('vehicleTypes')
             ->has('availabilityStatuses')
-            ->has('rosterStatuses'));
+            ->has('rosterStatuses')
+            ->where('drivers.single_active_branch', true));
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.drivers.edit', $seededDriver))
@@ -63,7 +65,7 @@ test('platform can list and create drivers with branch assignments', function ()
             'password_confirmation' => 'password',
             'vehicle_type' => DriverVehicleType::Car->value,
             'availability_status' => DriverAvailabilityStatus::Available->value,
-            'branch_ids' => [$sydney->id, $melbourne->id],
+            'branch_ids' => [$sydney->id],
             'is_active' => true,
         ])
         ->assertRedirect();
@@ -73,15 +75,28 @@ test('platform can list and create drivers with branch assignments', function ()
     expect($driver->user_type)->toBe(UserType::DRIVER)
         ->and($driver->branch_id)->toBeNull()
         ->and($driver->driverProfile)->not->toBeNull()
-        ->and(DriverBranchAssignment::query()->where('driver_id', $driver->id)->where('status', DriverAssignmentStatus::Active)->count())->toBe(2);
+        ->and(DriverBranchAssignment::query()->where('driver_id', $driver->id)->where('status', DriverAssignmentStatus::Active)->count())->toBe(1);
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
 });
 
-test('seeded driver has profile and multi branch assignments keyed by user id', function () {
+test('seeded driver has profile and one active branch assignment keyed by user id', function () {
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     expect($driver->user_type)->toBe(UserType::DRIVER)
         ->and(DriverProfile::query()->where('user_id', $driver->id)->exists())->toBeTrue()
-        ->and(DriverBranchAssignment::query()->where('driver_id', $driver->id)->count())->toBe(2);
+        ->and(DriverBranchAssignment::query()->where('driver_id', $driver->id)->count())->toBe(1);
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
 });
 
 test('platform can create a driver with a nested duty period', function () {
@@ -303,14 +318,26 @@ test('platform can store driver with address and avatar and sync branches', func
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.drivers.branches.sync', $driver), [
-            'branch_ids' => [$sydney->id, $melbourne->id],
+            'branch_ids' => [$melbourne->id],
         ])
         ->assertRedirect();
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Inactive->value,
+    ]);
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $melbourne->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
 
     expect(DriverBranchAssignment::query()
         ->where('driver_id', $driver->id)
         ->where('status', DriverAssignmentStatus::Active)
-        ->count())->toBe(2);
+        ->count())->toBe(1);
 });
 
 test('platform can update a driver avatar onto users.avatar', function () {
@@ -420,4 +447,210 @@ test('busy override wins over scheduled roster for effective availability', func
 
     expect(DriverAvailability::effective($driver)->value)
         ->toBe(DriverAvailabilityStatus::Busy->value);
+});
+
+test('platform rejects assigning a driver to two branches when a single active branch is required', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->from(route('platform.drivers.create'))
+        ->post(route('platform.drivers.store'), [
+            'name' => 'Two Branch Driver',
+            'phone' => '+61420000021',
+            'email' => 'two.branch.driver@puffmemate.dev',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'vehicle_type' => DriverVehicleType::Car->value,
+            'availability_status' => DriverAvailabilityStatus::Offline->value,
+            'branch_ids' => [$sydney->id, $melbourne->id],
+            'is_active' => true,
+        ])
+        ->assertRedirect(route('platform.drivers.create'))
+        ->assertSessionHasErrors([
+            'branch_ids' => DriverService::ONE_ACTIVE_BRANCH_MESSAGE,
+        ]);
+
+    expect(User::query()->where('phone', '+61420000021')->exists())->toBeFalse();
+});
+
+test('platform rejects syncing two active branches when a single active branch is required', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->from(route('platform.drivers.show', $driver))
+        ->put(route('platform.drivers.branches.sync', $driver), [
+            'branch_ids' => [$sydney->id, $melbourne->id],
+        ])
+        ->assertRedirect(route('platform.drivers.show', $driver))
+        ->assertSessionHasErrors([
+            'branch_ids' => DriverService::ONE_ACTIVE_BRANCH_MESSAGE,
+        ]);
+
+    expect(DriverBranchAssignment::query()
+        ->where('driver_id', $driver->id)
+        ->where('status', DriverAssignmentStatus::Active)
+        ->count())->toBe(1);
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
+});
+
+test('branch assign transfers the driver off their previous active branch', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_2_SUPER_ADMIN)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($staff, 'branch')
+        ->post(route('branch.drivers.assign', $melbourne), [
+            'driver_id' => $driver->id,
+            'status' => DriverAssignmentStatus::Active->value,
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Inactive->value,
+    ]);
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $melbourne->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
+
+    expect(DriverBranchAssignment::query()
+        ->where('driver_id', $driver->id)
+        ->where('status', DriverAssignmentStatus::Active)
+        ->count())->toBe(1);
+});
+
+test('platform creates a driver with two active branches when multiple are allowed', function () {
+    config(['drivers.single_active_branch' => false]);
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.drivers.store'), [
+            'name' => 'Two Branch Driver',
+            'phone' => '+61420000022',
+            'email' => 'multi.branch.driver@puffmemate.dev',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'vehicle_type' => DriverVehicleType::Car->value,
+            'availability_status' => DriverAvailabilityStatus::Offline->value,
+            'branch_ids' => [$sydney->id, $melbourne->id],
+            'is_active' => true,
+        ])
+        ->assertRedirect();
+
+    $driver = User::query()->where('phone', '+61420000022')->firstOrFail();
+
+    expect(DriverBranchAssignment::query()
+        ->where('driver_id', $driver->id)
+        ->where('status', DriverAssignmentStatus::Active)
+        ->count())->toBe(2);
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $melbourne->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
+});
+
+test('platform syncs two active branches when multiple are allowed', function () {
+    config(['drivers.single_active_branch' => false]);
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.drivers.branches.sync', $driver), [
+            'branch_ids' => [$sydney->id, $melbourne->id],
+        ])
+        ->assertRedirect();
+
+    expect(DriverBranchAssignment::query()
+        ->where('driver_id', $driver->id)
+        ->where('status', DriverAssignmentStatus::Active)
+        ->count())->toBe(2);
+});
+
+test('branch assign keeps the previous active branch when multiple are allowed', function () {
+    config(['drivers.single_active_branch' => false]);
+
+    $staff = User::query()->where('email', UserSeeder::BRANCH_2_SUPER_ADMIN)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($staff, 'branch')
+        ->post(route('branch.drivers.assign', $melbourne), [
+            'driver_id' => $driver->id,
+            'status' => DriverAssignmentStatus::Active->value,
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $melbourne->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
+
+    expect(DriverBranchAssignment::query()
+        ->where('driver_id', $driver->id)
+        ->where('status', DriverAssignmentStatus::Active)
+        ->count())->toBe(2);
+});
+
+test('seeded driver has two active branches when multiple are allowed', function () {
+    config(['drivers.single_active_branch' => false]);
+
+    $this->seed(UserSeeder::class);
+
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    expect(DriverBranchAssignment::query()
+        ->where('driver_id', $driver->id)
+        ->where('status', DriverAssignmentStatus::Active)
+        ->count())->toBe(2);
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
+
+    $this->assertDatabaseHas('driver_branch_assignments', [
+        'driver_id' => $driver->id,
+        'branch_id' => $melbourne->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
 });

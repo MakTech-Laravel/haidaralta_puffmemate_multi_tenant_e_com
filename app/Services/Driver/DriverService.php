@@ -18,6 +18,8 @@ use InvalidArgumentException;
 
 class DriverService
 {
+    public const ONE_ACTIVE_BRANCH_MESSAGE = 'A driver can only be assigned to one branch at a time.';
+
     /**
      * @param  array{name: string, phone: string, email?: string|null, password: string, license_number?: string|null, vehicle_type: string, availability_status?: string, notes?: string|null, address?: string|null, branch_ids?: list<int>, rosters?: list<array{branch_id: int, start_date: string, end_date: string, start_time: string, end_time: string, days_of_week?: list<int>, status?: string}>}  $data
      */
@@ -28,7 +30,7 @@ class DriverService
         ?UploadedFile $avatar = null,
         ?UploadedFile $vehicleImage = null,
     ): User {
-        $branchIds = $data['branch_ids'] ?? [];
+        $branchIds = array_values(array_unique(array_map('intval', $data['branch_ids'] ?? [])));
 
         if ($branchIds === [] && $autoAssignBranch === null) {
             throw new InvalidArgumentException('At least one branch must be assigned to the driver.');
@@ -36,6 +38,10 @@ class DriverService
 
         if ($branchIds === [] && $autoAssignBranch !== null) {
             $branchIds = [$autoAssignBranch->id];
+        }
+
+        if ($this->restrictsToSingleActiveBranch() && count($branchIds) > 1) {
+            throw new InvalidArgumentException(self::ONE_ACTIVE_BRANCH_MESSAGE);
         }
 
         return DB::transaction(function () use ($data, $assignedBy, $branchIds, $avatar, $vehicleImage): User {
@@ -152,7 +158,21 @@ class DriverService
     ): void {
         $this->assertIsDriver($driver);
 
+        $branchIds = array_values(array_unique(array_map('intval', $branchIds)));
+
+        if (
+            $this->restrictsToSingleActiveBranch()
+            && $status === DriverAssignmentStatus::Active
+            && count($branchIds) > 1
+        ) {
+            throw new InvalidArgumentException(self::ONE_ACTIVE_BRANCH_MESSAGE);
+        }
+
         DB::transaction(function () use ($driver, $branchIds, $status, $assignedBy): void {
+            if ($this->restrictsToSingleActiveBranch() && $status === DriverAssignmentStatus::Active) {
+                $this->deactivateOtherActiveAssignments($driver, $branchIds[0] ?? null);
+            }
+
             foreach ($branchIds as $branchId) {
                 DriverBranchAssignment::query()->updateOrCreate(
                     ['driver_id' => $driver->id, 'branch_id' => $branchId],
@@ -175,10 +195,16 @@ class DriverService
     ): DriverBranchAssignment {
         $this->assertIsDriver($driver);
 
-        return DriverBranchAssignment::query()->updateOrCreate(
-            ['driver_id' => $driver->id, 'branch_id' => $branch->id],
-            ['status' => $status->value, 'assigned_by' => $assignedBy?->id],
-        );
+        return DB::transaction(function () use ($driver, $branch, $assignedBy, $status): DriverBranchAssignment {
+            if ($this->restrictsToSingleActiveBranch() && $status === DriverAssignmentStatus::Active) {
+                $this->deactivateOtherActiveAssignments($driver, $branch->id);
+            }
+
+            return DriverBranchAssignment::query()->updateOrCreate(
+                ['driver_id' => $driver->id, 'branch_id' => $branch->id],
+                ['status' => $status->value, 'assigned_by' => $assignedBy?->id],
+            );
+        });
     }
 
     public function unassignFromBranch(User $driver, Branch $branch): void
@@ -190,18 +216,24 @@ class DriverService
     {
         $this->assertIsDriver($driver);
 
-        $assignment = DriverBranchAssignment::query()
-            ->where('driver_id', $driver->id)
-            ->where('branch_id', $branch->id)
-            ->first();
+        return DB::transaction(function () use ($driver, $branch, $status): DriverBranchAssignment {
+            $assignment = DriverBranchAssignment::query()
+                ->where('driver_id', $driver->id)
+                ->where('branch_id', $branch->id)
+                ->first();
 
-        if ($assignment === null) {
-            throw new InvalidArgumentException('Driver is not assigned to this branch.');
-        }
+            if ($assignment === null) {
+                throw new InvalidArgumentException('Driver is not assigned to this branch.');
+            }
 
-        $assignment->update(['status' => $status->value]);
+            if ($this->restrictsToSingleActiveBranch() && $status === DriverAssignmentStatus::Active) {
+                $this->deactivateOtherActiveAssignments($driver, $branch->id);
+            }
 
-        return $assignment->refresh();
+            $assignment->update(['status' => $status->value]);
+
+            return $assignment->refresh();
+        });
     }
 
     /**
@@ -275,6 +307,20 @@ class DriverService
     public function deleteRoster(DriverRoster $roster): void
     {
         $roster->delete();
+    }
+
+    private function restrictsToSingleActiveBranch(): bool
+    {
+        return (bool) config('drivers.single_active_branch');
+    }
+
+    private function deactivateOtherActiveAssignments(User $driver, ?int $exceptBranchId = null): void
+    {
+        DriverBranchAssignment::query()
+            ->where('driver_id', $driver->id)
+            ->where('status', DriverAssignmentStatus::Active->value)
+            ->when($exceptBranchId !== null, fn ($query) => $query->where('branch_id', '!=', $exceptBranchId))
+            ->update(['status' => DriverAssignmentStatus::Inactive->value]);
     }
 
     private function assertIsDriver(User $driver): void

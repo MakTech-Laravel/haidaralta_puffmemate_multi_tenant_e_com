@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     Bike,
     Building2,
@@ -83,6 +83,7 @@ export default function DriverProfileIndex({
     driver: DriverProfile;
 }) {
     const getInitials = useInitials();
+    const singleActiveBranch = usePage().props.drivers.single_active_branch;
     const activeAssignments = driver.assignments.filter(
         (assignment) => assignment.status === 'active',
     );
@@ -209,11 +210,15 @@ export default function DriverProfileIndex({
 
                 <section className="border-border space-y-3 rounded-xl border p-4">
                     <h2 className="text-foreground text-base font-semibold">
-                        Branches
+                        {singleActiveBranch
+                            ? 'Assigned branch'
+                            : 'Assigned branches'}
                     </h2>
                     {activeAssignments.length === 0 ? (
                         <p className="text-muted-foreground text-sm">
-                            No active branch assignment yet.
+                            {singleActiveBranch
+                                ? 'No active branch assignment yet.'
+                                : 'No active branch assignments yet.'}
                         </p>
                     ) : (
                         <ul className="flex flex-col gap-2">

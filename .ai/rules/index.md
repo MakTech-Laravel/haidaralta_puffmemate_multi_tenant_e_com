@@ -7,7 +7,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/actions/** | .ai/rules/actions.md |
 | resources/js/pages/driver/activity/**,resources/js/components/driver/driver-activity.ts | .ai/rules/activity-js-components-driver.md |
 | app/Services/ActivityLog/** | .ai/rules/activity-log.md |
-| resources/js/components/admin/branch-form.tsx, resources/js/components/admin/driver-form.tsx, resources/js/components/admin/duty-days-picker.tsx, resources/js/components/admin/driver-roster-fields.tsx, resources/js/components/admin/branch-location-map-dialog.tsx | .ai/rules/admin.md |
+| resources/js/components/admin/branch-form.tsx, resources/js/components/admin/driver-form.tsx, resources/js/components/admin/duty-days-picker.tsx, resources/js/components/admin/driver-roster-fields.tsx, resources/js/components/admin/branch-location-map-dialog.tsx, resources/js/components/admin/driver-branch-assign-sheet.tsx | .ai/rules/admin.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php | .ai/rules/backup.md |
 | app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php, app/Models/Driver*.php, app/Models/User.php | .ai/rules/branch.md |
 | resources/js/pages/platform/branches/index.tsx, resources/js/pages/platform/branches/show.tsx | .ai/rules/branches.md |
@@ -21,7 +21,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx}, resources/js/components/driver/** | .ai/rules/components-driver.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/components-stock.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
-| config/scout.php | .ai/rules/config.md |
+| config/*.php, config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/Driver/** | .ai/rules/controllers-driver.md |
 | app/Http/Controllers/Platform/AdminController.php, app/Http/Controllers/Platform/BranchStaffController.php | .ai/rules/controllers-platform.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
@@ -47,6 +47,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | package.json, vite.config.ts | .ai/rules/general.md |
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
 | resources/js/components/admin/role-*.tsx, resources/js/pages/{platform,branch}/roles/**, app/Http/Controllers/{Platform,Branch}/RoleController.php, app/Http/Requests/{Platform,Branch}/*RoleRequest.php | .ai/rules/http-requests-platform-branch.md |
+| app/Services/Driver/**,app/Http/Requests/{Platform,Branch}/*Driver*.php,resources/js/pages/{platform,branch}/drivers/**,resources/js/components/admin/driver-branch-assign-sheet.tsx | .ai/rules/js-components-admin.md |
 | resources/js/components/branch/**, resources/js/components/branch/product-inventory-panel.tsx | .ai/rules/js-components-branch.md |
 | app/Http/Controllers/Driver/OrderController.php,resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/js-components-driver.md |
 | app/Services/Conversation/**,app/Events/Conversation*,resources/js/components/conversation/**,resources/js/hooks/use-chat-scroll.ts | .ai/rules/js-hooks.md |

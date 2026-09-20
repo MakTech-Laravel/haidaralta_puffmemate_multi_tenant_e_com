@@ -28,7 +28,7 @@ Branch create/edit coords: Address then Map location with Set on map (BranchLoca
 
 ## Driver CRUD surfaces
 
-Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids). Nested platform.branches.drivers and branch.drivers auto-assign the current branch on create and can assign existing drivers. Rosters require an active assignment for that branch. Overlap is per driver: date ranges overlap AND weekdays intersect AND times overlap. Roster forms use start/end dates + Mon–Sun day chips. No parcel/GPS/chat yet.
+Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids; max:1 only when `drivers.single_active_branch` is true). Nested platform.branches.drivers and branch.drivers auto-assign the current branch on create and can assign existing drivers. Rosters require an active assignment for that branch. Overlap is per driver: date ranges overlap AND weekdays intersect AND times overlap. Roster forms use start/end dates + Mon–Sun day chips. No parcel/GPS/chat yet.
 
 ## Stock pages share a product/branch/locked query contract
 

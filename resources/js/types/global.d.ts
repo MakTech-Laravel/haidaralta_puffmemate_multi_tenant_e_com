@@ -23,6 +23,9 @@ declare module '@inertiajs/core' {
                 show_bulk_import: boolean;
                 sku_prefix: string;
             };
+            drivers: {
+                single_active_branch: boolean;
+            };
             driverSupport: {
                 supportPhone: string;
                 branchPhone: string;

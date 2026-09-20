@@ -58,6 +58,7 @@ export const defaultDataTableActionIcons: Record<string, LucideIcon> = {
     Drivers: Truck,
     'Manage stock': Settings2,
     'Manage branches': Network,
+    'Transfer branch': Network,
     'Stock transactions': ScrollText,
     'Price history': History,
     'Restore DB': RotateCcw,

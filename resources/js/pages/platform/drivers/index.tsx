@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Building2, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -63,6 +63,7 @@ export default function PlatformDriversIndex({
         null,
     );
     const [processing, setProcessing] = useState(false);
+    const singleActiveBranch = usePage().props.drivers.single_active_branch;
     const branches = (tablePayload.filterOptions?.branches ??
         []) as BranchOption[];
 
@@ -184,7 +185,9 @@ export default function PlatformDriversIndex({
                                 ),
                             },
                             {
-                                label: 'Manage branches',
+                                label: singleActiveBranch
+                                    ? 'Transfer branch'
+                                    : 'Manage branches',
                                 icon: Building2,
                                 onSelect: () => setManagingDriver(row.original),
                             },
@@ -201,7 +204,7 @@ export default function PlatformDriversIndex({
                 ),
             },
         ],
-        [],
+        [singleActiveBranch],
     );
 
     return (

@@ -142,16 +142,16 @@ class DriverController extends Controller
         $driver = DriverPayload::resolveDriver($user);
         $data = $request->validated();
 
-        if (array_key_exists('branch_ids', $data)) {
-            $this->drivers->syncBranchAssignments(
-                $driver,
-                array_map('intval', $data['branch_ids'] ?? []),
-                DriverAssignmentStatus::Active,
-                $request->user('platform'),
-            );
-        }
-
         try {
+            if (array_key_exists('branch_ids', $data)) {
+                $this->drivers->syncBranchAssignments(
+                    $driver,
+                    array_map('intval', $data['branch_ids'] ?? []),
+                    DriverAssignmentStatus::Active,
+                    $request->user('platform'),
+                );
+            }
+
             $this->drivers->update(
                 $driver,
                 $data,
@@ -183,14 +183,20 @@ class DriverController extends Controller
     {
         $driver = DriverPayload::resolveDriver($user);
 
-        $this->drivers->syncBranchAssignments(
-            $driver,
-            array_map('intval', $request->validated('branch_ids')),
-            DriverAssignmentStatus::Active,
-            $request->user('platform'),
-        );
+        try {
+            $this->drivers->syncBranchAssignments(
+                $driver,
+                array_map('intval', $request->validated('branch_ids')),
+                DriverAssignmentStatus::Active,
+                $request->user('platform'),
+            );
+        } catch (InvalidArgumentException $exception) {
+            Toast::error($exception->getMessage());
 
-        Toast::success('Branch assignments updated.');
+            return redirect()->back();
+        }
+
+        Toast::success('Assigned branch updated.');
 
         return redirect()->back();
     }

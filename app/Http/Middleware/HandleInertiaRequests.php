@@ -60,6 +60,9 @@ class HandleInertiaRequests extends Middleware
                 'show_bulk_import' => (bool) config('catalog.show_bulk_import'),
                 'sku_prefix' => (string) config('catalog.sku_prefix', 'PMM'),
             ],
+            'drivers' => [
+                'single_active_branch' => (bool) config('drivers.single_active_branch'),
+            ],
             'storefront' => [
                 'navCategories' => StorefrontCatalog::navCategories(),
                 'selectedBranchId' => $request->session()->get(StorefrontCatalog::BRANCH_SESSION_KEY),
