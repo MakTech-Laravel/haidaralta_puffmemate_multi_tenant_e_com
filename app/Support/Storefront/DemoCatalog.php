@@ -825,24 +825,51 @@ class DemoCatalog
      *     addressSummary: string,
      *     windowLabel: string,
      *     productCount: int,
-     *     totalLabel: string
+     *     totalLabel: string,
+     *     phone: string,
+     *     notes: string|null,
+     *     unitLabel: string|null,
+     *     productPreview: list<string>,
+     *     paymentMethod: string,
+     *     etaLabel: string|null
      * }>
      */
     public static function driverAssignedOrders(): array
     {
+        $codOrderIds = ['drv-ord-1001', 'drv-ord-1003', 'drv-ord-1008', 'drv-ord-1010'];
+
         return array_map(
-            static fn (array $order): array => [
-                'id' => $order['id'],
-                'orderNumber' => $order['orderNumber'],
-                'status' => $order['status'],
-                'customerName' => $order['customerName'],
-                'areaId' => $order['areaId'],
-                'areaLabel' => $order['areaLabel'],
-                'addressSummary' => $order['addressSummary'],
-                'windowLabel' => $order['windowLabel'],
-                'productCount' => $order['productCount'],
-                'totalLabel' => $order['totalLabel'],
-            ],
+            static function (array $order) use ($codOrderIds): array {
+                $productPreview = array_values(array_map(
+                    static fn (array $product): string => $product['name'],
+                    array_slice($order['products'], 0, 2),
+                ));
+
+                $etaLabel = match ($order['status']) {
+                    'arrived' => 'At door',
+                    'delivered' => null,
+                    default => $order['id'] === 'drv-ord-1001' ? '6 min' : '12 min',
+                };
+
+                return [
+                    'id' => $order['id'],
+                    'orderNumber' => $order['orderNumber'],
+                    'status' => $order['status'],
+                    'customerName' => $order['customerName'],
+                    'areaId' => $order['areaId'],
+                    'areaLabel' => $order['areaLabel'],
+                    'addressSummary' => $order['addressSummary'],
+                    'windowLabel' => $order['windowLabel'],
+                    'productCount' => $order['productCount'],
+                    'totalLabel' => $order['totalLabel'],
+                    'phone' => $order['phone'],
+                    'notes' => $order['notes'],
+                    'unitLabel' => $order['shippingAddress']['line2'],
+                    'productPreview' => $productPreview,
+                    'paymentMethod' => in_array($order['id'], $codOrderIds, true) ? 'cod' : 'paid',
+                    'etaLabel' => $etaLabel,
+                ];
+            },
             self::driverOrderCatalog(),
         );
     }

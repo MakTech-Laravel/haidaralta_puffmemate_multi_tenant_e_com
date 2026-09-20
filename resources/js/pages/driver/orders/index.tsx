@@ -2,23 +2,28 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import { DriverOrderCard } from '@/components/driver/driver-order-card';
 import {
-    driverOrderStatusLabel,
+    driverOrderFilterCounts,
+    driverOrderStatusFilterLabel,
+    filterDriverAssignedOrders,
     groupDriverAssignedOrdersByArea,
     type DriverAssignedOrder,
-    type DriverOrderStatus,
+    type DriverOrderStatusFilter,
 } from '@/components/driver/driver-order-types';
+import { DemoDataBadge } from '@/components/portal/demo-data-badge';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+    ToggleGroup,
+    ToggleGroupItem,
+} from '@/components/ui/toggle-group';
 import { index as ordersIndex } from '@/routes/driver/orders';
 
-type StatusFilter = 'all' | DriverOrderStatus;
+const statusFilters: DriverOrderStatusFilter[] = [
+    'active',
+    'out_for_delivery',
+    'arrived',
+    'delivered',
+    'all',
+];
 
 type DriverOrdersIndexProps = {
     orders: DriverAssignedOrder[];
@@ -29,12 +34,10 @@ export default function DriverOrdersIndex({
     orders,
     status = null,
 }: DriverOrdersIndexProps) {
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-
-    const filteredOrders =
-        statusFilter === 'all'
-            ? orders
-            : orders.filter((order) => order.status === statusFilter);
+    const [statusFilter, setStatusFilter] =
+        useState<DriverOrderStatusFilter>('active');
+    const counts = driverOrderFilterCounts(orders);
+    const filteredOrders = filterDriverAssignedOrders(orders, statusFilter);
     const areas = groupDriverAssignedOrdersByArea(filteredOrders);
 
     return (
@@ -42,14 +45,17 @@ export default function DriverOrdersIndex({
             <Head title="Orders" />
 
             <div className="flex flex-col gap-6">
-                <div className="space-y-1">
-                    <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
-                        Assigned orders
-                    </h1>
-                    <p className="text-muted-foreground text-base">
-                        Admins batch a neighbourhood to one driver. Work one
-                        suburb at a time.
-                    </p>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-1">
+                        <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
+                            Assigned orders
+                        </h1>
+                        <p className="text-muted-foreground text-base">
+                            Admins batch a neighbourhood to one driver. Work one
+                            suburb at a time.
+                        </p>
+                    </div>
+                    <DemoDataBadge />
                 </div>
 
                 {status ? (
@@ -58,33 +64,44 @@ export default function DriverOrdersIndex({
                     </p>
                 ) : null}
 
-                <div className="grid w-full max-w-xs gap-2">
-                    <Label htmlFor="driver-orders-status-filter">Status</Label>
-                    <Select
+                <div className="space-y-2">
+                    <p className="text-muted-foreground text-sm font-medium">
+                        Status
+                    </p>
+                    <ToggleGroup
+                        type="single"
                         value={statusFilter}
                         onValueChange={(value) => {
-                            setStatusFilter(value as StatusFilter);
+                            if (
+                                value === 'all' ||
+                                value === 'active' ||
+                                value === 'out_for_delivery' ||
+                                value === 'arrived' ||
+                                value === 'delivered'
+                            ) {
+                                setStatusFilter(value);
+                            }
                         }}
+                        variant="outline"
+                        size="lg"
+                        className="-mx-1 flex-nowrap justify-start overflow-x-auto px-1"
+                        aria-label="Filter orders by status"
                     >
-                        <SelectTrigger
-                            id="driver-orders-status-filter"
-                            className="w-full"
-                        >
-                            <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All orders</SelectItem>
-                            <SelectItem value="out_for_delivery">
-                                {driverOrderStatusLabel.out_for_delivery}
-                            </SelectItem>
-                            <SelectItem value="arrived">
-                                {driverOrderStatusLabel.arrived}
-                            </SelectItem>
-                            <SelectItem value="delivered">
-                                {driverOrderStatusLabel.delivered}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                        {statusFilters.map((filter) => (
+                            <ToggleGroupItem
+                                key={filter}
+                                value={filter}
+                                className="h-11 shrink-0 px-3 text-sm"
+                                aria-label={`${driverOrderStatusFilterLabel[filter]} orders`}
+                                data-test={`driver-orders-filter-${filter}`}
+                            >
+                                {driverOrderStatusFilterLabel[filter]}
+                                <span className="text-muted-foreground tabular-nums">
+                                    {counts[filter]}
+                                </span>
+                            </ToggleGroupItem>
+                        ))}
+                    </ToggleGroup>
                 </div>
 
                 {orders.length === 0 ? (
@@ -108,8 +125,10 @@ export default function DriverOrdersIndex({
                                             {area.label}
                                         </h2>
                                         <p className="text-muted-foreground text-sm">
-                                            {area.remainingCount} left ·{' '}
-                                            {area.orderCount} assigned
+                                            {statusFilter === 'all' ||
+                                            statusFilter === 'active'
+                                                ? `${area.remainingCount} left · ${area.orderCount} assigned`
+                                                : `${area.orderCount} ${area.orderCount === 1 ? 'stop' : 'stops'}`}
                                         </p>
                                     </div>
                                     <Badge variant="secondary">

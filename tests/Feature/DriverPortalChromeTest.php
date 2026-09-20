@@ -50,7 +50,23 @@ test('drivers receive sequenced remaining and completed stops on the route tab',
             ->where('currentArea.label', 'Surry Hills')
             ->where('remaining.0.areaLabel', 'Surry Hills')
             ->has('remaining.0.customerName')
-            ->has('remaining.0.addressSummary'));
+            ->has('remaining.0.addressSummary')
+            ->where('highlightId', null));
+});
+
+test('drivers can open the route tab with a highlighted drop', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.route.index', ['highlight' => 'drv-ord-1001']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('driver/route/index')
+            ->where('highlightId', 'drv-ord-1001')
+            ->where('remaining.0.id', 'drv-ord-1001'));
 });
 
 test('drivers receive support contacts for the header account sheet', function () {

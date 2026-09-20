@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { CheckCircle2, MapPin, Navigation } from 'lucide-react';
+import { useEffect } from 'react';
 import { OrderTrackMap } from '@/components/customer/order-track-map';
 import {
     driverAreaMapsQuery,
@@ -24,6 +25,7 @@ type DriverRouteProps = {
     completed: DriverAssignedOrder[];
     nextStop: DriverAssignedOrder | null;
     currentArea: DriverAssignedArea | null;
+    highlightId?: string | null;
 };
 
 export default function DriverRouteIndex({
@@ -32,9 +34,24 @@ export default function DriverRouteIndex({
     completed,
     nextStop,
     currentArea,
+    highlightId = null,
 }: DriverRouteProps) {
     const remainingAreas = areas.filter((area) => area.remainingCount > 0);
     const completedAreas = areas.filter((area) => area.deliveredCount > 0);
+    const highlightedStop =
+        remaining.find((order) => order.id === highlightId) ??
+        completed.find((order) => order.id === highlightId) ??
+        null;
+
+    useEffect(() => {
+        if (!highlightId) {
+            return;
+        }
+
+        document
+            .getElementById(`driver-stop-${highlightId}`)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, [highlightId]);
 
     return (
         <>
@@ -60,6 +77,26 @@ export default function DriverRouteIndex({
                 </div>
 
                 <OrderTrackMap />
+
+                {highlightedStop ? (
+                    <div
+                        className="border-primary bg-primary/5 flex items-start gap-3 rounded-xl border px-4 py-3"
+                        data-test="driver-route-highlight"
+                    >
+                        <MapPin className="text-primary mt-0.5 size-5 shrink-0" />
+                        <div className="min-w-0 space-y-0.5">
+                            <p className="text-foreground font-medium">
+                                Highlighted drop · {highlightedStop.customerName}
+                            </p>
+                            <p className="text-muted-foreground text-sm leading-snug">
+                                {highlightedStop.addressSummary}
+                                {highlightedStop.unitLabel
+                                    ? ` · ${highlightedStop.unitLabel}`
+                                    : ''}
+                            </p>
+                        </div>
+                    </div>
+                ) : null}
 
                 {remaining.length === 0 ? (
                     <p className="text-muted-foreground text-base">
@@ -117,7 +154,10 @@ export default function DriverRouteIndex({
                                             nextStop?.id === order.id;
 
                                         return (
-                                            <li key={order.id}>
+                                            <li
+                                                key={order.id}
+                                                id={`driver-stop-${order.id}`}
+                                            >
                                                 <Link
                                                     href={orderShow.url(
                                                         order.id,
@@ -126,6 +166,9 @@ export default function DriverRouteIndex({
                                                     className={cn(
                                                         'bg-accent flex items-start gap-3 rounded-xl p-4 transition-opacity hover:opacity-95 sm:p-5',
                                                         isNext &&
+                                                            'ring-primary ring-2',
+                                                        highlightId ===
+                                                            order.id &&
                                                             'ring-primary ring-2',
                                                     )}
                                                 >
@@ -149,6 +192,12 @@ export default function DriverRouteIndex({
                                                             {isNext ? (
                                                                 <Badge>
                                                                     Next
+                                                                </Badge>
+                                                            ) : null}
+                                                            {highlightId ===
+                                                            order.id ? (
+                                                                <Badge>
+                                                                    On map
                                                                 </Badge>
                                                             ) : null}
                                                             <Badge
@@ -213,11 +262,18 @@ export default function DriverRouteIndex({
                                 </p>
                                 <ul className="flex flex-col gap-2">
                                     {area.delivered.map((order) => (
-                                        <li key={order.id}>
+                                        <li
+                                            key={order.id}
+                                            id={`driver-stop-${order.id}`}
+                                        >
                                             <Link
                                                 href={orderShow.url(order.id)}
                                                 prefetch
-                                                className="text-muted-foreground hover:text-foreground flex items-start gap-3 rounded-xl border px-4 py-3 text-base transition-colors"
+                                                className={cn(
+                                                    'text-muted-foreground hover:text-foreground flex items-start gap-3 rounded-xl border px-4 py-3 text-base transition-colors',
+                                                    highlightId === order.id &&
+                                                        'ring-primary text-foreground ring-2',
+                                                )}
                                             >
                                                 <CheckCircle2
                                                     className="mt-0.5 size-5 shrink-0"

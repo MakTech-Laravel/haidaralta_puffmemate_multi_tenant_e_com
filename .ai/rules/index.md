@@ -52,6 +52,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/migrations/** | .ai/rules/migrations.md |
 | app/Models/**.php | .ai/rules/models.md |
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
+| resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/orders-js-components-driver.md |
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx | .ai/rules/orders.md |
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
@@ -69,6 +70,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Requests/Platform/*Category*Request.php | .ai/rules/requests-platform.md |
 | resources/js/components/admin/role-*.tsx, resources/js/pages/{platform,branch}/roles/** | .ai/rules/roles.md |
 | app/Http/Controllers/Driver/RouteController.php,resources/js/pages/driver/route/**,resources/js/components/driver/nav.ts | .ai/rules/route-js-components-driver.md |
+| app/Http/Controllers/Driver/RouteController.php,resources/js/pages/driver/route/** | .ai/rules/route.md |
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |
 | database/seeders/** | .ai/rules/seeders.md |
 | app/Services/OtpService.php | .ai/rules/services.md |

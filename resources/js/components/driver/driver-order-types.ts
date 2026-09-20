@@ -1,5 +1,9 @@
 export type DriverOrderStatus = 'out_for_delivery' | 'arrived' | 'delivered';
 
+export type DriverOrderStatusFilter = 'all' | 'active' | DriverOrderStatus;
+
+export type DriverOrderPaymentMethod = 'cod' | 'paid';
+
 export type DriverAssignedOrder = {
     id: string;
     orderNumber: string;
@@ -11,6 +15,12 @@ export type DriverAssignedOrder = {
     windowLabel: string;
     productCount: number;
     totalLabel: string;
+    phone: string;
+    notes: string | null;
+    unitLabel: string | null;
+    productPreview: string[];
+    paymentMethod: DriverOrderPaymentMethod;
+    etaLabel: string | null;
 };
 
 export type DriverAssignedArea = {
@@ -49,6 +59,47 @@ export const driverOrderStatusLabel: Record<DriverOrderStatus, string> = {
     arrived: 'Arrived',
     delivered: 'Delivered',
 };
+
+export const driverOrderStatusFilterLabel: Record<
+    DriverOrderStatusFilter,
+    string
+> = {
+    all: 'All',
+    active: 'Active',
+    out_for_delivery: 'On the way',
+    arrived: 'Arrived',
+    delivered: 'Delivered',
+};
+
+export function filterDriverAssignedOrders(
+    orders: DriverAssignedOrder[],
+    filter: DriverOrderStatusFilter,
+): DriverAssignedOrder[] {
+    if (filter === 'all') {
+        return orders;
+    }
+
+    if (filter === 'active') {
+        return orders.filter((order) => order.status !== 'delivered');
+    }
+
+    return orders.filter((order) => order.status === filter);
+}
+
+export function driverOrderFilterCounts(
+    orders: DriverAssignedOrder[],
+): Record<DriverOrderStatusFilter, number> {
+    return {
+        all: orders.length,
+        active: orders.filter((order) => order.status !== 'delivered').length,
+        out_for_delivery: orders.filter(
+            (order) => order.status === 'out_for_delivery',
+        ).length,
+        arrived: orders.filter((order) => order.status === 'arrived').length,
+        delivered: orders.filter((order) => order.status === 'delivered')
+            .length,
+    };
+}
 
 export function groupDriverAssignedOrdersByArea(
     orders: DriverAssignedOrder[],

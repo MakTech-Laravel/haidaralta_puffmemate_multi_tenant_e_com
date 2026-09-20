@@ -27,6 +27,9 @@ test('drivers can view assigned orders index', function () {
             ->has('orders.0.customerName')
             ->has('orders.0.areaId')
             ->where('orders.0.areaLabel', 'Surry Hills')
+            ->has('orders.0.phone')
+            ->has('orders.0.productPreview')
+            ->where('orders.0.paymentMethod', 'cod')
             ->has('orders', 10));
 });
 
