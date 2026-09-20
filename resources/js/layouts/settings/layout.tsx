@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,18 @@ const sidebarNavItems: NavItem[] = [
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
+    const { portal } = usePage().props;
+    const appearanceHref = toUrl(editAppearance());
+    const profileHref = toUrl(edit());
+    const items = sidebarNavItems.filter((item) => {
+        if (portal !== 'driver') {
+            return true;
+        }
+
+        const href = toUrl(item.href);
+
+        return href !== appearanceHref && href !== profileHref;
+    });
 
     return (
         <div className="space-y-6 px-4 py-6">
@@ -44,7 +56,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                         className="flex flex-col space-y-1 space-x-0"
                         aria-label="Settings"
                     >
-                        {sidebarNavItems.map((item, index) => (
+                        {items.map((item, index) => (
                             <Button
                                 key={`${toUrl(item.href)}-${index}`}
                                 size="sm"

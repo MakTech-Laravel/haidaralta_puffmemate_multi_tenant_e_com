@@ -1,0 +1,58 @@
+import { Head, usePage } from '@inertiajs/react';
+import type { ConversationMessage } from '@/components/conversation/types';
+import { DriverOrderChatPanel } from '@/components/driver/driver-order-chat-panel';
+import type { DriverOrderDetail } from '@/components/driver/driver-order-types';
+import {
+    chat as orderChat,
+    index as ordersIndex,
+    show as orderShow,
+} from '@/routes/driver/orders';
+import type { Auth } from '@/types';
+
+type DriverOrderChatProps = {
+    order: DriverOrderDetail;
+    messages: ConversationMessage[];
+    viewerId: number;
+    canSend: boolean;
+};
+
+export default function DriverOrderChat({
+    order,
+    messages,
+    viewerId,
+    canSend,
+}: DriverOrderChatProps) {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const viewerName = auth.user?.name ?? 'You';
+
+    return (
+        <>
+            <Head title={`Chat · ${order.orderNumber}`} />
+
+            <DriverOrderChatPanel
+                order={order}
+                messages={messages}
+                viewerId={viewerId}
+                viewerName={viewerName}
+                canSend={canSend}
+            />
+        </>
+    );
+}
+
+DriverOrderChat.layout = (props: DriverOrderChatProps) => ({
+    breadcrumbs: [
+        {
+            title: 'Orders',
+            href: ordersIndex.url(),
+        },
+        {
+            title: props.order.orderNumber,
+            href: orderShow.url(props.order.id),
+        },
+        {
+            title: 'Chat',
+            href: orderChat.url(props.order.id),
+        },
+    ],
+});

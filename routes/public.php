@@ -13,6 +13,11 @@ Route::get('/firebase-messaging-sw.js', FirebaseMessagingServiceWorkerController
     ->name('firebase.messaging-sw');
 
 Route::get('/', HomeController::class)->name('home');
+
+Route::redirect('/driver/login', '/login');
+Route::redirect('/platform/login', '/login');
+Route::redirect('/branch/login', '/login');
+Route::redirect('/customer/login', '/login');
 Route::get('/shop', ShopController::class)->name('shop');
 Route::get('/shop/{category}', [CategoryController::class, 'show'])->name('shop.category');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');

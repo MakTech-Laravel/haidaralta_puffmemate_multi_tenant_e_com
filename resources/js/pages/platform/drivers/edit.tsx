@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import DriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
 import { DriverForm } from '@/components/admin/driver-form';
 import Heading from '@/components/heading';
@@ -42,6 +42,8 @@ export default function PlatformDriversEdit({
     availabilityStatuses: Option[];
     rosterStatuses: Option[];
 }) {
+    const singleActiveBranch = usePage().props.drivers.single_active_branch;
+
     return (
         <>
             <Head title={`Edit ${driver.name}`} />
@@ -49,7 +51,11 @@ export default function PlatformDriversEdit({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${driver.name}`}
-                    description="Update account, vehicle, and branch assignments"
+                    description={
+                        singleActiveBranch
+                            ? 'Update account, vehicle, and assigned branch'
+                            : 'Update account, vehicle, and branch assignments'
+                    }
                 />
 
                 <DriverForm

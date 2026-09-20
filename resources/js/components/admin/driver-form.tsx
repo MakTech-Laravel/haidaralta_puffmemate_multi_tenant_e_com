@@ -1,4 +1,4 @@
-import { Link, useForm } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import { Building2, Plus, Trash2 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -152,6 +152,7 @@ export function DriverForm({
     cancelHref,
     submitLabel,
 }: DriverFormProps) {
+    const singleActiveBranch = usePage().props.drivers.single_active_branch;
     const [branchSheetOpen, setBranchSheetOpen] = useState(false);
     const [existingAvatar, setExistingAvatar] = useState<ExistingFile[]>(() =>
         defaults?.avatar && defaults?.avatar_url
@@ -704,11 +705,14 @@ export function DriverForm({
                         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                             <div className="space-y-1">
                                 <h2 className="text-base font-semibold tracking-tight">
-                                    Assigned branches
+                                    {singleActiveBranch
+                                        ? 'Assigned branch'
+                                        : 'Assigned branches'}
                                 </h2>
                                 <p className="text-muted-foreground text-sm">
-                                    At least one branch is required for platform
-                                    drivers.
+                                    {singleActiveBranch
+                                        ? 'One branch at a time. Choose another branch to transfer this driver.'
+                                        : 'At least one branch is required for platform drivers.'}
                                 </p>
                             </div>
                             <Button
@@ -717,13 +721,19 @@ export function DriverForm({
                                 onClick={() => setBranchSheetOpen(true)}
                             >
                                 <Building2 className="size-4" />
-                                Manage branches
+                                {singleActiveBranch
+                                    ? assignedBranches.length > 0
+                                        ? 'Transfer branch'
+                                        : 'Choose branch'
+                                    : 'Manage branches'}
                             </Button>
                         </div>
 
                         {assignedBranches.length === 0 ? (
                             <p className="text-muted-foreground text-sm">
-                                No branches selected yet.
+                                {singleActiveBranch
+                                    ? 'No branch selected yet.'
+                                    : 'No branches selected yet.'}
                             </p>
                         ) : (
                             <div className="flex flex-wrap gap-1.5">

@@ -820,27 +820,172 @@ class DemoCatalog
      *     orderNumber: string,
      *     status: string,
      *     customerName: string,
+     *     areaId: string,
+     *     areaLabel: string,
      *     addressSummary: string,
      *     windowLabel: string,
      *     productCount: int,
-     *     totalLabel: string
+     *     totalLabel: string,
+     *     phone: string,
+     *     notes: string|null,
+     *     unitLabel: string|null,
+     *     productPreview: list<string>,
+     *     paymentMethod: string,
+     *     etaLabel: string|null,
+     *     completedLabel: string|null
      * }>
      */
     public static function driverAssignedOrders(): array
     {
+        $codOrderIds = ['drv-ord-1001', 'drv-ord-1003', 'drv-ord-1008', 'drv-ord-1010'];
+
         return array_map(
-            static fn (array $order): array => [
-                'id' => $order['id'],
-                'orderNumber' => $order['orderNumber'],
-                'status' => $order['status'],
-                'customerName' => $order['customerName'],
-                'addressSummary' => $order['addressSummary'],
-                'windowLabel' => $order['windowLabel'],
-                'productCount' => $order['productCount'],
-                'totalLabel' => $order['totalLabel'],
-            ],
+            static function (array $order) use ($codOrderIds): array {
+                $productPreview = array_values(array_map(
+                    static fn (array $product): string => $product['name'],
+                    array_slice($order['products'], 0, 2),
+                ));
+
+                $etaLabel = match ($order['status']) {
+                    'arrived' => 'At door',
+                    'delivered' => null,
+                    default => $order['id'] === 'drv-ord-1001' ? '6 min' : '12 min',
+                };
+
+                return [
+                    'id' => $order['id'],
+                    'orderNumber' => $order['orderNumber'],
+                    'status' => $order['status'],
+                    'customerName' => $order['customerName'],
+                    'areaId' => $order['areaId'],
+                    'areaLabel' => $order['areaLabel'],
+                    'addressSummary' => $order['addressSummary'],
+                    'windowLabel' => $order['windowLabel'],
+                    'productCount' => $order['productCount'],
+                    'totalLabel' => $order['totalLabel'],
+                    'phone' => $order['phone'],
+                    'notes' => $order['notes'],
+                    'unitLabel' => $order['shippingAddress']['line2'],
+                    'productPreview' => $productPreview,
+                    'paymentMethod' => in_array($order['id'], $codOrderIds, true) ? 'cod' : 'paid',
+                    'etaLabel' => $etaLabel,
+                    'completedLabel' => $order['completedLabel'] ?? null,
+                ];
+            },
             self::driverOrderCatalog(),
         );
+    }
+
+    /**
+     * Assigned drops still to deliver, in the order the desk handed them over.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function driverRemainingOrders(): array
+    {
+        return array_values(array_filter(
+            self::driverAssignedOrders(),
+            static fn (array $order): bool => $order['status'] !== 'delivered',
+        ));
+    }
+
+    /**
+     * Assigned drops already completed on this shift.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function driverCompletedOrders(): array
+    {
+        return array_values(array_filter(
+            self::driverAssignedOrders(),
+            static fn (array $order): bool => $order['status'] === 'delivered',
+        ));
+    }
+
+    /**
+     * Static field-hub copy for the driver dashboard until earnings,
+     * roster, ratings, and vehicle live on real tables.
+     *
+     * @return array{
+     *     online: bool,
+     *     etaNext: string,
+     *     kmToday: string,
+     *     supportPhone: string,
+     *     branchPhone: string,
+     *     shift: array{label: string, window: string, endsIn: string, branch: string},
+     *     earnings: array{todayLabel: string, weekLabel: string, tipsLabel: string, perStopLabel: string},
+     *     performance: array{rating: string, ratingCount: int, onTimePercent: int, acceptancePercent: int, completionPercent: int},
+     *     vehicle: array{name: string, plate: string, fuel: string, insuranceUntil: string, docsOk: bool},
+     *     alerts: list<array{id: string, title: string, body: string}>
+     * }
+     */
+    public static function driverDashboardHub(): array
+    {
+        return [
+            'online' => true,
+            'etaNext' => '6 min',
+            'kmToday' => '8.1 km',
+            'supportPhone' => '+61418001100',
+            'branchPhone' => '+61290001200',
+            'shift' => [
+                'label' => 'Afternoon run',
+                'window' => '1:00–7:00 PM',
+                'endsIn' => '4h 12m',
+                'branch' => 'Sydney CBD',
+            ],
+            'earnings' => [
+                'todayLabel' => '$194.40',
+                'weekLabel' => '$612.10',
+                'tipsLabel' => '$18.00',
+                'perStopLabel' => '$21.60',
+            ],
+            'performance' => [
+                'rating' => '4.92',
+                'ratingCount' => 128,
+                'onTimePercent' => 97,
+                'acceptancePercent' => 94,
+                'completionPercent' => 99,
+            ],
+            'vehicle' => [
+                'name' => 'Honda Scooter',
+                'plate' => 'NSW · DVR-204',
+                'fuel' => 'Range good',
+                'insuranceUntil' => '12 Nov 2026',
+                'docsOk' => true,
+            ],
+            'alerts' => [
+                [
+                    'id' => 'load',
+                    'title' => 'Ten drops on this run',
+                    'body' => 'The desk assigned a mixed set within your load. Other riders can cover the same streets if the pile grows.',
+                ],
+                [
+                    'id' => 'weather',
+                    'title' => 'Light rain after 4 PM',
+                    'body' => 'Allow extra time on Oxford St and keep parcels dry.',
+                ],
+                [
+                    'id' => 'branch',
+                    'title' => 'CBD desk note',
+                    'body' => 'OTP is required for every cash-on-delivery stop today.',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Field-header contact numbers shared with every driver page.
+     *
+     * @return array{supportPhone: string, branchPhone: string}
+     */
+    public static function driverSupportContacts(): array
+    {
+        $hub = self::driverDashboardHub();
+
+        return [
+            'supportPhone' => $hub['supportPhone'],
+            'branchPhone' => $hub['branchPhone'],
+        ];
     }
 
     /**
@@ -852,6 +997,8 @@ class DemoCatalog
      *     status: string,
      *     statusLabel: string,
      *     customerName: string,
+     *     areaId: string,
+     *     areaLabel: string,
      *     addressSummary: string,
      *     windowLabel: string,
      *     productCount: int,
@@ -865,13 +1012,131 @@ class DemoCatalog
      */
     public static function driverOrderDetail(string $id): ?array
     {
-        foreach (self::driverOrderCatalog() as $order) {
+        $assigned = null;
+
+        foreach ([...self::driverAssignedOrders(), ...self::driverPastOrders()] as $order) {
             if ($order['id'] === $id) {
-                return $order;
+                $assigned = $order;
+                break;
+            }
+        }
+
+        if ($assigned === null) {
+            return null;
+        }
+
+        foreach ([...self::driverOrderCatalog(), ...self::driverPastOrderCatalog()] as $order) {
+            if ($order['id'] === $id) {
+                return array_merge($order, $assigned);
             }
         }
 
         return null;
+    }
+
+    /**
+     * Demo transcript for the order-scoped driver chat screen.
+     *
+     * Sender ids: customer = 1, branch = 2, driver = $viewerId so own bubbles
+     * match the signed-in driver when they send locally.
+     *
+     * @return list<array{
+     *     id: int,
+     *     conversation_id: int,
+     *     type: string,
+     *     body: string|null,
+     *     created_at: string,
+     *     sender: array{id: int, name: string, avatar_url: string|null}|null,
+     *     attachments: list<array{}>
+     * }>|null
+     */
+    public static function driverOrderChatMessages(string $orderId, int $viewerId): ?array
+    {
+        $order = self::driverOrderDetail($orderId);
+
+        if ($order === null) {
+            return null;
+        }
+
+        $now = now();
+        $customerName = $order['customerName'];
+        $orderNumber = $order['orderNumber'];
+        $conversationId = abs(crc32($orderId)) ?: 1;
+
+        return [
+            [
+                'id' => 1,
+                'conversation_id' => $conversationId,
+                'type' => 'system',
+                'body' => "Thread opened for order {$orderNumber}.",
+                'created_at' => $now->copy()->subMinutes(42)->toIso8601String(),
+                'sender' => null,
+                'attachments' => [],
+            ],
+            [
+                'id' => 2,
+                'conversation_id' => $conversationId,
+                'type' => 'text',
+                'body' => 'Hi — package is packed and ready. Customer asked for a call on arrival.',
+                'created_at' => $now->copy()->subMinutes(38)->toIso8601String(),
+                'sender' => [
+                    'id' => 2,
+                    'name' => 'Branch desk',
+                    'avatar_url' => null,
+                ],
+                'attachments' => [],
+            ],
+            [
+                'id' => 3,
+                'conversation_id' => $conversationId,
+                'type' => 'text',
+                'body' => 'Got it. Heading out now — ETA inside the delivery window.',
+                'created_at' => $now->copy()->subMinutes(35)->toIso8601String(),
+                'sender' => [
+                    'id' => $viewerId,
+                    'name' => 'You',
+                    'avatar_url' => null,
+                ],
+                'attachments' => [],
+            ],
+            [
+                'id' => 4,
+                'conversation_id' => $conversationId,
+                'type' => 'text',
+                'body' => "Hi, I'm {$customerName}. The intercom is broken — please call when you're downstairs.",
+                'created_at' => $now->copy()->subMinutes(12)->toIso8601String(),
+                'sender' => [
+                    'id' => 1,
+                    'name' => $customerName,
+                    'avatar_url' => null,
+                ],
+                'attachments' => [],
+            ],
+            [
+                'id' => 5,
+                'conversation_id' => $conversationId,
+                'type' => 'text',
+                'body' => 'Will do. About 10 minutes out.',
+                'created_at' => $now->copy()->subMinutes(10)->toIso8601String(),
+                'sender' => [
+                    'id' => $viewerId,
+                    'name' => 'You',
+                    'avatar_url' => null,
+                ],
+                'attachments' => [],
+            ],
+            [
+                'id' => 6,
+                'conversation_id' => $conversationId,
+                'type' => 'system',
+                'body' => $order['notes'] !== null
+                    ? "Delivery note: {$order['notes']}"
+                    : 'No special delivery notes on this stop.',
+                'created_at' => $now->copy()->subMinutes(8)->toIso8601String(),
+                'sender' => null,
+                'attachments' => [],
+            ],
+        ];
     }
 
     /**
@@ -881,6 +1146,8 @@ class DemoCatalog
      *     status: string,
      *     statusLabel: string,
      *     customerName: string,
+     *     areaId: string,
+     *     areaLabel: string,
      *     addressSummary: string,
      *     windowLabel: string,
      *     productCount: int,
@@ -894,6 +1161,9 @@ class DemoCatalog
      */
     private static function driverOrderCatalog(): array
     {
+        $surryHills = 'area-surry-hills';
+        $darlinghurst = 'area-darlinghurst';
+
         return [
             [
                 'id' => 'drv-ord-1001',
@@ -901,7 +1171,9 @@ class DemoCatalog
                 'status' => 'out_for_delivery',
                 'statusLabel' => 'Out for delivery',
                 'customerName' => 'Elena Vargas',
-                'addressSummary' => '418 Pine St, Sydney',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '418 Crown St, Surry Hills',
                 'windowLabel' => 'Today · 2:00–3:00 PM',
                 'productCount' => 3,
                 'totalLabel' => '$24.50',
@@ -909,11 +1181,11 @@ class DemoCatalog
                 'notes' => 'Call on arrival; leave with concierge if no answer.',
                 'demoOtpHint' => '482913',
                 'shippingAddress' => [
-                    'line1' => '418 Pine Street',
+                    'line1' => '418 Crown Street',
                     'line2' => 'Apartment 4B',
-                    'city' => 'Sydney',
+                    'city' => 'Surry Hills',
                     'region' => 'NSW',
-                    'postalCode' => '2000',
+                    'postalCode' => '2010',
                     'country' => 'Australia',
                 ],
                 'products' => [
@@ -928,19 +1200,21 @@ class DemoCatalog
                 'status' => 'arrived',
                 'statusLabel' => 'Arrived',
                 'customerName' => 'Chris Thompson',
-                'addressSummary' => '90 Harbor Ave, Sydney',
-                'windowLabel' => 'Today · 3:15–4:00 PM',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '90 Foveaux St, Surry Hills',
+                'windowLabel' => 'Today · 2:15–3:00 PM',
                 'productCount' => 2,
                 'totalLabel' => '$16.80',
                 'phone' => '+61418123344',
                 'notes' => null,
                 'demoOtpHint' => '719204',
                 'shippingAddress' => [
-                    'line1' => '90 Harbor Avenue',
+                    'line1' => '90 Foveaux Street',
                     'line2' => null,
-                    'city' => 'Sydney',
+                    'city' => 'Surry Hills',
                     'region' => 'NSW',
-                    'postalCode' => '2000',
+                    'postalCode' => '2010',
                     'country' => 'Australia',
                 ],
                 'products' => [
@@ -954,8 +1228,10 @@ class DemoCatalog
                 'status' => 'out_for_delivery',
                 'statusLabel' => 'Out for delivery',
                 'customerName' => 'Priya Nair',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
                 'addressSummary' => '12 Market Row, Surry Hills',
-                'windowLabel' => 'Today · 4:30–5:30 PM',
+                'windowLabel' => 'Today · 2:30–3:30 PM',
                 'productCount' => 4,
                 'totalLabel' => '$31.20',
                 'phone' => '+61419112233',
@@ -982,7 +1258,9 @@ class DemoCatalog
                 'status' => 'delivered',
                 'statusLabel' => 'Delivered',
                 'customerName' => 'James Okonkwo',
-                'addressSummary' => '7 West Dock, Pyrmont',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '18 Fitzroy St, Surry Hills',
                 'windowLabel' => 'Today · Completed',
                 'productCount' => 1,
                 'totalLabel' => '$8.90',
@@ -990,15 +1268,98 @@ class DemoCatalog
                 'notes' => null,
                 'demoOtpHint' => '664021',
                 'shippingAddress' => [
-                    'line1' => '7 West Dock',
+                    'line1' => '18 Fitzroy Street',
                     'line2' => 'Level 3',
-                    'city' => 'Pyrmont',
+                    'city' => 'Surry Hills',
                     'region' => 'NSW',
-                    'postalCode' => '2009',
+                    'postalCode' => '2010',
                     'country' => 'Australia',
                 ],
                 'products' => [
                     ['name' => 'Camel Blue', 'quantityLabel' => '×1', 'priceLabel' => '$8.90'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1006',
+                'orderNumber' => 'POM-DRV-1006',
+                'status' => 'out_for_delivery',
+                'statusLabel' => 'Out for delivery',
+                'customerName' => 'Liam Nguyen',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '24 Albion St, Surry Hills',
+                'windowLabel' => 'Today · 3:00–4:00 PM',
+                'productCount' => 2,
+                'totalLabel' => '$18.20',
+                'phone' => '+61413224455',
+                'notes' => 'Leave with the cafe if the shop is closed.',
+                'demoOtpHint' => '551902',
+                'shippingAddress' => [
+                    'line1' => '24 Albion Street',
+                    'line2' => 'Unit 8',
+                    'city' => 'Surry Hills',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Marlboro Gold', 'quantityLabel' => '×2', 'priceLabel' => '$12.00'],
+                    ['name' => 'Clipper Classic', 'quantityLabel' => '×1', 'priceLabel' => '$6.20'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1007',
+                'orderNumber' => 'POM-DRV-1007',
+                'status' => 'out_for_delivery',
+                'statusLabel' => 'Out for delivery',
+                'customerName' => 'Sophie Bennett',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '55 Devonshire St, Surry Hills',
+                'windowLabel' => 'Today · 3:30–4:30 PM',
+                'productCount' => 2,
+                'totalLabel' => '$22.40',
+                'phone' => '+61417667788',
+                'notes' => null,
+                'demoOtpHint' => '774310',
+                'shippingAddress' => [
+                    'line1' => '55 Devonshire Street',
+                    'line2' => null,
+                    'city' => 'Surry Hills',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Dunhill Red', 'quantityLabel' => '×2', 'priceLabel' => '$15.00'],
+                    ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$7.40'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1008',
+                'orderNumber' => 'POM-DRV-1008',
+                'status' => 'arrived',
+                'statusLabel' => 'Arrived',
+                'customerName' => 'Tom Richter',
+                'areaId' => $surryHills,
+                'areaLabel' => 'Surry Hills',
+                'addressSummary' => '7 Davies St, Surry Hills',
+                'windowLabel' => 'Today · 4:00–4:45 PM',
+                'productCount' => 1,
+                'totalLabel' => '$9.50',
+                'phone' => '+61419880011',
+                'notes' => 'Buzzer labelled Richter.',
+                'demoOtpHint' => '229184',
+                'shippingAddress' => [
+                    'line1' => '7 Davies Street',
+                    'line2' => null,
+                    'city' => 'Surry Hills',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Camel Blue', 'quantityLabel' => '×1', 'priceLabel' => '$9.50'],
                 ],
             ],
             [
@@ -1007,6 +1368,8 @@ class DemoCatalog
                 'status' => 'out_for_delivery',
                 'statusLabel' => 'Out for delivery',
                 'customerName' => 'Sabrina Walsh',
+                'areaId' => $darlinghurst,
+                'areaLabel' => 'Darlinghurst',
                 'addressSummary' => '41 Oxford St, Darlinghurst',
                 'windowLabel' => 'Today · 6:00–7:00 PM',
                 'productCount' => 2,
@@ -1025,6 +1388,441 @@ class DemoCatalog
                 'products' => [
                     ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$7.00'],
                     ['name' => 'Marlboro Gold', 'quantityLabel' => '×1', 'priceLabel' => '$8.40'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1009',
+                'orderNumber' => 'POM-DRV-1009',
+                'status' => 'out_for_delivery',
+                'statusLabel' => 'Out for delivery',
+                'customerName' => 'Daniel Rossi',
+                'areaId' => $darlinghurst,
+                'areaLabel' => 'Darlinghurst',
+                'addressSummary' => '28 Flinders St, Darlinghurst',
+                'windowLabel' => 'Today · 6:15–7:00 PM',
+                'productCount' => 2,
+                'totalLabel' => '$14.80',
+                'phone' => '+61414443322',
+                'notes' => null,
+                'demoOtpHint' => '640821',
+                'shippingAddress' => [
+                    'line1' => '28 Flinders Street',
+                    'line2' => null,
+                    'city' => 'Darlinghurst',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Benson & Hedges Gold', 'quantityLabel' => '×1', 'priceLabel' => '$7.00'],
+                    ['name' => 'Clipper Classic', 'quantityLabel' => '×1', 'priceLabel' => '$7.80'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-1010',
+                'orderNumber' => 'POM-DRV-1010',
+                'status' => 'out_for_delivery',
+                'statusLabel' => 'Out for delivery',
+                'customerName' => 'Hannah Clarke',
+                'areaId' => $darlinghurst,
+                'areaLabel' => 'Darlinghurst',
+                'addressSummary' => '6 Burton St, Darlinghurst',
+                'windowLabel' => 'Today · 6:30–7:15 PM',
+                'productCount' => 3,
+                'totalLabel' => '$19.60',
+                'phone' => '+61412229900',
+                'notes' => 'Park on Burton; loading zone after 6.',
+                'demoOtpHint' => '337560',
+                'shippingAddress' => [
+                    'line1' => '6 Burton Street',
+                    'line2' => 'Apartment 2',
+                    'city' => 'Darlinghurst',
+                    'region' => 'NSW',
+                    'postalCode' => '2010',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Marlboro Gold', 'quantityLabel' => '×1', 'priceLabel' => '$6.00'],
+                    ['name' => 'Dunhill Red', 'quantityLabel' => '×1', 'priceLabel' => '$7.50'],
+                    ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$6.10'],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Earlier delivered stops. Shown on Old orders, not on today's run.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function driverPastOrders(): array
+    {
+        return array_map(
+            static function (array $order): array {
+                $productPreview = array_values(array_map(
+                    static fn (array $product): string => $product['name'],
+                    array_slice($order['products'], 0, 2),
+                ));
+
+                return [
+                    'id' => $order['id'],
+                    'orderNumber' => $order['orderNumber'],
+                    'status' => 'delivered',
+                    'customerName' => $order['customerName'],
+                    'areaId' => $order['areaId'],
+                    'areaLabel' => $order['areaLabel'],
+                    'addressSummary' => $order['addressSummary'],
+                    'windowLabel' => $order['windowLabel'],
+                    'productCount' => $order['productCount'],
+                    'totalLabel' => $order['totalLabel'],
+                    'phone' => $order['phone'],
+                    'notes' => $order['notes'],
+                    'unitLabel' => $order['shippingAddress']['line2'],
+                    'productPreview' => $productPreview,
+                    'paymentMethod' => $order['id'] === 'drv-ord-0901' ? 'cod' : 'paid',
+                    'etaLabel' => null,
+                    'completedLabel' => $order['completedLabel'],
+                ];
+            },
+            self::driverPastOrderCatalog(),
+        );
+    }
+
+    /**
+     * Pay, tips, and completed-drop totals for the Earnings tab.
+     *
+     * @return array{
+     *     todayLabel: string,
+     *     weekLabel: string,
+     *     tipsLabel: string,
+     *     perStopLabel: string,
+     *     payoutLabel: string,
+     *     payoutStatus: string,
+     *     codHeldLabel: string,
+     *     dropsToday: int,
+     *     dropsWeek: int,
+     *     days: list<array{
+     *         label: string,
+     *         totalLabel: string,
+     *         entries: list<array{
+     *             id: string,
+     *             customerName: string,
+     *             orderNumber: string,
+     *             areaLabel: string,
+     *             amountLabel: string,
+     *             tipLabel: string,
+     *             paymentMethod: string
+     *         }>
+     *     }>
+     * }
+     */
+    public static function driverEarnings(): array
+    {
+        $hub = self::driverDashboardHub()['earnings'];
+        $todayDelivered = array_values(array_filter(
+            self::driverAssignedOrders(),
+            static fn (array $order): bool => $order['status'] === 'delivered',
+        ));
+        $past = self::driverPastOrders();
+
+        $days = [
+            [
+                'label' => 'Today',
+                'totalLabel' => $hub['todayLabel'],
+                'entries' => array_map(
+                    self::driverEarningEntry(...),
+                    $todayDelivered,
+                ),
+            ],
+        ];
+
+        foreach ($past as $order) {
+            $label = is_string($order['completedLabel'] ?? null)
+                ? $order['completedLabel']
+                : 'Earlier';
+            $last = $days[array_key_last($days)] ?? null;
+
+            if ($last === null || $last['label'] !== $label) {
+                $days[] = [
+                    'label' => $label,
+                    'totalLabel' => '$0.00',
+                    'entries' => [],
+                ];
+            }
+
+            $days[array_key_last($days)]['entries'][] = self::driverEarningEntry($order);
+        }
+
+        $days = array_map(static function (array $day): array {
+            $cents = array_sum(array_map(
+                static fn (array $entry): int => self::driverMoneyCents($entry['amountLabel']),
+                $day['entries'],
+            ));
+
+            $day['totalLabel'] = $day['label'] === 'Today'
+                ? $day['totalLabel']
+                : self::driverMoneyLabel($cents);
+
+            return $day;
+        }, $days);
+
+        $codCents = array_sum(array_map(
+            static function (array $day): int {
+                return array_sum(array_map(
+                    static fn (array $entry): int => $entry['paymentMethod'] === 'cod'
+                        ? self::driverMoneyCents($entry['amountLabel'])
+                        : 0,
+                    $day['entries'],
+                ));
+            },
+            $days,
+        ));
+
+        return [
+            'todayLabel' => $hub['todayLabel'],
+            'weekLabel' => $hub['weekLabel'],
+            'tipsLabel' => $hub['tipsLabel'],
+            'perStopLabel' => $hub['perStopLabel'],
+            'payoutLabel' => $hub['todayLabel'],
+            'payoutStatus' => 'Clears tonight',
+            'codHeldLabel' => self::driverMoneyLabel($codCents),
+            'dropsToday' => count($todayDelivered),
+            'dropsWeek' => count($todayDelivered) + count($past),
+            'days' => $days,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $order
+     * @return array{
+     *     id: string,
+     *     customerName: string,
+     *     orderNumber: string,
+     *     areaLabel: string,
+     *     amountLabel: string,
+     *     tipLabel: string,
+     *     paymentMethod: string
+     * }
+     */
+    private static function driverEarningEntry(array $order): array
+    {
+        return [
+            'id' => $order['id'],
+            'customerName' => $order['customerName'],
+            'orderNumber' => $order['orderNumber'],
+            'areaLabel' => $order['areaLabel'],
+            'amountLabel' => $order['totalLabel'],
+            'tipLabel' => ($order['paymentMethod'] ?? 'paid') === 'cod' ? '$2.00' : '$1.50',
+            'paymentMethod' => $order['paymentMethod'],
+        ];
+    }
+
+    private static function driverMoneyCents(string $label): int
+    {
+        $digits = preg_replace('/[^\d]/', '', $label) ?? '0';
+
+        return (int) $digits;
+    }
+
+    private static function driverMoneyLabel(int $cents): string
+    {
+        return '$'.number_format($cents / 100, 2);
+    }
+
+    /**
+     * @return list<array{
+     *     id: string,
+     *     orderNumber: string,
+     *     status: string,
+     *     statusLabel: string,
+     *     customerName: string,
+     *     areaId: string,
+     *     areaLabel: string,
+     *     addressSummary: string,
+     *     windowLabel: string,
+     *     productCount: int,
+     *     totalLabel: string,
+     *     phone: string,
+     *     notes: string|null,
+     *     demoOtpHint: string,
+     *     completedLabel: string,
+     *     shippingAddress: array{line1: string, line2: string|null, city: string, region: string, postalCode: string, country: string},
+     *     products: list<array{name: string, quantityLabel: string, priceLabel: string}>
+     * }>
+     */
+    private static function driverPastOrderCatalog(): array
+    {
+        return [
+            [
+                'id' => 'drv-ord-0901',
+                'orderNumber' => 'POM-DRV-0901',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Maya Patel',
+                'areaId' => 'area-paddington',
+                'areaLabel' => 'Paddington',
+                'addressSummary' => '22 Oxford St, Paddington',
+                'windowLabel' => 'Yesterday · 5:10 PM',
+                'completedLabel' => 'Yesterday',
+                'productCount' => 2,
+                'totalLabel' => '$17.40',
+                'phone' => '+61413001122',
+                'notes' => null,
+                'demoOtpHint' => '551001',
+                'shippingAddress' => [
+                    'line1' => '22 Oxford Street',
+                    'line2' => 'Shop 3',
+                    'city' => 'Paddington',
+                    'region' => 'NSW',
+                    'postalCode' => '2021',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Marlboro Gold', 'quantityLabel' => '×1', 'priceLabel' => '$6.00'],
+                    ['name' => 'Camel Blue', 'quantityLabel' => '×2', 'priceLabel' => '$11.40'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-0902',
+                'orderNumber' => 'POM-DRV-0902',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Jack Brennan',
+                'areaId' => 'area-paddington',
+                'areaLabel' => 'Paddington',
+                'addressSummary' => '8 Glenmore Rd, Paddington',
+                'windowLabel' => 'Yesterday · 6:02 PM',
+                'completedLabel' => 'Yesterday',
+                'productCount' => 1,
+                'totalLabel' => '$9.50',
+                'phone' => '+61419880011',
+                'notes' => 'Left with reception.',
+                'demoOtpHint' => '551002',
+                'shippingAddress' => [
+                    'line1' => '8 Glenmore Road',
+                    'line2' => null,
+                    'city' => 'Paddington',
+                    'region' => 'NSW',
+                    'postalCode' => '2021',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Dunhill Red', 'quantityLabel' => '×1', 'priceLabel' => '$9.50'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-0903',
+                'orderNumber' => 'POM-DRV-0903',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Olivia Hart',
+                'areaId' => 'area-potts-point',
+                'areaLabel' => 'Potts Point',
+                'addressSummary' => '14 Macleay St, Potts Point',
+                'windowLabel' => 'Yesterday · 7:21 PM',
+                'completedLabel' => 'Yesterday',
+                'productCount' => 2,
+                'totalLabel' => '$15.80',
+                'phone' => '+61417665500',
+                'notes' => null,
+                'demoOtpHint' => '551003',
+                'shippingAddress' => [
+                    'line1' => '14 Macleay Street',
+                    'line2' => 'Level 6',
+                    'city' => 'Potts Point',
+                    'region' => 'NSW',
+                    'postalCode' => '2011',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$7.00'],
+                    ['name' => 'Clipper Classic', 'quantityLabel' => '×1', 'priceLabel' => '$8.80'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-0881',
+                'orderNumber' => 'POM-DRV-0881',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Noah Ellis',
+                'areaId' => 'area-redfern',
+                'areaLabel' => 'Redfern',
+                'addressSummary' => '31 Redfern St, Redfern',
+                'windowLabel' => 'Fri · 4:40 PM',
+                'completedLabel' => 'Friday',
+                'productCount' => 3,
+                'totalLabel' => '$22.10',
+                'phone' => '+61415550990',
+                'notes' => null,
+                'demoOtpHint' => '448801',
+                'shippingAddress' => [
+                    'line1' => '31 Redfern Street',
+                    'line2' => null,
+                    'city' => 'Redfern',
+                    'region' => 'NSW',
+                    'postalCode' => '2016',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Marlboro Gold', 'quantityLabel' => '×2', 'priceLabel' => '$12.00'],
+                    ['name' => 'Benson & Hedges Gold', 'quantityLabel' => '×1', 'priceLabel' => '$10.10'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-0882',
+                'orderNumber' => 'POM-DRV-0882',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Grace Liu',
+                'areaId' => 'area-redfern',
+                'areaLabel' => 'Redfern',
+                'addressSummary' => '102 Chalmers St, Redfern',
+                'windowLabel' => 'Fri · 5:18 PM',
+                'completedLabel' => 'Friday',
+                'productCount' => 1,
+                'totalLabel' => '$8.90',
+                'phone' => '+61416667788',
+                'notes' => null,
+                'demoOtpHint' => '448802',
+                'shippingAddress' => [
+                    'line1' => '102 Chalmers Street',
+                    'line2' => 'Unit 12',
+                    'city' => 'Redfern',
+                    'region' => 'NSW',
+                    'postalCode' => '2016',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Camel Blue', 'quantityLabel' => '×1', 'priceLabel' => '$8.90'],
+                ],
+            ],
+            [
+                'id' => 'drv-ord-0870',
+                'orderNumber' => 'POM-DRV-0870',
+                'status' => 'delivered',
+                'statusLabel' => 'Delivered',
+                'customerName' => 'Leo Walsh',
+                'areaId' => 'area-newtown',
+                'areaLabel' => 'Newtown',
+                'addressSummary' => '255 King St, Newtown',
+                'windowLabel' => 'Thu · 3:55 PM',
+                'completedLabel' => 'Thursday',
+                'productCount' => 2,
+                'totalLabel' => '$16.20',
+                'phone' => '+61419990001',
+                'notes' => 'Buzzer 14.',
+                'demoOtpHint' => '337001',
+                'shippingAddress' => [
+                    'line1' => '255 King Street',
+                    'line2' => null,
+                    'city' => 'Newtown',
+                    'region' => 'NSW',
+                    'postalCode' => '2042',
+                    'country' => 'Australia',
+                ],
+                'products' => [
+                    ['name' => 'Dunhill Red', 'quantityLabel' => '×1', 'priceLabel' => '$7.50'],
+                    ['name' => 'Lucky Strike Original', 'quantityLabel' => '×1', 'priceLabel' => '$8.70'],
                 ],
             ],
         ];

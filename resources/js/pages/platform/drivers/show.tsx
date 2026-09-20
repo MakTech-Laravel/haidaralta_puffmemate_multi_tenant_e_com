@@ -1,4 +1,4 @@
-import { Form, Head, Link, router } from '@inertiajs/react';
+import { Form, Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Building2,
     IdCard,
@@ -116,6 +116,7 @@ export default function PlatformDriversShow({
     rosterStatuses: Option[];
     assignmentStatuses: Option[];
 }) {
+    const singleActiveBranch = usePage().props.drivers.single_active_branch;
     const activeAssignments = useMemo(
         () =>
             driver.assignments.filter(
@@ -194,7 +195,9 @@ export default function PlatformDriversShow({
                             onClick={() => setBranchSheetOpen(true)}
                         >
                             <Building2 className="size-4" />
-                            Manage branches
+                            {singleActiveBranch
+                                ? 'Transfer branch'
+                                : 'Manage branches'}
                         </Button>
                         <Button asChild>
                             <Link href={DriverController.edit.url(driver.id)}>
@@ -289,9 +292,15 @@ export default function PlatformDriversShow({
                 <Card className="shadow-sm">
                     <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
                         <div className="space-y-1.5">
-                            <CardTitle>Branch assignments</CardTitle>
+                            <CardTitle>
+                                {singleActiveBranch
+                                    ? 'Branch assignment'
+                                    : 'Branch assignments'}
+                            </CardTitle>
                             <CardDescription>
-                                Active and historical branch links
+                                {singleActiveBranch
+                                    ? 'One active branch at a time. Transfers keep the previous assignment as history.'
+                                    : 'Active and historical branch links'}
                             </CardDescription>
                         </div>
                         <Button
@@ -300,7 +309,9 @@ export default function PlatformDriversShow({
                             onClick={() => setBranchSheetOpen(true)}
                         >
                             <Building2 className="size-4" />
-                            Manage branches
+                            {singleActiveBranch
+                                ? 'Transfer branch'
+                                : 'Manage branches'}
                         </Button>
                     </CardHeader>
                     <CardContent>

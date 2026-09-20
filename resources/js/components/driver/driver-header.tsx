@@ -1,39 +1,60 @@
-import { CircleDot } from 'lucide-react';
-import { Link } from '@inertiajs/react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Link, usePage } from '@inertiajs/react';
+import { Bell } from 'lucide-react';
+import { DriverAccountSheet } from '@/components/driver/driver-account-sheet';
+import { storefrontLogoSrc } from '@/lib/storefront-chrome';
+import { cn } from '@/lib/utils';
+import { dashboard } from '@/routes/driver';
+import { index as notificationsIndex } from '@/routes/driver/notifications';
+import type { Auth } from '@/types';
 
+/**
+ * Field header: brand on the left, alerts + account sheet on the right.
+ */
 export function DriverHeader() {
+    const { url, props } = usePage<{ auth: Auth; name: string }>();
+    const user = props.auth.user;
+    const notificationsHref = notificationsIndex.url();
+    const notificationsActive =
+        url === notificationsHref ||
+        url.startsWith(`${notificationsHref}?`) ||
+        url.startsWith(`${notificationsHref}/`);
+
     return (
-        <header className="border-border bg-background border-b pt-[env(safe-area-inset-top)]">
-            <div className="container mx-auto flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <header className="border-border bg-background/95 sticky top-0 z-40 border-b pt-[env(safe-area-inset-top)] backdrop-blur-sm">
+            <div className="flex h-14 items-center gap-3 px-4 sm:h-16 sm:px-6">
                 <Link
-                    href="/driver/dashboard"
+                    href={dashboard.url()}
                     prefetch
-                    className="text-foreground min-w-0 text-lg font-bold tracking-tight"
+                    className="flex min-w-0 items-center gap-2"
                 >
-                    PuffMeMate
-                    <span className="text-muted-foreground ml-2 text-xs font-semibold tracking-[0.12em] uppercase">
+                    <img
+                        src={storefrontLogoSrc}
+                        alt={props.name}
+                        className="h-8 w-auto object-contain sm:h-9"
+                    />
+                    <span className="text-muted-foreground hidden text-xs font-semibold tracking-[0.12em] uppercase sm:inline">
                         Driver
                     </span>
                 </Link>
 
-                <div className="flex shrink-0 items-center gap-2">
-                    <Badge
-                        variant="secondary"
-                        className="h-8 gap-1.5 rounded-full px-2.5 font-normal"
+                <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
+                    <Link
+                        href={notificationsHref}
+                        prefetch
+                        aria-label="Notifications"
+                        aria-current={notificationsActive ? 'page' : undefined}
+                        data-test="driver-header-notifications"
+                        className={cn(
+                            'relative inline-flex size-11 items-center justify-center rounded-md transition-colors',
+                            notificationsActive
+                                ? 'text-primary'
+                                : 'text-foreground',
+                        )}
                     >
-                        <CircleDot className="size-3 text-emerald-600" />
-                        On duty
-                    </Badge>
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-8 rounded-full px-3 text-xs font-semibold"
-                    >
-                        End shift
-                    </Button>
+                        <Bell className="size-6" strokeWidth={1.75} />
+                    </Link>
+
+                    <DriverAccountSheet user={user} />
                 </div>
             </div>
         </header>

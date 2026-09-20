@@ -27,4 +27,4 @@ Branch 1 = sydney-cbd (PuffMeMate Sydney CBD), branch 2 = melbourne-collins, bra
 
 ## Seeded driver uses users.id as driver_id
 
-Daniel Foster (UserSeeder::DRIVER) is user_type=driver with branch_id null, a driver_profiles row (user_id), and active driver_branch_assignments to Sydney CBD + Melbourne Collins keyed by driver_id = users.id.
+Daniel Foster (UserSeeder::DRIVER) is user_type=driver with branch_id null, a driver_profiles row (user_id), and driver_branch_assignments keyed by driver_id = users.id. Seed Sydney CBD always. Also seed Melbourne Collins when `config('drivers.single_active_branch')` is false. Do not hardcode one or two active branches in the seeder.

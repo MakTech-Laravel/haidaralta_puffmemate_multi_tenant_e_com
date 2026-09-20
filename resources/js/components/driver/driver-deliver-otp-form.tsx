@@ -7,13 +7,11 @@ import { Label } from '@/components/ui/label';
 
 type DriverDeliverOtpFormProps = {
     orderId: string;
-    demoOtpHint: string;
     disabled?: boolean;
 };
 
 export function DriverDeliverOtpForm({
     orderId,
-    demoOtpHint,
     disabled = false,
 }: DriverDeliverOtpFormProps) {
     return (
@@ -25,9 +23,6 @@ export function DriverDeliverOtpForm({
                 <p className="text-muted-foreground text-base leading-relaxed">
                     Ask the customer for their delivery code, then submit to
                     mark this stop complete.
-                </p>
-                <p className="text-muted-foreground text-sm">
-                    Demo code: <span className="font-mono">{demoOtpHint}</span>
                 </p>
             </div>
 

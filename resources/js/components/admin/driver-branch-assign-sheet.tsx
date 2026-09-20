@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { Building2, Loader2, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
@@ -52,9 +52,18 @@ export function DriverBranchAssignSheet({
     driverId = null,
     selectedIds,
     onConfirm,
-    title = 'Manage branches',
-    description = 'Search and assign branches this driver can serve.',
+    title,
+    description,
 }: DriverBranchAssignSheetProps) {
+    const singleActiveBranch = usePage().props.drivers.single_active_branch;
+    const resolvedTitle =
+        title ??
+        (singleActiveBranch ? 'Assign branch' : 'Manage branches');
+    const resolvedDescription =
+        description ??
+        (singleActiveBranch
+            ? 'A driver can serve one branch at a time. Choosing another branch transfers them.'
+            : 'Search and assign branches this driver can serve.');
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [activeOnly, setActiveOnly] = useState(true);
@@ -154,11 +163,15 @@ export function DriverBranchAssignSheet({
     }, [open, debouncedSearch, activeOnly, page]);
 
     const toggleBranch = (id: number): void => {
-        setDraftIds((current) =>
-            current.includes(id)
+        setDraftIds((current) => {
+            if (singleActiveBranch) {
+                return current.includes(id) ? [] : [id];
+            }
+
+            return current.includes(id)
                 ? current.filter((branchId) => branchId !== id)
-                : [...current, id],
-        );
+                : [...current, id];
+        });
     };
 
     const confirm = (): void => {
@@ -204,9 +217,9 @@ export function DriverBranchAssignSheet({
                 <SheetHeader className="border-b p-4 text-left">
                     <SheetTitle className="flex items-center gap-2">
                         <Building2 className="size-4" />
-                        {title}
+                        {resolvedTitle}
                     </SheetTitle>
-                    <SheetDescription>{description}</SheetDescription>
+                    <SheetDescription>{resolvedDescription}</SheetDescription>
                 </SheetHeader>
 
                 <div className="flex flex-col gap-3 border-b p-4">
@@ -248,7 +261,9 @@ export function DriverBranchAssignSheet({
                         </div>
                     ) : (
                         <p className="text-muted-foreground text-sm">
-                            No branches selected yet.
+                            {singleActiveBranch
+                                ? 'No branch selected yet.'
+                                : 'No branches selected yet.'}
                         </p>
                     )}
                 </div>
@@ -356,7 +371,9 @@ export function DriverBranchAssignSheet({
                             {syncing ? (
                                 <Loader2 className="size-4 animate-spin" />
                             ) : null}
-                            Confirm ({draftIds.length})
+                            {singleActiveBranch
+                                ? 'Confirm'
+                                : `Confirm (${draftIds.length})`}
                         </Button>
                     </div>
                 </SheetFooter>

@@ -9,6 +9,8 @@ paths:
 
 Define portal sidebar trees with navLink / navGroup / navSection from resources/js/components/navigation. Filter with filterNavNodes + canAny (filterNavSections for labeled blocks). Do not add portal-specific sidebar item components or extend legacy AppSidebar/NavMain for platform/branch/customer. UI stays on shadcn Sidebar primitives in SidebarNav.
 
-## Driver uses Lucide sidebar, not PortalShell SidebarNav
+## Driver field chrome is not PortalShell
+Driver navigation is driverNavItems + DriverHeader + DriverMobileNav (below xl) + DriverSidebar (xl+). Do not put driver on PortalShell SidebarNav or StorefrontHeader menu/cart. Phone and tablet must keep the five-tab bar (Dashboard, Orders, Route, Earnings, Profile). Route is the center tab. Chat is order-scoped at driver.orders.chat, not a nav destination.
 
-Driver navigation is `driverNavItems` + `DriverSidebar` (Dashboard / Orders / My activity / Log Out) with Lucide icons. Below lg: horizontal icon-only row; lg+: vertical icon + label. Do not put driver back on PortalShell SidebarNav or fixed bottom tabs. Do not use StorefrontHeader menu/cart.
+## Driver field tabs include Profile
+Phone and tablet keep Dashboard, Orders, Route, Earnings, Profile. Account options live in the header sheet. Do not restore an Account, Activity, or Alerts footer tab.
