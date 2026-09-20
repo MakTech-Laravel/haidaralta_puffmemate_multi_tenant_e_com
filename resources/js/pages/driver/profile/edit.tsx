@@ -98,10 +98,6 @@ function pickImage(file: File | undefined): string | File {
         return 'Use a PNG, JPG, or WebP image.';
     }
 
-    if (file.size > MAX_IMAGE_BYTES) {
-        return 'The image must be 2MB or smaller.';
-    }
-
     return file;
 }
 

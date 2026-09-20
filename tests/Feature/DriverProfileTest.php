@@ -114,6 +114,38 @@ test('drivers can update contact license address and vehicle details', function 
     Storage::disk('public')->assertExists($profile?->vehicle_image_path);
 });
 
+test('drivers can upload photos larger than two megabytes', function () {
+    Storage::fake('public');
+
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'branch_id' => null,
+    ]);
+
+    DriverProfile::factory()->create([
+        'user_id' => $driver->id,
+        'vehicle_type' => DriverVehicleType::Motorcycle,
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->from(route('driver.profile.edit'))
+        ->patch(route('driver.profile.update'), [
+            'name' => $driver->name,
+            'phone' => $driver->phone,
+            'vehicle_type' => DriverVehicleType::Motorcycle->value,
+            'avatar' => UploadedFile::fake()->image('avatar.jpg')->size(3072),
+            'vehicle_image' => UploadedFile::fake()->image('vehicle.jpg')->size(4096),
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('driver.profile.index'));
+
+    $driver->refresh();
+    $profile = $driver->driverProfile;
+
+    expect($driver->avatar)->not->toBeNull()
+        ->and($profile?->vehicle_image_path)->not->toBeNull();
+});
+
 test('drivers cannot save a profile without a name or vehicle type', function () {
     $driver = User::factory()->create([
         'user_type' => UserType::DRIVER,
