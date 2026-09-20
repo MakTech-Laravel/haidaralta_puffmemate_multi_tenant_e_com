@@ -97,7 +97,10 @@ export function NotificationsPopover({
                 ) : (
                     <ul className="max-h-80 overflow-y-auto border-t">
                         {previewItems.map((item) => (
-                            <li key={item.id} className="border-b last:border-b-0">
+                            <li
+                                key={item.id}
+                                className="border-b last:border-b-0"
+                            >
                                 <Link
                                     href={getItemHref(item)}
                                     prefetch

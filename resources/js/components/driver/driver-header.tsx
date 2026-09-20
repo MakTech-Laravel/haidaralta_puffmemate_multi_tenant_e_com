@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 export function DriverHeader() {
     return (
         <header className="border-border bg-background border-b pt-[env(safe-area-inset-top)]">
-            <div className="mx-auto flex container items-center justify-between gap-3 px-4 py-3 sm:px-6">
+            <div className="container mx-auto flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
                 <Link
                     href="/driver/dashboard"
                     prefetch

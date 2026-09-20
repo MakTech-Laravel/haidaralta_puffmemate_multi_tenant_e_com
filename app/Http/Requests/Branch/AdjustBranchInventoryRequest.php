@@ -27,4 +27,11 @@ class AdjustBranchInventoryRequest extends FormRequest
             'variant_id' => ['nullable', 'integer', Rule::exists('product_variants', 'id')->whereNull('deleted_at')],
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('buying_price') === '') {
+            $this->merge(['buying_price' => null]);
+        }
+    }
 }

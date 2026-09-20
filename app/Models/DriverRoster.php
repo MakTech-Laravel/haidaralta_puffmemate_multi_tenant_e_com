@@ -9,7 +9,21 @@ use Database\Factories\DriverRosterFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $driver_id
+ * @property int $branch_id
+ * @property Carbon|null $start_date
+ * @property Carbon|null $end_date
+ * @property Carbon|null $start_time
+ * @property Carbon|null $end_time
+ * @property array<mixed>|null $days_of_week
+ * @property DriverRosterStatus $status
+ * @property-read User|null $driver
+ * @property-read Branch|null $branch
+ */
 class DriverRoster extends Model
 {
     /** @use HasFactory<DriverRosterFactory> */

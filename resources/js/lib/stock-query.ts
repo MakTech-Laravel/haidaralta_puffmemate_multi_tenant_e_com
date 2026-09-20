@@ -10,7 +10,9 @@ export type StockOption = {
 export type StockPrice = {
     selling_price: string | null;
     effective_price: string | null;
+    regular_price?: string | null;
     has_discount: boolean;
+    has_compare_at?: boolean;
     discount_type: string;
     discount_price: string | null;
     start_date?: string | null;
@@ -57,7 +59,9 @@ export function stockSelectionQuery(
 }
 
 export type StockActionUrls = {
+    manage?: string;
     transactions: string;
+    priceHistory: string;
 };
 
 export function stockPageUrl(
@@ -88,9 +92,9 @@ export function stockPageUrl(
 }
 
 /**
- * Row action for the stock ledger. Daily stock, price, and discount edits
- * live on Stock management → Manage (Catalog Manage with a known pair opens
- * that page locked). Transactions keeps the same selection as filters.
+ * Stock group row actions. Daily stock, selling price, and discounts stay on
+ * Manage stock. Ledger and price history keep the same product/branch query
+ * (`locked` omitted). Do not add Add stock, Update price, or Add discount.
  */
 export function stockActionItems(
     urls: StockActionUrls,
@@ -99,12 +103,27 @@ export function stockActionItems(
         branchId?: number | null;
     },
 ): Array<{ label: string; href: string }> {
-    return [
+    const items: Array<{ label: string; href: string }> = [];
+
+    if (urls.manage) {
+        items.push({
+            label: 'Manage stock',
+            href: urls.manage,
+        });
+    }
+
+    items.push(
         {
             label: 'Stock transactions',
             href: stockPageUrl(urls.transactions, params),
         },
-    ];
+        {
+            label: 'Price history',
+            href: stockPageUrl(urls.priceHistory, params),
+        },
+    );
+
+    return items;
 }
 
 export function isBranchLocked(locked: StockLock | null): boolean {

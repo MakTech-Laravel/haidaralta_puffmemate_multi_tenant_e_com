@@ -20,6 +20,8 @@ class ReuseBranchProductRequest extends FormRequest
         return [
             'product_id' => ['required', 'integer', Rule::exists('products', 'id')->whereNull('deleted_at')],
             'selling_price' => ['nullable', 'numeric', 'min:0'],
+            'buying_price' => ['nullable', 'numeric', 'min:0'],
+            'regular_price' => ['nullable', 'numeric', 'min:0'],
             'discount_price' => ['nullable', 'numeric', 'min:0'],
             'quantity' => ['nullable', 'integer'],
         ];

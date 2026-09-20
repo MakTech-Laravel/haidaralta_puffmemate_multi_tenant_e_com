@@ -94,12 +94,12 @@ test('platform staff index search returns matching platform users', function () 
     ]);
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.staff.index', [
+        ->get(route('platform.admins.index', [
             'filter' => ['search' => 'Zelda Unique'],
         ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('platform/staff/index')
+            ->component('platform/admins/index')
             ->has('table.data', 1)
             ->where('table.data.0.email', 'zelda.unique.staff@test.com')
             ->where('table.filters.search', 'Zelda Unique'));

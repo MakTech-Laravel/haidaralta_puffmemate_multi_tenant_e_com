@@ -344,8 +344,7 @@ export default function BranchDriversShow({
                                                             },
                                                         ),
                                                         {
-                                                            preserveScroll:
-                                                                true,
+                                                            preserveScroll: true,
                                                         },
                                                     )
                                                 }

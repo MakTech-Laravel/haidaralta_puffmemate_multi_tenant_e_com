@@ -11,9 +11,9 @@ use App\Models\DriverBranchAssignment;
 use App\Models\DriverProfile;
 use App\Models\DriverRoster;
 use App\Models\User;
+use App\Support\PublicDiskMedia;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 
 class DriverService
@@ -48,6 +48,7 @@ class DriverService
                 'branch_id' => null,
                 'is_active' => $data['is_active'] ?? true,
                 'phone_verified_at' => now(),
+                'avatar' => PublicDiskMedia::store($avatar, PublicDiskMedia::USER_AVATARS),
             ]);
 
             DriverProfile::query()->create([
@@ -57,8 +58,7 @@ class DriverService
                 'availability_status' => $data['availability_status'] ?? DriverAvailabilityStatus::Offline->value,
                 'notes' => $data['notes'] ?? null,
                 'address' => $data['address'] ?? null,
-                'avatar_path' => $this->storeMedia($avatar, 'drivers/avatars'),
-                'vehicle_image_path' => $this->storeMedia($vehicleImage, 'drivers/vehicles'),
+                'vehicle_image_path' => PublicDiskMedia::store($vehicleImage, PublicDiskMedia::DRIVER_VEHICLES),
             ]);
 
             $this->syncBranchAssignments($driver, $branchIds, DriverAssignmentStatus::Active, $assignedBy);
@@ -95,9 +95,14 @@ class DriverService
                 $userPayload['password'] = $data['password'];
             }
 
-            if ($userPayload !== []) {
-                $driver->update($userPayload);
-            }
+            $userPayload['avatar'] = PublicDiskMedia::replace(
+                $driver->avatar,
+                $avatar,
+                PublicDiskMedia::USER_AVATARS,
+                (bool) ($data['remove_avatar'] ?? false),
+            );
+
+            $driver->update($userPayload);
 
             $profile = $driver->driverProfile;
 
@@ -105,27 +110,17 @@ class DriverService
                 throw new InvalidArgumentException('Driver profile does not exist.');
             }
 
-            $avatarPath = $profile->avatar_path;
             $vehiclePath = $profile->vehicle_image_path;
 
-            if (($data['remove_avatar'] ?? false) === true) {
-                $this->deleteMedia($avatarPath);
-                $avatarPath = null;
-            } elseif ($avatar !== null) {
-                $this->deleteMedia($avatarPath);
-                $avatarPath = $this->storeMedia($avatar, 'drivers/avatars');
-            }
-
             if (($data['remove_vehicle_image'] ?? false) === true) {
-                $this->deleteMedia($vehiclePath);
+                PublicDiskMedia::delete($vehiclePath);
                 $vehiclePath = null;
             } elseif ($vehicleImage !== null) {
-                $this->deleteMedia($vehiclePath);
-                $vehiclePath = $this->storeMedia($vehicleImage, 'drivers/vehicles');
+                PublicDiskMedia::delete($vehiclePath);
+                $vehiclePath = PublicDiskMedia::store($vehicleImage, PublicDiskMedia::DRIVER_VEHICLES);
             }
 
             $profilePayload = [
-                'avatar_path' => $avatarPath,
                 'vehicle_image_path' => $vehiclePath,
             ];
 
@@ -280,24 +275,6 @@ class DriverService
     public function deleteRoster(DriverRoster $roster): void
     {
         $roster->delete();
-    }
-
-    private function storeMedia(?UploadedFile $file, string $directory): ?string
-    {
-        if ($file === null) {
-            return null;
-        }
-
-        return $file->store($directory, 'public');
-    }
-
-    private function deleteMedia(?string $path): void
-    {
-        if ($path === null || $path === '' || ! str_contains($path, '/')) {
-            return;
-        }
-
-        Storage::disk('public')->delete($path);
     }
 
     private function assertIsDriver(User $driver): void

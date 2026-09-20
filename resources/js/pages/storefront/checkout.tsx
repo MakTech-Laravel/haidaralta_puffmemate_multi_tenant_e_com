@@ -59,7 +59,7 @@ export default function StorefrontCheckout({
             <Head title="Checkout" />
 
             <div className="flex-1">
-                <div className="mx-auto container px-4 py-6 sm:px-6 sm:py-10">
+                <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10">
                     <div className="max-w-2xl">
                         <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl">
                             Complete your order.

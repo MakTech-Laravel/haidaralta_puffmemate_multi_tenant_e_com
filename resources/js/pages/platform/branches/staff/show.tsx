@@ -3,6 +3,7 @@ import { useState } from 'react';
 import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import Heading from '@/components/heading';
+import { filteredBranchStaffUrl } from '@/lib/branch-people-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -46,11 +47,7 @@ export default function PlatformBranchScopedStaffShow({
                     />
                     <div className="flex gap-2">
                         <Button variant="secondary" asChild>
-                            <Link
-                                href={BranchScopedStaffController.index.url(
-                                    branch.slug,
-                                )}
-                            >
+                            <Link href={filteredBranchStaffUrl(branch.id)}>
                                 Back
                             </Link>
                         </Button>

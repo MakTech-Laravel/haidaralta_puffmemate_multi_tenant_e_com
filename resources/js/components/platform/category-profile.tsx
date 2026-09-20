@@ -291,7 +291,7 @@ export function CategoryProfile({
                                         <span className="inline-flex items-center gap-2">
                                             {transparent ? null : (
                                                 <span
-                                                    className="size-5 shrink-0 rounded-md border border-border/70"
+                                                    className="border-border/70 size-5 shrink-0 rounded-md border"
                                                     style={colorPickerStyle(
                                                         colorCode,
                                                     )}

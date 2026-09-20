@@ -19,7 +19,7 @@ type PrivacyIntroProps = {
 export function PrivacyIntro({ className }: PrivacyIntroProps) {
     return (
         <section className={cn('bg-background pt-8 pb-6 sm:pt-10', className)}>
-            <div className="mx-auto container max-w-3xl px-4 sm:px-6">
+            <div className="container mx-auto max-w-3xl px-4 sm:px-6">
                 <Breadcrumb>
                     <BreadcrumbList className="text-muted-foreground gap-1.5 text-xs sm:text-sm">
                         <BreadcrumbItem>
@@ -82,7 +82,10 @@ export function PrivacyIntro({ className }: PrivacyIntroProps) {
 
                 <ul className="mt-8 space-y-6">
                     {privacyPage.summaryPoints.map((point) => (
-                        <li key={point.title} className="flex items-start gap-2.5">
+                        <li
+                            key={point.title}
+                            className="flex items-start gap-2.5"
+                        >
                             <span
                                 className="bg-primary mt-2 size-1.5 shrink-0 rounded-full"
                                 aria-hidden

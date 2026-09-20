@@ -61,6 +61,23 @@ function slugify(value: string): string {
 
 type FormErrors = Record<string, string | undefined>;
 
+/** Only collected while creating a branch, never while editing one. */
+type SuperAdminFields = {
+    name: string;
+    phone: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+};
+
+const SUPER_ADMIN_DEFAULTS: SuperAdminFields = {
+    name: '',
+    phone: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+};
+
 function fieldError(errors: FormErrors, key: string): string | undefined {
     return errors[key];
 }
@@ -89,9 +106,12 @@ export function BranchForm({
             : [],
     );
 
-    const formMethod = (
-        action.method ?? 'post'
-    ).toLowerCase() as 'get' | 'post' | 'put' | 'patch' | 'delete';
+    const formMethod = (action.method ?? 'post').toLowerCase() as
+        | 'get'
+        | 'post'
+        | 'put'
+        | 'patch'
+        | 'delete';
 
     const {
         data,
@@ -125,20 +145,26 @@ export function BranchForm({
         closing_time: defaults?.closing_time ?? '',
         status: defaults?.status ?? true,
         ...(includeSuperAdmin
-            ? {
-                  super_admin: {
-                      name: '',
-                      phone: '',
-                      email: '',
-                      password: '',
-                      password_confirmation: '',
-                  },
-              }
+            ? { super_admin: { ...SUPER_ADMIN_DEFAULTS } }
             : {}),
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
     const formErrors = errors as FormErrors;
+
+    /**
+     * `super_admin` is only present when creating a branch, so the conditional
+     * spread above leaves it optional. Reading through a defaulted copy keeps
+     * every field a plain string for the controlled inputs below.
+     */
+    const superAdmin: SuperAdminFields =
+        'super_admin' in data && data.super_admin
+            ? { ...SUPER_ADMIN_DEFAULTS, ...data.super_admin }
+            : SUPER_ADMIN_DEFAULTS;
+
+    const setSuperAdmin = (patch: Partial<SuperAdminFields>): void => {
+        setData('super_admin', { ...superAdmin, ...patch });
+    };
 
     useEffect(() => {
         setValidationTimeout(500);
@@ -179,7 +205,7 @@ export function BranchForm({
         <form onSubmit={submit} className="space-y-6">
             <section
                 className={cn(
-                    'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                    'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
                     'sm:p-6',
                 )}
             >
@@ -188,7 +214,8 @@ export function BranchForm({
                         Branch details
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                        Name, contact details, hours, and logo for this location.
+                        Name, contact details, hours, and logo for this
+                        location.
                     </p>
                 </div>
 
@@ -234,9 +261,7 @@ export function BranchForm({
                                     uploadProgress={
                                         progress?.percentage ?? null
                                     }
-                                    onCancel={
-                                        processing ? cancel : undefined
-                                    }
+                                    onCancel={processing ? cancel : undefined}
                                     placeholder="Add a logo"
                                     hint="PNG, JPG, or WebP · up to 2MB"
                                     error={errors.logo}
@@ -282,10 +307,7 @@ export function BranchForm({
                                         value={data.slug}
                                         onChange={(event) => {
                                             setSlugTouched(true);
-                                            setData(
-                                                'slug',
-                                                event.target.value,
-                                            );
+                                            setData('slug', event.target.value);
                                         }}
                                         onBlur={() => validate('slug')}
                                         required
@@ -300,10 +322,7 @@ export function BranchForm({
                                         id="code"
                                         value={data.code}
                                         onChange={(event) =>
-                                            setData(
-                                                'code',
-                                                event.target.value,
-                                            )
+                                            setData('code', event.target.value)
                                         }
                                         onBlur={() => validate('code')}
                                         required
@@ -321,10 +340,7 @@ export function BranchForm({
                                         type="tel"
                                         value={data.phone}
                                         onChange={(event) =>
-                                            setData(
-                                                'phone',
-                                                event.target.value,
-                                            )
+                                            setData('phone', event.target.value)
                                         }
                                         onBlur={() => {
                                             if (data.phone.trim() !== '') {
@@ -348,10 +364,7 @@ export function BranchForm({
                                         type="email"
                                         value={data.email}
                                         onChange={(event) =>
-                                            setData(
-                                                'email',
-                                                event.target.value,
-                                            )
+                                            setData('email', event.target.value)
                                         }
                                         onBlur={() => {
                                             if (data.email.trim() !== '') {
@@ -383,7 +396,7 @@ export function BranchForm({
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="space-y-1">
-                                <p className="text-sm font-medium leading-none">
+                                <p className="text-sm leading-none font-medium">
                                     Map location
                                 </p>
                                 <p className="text-muted-foreground text-sm">
@@ -423,10 +436,7 @@ export function BranchForm({
                                     step="any"
                                     value={data.latitude}
                                     onChange={(event) =>
-                                        setData(
-                                            'latitude',
-                                            event.target.value,
-                                        )
+                                        setData('latitude', event.target.value)
                                     }
                                     placeholder="-33.8688"
                                 />
@@ -446,10 +456,7 @@ export function BranchForm({
                                     step="any"
                                     value={data.longitude}
                                     onChange={(event) =>
-                                        setData(
-                                            'longitude',
-                                            event.target.value,
-                                        )
+                                        setData('longitude', event.target.value)
                                     }
                                     placeholder="151.2093"
                                 />
@@ -529,7 +536,7 @@ export function BranchForm({
             {includeSuperAdmin && 'super_admin' in data ? (
                 <section
                     className={cn(
-                        'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                        'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
                         'sm:p-6',
                     )}
                 >
@@ -551,10 +558,9 @@ export function BranchForm({
                                 </Label>
                                 <Input
                                     id="super_admin_name"
-                                    value={data.super_admin.name}
+                                    value={superAdmin.name}
                                     onChange={(event) =>
-                                        setData('super_admin', {
-                                            ...data.super_admin,
+                                        setSuperAdmin({
                                             name: event.target.value,
                                         })
                                     }
@@ -577,16 +583,13 @@ export function BranchForm({
                                 <Input
                                     id="super_admin_phone"
                                     type="tel"
-                                    value={data.super_admin.phone}
+                                    value={superAdmin.phone}
                                     onChange={(event) =>
-                                        setData('super_admin', {
-                                            ...data.super_admin,
+                                        setSuperAdmin({
                                             phone: event.target.value,
                                         })
                                     }
-                                    onBlur={() =>
-                                        validate('super_admin.phone')
-                                    }
+                                    onBlur={() => validate('super_admin.phone')}
                                     required
                                     placeholder="0412 345 678"
                                 />
@@ -609,15 +612,12 @@ export function BranchForm({
                             <Input
                                 id="super_admin_email"
                                 type="email"
-                                value={data.super_admin.email}
+                                value={superAdmin.email}
                                 onChange={(event) =>
-                                    setData('super_admin', {
-                                        ...data.super_admin,
-                                        email: event.target.value,
-                                    })
+                                    setSuperAdmin({ email: event.target.value })
                                 }
                                 onBlur={() => {
-                                    if (data.super_admin.email.trim() !== '') {
+                                    if (superAdmin.email.trim() !== '') {
                                         validate('super_admin.email');
                                     }
                                 }}
@@ -638,10 +638,9 @@ export function BranchForm({
                                 </Label>
                                 <PasswordInput
                                     id="super_admin_password"
-                                    value={data.super_admin.password}
+                                    value={superAdmin.password}
                                     onChange={(event) =>
-                                        setData('super_admin', {
-                                            ...data.super_admin,
+                                        setSuperAdmin({
                                             password: event.target.value,
                                         })
                                     }
@@ -663,12 +662,9 @@ export function BranchForm({
                                 </Label>
                                 <PasswordInput
                                     id="super_admin_password_confirmation"
-                                    value={
-                                        data.super_admin.password_confirmation
-                                    }
+                                    value={superAdmin.password_confirmation}
                                     onChange={(event) =>
-                                        setData('super_admin', {
-                                            ...data.super_admin,
+                                        setSuperAdmin({
                                             password_confirmation:
                                                 event.target.value,
                                         })
@@ -683,7 +679,7 @@ export function BranchForm({
                 </section>
             ) : null}
 
-            <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t px-2 py-4 backdrop-blur">
                 <Button variant="secondary" asChild>
                     <Link href={cancelHref}>Cancel</Link>
                 </Button>

@@ -28,19 +28,19 @@ function FaqQuestion({ item }: { item: FaqItem }) {
                         className="bg-primary mt-2 size-1.5 shrink-0 rounded-full"
                         aria-hidden
                     />
-                    <span className="text-foreground min-w-0 flex-1 text-sm font-bold sm:text-lg font-inter">
+                    <span className="text-foreground font-inter min-w-0 flex-1 text-sm font-bold sm:text-lg">
                         {item.question}
                     </span>
                     <ChevronDown
                         className={cn(
                             'text-muted-foreground mt-0.5 size-4 shrink-0 transition-transform',
-                            open && 'rotate-180 text-primary',
+                            open && 'text-primary rotate-180',
                         )}
                         aria-hidden
                     />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                    <p className="text-muted-foreground border-border border-t px-4 pt-3 pb-4 pl-[1.625rem] text-base leading-relaxed font-inter font-normal">
+                    <p className="text-muted-foreground border-border font-inter border-t px-4 pt-3 pb-4 pl-[1.625rem] text-base leading-relaxed font-normal">
                         {item.answer}
                     </p>
                 </CollapsibleContent>
@@ -52,7 +52,7 @@ function FaqQuestion({ item }: { item: FaqItem }) {
 export function FaqCategories({ className }: FaqCategoriesProps) {
     return (
         <section className={cn('bg-background pb-16 sm:pb-20', className)}>
-            <div className="mx-auto container max-w-3xl space-y-10 px-4 sm:max-w-4xl sm:space-y-12 sm:px-6">
+            <div className="container mx-auto max-w-3xl space-y-10 px-4 sm:max-w-4xl sm:space-y-12 sm:px-6">
                 {faqCategories.map((category) => {
                     const Icon = category.icon;
                     const count = category.items.length;
@@ -62,10 +62,7 @@ export function FaqCategories({ className }: FaqCategoriesProps) {
                             <div className="mb-4 flex items-center justify-between gap-3">
                                 <div className="flex min-w-0 items-center gap-3">
                                     <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full">
-                                        <Icon
-                                            className="size-4"
-                                            aria-hidden
-                                        />
+                                        <Icon className="size-4" aria-hidden />
                                     </span>
                                     <h2 className="text-foreground text-lg font-bold tracking-tight sm:text-2xl">
                                         {category.title}

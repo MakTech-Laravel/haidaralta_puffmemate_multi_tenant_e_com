@@ -70,6 +70,7 @@ class BranchInventoryController extends Controller
                 $request->user('platform'),
                 reason: InventoryAdjustmentReason::fromNullable($request->validated('reason')),
                 reasonNote: InventoryAdjustmentReason::noteFrom($request->validated('reason_note')),
+                unitCost: $request->validated('buying_price'),
             );
         } catch (InvalidArgumentException $exception) {
             Toast::error($exception->getMessage());
@@ -89,7 +90,7 @@ class BranchInventoryController extends Controller
     ): RedirectResponse {
         $variant = $this->resolveVariant($product, $request->validated('variant_id'));
 
-        $this->pricing->upsert($branch, $product, $request->validated(), $variant);
+        $this->pricing->upsert($branch, $product, $request->validated(), $variant, $request->user('platform'));
 
         Toast::success('Price updated.');
 

@@ -42,6 +42,8 @@ class UpsertBranchProductPriceRequest extends FormRequest
 
         return [
             'selling_price' => ['required', 'numeric', 'min:0'],
+            'buying_price' => ['nullable', 'numeric', 'min:0'],
+            'regular_price' => ['nullable', 'numeric', 'min:0'],
             'discount_type' => ['required', Rule::enum(DiscountType::class)],
             'discount_price' => $discountPriceRules,
             'start_date' => $hasDiscount
@@ -70,6 +72,12 @@ class UpsertBranchProductPriceRequest extends FormRequest
                 'start_date' => null,
                 'end_date' => null,
             ]);
+        }
+
+        foreach (['buying_price', 'regular_price'] as $field) {
+            if ($this->input($field) === '') {
+                $this->merge([$field => null]);
+            }
         }
     }
 }

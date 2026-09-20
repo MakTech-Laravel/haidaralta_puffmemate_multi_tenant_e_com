@@ -134,7 +134,12 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                     disabled={isDelivered}
                 />
 
-                <Button variant="outline" size="lg" className="h-12 w-full" asChild>
+                <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-12 w-full"
+                    asChild
+                >
                     <Link href={ordersIndex.url()} prefetch>
                         Back to orders
                     </Link>

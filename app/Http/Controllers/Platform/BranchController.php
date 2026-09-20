@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Platform;
 
 use App\DataTables\BranchDataTable;
+use App\DataTables\BranchStaffDataTable;
 use App\Exceptions\BranchAlreadyHasSuperAdminException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreBranchRequest;
@@ -10,6 +11,7 @@ use App\Http\Requests\Platform\StoreBranchSuperAdminRequest;
 use App\Http\Requests\Platform\UpdateBranchRequest;
 use App\Models\Branch;
 use App\Services\Branch\BranchService;
+use App\Support\BranchMap;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -103,18 +105,17 @@ class BranchController extends Controller
     /**
      * Display the specified branch.
      */
-    public function show(Branch $branch): Response
+    public function show(Request $request, Branch $branch): Response
     {
         $branch->loadCount('users');
-
-        $superAdmins = $this->branches->listSuperAdmins($branch);
 
         return Inertia::render('platform/branches/show', [
             'branch' => [
                 ...$this->mapBranchDetail($branch),
-                'super_admins' => $superAdmins,
-                'needs_super_admin' => $superAdmins === [],
+                'map' => BranchMap::links($branch->latitude, $branch->longitude),
+                'needs_super_admin' => ! $this->branches->hasSuperAdmin($branch),
             ],
+            'table' => BranchStaffDataTable::forBranch($request, $branch),
         ]);
     }
 

@@ -9,17 +9,17 @@ Admin surfaces for roles, permissions, and staff under the platform and branch p
 | Platform | `platform` | `0` (`PlatformTeamResolver::PLATFORM_TEAM_ID`) |
 | Branch   | `branch`   | `branches.id` (set by `resolve.branch`)        |
 
-Roles and permissions are always team-scoped. Platform staff users have `users.branch_id = null`; branch staff are pinned to a branch.
+Roles and permissions are always team-scoped. Platform admin users have `users.branch_id = null`; branch staff are pinned to a branch.
 
 ## Permissions
 
 | Permission            | Guard    | What it unlocks                                          |
 | --------------------- | -------- | -------------------------------------------------------- |
 | `manage-roles`        | platform | Platform roles CRUD, permission catalog, CSV export      |
-| `manage-users`         | platform | Platform staff CRUD                                      |
-| `manage-branch-users`  | platform | Branch staff CRUD across all branches (platform portal)  |
-| `manage-branch-roles`  | branch   | Branch roles CRUD, branch permission catalog, CSV export |
-| `manage-branch-staff`  | branch   | Branch staff CRUD (within own branch portal)             |
+| `manage-users`        | platform | Platform admins CRUD                                     |
+| `manage-branch-users` | platform | Branch staff CRUD across all branches (platform portal)  |
+| `manage-branch-roles` | branch   | Branch roles CRUD, branch permission catalog, CSV export |
+| `manage-branch-staff` | branch   | Branch staff CRUD (within own branch portal)             |
 
 Branch managers are seeded **without** `manage-branch-staff` and `manage-branch-roles`.
 Platform managers are seeded **without** `manage-branch-users`, `manage-roles`, and `manage-database-backups`.
@@ -30,7 +30,7 @@ Platform managers are seeded **without** `manage-branch-users`, `manage-roles`, 
 
 - `platform/roles` (+ `roles/export`)
 - `platform/permissions` (+ `permissions/export`)
-- `platform/staff`
+- `platform/admins`
 - `platform/branch-staff` (full CRUD; permission `manage-branch-users`)
 
 ### Branch (`ensure.guard:branch` + `resolve.branch`)
@@ -44,7 +44,7 @@ Platform managers are seeded **without** `manage-branch-users`, `manage-roles`, 
 - Success/error feedback uses `App\Support\Toast` → Inertia flash `toast` → Sonner.
 - Super-admin role cannot be renamed/deleted; assigned roles cannot be deleted.
 - Last active super-admin in a team cannot be deactivated/deleted or stripped of the role (`App\Support\SuperAdmin`).
-- Shared UI: `RoleForm`, `StaffForm`, `PermissionSelector`, `ConfirmDeleteDialog`.
+- Shared UI: `RoleForm`, `AdminForm` (platform admins), `StaffForm` (branch staff), `PermissionSelector`, `ConfirmDeleteDialog`.
 
 ## Related docs
 

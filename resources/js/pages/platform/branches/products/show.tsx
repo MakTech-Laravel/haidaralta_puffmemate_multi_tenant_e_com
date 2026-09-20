@@ -1,6 +1,7 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import CategoryController from '@/actions/App/Http/Controllers/Platform/CategoryController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Platform/Reports/StockTransactionController';
 import { BranchProductSummary } from '@/components/branch/branch-product-summary';
 import {
@@ -156,6 +157,13 @@ export default function PlatformBranchProductShow({
                     })}
                     transactionsUrl={stockPageUrl(
                         StockTransactionController.index.url(),
+                        {
+                            productId: product.id,
+                            branchId: branch.id,
+                        },
+                    )}
+                    priceHistoryUrl={stockPageUrl(
+                        PriceHistoryController.index.url(),
                         {
                             productId: product.id,
                             branchId: branch.id,

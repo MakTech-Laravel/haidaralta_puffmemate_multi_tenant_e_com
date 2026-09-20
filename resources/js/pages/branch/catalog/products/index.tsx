@@ -1,9 +1,10 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Settings2 } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import CategoryController from '@/actions/App/Http/Controllers/Branch/CategoryController';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
+import PriceHistoryController from '@/actions/App/Http/Controllers/Branch/Reports/PriceHistoryController';
 import StockTransactionController from '@/actions/App/Http/Controllers/Branch/Reports/StockTransactionController';
 import StockController from '@/actions/App/Http/Controllers/Branch/StockController';
 import { CategoryFilterCombobox } from '@/components/catalog/category-filter-combobox';
@@ -33,7 +34,9 @@ type ProductRow = {
     quantity: number;
     selling_price: string | number | null;
     effective_price: string | number | null;
+    regular_price?: string | number | null;
     has_discount: boolean;
+    has_compare_at?: boolean;
     discount_type: string;
     discount_price: string | number | null;
 };
@@ -53,6 +56,15 @@ function listingPrice(row: ProductRow): ReactNode {
         return (
             <span className="tabular-nums">
                 <s className="text-muted-foreground">{row.selling_price}</s>{' '}
+                {row.effective_price ?? row.selling_price}
+            </span>
+        );
+    }
+
+    if (row.has_compare_at && row.regular_price != null) {
+        return (
+            <span className="tabular-nums">
+                <s className="text-muted-foreground">{row.regular_price}</s>{' '}
                 {row.effective_price ?? row.selling_price}
             </span>
         );
@@ -160,7 +172,9 @@ export default function BranchProductsIndex({
                 accessorKey: 'quantity',
                 header: 'Stock',
                 cell: ({ row }) => (
-                    <span className="tabular-nums">{row.original.quantity}</span>
+                    <span className="tabular-nums">
+                        {row.original.quantity}
+                    </span>
                 ),
             },
             {
@@ -187,20 +201,6 @@ export default function BranchProductsIndex({
                                         }),
                                     },
                                     {
-                                        label: 'Manage stock',
-                                        icon: Settings2,
-                                        href: stockPageUrl(
-                                            StockController.manage.url(
-                                                branch.slug,
-                                            ),
-                                            {
-                                                productId: row.original.id,
-                                                branchId: branch.id,
-                                                locked: 'both',
-                                            },
-                                        ),
-                                    },
-                                    {
                                         label: 'Edit',
                                         href: ProductController.edit.url({
                                             branch: branch.slug,
@@ -213,13 +213,28 @@ export default function BranchProductsIndex({
                                 label: 'Stock',
                                 items: stockActionItems(
                                     {
+                                        manage: stockPageUrl(
+                                            StockController.manage.url(
+                                                branch.slug,
+                                            ),
+                                            {
+                                                productId: row.original.id,
+                                                branchId: branch.id,
+                                                locked: 'both',
+                                            },
+                                        ),
                                         transactions:
                                             StockTransactionController.index.url(
+                                                branch.slug,
+                                            ),
+                                        priceHistory:
+                                            PriceHistoryController.index.url(
                                                 branch.slug,
                                             ),
                                     },
                                     {
                                         productId: row.original.id,
+                                        branchId: branch.id,
                                     },
                                 ),
                             },

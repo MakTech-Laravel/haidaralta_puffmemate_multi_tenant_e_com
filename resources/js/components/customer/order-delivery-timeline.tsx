@@ -1,11 +1,6 @@
 import { Check } from 'lucide-react';
 import type { OrderTimelineStep } from '@/components/customer/order-track-types';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 type OrderDeliveryTimelineProps = {

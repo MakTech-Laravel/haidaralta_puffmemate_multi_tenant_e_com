@@ -10,6 +10,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property DatabaseBackupType $type
+ * @property DatabaseBackupStatus $status
+ * @property string $disk
+ * @property string|null $path
+ * @property string|null $filename
+ * @property int|null $size_bytes
+ * @property int|null $triggered_by
+ * @property int|null $source_history_id
+ * @property string|null $connection
+ * @property string|null $message
+ * @property-read User|null $triggeredBy
+ * @property-read DatabaseBackupHistory|null $sourceHistory
+ */
 class DatabaseBackupHistory extends Model
 {
     /** @use HasFactory<DatabaseBackupHistoryFactory> */

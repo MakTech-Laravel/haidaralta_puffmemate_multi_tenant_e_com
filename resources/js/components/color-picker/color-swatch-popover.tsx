@@ -94,10 +94,13 @@ export function ColorSwatchPopover({
 
                 <PopoverContent
                     align="start"
-                    className="z-60 w-[min(100vw-2rem,20rem)] overflow-hidden rounded-2xl border-border/80 p-0 shadow-lg"
+                    className="border-border/80 z-60 w-[min(100vw-2rem,20rem)] overflow-hidden rounded-2xl p-0 shadow-lg"
                 >
                     <div
-                        className={cn('relative h-28', COLOR_PICKER_CHECKERBOARD)}
+                        className={cn(
+                            'relative h-28',
+                            COLOR_PICKER_CHECKERBOARD,
+                        )}
                         style={{ background: safeHex }}
                     >
                         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/10" />
@@ -120,7 +123,7 @@ export function ColorSwatchPopover({
                                             event.target.value.toUpperCase(),
                                         )
                                     }
-                                    className="size-9 cursor-pointer appearance-none border-0 bg-transparent [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0"
+                                    className="size-9 cursor-pointer appearance-none border-0 bg-transparent [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
                                 />
                             </label>
                         </div>

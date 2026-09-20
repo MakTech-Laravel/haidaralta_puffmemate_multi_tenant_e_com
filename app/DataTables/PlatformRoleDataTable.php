@@ -11,7 +11,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 
+/**
+ * @extends AbstractDataTable<Role>
+ */
 class PlatformRoleDataTable extends AbstractDataTable
 {
     use MapsRoleRows;

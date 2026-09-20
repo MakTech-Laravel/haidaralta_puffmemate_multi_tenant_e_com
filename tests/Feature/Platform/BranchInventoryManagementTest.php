@@ -1,10 +1,12 @@
 <?php
 
 use App\Enums\DiscountType;
+use App\Enums\PriceChangeSource;
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\BranchProductPrice;
+use App\Models\BranchProductPriceHistory;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -53,6 +55,7 @@ test('platform can set stock and price for any branch', function () {
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 12,
         ])
         ->assertRedirect();
@@ -78,6 +81,8 @@ test('platform can set stock and price for any branch', function () {
             ->has('product.variant_prices')
             ->has('adjustmentReasons')
             ->has('transactionsUrl')
+            ->has('priceHistoryUrl')
+            ->missing('product.price_history')
             ->missing('transactions'));
 });
 
@@ -89,6 +94,7 @@ test('platform product inventory adjustment sets counted on-hand with a reason',
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 10,
         ])
         ->assertRedirect();
@@ -165,6 +171,20 @@ test('platform can set percent discount and clear discount with none', function 
             ->where('product.price.end_date', null));
 });
 
+test('platform rejects a fixed discount greater than selling price', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.prices', [$branch, $product]), [
+            'selling_price' => 19.99,
+            'discount_type' => 'fixed',
+            'discount_price' => 20,
+        ])
+        ->assertInvalid(['discount_price']);
+});
+
 test('manage page hydrates a price without an offer as none', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
@@ -201,6 +221,7 @@ test('platform reduce subtracts a positive quantity', function () {
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 10,
         ])
         ->assertRedirect();
@@ -241,6 +262,7 @@ test('platform inventory adjustment other stores the typed reason', function () 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 10,
         ])
         ->assertRedirect();
@@ -272,6 +294,7 @@ test('platform inventory adjustment rejects a counted quantity that matches curr
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 6,
         ])
         ->assertRedirect();
@@ -309,6 +332,7 @@ test('platform inventory new entry rejects a reason', function () {
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 4,
             'reason' => 'damaged',
         ])
@@ -386,6 +410,7 @@ test('platform can set variant stock and price on manage stock', function () {
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$branch, $product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 3,
             'variant_id' => $variant->id,
         ])
@@ -429,6 +454,7 @@ test('platform can list filter and paginate branch products', function () {
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$branch, $matched]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 2,
         ])
         ->assertRedirect();
@@ -523,6 +549,7 @@ test('platform can search and filter product branch inventory table', function (
     $this->actingAs($admin, 'platform')
         ->post(route('platform.branches.products.inventory', [$downtown, $product]), [
             'type' => 'stock_in',
+            'buying_price' => 10,
             'quantity' => 2,
         ])
         ->assertRedirect();
@@ -575,4 +602,146 @@ test('branch user still cannot soft-delete catalog products after platform inven
         ->assertRedirect(route('login'));
 
     expect(Product::query()->where('slug', 'still-protected')->exists())->toBeTrue();
+});
+
+test('platform can save buying and regular prices on a branch sku', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.prices', [$branch, $product]), [
+            'buying_price' => 12.5,
+            'regular_price' => 24.99,
+            'selling_price' => 19.99,
+            'discount_type' => 'none',
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->get(ProductManageRedirect::platformUrl($branch, $product))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('product.price.buying_price', '12.50')
+            ->where('product.price.regular_price', '24.99')
+            ->where('product.price.selling_price', '19.99')
+            ->has('priceHistoryUrl')
+            ->missing('product.price_history'));
+});
+
+test('saving the same price again does not append price history', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+    $payload = [
+        'buying_price' => 8,
+        'regular_price' => 15,
+        'selling_price' => 12,
+        'discount_type' => 'none',
+    ];
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.prices', [$branch, $product]), $payload)
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.prices', [$branch, $product]), $payload)
+        ->assertRedirect();
+
+    expect(BranchProductPriceHistory::query()
+        ->where('branch_id', $branch->id)
+        ->where('product_id', $product->id)
+        ->count())->toBe(1);
+});
+
+test('new entry requires a buying price and stores unit cost on the ledger', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 4,
+        ])
+        ->assertSessionHasErrors('buying_price');
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.products.prices', [$branch, $product]), [
+            'buying_price' => 8,
+            'selling_price' => 16,
+            'discount_type' => 'none',
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'quantity' => 4,
+            'buying_price' => 9.25,
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('inventory_transactions', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'type' => 'stock_in',
+        'quantity' => 4,
+        'unit_cost' => '9.25',
+    ]);
+
+    $this->assertDatabaseHas('branch_product_prices', [
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'buying_price' => '9.25',
+    ]);
+
+    expect(BranchProductPriceHistory::query()
+        ->where('branch_id', $branch->id)
+        ->where('product_id', $product->id)
+        ->where('source', PriceChangeSource::StockIn->value)
+        ->count())->toBe(1);
+});
+
+test('reduce rejects a buying price', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'buying_price' => 10,
+            'quantity' => 5,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_out',
+            'quantity' => 1,
+            'buying_price' => 10,
+        ])
+        ->assertSessionHasErrors('buying_price');
+});
+
+test('stock transactions report includes the buying price for new entries', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branches.products.inventory', [$branch, $product]), [
+            'type' => 'stock_in',
+            'buying_price' => 7.5,
+            'quantity' => 2,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.stock-transactions', ['product' => $product->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('table.data.0.unit_cost', '7.50')
+            ->where('table.data.0.type', 'stock_in'));
 });

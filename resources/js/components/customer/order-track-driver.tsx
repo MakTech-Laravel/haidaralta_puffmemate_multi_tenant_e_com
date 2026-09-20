@@ -9,7 +9,7 @@ type OrderTrackDriverProps = {
 
 export function OrderTrackDriverCard({ driver }: OrderTrackDriverProps) {
     return (
-        <Card className="bg-[#F4F4F2] gap-0 border-0 py-4 shadow-none">
+        <Card className="gap-0 border-0 bg-[#F4F4F2] py-4 shadow-none">
             <CardContent className="flex items-start gap-3 px-4">
                 <div className="bg-foreground text-background flex size-11 shrink-0 items-center justify-center rounded-full">
                     <Truck className="size-5" aria-hidden />

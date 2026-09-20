@@ -77,7 +77,7 @@ export default function PlatformBranchesCreateSuperAdmin({
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <section
                         className={cn(
-                            'rounded-2xl border border-border/80 bg-card p-5 shadow-sm',
+                            'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
                             'sm:p-6',
                         )}
                     >
@@ -124,9 +124,7 @@ export default function PlatformBranchesCreateSuperAdmin({
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="email">
-                                    Email (optional)
-                                </Label>
+                                <Label htmlFor="email">Email (optional)</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -185,11 +183,9 @@ export default function PlatformBranchesCreateSuperAdmin({
                         </div>
                     </section>
 
-                    <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t bg-background/95 px-2 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                    <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t px-2 py-4 backdrop-blur">
                         <Button variant="secondary" asChild>
-                            <Link
-                                href={BranchController.show.url(branch.slug)}
-                            >
+                            <Link href={BranchController.show.url(branch.slug)}>
                                 Cancel
                             </Link>
                         </Button>

@@ -2,6 +2,7 @@ import { Head, setLayoutProps } from '@inertiajs/react';
 import BranchDriverController from '@/actions/App/Http/Controllers/Platform/BranchDriverController';
 import { DriverForm } from '@/components/admin/driver-form';
 import Heading from '@/components/heading';
+import { filteredBranchDriversUrl } from '@/lib/branch-people-query';
 
 type Option = { value: string; label: string };
 type Branch = { id: number; name: string; slug: string };
@@ -17,7 +18,7 @@ type Driver = {
     notes: string | null;
     address: string | null;
     is_active: boolean;
-    avatar_path: string | null;
+    avatar: string | null;
     avatar_url: string | null;
     vehicle_image_path: string | null;
     vehicle_image_url: string | null;
@@ -46,7 +47,7 @@ export default function PlatformBranchDriversEdit({
             },
             {
                 title: 'Drivers',
-                href: BranchDriverController.index.url(branch.slug),
+                href: filteredBranchDriversUrl(branch.id),
             },
             {
                 title: driver.name,
@@ -91,7 +92,7 @@ export default function PlatformBranchDriversEdit({
                         notes: driver.notes,
                         address: driver.address,
                         is_active: driver.is_active,
-                        avatar: driver.avatar_path,
+                        avatar: driver.avatar,
                         avatar_url: driver.avatar_url,
                         vehicle_image: driver.vehicle_image_path,
                         vehicle_image_url: driver.vehicle_image_url,

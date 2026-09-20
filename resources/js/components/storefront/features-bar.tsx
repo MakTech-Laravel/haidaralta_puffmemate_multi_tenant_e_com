@@ -9,7 +9,7 @@ type FeaturesBarProps = {
 export function FeaturesBar({ features, className }: FeaturesBarProps) {
     return (
         <section className={cn('', className)}>
-            <div className="mx-auto container px-4 sm:px-6">
+            <div className="container mx-auto px-4 sm:px-6">
                 <ul className="grid sm:grid-cols-2 lg:grid-cols-4">
                     {features.map((feature, index) => (
                         <li

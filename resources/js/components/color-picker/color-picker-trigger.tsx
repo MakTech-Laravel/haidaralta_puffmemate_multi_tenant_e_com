@@ -63,7 +63,7 @@ export function ColorPickerTrigger({
     const swatch = (
         <span
             className={cn(
-                'relative size-9 shrink-0 overflow-hidden rounded-lg border border-border/70 shadow-inner',
+                'border-border/70 relative size-9 shrink-0 overflow-hidden rounded-lg border shadow-inner',
                 classNames?.triggerPreview,
             )}
             style={transparent ? undefined : previewStyle}
@@ -121,7 +121,7 @@ export function ColorPickerTrigger({
             >
                 <span
                     className={cn(
-                        'relative size-6 shrink-0 overflow-hidden rounded-md border border-border/70 shadow-inner',
+                        'border-border/70 relative size-6 shrink-0 overflow-hidden rounded-md border shadow-inner',
                         classNames?.triggerPreview,
                     )}
                     style={transparent ? undefined : previewStyle}
@@ -129,7 +129,9 @@ export function ColorPickerTrigger({
                 >
                     <span className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-black/5" />
                 </span>
-                <span className={cn('min-w-0 truncate', classNames?.triggerLabel)}>
+                <span
+                    className={cn('min-w-0 truncate', classNames?.triggerLabel)}
+                >
                     {summary}
                 </span>
                 <ChevronDown
@@ -221,7 +223,7 @@ export function ColorPickerTrigger({
                 <div className="flex flex-1 items-center gap-3 p-3.5">
                     <span
                         className={cn(
-                            'relative size-12 shrink-0 overflow-hidden rounded-xl border border-border/70 shadow-inner',
+                            'border-border/70 relative size-12 shrink-0 overflow-hidden rounded-xl border shadow-inner',
                             classNames?.triggerPreview,
                         )}
                         style={transparent ? undefined : previewStyle}

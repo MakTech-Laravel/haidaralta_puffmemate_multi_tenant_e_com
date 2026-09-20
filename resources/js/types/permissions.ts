@@ -22,4 +22,6 @@ export type PermissionKey =
     | 'manage-catalog'
     | 'manage-branch-inventories'
     | 'manage-drivers'
-    | 'manage-branch-drivers';
+    | 'manage-branch-drivers'
+    | 'manage-conversations'
+    | 'manage-branch-conversations';

@@ -38,7 +38,7 @@ export default function BranchPermissionsIndex({
         <>
             <Head title="Permissions" />
 
-            <div className="space-y-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Permissions"
@@ -46,7 +46,7 @@ export default function BranchPermissionsIndex({
                     />
                     <Button variant="outline" asChild>
                         <a href={PermissionController.export.url(branch.slug)}>
-                            <Download className="h-4 w-4" />
+                            <Download className="size-4" />
                             Export CSV
                         </a>
                     </Button>

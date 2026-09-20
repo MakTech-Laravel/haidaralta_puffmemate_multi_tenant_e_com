@@ -1,5 +1,8 @@
 import { Link } from '@inertiajs/react';
-import type { DataTableLink, DataTableMeta } from '@/components/data-table/types';
+import type {
+    DataTableLink,
+    DataTableMeta,
+} from '@/components/data-table/types';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -9,7 +12,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
-const PER_PAGE_OPTIONS = [15, 25, 50];
+const PER_PAGE_OPTIONS = [15, 25, 50, 100];
 
 export function DataTablePagination({
     meta,
@@ -47,10 +50,7 @@ export function DataTablePagination({
                         </SelectTrigger>
                         <SelectContent>
                             {PER_PAGE_OPTIONS.map((option) => (
-                                <SelectItem
-                                    key={option}
-                                    value={String(option)}
-                                >
+                                <SelectItem key={option} value={String(option)}>
                                     {option}
                                 </SelectItem>
                             ))}

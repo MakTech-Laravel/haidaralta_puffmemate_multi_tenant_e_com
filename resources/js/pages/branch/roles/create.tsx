@@ -13,9 +13,11 @@ type Branch = {
 export default function BranchRolesCreate({
     branch,
     permissionGroups,
+    existingNames,
 }: {
     branch: Branch;
     permissionGroups: PermissionGroup[];
+    existingNames: string[];
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -35,7 +37,7 @@ export default function BranchRolesCreate({
         <>
             <Head title="Create role" />
 
-            <div className="mx-auto max-w-3xl space-y-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Create role"
                     description={`Define a role for ${branch.name}`}
@@ -44,6 +46,7 @@ export default function BranchRolesCreate({
                 <RoleForm
                     action={RoleController.store.form(branch.slug)}
                     groups={permissionGroups}
+                    existingNames={existingNames}
                     cancelHref={RoleController.index.url(branch.slug)}
                 />
             </div>

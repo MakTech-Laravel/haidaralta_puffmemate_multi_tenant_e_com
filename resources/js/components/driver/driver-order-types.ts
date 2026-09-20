@@ -1,7 +1,4 @@
-export type DriverOrderStatus =
-    | 'out_for_delivery'
-    | 'arrived'
-    | 'delivered';
+export type DriverOrderStatus = 'out_for_delivery' | 'arrived' | 'delivered';
 
 export type DriverAssignedOrder = {
     id: string;

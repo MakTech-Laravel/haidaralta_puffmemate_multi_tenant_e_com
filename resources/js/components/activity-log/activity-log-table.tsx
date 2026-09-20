@@ -46,9 +46,7 @@ export function ActivityLogTable({
                 header: 'Event',
                 cell: ({ row }) =>
                     row.original.event ? (
-                        <Badge
-                            variant={eventBadgeVariant(row.original.event)}
-                        >
+                        <Badge variant={eventBadgeVariant(row.original.event)}>
                             {row.original.event}
                         </Badge>
                     ) : (
