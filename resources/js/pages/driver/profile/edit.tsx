@@ -1,8 +1,16 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useEffect, useState, type FormEvent } from 'react';
+import { Bike, Camera, IdCard, Mail, MapPin, Phone } from 'lucide-react';
+import {
+    useEffect,
+    useRef,
+    useState,
+    type ChangeEvent,
+    type FormEvent,
+    type ReactNode,
+} from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Driver/ProfileController';
-import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,10 +22,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useInitials } from '@/hooks/use-initials';
 import { edit as editProfile, index as profileIndex } from '@/routes/driver/profile';
 import { notice } from '@/routes/phone/verification';
 
 const MEDIA_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
+const MAX_IMAGE_BYTES = 2 * 1_048_576;
 
 type Option = { value: string; label: string };
 
@@ -28,30 +38,62 @@ type DriverEditProfile = {
     license_number: string | null;
     vehicle_type: string | null;
     address: string | null;
-    avatar: string | null;
     avatar_url: string | null;
-    vehicle_image_path: string | null;
     vehicle_image_url: string | null;
 };
 
-function existingImage(
-    id: string,
-    path: string | null,
-    url: string | null,
-): ExistingFile[] {
-    if (!path || !url) {
-        return [];
+function EditField({
+    icon: Icon,
+    label,
+    htmlFor,
+    error,
+    children,
+}: {
+    icon: typeof Phone;
+    label: string;
+    htmlFor: string;
+    error?: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className="flex items-start gap-3">
+            <span className="bg-muted mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg">
+                <Icon className="text-muted-foreground size-4" aria-hidden />
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <Label
+                    htmlFor={htmlFor}
+                    className="text-muted-foreground text-xs font-medium tracking-wide uppercase"
+                >
+                    {label}
+                </Label>
+                {children}
+                <InputError message={error} />
+            </div>
+        </div>
+    );
+}
+
+function pickImage(file: File | undefined): string | File {
+    if (!file) {
+        return 'Choose an image file.';
     }
 
-    return [
-        {
-            id,
-            path,
-            url,
-            mime_type: 'image/jpeg',
-            name: path.split('/').pop() ?? id,
-        },
-    ];
+    const allowedType =
+        file.type === 'image/jpeg' ||
+        file.type === 'image/png' ||
+        file.type === 'image/webp' ||
+        /\.(jpe?g|png|webp)$/iu.test(file.name);
+
+    if (!allowedType) {
+        return 'Use a PNG, JPG, or WebP image.';
+    }
+
+    if (file.size > MAX_IMAGE_BYTES) {
+        return 'The image must be 2MB or smaller.';
+    }
+
+    return file;
 }
 
 export default function DriverProfileEdit({
@@ -63,17 +105,18 @@ export default function DriverProfileEdit({
     vehicleTypes: Option[];
     mustVerifyPhone: boolean;
 }) {
+    const getInitials = useInitials();
     const action = ProfileController.update.form();
-    const [existingAvatar, setExistingAvatar] = useState<ExistingFile[]>(() =>
-        existingImage('avatar', driver.avatar, driver.avatar_url),
+    const avatarObjectUrl = useRef<string | null>(null);
+    const vehicleObjectUrl = useRef<string | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(
+        driver.avatar_url,
     );
-    const [existingVehicle, setExistingVehicle] = useState<ExistingFile[]>(() =>
-        existingImage(
-            'vehicle',
-            driver.vehicle_image_path,
-            driver.vehicle_image_url,
-        ),
+    const [vehiclePreview, setVehiclePreview] = useState<string | null>(
+        driver.vehicle_image_url,
     );
+    const [avatarReject, setAvatarReject] = useState<string | undefined>();
+    const [vehicleReject, setVehicleReject] = useState<string | undefined>();
 
     const {
         data,
@@ -81,11 +124,9 @@ export default function DriverProfileEdit({
         post,
         processing,
         errors,
-        progress,
         transform,
         validate,
         setValidationTimeout,
-        cancel,
     } = useForm('post', action.action, {
         name: driver.name,
         phone: driver.phone,
@@ -101,7 +142,97 @@ export default function DriverProfileEdit({
 
     useEffect(() => {
         setValidationTimeout(500);
+
+        return () => {
+            if (avatarObjectUrl.current) {
+                URL.revokeObjectURL(avatarObjectUrl.current);
+            }
+
+            if (vehicleObjectUrl.current) {
+                URL.revokeObjectURL(vehicleObjectUrl.current);
+            }
+        };
     }, [setValidationTimeout]);
+
+    const replacePreview = (
+        store: typeof avatarObjectUrl,
+        setPreview: (url: string | null) => void,
+        next: File | null,
+        fallback: string | null,
+    ): void => {
+        if (store.current) {
+            URL.revokeObjectURL(store.current);
+            store.current = null;
+        }
+
+        if (next) {
+            const url = URL.createObjectURL(next);
+            store.current = url;
+            setPreview(url);
+
+            return;
+        }
+
+        setPreview(fallback);
+    };
+
+    const onAvatarChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        const picked = pickImage(event.target.files?.[0]);
+        event.target.value = '';
+
+        if (typeof picked === 'string') {
+            setAvatarReject(picked);
+
+            return;
+        }
+
+        setAvatarReject(undefined);
+        replacePreview(avatarObjectUrl, setAvatarPreview, picked, null);
+        setData((current) => ({
+            ...current,
+            avatar: picked,
+            remove_avatar: false,
+        }));
+    };
+
+    const removeAvatar = (): void => {
+        setAvatarReject(undefined);
+        replacePreview(avatarObjectUrl, setAvatarPreview, null, null);
+        setData((current) => ({
+            ...current,
+            avatar: null,
+            remove_avatar: true,
+        }));
+    };
+
+    const onVehicleChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        const picked = pickImage(event.target.files?.[0]);
+        event.target.value = '';
+
+        if (typeof picked === 'string') {
+            setVehicleReject(picked);
+
+            return;
+        }
+
+        setVehicleReject(undefined);
+        replacePreview(vehicleObjectUrl, setVehiclePreview, picked, null);
+        setData((current) => ({
+            ...current,
+            vehicle_image: picked,
+            remove_vehicle_image: false,
+        }));
+    };
+
+    const removeVehicle = (): void => {
+        setVehicleReject(undefined);
+        replacePreview(vehicleObjectUrl, setVehiclePreview, null, null);
+        setData((current) => ({
+            ...current,
+            vehicle_image: null,
+            remove_vehicle_image: true,
+        }));
+    };
 
     const submit = (event: FormEvent): void => {
         event.preventDefault();
@@ -136,134 +267,110 @@ export default function DriverProfileEdit({
 
             <form
                 onSubmit={submit}
-                className="flex max-w-2xl flex-col gap-4"
+                className="flex w-full flex-col gap-5"
                 autoComplete="off"
             >
-                <header className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                        <h1 className="text-foreground text-xl font-bold tracking-tight">
-                            Edit details
-                        </h1>
-                        <p className="text-muted-foreground text-sm">
-                            Photo, contact, and vehicle
-                        </p>
-                    </div>
-                    <Button
-                        type="submit"
-                        disabled={processing}
-                        className="hidden shrink-0 sm:inline-flex"
-                    >
-                        {processing ? <Spinner /> : null}
-                        Save
-                    </Button>
-                </header>
-
-                <section className="border-border space-y-3 rounded-xl border p-4">
-                    <h2 className="text-foreground text-base font-semibold">
-                        You
-                    </h2>
-                    <div className="flex items-start gap-4">
-                        <div className="flex w-[5.5rem] shrink-0 flex-col items-center gap-1.5">
-                            <FileUpload
-                                variant="avatar"
-                                avatarSize={88}
-                                value={data.avatar}
-                                onChange={(file) => {
-                                    const next = Array.isArray(file)
-                                        ? (file[0] ?? null)
-                                        : file;
-                                    setExistingAvatar([]);
-                                    setData((current) => ({
-                                        ...current,
-                                        avatar: next,
-                                        remove_avatar: next
-                                            ? false
-                                            : current.remove_avatar,
-                                    }));
-                                }}
-                                existingFiles={
-                                    data.avatar || data.remove_avatar
-                                        ? []
-                                        : existingAvatar
-                                }
-                                onRemoveExisting={() => {
-                                    setExistingAvatar([]);
-                                    setData((current) => ({
-                                        ...current,
-                                        avatar: null,
-                                        remove_avatar: true,
-                                    }));
-                                }}
+                <section className="bg-accent flex flex-col gap-4 rounded-xl p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <div className="relative size-20 shrink-0">
+                            <Avatar className="size-full">
+                                {avatarPreview ? (
+                                    <AvatarImage
+                                        src={avatarPreview}
+                                        alt={data.name}
+                                    />
+                                ) : null}
+                                <AvatarFallback className="text-base sm:text-lg">
+                                    {getInitials(data.name)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <span
+                                className="bg-primary text-primary-foreground pointer-events-none absolute right-0 bottom-0 flex size-7 items-center justify-center rounded-full ring-2 ring-background"
+                                aria-hidden
+                            >
+                                <Camera className="size-3.5" />
+                            </span>
+                            <input
+                                type="file"
                                 accept={MEDIA_ACCEPT}
-                                maxSize={2}
-                                maxFiles={1}
-                                multiple={false}
-                                isUploading={processing}
-                                uploadProgress={progress?.percentage ?? null}
-                                onCancel={processing ? cancel : undefined}
-                                showCaption={false}
-                                error={errors.avatar}
+                                disabled={processing}
+                                className="absolute inset-0 z-10 cursor-pointer opacity-0"
+                                aria-label="Change profile photo"
+                                onChange={onAvatarChange}
                             />
-                            <InputError message={errors.avatar} />
                         </div>
+                        <div className="min-w-0 flex-1 space-y-1">
+                            <Label htmlFor="name" className="sr-only">
+                                Name
+                            </Label>
+                            <Input
+                                id="name"
+                                name="name"
+                                required
+                                autoComplete="name"
+                                placeholder="Your name"
+                                value={data.name}
+                                onChange={(event) =>
+                                    setData('name', event.target.value)
+                                }
+                                className="text-foreground h-auto min-h-0 border-0 bg-transparent px-0 py-0 text-xl font-bold tracking-tight shadow-none focus-visible:border-transparent focus-visible:ring-0 sm:text-2xl"
+                            />
+                            <p className="text-muted-foreground text-sm">
+                                Change your photo
+                            </p>
+                            <InputError
+                                message={errors.name ?? errors.avatar ?? avatarReject}
+                            />
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                        {avatarPreview ? (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={processing}
+                                onClick={removeAvatar}
+                            >
+                                Remove photo
+                            </Button>
+                        ) : null}
+                        <Button
+                            type="submit"
+                            size="lg"
+                            disabled={processing}
+                            className="hidden h-12 w-full sm:inline-flex sm:w-auto"
+                        >
+                            {processing ? <Spinner /> : null}
+                            Save
+                        </Button>
+                    </div>
+                </section>
 
-                        <div className="grid min-w-0 flex-1 gap-3">
-                            <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    name="name"
-                                    required
-                                    autoComplete="name"
-                                    placeholder="Daniel Foster"
-                                    value={data.name}
-                                    onChange={(event) =>
-                                        setData('name', event.target.value)
-                                    }
-                                />
-                                <InputError message={errors.name} />
-                            </div>
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="phone">Phone</Label>
-                                    <Input
-                                        id="phone"
-                                        name="phone"
-                                        type="tel"
-                                        required
-                                        autoComplete="tel"
-                                        placeholder="04XX XXX XXX"
-                                        value={data.phone}
-                                        onChange={(event) =>
-                                            setData('phone', event.target.value)
-                                        }
-                                        onBlur={() => validate('phone')}
-                                    />
-                                    <InputError message={errors.phone} />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        autoComplete="email"
-                                        placeholder="Optional"
-                                        value={data.email}
-                                        onChange={(event) =>
-                                            setData('email', event.target.value)
-                                        }
-                                        onBlur={(event) => {
-                                            if (
-                                                event.target.value.trim() !== ''
-                                            ) {
-                                                validate('email');
-                                            }
-                                        }}
-                                    />
-                                    <InputError message={errors.email} />
-                                </div>
-                            </div>
+                <section className="border-border space-y-4 rounded-xl border p-4">
+                    <h2 className="text-foreground text-base font-semibold">
+                        Contact
+                    </h2>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                        <EditField
+                            icon={Phone}
+                            label="Phone"
+                            htmlFor="phone"
+                            error={errors.phone}
+                        >
+                            <Input
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                required
+                                autoComplete="tel"
+                                placeholder="04XX XXX XXX"
+                                value={data.phone}
+                                onChange={(event) =>
+                                    setData('phone', event.target.value)
+                                }
+                                onBlur={() => validate('phone')}
+                            />
                             {mustVerifyPhone ? (
                                 <p className="text-muted-foreground text-sm">
                                     Phone unverified.{' '}
@@ -275,19 +382,36 @@ export default function DriverProfileEdit({
                                     </Link>
                                 </p>
                             ) : null}
-                        </div>
-                    </div>
-                </section>
-
-                <section className="border-border space-y-3 rounded-xl border p-4">
-                    <h2 className="text-foreground text-base font-semibold">
-                        License & vehicle
-                    </h2>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="license_number">
-                                License number
-                            </Label>
+                        </EditField>
+                        <EditField
+                            icon={Mail}
+                            label="Email"
+                            htmlFor="email"
+                            error={errors.email}
+                        >
+                            <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                autoComplete="email"
+                                placeholder="Optional"
+                                value={data.email}
+                                onChange={(event) =>
+                                    setData('email', event.target.value)
+                                }
+                                onBlur={(event) => {
+                                    if (event.target.value.trim() !== '') {
+                                        validate('email');
+                                    }
+                                }}
+                            />
+                        </EditField>
+                        <EditField
+                            icon={IdCard}
+                            label="License"
+                            htmlFor="license_number"
+                            error={errors.license_number}
+                        >
                             <Input
                                 id="license_number"
                                 name="license_number"
@@ -301,37 +425,13 @@ export default function DriverProfileEdit({
                                 }
                                 onBlur={() => validate('license_number')}
                             />
-                            <InputError message={errors.license_number} />
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="vehicle_type">Vehicle type</Label>
-                            <Select
-                                value={data.vehicle_type}
-                                onValueChange={(value) =>
-                                    setData('vehicle_type', value)
-                                }
-                            >
-                                <SelectTrigger
-                                    id="vehicle_type"
-                                    className="w-full"
-                                >
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {vehicleTypes.map((type) => (
-                                        <SelectItem
-                                            key={type.value}
-                                            value={type.value}
-                                        >
-                                            {type.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <InputError message={errors.vehicle_type} />
-                        </div>
-                        <div className="flex flex-col gap-1.5 sm:col-span-2">
-                            <Label htmlFor="address">Address</Label>
+                        </EditField>
+                        <EditField
+                            icon={MapPin}
+                            label="Address"
+                            htmlFor="address"
+                            error={errors.address}
+                        >
                             <Input
                                 id="address"
                                 name="address"
@@ -342,67 +442,92 @@ export default function DriverProfileEdit({
                                     setData('address', event.target.value)
                                 }
                             />
-                            <InputError message={errors.address} />
-                        </div>
-                        <div className="flex flex-col gap-1.5 sm:col-span-2">
-                            <Label>Vehicle photo</Label>
-                            <FileUpload
-                                value={data.vehicle_image}
-                                onChange={(file) => {
-                                    const next = Array.isArray(file)
-                                        ? (file[0] ?? null)
-                                        : file;
-                                    setExistingVehicle([]);
-                                    setData((current) => ({
-                                        ...current,
-                                        vehicle_image: next,
-                                        remove_vehicle_image: next
-                                            ? false
-                                            : current.remove_vehicle_image,
-                                    }));
-                                }}
-                                existingFiles={
-                                    data.vehicle_image ||
-                                    data.remove_vehicle_image
-                                        ? []
-                                        : existingVehicle
-                                }
-                                onRemoveExisting={() => {
-                                    setExistingVehicle([]);
-                                    setData((current) => ({
-                                        ...current,
-                                        vehicle_image: null,
-                                        remove_vehicle_image: true,
-                                    }));
-                                }}
-                                accept={MEDIA_ACCEPT}
-                                maxSize={2}
-                                maxFiles={1}
-                                multiple={false}
-                                compactCards
-                                dropzoneVisibility="empty"
-                                lightbox
-                                isUploading={processing}
-                                uploadProgress={progress?.percentage ?? null}
-                                onCancel={processing ? cancel : undefined}
-                                placeholder="Add a photo of your vehicle"
-                                hint="PNG, JPG, or WebP · up to 2MB"
-                                error={errors.vehicle_image}
-                                classNames={{
-                                    dropzone:
-                                        'min-h-28 border-dashed px-3 py-5',
-                                    dropzoneContent: 'gap-1',
-                                }}
-                            />
-                            <InputError message={errors.vehicle_image} />
-                        </div>
+                        </EditField>
                     </div>
+                </section>
+
+                <section className="border-border space-y-4 rounded-xl border p-4">
+                    <div className="flex items-center justify-between gap-3">
+                        <h2 className="text-foreground text-base font-semibold">
+                            Vehicle
+                        </h2>
+                        {vehiclePreview ? (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={processing}
+                                onClick={removeVehicle}
+                            >
+                                Remove photo
+                            </Button>
+                        ) : null}
+                    </div>
+                    <div className="relative">
+                        {vehiclePreview ? (
+                            <img
+                                src={vehiclePreview}
+                                alt="Your vehicle"
+                                className="border-border h-40 w-full rounded-lg border object-cover sm:h-52"
+                            />
+                        ) : (
+                            <div className="bg-muted text-muted-foreground flex h-28 items-center justify-center gap-2 rounded-lg text-sm">
+                                <Bike className="size-4" aria-hidden />
+                                Add a vehicle photo
+                            </div>
+                        )}
+                        <span
+                            className="bg-primary text-primary-foreground pointer-events-none absolute right-3 bottom-3 flex size-9 items-center justify-center rounded-full shadow-sm"
+                            aria-hidden
+                        >
+                            <Camera className="size-4" />
+                        </span>
+                        <input
+                            type="file"
+                            accept={MEDIA_ACCEPT}
+                            disabled={processing}
+                            className="absolute inset-0 z-10 cursor-pointer opacity-0"
+                            aria-label="Change vehicle photo"
+                            onChange={onVehicleChange}
+                        />
+                    </div>
+                    <InputError
+                        message={errors.vehicle_image ?? vehicleReject}
+                    />
+                    <EditField
+                        icon={Bike}
+                        label="Vehicle type"
+                        htmlFor="vehicle_type"
+                        error={errors.vehicle_type}
+                    >
+                        <Select
+                            value={data.vehicle_type}
+                            onValueChange={(value) =>
+                                setData('vehicle_type', value)
+                            }
+                        >
+                            <SelectTrigger id="vehicle_type" className="w-full">
+                                <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {vehicleTypes.map((type) => (
+                                    <SelectItem
+                                        key={type.value}
+                                        value={type.value}
+                                    >
+                                        {type.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </EditField>
                 </section>
 
                 <Button
                     type="submit"
+                    size="lg"
                     disabled={processing}
-                    className="w-full sm:hidden"
+                    className="h-12 w-full sm:hidden"
                 >
                     {processing ? <Spinner /> : null}
                     Save
