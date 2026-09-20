@@ -27,7 +27,6 @@ import { edit as editProfile, index as profileIndex } from '@/routes/driver/prof
 import { notice } from '@/routes/phone/verification';
 
 const MEDIA_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
-const MAX_IMAGE_BYTES = 2 * 1_048_576;
 
 type Option = { value: string; label: string };
 
@@ -42,17 +41,27 @@ type DriverEditProfile = {
     vehicle_image_url: string | null;
 };
 
+function RequiredMark() {
+    return (
+        <span className="text-primary" aria-hidden>
+            *
+        </span>
+    );
+}
+
 function EditField({
     icon: Icon,
     label,
     htmlFor,
     error,
+    required = false,
     children,
 }: {
     icon: typeof Phone;
     label: string;
     htmlFor: string;
     error?: string;
+    required?: boolean;
     children: ReactNode;
 }) {
     return (
@@ -65,7 +74,7 @@ function EditField({
                     htmlFor={htmlFor}
                     className="text-muted-foreground text-xs font-medium tracking-wide uppercase"
                 >
-                    {label}
+                    {label} {required ? <RequiredMark /> : null}
                 </Label>
                 {children}
                 <InputError message={error} />
@@ -300,8 +309,11 @@ export default function DriverProfileEdit({
                             />
                         </div>
                         <div className="min-w-0 flex-1 space-y-1">
-                            <Label htmlFor="name" className="sr-only">
-                                Name
+                            <Label
+                                htmlFor="name"
+                                className="text-muted-foreground text-xs font-medium tracking-wide uppercase"
+                            >
+                                Name <RequiredMark />
                             </Label>
                             <Input
                                 id="name"
@@ -324,6 +336,7 @@ export default function DriverProfileEdit({
                         </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:items-end">
+   
                         {avatarPreview ? (
                             <Button
                                 type="button"
@@ -356,6 +369,7 @@ export default function DriverProfileEdit({
                             icon={Phone}
                             label="Phone"
                             htmlFor="phone"
+                            required
                             error={errors.phone}
                         >
                             <Input
@@ -498,6 +512,7 @@ export default function DriverProfileEdit({
                         icon={Bike}
                         label="Vehicle type"
                         htmlFor="vehicle_type"
+                        required
                         error={errors.vehicle_type}
                     >
                         <Select
@@ -506,7 +521,11 @@ export default function DriverProfileEdit({
                                 setData('vehicle_type', value)
                             }
                         >
-                            <SelectTrigger id="vehicle_type" className="w-full">
+                            <SelectTrigger
+                                id="vehicle_type"
+                                className="w-full"
+                                aria-required
+                            >
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
