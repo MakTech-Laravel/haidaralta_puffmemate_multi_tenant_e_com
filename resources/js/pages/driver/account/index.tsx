@@ -20,7 +20,7 @@ export default function DriverAccountIndex() {
             <div className="flex flex-col gap-6">
                 <Heading
                     title="Account"
-                    description="Profile, security, and sign out"
+                    description="Profile, security, and activity"
                 />
 
                 {user ? (

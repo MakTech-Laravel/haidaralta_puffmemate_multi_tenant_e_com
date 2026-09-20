@@ -1567,6 +1567,147 @@ class DemoCatalog
     }
 
     /**
+     * Pay, tips, and completed-drop totals for the Earnings tab.
+     *
+     * @return array{
+     *     todayLabel: string,
+     *     weekLabel: string,
+     *     tipsLabel: string,
+     *     perStopLabel: string,
+     *     payoutLabel: string,
+     *     payoutStatus: string,
+     *     codHeldLabel: string,
+     *     dropsToday: int,
+     *     dropsWeek: int,
+     *     days: list<array{
+     *         label: string,
+     *         totalLabel: string,
+     *         entries: list<array{
+     *             id: string,
+     *             customerName: string,
+     *             orderNumber: string,
+     *             areaLabel: string,
+     *             amountLabel: string,
+     *             tipLabel: string,
+     *             paymentMethod: string
+     *         }>
+     *     }>
+     * }
+     */
+    public static function driverEarnings(): array
+    {
+        $hub = self::driverDashboardHub()['earnings'];
+        $todayDelivered = array_values(array_filter(
+            self::driverAssignedOrders(),
+            static fn (array $order): bool => $order['status'] === 'delivered',
+        ));
+        $past = self::driverPastOrders();
+
+        $days = [
+            [
+                'label' => 'Today',
+                'totalLabel' => $hub['todayLabel'],
+                'entries' => array_map(
+                    self::driverEarningEntry(...),
+                    $todayDelivered,
+                ),
+            ],
+        ];
+
+        foreach ($past as $order) {
+            $label = is_string($order['completedLabel'] ?? null)
+                ? $order['completedLabel']
+                : 'Earlier';
+            $last = $days[array_key_last($days)] ?? null;
+
+            if ($last === null || $last['label'] !== $label) {
+                $days[] = [
+                    'label' => $label,
+                    'totalLabel' => '$0.00',
+                    'entries' => [],
+                ];
+            }
+
+            $days[array_key_last($days)]['entries'][] = self::driverEarningEntry($order);
+        }
+
+        $days = array_map(static function (array $day): array {
+            $cents = array_sum(array_map(
+                static fn (array $entry): int => self::driverMoneyCents($entry['amountLabel']),
+                $day['entries'],
+            ));
+
+            $day['totalLabel'] = $day['label'] === 'Today'
+                ? $day['totalLabel']
+                : self::driverMoneyLabel($cents);
+
+            return $day;
+        }, $days);
+
+        $codCents = array_sum(array_map(
+            static function (array $day): int {
+                return array_sum(array_map(
+                    static fn (array $entry): int => $entry['paymentMethod'] === 'cod'
+                        ? self::driverMoneyCents($entry['amountLabel'])
+                        : 0,
+                    $day['entries'],
+                ));
+            },
+            $days,
+        ));
+
+        return [
+            'todayLabel' => $hub['todayLabel'],
+            'weekLabel' => $hub['weekLabel'],
+            'tipsLabel' => $hub['tipsLabel'],
+            'perStopLabel' => $hub['perStopLabel'],
+            'payoutLabel' => $hub['todayLabel'],
+            'payoutStatus' => 'Clears tonight',
+            'codHeldLabel' => self::driverMoneyLabel($codCents),
+            'dropsToday' => count($todayDelivered),
+            'dropsWeek' => count($todayDelivered) + count($past),
+            'days' => $days,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $order
+     * @return array{
+     *     id: string,
+     *     customerName: string,
+     *     orderNumber: string,
+     *     areaLabel: string,
+     *     amountLabel: string,
+     *     tipLabel: string,
+     *     paymentMethod: string
+     * }
+     */
+    private static function driverEarningEntry(array $order): array
+    {
+        return [
+            'id' => $order['id'],
+            'customerName' => $order['customerName'],
+            'orderNumber' => $order['orderNumber'],
+            'areaLabel' => $order['areaLabel'],
+            'amountLabel' => $order['totalLabel'],
+            'tipLabel' => ($order['paymentMethod'] ?? 'paid') === 'cod' ? '$2.00' : '$1.50',
+            'paymentMethod' => $order['paymentMethod'],
+        ];
+    }
+
+    private static function driverMoneyCents(string $label): int
+    {
+        $digits = preg_replace('/[^\d]/', '', $label) ?? '0';
+
+        return (int) $digits;
+    }
+
+    private static function driverMoneyLabel(int $cents): string
+    {
+        return '$'.number_format($cents / 100, 2);
+    }
+
+    /**
      * @return list<array{
      *     id: string,
      *     orderNumber: string,

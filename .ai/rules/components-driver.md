@@ -18,3 +18,6 @@ Driver tab bar is Dashboard, Orders, Route, Activity, Account. Notifications sta
 
 ## Header avatar opens a right sheet
 The driver header avatar opens DriverAccountSheet (right Sheet on every breakpoint), not a dropdown and not a direct /driver/account link. Keep profile, settings (security), account hub, call support/branch from shared driverSupport, safety check-in, and log out. Do not reuse UserMenuContent, put End shift or Appearance in the sheet, or restore an Alerts tab.
+
+## Driver field tab is Earnings not Activity
+Driver tab bar is Dashboard, Orders, Route, Earnings, Account. Activity is account-only (Account page + account sheet), not a field tab and not a sidebar item. Notifications stay on the header bell. Do not restore an Activity or Alerts footer tab.

@@ -10,3 +10,6 @@ Driver chrome is field-first. Sticky DriverHeader (logo left, notification bell 
 
 ## Driver tab bar has Activity not Alerts
 Below xl the five-tab bar is Dashboard, Orders, Route, Activity, Account. Notifications open from the header bell, not the footer. xl+ sidebar lists those five tabs plus Log Out.
+
+## Driver tab bar has Earnings not Activity
+Below xl the five-tab bar is Dashboard, Orders, Route, Earnings, Account. xl+ sidebar lists those five plus Old orders and Log Out. Activity is not in chrome — open it from Account.

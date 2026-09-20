@@ -238,6 +238,35 @@ export type DriverDashboardHub = {
     alerts: Array<{ id: string; title: string; body: string }>;
 };
 
+export type DriverEarningEntry = {
+    id: string;
+    customerName: string;
+    orderNumber: string;
+    areaLabel: string;
+    amountLabel: string;
+    tipLabel: string;
+    paymentMethod: DriverOrderPaymentMethod;
+};
+
+export type DriverEarningsDay = {
+    label: string;
+    totalLabel: string;
+    entries: DriverEarningEntry[];
+};
+
+export type DriverEarnings = {
+    todayLabel: string;
+    weekLabel: string;
+    tipsLabel: string;
+    perStopLabel: string;
+    payoutLabel: string;
+    payoutStatus: string;
+    codHeldLabel: string;
+    dropsToday: number;
+    dropsWeek: number;
+    days: DriverEarningsDay[];
+};
+
 export type DriverDashboardSummary = {
     activeCount: number;
     deliveredCount: number;

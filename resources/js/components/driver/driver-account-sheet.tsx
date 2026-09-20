@@ -1,13 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import {
-    CircleHelp,
-    CircleUser,
-    LogOut,
-    Phone,
-    Settings,
-    Shield,
-    UserRound,
-} from 'lucide-react';
+import { CircleHelp, CircleUser, LogOut, Phone, ScrollText, Settings, Shield, UserRound } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,6 +19,7 @@ import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
 import { index as accountIndex } from '@/routes/driver/account';
+import { index as activityIndex } from '@/routes/driver/activity';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { User } from '@/types';
@@ -171,6 +164,12 @@ export function DriverAccountSheet({ user }: DriverAccountSheetProps) {
                             icon={Settings}
                         >
                             Settings
+                        </AccountSheetItem>
+                        <AccountSheetItem
+                            href={activityIndex.url()}
+                            icon={ScrollText}
+                        >
+                            Activity
                         </AccountSheetItem>
                     </section>
 

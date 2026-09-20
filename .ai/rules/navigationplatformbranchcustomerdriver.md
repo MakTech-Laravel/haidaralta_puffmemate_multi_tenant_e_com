@@ -14,3 +14,6 @@ Driver navigation is driverNavItems + DriverHeader + DriverMobileNav (below xl) 
 
 ## Driver field tabs include Activity
 Phone and tablet must keep the five-tab bar Dashboard, Orders, Route, Activity, Account. Notifications stay on the header bell. Do not restore an Alerts footer tab.
+
+## Driver field tabs include Earnings
+Phone and tablet keep Dashboard, Orders, Route, Earnings, Account. Activity is optional under Account. Do not restore an Activity or Alerts footer tab.

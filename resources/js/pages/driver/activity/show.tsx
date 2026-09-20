@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { eventBadgeVariant } from '@/lib/activity-log';
-import { dashboard } from '@/routes/driver';
+import { index as accountIndex } from '@/routes/driver/account';
 import { index as activityIndex, show as activityShow } from '@/routes/driver/activity';
 
 function formatWhen(value: string | null): string {
@@ -161,7 +161,7 @@ export default function DriverActivityShow({
 
 DriverActivityShow.layout = (props: { activity: ActivityDetail }) => ({
     breadcrumbs: [
-        { title: 'Dashboard', href: dashboard.url() },
+        { title: 'Account', href: accountIndex.url() },
         { title: 'Activity', href: activityIndex.url() },
         {
             title: props.activity.description,

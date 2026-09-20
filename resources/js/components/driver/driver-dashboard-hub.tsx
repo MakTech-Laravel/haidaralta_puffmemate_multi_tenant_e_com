@@ -1,6 +1,5 @@
 import { Link } from '@inertiajs/react';
 import {
-    Activity,
     Bell,
     Bike,
     CloudRain,
@@ -44,7 +43,7 @@ import { Switch } from '@/components/ui/switch';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { index as accountIndex } from '@/routes/driver/account';
-import { index as activityIndex } from '@/routes/driver/activity';
+import { index as earningsIndex } from '@/routes/driver/earnings';
 import { index as notificationsIndex } from '@/routes/driver/notifications';
 import {
     chat as orderChat,
@@ -115,11 +114,11 @@ export function DriverDashboardHub({
             icon: Bell,
         },
         {
-            id: 'activity',
-            label: 'Activity',
-            hint: 'Your log',
-            href: activityIndex.url(),
-            icon: Activity,
+            id: 'earnings',
+            label: 'Earnings',
+            hint: 'Pay and tips',
+            href: earningsIndex.url(),
+            icon: Wallet,
         },
         {
             id: 'account',
@@ -379,6 +378,7 @@ export function DriverDashboardHub({
                         label: 'Today',
                         value: hub.earnings.todayLabel,
                         hint: `${hub.earnings.tipsLabel} tips`,
+                        href: earningsIndex.url(),
                     },
                     {
                         icon: Star,
@@ -400,12 +400,8 @@ export function DriverDashboardHub({
                     },
                 ].map((stat) => {
                     const Icon = stat.icon;
-
-                    return (
-                        <Card
-                            key={stat.label}
-                            className="gap-2 py-4 shadow-none"
-                        >
+                    const card = (
+                        <Card className="gap-2 py-4 shadow-none">
                             <CardContent className="space-y-2 px-4">
                                 <div className="flex items-center gap-2">
                                     <span className="bg-muted flex size-8 items-center justify-center rounded-full">
@@ -424,6 +420,21 @@ export function DriverDashboardHub({
                             </CardContent>
                         </Card>
                     );
+
+                    if ('href' in stat && stat.href) {
+                        return (
+                            <Link
+                                key={stat.label}
+                                href={stat.href}
+                                prefetch
+                                className="block transition-opacity hover:opacity-95"
+                            >
+                                {card}
+                            </Link>
+                        );
+                    }
+
+                    return card;
                 })}
             </div>
 
@@ -594,7 +605,7 @@ export function DriverDashboardHub({
                     <CardHeader className="gap-1 px-4">
                         <CardTitle className="text-base">Earnings</CardTitle>
                         <CardDescription>
-                            Demo totals for this shift and week.
+                            Totals for this shift and week.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 px-4 text-sm">
@@ -624,6 +635,18 @@ export function DriverDashboardHub({
                             <span>{hub.earnings.perStopLabel}</span>
                         </div>
                     </CardContent>
+                    <CardFooter className="px-4">
+                        <Button
+                            variant="outline"
+                            size="lg"
+                            className="h-12 w-full"
+                            asChild
+                        >
+                            <Link href={earningsIndex.url()} prefetch>
+                                View earnings
+                            </Link>
+                        </Button>
+                    </CardFooter>
                 </Card>
 
                 <Card className="gap-3 py-4 shadow-none">
