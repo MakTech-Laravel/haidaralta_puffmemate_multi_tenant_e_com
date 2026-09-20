@@ -1,17 +1,15 @@
 import {
+    Activity,
     Bell,
     LayoutDashboard,
     LogOut,
-    MessageCircle,
     Package,
-    Activity,
     UserRound,
     type LucideIcon,
 } from 'lucide-react';
 import { dashboard } from '@/routes/driver';
 import { index as accountIndex } from '@/routes/driver/account';
 import { index as activityIndex } from '@/routes/driver/activity';
-import { index as chatsIndex } from '@/routes/driver/chats';
 import { index as notificationsIndex } from '@/routes/driver/notifications';
 import { index as ordersIndex } from '@/routes/driver/orders';
 
@@ -24,7 +22,7 @@ export type DriverNavItem = {
     logout?: boolean;
     /** Shown in the phone/tablet tab bar. Desktop sidebar lists every item. */
     tab?: boolean;
-    /** Short label for the tab bar when `label` is too long for five columns. */
+    /** Short label for the tab bar when `label` is too long for four columns. */
     tabLabel?: string;
 };
 
@@ -36,7 +34,7 @@ function matchesPath(url: string, path: string, nested = false): boolean {
     return nested && url.startsWith(`${path}/`);
 }
 
-/** Five field tabs, then desktop-only activity and sign-out. */
+/** Four field tabs. Order chat is opened from a stop, not from nav. */
 export const driverNavItems: DriverNavItem[] = [
     {
         id: 'dashboard',
@@ -45,14 +43,6 @@ export const driverNavItems: DriverNavItem[] = [
         href: dashboard.url(),
         tab: true,
         match: (url) => matchesPath(url, dashboard.url()),
-    },
-    {
-        id: 'chats',
-        label: 'Chats',
-        icon: MessageCircle,
-        href: chatsIndex.url(),
-        tab: true,
-        match: (url) => matchesPath(url, chatsIndex.url(), true),
     },
     {
         id: 'orders',

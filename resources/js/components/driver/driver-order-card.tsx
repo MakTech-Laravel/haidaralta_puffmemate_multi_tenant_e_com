@@ -1,11 +1,13 @@
 import { Link } from '@inertiajs/react';
+import { MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     driverOrderStatusLabel,
     type DriverAssignedOrder,
 } from '@/components/driver/driver-order-types';
 import { cn } from '@/lib/utils';
-import { show as orderShow } from '@/routes/driver/orders';
+import { chat as orderChat, show as orderShow } from '@/routes/driver/orders';
 
 type DriverOrderCardProps = {
     order: DriverAssignedOrder;
@@ -15,12 +17,12 @@ export function DriverOrderCard({ order }: DriverOrderCardProps) {
     const isDelivered = order.status === 'delivered';
 
     return (
-        <Link
-            href={orderShow.url(order.id)}
-            prefetch
-            className="bg-accent block rounded-xl p-4 transition-opacity hover:opacity-95 sm:p-5"
-        >
-            <article className="flex flex-col gap-3">
+        <article className="bg-accent flex flex-col gap-3 rounded-xl p-4 sm:p-5">
+            <Link
+                href={orderShow.url(order.id)}
+                prefetch
+                className="flex flex-col gap-3 transition-opacity hover:opacity-95"
+            >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0 space-y-1">
                         <p className="text-muted-foreground text-sm font-medium">
@@ -56,7 +58,25 @@ export function DriverOrderCard({ order }: DriverOrderCardProps) {
                         {order.totalLabel}
                     </span>
                 </div>
-            </article>
-        </Link>
+            </Link>
+
+            <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="h-12 w-full"
+                asChild
+            >
+                <Link
+                    href={orderChat.url(order.id)}
+                    prefetch
+                    aria-label={`Chat about order ${order.orderNumber}`}
+                    data-test="driver-order-chat"
+                >
+                    <MessageCircle data-icon="inline-start" />
+                    Chat
+                </Link>
+            </Button>
+        </article>
     );
 }

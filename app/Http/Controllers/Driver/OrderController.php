@@ -30,6 +30,20 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * Order-scoped thread. Drivers enter from the stop, never a global inbox.
+     */
+    public function chat(string $order): Response
+    {
+        $detail = DemoCatalog::driverOrderDetail($order);
+
+        abort_if($detail === null, 404);
+
+        return Inertia::render('driver/orders/chat', [
+            'order' => $detail,
+        ]);
+    }
+
     public function deliver(Request $request, string $order): RedirectResponse
     {
         abort_if(DemoCatalog::driverOrderDetail($order) === null, 404);

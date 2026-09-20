@@ -10,4 +10,4 @@ paths:
 Define portal sidebar trees with navLink / navGroup / navSection from resources/js/components/navigation. Filter with filterNavNodes + canAny (filterNavSections for labeled blocks). Do not add portal-specific sidebar item components or extend legacy AppSidebar/NavMain for platform/branch/customer. UI stays on shadcn Sidebar primitives in SidebarNav.
 
 ## Driver field chrome is not PortalShell
-Driver navigation is driverNavItems + DriverHeader + DriverMobileNav (below xl) + DriverSidebar (xl+). Do not put driver on PortalShell SidebarNav or StorefrontHeader menu/cart. Phone and tablet must keep the five-tab bar.
+Driver navigation is driverNavItems + DriverHeader + DriverMobileNav (below xl) + DriverSidebar (xl+). Do not put driver on PortalShell SidebarNav or StorefrontHeader menu/cart. Phone and tablet must keep the four-tab bar (Dashboard, Orders, Alerts, Account). Chat is order-scoped at driver.orders.chat, not a nav destination.

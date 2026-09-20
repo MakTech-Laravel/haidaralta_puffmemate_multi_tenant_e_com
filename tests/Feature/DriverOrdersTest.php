@@ -45,6 +45,38 @@ test('drivers can view an assigned order detail', function () {
             ->has('order.shippingAddress'));
 });
 
+test('guests are redirected from driver order chat', function () {
+    $this->get(route('driver.orders.chat', 'drv-ord-1001'))
+        ->assertRedirect();
+});
+
+test('drivers can open chat for an assigned order', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.orders.chat', 'drv-ord-1001'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('driver/orders/chat')
+            ->where('order.id', 'drv-ord-1001')
+            ->where('order.orderNumber', 'POM-DRV-1001')
+            ->where('order.customerName', 'Elena Vargas'));
+});
+
+test('unknown driver order chats return 404', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.orders.chat', 'missing-order'))
+        ->assertNotFound();
+});
+
 test('unknown driver orders return 404', function () {
     $driver = User::factory()->create([
         'user_type' => UserType::DRIVER,

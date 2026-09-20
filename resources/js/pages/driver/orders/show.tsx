@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import {
+    chat as orderChat,
     index as ordersIndex,
     show as orderShow,
 } from '@/routes/driver/orders';
@@ -47,9 +48,20 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                                 driverOrderStatusLabel[order.status]}
                         </Badge>
                     </div>
-                    <Button type="button" size="lg" className="h-12 shrink-0">
-                        <MessageCircle data-icon="inline-start" />
-                        Chat
+                    <Button
+                        type="button"
+                        size="lg"
+                        className="h-12 shrink-0"
+                        asChild
+                    >
+                        <Link
+                            href={orderChat.url(order.id)}
+                            prefetch
+                            data-test="driver-order-chat"
+                        >
+                            <MessageCircle data-icon="inline-start" />
+                            Chat
+                        </Link>
                     </Button>
                 </div>
 

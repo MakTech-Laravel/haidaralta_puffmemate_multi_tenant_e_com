@@ -6,5 +6,5 @@ paths:
 
 # Components Driver
 
-## Driver nav is five field tabs plus desktop extras
-driverNavItems is the single source: tab:true items (Home/Chats/Orders/Alerts/Account) render in DriverMobileNav; the full list including My activity and Log Out renders in DriverSidebar. Keep Orders match covering /driver/orders/*. Use Wayfinder URLs. Header icons link to notifications and account — do not put cart, shop menu, or End shift in the driver header.
+## Driver nav is four field tabs plus desktop extras
+driverNavItems is the single source: tab:true items (Dashboard/Orders/Alerts/Account) render in DriverMobileNav (grid-cols-4); the full list including My activity and Log Out renders in DriverSidebar. Keep Orders match covering /driver/orders/* so order chat stays on the Orders tab. Do not add a Chats tab — open chat from the order card or order show. Use Wayfinder URLs. Header icons link to notifications and account — do not put cart, shop menu, or End shift in the driver header.
