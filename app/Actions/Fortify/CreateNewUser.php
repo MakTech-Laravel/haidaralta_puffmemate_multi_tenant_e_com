@@ -9,22 +9,16 @@ use Laravel\Fortify\Contracts\CreatesNewUsers;
 class CreateNewUser implements CreatesNewUsers
 {
     /**
-     * Create a newly registered user from already-validated input.
+     * Create a newly registered customer from already-validated input.
      *
      * @param  array<string, mixed>  $input
      */
     public function create(array $input): User
     {
-        $email = $input['email'] ?? null;
-
-        if (is_string($email) && trim($email) === '') {
-            $email = null;
-        }
-
         return User::create([
-            'name' => $input['name'],
-            'phone' => $input['phone'],
-            'email' => $email,
+            'name' => (string) $input['name'],
+            'phone' => (string) $input['phone'],
+            'email' => null,
             'password' => $input['password'],
             'user_type' => UserType::CUSTOMER,
             'branch_id' => null,
