@@ -21,6 +21,15 @@
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <link rel="manifest" href="{{ route('pwa.manifest') }}">
+        <meta name="theme-color" content="{{ config('pwa.theme_color') }}">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="apple-mobile-web-app-title" content="{{ config('pwa.name') }}">
+        @foreach (\App\Support\PwaAppleSplash::links() as $splash)
+            <link rel="apple-touch-startup-image" href="{{ $splash['href'] }}" media="{{ $splash['media'] }}">
+        @endforeach
 
         @fonts
 

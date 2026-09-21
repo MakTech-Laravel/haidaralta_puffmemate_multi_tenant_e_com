@@ -3,6 +3,7 @@ import { Menu, ShoppingCart, User } from 'lucide-react';
 import { useState } from 'react';
 import { NotificationsPopover } from '@/components/notifications/notifications-popover';
 import type { NotificationItem } from '@/components/notifications/types';
+import { PwaInstallMenuItem } from '@/components/pwa/pwa-install-menu-item';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -266,6 +267,12 @@ export function StorefrontHeader() {
                                             }
                                         />
                                     ))}
+                                    <PwaInstallMenuItem
+                                        className="text-foreground/80 py-1 text-base font-medium"
+                                        onInstalledNavigate={() =>
+                                            setMobileOpen(false)
+                                        }
+                                    />
                                 </nav>
                             </SheetContent>
                         </Sheet>

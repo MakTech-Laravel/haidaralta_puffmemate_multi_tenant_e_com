@@ -73,6 +73,7 @@ ENV VITE_APP_NAME=${VITE_APP_NAME} \
     VITE_FIREBASE_VAPID_KEY=${VITE_FIREBASE_VAPID_KEY}
 
 RUN composer dump-autoload --classmap-authoritative --no-dev --no-interaction \
+    && pnpm generate:pwa-assets \
     && pnpm run build
 
 FROM php:8.4-fpm-bookworm AS production
@@ -128,7 +129,8 @@ ENV QUEUE_CONNECTION=redis \
     QUEUE_MAX_TIME=3600 \
     QUEUE_MEMORY=128 \
     QUEUE_PROCESSES=2 \
-    FCM_SW_SHOW_NOTIFICATION=false
+    FCM_SW_SHOW_NOTIFICATION=false \
+    PWA_SW_ENABLED=true
 
 EXPOSE 80
 

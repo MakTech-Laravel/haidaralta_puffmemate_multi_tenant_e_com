@@ -54,6 +54,10 @@ test('nginx sends health checks through Laravel and has no local websocket proxy
     expect($nginx)
         ->toContain('try_files $uri $uri/ /index.php?$query_string;')
         ->toContain('fastcgi_pass 127.0.0.1:9000;')
+        ->toContain('geolocation=(self)')
+        ->toContain('location = /manifest.webmanifest')
+        ->toContain('location = /firebase-messaging-sw.js')
+        ->toContain('application/manifest+json')
         ->not->toContain('proxy_pass http://127.0.0.1:8080')
         ->not->toMatch('/location\s+=?\s*\/up\s*\{[^}]*return\s+200/s');
 });
@@ -74,6 +78,7 @@ test('the final image excludes frontend and development tooling', function () {
         ->toContain('COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./')
         ->toContain('corepack enable pnpm')
         ->toContain('pnpm install --frozen-lockfile')
+        ->toContain('pnpm generate:pwa-assets')
         ->toContain('pnpm run build')
         ->toContain('composer install')
         ->toContain('pcntl pdo_mysql pdo_pgsql zip')

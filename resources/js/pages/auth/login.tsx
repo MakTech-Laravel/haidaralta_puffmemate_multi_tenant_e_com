@@ -11,6 +11,7 @@ import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import PasskeyVerify from '@/components/passkey-verify';
+import { PwaInstallMenuItem } from '@/components/pwa/pwa-install-menu-item';
 
 type Props = {
     status?: string;
@@ -104,6 +105,8 @@ export default function Login({ status, canResetPassword }: Props) {
                                 Sign up
                             </TextLink>
                         </div>
+
+                        <PwaInstallMenuItem className="text-muted-foreground justify-center text-sm" />
                     </>
                 )}
             </Form>

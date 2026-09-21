@@ -7,10 +7,14 @@ use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\ShopController;
+use App\Http\Controllers\WebAppManifestController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/firebase-messaging-sw.js', FirebaseMessagingServiceWorkerController::class)
     ->name('firebase.messaging-sw');
+
+Route::get('/manifest.webmanifest', WebAppManifestController::class)
+    ->name('pwa.manifest');
 
 Route::get('/', HomeController::class)->name('home');
 

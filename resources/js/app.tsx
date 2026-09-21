@@ -3,10 +3,12 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { AppToaster } from '@/components/app-toaster';
 import { ErrorBoundaryFallback } from '@/components/error-boundary/error-boundary-fallback';
 import { pushError } from '@/components/error-boundary/error-store';
+import { PwaInstallProvider } from '@/components/pwa/pwa-install-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { getEcho, logEchoConfig } from '@/echo';
 import { initializeTheme } from '@/hooks/use-appearance';
 import { useDevErrorFallback } from '@/hooks/useDevErrorFallback';
+import { startPwaServiceWorkerLifecycle } from '@/lib/pwa';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import BranchLayout from '@/layouts/branch/branch-layout';
@@ -22,6 +24,7 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 if (typeof window !== 'undefined') {
     getEcho();
     logEchoConfig();
+    startPwaServiceWorkerLifecycle();
 }
 
 void createInertiaApp({
@@ -52,20 +55,22 @@ void createInertiaApp({
 
         return (
             <TooltipProvider delayDuration={0}>
-                <ErrorBoundary
-                    FallbackComponent={ErrorBoundaryFallback}
-                    onReset={() => router.reload()}
-                    onError={(error, info) => {
-                        pushError(error, info.componentStack ?? null);
+                <PwaInstallProvider>
+                    <ErrorBoundary
+                        FallbackComponent={ErrorBoundaryFallback}
+                        onReset={() => router.reload()}
+                        onError={(error, info) => {
+                            pushError(error, info.componentStack ?? null);
 
-                        if (useDevErrorFallback()) {
-                            console.error(error, info.componentStack);
-                        }
-                    }}
-                >
-                    {app}
-                </ErrorBoundary>
-                <AppToaster authUserId={authUserId} />
+                            if (useDevErrorFallback()) {
+                                console.error(error, info.componentStack);
+                            }
+                        }}
+                    >
+                        {app}
+                    </ErrorBoundary>
+                    <AppToaster authUserId={authUserId} />
+                </PwaInstallProvider>
             </TooltipProvider>
         );
     },
