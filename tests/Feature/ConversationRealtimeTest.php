@@ -42,10 +42,11 @@ function openThread(): Conversation
     return app(ConversationService::class)->openForOrder($order);
 }
 
-test('sending a message broadcasts to the thread and to every participant inbox', function () {
+test('sending a message broadcasts to the thread and to operators who can see the inbox', function () {
     Event::fake([MessageCreated::class, ConversationInboxUpdated::class]);
 
     $operator = User::query()->where('email', UserSeeder::BRANCH_1_ADMIN)->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $conversation = openThread();
 
     app(ConversationService::class)->sendMessage($conversation, $operator, 'The driver is five minutes away.');
@@ -57,7 +58,42 @@ test('sending a message broadcasts to the thread and to every participant inbox'
 
     Event::assertDispatched(
         ConversationInboxUpdated::class,
-        fn (ConversationInboxUpdated $event) => in_array($operator->id, $event->userIds, true),
+        function (ConversationInboxUpdated $event) use ($operator, $admin): bool {
+            $payload = $event->broadcastWith();
+
+            return in_array($operator->id, $event->userIds, true)
+                && in_array($admin->id, $event->userIds, true)
+                && ($payload['message']['body'] ?? null) === 'The driver is five minutes away.'
+                && ($payload['row']['id'] ?? null) === $event->conversation->id;
+        },
+    );
+});
+
+test('opening a conversation broadcasts the inbox row to operators who are not participants', function () {
+    Event::fake([ConversationInboxUpdated::class]);
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $customer = User::query()->where('email', UserSeeder::CUSTOMER)->firstOrFail();
+
+    $order = Order::factory()->create([
+        'branch_id' => $sydney->id,
+        'customer_id' => $customer->id,
+    ]);
+
+    $conversation = app(ConversationService::class)->openForOrder($order);
+
+    Event::assertDispatched(
+        ConversationInboxUpdated::class,
+        function (ConversationInboxUpdated $event) use ($admin, $conversation): bool {
+            $payload = $event->broadcastWith();
+
+            return in_array($admin->id, $event->userIds, true)
+                && $event->conversation->is($conversation)
+                && ($payload['row']['id'] ?? null) === $conversation->id
+                && ($payload['row']['order_number'] ?? null) === $conversation->order->order_number
+                && is_array($payload['message']);
+        },
     );
 });
 
@@ -173,9 +209,9 @@ function useReverbForConversationAuth(): void
 }
 
 test('the presence channel authorizes operators and rejects staff without the permission', function () {
-    useReverbForConversationAuth();
-
     $conversation = openThread();
+
+    useReverbForConversationAuth();
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $outsider = User::factory()->create([

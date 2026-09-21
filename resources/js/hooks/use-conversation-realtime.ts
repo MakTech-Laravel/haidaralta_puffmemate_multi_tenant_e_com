@@ -85,53 +85,55 @@ export function useConversationRealtime({
 
         whisperRef.current = (event, data) => presence.whisper(event, data);
 
-        presence
-            .here((members: PresenceMember[]) =>
-                setOnline(withoutViewer(members)),
-            )
-            .joining((member: PresenceMember) =>
-                setOnline((current) =>
-                    withoutViewer([
-                        ...current.filter((one) => one.id !== member.id),
-                        member,
-                    ]),
-                ),
-            )
-            .leaving((member: PresenceMember) => {
-                setOnline((current) =>
-                    current.filter((one) => one.id !== member.id),
-                );
-                setTyping((current) =>
-                    current.filter((one) => one.id !== member.id),
-                );
-            })
-            .listen(MESSAGE_EVENT, (payload: MessageCreatedPayload) => {
-                // A delivered message ends that sender's typing indicator.
-                setTyping((current) =>
-                    current.filter(
-                        (one) => one.id !== payload.message.sender?.id,
-                    ),
-                );
-                onMessage(payload);
-            })
-            .listen(CLOSED_EVENT, onClosed)
-            .listen(RECEIPTS_EVENT, onReceipts)
-            .listenForWhisper(TYPING_WHISPER, (peer: TypingWhisper) => {
-                if (peer.id === viewerId) {
-                    return;
-                }
+        presence.here((members: PresenceMember[]) =>
+            setOnline(withoutViewer(members)),
+        );
+        presence.joining((member: PresenceMember) =>
+            setOnline((current) =>
+                withoutViewer([
+                    ...current.filter((one) => one.id !== member.id),
+                    member,
+                ]),
+            ),
+        );
+        presence.leaving((member: PresenceMember) => {
+            setOnline((current) =>
+                current.filter((one) => one.id !== member.id),
+            );
+            setTyping((current) =>
+                current.filter((one) => one.id !== member.id),
+            );
+        });
+        presence.error((error: unknown) => {
+            if (import.meta.env.DEV) {
+                console.error('[echo] conversation presence', channel, error);
+            }
+        });
+        presence.listen(MESSAGE_EVENT, (payload: MessageCreatedPayload) => {
+            // A delivered message ends that sender's typing indicator.
+            setTyping((current) =>
+                current.filter((one) => one.id !== payload.message.sender?.id),
+            );
+            onMessage(payload);
+        });
+        presence.listen(CLOSED_EVENT, onClosed);
+        presence.listen(RECEIPTS_EVENT, onReceipts);
+        presence.listenForWhisper(TYPING_WHISPER, (peer: TypingWhisper) => {
+            if (peer.id === viewerId) {
+                return;
+            }
 
-                setTyping((current) => [
-                    ...current.filter((one) => one.id !== peer.id),
-                    { id: peer.id, name: peer.name, avatar_url: null },
-                ]);
+            setTyping((current) => [
+                ...current.filter((one) => one.id !== peer.id),
+                { id: peer.id, name: peer.name, avatar_url: null },
+            ]);
 
-                window.setTimeout(() => {
-                    setTyping((current) =>
-                        current.filter((one) => one.id !== peer.id),
-                    );
-                }, TYPING_TTL_MS);
-            });
+            window.setTimeout(() => {
+                setTyping((current) =>
+                    current.filter((one) => one.id !== peer.id),
+                );
+            }, TYPING_TTL_MS);
+        });
 
         return () => {
             whisperRef.current = null;

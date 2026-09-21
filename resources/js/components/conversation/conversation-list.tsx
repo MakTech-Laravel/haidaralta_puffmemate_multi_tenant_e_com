@@ -14,8 +14,8 @@ import { relativeTime } from './format';
 import type { ConversationRow, InboxParticipant } from './types';
 
 const STATUS_TABS = [
-    { value: 'all', label: 'All' },
     { value: 'open', label: 'Open' },
+    { value: 'all', label: 'All' },
     { value: 'closed', label: 'Closed' },
 ] as const;
 

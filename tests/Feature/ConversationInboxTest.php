@@ -69,6 +69,7 @@ test('the platform inbox renders the workspace with conversation rows', function
             ->component('platform/conversations/index')
             ->where('thread', null)
             ->has('inboxMeta.statuses')
+            ->where('inboxMeta.filters.status', 'open')
             ->has('conversations', 1)
             ->where('conversations.0.id', $conversation->id)
             ->where('conversations.0.last_message_preview', 'Where is my order?'));
@@ -128,6 +129,28 @@ test('the status filter narrows the inbox to closed threads', function () {
         ->assertInertia(fn ($page) => $page
             ->has('conversations', 1)
             ->where('conversations.0.id', $closed->id));
+});
+
+test('the inbox defaults to open threads and omits closed ones', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $open = seedThread($sydney, $admin);
+    $closed = seedThread($sydney, $admin);
+    $closed->forceFill(['status' => 'closed', 'closed_at' => now()])->save();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.conversations.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('inboxMeta.filters.status', 'open')
+            ->has('conversations', 1)
+            ->where('conversations.0.id', $open->id));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.conversations.index', ['status' => 'all']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('conversations', 2));
 });
 
 test('unread counts exclude the viewers own messages and are cached per user', function () {

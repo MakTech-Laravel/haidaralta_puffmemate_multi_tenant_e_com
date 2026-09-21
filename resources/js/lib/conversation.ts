@@ -2,6 +2,7 @@ import type {
     ConversationMessage,
     OrderOption,
 } from '@/components/conversation/types';
+import { getEcho } from '@/echo';
 
 function xsrfToken(): string {
     const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
@@ -10,11 +11,20 @@ function xsrfToken(): string {
 }
 
 function jsonHeaders(): Record<string, string> {
-    return {
+    const headers: Record<string, string> = {
         Accept: 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
         'X-XSRF-TOKEN': xsrfToken(),
     };
+
+    // Lets broadcast()->toOthers() skip this browser's Echo socket.
+    const socketId = getEcho()?.socketId();
+
+    if (socketId) {
+        headers['X-Socket-ID'] = socketId;
+    }
+
+    return headers;
 }
 
 export class ConversationRequestError extends Error {
