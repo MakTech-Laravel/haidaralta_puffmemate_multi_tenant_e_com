@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import { useAppBrand } from '@/hooks/use-app-brand';
 import { cn } from '@/lib/utils';
 import { shop } from '@/routes';
 
@@ -8,6 +9,8 @@ type HomeDealsBannerProps = {
 };
 
 export function HomeDealsBanner({ className }: HomeDealsBannerProps) {
+    const brand = useAppBrand();
+
     return (
         <div
             id="home-deals"
@@ -18,7 +21,7 @@ export function HomeDealsBanner({ className }: HomeDealsBannerProps) {
         >
             <div className="max-w-xl flex-1 text-center md:text-left">
                 <p className="text-primary font-inter text-xs font-semibold tracking-[0.16em] uppercase sm:text-sm">
-                    PuffMeMate Deals
+                    {brand.shortName} Deals
                 </p>
                 <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
                     Bigger brands.

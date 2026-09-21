@@ -9,6 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { eventBadgeVariant } from '@/lib/activity-log';
+import { formatAppDateTime } from '@/lib/datetime';
 import { index as activityIndex, show as activityShow } from '@/routes/driver/activity';
 import { index as profileIndex } from '@/routes/driver/profile';
 
@@ -17,19 +18,7 @@ function formatWhen(value: string | null): string {
         return '—';
     }
 
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-        return '—';
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-        hour: 'numeric',
-        minute: '2-digit',
-    }).format(date);
+    return formatAppDateTime(value) || '—';
 }
 
 function formatValue(value: unknown): string {

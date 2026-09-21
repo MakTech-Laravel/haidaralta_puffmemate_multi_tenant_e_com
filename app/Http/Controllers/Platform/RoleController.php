@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Platform;
 use App\DataTables\PlatformRoleDataTable;
 use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
+use App\Exports\RoleExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ExportSpreadsheetRequest;
 use App\Http\Requests\Platform\StoreRoleRequest;
 use App\Http\Requests\Platform\UpdateRoleRequest;
 use App\Models\Role;
@@ -17,8 +19,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\PermissionRegistrar;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class RoleController extends Controller
 {
@@ -33,37 +36,23 @@ class RoleController extends Controller
     }
 
     /**
-     * Export filtered platform roles as CSV.
+     * Export filtered platform roles as CSV or Excel.
      */
-    public function export(Request $request): StreamedResponse
+    public function export(ExportSpreadsheetRequest $request): BinaryFileResponse
     {
         $this->usePlatformTeam();
 
         $filters = $this->resolveFilters($request);
-        $roles = $this->rolesQuery($filters)->get();
-        $filename = 'platform-roles-'.now()->format('Y-m-d').'.csv';
+        $rows = $this->rolesQuery($filters)
+            ->get()
+            ->map(fn (Role $role): array => $this->mapRole($role))
+            ->values();
 
-        return response()->streamDownload(function () use ($roles): void {
-            $handle = fopen('php://output', 'w');
-
-            fputcsv($handle, ['id', 'name', 'permissions_count', 'users_count', 'is_system']);
-
-            foreach ($roles as $role) {
-                $mapped = $this->mapRole($role);
-
-                fputcsv($handle, [
-                    $mapped['id'],
-                    $mapped['name'],
-                    $mapped['permissions_count'],
-                    $mapped['users_count'],
-                    $mapped['is_super_admin'] ? 'yes' : 'no',
-                ]);
-            }
-
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+        return Excel::download(
+            new RoleExport($rows),
+            $request->filename('platform-roles'),
+            $request->exportFormat()->writerType(),
+        );
     }
 
     /**

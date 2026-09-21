@@ -2,6 +2,7 @@
 
 namespace App\Support\Storefront;
 
+use App\Services\Application\PaymentGatewaySettingsService;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class DemoCatalog
@@ -538,20 +539,7 @@ class DemoCatalog
                     'meta' => '2–5 business days',
                 ],
             ],
-            'paymentMethods' => [
-                [
-                    'id' => 'cash',
-                    'title' => 'Cash on delivery',
-                    'description' => 'Pay the driver in cash',
-                    'badge' => '$',
-                ],
-                [
-                    'id' => 'card',
-                    'title' => 'Card on delivery',
-                    'description' => 'Driver carries an EFTPOS machine',
-                    'badge' => 'EFT',
-                ],
-            ],
+            'paymentMethods' => app(PaymentGatewaySettingsService::class)->enabledMethods(),
             'timeSlots' => [
                 ['id' => 'morning', 'label' => '9:00 AM – 12:00 PM'],
                 ['id' => 'afternoon', 'label' => '12:00 PM – 3:00 PM'],

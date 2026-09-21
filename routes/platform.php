@@ -16,8 +16,10 @@ use App\Http\Controllers\Platform\DashboardController as PlatformDashboardContro
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
+use App\Http\Controllers\Platform\GeneralSettingsController as PlatformGeneralSettingsController;
 use App\Http\Controllers\Platform\NotificationController as PlatformNotificationController;
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
+use App\Http\Controllers\Platform\PaymentGatewaySettingsController as PlatformPaymentGatewaySettingsController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
@@ -28,6 +30,7 @@ use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
 use App\Http\Controllers\Platform\ShiftAssignmentController as PlatformShiftAssignmentController;
 use App\Http\Controllers\Platform\ShiftRosterPeriodController as PlatformShiftRosterPeriodController;
 use App\Http\Controllers\Platform\ShiftTemplateController as PlatformShiftTemplateController;
+use App\Http\Controllers\Platform\SmtpSettingsController as PlatformSmtpSettingsController;
 use App\Http\Controllers\Platform\StockController as PlatformStockController;
 use App\Http\Controllers\Platform\TransferController as PlatformTransferController;
 use App\Support\ProductManageRedirect;
@@ -321,6 +324,26 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::middleware(['permission:view-activity-logs'])->group(function () {
         Route::get('activity-logs', [PlatformActivityLogController::class, 'index'])->name('platform.activity-logs.index');
         Route::get('activity-logs/{activity}', [PlatformActivityLogController::class, 'show'])->name('platform.activity-logs.show');
+    });
+
+    Route::middleware(['permission:manage-application-settings'])->prefix('settings')->group(function () {
+        Route::get('general', [PlatformGeneralSettingsController::class, 'edit'])
+            ->name('platform.settings.general.edit');
+        Route::put('general', [PlatformGeneralSettingsController::class, 'update'])
+            ->name('platform.settings.general.update');
+
+        Route::get('smtp', [PlatformSmtpSettingsController::class, 'edit'])
+            ->name('platform.settings.smtp.edit');
+        Route::put('smtp', [PlatformSmtpSettingsController::class, 'update'])
+            ->name('platform.settings.smtp.update');
+        Route::post('smtp/test', [PlatformSmtpSettingsController::class, 'test'])
+            ->middleware('throttle:6,1')
+            ->name('platform.settings.smtp.test');
+
+        Route::get('payment-gateway', [PlatformPaymentGatewaySettingsController::class, 'edit'])
+            ->name('platform.settings.payment-gateway.edit');
+        Route::put('payment-gateway', [PlatformPaymentGatewaySettingsController::class, 'update'])
+            ->name('platform.settings.payment-gateway.update');
     });
 
     Route::middleware(['permission:manage-database-backups'])->group(function () {

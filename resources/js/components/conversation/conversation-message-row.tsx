@@ -20,6 +20,7 @@ import {
     MessageHeader,
 } from '@/components/ui/message';
 import { cn } from '@/lib/utils';
+import { clockTime } from './format';
 import { MessageReceipt } from './message-receipt';
 import type {
     ConversationMessage,
@@ -37,14 +38,7 @@ function initials(name: string): string {
 }
 
 function formatTime(iso: string | null): string {
-    if (!iso) {
-        return '';
-    }
-
-    return new Date(iso).toLocaleTimeString(undefined, {
-        hour: 'numeric',
-        minute: '2-digit',
-    });
+    return clockTime(iso);
 }
 
 function formatSize(bytes: number): string {

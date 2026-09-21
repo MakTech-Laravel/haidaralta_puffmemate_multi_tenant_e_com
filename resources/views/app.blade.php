@@ -12,17 +12,37 @@
             })();
         </script>
 
+        @php
+            $applicationSettings = app(\App\Services\Application\ApplicationSettingsService::class);
+            $themeColor = (string) config('pwa.theme_color', '#C4472F');
+            $shortDescription = $applicationSettings->shortDescription();
+            $hasCustomFavicon = $applicationSettings->hasCustomFavicon();
+        @endphp
+
         <style>
             html {
                 background-color: oklch(1 0 0);
             }
+
+            :root {
+                --primary: {{ $themeColor }};
+                --ring: {{ $themeColor }};
+                --sidebar-primary: {{ $themeColor }};
+                --sidebar-ring: {{ $themeColor }};
+                --chart-1: {{ $themeColor }};
+            }
         </style>
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <link rel="icon" href="{{ $applicationSettings->faviconHref() }}" sizes="any">
+        @unless ($hasCustomFavicon)
+            <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+        @endunless
+        <link rel="apple-touch-icon" href="{{ $applicationSettings->appleTouchIconHref() }}">
         <link rel="manifest" href="{{ route('pwa.manifest') }}">
-        <meta name="theme-color" content="{{ config('pwa.theme_color') }}">
+        <meta name="theme-color" content="{{ $themeColor }}">
+        @if ($shortDescription)
+            <meta name="description" content="{{ $shortDescription }}">
+        @endif
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="default">

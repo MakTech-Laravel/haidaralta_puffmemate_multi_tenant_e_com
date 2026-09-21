@@ -26,6 +26,7 @@ import {
     backupTypeBadgeVariant,
     formatBytes,
 } from '@/lib/database-backup';
+import { formatAppDateTime } from '@/lib/datetime';
 
 type BackupZip = {
     path: string;
@@ -56,6 +57,12 @@ type CleanupPolicy = {
 function formatWhen(value: string | null): string {
     if (!value) {
         return '—';
+    }
+
+    const formatted = formatAppDateTime(value);
+
+    if (formatted !== '') {
+        return formatted;
     }
 
     const date = new Date(value);

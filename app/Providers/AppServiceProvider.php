@@ -3,8 +3,11 @@
 namespace App\Providers;
 
 use App\Contracts\SendsSms;
+use App\Listeners\ApplyMailReplyTo;
 use App\Listeners\AuthActivitySubscriber;
 use App\Models\User;
+use App\Services\Application\ApplicationSettingsService;
+use App\Services\Application\SmtpSettingsService;
 use App\Services\Sms\FakeSmsSender;
 use App\Services\Sms\LogSmsSender;
 use App\Support\OpsDashboardAccess;
@@ -12,6 +15,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Auth\Access\Gate as GateContract;
 use Illuminate\Http\Request;
+use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -55,11 +59,23 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureApplicationSettingsOverlays();
         $this->configureActivityLogContext();
         $this->configureOpsDashboards();
         $this->configureRateLimiters();
 
         Event::subscribe(AuthActivitySubscriber::class);
+        Event::listen(MessageSending::class, ApplyMailReplyTo::class);
+    }
+
+    protected function configureApplicationSettingsOverlays(): void
+    {
+        try {
+            app(ApplicationSettingsService::class)->bootRuntimeOverlay();
+            app(SmtpSettingsService::class)->bootRuntimeOverlay();
+        } catch (\Throwable) {
+            // Tables may not exist yet during early migrate/install.
+        }
     }
 
     /**

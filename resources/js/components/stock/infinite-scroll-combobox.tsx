@@ -16,26 +16,15 @@ import {
 import { fetchStockOptions } from '@/lib/stock-query';
 import { cn } from '@/lib/utils';
 
-type ComboboxOption = {
+export type ComboboxOption = {
     value: string;
     label: string;
     description?: string | null;
 };
 
-export function InfiniteScrollCombobox({
-    optionsUrl,
-    value,
-    onValueChange,
-    selectedLabel,
-    placeholder,
-    searchPlaceholder,
-    emptyText,
-    noneLabel,
-    className,
-    id,
-    descriptionKey = 'sku',
-}: {
-    optionsUrl: string;
+const PAGE_SIZE = 20;
+
+type InfiniteScrollComboboxBaseProps = {
     value: string | null;
     onValueChange: (value: string | null) => void;
     selectedLabel?: string | null;
@@ -45,8 +34,48 @@ export function InfiniteScrollCombobox({
     noneLabel?: string;
     className?: string;
     id?: string;
+};
+
+type InfiniteScrollComboboxRemoteProps = InfiniteScrollComboboxBaseProps & {
+    optionsUrl: string;
+    staticOptions?: never;
     descriptionKey?: 'sku' | null;
-}) {
+};
+
+type InfiniteScrollComboboxStaticProps = InfiniteScrollComboboxBaseProps & {
+    optionsUrl?: never;
+    staticOptions: ComboboxOption[];
+    descriptionKey?: never;
+};
+
+export type InfiniteScrollComboboxProps =
+    | InfiniteScrollComboboxRemoteProps
+    | InfiniteScrollComboboxStaticProps;
+
+export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
+    const {
+        value,
+        onValueChange,
+        selectedLabel,
+        placeholder,
+        searchPlaceholder,
+        emptyText,
+        noneLabel,
+        className,
+        id,
+    } = props;
+
+    const optionsUrl =
+        'optionsUrl' in props && props.optionsUrl ? props.optionsUrl : null;
+    const staticOptions =
+        'staticOptions' in props && props.staticOptions
+            ? props.staticOptions
+            : null;
+    const descriptionKey =
+        optionsUrl && 'descriptionKey' in props
+            ? (props.descriptionKey ?? 'sku')
+            : null;
+
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -80,7 +109,52 @@ export function InfiniteScrollCombobox({
 
         return () => controller.abort();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, debouncedSearch, optionsUrl]);
+    }, [open, debouncedSearch, optionsUrl, staticOptions]);
+
+    const loadStaticPage = (
+        nextPage: number,
+        nextSearch: string,
+        replace: boolean,
+    ): void => {
+        if (!staticOptions) {
+            return;
+        }
+
+        const query = nextSearch.toLowerCase();
+        const filtered = query
+            ? staticOptions.filter(
+                  (option) =>
+                      option.label.toLowerCase().includes(query) ||
+                      option.value.toLowerCase().includes(query) ||
+                      (option.description ?? '')
+                          .toLowerCase()
+                          .includes(query),
+              )
+            : staticOptions;
+
+        const lastPage = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+        const start = (nextPage - 1) * PAGE_SIZE;
+        const mapped = filtered.slice(start, start + PAGE_SIZE);
+
+        setOptions((current) => {
+            const source = replace ? mapped : [...current, ...mapped];
+            const seen = new Set<string>();
+
+            return source.filter((option) => {
+                if (seen.has(option.value)) {
+                    return false;
+                }
+
+                seen.add(option.value);
+
+                return true;
+            });
+        });
+        pageRef.current = nextPage;
+        lastPageRef.current = lastPage;
+        loadingRef.current = false;
+        setLoading(false);
+    };
 
     const loadPage = async (
         nextPage: number,
@@ -95,11 +169,24 @@ export function InfiniteScrollCombobox({
         loadingRef.current = true;
         setLoading(true);
 
+        if (staticOptions) {
+            loadStaticPage(nextPage, nextSearch, replace);
+
+            return;
+        }
+
+        if (!optionsUrl) {
+            loadingRef.current = false;
+            setLoading(false);
+
+            return;
+        }
+
         try {
             const payload = await fetchStockOptions(optionsUrl, {
                 search: nextSearch,
                 page: nextPage,
-                perPage: 20,
+                perPage: PAGE_SIZE,
                 signal,
             });
 
@@ -166,8 +253,12 @@ export function InfiniteScrollCombobox({
     };
 
     const hasSelection = Boolean(value && value !== 'all');
+    const staticSelectedLabel = staticOptions?.find(
+        (option) => option.value === value,
+    )?.label;
     const displayLabel = hasSelection
         ? (selectedLabel ??
+          staticSelectedLabel ??
           options.find((option) => option.value === value)?.label ??
           placeholder)
         : (noneLabel ?? placeholder);

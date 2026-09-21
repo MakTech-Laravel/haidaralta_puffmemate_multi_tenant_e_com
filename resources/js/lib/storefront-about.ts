@@ -21,7 +21,7 @@ export const aboutHero = {
 export const aboutWhoWeAre = {
     eyebrow: 'Who we are',
     heading: 'More Than An Online Store',
-    body: 'PuffMeMate connects you with trusted local branches for cigarettes, tobacco, vapes and more — with instant delivery, clear stock, and a simple checkout.',
+    body: '{name} connects you with trusted local branches for cigarettes, tobacco, vapes and more — with instant delivery, clear stock, and a simple checkout.',
     mediaImage: '/images/storefront/about.jpg',
     mediaTitle: 'Connected Platform',
     mediaCaption: 'Download App Now. Shopping, Branches, Delivery.',

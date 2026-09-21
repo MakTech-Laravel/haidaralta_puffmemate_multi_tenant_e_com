@@ -1,10 +1,10 @@
 import { Link } from '@inertiajs/react';
+import { useAppBrand } from '@/hooks/use-app-brand';
 import {
     storefrontFooterBlurb,
     storefrontFooterBrand,
     storefrontFooterCustomer,
     storefrontFooterShop,
-    storefrontLogoSrc,
     type StorefrontChromeItem,
 } from '@/lib/storefront-chrome';
 import { about, contact, faqs, home, privacy, shop, wholesale } from '@/routes';
@@ -71,6 +71,8 @@ function FooterColumn({
 }
 
 export function StorefrontFooter() {
+    const brand = useAppBrand();
+
     return (
         <footer className="border-border bg-muted mt-auto border-t">
             <div className="container mx-auto grid gap-10 px-4 py-12 sm:px-6 sm:py-14 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
@@ -81,13 +83,13 @@ export function StorefrontFooter() {
                         className="flex shrink-0 items-center"
                     >
                         <img
-                            src={storefrontLogoSrc}
-                            alt="PuffMeMate"
+                            src={brand.logoUrl}
+                            alt={brand.name}
                             className="h-9 w-auto object-contain sm:h-11"
                         />
                     </Link>
                     <p className="text-muted-foreground max-w-xs text-sm leading-relaxed font-normal">
-                        {storefrontFooterBlurb}
+                        {brand.description || storefrontFooterBlurb}
                     </p>
                 </div>
 
@@ -97,7 +99,7 @@ export function StorefrontFooter() {
                     items={storefrontFooterCustomer}
                 />
                 <FooterColumn
-                    title="PuffMeMate"
+                    title={brand.shortName}
                     items={storefrontFooterBrand}
                 />
             </div>

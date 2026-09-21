@@ -93,6 +93,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/shift-*.tsx,database/seeders/WorkforceShiftSeeder.php,app/Support/WorkforcePayload.php | .ai/rules/seeders-support.md |
 | database/seeders/** | .ai/rules/seeders.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
+| app/Services/Application/**, app/Models/{Application,Smtp,PaymentGateway}Setting.php, resources/js/pages/platform/settings/**, resources/js/lib/datetime.ts | .ai/rules/application-settings.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/stock.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts | .ai/rules/storefront.md |

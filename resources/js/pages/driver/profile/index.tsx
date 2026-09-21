@@ -12,6 +12,7 @@ import type { ReactNode } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { formatDutyLine } from '@/components/admin/workforce-types';
 import { useInitials } from '@/hooks/use-initials';
 import { edit as editProfile, index as profileIndex } from '@/routes/driver/profile';
 
@@ -285,18 +286,7 @@ export default function DriverProfileIndex({
                                         </Badge>
                                     </div>
                                     <p className="text-muted-foreground pl-6 text-sm">
-                                        {[
-                                            shift.shift_template_name,
-                                            shift.start_date && shift.end_date
-                                                ? `${shift.start_date} – ${shift.end_date}`
-                                                : null,
-                                            shift.days_label,
-                                            shift.start_time && shift.end_time
-                                                ? `${shift.start_time}–${shift.end_time}`
-                                                : null,
-                                        ]
-                                            .filter(Boolean)
-                                            .join(' · ')}
+                                        {formatDutyLine(shift)}
                                     </p>
                                 </li>
                             ))}

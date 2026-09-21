@@ -1,5 +1,5 @@
-import { usePage } from '@inertiajs/react';
-import AppLogoIcon from '@/components/app-logo-icon';
+import { AppBrandMark } from '@/components/app-brand-mark';
+import { useAppBrand } from '@/hooks/use-app-brand';
 import { cn } from '@/lib/utils';
 
 export function PortalBrand({
@@ -11,21 +11,19 @@ export function PortalBrand({
     subtitle?: string;
     tone?: 'default' | 'inverse';
 }) {
-    const { name } = usePage().props;
+    const brand = useAppBrand();
     const inverse = tone === 'inverse';
 
     return (
         <>
-            <div
-                className={cn(
-                    'flex aspect-square size-8 items-center justify-center rounded-md',
+            <AppBrandMark
+                defaultBackgroundClassName={
                     inverse
-                        ? 'text-foreground bg-white'
-                        : 'bg-sidebar-primary text-sidebar-primary-foreground',
-                )}
-            >
-                <AppLogoIcon className="size-5 fill-current" />
-            </div>
+                        ? 'bg-white text-foreground'
+                        : 'bg-sidebar-primary text-sidebar-primary-foreground'
+                }
+                iconClassName="size-5 fill-current"
+            />
             <div className="ml-1 grid min-w-0 flex-1 text-left text-sm group-data-[collapsible=icon]:hidden">
                 {eyebrow ? (
                     <span
@@ -45,7 +43,7 @@ export function PortalBrand({
                         inverse && 'text-primary-foreground',
                     )}
                 >
-                    {name}
+                    {brand.name}
                 </span>
                 {subtitle ? (
                     <span

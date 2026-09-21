@@ -3,6 +3,7 @@ import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { eventBadgeVariant } from '@/lib/activity-log';
+import { formatAppDateTime } from '@/lib/datetime';
 import type { ActivityDetail } from '@/components/activity-log/types';
 
 function formatWhen(value: string | null): string {
@@ -10,7 +11,7 @@ function formatWhen(value: string | null): string {
         return '—';
     }
 
-    return new Date(value).toLocaleString();
+    return formatAppDateTime(value) || '—';
 }
 
 function formatValue(value: unknown): string {

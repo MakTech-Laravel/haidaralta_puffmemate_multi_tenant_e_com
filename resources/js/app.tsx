@@ -1,6 +1,7 @@
 import { createInertiaApp, router } from '@inertiajs/react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { AppToaster } from '@/components/app-toaster';
+import { ApplicationTheme } from '@/components/application-theme';
 import { ErrorBoundaryFallback } from '@/components/error-boundary/error-boundary-fallback';
 import { pushError } from '@/components/error-boundary/error-store';
 import { PwaInstallProvider } from '@/components/pwa/pwa-install-provider';
@@ -19,7 +20,8 @@ import SettingsPortalLayout from '@/layouts/settings/settings-portal-layout';
 import StorefrontLayout from '@/layouts/storefront/storefront-layout';
 import type { Auth } from '@/types/auth';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const fallbackAppName = import.meta.env.VITE_APP_NAME || 'Laravel';
+let resolvedAppName = fallbackAppName;
 
 if (typeof window !== 'undefined') {
     getEcho();
@@ -28,7 +30,8 @@ if (typeof window !== 'undefined') {
 }
 
 void createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) =>
+        title ? `${title} - ${resolvedAppName}` : resolvedAppName,
     layout: (name) => {
         switch (true) {
             case name.startsWith('storefront/'):
@@ -51,9 +54,14 @@ void createInertiaApp({
     },
     strictMode: true,
     withApp(app, { page }) {
-        const pageProps = page.props as { auth?: Auth; name?: string };
+        const pageProps = page.props as {
+            auth?: Auth;
+            name?: string;
+            application?: { themeColor?: string | null };
+        };
         const authUserId = pageProps.auth?.user?.id;
-        const productName = pageProps.name || appName;
+        const productName = pageProps.name || fallbackAppName;
+        resolvedAppName = productName;
 
         return (
             <TooltipProvider delayDuration={0}>
@@ -69,6 +77,9 @@ void createInertiaApp({
                             }
                         }}
                     >
+                        <ApplicationTheme
+                            themeColor={pageProps.application?.themeColor}
+                        />
                         {app}
                     </ErrorBoundary>
                     <AppToaster authUserId={authUserId} />

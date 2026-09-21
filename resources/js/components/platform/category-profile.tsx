@@ -1,8 +1,8 @@
 import { Link, usePage } from '@inertiajs/react';
-import { format, isValid, parseISO } from 'date-fns';
 import { Check, Copy, Pencil } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { ProductGallery } from '@/components/product-gallery';
+import { formatAppDateTime } from '@/lib/datetime';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -119,9 +119,7 @@ function formatTimestamp(value: string | null): string {
         return '—';
     }
 
-    const parsed = parseISO(value);
-
-    return isValid(parsed) ? format(parsed, 'd MMM yyyy, HH:mm') : value;
+    return formatAppDateTime(value) || '—';
 }
 
 export function CategoryProfile({

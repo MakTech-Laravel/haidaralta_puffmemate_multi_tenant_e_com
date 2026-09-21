@@ -13,6 +13,7 @@ import AdminController from '@/actions/App/Http/Controllers/Platform/AdminContro
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { formatAppDateTime } from '@/lib/datetime';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -60,10 +61,7 @@ function formatDateTime(value: string | null): string {
         return '—';
     }
 
-    return new Date(value).toLocaleString('en-AU', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    });
+    return formatAppDateTime(value) || '—';
 }
 
 function formatRoleName(role: string): string {

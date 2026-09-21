@@ -8,6 +8,7 @@ import {
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ConversationComposer } from '@/components/conversation/conversation-composer';
 import { ConversationMessageRow } from '@/components/conversation/conversation-message-row';
+import { daySeparatorLabel } from '@/components/conversation/format';
 import type {
     ConversationMessage,
     ReceiptState,
@@ -30,29 +31,7 @@ function sameDay(a: string | null, b: string | null): boolean {
 }
 
 function dayLabel(iso: string | null): string {
-    if (!iso) {
-        return '';
-    }
-
-    const date = new Date(iso);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) {
-        return 'Today';
-    }
-
-    if (date.toDateString() === yesterday.toDateString()) {
-        return 'Yesterday';
-    }
-
-    return date.toLocaleDateString(undefined, {
-        day: 'numeric',
-        month: 'long',
-        year:
-            date.getFullYear() === today.getFullYear() ? undefined : 'numeric',
-    });
+    return daySeparatorLabel(iso);
 }
 
 let nextClientId = 1;

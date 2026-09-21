@@ -1,3 +1,5 @@
+import { formatAppClock, formatAppDate } from '@/lib/datetime';
+
 export type Option = { value: string; label: string };
 
 export type BranchOption = {
@@ -102,14 +104,16 @@ export function formatDutyLine(row: {
     days_label?: string | null;
     shift_template_name?: string | null;
 }): string {
+    const start = row.start_date ? formatAppDate(row.start_date) : '';
+    const end = row.end_date ? formatAppDate(row.end_date) : '';
     const dates =
-        row.start_date && row.end_date
-            ? `${row.start_date} – ${row.end_date}`
-            : null;
+        start && end ? `${start} – ${end}` : start || end || null;
+    const startTime = row.start_time ? formatAppClock(row.start_time) : '';
+    const endTime = row.end_time ? formatAppClock(row.end_time) : '';
     const hours =
-        row.start_time && row.end_time
-            ? `${row.start_time}–${row.end_time}`
-            : null;
+        startTime && endTime
+            ? `${startTime}–${endTime}`
+            : startTime || endTime || null;
 
     return [row.shift_template_name, dates, hours, row.days_label]
         .filter((part): part is string => Boolean(part))

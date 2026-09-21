@@ -1,3 +1,4 @@
+import { AppDate } from '@/components/app-datetime';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -27,7 +28,7 @@ export function TransferTimeline({ transfers }: { transfers: TransferRow[] }) {
                                 {transfer.to_branch_name ?? '—'}
                             </p>
                             <p className="text-muted-foreground text-sm">
-                                {transfer.effective_date}
+                                <AppDate value={transfer.effective_date} />
                                 {transfer.from_role || transfer.to_role
                                     ? ` · ${transfer.from_role ?? '—'} → ${transfer.to_role ?? '—'}`
                                     : ''}

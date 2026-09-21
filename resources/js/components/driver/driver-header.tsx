@@ -1,7 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Bell } from 'lucide-react';
 import { DriverAccountSheet } from '@/components/driver/driver-account-sheet';
-import { storefrontLogoSrc } from '@/lib/storefront-chrome';
+import { useAppBrand } from '@/hooks/use-app-brand';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/driver';
 import { index as notificationsIndex } from '@/routes/driver/notifications';
@@ -12,6 +12,7 @@ import type { Auth } from '@/types';
  */
 export function DriverHeader() {
     const { url, props } = usePage<{ auth: Auth; name: string }>();
+    const brand = useAppBrand();
     const user = props.auth.user;
     const notificationsHref = notificationsIndex.url();
     const notificationsActive =
@@ -28,8 +29,8 @@ export function DriverHeader() {
                     className="flex min-w-0 items-center gap-2"
                 >
                     <img
-                        src={storefrontLogoSrc}
-                        alt={props.name}
+                        src={brand.logoUrl}
+                        alt={brand.name}
                         className="h-8 w-auto object-contain sm:h-9"
                     />
                     <span className="text-muted-foreground hidden text-xs font-semibold tracking-[0.12em] uppercase sm:inline">
