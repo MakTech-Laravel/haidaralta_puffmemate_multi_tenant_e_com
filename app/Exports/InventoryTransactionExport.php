@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\InventoryTransaction;
+use App\Support\DateTimeFormat;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
@@ -78,7 +79,7 @@ class InventoryTransactionExport implements FromQuery, WithHeadings, WithMapping
                 : number_format((float) $row->unit_cost, 2, '.', ''),
             $row->before_quantity,
             $row->after_quantity,
-            $row->created_at?->format('Y-m-d H:i:s'),
+            DateTimeFormat::dateTime($row->created_at),
             $row->creator?->name,
         ];
     }

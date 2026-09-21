@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Maintenance Mode Bypass Secret
+    |--------------------------------------------------------------------------
+    |
+    | Optional secret URI token for bypassing maintenance mode while it is
+    | enabled from Application Settings. Visit /{secret} to set the cookie.
+    |
+    */
+
+    'maintenance_secret' => env('MAINTENANCE_SECRET'),
+
 ];

@@ -1,6 +1,12 @@
 import type { LucideIcon } from 'lucide-react';
 import { KeyRound, LogIn, LogOut, Pencil, ScrollText } from 'lucide-react';
 import type { ActivityRow } from '@/components/activity-log/types';
+import {
+    formatAppDate,
+    formatAppTime,
+    getApplicationDateTime,
+    toWallClockDate,
+} from '@/lib/datetime';
 
 export const driverActivityEventFilters = [
     'all',
@@ -55,16 +61,18 @@ export function driverActivityDayLabel(value: string | null): string {
         return 'Earlier';
     }
 
-    const today = new Date();
+    const settings = getApplicationDateTime();
+    const wall = toWallClockDate(date, settings.timezone);
+    const todayWall = toWallClockDate(new Date(), settings.timezone);
     const startOfToday = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
+        todayWall.getFullYear(),
+        todayWall.getMonth(),
+        todayWall.getDate(),
     );
     const startOfDate = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate(),
+        wall.getFullYear(),
+        wall.getMonth(),
+        wall.getDate(),
     );
     const diffDays = Math.round(
         (startOfToday.getTime() - startOfDate.getTime()) / 86_400_000,
@@ -78,11 +86,7 @@ export function driverActivityDayLabel(value: string | null): string {
         return 'Yesterday';
     }
 
-    return new Intl.DateTimeFormat(undefined, {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'short',
-    }).format(date);
+    return formatAppDate(value) || 'Earlier';
 }
 
 export function driverActivityTimeLabel(value: string | null): string {
@@ -90,16 +94,7 @@ export function driverActivityTimeLabel(value: string | null): string {
         return '';
     }
 
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-        return '';
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        hour: 'numeric',
-        minute: '2-digit',
-    }).format(date);
+    return formatAppTime(value) || '';
 }
 
 export function driverActivityTitle(row: ActivityRow): string {

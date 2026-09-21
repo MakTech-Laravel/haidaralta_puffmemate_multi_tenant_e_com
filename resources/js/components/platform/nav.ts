@@ -322,6 +322,7 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                 title: 'Application settings',
                 icon: Settings2,
                 permissions: [
+                    'manage-application-settings',
                     'manage-database-backups',
                     'view-activity-logs',
                     'view-horizon',
@@ -329,10 +330,11 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                     'view-dashboard',
                 ],
                 items: [
-                    navSoon({
+                    navLink({
                         title: 'General',
+                        href: '/platform/settings/general',
                         icon: Settings2,
-                        permissions: ['manage-database-backups'],
+                        permissions: ['manage-application-settings'],
                     }),
                     navLink({
                         title: 'Notifications',
@@ -340,20 +342,22 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                         icon: Bell,
                         permissions: ['view-dashboard'],
                     }),
-                    navSoon({
-                        title: 'Payments',
+                    navLink({
+                        title: 'Payment Gateway',
+                        href: '/platform/settings/payment-gateway',
                         icon: CreditCard,
-                        permissions: ['manage-database-backups'],
+                        permissions: ['manage-application-settings'],
                     }),
                     navSoon({
                         title: 'Delivery and fees',
                         icon: Truck,
                         permissions: ['manage-database-backups'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'SMTP',
+                        href: '/platform/settings/smtp',
                         icon: Mail,
-                        permissions: ['manage-database-backups'],
+                        permissions: ['manage-application-settings'],
                     }),
                     navLink({
                         title: 'Backups',

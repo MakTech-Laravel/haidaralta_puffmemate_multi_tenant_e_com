@@ -10,6 +10,7 @@ import { DriverRouteMapPanel } from '@/components/driver/driver-route-map-panel'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { usePaymentGatewayLabel } from '@/lib/payment-gateway';
 import { cn } from '@/lib/utils';
 import {
     chat as orderChat,
@@ -28,6 +29,10 @@ type DriverOrderShowProps = {
 
 export default function DriverOrderShow({ order }: DriverOrderShowProps) {
     const isDelivered = order.status === 'delivered';
+    const paymentLabel = usePaymentGatewayLabel(
+        order.paymentMethod,
+        order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Paid',
+    );
 
     return (
         <>
@@ -108,9 +113,7 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                         <p className="text-muted-foreground text-sm">
                             {order.windowLabel}
                             {order.etaLabel ? ` · ETA ${order.etaLabel}` : ''}
-                            {order.paymentMethod === 'cod'
-                                ? ' · Cash on delivery'
-                                : ' · Paid'}
+                            {` · ${paymentLabel}`}
                         </p>
                     </div>
 

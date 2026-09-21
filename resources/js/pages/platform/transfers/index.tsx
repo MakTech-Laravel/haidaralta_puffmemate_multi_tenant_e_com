@@ -6,6 +6,7 @@ import BranchStaffController from '@/actions/App/Http/Controllers/Platform/Branc
 import DriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
 import TransferController from '@/actions/App/Http/Controllers/Platform/TransferController';
 import type { TransferRow } from '@/components/admin/workforce-types';
+import { AppDate } from '@/components/app-datetime';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -103,6 +104,9 @@ export default function PlatformTransfersIndex({
                         currentSort={query.sort}
                         onSort={query.toggleSort}
                     />
+                ),
+                cell: ({ row }) => (
+                    <AppDate value={row.original.effective_date} />
                 ),
             },
             {

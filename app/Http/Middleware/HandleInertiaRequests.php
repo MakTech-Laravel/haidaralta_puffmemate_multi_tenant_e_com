@@ -5,6 +5,8 @@ namespace App\Http\Middleware;
 use App\Enums\RoleEnum;
 use App\Models\Branch;
 use App\Models\User;
+use App\Services\Application\ApplicationSettingsService;
+use App\Services\Application\PaymentGatewaySettingsService;
 use App\Support\MediaUrl;
 use App\Support\PortalAuth;
 use App\Support\Storefront\DemoCatalog;
@@ -48,6 +50,8 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'application' => app(ApplicationSettingsService::class)->sharedPayload(),
+            'paymentGateways' => app(PaymentGatewaySettingsService::class)->enabledMethods(),
             'auth' => $auth,
             'portal' => $portal,
             'branch' => $branch,

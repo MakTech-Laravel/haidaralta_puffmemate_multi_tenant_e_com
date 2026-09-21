@@ -1,4 +1,5 @@
 import { aboutWhoWeAre } from '@/lib/storefront-about';
+import { useAppBrand } from '@/hooks/use-app-brand';
 import { cn } from '@/lib/utils';
 
 type AboutWhoWeAreProps = {
@@ -6,6 +7,9 @@ type AboutWhoWeAreProps = {
 };
 
 export function AboutWhoWeAre({ className }: AboutWhoWeAreProps) {
+    const brand = useAppBrand();
+    const body = aboutWhoWeAre.body.replaceAll('{name}', brand.name);
+
     return (
         <section className={cn('bg-background py-16 sm:py-20', className)}>
             <div className="container mx-auto grid items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14">
@@ -17,7 +21,7 @@ export function AboutWhoWeAre({ className }: AboutWhoWeAreProps) {
                         {aboutWhoWeAre.heading}
                     </h2>
                     <p className="text-muted-foreground font-inter mt-4 max-w-xl text-sm leading-relaxed font-normal sm:text-base">
-                        {aboutWhoWeAre.body}
+                        {body}
                     </p>
 
                     <ul className="mt-8 grid gap-6 sm:grid-cols-2">

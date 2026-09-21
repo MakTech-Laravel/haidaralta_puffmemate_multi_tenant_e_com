@@ -8,7 +8,9 @@ import {
     type ShiftWorkspace,
 } from '@/components/admin/platform-shift-workspace';
 import Heading from '@/components/heading';
+import { AppDateRange } from '@/components/app-datetime';
 import { Badge } from '@/components/ui/badge';
+import { formatAppClock } from '@/lib/datetime';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -87,8 +89,13 @@ export default function PlatformShiftsIndex({
                                         <div>
                                             <p className="text-sm font-medium">
                                                 {template.name} ·{' '}
-                                                {template.start_time}–
-                                                {template.end_time}
+                                                {formatAppClock(
+                                                    template.start_time,
+                                                )}
+                                                –
+                                                {formatAppClock(
+                                                    template.end_time,
+                                                )}
                                             </p>
                                             <p className="text-muted-foreground text-sm">
                                                 {template.branch_name
@@ -154,8 +161,10 @@ export default function PlatformShiftsIndex({
                                                 {period.name}
                                             </p>
                                             <p className="text-muted-foreground text-sm">
-                                                {period.start_date} –{' '}
-                                                {period.end_date}
+                                                <AppDateRange
+                                                    start={period.start_date}
+                                                    end={period.end_date}
+                                                />
                                                 {period.branch_name
                                                     ? ` · ${period.branch_name}`
                                                     : ''}

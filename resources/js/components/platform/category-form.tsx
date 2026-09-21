@@ -1,27 +1,14 @@
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { Check, ChevronsUpDown } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { ColorPicker } from '@/components/color-picker';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
-import { ColorPicker } from '@/components/color-picker';
+import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
 import {
     CATALOG_COLOR_PICKER_MODES,
@@ -112,7 +99,6 @@ export function CategoryForm({
 }: CategoryFormProps) {
     const { catalog } = usePage().props;
     const [slugTouched, setSlugTouched] = useState(isEdit);
-    const [parentOpen, setParentOpen] = useState(false);
     const [suggestions, setSuggestions] = useState<CategorySuggestion[]>([]);
     const [existingPrimary, setExistingPrimary] = useState<ExistingFile[]>(
         () =>
@@ -186,6 +172,14 @@ export function CategoryForm({
                       (option) => option.id === data.parent_id,
                   ) ?? null),
         [data.parent_id, parentOptions],
+    );
+    const parentComboboxOptions = useMemo(
+        () =>
+            parentOptions.map((option) => ({
+                value: String(option.id),
+                label: option.name,
+            })),
+        [parentOptions],
     );
 
     useEffect(() => {
@@ -384,113 +378,28 @@ export function CategoryForm({
                                 <Label htmlFor="parent_id">
                                     Parent category
                                 </Label>
-                                <Popover
-                                    open={parentOpen}
-                                    onOpenChange={setParentOpen}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            id="parent_id"
-                                            type="button"
-                                            variant="outline"
-                                            role="combobox"
-                                            aria-expanded={parentOpen}
-                                            aria-invalid={Boolean(
-                                                errors.parent_id,
-                                            )}
-                                            className="h-9 w-full min-w-0 justify-between gap-2 px-3 font-normal"
-                                        >
-                                            <span
-                                                className={cn(
-                                                    'truncate text-left',
-                                                    !selectedParent &&
-                                                        'text-muted-foreground',
-                                                )}
-                                            >
-                                                {selectedParent?.name ??
-                                                    'No parent'}
-                                            </span>
-                                            <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent
-                                        className="w-[var(--radix-popover-trigger-width)] p-0"
-                                        align="start"
-                                    >
-                                        <Command>
-                                            <CommandInput placeholder="Search categories…" />
-                                            <CommandList>
-                                                <CommandEmpty>
-                                                    No category found.
-                                                </CommandEmpty>
-                                                <CommandGroup>
-                                                    <CommandItem
-                                                        value="No parent"
-                                                        onSelect={() => {
-                                                            setData(
-                                                                'parent_id',
-                                                                null,
-                                                            );
-                                                            setParentOpen(
-                                                                false,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <Check
-                                                            className={cn(
-                                                                'size-4',
-                                                                data.parent_id ===
-                                                                    null
-                                                                    ? 'opacity-100'
-                                                                    : 'opacity-0',
-                                                            )}
-                                                        />
-                                                        No parent
-                                                    </CommandItem>
-                                                    {parentOptions.map(
-                                                        (option) => {
-                                                            const selected =
-                                                                data.parent_id ===
-                                                                option.id;
-
-                                                            return (
-                                                                <CommandItem
-                                                                    key={
-                                                                        option.id
-                                                                    }
-                                                                    value={
-                                                                        option.name
-                                                                    }
-                                                                    onSelect={() => {
-                                                                        setData(
-                                                                            'parent_id',
-                                                                            option.id,
-                                                                        );
-                                                                        setParentOpen(
-                                                                            false,
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    <Check
-                                                                        className={cn(
-                                                                            'size-4',
-                                                                            selected
-                                                                                ? 'opacity-100'
-                                                                                : 'opacity-0',
-                                                                        )}
-                                                                    />
-                                                                    {
-                                                                        option.name
-                                                                    }
-                                                                </CommandItem>
-                                                            );
-                                                        },
-                                                    )}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                <InfiniteScrollCombobox
+                                    id="parent_id"
+                                    staticOptions={parentComboboxOptions}
+                                    value={
+                                        data.parent_id === null
+                                            ? null
+                                            : String(data.parent_id)
+                                    }
+                                    onValueChange={(value) =>
+                                        setData(
+                                            'parent_id',
+                                            value === null
+                                                ? null
+                                                : Number(value),
+                                        )
+                                    }
+                                    selectedLabel={selectedParent?.name}
+                                    placeholder="No parent"
+                                    searchPlaceholder="Search categories…"
+                                    emptyText="No category found."
+                                    noneLabel="No parent"
+                                />
                                 <InputError message={errors.parent_id} />
                             </div>
                         ) : null}

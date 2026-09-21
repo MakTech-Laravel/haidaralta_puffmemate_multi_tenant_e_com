@@ -6,6 +6,7 @@ import {
     driverOrderStatusLabel,
     type DriverAssignedOrder,
 } from '@/components/driver/driver-order-types';
+import { usePaymentGatewayLabel } from '@/lib/payment-gateway';
 import { cn } from '@/lib/utils';
 import { chat as orderChat, show as orderShow } from '@/routes/driver/orders';
 import { index as routeIndex } from '@/routes/driver/route';
@@ -21,6 +22,10 @@ export function DriverOrderCard({
     highlighted = false,
     showRoutePin = true,
 }: DriverOrderCardProps) {
+    const paymentLabel = usePaymentGatewayLabel(
+        order.paymentMethod,
+        order.paymentMethod === 'cod' ? 'COD' : undefined,
+    );
     const isDelivered = order.status === 'delivered';
     const addressLine = [order.addressSummary, order.unitLabel]
         .filter(Boolean)
@@ -29,7 +34,7 @@ export function DriverOrderCard({
         order.orderNumber,
         order.completedLabel ?? order.windowLabel,
         order.totalLabel,
-        order.paymentMethod === 'cod' ? 'COD' : null,
+        order.paymentMethod ? paymentLabel : null,
     ]
         .filter(Boolean)
         .join(' · ');
