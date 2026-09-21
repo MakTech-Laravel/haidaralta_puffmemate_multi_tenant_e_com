@@ -28,7 +28,9 @@ test('new users can register', function () {
     $user = User::query()->where('phone', '+61412345678')->firstOrFail();
 
     expect($user->user_type)->toBe(UserType::CUSTOMER)
-        ->and($user->branch_id)->toBeNull();
+        ->and($user->branch_id)->toBeNull()
+        ->and($user->name)->toBe('Test User')
+        ->and($user->email)->toBeNull();
 });
 
 test('registration always creates a customer and ignores portal spoofing', function (string $spoofedType) {
@@ -45,6 +47,7 @@ test('registration always creates a customer and ignores portal spoofing', funct
 
     expect($user->user_type)->toBe(UserType::CUSTOMER)
         ->and($user->branch_id)->toBeNull()
+        ->and($user->name)->toBe('Spoof Attempt')
         ->and($user->user_type)->not->toBe(UserType::PLATFORM)
         ->and($user->user_type)->not->toBe(UserType::BRANCH)
         ->and($user->user_type)->not->toBe(UserType::DRIVER);

@@ -28,10 +28,6 @@ class StoreRegisteredUserRequest extends FormRequest
                 // Leave raw value for the phone validation rule.
             }
         }
-
-        if ($this->input('email') === '') {
-            $this->merge(['email' => null]);
-        }
     }
 
     /**
@@ -40,7 +36,8 @@ class StoreRegisteredUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            ...$this->profileRules(),
+            'name' => $this->nameRules(),
+            'phone' => $this->phoneRules(),
             'password' => $this->passwordRules(),
         ];
     }

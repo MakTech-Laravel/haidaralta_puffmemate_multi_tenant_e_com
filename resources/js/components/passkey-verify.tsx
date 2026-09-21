@@ -41,7 +41,7 @@ export default function PasskeyVerify({
 
     return (
         <>
-            <div className="grid gap-2">
+            {/* <div className="grid gap-2">
                 <Button
                     type="button"
                     variant="outline"
@@ -68,7 +68,7 @@ export default function PasskeyVerify({
                         {separator ?? 'Or continue with phone'}
                     </span>
                 </div>
-            </div>
+            </div> */}
         </>
     );
 }
