@@ -60,7 +60,13 @@ export default function PlatformShiftsIndex({
                         : 'Administrator'
                 }
                 title={routes.title}
-                description={routes.description}
+                description={
+                    workspace === 'branch'
+                        ? selectedBranch
+                            ? `Shifts at ${selectedBranch.name}.`
+                            : routes.description
+                        : routes.description
+                }
                 templates={templates}
                 periods={periods}
                 onDuty={onDuty}

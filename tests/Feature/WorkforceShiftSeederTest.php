@@ -43,9 +43,10 @@ test('the workforce seeder writes named retail duty windows without faker copy',
         ->assertInertia(fn ($page) => $page
             ->component('platform/shifts/index')
             ->where('workspace', 'branch')
-            ->has('templates')
-            ->has('onDuty')
-            ->has('stats'));
+            ->where('selectedBranchId', null)
+            ->where('selectedBranch', null)
+            ->has('templates', 0)
+            ->has('onDuty', 0));
 });
 
 test('the workforce seeder is safe to run twice', function () {

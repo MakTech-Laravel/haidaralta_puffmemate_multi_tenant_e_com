@@ -27,8 +27,12 @@ class BranchShiftAssignmentController extends Controller
         return ShiftOwnerType::Branch;
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse|Response
     {
+        if ($redirect = $this->redirectUnlessBranchSelected()) {
+            return $redirect;
+        }
+
         $selected = $this->selectedBranch();
         $branchId = $selected['id'] ?? null;
 

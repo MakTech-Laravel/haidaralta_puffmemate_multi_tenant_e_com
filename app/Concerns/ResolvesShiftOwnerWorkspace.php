@@ -7,6 +7,7 @@ use App\Models\ShiftRosterPeriod;
 use App\Models\ShiftTemplate;
 use App\Models\UserShiftAssignment;
 use App\Support\WorkforcePayload;
+use Illuminate\Http\RedirectResponse;
 
 trait ResolvesShiftOwnerWorkspace
 {
@@ -48,9 +49,16 @@ trait ResolvesShiftOwnerWorkspace
             return null;
         }
 
-        $requested = (int) request()->query('branch_id', 0);
+        return WorkforcePayload::branchOption((int) request()->query('branch_id', 0));
+    }
 
-        return WorkforcePayload::branchOption($requested) ?? WorkforcePayload::firstActiveBranch();
+    protected function redirectUnlessBranchSelected(): ?RedirectResponse
+    {
+        if ($this->shiftOwner() !== ShiftOwnerType::Branch || $this->selectedBranch() !== null) {
+            return null;
+        }
+
+        return redirect()->route('platform.branch-shift-templates.index');
     }
 
     protected function selectedBranchId(): ?int

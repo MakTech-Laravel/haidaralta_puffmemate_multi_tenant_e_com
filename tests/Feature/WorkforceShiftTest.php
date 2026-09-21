@@ -309,11 +309,20 @@ test('branch shifts board loads one store at a time', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/shifts/index')
-            ->where('selectedBranchId', $brisbane->id)
-            ->where('selectedBranch.id', $brisbane->id)
-            ->where('selectedBranch.name', $brisbane->name)
-            ->has('templates', 1)
-            ->where('templates.0.name', 'Brisbane Floor'));
+            ->where('selectedBranchId', null)
+            ->where('selectedBranch', null)
+            ->has('templates', 0)
+            ->has('periods', 0)
+            ->has('onDuty', 0));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-templates.index', [
+            'branch_id' => 999_999,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('selectedBranchId', null)
+            ->has('templates', 0));
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-shift-templates.index', [
@@ -334,6 +343,22 @@ test('branch shifts board loads one store at a time', function () {
             ->where('selectedBranchId', $melbourne->id)
             ->has('templates', 1)
             ->where('templates.0.name', 'Melbourne Floor'));
+});
+
+test('branch shift create and assign without a store redirect to the empty board', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-templates.create'))
+        ->assertRedirect(route('platform.branch-shift-templates.index'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-roster-periods.create'))
+        ->assertRedirect(route('platform.branch-shift-templates.index'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-assignments.create'))
+        ->assertRedirect(route('platform.branch-shift-templates.index'));
 });
 
 test('branch assign page only lists the selected store windows', function () {

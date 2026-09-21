@@ -7,6 +7,7 @@ import {
     Users,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { ShiftBranchEmptyState } from '@/components/admin/shift-branch-empty-state';
 import { ShiftBranchPicker } from '@/components/admin/shift-branch-picker';
 import { ShiftCoverageMap } from '@/components/admin/shift-coverage-map';
 import { ShiftPageHeader } from '@/components/admin/shift-page-header';
@@ -144,13 +145,32 @@ export function ShiftBoard({
         [visibleTemplates],
     );
 
+    const waitingForBranch = Boolean(
+        onSelectBranch && branchOptionsUrl && !selectedBranchId,
+    );
+
+    const branchPicker = onSelectBranch && branchOptionsUrl ? (
+        <ShiftBranchPicker
+            optionsUrl={branchOptionsUrl}
+            value={selectedBranchId ? String(selectedBranchId) : ''}
+            selectedLabel={selectedBranch?.name}
+            onChange={(branchId) => onSelectBranch(Number(branchId))}
+        />
+    ) : null;
+
     return (
-        <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+        <div
+            className={cn(
+                'flex w-full flex-col gap-6 p-2 md:p-4',
+                waitingForBranch && 'min-h-[calc(100svh-7rem)]',
+            )}
+        >
             <ShiftPageHeader
                 kicker={kicker}
                 title={title}
                 description={description}
                 actions={
+                    waitingForBranch ? null : (
                     <>
                         <div className="border-border/80 bg-card hidden items-center gap-3 rounded-full border px-3 py-1.5 sm:flex">
                             <span className="relative flex size-2">
@@ -179,17 +199,28 @@ export function ShiftBoard({
                             </Link>
                         </Button>
                     </>
+                    )
                 }
             />
 
-            {onSelectBranch && branchOptionsUrl ? (
-                <ShiftBranchPicker
-                    optionsUrl={branchOptionsUrl}
-                    value={selectedBranchId ? String(selectedBranchId) : ''}
-                    selectedLabel={selectedBranch?.name}
-                    onChange={(branchId) => onSelectBranch(Number(branchId))}
+            {waitingForBranch && branchOptionsUrl && onSelectBranch ? (
+                <ShiftBranchEmptyState
+                    picker={
+                        <ShiftBranchPicker
+                            optionsUrl={branchOptionsUrl}
+                            value=""
+                            selectedLabel={null}
+                            size="lg"
+                            className="max-w-none"
+                            onChange={(branchId) =>
+                                onSelectBranch(Number(branchId))
+                            }
+                        />
+                    }
                 />
-            ) : null}
+            ) : (
+                <>
+            {branchPicker}
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <StatCard
@@ -449,6 +480,8 @@ export function ShiftBoard({
                     )}
                 </section>
             </div>
+                </>
+            )}
         </div>
     );
 }

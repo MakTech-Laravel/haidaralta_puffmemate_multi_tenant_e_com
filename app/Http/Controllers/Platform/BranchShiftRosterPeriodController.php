@@ -27,8 +27,12 @@ class BranchShiftRosterPeriodController extends Controller
         return ShiftOwnerType::Branch;
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse|Response
     {
+        if ($redirect = $this->redirectUnlessBranchSelected()) {
+            return $redirect;
+        }
+
         $selected = $this->selectedBranch();
 
         return Inertia::render('platform/shifts/periods/create', [

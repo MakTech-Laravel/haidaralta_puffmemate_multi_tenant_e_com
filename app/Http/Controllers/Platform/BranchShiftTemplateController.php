@@ -39,8 +39,12 @@ class BranchShiftTemplateController extends Controller
         return response()->json(WorkforcePayload::paginatedBranchOptions($request));
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse|Response
     {
+        if ($redirect = $this->redirectUnlessBranchSelected()) {
+            return $redirect;
+        }
+
         $selected = $this->selectedBranch();
 
         return Inertia::render('platform/shifts/create', [

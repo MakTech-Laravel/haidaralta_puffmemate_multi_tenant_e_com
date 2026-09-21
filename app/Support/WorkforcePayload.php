@@ -492,22 +492,6 @@ final class WorkforcePayload
     }
 
     /**
-     * First active store by name, then id. Used as the Branch shifts default.
-     *
-     * @return array{id: int, name: string, slug: string}|null
-     */
-    public static function firstActiveBranch(): ?array
-    {
-        $branch = Branch::query()
-            ->where('status', true)
-            ->orderBy('name')
-            ->orderBy('id')
-            ->first(['id', 'name', 'slug']);
-
-        return $branch === null ? null : self::mapBranchOption($branch);
-    }
-
-    /**
      * @return array{id: int, name: string, slug: string}
      */
     private static function mapBranchOption(Branch $branch): array

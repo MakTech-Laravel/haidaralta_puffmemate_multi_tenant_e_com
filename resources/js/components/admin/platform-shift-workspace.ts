@@ -21,7 +21,7 @@ export function platformShiftWorkspace(
     if (workspace === 'branch') {
         return {
             title: 'Branch shifts',
-            description: 'Pick a branch to see only that store.',
+            description: 'Choose a branch to see that store.',
             templates: BranchShiftTemplateController,
             periods: BranchShiftRosterPeriodController,
             assignments: BranchShiftAssignmentController,
