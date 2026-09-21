@@ -23,20 +23,9 @@ class ShiftTemplateFactory extends Factory
             'name' => fake()->unique()->words(2, true).' Shift',
             'start_time' => '08:00',
             'end_time' => '17:00',
-            'is_overnight' => false,
             'is_active' => true,
             'created_by' => null,
         ];
-    }
-
-    public function overnight(): static
-    {
-        return $this->state(fn (): array => [
-            'name' => 'Night Shift',
-            'start_time' => '22:00',
-            'end_time' => '06:00',
-            'is_overnight' => true,
-        ]);
     }
 
     public function forBranch(Branch $branch): static

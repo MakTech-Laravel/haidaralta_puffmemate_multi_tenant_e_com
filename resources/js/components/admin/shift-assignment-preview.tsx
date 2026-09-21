@@ -63,16 +63,11 @@ export function ShiftAssignmentPreview({
                                 {template.name}
                             </p>
                             <p className="text-muted-foreground text-xs">
-                                {formatWindow(
-                                    template.start_time,
-                                    template.end_time,
-                                    template.is_overnight,
-                                )}
+                                {formatWindow(template.start_time, template.end_time)}
                             </p>
                             <ShiftTimeBar
                                 start={template.start_time}
                                 end={template.end_time}
-                                overnight={template.is_overnight}
                             />
                         </div>
                     ) : null}

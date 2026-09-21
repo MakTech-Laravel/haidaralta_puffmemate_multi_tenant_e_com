@@ -42,3 +42,6 @@ Branch shifts picker is InfiniteScrollCombobox against platform.branch-shift-tem
 
 ## Say shift, not template
 User-facing shift copy says shift, never template. Keep ShiftTemplate in code, routes, and props. Buttons, headings, empty states, and toasts use New shift / Create shift / Shift created.
+
+## No overnight shift UI
+Shift board, coverage map, and forms never show overnight wrap, Overnight stats, or Overnight filters. End must be after start on the same day. User-facing copy still says shift, never template.

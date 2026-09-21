@@ -22,7 +22,6 @@ export default function BranchShiftsIndex({
         templates: 0,
         active_templates: 0,
         periods: 0,
-        overnight: 0,
     },
 }: {
     branch: Branch;

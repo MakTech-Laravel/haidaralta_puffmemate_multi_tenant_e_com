@@ -145,13 +145,11 @@ export function ShiftCoverageMap({
                                 const live = windowCoversNow(
                                     template.start_time,
                                     template.end_time,
-                                    template.is_overnight,
                                     now,
                                 );
                                 const segments = timeBarSegments(
                                     template.start_time,
                                     template.end_time,
-                                    template.is_overnight,
                                 );
 
                                 return (
@@ -178,12 +176,6 @@ export function ShiftCoverageMap({
                                                         {formatClock(
                                                             template.start_time,
                                                         )}
-                                                        {template.is_overnight &&
-                                                        index ===
-                                                            segments.length -
-                                                                1
-                                                            ? ' next day'
-                                                            : ''}
                                                     </span>
                                                 ) : null}
                                             </span>

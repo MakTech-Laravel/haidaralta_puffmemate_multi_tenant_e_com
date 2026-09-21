@@ -76,7 +76,6 @@ class UserShiftAssignment extends Model
             $template->startTimeValue(),
             $template->endTimeValue(),
             $this->normalizedDaysOfWeek(),
-            $template->is_overnight,
         );
     }
 

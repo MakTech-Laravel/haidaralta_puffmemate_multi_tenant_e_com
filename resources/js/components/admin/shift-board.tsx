@@ -2,7 +2,6 @@ import { Link } from '@inertiajs/react';
 import {
     CalendarRange,
     Clock3,
-    Moon,
     Plus,
     Search,
     Users,
@@ -36,7 +35,7 @@ import {
 } from '@/lib/shift-format';
 import { cn } from '@/lib/utils';
 
-type ShiftFilter = 'all' | 'live' | 'overnight';
+type ShiftFilter = 'all' | 'live';
 
 type ShiftBoardProps = {
     kicker: string;
@@ -89,16 +88,11 @@ export function ShiftBoard({
     const visibleTemplates = useMemo(
         () =>
             templates.filter((template) => {
-                if (filter === 'overnight' && !template.is_overnight) {
-                    return false;
-                }
-
                 if (
                     filter === 'live' &&
                     !windowCoversNow(
                         template.start_time,
                         template.end_time,
-                        template.is_overnight,
                         now,
                     )
                 ) {
@@ -197,7 +191,7 @@ export function ShiftBoard({
                 />
             ) : null}
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <StatCard
                     icon={Users}
                     label="On duty now"
@@ -219,12 +213,6 @@ export function ShiftBoard({
                     label="Roster periods"
                     value={String(stats.periods)}
                     hint="Named date ranges"
-                />
-                <StatCard
-                    icon={Moon}
-                    label="Overnight"
-                    value={String(stats.overnight)}
-                    hint="Windows that wrap midnight"
                 />
             </div>
 
@@ -304,7 +292,6 @@ export function ShiftBoard({
                         [
                             ['all', 'All windows'],
                             ['live', 'Live now'],
-                            ['overnight', 'Overnight'],
                         ] as const
                     ).map(([value, label]) => (
                         <button
@@ -332,7 +319,7 @@ export function ShiftBoard({
                                 Shifts
                             </h2>
                             <p className="text-muted-foreground text-sm">
-                                Named start and end times, including overnight.
+                                Named start and end times on the same day.
                             </p>
                         </div>
                         <span className="text-muted-foreground text-xs tabular-nums">
@@ -478,7 +465,6 @@ function TemplateCard({
     const live = windowCoversNow(
         template.start_time,
         template.end_time,
-        template.is_overnight,
         now,
     );
 
@@ -494,11 +480,6 @@ function TemplateCard({
                         </span>
                         {formatClock(template.end_time)}
                     </p>
-                    {template.is_overnight ? (
-                        <p className="text-muted-foreground mt-0.5 text-xs">
-                            Overnight wrap
-                        </p>
-                    ) : null}
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
                     {live ? (
@@ -517,7 +498,6 @@ function TemplateCard({
             <ShiftTimeBar
                 start={template.start_time}
                 end={template.end_time}
-                overnight={template.is_overnight}
             />
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <p className="text-muted-foreground">
@@ -526,7 +506,6 @@ function TemplateCard({
                     {durationLabel(
                         template.start_time,
                         template.end_time,
-                        template.is_overnight,
                     )}
                     {' · '}
                     {template.scheduled_count ?? 0} scheduled

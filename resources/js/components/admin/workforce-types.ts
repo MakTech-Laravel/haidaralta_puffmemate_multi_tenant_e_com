@@ -15,7 +15,6 @@ export type ShiftTemplateOption = {
     branch_name?: string | null;
     start_time: string | null;
     end_time: string | null;
-    is_overnight: boolean;
     is_active: boolean;
     scheduled_count?: number;
 };
@@ -50,7 +49,6 @@ export type ShiftWorkspaceStats = {
     templates: number;
     active_templates: number;
     periods: number;
-    overnight: number;
 };
 
 export type ShiftAssignmentRow = {
@@ -70,7 +68,6 @@ export type ShiftAssignmentRow = {
     end_date: string | null;
     start_time: string | null;
     end_time: string | null;
-    is_overnight?: boolean;
     days_of_week: number[];
     days_label: string | null;
     status: string | null;

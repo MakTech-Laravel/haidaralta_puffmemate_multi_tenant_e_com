@@ -65,10 +65,13 @@ test('platform assigns a shift with required branch and roster period', function
         ->and(UserTransferHistory::query()->where('user_id', $driver->id)->exists())->toBeFalse();
 });
 
-test('overnight duty window covers 02:00 and not 12:00', function () {
+test('same-day duty window covers 10:00 and not 02:00', function () {
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-    $template = ShiftTemplate::factory()->overnight()->create();
+    $template = ShiftTemplate::factory()->create([
+        'start_time' => '08:00',
+        'end_time' => '17:00',
+    ]);
     $period = ShiftRosterPeriod::factory()->create([
         'start_date' => '2026-09-01',
         'end_date' => '2026-09-30',
@@ -87,13 +90,31 @@ test('overnight duty window covers 02:00 and not 12:00', function () {
         'availability_status' => DriverAvailabilityStatus::Offline,
     ]);
 
-    $this->travelTo('2026-09-16 02:00:00');
+    $this->travelTo('2026-09-16 10:00:00');
     expect(DriverAvailability::effective($driver->fresh())->value)->toBe('available')
-        ->and(DutyWindow::coversTime('02:00', '22:00', '06:00', true))->toBeTrue()
-        ->and(DutyWindow::coversTime('12:00', '22:00', '06:00', true))->toBeFalse();
+        ->and(DutyWindow::coversTime('10:00', '08:00', '17:00'))->toBeTrue()
+        ->and(DutyWindow::coversTime('02:00', '08:00', '17:00'))->toBeFalse()
+        ->and(DutyWindow::coversTime('02:00', '22:00', '06:00'))->toBeFalse();
 
-    $this->travelTo('2026-09-16 12:00:00');
+    $this->travelTo('2026-09-16 02:00:00');
     expect(DriverAvailability::effective($driver->fresh())->value)->toBe('offline');
+});
+
+test('platform rejects a shift that wraps past midnight', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->from(route('platform.shift-templates.create'))
+        ->post(route('platform.shift-templates.store'), [
+            'name' => 'Night wrap',
+            'start_time' => '22:00',
+            'end_time' => '06:00',
+            'owner_type' => ShiftOwnerType::Platform->value,
+        ])
+        ->assertRedirect(route('platform.shift-templates.create'))
+        ->assertSessionHasErrors('end_time');
+
+    expect(ShiftTemplate::query()->where('name', 'Night wrap')->exists())->toBeFalse();
 });
 
 test('changing a shift writes shift history only', function () {
@@ -225,7 +246,6 @@ test('platform creates a unique-named shift template', function () {
     $this->assertDatabaseHas('shift_templates', [
         'name' => 'Morning',
         'owner_type' => ShiftOwnerType::Platform->value,
-        'is_overnight' => false,
     ]);
 
     $this->actingAs($admin, 'platform')

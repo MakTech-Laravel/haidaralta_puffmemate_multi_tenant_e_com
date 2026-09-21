@@ -23,7 +23,6 @@ import { TimePicker } from '@/components/ui/time-picker';
 import {
     durationLabel,
     formatWindow,
-    isOvernightWindow,
 } from '@/lib/shift-format';
 import { cn } from '@/lib/utils';
 
@@ -81,7 +80,9 @@ export function ShiftTemplateForm({
             validationTimeout={500}
         >
             {({ processing, errors, validate }) => {
-                const overnight = isOvernightWindow(startTime, endTime);
+                const invalidWindow =
+                    Boolean(startTime && endTime) &&
+                    durationLabel(startTime, endTime) === '';
 
                 return (
                 <>
@@ -92,8 +93,7 @@ export function ShiftTemplateForm({
                                 Shift
                             </h2>
                             <p className="text-muted-foreground text-sm">
-                                Named start and end times. Overnight is inferred
-                                when end time is on or before start time.
+                                Named start and end times on the same day.
                             </p>
                         </div>
 
@@ -293,18 +293,19 @@ export function ShiftTemplateForm({
                                 Preview
                             </p>
                             <p className="mt-1 text-sm font-medium">
-                                {formatWindow(startTime, endTime, overnight)}
+                                {formatWindow(startTime, endTime)}
                             </p>
                             <p className="text-muted-foreground mt-1 text-xs">
-                                {startTime && endTime
-                                    ? `${durationLabel(startTime, endTime, overnight)} coverage`
-                                    : 'Pick both times to see the window'}
+                                {invalidWindow
+                                    ? 'End time must be after start time on the same day.'
+                                    : startTime && endTime
+                                      ? `${durationLabel(startTime, endTime)} coverage`
+                                      : 'Pick both times to see the window'}
                             </p>
                         </div>
                         <ShiftTimeBar
                             start={startTime}
                             end={endTime}
-                            overnight={overnight}
                         />
                     </aside>
                     </div>

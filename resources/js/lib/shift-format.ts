@@ -29,21 +29,9 @@ export function formatClock(hhmm: string | null | undefined): string {
     return `${hour}:${String(minutes).padStart(2, '0')} ${suffix}`;
 }
 
-export function isOvernightWindow(
-    start: string | null | undefined,
-    end: string | null | undefined,
-): boolean {
-    if (!start || !end) {
-        return false;
-    }
-
-    return minutesFromMidnight(end) <= minutesFromMidnight(start);
-}
-
 export function durationMinutes(
     start: string | null | undefined,
     end: string | null | undefined,
-    overnight = false,
 ): number {
     if (!start || !end) {
         return 0;
@@ -52,8 +40,8 @@ export function durationMinutes(
     const from = minutesFromMidnight(start);
     const to = minutesFromMidnight(end);
 
-    if (overnight || to <= from) {
-        return MINUTES_IN_DAY - from + to;
+    if (to <= from) {
+        return 0;
     }
 
     return to - from;
@@ -62,9 +50,8 @@ export function durationMinutes(
 export function durationLabel(
     start: string | null | undefined,
     end: string | null | undefined,
-    overnight = false,
 ): string {
-    const minutes = durationMinutes(start, end, overnight);
+    const minutes = durationMinutes(start, end);
 
     if (minutes <= 0) {
         return '';
@@ -83,17 +70,12 @@ export function durationLabel(
 export function formatWindow(
     start: string | null | undefined,
     end: string | null | undefined,
-    overnight = false,
 ): string {
     if (!start || !end) {
         return 'Set start and end';
     }
 
-    const range = `${formatClock(start)} – ${formatClock(end)}`;
-
-    return overnight || isOvernightWindow(start, end)
-        ? `${range} · Overnight`
-        : range;
+    return `${formatClock(start)} – ${formatClock(end)}`;
 }
 
 export function formatDayRange(
@@ -144,7 +126,6 @@ export type TimeBarSegment = {
 export function timeBarSegments(
     start: string | null | undefined,
     end: string | null | undefined,
-    overnight = false,
 ): TimeBarSegment[] {
     if (!start || !end) {
         return [];
@@ -152,25 +133,15 @@ export function timeBarSegments(
 
     const from = minutesFromMidnight(start);
     const to = minutesFromMidnight(end);
-    const wraps = overnight || to <= from;
 
-    if (!wraps) {
-        return [
-            {
-                startPct: (from / MINUTES_IN_DAY) * 100,
-                widthPct: ((to - from) / MINUTES_IN_DAY) * 100,
-            },
-        ];
+    if (to <= from) {
+        return [];
     }
 
     return [
         {
             startPct: (from / MINUTES_IN_DAY) * 100,
-            widthPct: ((MINUTES_IN_DAY - from) / MINUTES_IN_DAY) * 100,
-        },
-        {
-            startPct: 0,
-            widthPct: (to / MINUTES_IN_DAY) * 100,
+            widthPct: ((to - from) / MINUTES_IN_DAY) * 100,
         },
     ];
 }
@@ -194,7 +165,6 @@ export function hourTickLabel(hour: number): string {
 export function windowCoversNow(
     start: string | null | undefined,
     end: string | null | undefined,
-    overnight = false,
     now = new Date(),
 ): boolean {
     if (!start || !end) {
@@ -205,8 +175,8 @@ export function windowCoversNow(
     const from = minutesFromMidnight(start);
     const to = minutesFromMidnight(end);
 
-    if (overnight || to <= from) {
-        return minutes >= from || minutes < to;
+    if (to <= from) {
+        return false;
     }
 
     return minutes >= from && minutes < to;

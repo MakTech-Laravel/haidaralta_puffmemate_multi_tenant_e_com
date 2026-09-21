@@ -15,6 +15,7 @@ use App\Models\ShiftTemplate;
 use App\Models\UserShiftAssignment;
 use App\Models\UserTransferHistory;
 use App\Services\Workforce\TransferEmployeeService;
+use App\Support\DutyWindow;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -145,6 +146,11 @@ class BackfillTransfersAndShiftsCommand extends Command
                 DB::transaction(function () use ($roster, &$created): void {
                     $startTime = $roster->start_time?->format('H:i') ?? '09:00';
                     $endTime = $roster->end_time?->format('H:i') ?? '17:00';
+
+                    if (! DutyWindow::isSameDayWindow($startTime, $endTime)) {
+                        return;
+                    }
+
                     $startDate = $roster->start_date?->toDateString() ?? now()->toDateString();
                     $endDate = $roster->end_date?->toDateString() ?? $startDate;
                     $templateName = "Migrated {$startTime}–{$endTime}";
@@ -158,7 +164,6 @@ class BackfillTransfersAndShiftsCommand extends Command
                         [
                             'start_time' => $startTime,
                             'end_time' => $endTime,
-                            'is_overnight' => false,
                             'is_active' => true,
                             'created_by' => null,
                         ],

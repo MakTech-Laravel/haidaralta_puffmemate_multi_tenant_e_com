@@ -148,7 +148,6 @@ test('driver list payload includes branch slug and effective availability from s
     $template = ShiftTemplate::factory()->create([
         'start_time' => '08:00',
         'end_time' => '17:00',
-        'is_overnight' => false,
     ]);
     $period = ShiftRosterPeriod::factory()->create([
         'start_date' => '2026-09-01',
@@ -362,7 +361,6 @@ test('busy override wins over a scheduled shift assignment for effective availab
     $template = ShiftTemplate::factory()->create([
         'start_time' => now()->copy()->subHour()->format('H:i'),
         'end_time' => now()->copy()->addHour()->format('H:i'),
-        'is_overnight' => false,
     ]);
     $period = ShiftRosterPeriod::factory()->create([
         'start_date' => now()->toDateString(),

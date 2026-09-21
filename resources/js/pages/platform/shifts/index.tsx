@@ -23,7 +23,6 @@ export default function PlatformShiftsIndex({
         templates: 0,
         active_templates: 0,
         periods: 0,
-        overnight: 0,
     },
     selectedBranchId = null,
     selectedBranch = null,

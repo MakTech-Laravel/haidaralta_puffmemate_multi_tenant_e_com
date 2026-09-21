@@ -30,6 +30,8 @@ class WorkforceShiftSeeder extends Seeder
 
     public function run(): void
     {
+        $this->replaceOvernightOps();
+
         $actor = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->first();
         $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
         $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
@@ -46,9 +48,9 @@ class WorkforceShiftSeeder extends Seeder
             'owner_type' => ShiftOwnerType::Platform->value,
         ]);
         $this->template($templates, $actor, [
-            'name' => 'Overnight ops',
-            'start_time' => '20:00',
-            'end_time' => '08:00',
+            'name' => 'Evening ops',
+            'start_time' => '18:00',
+            'end_time' => '22:00',
             'owner_type' => ShiftOwnerType::Platform->value,
         ]);
 
@@ -136,6 +138,18 @@ class WorkforceShiftSeeder extends Seeder
             'days' => self::LATE_DAYS,
             'reason' => 'Queen Street late trade.',
         ]);
+    }
+
+    private function replaceOvernightOps(): void
+    {
+        ShiftTemplate::query()
+            ->where('name', 'Overnight ops')
+            ->whereNull('branch_id')
+            ->update([
+                'name' => 'Evening ops',
+                'start_time' => '18:00',
+                'end_time' => '22:00',
+            ]);
     }
 
     /**

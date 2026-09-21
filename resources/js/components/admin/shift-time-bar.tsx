@@ -9,17 +9,15 @@ const HOUR_TICKS = [0, 6, 12, 18, 24];
 export function ShiftTimeBar({
     start,
     end,
-    overnight = false,
     showNow = true,
     className,
 }: {
     start: string | null | undefined;
     end: string | null | undefined;
-    overnight?: boolean;
     showNow?: boolean;
     className?: string;
 }) {
-    const segments = timeBarSegments(start, end, overnight);
+    const segments = timeBarSegments(start, end);
     const nowPct = nowMarkerPct();
 
     return (

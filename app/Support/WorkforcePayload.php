@@ -34,7 +34,6 @@ final class WorkforcePayload
             'name' => $template->name,
             'start_time' => $template->start_time?->format('H:i'),
             'end_time' => $template->end_time?->format('H:i'),
-            'is_overnight' => (bool) $template->is_overnight,
             'is_active' => (bool) $template->is_active,
             'scheduled_count' => (int) ($template->scheduled_count ?? 0),
         ];
@@ -97,7 +96,6 @@ final class WorkforcePayload
             'end_date' => $assignment->end_date?->format('Y-m-d'),
             'start_time' => $template?->start_time?->format('H:i'),
             'end_time' => $template?->end_time?->format('H:i'),
-            'is_overnight' => (bool) $template?->is_overnight,
             'days_of_week' => $days,
             'days_label' => DriverRoster::daysLabel($days),
             'status' => $assignment->status?->value,
@@ -363,7 +361,7 @@ final class WorkforcePayload
      * @param  list<array<string, mixed>>  $templates
      * @param  list<array<string, mixed>>  $periods
      * @param  list<array<string, mixed>>  $onDuty
-     * @return array{on_duty: int, templates: int, active_templates: int, periods: int, overnight: int}
+     * @return array{on_duty: int, templates: int, active_templates: int, periods: int}
      */
     public static function workspaceStats(array $templates, array $periods, array $onDuty): array
     {
@@ -375,10 +373,6 @@ final class WorkforcePayload
                 fn (array $template): bool => (bool) $template['is_active'],
             )),
             'periods' => count($periods),
-            'overnight' => count(array_filter(
-                $templates,
-                fn (array $template): bool => (bool) $template['is_overnight'],
-            )),
         ];
     }
 
