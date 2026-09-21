@@ -49,6 +49,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'phone.verified' => EnsurePhoneIsVerified::class,
         ]);
 
+        $middleware->redirectGuestsTo(fn () => route('login'));
+
         $middleware->priority([
             EnsureAnyPortalGuard::class,
             EnsurePortalGuard::class,

@@ -1,10 +1,11 @@
 ---
 paths:
-    - resources/js/components/admin/branch-form.tsx
-    - resources/js/components/admin/driver-form.tsx
-    - resources/js/components/admin/duty-days-picker.tsx
-    - resources/js/components/admin/driver-roster-fields.tsx
-    - resources/js/components/admin/branch-location-map-dialog.tsx
+  - resources/js/components/admin/branch-form.tsx
+  - resources/js/components/admin/driver-form.tsx
+  - resources/js/components/admin/duty-days-picker.tsx
+  - resources/js/components/admin/driver-roster-fields.tsx
+  - resources/js/components/admin/branch-location-map-dialog.tsx
+  - resources/js/components/admin/driver-branch-assign-sheet.tsx
 ---
 
 # Admin
@@ -28,3 +29,6 @@ Driver avatar uses FileUpload variant=avatar with showCaption={false} (no Photo/
 ## View-only branch map dialog uses OSM embed
 
 BranchLocationMapDialog is view-only. Preview uses an OpenStreetMap embed until Mapbox/Google is wired. Keep picking on BranchLocationPicker (create/edit). Do not put a live map inline on branch show or the branch form.
+
+## Assigner select mode follows shared flag
+DriverBranchAssignSheet and driver form/pages copy read Inertia drivers.single_active_branch. True: exclusive select and one-branch/transfer copy. False: multi-checkbox and manage-branches copy. Do not hardcode one-branch UI.

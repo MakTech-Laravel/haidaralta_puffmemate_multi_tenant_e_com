@@ -6,6 +6,7 @@ use App\Concerns\NormalizesPhoneInput;
 use App\Concerns\ValidatesDriverRosterPeriod;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\DriverVehicleType;
+use App\Services\Driver\DriverService;
 use App\Support\Phone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -51,9 +52,24 @@ class StoreDriverRequest extends FormRequest
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'vehicle_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'is_active' => ['sometimes', 'boolean'],
-            'branch_ids' => ['required', 'array', 'min:1'],
+            'branch_ids' => [
+                'required',
+                'array',
+                'min:1',
+                Rule::when((bool) config('drivers.single_active_branch'), ['max:1']),
+            ],
             'branch_ids.*' => ['integer', 'distinct', Rule::exists('branches', 'id')],
             ...$this->nestedRosterRules(),
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'branch_ids.max' => DriverService::ONE_ACTIVE_BRANCH_MESSAGE,
         ];
     }
 }

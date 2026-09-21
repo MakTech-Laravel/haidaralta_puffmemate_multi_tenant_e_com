@@ -1,49 +1,100 @@
 import {
-    Activity,
+    History,
     LayoutDashboard,
     LogOut,
+    Navigation,
     Package,
+    UserRound,
+    Wallet,
     type LucideIcon,
 } from 'lucide-react';
+import { dashboard } from '@/routes/driver';
+import { index as earningsIndex } from '@/routes/driver/earnings';
+import { index as historyIndex } from '@/routes/driver/history';
+import { index as ordersIndex } from '@/routes/driver/orders';
+import { index as profileIndex } from '@/routes/driver/profile';
+import { index as routeIndex } from '@/routes/driver/route';
 
 export type DriverNavItem = {
+    id: string;
     label: string;
     icon: LucideIcon;
     href?: string;
-    match?: (url: string) => boolean;
+    match: (url: string) => boolean;
     logout?: boolean;
+    /** Shown in the phone/tablet tab bar. Desktop sidebar lists every item. */
+    tab?: boolean;
+    /** Short label for the tab bar when `label` is too long for five columns. */
+    tabLabel?: string;
 };
 
-/** Text sidebar items for the driver account-style shell (not PortalShell / bottom tabs). */
+function matchesPath(url: string, path: string, nested = false): boolean {
+    if (url === path || url.startsWith(`${path}?`)) {
+        return true;
+    }
+
+    return nested && url.startsWith(`${path}/`);
+}
+
+/**
+ * Five field tabs. Notifications live on the header bell, not the tab bar.
+ * Route stays center; account options live in the header sheet; chat stays on the order.
+ */
 export const driverNavItems: DriverNavItem[] = [
     {
+        id: 'dashboard',
         label: 'Dashboard',
         icon: LayoutDashboard,
-        href: '/driver/dashboard',
-        match: (url) =>
-            url === '/driver/dashboard' || url.startsWith('/driver/dashboard?'),
+        href: dashboard.url(),
+        tab: true,
+        match: (url) => matchesPath(url, dashboard.url()),
     },
     {
+        id: 'orders',
         label: 'Orders',
         icon: Package,
-        href: '/driver/orders',
-        match: (url) =>
-            url === '/driver/orders' ||
-            url.startsWith('/driver/orders?') ||
-            url.startsWith('/driver/orders/'),
+        href: ordersIndex.url(),
+        tab: true,
+        match: (url) => matchesPath(url, ordersIndex.url(), true),
     },
     {
-        label: 'My activity',
-        icon: Activity,
-        href: '/driver/activity',
-        match: (url) =>
-            url === '/driver/activity' ||
-            url.startsWith('/driver/activity?') ||
-            url.startsWith('/driver/activity/'),
+        id: 'history',
+        label: 'Old orders',
+        icon: History,
+        href: historyIndex.url(),
+        match: (url) => matchesPath(url, historyIndex.url(), true),
     },
     {
+        id: 'route',
+        label: 'Route',
+        icon: Navigation,
+        href: routeIndex.url(),
+        tab: true,
+        match: (url) => matchesPath(url, routeIndex.url(), true),
+    },
+    {
+        id: 'earnings',
+        label: 'Earnings',
+        icon: Wallet,
+        href: earningsIndex.url(),
+        tab: true,
+        match: (url) => matchesPath(url, earningsIndex.url(), true),
+    },
+    {
+        id: 'profile',
+        label: 'Profile',
+        icon: UserRound,
+        href: profileIndex.url(),
+        tab: true,
+        match: (url) => matchesPath(url, profileIndex.url(), true),
+    },
+    {
+        id: 'logout',
         label: 'Log Out',
         icon: LogOut,
         logout: true,
+        match: () => false,
     },
 ];
+
+export const driverTabItems = driverNavItems.filter((item) => item.tab);

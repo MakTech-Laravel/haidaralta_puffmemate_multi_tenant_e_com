@@ -1,33 +1,30 @@
 import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { Package } from 'lucide-react';
+import { useMemo, useState, type FormEvent } from 'react';
+import { DriverEmptyState } from '@/components/driver/driver-empty-state';
 import { DriverOrderCard } from '@/components/driver/driver-order-card';
+import { DriverOrderSearchField } from '@/components/driver/driver-order-search-field';
 import {
-    driverOrderStatusLabel,
+    driverOrderFilterCounts,
+    driverOrderStatusFilterLabel,
+    filterDriverAssignedOrders,
+    searchDriverAssignedOrders,
     type DriverAssignedOrder,
-    type DriverOrderStatus,
+    type DriverOrderStatusFilter,
 } from '@/components/driver/driver-order-types';
-import { Label } from '@/components/ui/label';
 import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from '@/components/ui/pagination';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+    ToggleGroup,
+    ToggleGroupItem,
+} from '@/components/ui/toggle-group';
 import { index as ordersIndex } from '@/routes/driver/orders';
 
-const PAGE_SIZE = 4;
-
-type StatusFilter = 'all' | DriverOrderStatus;
+const statusFilters: DriverOrderStatusFilter[] = [
+    'active',
+    'out_for_delivery',
+    'arrived',
+    'delivered',
+    'all',
+];
 
 type DriverOrdersIndexProps = {
     orders: DriverAssignedOrder[];
@@ -38,34 +35,34 @@ export default function DriverOrdersIndex({
     orders,
     status = null,
 }: DriverOrdersIndexProps) {
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-    const [page, setPage] = useState(1);
+    const [statusFilter, setStatusFilter] =
+        useState<DriverOrderStatusFilter>('active');
+    const [search, setSearch] = useState('');
+    const counts = driverOrderFilterCounts(orders);
+    const filteredOrders = useMemo(() => {
+        return searchDriverAssignedOrders(
+            filterDriverAssignedOrders(orders, statusFilter),
+            search,
+        );
+    }, [orders, search, statusFilter]);
 
-    const filteredOrders =
-        statusFilter === 'all'
-            ? orders
-            : orders.filter((order) => order.status === statusFilter);
-
-    const totalPages = Math.max(
-        1,
-        Math.ceil(filteredOrders.length / PAGE_SIZE),
-    );
-    const currentPage = Math.min(Math.max(page, 1), totalPages);
-    const pageOrders = filteredOrders.slice(
-        (currentPage - 1) * PAGE_SIZE,
-        currentPage * PAGE_SIZE,
-    );
-    const showPagination = filteredOrders.length > PAGE_SIZE;
+    const submitSearch = (event: FormEvent<HTMLFormElement>): void => {
+        event.preventDefault();
+        setSearch(search.trim());
+    };
 
     return (
         <>
             <Head title="Orders" />
 
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-5">
                 <div className="space-y-1">
-                    <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
-                        Assigned orders
+                    <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
+                        Orders
                     </h1>
+                    <p className="text-muted-foreground text-sm">
+                        {counts.active} active · {counts.delivered} delivered
+                    </p>
                 </div>
 
                 {status ? (
@@ -74,121 +71,75 @@ export default function DriverOrdersIndex({
                     </p>
                 ) : null}
 
-                <div className="grid w-full max-w-xs gap-2">
-                    <Label htmlFor="driver-orders-status-filter">Status</Label>
-                    <Select
-                        value={statusFilter}
-                        onValueChange={(value) => {
-                            setStatusFilter(value as StatusFilter);
-                            setPage(1);
-                        }}
-                    >
-                        <SelectTrigger
-                            id="driver-orders-status-filter"
-                            className="w-full"
+                <DriverOrderSearchField
+                    value={search}
+                    onChange={setSearch}
+                    onSubmit={submitSearch}
+                />
+
+                <ToggleGroup
+                    type="single"
+                    value={statusFilter}
+                    onValueChange={(value) => {
+                        if (
+                            value === 'all' ||
+                            value === 'active' ||
+                            value === 'out_for_delivery' ||
+                            value === 'arrived' ||
+                            value === 'delivered'
+                        ) {
+                            setStatusFilter(value);
+                        }
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="-mx-1 flex-nowrap justify-start overflow-x-auto px-1"
+                    aria-label="Filter orders by status"
+                >
+                    {statusFilters.map((filter) => (
+                        <ToggleGroupItem
+                            key={filter}
+                            value={filter}
+                            className="h-9 shrink-0 px-2.5 text-sm"
+                            aria-label={`${driverOrderStatusFilterLabel[filter]} orders`}
+                            data-test={`driver-orders-filter-${filter}`}
                         >
-                            <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All orders</SelectItem>
-                            <SelectItem value="out_for_delivery">
-                                {driverOrderStatusLabel.out_for_delivery}
-                            </SelectItem>
-                            <SelectItem value="arrived">
-                                {driverOrderStatusLabel.arrived}
-                            </SelectItem>
-                            <SelectItem value="delivered">
-                                {driverOrderStatusLabel.delivered}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+                            {driverOrderStatusFilterLabel[filter]}
+                            <span className="text-muted-foreground tabular-nums">
+                                {counts[filter]}
+                            </span>
+                        </ToggleGroupItem>
+                    ))}
+                </ToggleGroup>
 
                 {orders.length === 0 ? (
-                    <p className="text-muted-foreground text-base">
-                        No assigned orders right now.
-                    </p>
+                    <DriverEmptyState
+                        icon={Package}
+                        title="No assigned orders"
+                        description="New drops for this shift will appear here."
+                    />
                 ) : filteredOrders.length === 0 ? (
-                    <p className="text-muted-foreground text-base">
-                        No orders with this status.
-                    </p>
+                    <DriverEmptyState
+                        icon={Package}
+                        title={
+                            search !== ''
+                                ? 'No matching orders'
+                                : 'Nothing in this filter'
+                        }
+                        description={
+                            search !== ''
+                                ? 'Try a name, order number, suburb, or address.'
+                                : 'Try another status to see the rest of your run.'
+                        }
+                    />
                 ) : (
-                    <>
-                        <ul className="flex flex-col gap-4">
-                            {pageOrders.map((order) => (
-                                <li key={order.id}>
-                                    <DriverOrderCard order={order} />
-                                </li>
-                            ))}
-                        </ul>
-
-                        {showPagination ? (
-                            <Pagination>
-                                <PaginationContent>
-                                    <PaginationItem>
-                                        <PaginationPrevious
-                                            href="#"
-                                            aria-disabled={currentPage <= 1}
-                                            className={cn(
-                                                currentPage <= 1 &&
-                                                    'pointer-events-none opacity-50',
-                                            )}
-                                            onClick={(event) => {
-                                                event.preventDefault();
-                                                if (currentPage > 1) {
-                                                    setPage(currentPage - 1);
-                                                }
-                                            }}
-                                        />
-                                    </PaginationItem>
-                                    {Array.from(
-                                        { length: totalPages },
-                                        (_, index) => {
-                                            const pageNumber = index + 1;
-
-                                            return (
-                                                <PaginationItem
-                                                    key={pageNumber}
-                                                >
-                                                    <PaginationLink
-                                                        href="#"
-                                                        isActive={
-                                                            pageNumber ===
-                                                            currentPage
-                                                        }
-                                                        onClick={(event) => {
-                                                            event.preventDefault();
-                                                            setPage(pageNumber);
-                                                        }}
-                                                    >
-                                                        {pageNumber}
-                                                    </PaginationLink>
-                                                </PaginationItem>
-                                            );
-                                        },
-                                    )}
-                                    <PaginationItem>
-                                        <PaginationNext
-                                            href="#"
-                                            aria-disabled={
-                                                currentPage >= totalPages
-                                            }
-                                            className={cn(
-                                                currentPage >= totalPages &&
-                                                    'pointer-events-none opacity-50',
-                                            )}
-                                            onClick={(event) => {
-                                                event.preventDefault();
-                                                if (currentPage < totalPages) {
-                                                    setPage(currentPage + 1);
-                                                }
-                                            }}
-                                        />
-                                    </PaginationItem>
-                                </PaginationContent>
-                            </Pagination>
-                        ) : null}
-                    </>
+                    <ul className="flex flex-col gap-2.5">
+                        {filteredOrders.map((order) => (
+                            <li key={order.id}>
+                                <DriverOrderCard order={order} />
+                            </li>
+                        ))}
+                    </ul>
                 )}
             </div>
         </>

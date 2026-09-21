@@ -7,6 +7,7 @@ use App\Concerns\ValidatesDriverRosterPeriod;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\DriverVehicleType;
 use App\Models\User;
+use App\Services\Driver\DriverService;
 use App\Support\Phone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -63,9 +64,23 @@ class UpdateDriverRequest extends FormRequest
             'remove_avatar' => ['sometimes', 'boolean'],
             'remove_vehicle_image' => ['sometimes', 'boolean'],
             'is_active' => ['required', 'boolean'],
-            'branch_ids' => ['sometimes', 'array'],
+            'branch_ids' => [
+                'sometimes',
+                'array',
+                Rule::when((bool) config('drivers.single_active_branch'), ['max:1']),
+            ],
             'branch_ids.*' => ['integer', 'distinct', Rule::exists('branches', 'id')],
             ...$this->nestedRosterRules(),
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'branch_ids.max' => DriverService::ONE_ACTIVE_BRANCH_MESSAGE,
         ];
     }
 }

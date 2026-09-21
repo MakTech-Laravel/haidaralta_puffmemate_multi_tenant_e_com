@@ -9,6 +9,7 @@ import {
     User,
     type LucideIcon,
 } from 'lucide-react';
+import { PwaInstallMenuItem } from '@/components/pwa/pwa-install-menu-item';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
 import { index as accountIndex } from '@/routes/customer/account';
@@ -128,6 +129,7 @@ export function AccountSidebar({ className }: AccountSidebarProps) {
                     </Link>
                 );
             })}
+            <PwaInstallMenuItem className="border-border text-foreground hover:text-primary flex items-center gap-3 border-b py-3 text-base font-medium transition-colors [&_svg]:size-5" />
         </nav>
     );
 }

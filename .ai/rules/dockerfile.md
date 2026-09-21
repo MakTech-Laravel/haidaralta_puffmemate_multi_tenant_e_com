@@ -24,3 +24,6 @@ Coolify Postgres is 18.x. Install postgresql-client-18 from PGDG in the producti
 ## Pulse CPU needs procps in the app image
 
 Install procps in the production image so Pulse pulse:check can sample CPU with top. Without it Servers shows 0% CPU while memory/disk still work via /proc.
+
+## Generate PWA assets in the image build
+Run pnpm generate:pwa-assets before pnpm run build. No new VITE_* PWA args. PWA_SW_ENABLED is runtime (default true), same pattern as FCM_SW_SHOW_NOTIFICATION.

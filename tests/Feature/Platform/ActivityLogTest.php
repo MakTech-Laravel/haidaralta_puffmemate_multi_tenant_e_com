@@ -214,6 +214,35 @@ test('driver only sees own causer activities and guests are redirected', functio
     $this->get(route('driver.activity.index'))->assertRedirect();
 });
 
+test('driver can open own activity detail and cannot open another drivers', function () {
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $other = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+
+    Activity::query()->delete();
+
+    activity()->causedBy($driver)->event('login')->log('driver-own-login-show');
+    activity()->causedBy($other)->event('login')->log('driver-other-login-show');
+
+    $own = Activity::query()->where('description', 'driver-own-login-show')->firstOrFail();
+    $foreign = Activity::query()->where('description', 'driver-other-login-show')->firstOrFail();
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.activity.show', $own->id))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('driver/activity/show')
+            ->where('activity.description', 'driver-own-login-show')
+            ->where('activity.event', 'login')
+        );
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.activity.show', $foreign->id))
+        ->assertNotFound();
+});
+
 test('customer can open my activity', function () {
     $customer = User::query()->where('email', UserSeeder::CUSTOMER)->firstOrFail();
 

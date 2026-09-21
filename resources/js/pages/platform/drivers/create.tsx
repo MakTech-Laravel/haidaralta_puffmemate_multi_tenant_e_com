@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import DriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
 import { DriverForm } from '@/components/admin/driver-form';
 import Heading from '@/components/heading';
@@ -22,6 +22,8 @@ export default function PlatformDriversCreate({
     availabilityStatuses: Option[];
     rosterStatuses: Option[];
 }) {
+    const singleActiveBranch = usePage().props.drivers.single_active_branch;
+
     return (
         <>
             <Head title="Add driver" />
@@ -29,7 +31,11 @@ export default function PlatformDriversCreate({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Add driver"
-                    description="Create a driver and assign at least one branch"
+                    description={
+                        singleActiveBranch
+                            ? 'Create a driver and assign a branch'
+                            : 'Create a driver and assign at least one branch'
+                    }
                 />
 
                 <DriverForm

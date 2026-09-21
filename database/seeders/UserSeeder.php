@@ -223,7 +223,10 @@ class UserSeeder extends Seeder
 
         $driverService = app(DriverService::class);
         $driverService->assignToBranch($driver, $sydney, status: DriverAssignmentStatus::Active);
-        $driverService->assignToBranch($driver, $melbourne, status: DriverAssignmentStatus::Active);
+
+        if (! (bool) config('drivers.single_active_branch')) {
+            $driverService->assignToBranch($driver, $melbourne, status: DriverAssignmentStatus::Active);
+        }
     }
 
     private function seedPortalUser(
