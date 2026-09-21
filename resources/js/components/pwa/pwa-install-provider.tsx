@@ -5,7 +5,6 @@ import {
     useState,
     type ReactNode,
 } from 'react';
-import { usePage } from '@inertiajs/react';
 import { Download, Share, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,8 +38,15 @@ export function usePwaInstall(): PwaInstallContextValue | null {
     return useContext(PwaInstallContext);
 }
 
-export function PwaInstallProvider({ children }: { children: ReactNode }) {
-    const { name } = usePage().props as { name: string };
+type PwaInstallProviderProps = {
+    children: ReactNode;
+    name: string;
+};
+
+export function PwaInstallProvider({
+    children,
+    name,
+}: PwaInstallProviderProps) {
     const [isInstalled, setIsInstalled] = useState(isStandaloneDisplay);
     const [deferredPrompt, setDeferredPrompt] =
         useState<BeforeInstallPromptEvent | null>(null);

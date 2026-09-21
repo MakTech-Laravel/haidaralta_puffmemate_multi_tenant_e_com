@@ -19,6 +19,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx | .ai/rules/components-branch.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx,resources/js/components/driver/driver-deliver-otp-form.tsx | .ai/rules/components-driver-js-components-driver.md |
 | resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx}, resources/js/components/driver/** | .ai/rules/components-driver.md |
+| resources/js/app.tsx, resources/js/components/pwa/** | .ai/rules/components-pwa.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/components-stock.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
 | config/*.php, config/scout.php | .ai/rules/config.md |

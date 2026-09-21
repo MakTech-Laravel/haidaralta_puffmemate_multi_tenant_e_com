@@ -51,11 +51,13 @@ void createInertiaApp({
     },
     strictMode: true,
     withApp(app, { page }) {
-        const authUserId = (page.props as { auth?: Auth }).auth?.user?.id;
+        const pageProps = page.props as { auth?: Auth; name?: string };
+        const authUserId = pageProps.auth?.user?.id;
+        const productName = pageProps.name || appName;
 
         return (
             <TooltipProvider delayDuration={0}>
-                <PwaInstallProvider>
+                <PwaInstallProvider name={productName}>
                     <ErrorBoundary
                         FallbackComponent={ErrorBoundaryFallback}
                         onReset={() => router.reload()}
