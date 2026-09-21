@@ -85,7 +85,11 @@ export function buildBranchNav(
             navGroup({
                 title: 'Administrator',
                 icon: Shield,
-                permissions: ['manage-branch-staff', 'manage-branch-roles'],
+                permissions: [
+                    'manage-branch-staff',
+                    'manage-branch-roles',
+                    'manage-branch-shifts',
+                ],
                 items: [
                     navLink({
                         title: 'Staff',
@@ -104,6 +108,18 @@ export function buildBranchNav(
                         href: `/branch/${slug}/permissions`,
                         icon: KeyRound,
                         permissions: ['manage-branch-roles'],
+                    }),
+                    navLink({
+                        title: 'Shifts',
+                        href: `/branch/${slug}/shifts`,
+                        icon: CalendarClock,
+                        permissions: ['manage-branch-shifts'],
+                    }),
+                    navLink({
+                        title: 'Assign to shift',
+                        href: `/branch/${slug}/shifts/assign`,
+                        icon: UserPlus,
+                        permissions: ['manage-branch-shifts'],
                     }),
                 ],
             }),
@@ -128,25 +144,13 @@ export function buildBranchNav(
                 title: 'Driver management',
                 href: `/branch/${slug}/drivers`,
                 icon: Truck,
-                permissions: ['manage-branch-drivers', 'manage-branch-shifts'],
+                permissions: ['manage-branch-drivers'],
                 items: [
                     navLink({
                         title: 'Drivers',
                         href: `/branch/${slug}/drivers`,
                         icon: Truck,
                         permissions: ['manage-branch-drivers'],
-                    }),
-                    navLink({
-                        title: 'Shifts',
-                        href: `/branch/${slug}/shifts`,
-                        icon: CalendarClock,
-                        permissions: ['manage-branch-shifts'],
-                    }),
-                    navLink({
-                        title: 'Assign to shift',
-                        href: `/branch/${slug}/shifts/assign`,
-                        icon: UserPlus,
-                        permissions: ['manage-branch-shifts'],
                     }),
                     navSoon({
                         title: 'Live tracking',
