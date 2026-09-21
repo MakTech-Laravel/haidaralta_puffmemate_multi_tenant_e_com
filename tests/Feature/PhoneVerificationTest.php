@@ -13,7 +13,6 @@ test('registration requires phone and redirects to phone verification', function
     $response = $this->post(route('register.store'), [
         'name' => 'Test User',
         'phone' => '0412345678',
-        'email' => null,
         'password' => 'password',
         'password_confirmation' => 'password',
     ]);
@@ -23,6 +22,7 @@ test('registration requires phone and redirects to phone verification', function
 
     $this->assertDatabaseHas('users', [
         'phone' => '+61412345678',
+        'name' => 'Test User',
         'email' => null,
         'phone_verified_at' => null,
     ]);
