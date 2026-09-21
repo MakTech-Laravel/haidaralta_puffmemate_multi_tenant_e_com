@@ -27,6 +27,10 @@ Generate with `pnpm generate:pwa-assets` (`@vite-pwa/assets-generator` only). Ne
 
 `/firebase-messaging-sw.js` is the only worker (`Service-Worker-Allowed: /`). Register on every boot (notification permission is unrelated). Unregister any other `scriptURL` on the origin. Network-only — no `fetch` cache. `PWA_SW_ENABLED` kill-switch. Do not build WordPress user migration into the PWA.
 
+## Install UI
+
+`PwaInstallProvider` lives in `createInertiaApp`'s `withApp`, which is **outside** Inertia page context. Pass `name` from `page.props` — never call `usePage()` there (`usePage must be used within the Inertia component` blanks the app).
+
 ## Nginx
 
 `Permissions-Policy` `geolocation=(self)`. Exact locations for `/manifest.webmanifest` and `/firebase-messaging-sw.js` rewrite to `index.php`. Do not long-cache `service-worker.js`. gzip `application/manifest+json`. PNG/splash files under `public/pwa/` keep the 7-day static cache.
