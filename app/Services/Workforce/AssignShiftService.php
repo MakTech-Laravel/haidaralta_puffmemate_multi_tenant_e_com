@@ -4,6 +4,7 @@ namespace App\Services\Workforce;
 
 use App\Enums\DriverAssignmentStatus;
 use App\Enums\ShiftAssignmentStatus;
+use App\Enums\ShiftOwnerType;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\DriverBranchAssignment;
@@ -23,7 +24,7 @@ class AssignShiftService
     /**
      * @param  array{user_id: int, branch_id: int, shift_template_id: int, shift_roster_period_id: int, start_date: string, end_date: string, days_of_week?: list<int>, reason?: string|null, note?: string|null, effective_date?: string|null}  $data
      */
-    public function assign(array $data, ?User $actor = null): UserShiftAssignment
+    public function assign(array $data, ?User $actor = null, ?ShiftOwnerType $expectedOwner = null): UserShiftAssignment
     {
         $user = User::query()->findOrFail((int) $data['user_id']);
         $branch = Branch::query()->findOrFail((int) $data['branch_id']);
@@ -32,7 +33,9 @@ class AssignShiftService
         $days = DriverRoster::normalizeDays($data['days_of_week'] ?? null);
 
         $this->assertAssignableUser($user, $branch);
+        $this->assertExpectedOwner($template, $period, $branch, $expectedOwner);
         $this->assertTemplateVisible($template, $branch);
+        $this->assertPeriodVisible($period, $branch);
         $this->assertDatesInsidePeriod($data['start_date'], $data['end_date'], $period);
 
         return DB::transaction(function () use ($user, $branch, $template, $period, $data, $days, $actor): UserShiftAssignment {
@@ -76,9 +79,9 @@ class AssignShiftService
     /**
      * @param  array{shift_template_id?: int, shift_roster_period_id?: int, start_date?: string, end_date?: string, days_of_week?: list<int>, status?: string, reason?: string|null, note?: string|null, effective_date?: string|null}  $data
      */
-    public function change(UserShiftAssignment $assignment, array $data, ?User $actor = null): UserShiftAssignment
+    public function change(UserShiftAssignment $assignment, array $data, ?User $actor = null, ?ShiftOwnerType $expectedOwner = null): UserShiftAssignment
     {
-        $assignment->loadMissing(['user', 'branch', 'shiftTemplate']);
+        $assignment->loadMissing(['user', 'branch', 'shiftTemplate', 'shiftRosterPeriod']);
 
         $user = $assignment->user;
         $branch = $assignment->branch;
@@ -100,8 +103,10 @@ class AssignShiftService
             ? ShiftAssignmentStatus::from($data['status'])
             : $assignment->status;
 
+        $this->assertExpectedOwner($template, $period, $branch, $expectedOwner);
         $this->assertDatesInsidePeriod($startDate, $endDate, $period);
         $this->assertTemplateVisible($template, $branch);
+        $this->assertPeriodVisible($period, $branch);
 
         if ($status === ShiftAssignmentStatus::Scheduled) {
             $this->assertNoOverlap($user, $startDate, $endDate, $template, $days, $assignment->id);
@@ -162,17 +167,54 @@ class AssignShiftService
         }
     }
 
+    private function assertExpectedOwner(
+        ShiftTemplate $template,
+        ShiftRosterPeriod $period,
+        Branch $branch,
+        ?ShiftOwnerType $expectedOwner,
+    ): void {
+        if ($expectedOwner === null) {
+            return;
+        }
+
+        if ($expectedOwner === ShiftOwnerType::Platform) {
+            abort_unless($template->isPlatformOwned() && $period->isPlatformOwned(), 404);
+
+            return;
+        }
+
+        abort_unless(
+            $template->isBranchOwned()
+                && $period->isBranchOwned()
+                && (int) $template->branch_id === $branch->id
+                && (int) $period->branch_id === $branch->id,
+            404,
+        );
+    }
+
     private function assertTemplateVisible(ShiftTemplate $template, Branch $branch): void
     {
         if (! $template->is_active) {
             throw new InvalidArgumentException('This shift template is inactive.');
         }
 
-        $visible = ($template->owner_type->value === 'platform' && $template->branch_id === null)
-            || $template->branch_id === $branch->id;
+        $visible = $template->isPlatformOwned() || $template->branch_id === $branch->id;
 
         if (! $visible) {
             throw new InvalidArgumentException('This shift template is not available for this branch.');
+        }
+    }
+
+    private function assertPeriodVisible(ShiftRosterPeriod $period, Branch $branch): void
+    {
+        if (! $period->is_active) {
+            throw new InvalidArgumentException('This roster period is inactive.');
+        }
+
+        $visible = $period->isPlatformOwned() || $period->branch_id === $branch->id;
+
+        if (! $visible) {
+            throw new InvalidArgumentException('This roster period is not available for this branch.');
         }
     }
 

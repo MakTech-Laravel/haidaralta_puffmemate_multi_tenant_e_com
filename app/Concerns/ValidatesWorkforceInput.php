@@ -73,6 +73,21 @@ trait ValidatesWorkforceInput
         ];
     }
 
+    protected function forcePlatformOwner(): void
+    {
+        $this->merge([
+            'owner_type' => ShiftOwnerType::Platform->value,
+            'branch_id' => null,
+        ]);
+    }
+
+    protected function forceBranchOwner(): void
+    {
+        $this->merge([
+            'owner_type' => ShiftOwnerType::Branch->value,
+        ]);
+    }
+
     protected function normalizeDaysOfWeekInput(): void
     {
         if (! $this->exists('days_of_week') || is_array($this->input('days_of_week'))) {

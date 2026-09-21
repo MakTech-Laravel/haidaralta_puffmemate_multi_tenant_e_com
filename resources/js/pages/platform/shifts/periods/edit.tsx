@@ -1,23 +1,34 @@
-import { Head } from '@inertiajs/react';
-import ShiftRosterPeriodController from '@/actions/App/Http/Controllers/Platform/ShiftRosterPeriodController';
-import ShiftTemplateController from '@/actions/App/Http/Controllers/Platform/ShiftTemplateController';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import { ShiftPeriodForm } from '@/components/admin/shift-period-form';
+import {
+    platformShiftWorkspace,
+    type ShiftWorkspace,
+} from '@/components/admin/platform-shift-workspace';
 import type {
     BranchOption,
-    Option,
     ShiftPeriodOption,
 } from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
 
 export default function PlatformShiftPeriodsEdit({
+    workspace = 'platform',
     period,
-    ownerTypes,
-    branches,
+    branches = [],
 }: {
+    workspace?: ShiftWorkspace;
     period: ShiftPeriodOption;
-    ownerTypes: Option[];
-    branches: BranchOption[];
+    branches?: BranchOption[];
 }) {
+    const routes = platformShiftWorkspace(workspace);
+
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Dashboard', href: '/platform/dashboard' },
+            { title: routes.title, href: routes.templates.index.url() },
+            { title: 'Edit period', href: '#' },
+        ],
+    });
+
     return (
         <>
             <Head title={`Edit ${period.name}`} />
@@ -28,22 +39,14 @@ export default function PlatformShiftPeriodsEdit({
                     description="Update the named date range assignments must stay inside."
                 />
                 <ShiftPeriodForm
-                    action={ShiftRosterPeriodController.update.form(period.id)}
-                    ownerTypes={ownerTypes}
+                    action={routes.periods.update.form(period.id)}
                     branches={branches}
                     lockOwner
+                    showBranchSelect={false}
                     defaults={period}
-                    cancelHref={ShiftTemplateController.index.url()}
+                    cancelHref={routes.templates.index.url()}
                 />
             </div>
         </>
     );
 }
-
-PlatformShiftPeriodsEdit.layout = {
-    breadcrumbs: [
-        { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Shifts', href: '/platform/shifts' },
-        { title: 'Edit period', href: '#' },
-    ],
-};

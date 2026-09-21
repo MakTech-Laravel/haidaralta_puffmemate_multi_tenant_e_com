@@ -1,22 +1,34 @@
-import { Head } from '@inertiajs/react';
-import ShiftTemplateController from '@/actions/App/Http/Controllers/Platform/ShiftTemplateController';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import { ShiftTemplateForm } from '@/components/admin/shift-template-form';
+import {
+    platformShiftWorkspace,
+    type ShiftWorkspace,
+} from '@/components/admin/platform-shift-workspace';
 import type {
     BranchOption,
-    Option,
     ShiftTemplateOption,
 } from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
 
 export default function PlatformShiftsEdit({
+    workspace = 'platform',
     template,
-    ownerTypes,
-    branches,
+    branches = [],
 }: {
+    workspace?: ShiftWorkspace;
     template: ShiftTemplateOption;
-    ownerTypes: Option[];
-    branches: BranchOption[];
+    branches?: BranchOption[];
 }) {
+    const routes = platformShiftWorkspace(workspace);
+
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Dashboard', href: '/platform/dashboard' },
+            { title: routes.title, href: routes.templates.index.url() },
+            { title: 'Edit', href: '#' },
+        ],
+    });
+
     return (
         <>
             <Head title={`Edit ${template.name}`} />
@@ -27,22 +39,14 @@ export default function PlatformShiftsEdit({
                     description="Update the duty window. Overnight is inferred from the times."
                 />
                 <ShiftTemplateForm
-                    action={ShiftTemplateController.update.form(template.id)}
-                    ownerTypes={ownerTypes}
+                    action={routes.templates.update.form(template.id)}
                     branches={branches}
                     lockOwner
+                    showBranchSelect={false}
                     defaults={template}
-                    cancelHref={ShiftTemplateController.index.url()}
+                    cancelHref={routes.templates.index.url()}
                 />
             </div>
         </>
     );
 }
-
-PlatformShiftsEdit.layout = {
-    breadcrumbs: [
-        { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Shifts', href: '/platform/shifts' },
-        { title: 'Edit', href: '#' },
-    ],
-};

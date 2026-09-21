@@ -1,22 +1,31 @@
-import { Head } from '@inertiajs/react';
-import ShiftRosterPeriodController from '@/actions/App/Http/Controllers/Platform/ShiftRosterPeriodController';
-import ShiftTemplateController from '@/actions/App/Http/Controllers/Platform/ShiftTemplateController';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import { ShiftPeriodForm } from '@/components/admin/shift-period-form';
-import type {
-    BranchOption,
-    Option,
-} from '@/components/admin/workforce-types';
+import {
+    platformShiftWorkspace,
+    type ShiftWorkspace,
+} from '@/components/admin/platform-shift-workspace';
+import type { BranchOption } from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
 
 export default function PlatformShiftPeriodsCreate({
-    ownerTypes,
-    branches,
+    workspace = 'platform',
+    branches = [],
     defaultOwnerType,
 }: {
-    ownerTypes: Option[];
-    branches: BranchOption[];
+    workspace?: ShiftWorkspace;
+    branches?: BranchOption[];
     defaultOwnerType: string;
 }) {
+    const routes = platformShiftWorkspace(workspace);
+
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Dashboard', href: '/platform/dashboard' },
+            { title: routes.title, href: routes.templates.index.url() },
+            { title: 'New period', href: routes.periods.create.url() },
+        ],
+    });
+
     return (
         <>
             <Head title="Create roster period" />
@@ -27,22 +36,15 @@ export default function PlatformShiftPeriodsCreate({
                     description="A named date range. Assignments must stay inside these dates."
                 />
                 <ShiftPeriodForm
-                    action={ShiftRosterPeriodController.store.form()}
-                    ownerTypes={ownerTypes}
+                    action={routes.periods.store.form()}
                     branches={branches}
+                    lockOwner
+                    showBranchSelect={routes.showBranchSelect}
                     defaults={{ owner_type: defaultOwnerType }}
-                    cancelHref={ShiftTemplateController.index.url()}
+                    cancelHref={routes.templates.index.url()}
                     submitLabel="Create period"
                 />
             </div>
         </>
     );
 }
-
-PlatformShiftPeriodsCreate.layout = {
-    breadcrumbs: [
-        { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Shifts', href: '/platform/shifts' },
-        { title: 'New period', href: '/platform/shift-periods/create' },
-    ],
-};

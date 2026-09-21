@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\Concerns\ResolvesShiftOwnerWorkspace;
 use App\Enums\ShiftOwnerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreShiftRosterPeriodRequest;
@@ -17,14 +18,20 @@ use InvalidArgumentException;
 
 class ShiftRosterPeriodController extends Controller
 {
+    use ResolvesShiftOwnerWorkspace;
+
     public function __construct(private ShiftRosterPeriodService $periods) {}
+
+    protected function shiftOwner(): ShiftOwnerType
+    {
+        return ShiftOwnerType::Platform;
+    }
 
     public function create(): Response
     {
         return Inertia::render('platform/shifts/periods/create', [
-            'ownerTypes' => WorkforcePayload::ownerTypeOptions(),
-            'branches' => WorkforcePayload::branchOptions(),
-            'defaultOwnerType' => ShiftOwnerType::Platform->value,
+            'workspace' => $this->shiftWorkspace(),
+            'defaultOwnerType' => $this->shiftOwner()->value,
         ]);
     }
 
@@ -45,17 +52,20 @@ class ShiftRosterPeriodController extends Controller
 
     public function edit(ShiftRosterPeriod $shiftRosterPeriod): Response
     {
+        $this->assertOwnedPeriod($shiftRosterPeriod);
+
         $shiftRosterPeriod->load('branch:id,name');
 
         return Inertia::render('platform/shifts/periods/edit', [
+            'workspace' => $this->shiftWorkspace(),
             'period' => WorkforcePayload::period($shiftRosterPeriod),
-            'ownerTypes' => WorkforcePayload::ownerTypeOptions(),
-            'branches' => WorkforcePayload::branchOptions(),
         ]);
     }
 
     public function update(UpdateShiftRosterPeriodRequest $request, ShiftRosterPeriod $shiftRosterPeriod): RedirectResponse
     {
+        $this->assertOwnedPeriod($shiftRosterPeriod);
+
         try {
             $this->periods->update($shiftRosterPeriod, $request->validated());
         } catch (InvalidArgumentException $exception) {

@@ -1,11 +1,12 @@
-import { Head, Link } from '@inertiajs/react';
-import ShiftRosterPeriodController from '@/actions/App/Http/Controllers/Platform/ShiftRosterPeriodController';
-import ShiftAssignmentController from '@/actions/App/Http/Controllers/Platform/ShiftAssignmentController';
-import ShiftTemplateController from '@/actions/App/Http/Controllers/Platform/ShiftTemplateController';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import type {
     ShiftPeriodOption,
     ShiftTemplateOption,
 } from '@/components/admin/workforce-types';
+import {
+    platformShiftWorkspace,
+    type ShiftWorkspace,
+} from '@/components/admin/platform-shift-workspace';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,37 +19,46 @@ import {
 } from '@/components/ui/card';
 
 export default function PlatformShiftsIndex({
+    workspace = 'platform',
     templates,
     periods,
 }: {
+    workspace?: ShiftWorkspace;
     templates: ShiftTemplateOption[];
     periods: ShiftPeriodOption[];
 }) {
+    const routes = platformShiftWorkspace(workspace);
+
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Dashboard', href: '/platform/dashboard' },
+            { title: routes.title, href: routes.templates.index.url() },
+        ],
+    });
+
     return (
         <>
-            <Head title="Shifts" />
+            <Head title={routes.title} />
 
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
-                        title="Shifts"
-                        description="Duty windows and roster periods. Overnight wrap is allowed."
+                        title={routes.title}
+                        description={routes.description}
                     />
                     <div className="flex flex-wrap gap-2">
                         <Button variant="secondary" asChild>
-                            <Link
-                                href={ShiftRosterPeriodController.create.url()}
-                            >
+                            <Link href={routes.periods.create.url()}>
                                 New period
                             </Link>
                         </Button>
                         <Button variant="secondary" asChild>
-                            <Link href={ShiftAssignmentController.create.url()}>
+                            <Link href={routes.assignments.create.url()}>
                                 Assign to shift
                             </Link>
                         </Button>
                         <Button asChild>
-                            <Link href={ShiftTemplateController.create.url()}>
+                            <Link href={routes.templates.create.url()}>
                                 New template
                             </Link>
                         </Button>
@@ -81,10 +91,9 @@ export default function PlatformShiftsIndex({
                                                 {template.end_time}
                                             </p>
                                             <p className="text-muted-foreground text-sm">
-                                                {template.owner_type_label}
                                                 {template.branch_name
-                                                    ? ` · ${template.branch_name}`
-                                                    : ''}
+                                                    ? template.branch_name
+                                                    : template.owner_type_label}
                                                 {template.is_overnight
                                                     ? ' · Overnight'
                                                     : ''}
@@ -108,7 +117,7 @@ export default function PlatformShiftsIndex({
                                                 asChild
                                             >
                                                 <Link
-                                                    href={ShiftTemplateController.edit.url(
+                                                    href={routes.templates.edit.url(
                                                         template.id,
                                                     )}
                                                 >
@@ -149,7 +158,7 @@ export default function PlatformShiftsIndex({
                                                 {period.end_date}
                                                 {period.branch_name
                                                     ? ` · ${period.branch_name}`
-                                                    : ` · ${period.owner_type_label}`}
+                                                    : ''}
                                             </p>
                                         </div>
                                         <Button
@@ -158,7 +167,7 @@ export default function PlatformShiftsIndex({
                                             asChild
                                         >
                                             <Link
-                                                href={ShiftRosterPeriodController.edit.url(
+                                                href={routes.periods.edit.url(
                                                     period.id,
                                                 )}
                                             >
@@ -175,10 +184,3 @@ export default function PlatformShiftsIndex({
         </>
     );
 }
-
-PlatformShiftsIndex.layout = {
-    breadcrumbs: [
-        { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Shifts', href: '/platform/shifts' },
-    ],
-};

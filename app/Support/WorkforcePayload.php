@@ -142,6 +142,47 @@ final class WorkforcePayload
     /**
      * @return list<array<string, mixed>>
      */
+    public static function templatesOwnedBy(ShiftOwnerType $owner, bool $activeOnly = false): array
+    {
+        return ShiftTemplate::query()
+            ->with('branch:id,name')
+            ->when($activeOnly, fn ($query) => $query->where('is_active', true))
+            ->when(
+                $owner === ShiftOwnerType::Platform,
+                fn ($query) => $query->platformOwned(),
+                fn ($query) => $query->branchOwned(),
+            )
+            ->orderBy('name')
+            ->get()
+            ->map(fn (ShiftTemplate $template): array => self::template($template))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public static function periodsOwnedBy(ShiftOwnerType $owner, bool $activeOnly = false): array
+    {
+        return ShiftRosterPeriod::query()
+            ->with('branch:id,name')
+            ->when($activeOnly, fn ($query) => $query->where('is_active', true))
+            ->when(
+                $owner === ShiftOwnerType::Platform,
+                fn ($query) => $query->platformOwned(),
+                fn ($query) => $query->branchOwned(),
+            )
+            ->orderByDesc('start_date')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (ShiftRosterPeriod $period): array => self::period($period))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
     public static function templatesForBranch(?int $branchId = null): array
     {
         return ShiftTemplate::query()

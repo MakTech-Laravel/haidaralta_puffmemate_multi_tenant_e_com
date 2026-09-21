@@ -64,6 +64,34 @@ class ShiftRosterPeriod extends Model
         return $this->hasMany(UserShiftAssignment::class);
     }
 
+    public function isPlatformOwned(): bool
+    {
+        return $this->owner_type === ShiftOwnerType::Platform && $this->branch_id === null;
+    }
+
+    public function isBranchOwned(): bool
+    {
+        return $this->owner_type === ShiftOwnerType::Branch && $this->branch_id !== null;
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopePlatformOwned(Builder $query): Builder
+    {
+        return $query->where('owner_type', ShiftOwnerType::Platform)->whereNull('branch_id');
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeBranchOwned(Builder $query): Builder
+    {
+        return $query->where('owner_type', ShiftOwnerType::Branch)->whereNotNull('branch_id');
+    }
+
     /**
      * @param  Builder<self>  $query
      * @return Builder<self>

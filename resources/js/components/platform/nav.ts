@@ -87,7 +87,7 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                     }),
                     navLink({
                         title: 'Assign to shift',
-                        href: '/platform/shifts/assign',
+                        href: '/platform/shift-assignments',
                         icon: UserPlus,
                         permissions: ['manage-shifts'],
                     }),
@@ -170,13 +170,13 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                     }),
                     navLink({
                         title: 'Shifts',
-                        href: '/platform/shifts',
+                        href: '/platform/branch-shifts',
                         icon: CalendarClock,
                         permissions: ['manage-shifts'],
                     }),
                     navLink({
                         title: 'Assign to shift',
-                        href: '/platform/shifts/assign',
+                        href: '/platform/branch-shift-assignments',
                         icon: UserPlus,
                         permissions: ['manage-shifts'],
                     }),

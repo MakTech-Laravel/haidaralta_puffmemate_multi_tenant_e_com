@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\Concerns\ResolvesShiftOwnerWorkspace;
 use App\Enums\ShiftOwnerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreShiftTemplateRequest;
@@ -11,39 +12,35 @@ use App\Services\Workforce\ShiftTemplateService;
 use App\Support\Toast;
 use App\Support\WorkforcePayload;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use InvalidArgumentException;
 
 class ShiftTemplateController extends Controller
 {
+    use ResolvesShiftOwnerWorkspace;
+
     public function __construct(private ShiftTemplateService $templates) {}
 
-    public function index(Request $request): Response
+    protected function shiftOwner(): ShiftOwnerType
     {
-        $templates = ShiftTemplate::query()
-            ->with('branch:id,name')
-            ->orderBy('name')
-            ->get()
-            ->map(fn (ShiftTemplate $template): array => WorkforcePayload::template($template))
-            ->values()
-            ->all();
+        return ShiftOwnerType::Platform;
+    }
 
+    public function index(): Response
+    {
         return Inertia::render('platform/shifts/index', [
-            'templates' => $templates,
-            'periods' => WorkforcePayload::periodsForBranch(),
-            'ownerTypes' => WorkforcePayload::ownerTypeOptions(),
-            'branches' => WorkforcePayload::branchOptions(),
+            'workspace' => $this->shiftWorkspace(),
+            'templates' => WorkforcePayload::templatesOwnedBy($this->shiftOwner()),
+            'periods' => WorkforcePayload::periodsOwnedBy($this->shiftOwner()),
         ]);
     }
 
     public function create(): Response
     {
         return Inertia::render('platform/shifts/create', [
-            'ownerTypes' => WorkforcePayload::ownerTypeOptions(),
-            'branches' => WorkforcePayload::branchOptions(),
-            'defaultOwnerType' => ShiftOwnerType::Platform->value,
+            'workspace' => $this->shiftWorkspace(),
+            'defaultOwnerType' => $this->shiftOwner()->value,
         ]);
     }
 
@@ -64,17 +61,20 @@ class ShiftTemplateController extends Controller
 
     public function edit(ShiftTemplate $shiftTemplate): Response
     {
+        $this->assertOwnedTemplate($shiftTemplate);
+
         $shiftTemplate->load('branch:id,name');
 
         return Inertia::render('platform/shifts/edit', [
+            'workspace' => $this->shiftWorkspace(),
             'template' => WorkforcePayload::template($shiftTemplate),
-            'ownerTypes' => WorkforcePayload::ownerTypeOptions(),
-            'branches' => WorkforcePayload::branchOptions(),
         ]);
     }
 
     public function update(UpdateShiftTemplateRequest $request, ShiftTemplate $shiftTemplate): RedirectResponse
     {
+        $this->assertOwnedTemplate($shiftTemplate);
+
         try {
             $this->templates->update($shiftTemplate, $request->validated());
         } catch (InvalidArgumentException $exception) {

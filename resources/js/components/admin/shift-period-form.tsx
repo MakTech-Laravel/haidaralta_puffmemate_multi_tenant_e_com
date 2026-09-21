@@ -33,6 +33,7 @@ type ShiftPeriodFormProps = {
     ownerTypes?: Option[];
     branches?: BranchOption[];
     lockOwner?: boolean;
+    showBranchSelect?: boolean;
     defaults?: Partial<ShiftPeriodOption> & { owner_type?: string };
     cancelHref: string;
     submitLabel?: string;
@@ -50,6 +51,7 @@ export function ShiftPeriodForm({
     ownerTypes = [],
     branches = [],
     lockOwner = false,
+    showBranchSelect = false,
     defaults,
     cancelHref,
     submitLabel,
@@ -108,7 +110,39 @@ export function ShiftPeriodForm({
                                         name="owner_type"
                                         value={ownerType}
                                     />
-                                    {branchId ? (
+                                    {showBranchSelect ? (
+                                        <div className="flex min-w-0 max-w-md flex-col gap-1.5">
+                                            <Label>Branch</Label>
+                                            <Select
+                                                value={branchId}
+                                                onValueChange={setBranchId}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select branch" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {branches.map((branch) => (
+                                                        <SelectItem
+                                                            key={branch.id}
+                                                            value={String(
+                                                                branch.id,
+                                                            )}
+                                                        >
+                                                            {branch.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <input
+                                                type="hidden"
+                                                name="branch_id"
+                                                value={branchId}
+                                            />
+                                            <InputError
+                                                message={errors.branch_id}
+                                            />
+                                        </div>
+                                    ) : branchId ? (
                                         <input
                                             type="hidden"
                                             name="branch_id"

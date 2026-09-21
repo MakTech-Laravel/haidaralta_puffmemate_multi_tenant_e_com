@@ -117,7 +117,7 @@ export function buildBranchNav(
                     }),
                     navLink({
                         title: 'Assign to shift',
-                        href: `/branch/${slug}/shifts/assign`,
+                        href: `/branch/${slug}/shift-assignments`,
                         icon: UserPlus,
                         permissions: ['manage-branch-shifts'],
                     }),

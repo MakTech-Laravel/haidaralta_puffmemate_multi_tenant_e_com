@@ -14,6 +14,11 @@ class StoreShiftTemplateRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->forcePlatformOwner();
+    }
+
     /**
      * @return array<string, mixed>
      */

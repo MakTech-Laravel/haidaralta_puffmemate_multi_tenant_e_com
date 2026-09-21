@@ -1,11 +1,13 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
-import ShiftAssignmentController from '@/actions/App/Http/Controllers/Platform/ShiftAssignmentController';
-import ShiftTemplateController from '@/actions/App/Http/Controllers/Platform/ShiftTemplateController';
 import {
     emptyShiftAssignmentFields,
     ShiftAssignmentFields,
 } from '@/components/admin/shift-assignment-fields';
+import {
+    platformShiftWorkspace,
+    type ShiftWorkspace,
+} from '@/components/admin/platform-shift-workspace';
 import type {
     AssignablePerson,
     BranchOption,
@@ -17,17 +19,28 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
 export default function PlatformShiftsAssign({
+    workspace = 'platform',
     people,
     templates,
     periods,
     branches,
 }: {
+    workspace?: ShiftWorkspace;
     people: AssignablePerson[];
     templates: ShiftTemplateOption[];
     periods: ShiftPeriodOption[];
     branches: BranchOption[];
 }) {
-    const [fields, setFields] = useState(emptyShiftAssignmentFields);
+    const routes = platformShiftWorkspace(workspace);
+    const [fields, setFields] = useState(emptyShiftAssignmentFields());
+
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Dashboard', href: '/platform/dashboard' },
+            { title: routes.title, href: routes.templates.index.url() },
+            { title: 'Assign', href: routes.assignments.create.url() },
+        ],
+    });
 
     return (
         <>
@@ -36,11 +49,15 @@ export default function PlatformShiftsAssign({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Assign to shift"
-                    description="Give a driver or branch staff member a duty window. Platform users cannot be assigned."
+                    description={
+                        workspace === 'branch'
+                            ? 'Assign a person onto a branch-owned duty window. Platform templates live under Administrator.'
+                            : 'Assign a person onto a platform-owned duty window. Branch templates live under Branch management.'
+                    }
                 />
 
                 <Form
-                    {...ShiftAssignmentController.store.form()}
+                    {...routes.assignments.store.form()}
                     className="border-border/80 bg-card space-y-6 rounded-2xl border p-5 shadow-sm sm:p-6"
                     options={{ preserveScroll: true }}
                     onSuccess={() => setFields(emptyShiftAssignmentFields())}
@@ -67,9 +84,7 @@ export default function PlatformShiftsAssign({
                                     Assign shift
                                 </Button>
                                 <Button variant="secondary" asChild>
-                                    <Link
-                                        href={ShiftTemplateController.index.url()}
-                                    >
+                                    <Link href={routes.templates.index.url()}>
                                         Back to shifts
                                     </Link>
                                 </Button>
@@ -81,11 +96,3 @@ export default function PlatformShiftsAssign({
         </>
     );
 }
-
-PlatformShiftsAssign.layout = {
-    breadcrumbs: [
-        { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Shifts', href: '/platform/shifts' },
-        { title: 'Assign', href: '/platform/shifts/assign' },
-    ],
-};

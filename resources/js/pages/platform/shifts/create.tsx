@@ -1,21 +1,31 @@
-import { Head } from '@inertiajs/react';
-import ShiftTemplateController from '@/actions/App/Http/Controllers/Platform/ShiftTemplateController';
+import { Head, setLayoutProps } from '@inertiajs/react';
 import { ShiftTemplateForm } from '@/components/admin/shift-template-form';
-import type {
-    BranchOption,
-    Option,
-} from '@/components/admin/workforce-types';
+import {
+    platformShiftWorkspace,
+    type ShiftWorkspace,
+} from '@/components/admin/platform-shift-workspace';
+import type { BranchOption } from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
 
 export default function PlatformShiftsCreate({
-    ownerTypes,
-    branches,
+    workspace = 'platform',
+    branches = [],
     defaultOwnerType,
 }: {
-    ownerTypes: Option[];
-    branches: BranchOption[];
+    workspace?: ShiftWorkspace;
+    branches?: BranchOption[];
     defaultOwnerType: string;
 }) {
+    const routes = platformShiftWorkspace(workspace);
+
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Dashboard', href: '/platform/dashboard' },
+            { title: routes.title, href: routes.templates.index.url() },
+            { title: 'Create', href: routes.templates.create.url() },
+        ],
+    });
+
     return (
         <>
             <Head title="Create shift template" />
@@ -23,25 +33,18 @@ export default function PlatformShiftsCreate({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Create shift template"
-                    description="A reusable duty window. Overnight is inferred from the times."
+                    description={routes.description}
                 />
                 <ShiftTemplateForm
-                    action={ShiftTemplateController.store.form()}
-                    ownerTypes={ownerTypes}
+                    action={routes.templates.store.form()}
                     branches={branches}
+                    lockOwner
+                    showBranchSelect={routes.showBranchSelect}
                     defaults={{ owner_type: defaultOwnerType }}
-                    cancelHref={ShiftTemplateController.index.url()}
+                    cancelHref={routes.templates.index.url()}
                     submitLabel="Create template"
                 />
             </div>
         </>
     );
 }
-
-PlatformShiftsCreate.layout = {
-    breadcrumbs: [
-        { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Shifts', href: '/platform/shifts' },
-        { title: 'Create', href: '/platform/shifts/create' },
-    ],
-};

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\Concerns\ResolvesShiftOwnerWorkspace;
+use App\Enums\ShiftOwnerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreShiftAssignmentRequest;
 use App\Http\Requests\Platform\UpdateShiftAssignmentRequest;
@@ -16,14 +18,22 @@ use InvalidArgumentException;
 
 class ShiftAssignmentController extends Controller
 {
+    use ResolvesShiftOwnerWorkspace;
+
     public function __construct(private AssignShiftService $assignments) {}
+
+    protected function shiftOwner(): ShiftOwnerType
+    {
+        return ShiftOwnerType::Platform;
+    }
 
     public function create(): Response
     {
         return Inertia::render('platform/shifts/assign', [
+            'workspace' => $this->shiftWorkspace(),
             'people' => WorkforcePayload::assignablePeople(),
-            'templates' => WorkforcePayload::templatesForBranch(),
-            'periods' => WorkforcePayload::periodsForBranch(),
+            'templates' => WorkforcePayload::templatesOwnedBy($this->shiftOwner(), activeOnly: true),
+            'periods' => WorkforcePayload::periodsOwnedBy($this->shiftOwner(), activeOnly: true),
             'branches' => WorkforcePayload::branchOptions(),
         ]);
     }
@@ -31,7 +41,7 @@ class ShiftAssignmentController extends Controller
     public function store(StoreShiftAssignmentRequest $request): RedirectResponse
     {
         try {
-            $this->assignments->assign($request->validated(), $request->user('platform'));
+            $this->assignments->assign($request->validated(), $request->user('platform'), $this->shiftOwner());
         } catch (InvalidArgumentException $exception) {
             Toast::error($exception->getMessage());
 
@@ -45,8 +55,10 @@ class ShiftAssignmentController extends Controller
 
     public function update(UpdateShiftAssignmentRequest $request, UserShiftAssignment $userShiftAssignment): RedirectResponse
     {
+        $this->assertOwnedAssignment($userShiftAssignment);
+
         try {
-            $this->assignments->change($userShiftAssignment, $request->validated(), $request->user('platform'));
+            $this->assignments->change($userShiftAssignment, $request->validated(), $request->user('platform'), $this->shiftOwner());
         } catch (InvalidArgumentException $exception) {
             Toast::error($exception->getMessage());
 
