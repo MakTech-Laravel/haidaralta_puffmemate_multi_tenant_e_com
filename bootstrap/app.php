@@ -33,6 +33,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        // Platform ops stay reachable while Application Settings maintenance is on.
+        $middleware->preventRequestsDuringMaintenance(except: [
+            'platform',
+            'platform/*',
+            'up',
+        ]);
+
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,

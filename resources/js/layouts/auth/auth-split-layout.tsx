@@ -1,5 +1,5 @@
-import { Link, usePage } from '@inertiajs/react';
-import { storefrontLogoSrc } from '@/lib/storefront-chrome';
+import { Link } from '@inertiajs/react';
+import { useAppBrand } from '@/hooks/use-app-brand';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
 
@@ -8,8 +8,7 @@ export default function AuthSplitLayout({
     title,
     description,
 }: AuthLayoutProps) {
-    const { name } = usePage().props;
-    const brand = name || 'PuffMeMate';
+    const brand = useAppBrand();
 
     return (
         <div className="bg-background grid min-h-dvh lg:grid-cols-2">
@@ -34,9 +33,13 @@ export default function AuthSplitLayout({
                         className="inline-flex w-fit max-w-full"
                     >
                         <img
-                            src={storefrontLogoSrc}
-                            alt={brand}
-                            className="h-10 w-auto max-w-full object-contain object-left sm:h-12 lg:h-14 bg-white"
+                            src={brand.logoUrl}
+                            alt={brand.name}
+                            className={
+                                brand.hasCustomLogo
+                                    ? 'h-10 w-auto max-w-full object-contain object-left sm:h-12 lg:h-14'
+                                    : 'h-10 w-auto max-w-full bg-white object-contain object-left sm:h-12 lg:h-14'
+                            }
                         />
                     </Link>
 

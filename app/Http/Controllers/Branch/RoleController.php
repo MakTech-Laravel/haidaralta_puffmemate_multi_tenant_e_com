@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Branch;
 use App\DataTables\BranchRoleDataTable;
 use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
+use App\Exports\RoleExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\StoreRoleRequest;
 use App\Http\Requests\Branch\UpdateRoleRequest;
+use App\Http\Requests\ExportSpreadsheetRequest;
 use App\Models\Branch;
 use App\Models\Role;
 use App\Support\Toast;
@@ -17,8 +19,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\PermissionRegistrar;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class RoleController extends Controller
 {
@@ -32,36 +35,22 @@ class RoleController extends Controller
         ]);
     }
 
-    public function export(Request $request): StreamedResponse
+    public function export(ExportSpreadsheetRequest $request): BinaryFileResponse
     {
         $branch = $this->currentBranch();
         $this->useBranchTeam($branch);
 
         $filters = $this->resolveFilters($request);
-        $roles = $this->rolesQuery($branch, $filters)->get();
-        $filename = 'branch-roles-'.$branch->slug.'-'.now()->format('Y-m-d').'.csv';
+        $rows = $this->rolesQuery($branch, $filters)
+            ->get()
+            ->map(fn (Role $role): array => $this->mapRole($role))
+            ->values();
 
-        return response()->streamDownload(function () use ($roles): void {
-            $handle = fopen('php://output', 'w');
-
-            fputcsv($handle, ['id', 'name', 'permissions_count', 'users_count', 'is_system']);
-
-            foreach ($roles as $role) {
-                $mapped = $this->mapRole($role);
-
-                fputcsv($handle, [
-                    $mapped['id'],
-                    $mapped['name'],
-                    $mapped['permissions_count'],
-                    $mapped['users_count'],
-                    $mapped['is_super_admin'] ? 'yes' : 'no',
-                ]);
-            }
-
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+        return Excel::download(
+            new RoleExport($rows),
+            $request->filename('branch-roles-'.$branch->slug),
+            $request->exportFormat()->writerType(),
+        );
     }
 
     public function create(): Response

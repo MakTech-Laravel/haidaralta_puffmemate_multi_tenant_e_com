@@ -1,11 +1,10 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Download, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import RoleController from '@/actions/App/Http/Controllers/Branch/RoleController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import {
-    buildDataTableQuery,
     DataTable,
     DataTableColumnHeader,
     DataTableRowActions,
@@ -13,6 +12,7 @@ import {
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
+import { ExportDropdown } from '@/components/export/export-dropdown';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -71,13 +71,7 @@ export default function BranchRolesIndex({
         },
     });
 
-    const exportUrl = RoleController.export.url(branch.slug, {
-        query: buildDataTableQuery({
-            filter: query.filters,
-            sort: query.sort,
-            per_page: query.perPage,
-        }),
-    });
+    const exportUrl = RoleController.export.url(branch.slug);
 
     const columns = useMemo<ColumnDef<RoleRow>[]>(
         () => [
@@ -173,12 +167,15 @@ export default function BranchRolesIndex({
                         description={`Manage roles for ${branch.name}`}
                     />
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" asChild>
-                            <a href={exportUrl}>
-                                <Download className="h-4 w-4" />
-                                Export CSV
-                            </a>
-                        </Button>
+                        <ExportDropdown
+                            url={exportUrl}
+                            query={{
+                                filter: query.filters,
+                                sort: query.sort,
+                                per_page: query.perPage,
+                                page: tablePayload.meta.current_page,
+                            }}
+                        />
                         <Button asChild>
                             <Link href={RoleController.create.url(branch.slug)}>
                                 Create role

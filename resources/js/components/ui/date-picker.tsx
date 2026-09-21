@@ -8,6 +8,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import { formatAppDate } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
 
 const DATE_VALUE_FORMAT = 'yyyy-MM-dd';
@@ -80,7 +81,8 @@ export function DatePicker({
                     >
                         <span className="min-w-0 flex-1 truncate text-left">
                             {selected
-                                ? format(selected, 'PPP')
+                                ? formatAppDate(toDateValue(selected)) ||
+                                  format(selected, 'PPP')
                                 : placeholder}
                         </span>
                         <CalendarIcon className="text-muted-foreground size-4 shrink-0" />

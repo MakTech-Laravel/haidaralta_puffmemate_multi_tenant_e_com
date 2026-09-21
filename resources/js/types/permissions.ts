@@ -7,6 +7,7 @@ export type PermissionKey =
     | 'manage-reports'
     | 'view-activity-logs'
     | 'manage-database-backups'
+    | 'manage-application-settings'
     | 'view-horizon'
     | 'view-pulse'
     | 'view-branch-dashboard'
@@ -23,5 +24,8 @@ export type PermissionKey =
     | 'manage-branch-inventories'
     | 'manage-drivers'
     | 'manage-branch-drivers'
+    | 'manage-shifts'
+    | 'manage-branch-shifts'
+    | 'view-transfers'
     | 'manage-conversations'
     | 'manage-branch-conversations';

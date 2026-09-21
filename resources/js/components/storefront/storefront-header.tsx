@@ -12,9 +12,9 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import { useAppBrand } from '@/hooks/use-app-brand';
 import {
     storefrontAnnouncement,
-    storefrontLogoSrc,
     storefrontNavItems,
     type StorefrontChromeItem,
 } from '@/lib/storefront-chrome';
@@ -133,15 +133,15 @@ function isAccountArea(url: string): boolean {
 
 export function StorefrontHeader() {
     const page = usePage();
+    const brand = useAppBrand();
     const {
         auth,
-        name,
         customerNotifications = [],
     } = page.props as {
         auth: { user: { avatar?: string } | null };
-        name: string;
         customerNotifications?: NotificationItem[];
     };
+    const name = brand.name;
     const url = page.url;
     const [mobileOpen, setMobileOpen] = useState(false);
     const accountHref = auth.user ? dashboard() : login();
@@ -170,7 +170,7 @@ export function StorefrontHeader() {
                         className="flex shrink-0 items-center"
                     >
                         <img
-                            src={storefrontLogoSrc}
+                            src={brand.logoUrl}
                             alt={name}
                             className="h-9 w-auto object-contain sm:h-11"
                         />

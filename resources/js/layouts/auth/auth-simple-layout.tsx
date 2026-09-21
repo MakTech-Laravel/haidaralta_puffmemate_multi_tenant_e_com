@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
-import AppLogoIcon from '@/components/app-logo-icon';
+import { AppBrandMark } from '@/components/app-brand-mark';
+import { useAppBrand } from '@/hooks/use-app-brand';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
 
@@ -8,6 +9,8 @@ export default function AuthSimpleLayout({
     title,
     description,
 }: AuthLayoutProps) {
+    const brand = useAppBrand();
+
     return (
         <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
             <div className="w-full max-w-sm">
@@ -17,10 +20,14 @@ export default function AuthSimpleLayout({
                             href={home()}
                             className="flex flex-col items-center gap-2 font-medium"
                         >
-                            <div className="mb-1 flex h-9 w-9 items-center justify-center">
-                                <AppLogoIcon className="size-9 fill-current text-[var(--foreground)] dark:text-white" />
-                            </div>
-                            <span className="sr-only">{title}</span>
+                            <AppBrandMark
+                                className="mb-1"
+                                sizeClassName="size-9"
+                                defaultBackgroundClassName="bg-transparent"
+                                iconClassName="size-9 fill-current text-[var(--foreground)] dark:text-white"
+                                imageClassName="size-9 object-contain"
+                            />
+                            <span className="sr-only">{brand.name}</span>
                         </Link>
 
                         <div className="space-y-1.5 text-center">

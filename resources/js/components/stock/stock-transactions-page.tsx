@@ -1,6 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { format, isValid, parseISO } from 'date-fns';
 import { useMemo } from 'react';
 import {
     DataTable,
@@ -23,6 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { formatAppDateTime } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
 
 type TransactionRow = {
@@ -295,11 +295,10 @@ export function StockTransactionsPage({
                         return '—';
                     }
 
-                    const parsed = parseISO(row.original.created_at);
-
-                    return isValid(parsed)
-                        ? format(parsed, 'dd MMM yyyy HH:mm')
-                        : row.original.created_at;
+                    return (
+                        formatAppDateTime(row.original.created_at) ||
+                        row.original.created_at
+                    );
                 },
             },
             {

@@ -11,6 +11,24 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
+            application: {
+                shortName: string;
+                description: string | null;
+                logoUrl: string | null;
+                faviconUrl: string | null;
+                timezone: string;
+                dateFormat: string;
+                timeFormat: string;
+                themeColor: string;
+                backgroundColor: string;
+            };
+            paymentGateways: Array<{
+                id: string;
+                label: string;
+                title: string;
+                description: string;
+                badge: string;
+            }>;
             auth: Auth;
             portal: Portal | null;
             branch: BranchContext | null;

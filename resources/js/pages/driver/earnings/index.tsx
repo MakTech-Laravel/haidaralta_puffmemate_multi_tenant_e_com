@@ -3,6 +3,7 @@ import { Banknote, CircleDollarSign, Wallet } from 'lucide-react';
 import { DriverEmptyState } from '@/components/driver/driver-empty-state';
 import type { DriverEarnings } from '@/components/driver/driver-order-types';
 import { Badge } from '@/components/ui/badge';
+import { usePaymentGatewayLabel } from '@/lib/payment-gateway';
 import { index as earningsIndex } from '@/routes/driver/earnings';
 import { show as orderShow } from '@/routes/driver/orders';
 
@@ -10,10 +11,25 @@ type DriverEarningsIndexProps = {
     earnings: DriverEarnings;
 };
 
+function EarningsEntryBadge({ paymentMethod }: { paymentMethod: string }) {
+    const label = usePaymentGatewayLabel(paymentMethod, 'COD');
+
+    if (paymentMethod !== 'cod') {
+        return null;
+    }
+
+    return (
+        <Badge className="bg-muted-foreground/15 text-foreground shrink-0 rounded-sm border-transparent px-1.5 py-0 text-[11px] font-medium">
+            {label}
+        </Badge>
+    );
+}
+
 export default function DriverEarningsIndex({
     earnings,
 }: DriverEarningsIndexProps) {
     const hasEntries = earnings.days.some((day) => day.entries.length > 0);
+    const codHeldLabel = usePaymentGatewayLabel('cod', 'COD');
 
     return (
         <>
@@ -57,7 +73,7 @@ export default function DriverEarningsIndex({
                             value: earnings.perStopLabel,
                         },
                         {
-                            label: 'COD held',
+                            label: `${codHeldLabel} held`,
                             value: earnings.codHeldLabel,
                         },
                     ].map((stat) => (
@@ -116,12 +132,11 @@ export default function DriverEarningsIndex({
                                                                     entry.customerName
                                                                 }
                                                             </p>
-                                                            {entry.paymentMethod ===
-                                                            'cod' ? (
-                                                                <Badge className="bg-muted-foreground/15 text-foreground shrink-0 rounded-sm border-transparent px-1.5 py-0 text-[11px] font-medium">
-                                                                    COD
-                                                                </Badge>
-                                                            ) : null}
+                                                            <EarningsEntryBadge
+                                                                paymentMethod={
+                                                                    entry.paymentMethod
+                                                                }
+                                                            />
                                                         </div>
                                                         <p className="text-muted-foreground truncate text-sm">
                                                             {entry.areaLabel} ·{' '}

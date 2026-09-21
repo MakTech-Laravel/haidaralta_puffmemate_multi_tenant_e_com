@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\DataTables\BranchProductPriceHistoryDataTable;
 use App\Models\BranchProductPriceHistory;
+use App\Support\DateTimeFormat;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
@@ -70,7 +71,7 @@ class PriceHistoryExport implements FromQuery, WithHeadings, WithMapping
             ...$values,
             $row->source->label(),
             BranchProductPriceHistoryDataTable::flattenChanges($row->changes ?? []),
-            $row->created_at?->format('Y-m-d H:i:s'),
+            DateTimeFormat::dateTime($row->created_at),
             $row->creator?->name,
         ];
     }

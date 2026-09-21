@@ -42,7 +42,7 @@ export default function StorefrontCheckout({
         deliveryMethodId: deliveryMethods[0]?.id ?? 'same-day',
         deliveryDate: '',
         timeSlotId: timeSlots[0]?.id ?? '',
-        paymentMethodId: paymentMethods[0]?.id ?? 'cash',
+        paymentMethodId: paymentMethods[0]?.id ?? 'cod',
     });
     const [coupon, setCoupon] = useState('');
     const [termsAccepted, setTermsAccepted] = useState(false);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Application\ApplicationSettingsService;
 use App\Support\PortalAuth;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,9 @@ class WebAppManifestController extends Controller
     {
         $name = (string) config('pwa.name');
         $startUrl = $this->startUrl();
+
+        $description = app(ApplicationSettingsService::class)
+            ->sharedPayload()['description'] ?? null;
 
         $manifest = [
             'id' => (string) config('pwa.id', '/'),
@@ -36,6 +40,10 @@ class WebAppManifestController extends Controller
             'prefer_related_applications' => false,
             'shortcuts' => $this->shortcuts(),
         ];
+
+        if (filled($description)) {
+            $manifest['description'] = (string) $description;
+        }
 
         $screenshots = $this->screenshots();
 

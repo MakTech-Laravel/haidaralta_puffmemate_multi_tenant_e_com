@@ -1,6 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { format, isValid, parseISO } from 'date-fns';
+import { formatAppDateTime } from '@/lib/datetime';
 import {
     Check,
     Copy,
@@ -173,9 +173,7 @@ function formatTimestamp(value: string | null): string {
         return '—';
     }
 
-    const parsed = parseISO(value);
-
-    return isValid(parsed) ? format(parsed, 'd MMM yyyy, HH:mm') : value;
+    return formatAppDateTime(value) || '—';
 }
 
 function attributePairs(

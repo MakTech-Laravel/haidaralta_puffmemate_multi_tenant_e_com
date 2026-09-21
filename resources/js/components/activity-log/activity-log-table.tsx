@@ -1,6 +1,7 @@
 import { type ColumnDef } from '@tanstack/react-table';
 import { Eye } from 'lucide-react';
 import { useMemo } from 'react';
+import { AppDateTime } from '@/components/app-datetime';
 import {
     DataTable,
     DataTableRowActions,
@@ -10,14 +11,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { eventBadgeVariant } from '@/lib/activity-log';
 import type { ActivityRow } from '@/components/activity-log/types';
-
-function formatWhen(value: string | null): string {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(value).toLocaleString();
-}
 
 export function ActivityLogTable({
     payload,
@@ -36,9 +29,10 @@ export function ActivityLogTable({
                 accessorKey: 'created_at',
                 header: 'When',
                 cell: ({ row }) => (
-                    <span className="text-muted-foreground whitespace-nowrap">
-                        {formatWhen(row.original.created_at)}
-                    </span>
+                    <AppDateTime
+                        value={row.original.created_at}
+                        className="text-muted-foreground whitespace-nowrap"
+                    />
                 ),
             },
             {

@@ -700,6 +700,67 @@ Table delivery_zones {
  updated_at timestamp
 }
 ////////////////////////////////////////////////////
+// APPLICATION SETTINGS (PLATFORM)
+////////////////////////////////////////////////////
+Table application_settings {
+  id bigint [pk]
+  app_name varchar
+  app_short_name varchar
+  short_description text
+  logo_path varchar
+  favicon_path varchar
+  pwa_icon_192_path varchar
+  pwa_icon_512_path varchar
+  pwa_maskable_path varchar
+  apple_touch_icon_path varchar
+  theme_color varchar [default: '#C4472F']
+  background_color varchar [default: '#FFFFFF']
+  display_timezone varchar [default: 'Asia/Dhaka']
+  date_format varchar [default: 'Y-m-d']
+  time_format varchar [default: 'H:i']
+  updated_by bigint [ref: > users.id]
+  created_at timestamp
+  updated_at timestamp
+}
+////////////////////////////////////////////////////
+// SMTP SETTINGS (PLATFORM)
+////////////////////////////////////////////////////
+Table smtp_settings {
+  id bigint [pk]
+  enabled boolean [default: false]
+  host varchar
+  port integer
+  encryption varchar
+  // tls
+  // ssl
+  // none
+  username varchar
+  password text
+  // encrypted at rest
+  from_address varchar
+  from_name varchar
+  reply_to_address varchar
+  updated_by bigint [ref: > users.id]
+  created_at timestamp
+  updated_at timestamp
+}
+////////////////////////////////////////////////////
+// PAYMENT GATEWAY SETTINGS (PLATFORM)
+////////////////////////////////////////////////////
+Table payment_gateway_settings {
+  id bigint [pk]
+  key varchar [unique]
+  // cod
+  // pos
+  // payment_link
+  label varchar
+  description varchar
+  enabled boolean [default: true]
+  sort smallint [default: 0]
+  created_at timestamp
+  updated_at timestamp
+}
+////////////////////////////////////////////////////
 // PAYMENT SYSTEM
 ////////////////////////////////////////////////////
 Table payments {

@@ -1,6 +1,6 @@
-import { CalendarDays } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -36,9 +36,6 @@ const sectionCardClass =
 
 const sectionHeaderClass =
     'flex-row flex-wrap items-center justify-between gap-2 space-y-0 px-0 sm:gap-3';
-
-const dateInputClass =
-    'h-11 rounded-none border-none bg-background pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0';
 
 function SectionBadge({ children }: { children: string }) {
     return (
@@ -235,24 +232,16 @@ export function CheckoutForm({
                                         >
                                             Delivery date
                                         </Label>
-                                        <div className="relative">
-                                            <Input
-                                                id="checkout-delivery-date"
-                                                type="date"
-                                                value={details.deliveryDate}
-                                                onChange={(event) =>
-                                                    onChange(
-                                                        'deliveryDate',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                className={dateInputClass}
-                                            />
-                                            <CalendarDays
-                                                className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
-                                                aria-hidden
-                                            />
-                                        </div>
+                                        <DatePicker
+                                            id="checkout-delivery-date"
+                                            value={details.deliveryDate}
+                                            onChange={(value) =>
+                                                onChange('deliveryDate', value)
+                                            }
+                                            placeholder="Select delivery date"
+                                            clearable={false}
+                                            className="[&_button]:bg-background [&_button]:h-11 [&_button]:rounded-none [&_button]:border-none"
+                                        />
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label

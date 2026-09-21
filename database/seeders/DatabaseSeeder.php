@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             BranchSeeder::class,
             UserSeeder::class,
+            ApplicationSettingsSeeder::class,
             CatalogSeeder::class,
             BranchInventorySeeder::class,
             OrderConversationSeeder::class,

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { useAppBrand } from '@/hooks/use-app-brand';
 import {
     formatMoney,
     type CheckoutItem,
@@ -33,6 +34,8 @@ export function CheckoutOrderSummary({
     onTermsChange,
     className,
 }: CheckoutOrderSummaryProps) {
+    const brand = useAppBrand();
+
     return (
         <aside
             className={cn('bg-accent h-fit p-5 lg:sticky lg:top-28', className)}
@@ -133,7 +136,7 @@ export function CheckoutOrderSummary({
                     className="text-muted-foreground text-xs leading-relaxed font-normal"
                 >
                     By placing your order, you confirm your details are correct
-                    and agree to PuffMeMate's terms.
+                    and agree to {brand.name}&apos;s terms.
                 </Label>
             </div>
 

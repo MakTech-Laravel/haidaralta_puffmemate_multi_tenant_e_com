@@ -7,7 +7,9 @@ import type {
     ShiftTemplateOption,
 } from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
+import { AppDateRange } from '@/components/app-datetime';
 import { Badge } from '@/components/ui/badge';
+import { formatAppClock } from '@/lib/datetime';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -103,8 +105,13 @@ export default function BranchShiftsIndex({
                                         <div>
                                             <p className="text-sm font-medium">
                                                 {template.name} ·{' '}
-                                                {template.start_time}–
-                                                {template.end_time}
+                                                {formatAppClock(
+                                                    template.start_time,
+                                                )}
+                                                –
+                                                {formatAppClock(
+                                                    template.end_time,
+                                                )}
                                             </p>
                                             <p className="text-muted-foreground text-sm">
                                                 {template.owner_type_label}
@@ -169,8 +176,10 @@ export default function BranchShiftsIndex({
                                                 {period.name}
                                             </p>
                                             <p className="text-muted-foreground text-sm">
-                                                {period.start_date} –{' '}
-                                                {period.end_date}
+                                                <AppDateRange
+                                                    start={period.start_date}
+                                                    end={period.end_date}
+                                                />
                                             </p>
                                         </div>
                                         {period.branch_id === branch.id ? (
