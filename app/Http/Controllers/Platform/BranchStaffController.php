@@ -10,6 +10,7 @@ use App\Models\Branch;
 use App\Models\User;
 use App\Services\Branch\BranchStaffService;
 use App\Support\Toast;
+use App\Support\WorkforcePayload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -89,7 +90,17 @@ class BranchStaffController extends Controller
                 'roles' => $roles,
                 'is_super_admin' => $isSuperAdmin,
                 'effective_permissions' => $effectivePermissions,
+                'transfers' => $user->transferHistories()
+                    ->with(['fromBranch:id,name,slug', 'toBranch:id,name,slug', 'transferredBy:id,name'])
+                    ->orderByDesc('effective_date')
+                    ->orderByDesc('id')
+                    ->get()
+                    ->map(fn ($history) => WorkforcePayload::transfer($history))
+                    ->values()
+                    ->all(),
             ],
+            'branches' => $this->branchStaffService->branchOptions(),
+            'rolesByBranch' => $this->branchStaffService->rolesByBranch(),
         ]);
     }
 

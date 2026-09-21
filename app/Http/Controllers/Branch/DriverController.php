@@ -15,6 +15,7 @@ use App\Models\Branch;
 use App\Models\DriverRoster;
 use App\Models\User;
 use App\Services\Driver\DriverService;
+use App\Services\Workforce\TransferEmployeeService;
 use App\Support\DriverPayload;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +26,10 @@ use InvalidArgumentException;
 
 class DriverController extends Controller
 {
-    public function __construct(private DriverService $drivers) {}
+    public function __construct(
+        private DriverService $drivers,
+        private TransferEmployeeService $transfers,
+    ) {}
 
     public function index(Request $request, Branch $branch): Response
     {
@@ -122,7 +126,33 @@ class DriverController extends Controller
         $status = DriverAssignmentStatus::tryFrom((string) ($request->validated('status') ?? DriverAssignmentStatus::Active->value))
             ?? DriverAssignmentStatus::Active;
 
-        $this->drivers->assignToBranch($driver, $branch, $request->user('branch'), $status);
+        try {
+            if ($status === DriverAssignmentStatus::Active) {
+                $branchIds = (bool) config('drivers.single_active_branch')
+                    ? [$branch->id]
+                    : array_values(array_unique([
+                        ...$driver->driverBranchAssignments()
+                            ->where('status', DriverAssignmentStatus::Active)
+                            ->pluck('branch_id')
+                            ->map(fn (mixed $id): int => (int) $id)
+                            ->all(),
+                        $branch->id,
+                    ]));
+
+                $this->transfers->syncDriverBranches(
+                    $driver,
+                    $branchIds,
+                    $request->user('branch'),
+                    'Assigned from branch portal.',
+                );
+            } else {
+                $this->drivers->assignToBranch($driver, $branch, $request->user('branch'), $status);
+            }
+        } catch (InvalidArgumentException $exception) {
+            Toast::error($exception->getMessage());
+
+            return redirect()->back();
+        }
 
         Toast::success('Driver assigned to branch.');
 

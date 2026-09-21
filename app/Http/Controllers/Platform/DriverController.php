@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Platform;
 
 use App\DataTables\DriverDataTable;
-use App\Enums\DriverAssignmentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreDriverRequest;
 use App\Http\Requests\Platform\StoreDriverRosterRequest;
@@ -14,6 +13,7 @@ use App\Models\Branch;
 use App\Models\DriverRoster;
 use App\Models\User;
 use App\Services\Driver\DriverService;
+use App\Services\Workforce\TransferEmployeeService;
 use App\Support\DriverPayload;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +25,10 @@ use InvalidArgumentException;
 
 class DriverController extends Controller
 {
-    public function __construct(private DriverService $drivers) {}
+    public function __construct(
+        private DriverService $drivers,
+        private TransferEmployeeService $transfers,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -144,10 +147,9 @@ class DriverController extends Controller
 
         try {
             if (array_key_exists('branch_ids', $data)) {
-                $this->drivers->syncBranchAssignments(
+                $this->transfers->syncDriverBranches(
                     $driver,
                     array_map('intval', $data['branch_ids'] ?? []),
-                    DriverAssignmentStatus::Active,
                     $request->user('platform'),
                 );
             }
@@ -184,10 +186,9 @@ class DriverController extends Controller
         $driver = DriverPayload::resolveDriver($user);
 
         try {
-            $this->drivers->syncBranchAssignments(
+            $this->transfers->syncDriverBranches(
                 $driver,
                 array_map('intval', $request->validated('branch_ids')),
-                DriverAssignmentStatus::Active,
                 $request->user('platform'),
             );
         } catch (InvalidArgumentException $exception) {

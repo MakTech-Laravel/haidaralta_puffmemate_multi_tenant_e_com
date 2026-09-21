@@ -5,7 +5,6 @@ namespace App\Support;
 use App\Enums\ConversationStatus;
 use App\Models\Branch;
 use App\Models\Conversation;
-use App\Models\ConversationParticipant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -41,7 +40,7 @@ final class ConversationInbox
     public function toArray(): array
     {
         $search = trim((string) $this->request->string('search'));
-        $status = (string) $this->request->string('status', 'all');
+        $status = (string) $this->request->string('status', 'open');
         $cursor = trim((string) $this->request->string('cursor'));
 
         // Branch operators are scoped by route; only the platform picker sends this.
@@ -166,23 +165,8 @@ final class ConversationInbox
 
         foreach ($rows as $conversation) {
             $items[] = [
-                'id' => $conversation->id,
-                'order_number' => $conversation->order->order_number,
-                'order_status_label' => $conversation->order->status->label(),
-                'status' => $conversation->status->value,
-                'branch' => $conversation->branch?->only(['id', 'name', 'slug']),
-                'last_message_preview' => $conversation->last_message_preview,
-                'last_message_at' => $conversation->last_message_at?->toIso8601String(),
+                ...ConversationPayload::inboxRow($conversation),
                 'unread_count' => $unread[$conversation->id] ?? 0,
-                'participants' => $conversation->participants
-                    ->map(fn (ConversationParticipant $participant): array => [
-                        'user_id' => $participant->user_id,
-                        'name' => $participant->user->name,
-                        'role_label' => $participant->role->label(),
-                        'avatar_url' => MediaUrl::resolve($participant->user->avatar, fallback: null),
-                    ])
-                    ->values()
-                    ->all(),
             ];
         }
 

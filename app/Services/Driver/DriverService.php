@@ -69,11 +69,6 @@ class DriverService
 
             $this->syncBranchAssignments($driver, $branchIds, DriverAssignmentStatus::Active, $assignedBy);
 
-            foreach ($data['rosters'] ?? [] as $roster) {
-                $branch = Branch::query()->findOrFail((int) $roster['branch_id']);
-                $this->createRoster($driver, $branch, $roster);
-            }
-
             return $driver->refresh();
         });
     }
@@ -141,11 +136,6 @@ class DriverService
 
             $profile->update($profilePayload);
 
-            foreach ($data['rosters'] ?? [] as $roster) {
-                $branch = Branch::query()->findOrFail((int) $roster['branch_id']);
-                $this->createRoster($driver, $branch, $roster);
-            }
-
             return $driver->refresh();
         });
     }
@@ -177,16 +167,24 @@ class DriverService
             }
 
             foreach ($branchIds as $branchId) {
-                DriverBranchAssignment::query()->updateOrCreate(
+                $assignment = DriverBranchAssignment::query()->updateOrCreate(
                     ['driver_id' => $driver->id, 'branch_id' => $branchId],
                     ['status' => $status->value, 'assigned_by' => $assignedBy?->id],
                 );
+
+                if ($status === DriverAssignmentStatus::Active && $assignment->started_at === null) {
+                    $assignment->update(['started_at' => now()->toDateString(), 'ended_at' => null]);
+                }
             }
 
             DriverBranchAssignment::query()
                 ->where('driver_id', $driver->id)
                 ->whereNotIn('branch_id', $branchIds === [] ? [0] : $branchIds)
-                ->update(['status' => DriverAssignmentStatus::Inactive->value]);
+                ->whereNull('ended_at')
+                ->update([
+                    'status' => DriverAssignmentStatus::Inactive->value,
+                    'ended_at' => now()->toDateString(),
+                ]);
         });
     }
 
@@ -203,10 +201,19 @@ class DriverService
                 $this->deactivateOtherActiveAssignments($driver, $branch->id);
             }
 
-            return DriverBranchAssignment::query()->updateOrCreate(
+            $assignment = DriverBranchAssignment::query()->updateOrCreate(
                 ['driver_id' => $driver->id, 'branch_id' => $branch->id],
                 ['status' => $status->value, 'assigned_by' => $assignedBy?->id],
             );
+
+            if ($status === DriverAssignmentStatus::Active) {
+                $assignment->forceFill([
+                    'started_at' => $assignment->started_at ?? now()->toDateString(),
+                    'ended_at' => null,
+                ])->save();
+            }
+
+            return $assignment->refresh();
         });
     }
 
@@ -323,7 +330,10 @@ class DriverService
             ->where('driver_id', $driver->id)
             ->where('status', DriverAssignmentStatus::Active->value)
             ->when($exceptBranchId !== null, fn ($query) => $query->where('branch_id', '!=', $exceptBranchId))
-            ->update(['status' => DriverAssignmentStatus::Inactive->value]);
+            ->update([
+                'status' => DriverAssignmentStatus::Inactive->value,
+                'ended_at' => now()->toDateString(),
+            ]);
     }
 
     private function assertIsDriver(User $driver): void

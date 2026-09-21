@@ -1,4 +1,4 @@
-import { Form, Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     Building2,
     IdCard,
@@ -11,12 +11,17 @@ import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import DriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
+import TransferController from '@/actions/App/Http/Controllers/Platform/TransferController';
 import { DriverBranchAssignSheet } from '@/components/admin/driver-branch-assign-sheet';
+import { TransferEmployeeSheet } from '@/components/admin/transfer-employee-sheet';
 import {
-    DriverRosterFields,
-    emptyRosterFields,
-    formatRosterPeriodLine,
-} from '@/components/admin/driver-roster-fields';
+    ShiftAssignmentList,
+    TransferTimeline,
+} from '@/components/admin/workforce-timeline';
+import type {
+    ShiftAssignmentRow,
+    TransferRow,
+} from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +34,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Spinner } from '@/components/ui/spinner';
 
 type Option = { value: string; label: string };
 
@@ -57,19 +61,9 @@ type Driver = {
         status: string | null;
         status_label: string | null;
     }[];
-    rosters: {
-        id: number;
-        branch_id: number;
-        branch_name: string | null;
-        start_date: string | null;
-        end_date: string | null;
-        start_time: string | null;
-        end_time: string | null;
-        days_label: string | null;
-        period_label: string | null;
-        status: string | null;
-        status_label: string | null;
-    }[];
+    current_duty: ShiftAssignmentRow | null;
+    shift_assignments: ShiftAssignmentRow[];
+    transfers: TransferRow[];
 };
 
 function initials(name: string): string {
@@ -109,7 +103,7 @@ function DetailItem({
 
 export default function PlatformDriversShow({
     driver,
-    rosterStatuses,
+    branches,
 }: {
     driver: Driver;
     branches: { id: number; name: string; slug: string }[];
@@ -126,16 +120,7 @@ export default function PlatformDriversShow({
     );
 
     const [branchSheetOpen, setBranchSheetOpen] = useState(false);
-    const defaultRosterStatus =
-        rosterStatuses.find((item) => item.value === 'scheduled')?.value ??
-        rosterStatuses[0]?.value ??
-        'scheduled';
-    const [rosterDraft, setRosterDraft] = useState(() =>
-        emptyRosterFields({
-            branchId: String(activeAssignments[0]?.branch_id ?? ''),
-            status: defaultRosterStatus,
-        }),
-    );
+    const [transferSheetOpen, setTransferSheetOpen] = useState(false);
 
     return (
         <>
@@ -192,7 +177,11 @@ export default function PlatformDriversShow({
                         </Button>
                         <Button
                             variant="outline"
-                            onClick={() => setBranchSheetOpen(true)}
+                            onClick={() =>
+                                singleActiveBranch
+                                    ? setTransferSheetOpen(true)
+                                    : setBranchSheetOpen(true)
+                            }
                         >
                             <Building2 className="size-4" />
                             {singleActiveBranch
@@ -306,7 +295,11 @@ export default function PlatformDriversShow({
                         <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setBranchSheetOpen(true)}
+                            onClick={() =>
+                                singleActiveBranch
+                                    ? setTransferSheetOpen(true)
+                                    : setBranchSheetOpen(true)
+                            }
                         >
                             <Building2 className="size-4" />
                             {singleActiveBranch
@@ -356,124 +349,48 @@ export default function PlatformDriversShow({
 
                 <Card className="shadow-sm">
                     <CardHeader>
-                        <CardTitle>Rosters</CardTitle>
+                        <CardTitle>Current duty</CardTitle>
                         <CardDescription>
-                            Shift duty times by branch and date period
+                            On-duty window from shift assignments, not
+                            attendance
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Form
-                            action={DriverController.storeRoster.url(driver.id)}
-                            method="post"
-                            className="space-y-3 rounded-xl border p-3"
-                            options={{ preserveScroll: true }}
-                            onSuccess={() => {
-                                setRosterDraft(
-                                    emptyRosterFields({
-                                        branchId:
-                                            rosterDraft.branch_id ||
-                                            String(
-                                                activeAssignments[0]
-                                                    ?.branch_id ?? '',
-                                            ),
-                                        status: defaultRosterStatus,
-                                    }),
-                                );
-                            }}
-                        >
-                            {({ errors, processing }) => (
-                                <>
-                                    <DriverRosterFields
-                                        value={rosterDraft}
-                                        includeHiddenInputs
-                                        showBranch
-                                        rosterStatuses={rosterStatuses}
-                                        errors={errors}
-                                        branches={activeAssignments.map(
-                                            (assignment) => ({
-                                                id: assignment.branch_id,
-                                                name:
-                                                    assignment.branch_name ??
-                                                    'Unknown branch',
-                                                slug:
-                                                    assignment.branch_slug ??
-                                                    '',
-                                            }),
-                                        )}
-                                        onChange={(patch) =>
-                                            setRosterDraft((current) => ({
-                                                ...current,
-                                                ...patch,
-                                            }))
-                                        }
-                                        statusTrailing={
-                                            <Button
-                                                type="submit"
-                                                disabled={
-                                                    processing ||
-                                                    activeAssignments.length ===
-                                                        0
-                                                }
-                                            >
-                                                {processing ? (
-                                                    <Spinner />
-                                                ) : null}
-                                                Add
-                                            </Button>
-                                        }
-                                    />
-                                </>
-                            )}
-                        </Form>
-
-                        {driver.rosters.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
-                                No roster shifts yet.
-                            </p>
+                    <CardContent>
+                        {driver.current_duty ? (
+                            <ShiftAssignmentList
+                                assignments={[driver.current_duty]}
+                            />
                         ) : (
-                            <div className="flex flex-col">
-                                {driver.rosters.map((roster, index) => (
-                                    <div key={roster.id}>
-                                        {index > 0 ? (
-                                            <Separator className="my-4" />
-                                        ) : null}
-                                        <div className="flex flex-wrap items-center justify-between gap-3">
-                                            <div>
-                                                <p className="text-sm font-medium">
-                                                    {roster.branch_name} ·{' '}
-                                                    {formatRosterPeriodLine(
-                                                        roster,
-                                                    )}
-                                                </p>
-                                                <p className="text-muted-foreground text-sm">
-                                                    {roster.status_label}
-                                                </p>
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-destructive"
-                                                onClick={() =>
-                                                    router.delete(
-                                                        DriverController.destroyRoster.url(
-                                                            {
-                                                                user: driver.id,
-                                                                roster: roster.id,
-                                                            },
-                                                        ),
-                                                        {
-                                                            preserveScroll: true,
-                                                        },
-                                                    )
-                                                }
-                                            >
-                                                Remove
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                            <p className="text-muted-foreground text-sm">
+                                Not on duty right now.
+                            </p>
                         )}
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-sm">
+                    <CardHeader>
+                        <CardTitle>Duty windows</CardTitle>
+                        <CardDescription>
+                            Assigned templates and roster periods
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ShiftAssignmentList
+                            assignments={driver.shift_assignments}
+                        />
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-sm">
+                    <CardHeader>
+                        <CardTitle>Transfer history</CardTitle>
+                        <CardDescription>
+                            Branch moves for this driver
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <TransferTimeline transfers={driver.transfers} />
                     </CardContent>
                 </Card>
             </div>
@@ -483,6 +400,14 @@ export default function PlatformDriversShow({
                 onOpenChange={setBranchSheetOpen}
                 driverId={driver.id}
                 selectedIds={driver.branch_ids}
+            />
+            <TransferEmployeeSheet
+                open={transferSheetOpen}
+                onOpenChange={setTransferSheetOpen}
+                action={TransferController.storeDriver.form(driver.id)}
+                subjectType="driver"
+                branches={branches}
+                currentBranchId={activeAssignments[0]?.branch_id}
             />
         </>
     );

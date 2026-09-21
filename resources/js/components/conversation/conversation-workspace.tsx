@@ -10,6 +10,7 @@ import { ConversationList } from './conversation-list';
 import { ConversationThread } from './conversation-thread';
 import { NewConversationDialog } from './new-conversation-dialog';
 import type {
+    ConversationMessage,
     ConversationRow,
     ConversationThreadProps,
     InboxMeta,
@@ -68,7 +69,14 @@ export function ConversationWorkspace({
     const [overlay, setOverlay] = useState<
         Record<number, Partial<ConversationRow>>
     >({});
+    // Threads that arrived over Echo before the next Inertia page of the list.
+    const [extras, setExtras] = useState<ConversationRow[]>([]);
+    const [incomingMessage, setIncomingMessage] =
+        useState<ConversationMessage | null>(null);
     const isFirstRender = useRef(true);
+    const conversationsRef = useRef(conversations);
+
+    conversationsRef.current = conversations;
 
     const activeId = thread?.conversation.id ?? null;
 
@@ -84,6 +92,7 @@ export function ConversationWorkspace({
         const timer = window.setTimeout(() => {
             setLoading(true);
             setOverlay({});
+            setExtras([]);
             router.reload({
                 only: INBOX_PROPS,
                 reset: ['conversations'],
@@ -130,7 +139,8 @@ export function ConversationWorkspace({
     ]);
 
     // A thread the operator is not looking at still re-badges and re-previews
-    // the moment someone posts to it.
+    // the moment someone posts to it. The same payload also inserts unknown
+    // rows and, when the thread is open, forwards the message into the pane.
     const onInboxUpdate = useCallback(
         (payload: InboxUpdatedPayload) => {
             // The thread being open handles its own ack; this covers the case
@@ -146,9 +156,32 @@ export function ConversationWorkspace({
                 );
             }
 
+            if (payload.message) {
+                setIncomingMessage(payload.message);
+            }
+
+            if (payload.row) {
+                setExtras((current) => {
+                    if (
+                        current.some((row) => row.id === payload.row.id) ||
+                        conversationsRef.current.some(
+                            (row) => row.id === payload.row.id,
+                        )
+                    ) {
+                        return current;
+                    }
+
+                    return [payload.row, ...current];
+                });
+            }
+
             setOverlay((current) => {
                 const previous = current[payload.conversation_id];
                 const isOpenHere = payload.conversation_id === activeId;
+                const isOwn = payload.sender_id === viewerId;
+                const existing = conversationsRef.current.find(
+                    (row) => row.id === payload.conversation_id,
+                );
 
                 return {
                     ...current,
@@ -156,14 +189,17 @@ export function ConversationWorkspace({
                         status: payload.status,
                         last_message_preview: payload.last_message_preview,
                         last_message_at: payload.last_message_at,
-                        unread_count: isOpenHere
-                            ? 0
-                            : (previous?.unread_count ?? 0) + 1,
+                        unread_count:
+                            isOpenHere || isOwn
+                                ? 0
+                                : (previous?.unread_count ??
+                                      existing?.unread_count ??
+                                      0) + 1,
                     },
                 };
             });
         },
-        [activeId, deliveredUrlFor],
+        [activeId, deliveredUrlFor, viewerId],
     );
 
     useConversationInboxRealtime(inboxChannel, onInboxUpdate);
@@ -180,7 +216,9 @@ export function ConversationWorkspace({
         }));
     }, [activeId, thread?.messages.length]);
 
-    const rows = applyOverlay(conversations, overlay);
+    const rows = applyOverlay(conversations, overlay, extras).filter((row) =>
+        matchesInboxFilters(row, { status, search, branchId }),
+    );
 
     return (
         <div className="flex h-full min-h-0 gap-4">
@@ -231,6 +269,7 @@ export function ConversationWorkspace({
                         viewerId={viewerId}
                         viewerName={viewerName}
                         backUrl={indexUrl}
+                        incomingMessage={incomingMessage}
                     />
                 )}
             </section>
@@ -240,19 +279,60 @@ export function ConversationWorkspace({
 
 /**
  * Newly-active rows float to the top, matching how a messenger reorders when a
- * message lands.
+ * message lands. Unknown ids from Echo are prepended so a thread opened on the
+ * other portal appears without a reload.
  */
 function applyOverlay(
     rows: ConversationRow[],
     overlay: Record<number, Partial<ConversationRow>>,
+    extras: ConversationRow[],
 ): ConversationRow[] {
-    if (Object.keys(overlay).length === 0) {
+    if (extras.length === 0 && Object.keys(overlay).length === 0) {
         return rows;
     }
 
-    return rows
+    const byId = new Map<number, ConversationRow>();
+
+    for (const row of rows) {
+        byId.set(row.id, row);
+    }
+
+    for (const extra of extras) {
+        if (!byId.has(extra.id)) {
+            byId.set(extra.id, extra);
+        }
+    }
+
+    return [...byId.values()]
         .map((row) => ({ ...row, ...overlay[row.id] }))
         .sort((a, b) => sortKey(b) - sortKey(a));
+}
+
+function matchesInboxFilters(
+    row: ConversationRow,
+    filters: { status: string; search: string; branchId: string },
+): boolean {
+    if (filters.status !== 'all' && row.status !== filters.status) {
+        return false;
+    }
+
+    if (
+        filters.branchId !== 'all' &&
+        String(row.branch?.id ?? '') !== filters.branchId
+    ) {
+        return false;
+    }
+
+    const needle = filters.search.trim().toLowerCase();
+
+    if (needle === '') {
+        return true;
+    }
+
+    return (
+        row.order_number.toLowerCase().includes(needle) ||
+        (row.last_message_preview ?? '').toLowerCase().includes(needle)
+    );
 }
 
 function sortKey(row: ConversationRow): number {

@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Http\Requests\Platform;
+
+use App\Concerns\ValidatesWorkforceInput;
+use Illuminate\Foundation\Http\FormRequest;
+
+class StoreShiftTemplateRequest extends FormRequest
+{
+    use ValidatesWorkforceInput;
+
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->forcePlatformOwner();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return $this->shiftTemplateRules();
+    }
+}

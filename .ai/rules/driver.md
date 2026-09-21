@@ -1,10 +1,11 @@
 ---
 paths:
-    - 'app/Services/Driver/**'
-    - 'app/Models/Driver*.php'
-    - 'app/Http/Controllers/{Platform,Branch}/*Driver*.php'
-    - 'resources/js/pages/{platform,branch}/drivers/**'
-    - 'resources/js/pages/platform/branches/drivers/**'
+  - 'app/Services/Driver/**'
+  - 'app/Models/Driver*.php'
+  - 'app/Http/Controllers/{Platform,Branch}/*Driver*.php'
+  - 'resources/js/pages/{platform,branch}/drivers/**'
+  - 'resources/js/pages/platform/branches/drivers/**'
+  - 'app/Http/Controllers/{Platform,Branch}/**'
 ---
 
 # Driver
@@ -32,3 +33,6 @@ Platform nested staff and drivers INDEX actions redirect to platform.branch-staf
 ## Gate one-active-branch on config
 
 Assignment mode is `config('drivers.single_active_branch')` (env `DRIVER_SINGLE_ACTIVE_BRANCH`, default true), not an unconditional one-branch law. True: Active assign/sync/status transfers (deactivates other actives) and rejects more than one branch_id. False: multiple actives are allowed. Unique remains `(driver_id, branch_id)` only — never a unique-on-active index.
+
+## Platform shift workspaces use separate controllers
+Administrator Shift* controllers handle owner_type=platform and branch_id null only. Branch management uses BranchShift* controllers for owner_type=branch with required branch_id. Do not point two route URIs at the same controller method (Wayfinder becomes a URI dictionary). Cross-owner edit/assign is 404. Branch portal Shift* controllers stay branch-scoped and may still assign onto visible platform templates.

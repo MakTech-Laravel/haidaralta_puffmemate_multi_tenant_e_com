@@ -6,6 +6,7 @@ use App\Enums\ConversationParticipantRole;
 use App\Enums\ConversationStatus;
 use App\Enums\MessageType;
 use App\Enums\OrderStatus;
+use App\Enums\UserType;
 use App\Events\ConversationClosed;
 use App\Events\ConversationInboxUpdated;
 use App\Events\ConversationReceiptsUpdated;
@@ -55,12 +56,17 @@ class ConversationService
                 $this->addParticipant($conversation, $order->driver_id, ConversationParticipantRole::Driver);
             }
 
-            $this->touchLastMessage($conversation, $this->writeSystemMessage(
+            $systemMessage = $this->writeSystemMessage(
                 $conversation,
                 'Conversation opened for order '.$order->order_number.'.',
-            ));
+            );
 
-            return $conversation->refresh();
+            $this->touchLastMessage($conversation, $systemMessage);
+
+            $conversation->refresh();
+            $this->notifyInbox($conversation, $systemMessage);
+
+            return $conversation;
         });
     }
 
@@ -114,7 +120,7 @@ class ConversationService
         $message->load(['sender:id,name,avatar', 'attachments']);
 
         broadcast(new MessageCreated($message))->toOthers();
-        $this->notifyInbox($conversation);
+        $this->notifyInbox($conversation, $message);
 
         return $message;
     }
@@ -167,7 +173,7 @@ class ConversationService
 
             broadcast(new MessageCreated($systemMessage));
             broadcast(new ConversationClosed($conversation));
-            $this->notifyInbox($conversation);
+            $this->notifyInbox($conversation, $systemMessage);
         }
 
         return $conversation;
@@ -263,15 +269,14 @@ class ConversationService
     }
 
     /**
-     * Bust every participant's unread cache and push the inbox row to them.
+     * Bust unread caches and push the inbox row to everyone who can see the thread.
+     *
+     * Operators list every conversation in their portal without joining, so the
+     * audience is participants plus platform staff and the branch's operators.
      */
-    private function notifyInbox(Conversation $conversation): void
+    private function notifyInbox(Conversation $conversation, ?Message $message = null): void
     {
-        $userIds = [];
-
-        foreach ($conversation->participants()->pluck('user_id') as $userId) {
-            $userIds[] = (int) $userId;
-        }
+        $userIds = $this->inboxAudience($conversation);
 
         if ($userIds === []) {
             return;
@@ -279,7 +284,33 @@ class ConversationService
 
         ConversationUnreadCounts::forgetMany($userIds);
 
-        broadcast(new ConversationInboxUpdated($conversation, $userIds));
+        broadcast(new ConversationInboxUpdated($conversation, $userIds, $message));
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function inboxAudience(Conversation $conversation): array
+    {
+        $participantIds = $conversation->participants()->pluck('user_id');
+
+        $operatorIds = User::query()
+            ->where('is_active', true)
+            ->where(function ($query) use ($conversation): void {
+                $query->where('user_type', UserType::PLATFORM)
+                    ->orWhere(function ($branch) use ($conversation): void {
+                        $branch->where('user_type', UserType::BRANCH)
+                            ->where('branch_id', $conversation->branch_id);
+                    });
+            })
+            ->pluck('id');
+
+        return $participantIds
+            ->merge($operatorIds)
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

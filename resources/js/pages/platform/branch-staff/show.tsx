@@ -1,7 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
+import TransferController from '@/actions/App/Http/Controllers/Platform/TransferController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import { TransferEmployeeSheet } from '@/components/admin/transfer-employee-sheet';
+import { TransferTimeline } from '@/components/admin/workforce-timeline';
+import type { TransferRow } from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,15 +20,24 @@ type StaffMember = {
     roles: string[];
     is_super_admin: boolean;
     effective_permissions: string[];
+    transfers: TransferRow[];
 };
+
+type BranchOption = { id: number; name: string };
+type RoleOption = { value: string; label: string };
 
 export default function PlatformBranchStaffShow({
     staffMember,
+    branches = [],
+    rolesByBranch = {},
 }: {
     staffMember: StaffMember;
+    branches?: BranchOption[];
+    rolesByBranch?: Record<string, RoleOption[]>;
 }) {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [transferOpen, setTransferOpen] = useState(false);
 
     return (
         <>
@@ -41,6 +54,12 @@ export default function PlatformBranchStaffShow({
                             <Link href={BranchStaffController.index.url()}>
                                 Back
                             </Link>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setTransferOpen(true)}
+                        >
+                            Transfer
                         </Button>
                         <Button asChild>
                             <Link
@@ -101,7 +120,23 @@ export default function PlatformBranchStaffShow({
                         ))}
                     </div>
                 </section>
+
+                <section className="flex flex-col gap-2">
+                    <h2 className="text-sm font-medium">Transfer history</h2>
+                    <TransferTimeline transfers={staffMember.transfers ?? []} />
+                </section>
             </div>
+
+            <TransferEmployeeSheet
+                open={transferOpen}
+                onOpenChange={setTransferOpen}
+                action={TransferController.storeStaff.form(staffMember.id)}
+                subjectType="branch_staff"
+                branches={branches}
+                currentBranchId={staffMember.branch?.id}
+                rolesByBranch={rolesByBranch}
+                currentRoles={staffMember.roles}
+            />
 
             <ConfirmDeleteDialog
                 open={confirmOpen}

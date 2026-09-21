@@ -14,6 +14,8 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->string('status')->default('active');
             $table->foreignId('assigned_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->date('started_at')->nullable();
+            $table->date('ended_at')->nullable();
             $table->timestamps();
 
             $table->unique(['driver_id', 'branch_id']);

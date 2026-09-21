@@ -84,6 +84,30 @@ class User extends Authenticatable implements PasskeyUser, ScoutSearchable
     }
 
     /**
+     * @return HasMany<UserTransferHistory, $this>
+     */
+    public function transferHistories(): HasMany
+    {
+        return $this->hasMany(UserTransferHistory::class);
+    }
+
+    /**
+     * @return HasMany<UserShiftAssignment, $this>
+     */
+    public function shiftAssignments(): HasMany
+    {
+        return $this->hasMany(UserShiftAssignment::class);
+    }
+
+    /**
+     * @return HasMany<UserShiftHistory, $this>
+     */
+    public function shiftHistories(): HasMany
+    {
+        return $this->hasMany(UserShiftHistory::class);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toSearchableArray(): array

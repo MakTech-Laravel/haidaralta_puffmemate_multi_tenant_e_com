@@ -6,6 +6,9 @@ use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchDriverController as PlatformBranchDriverController;
 use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInventoryController;
 use App\Http\Controllers\Platform\BranchScopedStaffController as PlatformBranchScopedStaffController;
+use App\Http\Controllers\Platform\BranchShiftAssignmentController as PlatformBranchShiftAssignmentController;
+use App\Http\Controllers\Platform\BranchShiftRosterPeriodController as PlatformBranchShiftRosterPeriodController;
+use App\Http\Controllers\Platform\BranchShiftTemplateController as PlatformBranchShiftTemplateController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
 use App\Http\Controllers\Platform\CategoryController as PlatformCategoryController;
 use App\Http\Controllers\Platform\ConversationController as PlatformConversationController;
@@ -22,7 +25,11 @@ use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeControll
 use App\Http\Controllers\Platform\Reports\PriceHistoryController as PlatformPriceHistoryController;
 use App\Http\Controllers\Platform\Reports\StockTransactionController as PlatformStockTransactionController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
+use App\Http\Controllers\Platform\ShiftAssignmentController as PlatformShiftAssignmentController;
+use App\Http\Controllers\Platform\ShiftRosterPeriodController as PlatformShiftRosterPeriodController;
+use App\Http\Controllers\Platform\ShiftTemplateController as PlatformShiftTemplateController;
 use App\Http\Controllers\Platform\StockController as PlatformStockController;
+use App\Http\Controllers\Platform\TransferController as PlatformTransferController;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -71,6 +78,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->names('platform.branch-staff')
             ->middlewareFor(['store', 'update'], 'precognitive');
 
+        Route::post('branch-staff/{user}/transfer', [PlatformTransferController::class, 'storeStaff'])
+            ->name('platform.staff.transfer');
+
         Route::resource('branches.staff', PlatformBranchScopedStaffController::class)
             ->parameters(['staff' => 'user'])
             ->names('platform.branches.staff')
@@ -87,6 +97,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.drivers.branch-options');
         Route::put('drivers/{user}/branches', [PlatformDriverController::class, 'syncBranches'])
             ->name('platform.drivers.branches.sync');
+        Route::post('drivers/{user}/transfer', [PlatformTransferController::class, 'storeDriver'])
+            ->name('platform.drivers.transfer');
         Route::post('drivers/{user}/rosters', [PlatformDriverController::class, 'storeRoster'])
             ->name('platform.drivers.rosters.store');
         Route::put('drivers/{user}/rosters/{roster}', [PlatformDriverController::class, 'updateRoster'])
@@ -110,6 +122,59 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::put('branches/{branch}/drivers/{user}', [PlatformBranchDriverController::class, 'update'])
             ->middleware('precognitive')
             ->name('platform.branches.drivers.update');
+    });
+
+    Route::middleware(['permission:view-transfers'])->group(function () {
+        Route::get('transfers', [PlatformTransferController::class, 'index'])->name('platform.transfers.index');
+    });
+
+    Route::middleware(['permission:manage-shifts'])->group(function () {
+        Route::redirect('shifts/assign', '/platform/shift-assignments');
+        Route::redirect('shift-periods/create', '/platform/shifts/periods/create');
+
+        Route::get('shifts', [PlatformShiftTemplateController::class, 'index'])->name('platform.shift-templates.index');
+        Route::get('shifts/create', [PlatformShiftTemplateController::class, 'create'])->name('platform.shift-templates.create');
+        Route::get('shifts/periods/create', [PlatformShiftRosterPeriodController::class, 'create'])->name('platform.shift-roster-periods.create');
+        Route::get('shifts/periods/{shift_roster_period}/edit', [PlatformShiftRosterPeriodController::class, 'edit'])->name('platform.shift-roster-periods.edit');
+        Route::post('shift-templates', [PlatformShiftTemplateController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.shift-templates.store');
+        Route::get('shifts/{shift_template}/edit', [PlatformShiftTemplateController::class, 'edit'])->name('platform.shift-templates.edit');
+        Route::put('shift-templates/{shift_template}', [PlatformShiftTemplateController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.shift-templates.update');
+        Route::post('shift-roster-periods', [PlatformShiftRosterPeriodController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.shift-roster-periods.store');
+        Route::put('shift-roster-periods/{shift_roster_period}', [PlatformShiftRosterPeriodController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.shift-roster-periods.update');
+
+        Route::get('shift-assignments', [PlatformShiftAssignmentController::class, 'create'])->name('platform.shift-assignments.create');
+        Route::post('shift-assignments', [PlatformShiftAssignmentController::class, 'store'])->name('platform.shift-assignments.store');
+        Route::put('shift-assignments/{user_shift_assignment}', [PlatformShiftAssignmentController::class, 'update'])->name('platform.shift-assignments.update');
+
+        Route::get('branch-shifts', [PlatformBranchShiftTemplateController::class, 'index'])->name('platform.branch-shift-templates.index');
+        Route::get('branch-shifts/create', [PlatformBranchShiftTemplateController::class, 'create'])->name('platform.branch-shift-templates.create');
+        Route::get('branch-shifts/periods/create', [PlatformBranchShiftRosterPeriodController::class, 'create'])->name('platform.branch-shift-roster-periods.create');
+        Route::get('branch-shifts/periods/{shift_roster_period}/edit', [PlatformBranchShiftRosterPeriodController::class, 'edit'])->name('platform.branch-shift-roster-periods.edit');
+        Route::post('branch-shift-templates', [PlatformBranchShiftTemplateController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.branch-shift-templates.store');
+        Route::get('branch-shifts/{shift_template}/edit', [PlatformBranchShiftTemplateController::class, 'edit'])->name('platform.branch-shift-templates.edit');
+        Route::put('branch-shift-templates/{shift_template}', [PlatformBranchShiftTemplateController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.branch-shift-templates.update');
+        Route::post('branch-shift-roster-periods', [PlatformBranchShiftRosterPeriodController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.branch-shift-roster-periods.store');
+        Route::put('branch-shift-roster-periods/{shift_roster_period}', [PlatformBranchShiftRosterPeriodController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.branch-shift-roster-periods.update');
+
+        Route::get('branch-shift-assignments', [PlatformBranchShiftAssignmentController::class, 'create'])->name('platform.branch-shift-assignments.create');
+        Route::post('branch-shift-assignments', [PlatformBranchShiftAssignmentController::class, 'store'])->name('platform.branch-shift-assignments.store');
+        Route::put('branch-shift-assignments/{user_shift_assignment}', [PlatformBranchShiftAssignmentController::class, 'update'])->name('platform.branch-shift-assignments.update');
     });
 
     Route::middleware(['permission:create-branches'])->group(function () {

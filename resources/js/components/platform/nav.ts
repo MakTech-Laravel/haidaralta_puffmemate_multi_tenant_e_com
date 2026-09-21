@@ -59,7 +59,7 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
             navGroup({
                 title: 'Administrator',
                 icon: Shield,
-                permissions: ['manage-users', 'manage-roles'],
+                permissions: ['manage-users', 'manage-roles', 'manage-shifts'],
                 items: [
                     navLink({
                         title: 'Admins',
@@ -78,6 +78,18 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                         href: '/platform/permissions',
                         icon: KeyRound,
                         permissions: ['manage-roles'],
+                    }),
+                    navLink({
+                        title: 'Shifts',
+                        href: '/platform/shifts',
+                        icon: CalendarClock,
+                        permissions: ['manage-shifts'],
+                    }),
+                    navLink({
+                        title: 'Assign to shift',
+                        href: '/platform/shift-assignments',
+                        icon: UserPlus,
+                        permissions: ['manage-shifts'],
                     }),
                 ],
             }),
@@ -121,16 +133,6 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                         permissions: ['manage-drivers'],
                     }),
                     navSoon({
-                        title: 'Shifts',
-                        icon: CalendarClock,
-                        permissions: ['manage-drivers'],
-                    }),
-                    navSoon({
-                        title: 'Assign to shift',
-                        icon: UserPlus,
-                        permissions: ['manage-drivers'],
-                    }),
-                    navSoon({
                         title: 'Live tracking',
                         icon: MapPinned,
                         permissions: ['manage-drivers'],
@@ -150,6 +152,8 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                     'view-branches',
                     'manage-branch-users',
                     'manage-branch-inventories',
+                    'view-transfers',
+                    'manage-shifts',
                 ],
                 items: [
                     navLink({
@@ -163,6 +167,24 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                         href: '/platform/branch-staff',
                         icon: Users,
                         permissions: ['manage-branch-users'],
+                    }),
+                    navLink({
+                        title: 'Shifts',
+                        href: '/platform/branch-shifts',
+                        icon: CalendarClock,
+                        permissions: ['manage-shifts'],
+                    }),
+                    navLink({
+                        title: 'Assign to shift',
+                        href: '/platform/branch-shift-assignments',
+                        icon: UserPlus,
+                        permissions: ['manage-shifts'],
+                    }),
+                    navLink({
+                        title: 'Transfers',
+                        href: '/platform/transfers',
+                        icon: History,
+                        permissions: ['view-transfers'],
                     }),
                     navLink({
                         title: 'Manage stock',

@@ -83,6 +83,40 @@ final class ConversationPayload
     }
 
     /**
+     * Left-hand inbox row. Unread is viewer-specific, so callers overlay it.
+     *
+     * @return array<string, mixed>
+     */
+    public static function inboxRow(Conversation $conversation): array
+    {
+        $conversation->loadMissing([
+            'order:id,order_number,status',
+            'branch:id,name,slug',
+            'participants.user:id,name,avatar',
+        ]);
+
+        return [
+            'id' => $conversation->id,
+            'order_number' => $conversation->order->order_number,
+            'order_status_label' => $conversation->order->status->label(),
+            'status' => $conversation->status->value,
+            'branch' => $conversation->branch?->only(['id', 'name', 'slug']),
+            'last_message_preview' => $conversation->last_message_preview,
+            'last_message_at' => $conversation->last_message_at?->toIso8601String(),
+            'unread_count' => 0,
+            'participants' => $conversation->participants
+                ->map(fn (ConversationParticipant $participant): array => [
+                    'user_id' => $participant->user_id,
+                    'name' => $participant->user->name,
+                    'role_label' => $participant->role->label(),
+                    'avatar_url' => MediaUrl::resolve($participant->user->avatar, fallback: null),
+                ])
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public static function conversation(Conversation $conversation): array

@@ -1,12 +1,13 @@
 ---
 paths:
-    - resources/js/components/branch/product-inventory-panel.tsx
-    - 'resources/js/pages/{platform,branch}/**/products/show.tsx'
-    - 'resources/js/pages/{platform,branch}/stock/manage.tsx'
-    - app/Support/ProductManageRedirect.php
-    - 'routes/{platform,branch}.php'
-    - app/Support/BranchProductPriceDisplay.php
-    - routes/platform.php
+  - resources/js/components/branch/product-inventory-panel.tsx
+  - 'resources/js/pages/{platform,branch}/**/products/show.tsx'
+  - 'resources/js/pages/{platform,branch}/stock/manage.tsx'
+  - app/Support/ProductManageRedirect.php
+  - 'routes/{platform,branch}.php'
+  - app/Support/BranchProductPriceDisplay.php
+  - routes/platform.php
+  - 'routes/*.php'
 ---
 
 # Discounts
@@ -34,3 +35,6 @@ Do not keep a stock/transactions redirect. The ledger URL is reports/stock-trans
 ## Fixed discount is amount off
 
 `discount_type` fixed is amount off selling: effective = max(0, selling_price − discount_price). Do not treat discount_price as the sale price. Percent stays selling × (1 − % / 100). Storefront pay price is effective; strikethrough is selling while the offer is live.
+
+## Platform shift URLs split by owner
+Platform-owned: /platform/shifts, /platform/shifts/periods, /platform/shift-assignments. Branch-owned: /platform/branch-shifts, /platform/branch-shifts/periods, /platform/branch-shift-assignments. Keep assign off the /shifts prefix so the Shifts nav item is not also active. Keep period GETs under /shifts/periods so Shifts stays active while editing periods. Wayfinder needs separate controller classes for each URI set.

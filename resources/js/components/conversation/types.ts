@@ -166,9 +166,12 @@ export type ConversationClosedPayload = {
 export type InboxUpdatedPayload = {
     conversation_id: number;
     last_message_id: number;
+    sender_id: number | null;
     status: ConversationStatus;
     last_message_preview: string | null;
     last_message_at: string | null;
+    row: ConversationRow;
+    message: ConversationMessage | null;
 };
 
 export type TypingWhisper = {

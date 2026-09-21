@@ -123,6 +123,7 @@ export function ConversationThread({
     canClose,
     endpoints,
     backUrl,
+    incomingMessage = null,
 }: {
     conversation: ConversationSummary;
     messages: ConversationMessage[];
@@ -133,6 +134,12 @@ export function ConversationThread({
     canClose: boolean;
     endpoints: ConversationEndpoints;
     backUrl: string;
+    /**
+     * Inbox-channel fallback. Presence MessageCreated is still the primary
+     * path; this covers the case where the operator is in the thread but the
+     * presence join never completed.
+     */
+    incomingMessage?: ConversationMessage | null;
 }) {
     const [messages, setMessages] = useState(initialMessages);
     const [hasMore, setHasMore] = useState(initialHasMore);
@@ -184,6 +191,18 @@ export function ConversationThread({
         setMessages((current) => mergeMessages(current, initialMessages));
         setHasMore(initialHasMore);
     }, [initialMessages, initialHasMore]);
+
+    useEffect(() => {
+        if (
+            incomingMessage === null ||
+            incomingMessage.conversation_id !== conversation.id ||
+            incomingMessage.sender?.id === viewerId
+        ) {
+            return;
+        }
+
+        setMessages((current) => mergeMessages(current, [incomingMessage]));
+    }, [incomingMessage, conversation.id, viewerId]);
 
     useEffect(() => {
         setReceipts(conversation.receipts);
