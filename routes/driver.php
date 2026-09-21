@@ -7,6 +7,7 @@ use App\Http\Controllers\Driver\NotificationController as DriverNotificationCont
 use App\Http\Controllers\Driver\OrderController as DriverOrderController;
 use App\Http\Controllers\Driver\ProfileController as DriverProfileController;
 use App\Http\Controllers\Driver\RouteController as DriverRouteController;
+use App\Http\Controllers\Driver\SecurityController as DriverSecurityController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () {
@@ -20,6 +21,7 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::get('orders/{order}', [DriverOrderController::class, 'show'])->name('driver.orders.show');
     Route::get('notifications', [DriverNotificationController::class, 'index'])->name('driver.notifications.index');
     Route::get('profile', [DriverProfileController::class, 'index'])->name('driver.profile.index');
+    Route::get('security', [DriverSecurityController::class, 'index'])->name('driver.security.index');
     Route::get('profile/edit', [DriverProfileController::class, 'edit'])->name('driver.profile.edit');
     Route::patch('profile', [DriverProfileController::class, 'update'])
         ->middleware('precognitive')

@@ -85,6 +85,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/Driver/RouteController.php,resources/js/pages/driver/route/**,resources/js/components/driver/nav.ts | .ai/rules/route-js-components-driver.md |
 | app/Http/Controllers/Driver/RouteController.php,resources/js/pages/driver/route/** | .ai/rules/route.md |
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |
+| resources/js/pages/driver/security/**,resources/js/components/driver/driver-account-sheet.tsx | .ai/rules/security-js-components-driver.md |
 | database/seeders/** | .ai/rules/seeders.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |
