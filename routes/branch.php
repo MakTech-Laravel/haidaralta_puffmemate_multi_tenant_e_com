@@ -11,6 +11,9 @@ use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
 use App\Http\Controllers\Branch\Reports\StockTransactionController as BranchStockTransactionController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
+use App\Http\Controllers\Branch\ShiftAssignmentController as BranchShiftAssignmentController;
+use App\Http\Controllers\Branch\ShiftRosterPeriodController as BranchShiftRosterPeriodController;
+use App\Http\Controllers\Branch\ShiftTemplateController as BranchShiftTemplateController;
 use App\Http\Controllers\Branch\StaffController as BranchStaffController;
 use App\Http\Controllers\Branch\StockController as BranchStockController;
 use App\Models\Branch;
@@ -160,5 +163,30 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.drivers.rosters.update');
         Route::delete('drivers/{user}/rosters/{roster}', [BranchDriverController::class, 'destroyRoster'])
             ->name('branch.drivers.rosters.destroy');
+    });
+
+    Route::middleware(['permission:manage-branch-shifts'])->group(function () {
+        Route::get('shifts', [BranchShiftTemplateController::class, 'index'])->name('branch.shift-templates.index');
+        Route::get('shifts/create', [BranchShiftTemplateController::class, 'create'])->name('branch.shift-templates.create');
+        Route::get('shifts/assign', [BranchShiftAssignmentController::class, 'create'])->name('branch.shift-assignments.create');
+        Route::post('shift-templates', [BranchShiftTemplateController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('branch.shift-templates.store');
+        Route::get('shifts/{shift_template}/edit', [BranchShiftTemplateController::class, 'edit'])->name('branch.shift-templates.edit');
+        Route::put('shift-templates/{shift_template}', [BranchShiftTemplateController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('branch.shift-templates.update');
+
+        Route::get('shift-periods/create', [BranchShiftRosterPeriodController::class, 'create'])->name('branch.shift-roster-periods.create');
+        Route::post('shift-roster-periods', [BranchShiftRosterPeriodController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('branch.shift-roster-periods.store');
+        Route::get('shift-periods/{shift_roster_period}/edit', [BranchShiftRosterPeriodController::class, 'edit'])->name('branch.shift-roster-periods.edit');
+        Route::put('shift-roster-periods/{shift_roster_period}', [BranchShiftRosterPeriodController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('branch.shift-roster-periods.update');
+
+        Route::post('shift-assignments', [BranchShiftAssignmentController::class, 'store'])->name('branch.shift-assignments.store');
+        Route::put('shift-assignments/{user_shift_assignment}', [BranchShiftAssignmentController::class, 'update'])->name('branch.shift-assignments.update');
     });
 });

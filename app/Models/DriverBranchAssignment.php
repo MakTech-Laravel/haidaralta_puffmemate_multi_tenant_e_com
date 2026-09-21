@@ -8,6 +8,7 @@ use Database\Factories\DriverBranchAssignmentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $branch_id
  * @property DriverAssignmentStatus $status
  * @property int|null $assigned_by
+ * @property Carbon|null $started_at
+ * @property Carbon|null $ended_at
  * @property-read User|null $driver
  * @property-read Branch|null $branch
  * @property-read User|null $assignedBy
@@ -32,6 +35,8 @@ class DriverBranchAssignment extends Model
         'branch_id',
         'status',
         'assigned_by',
+        'started_at',
+        'ended_at',
     ];
 
     /**
@@ -65,6 +70,8 @@ class DriverBranchAssignment extends Model
     {
         return [
             'status' => DriverAssignmentStatus::class,
+            'started_at' => 'date',
+            'ended_at' => 'date',
         ];
     }
 }

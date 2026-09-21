@@ -23,13 +23,15 @@ type DriverAssignment = {
     status_label: string | null;
 };
 
-type DriverRoster = {
+type DriverShift = {
     id: number;
     branch_name: string | null;
     start_time: string | null;
     end_time: string | null;
     days_label: string | null;
-    period_label: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    shift_template_name: string | null;
     status: string | null;
     status_label: string | null;
 };
@@ -47,7 +49,8 @@ type DriverProfile = {
     avatar_url: string | null;
     vehicle_image_url: string | null;
     assignments: DriverAssignment[];
-    rosters: DriverRoster[];
+    current_duty: DriverShift | null;
+    shift_assignments: DriverShift[];
 };
 
 function Fact({
@@ -86,8 +89,8 @@ export default function DriverProfileIndex({
     const activeAssignments = driver.assignments.filter(
         (assignment) => assignment.status === 'active',
     );
-    const scheduledRosters = driver.rosters.filter(
-        (roster) => roster.status === 'scheduled',
+    const scheduledShifts = driver.shift_assignments.filter(
+        (assignment) => assignment.status === 'scheduled',
     );
 
     return (
@@ -244,18 +247,29 @@ export default function DriverProfileIndex({
 
                 <section className="border-border space-y-3 rounded-xl border p-4">
                     <h2 className="text-foreground text-base font-semibold">
-                        Roster
+                        Duty window
                     </h2>
-                    {scheduledRosters.length === 0 ? (
+                    {driver.current_duty ? (
+                        <p className="text-sm">
+                            On duty now: {driver.current_duty.shift_template_name}{' '}
+                            · {driver.current_duty.start_time}–
+                            {driver.current_duty.end_time}
+                        </p>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">
+                            You are not on duty right now.
+                        </p>
+                    )}
+                    {scheduledShifts.length === 0 ? (
                         <p className="text-muted-foreground text-sm">
                             No scheduled shifts on file. The desk will add them
                             when you are rostered.
                         </p>
                     ) : (
                         <ul className="flex flex-col gap-2">
-                            {scheduledRosters.map((roster) => (
+                            {scheduledShifts.map((shift) => (
                                 <li
-                                    key={roster.id}
+                                    key={shift.id}
                                     className="bg-accent space-y-1 rounded-lg px-3 py-2.5"
                                 >
                                     <div className="flex items-center gap-2">
@@ -264,18 +278,21 @@ export default function DriverProfileIndex({
                                             aria-hidden
                                         />
                                         <p className="min-w-0 flex-1 truncate text-sm font-medium">
-                                            {roster.branch_name ?? 'Branch'}
+                                            {shift.branch_name ?? 'Branch'}
                                         </p>
                                         <Badge variant="outline">
-                                            {roster.status_label ?? 'Scheduled'}
+                                            {shift.status_label ?? 'Scheduled'}
                                         </Badge>
                                     </div>
                                     <p className="text-muted-foreground pl-6 text-sm">
                                         {[
-                                            roster.period_label,
-                                            roster.days_label,
-                                            roster.start_time && roster.end_time
-                                                ? `${roster.start_time}–${roster.end_time}`
+                                            shift.shift_template_name,
+                                            shift.start_date && shift.end_date
+                                                ? `${shift.start_date} – ${shift.end_date}`
+                                                : null,
+                                            shift.days_label,
+                                            shift.start_time && shift.end_time
+                                                ? `${shift.start_time}–${shift.end_time}`
                                                 : null,
                                         ]
                                             .filter(Boolean)

@@ -112,7 +112,7 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                 title: 'Driver management',
                 href: '/platform/drivers',
                 icon: Truck,
-                permissions: ['manage-drivers'],
+                permissions: ['manage-drivers', 'manage-shifts'],
                 items: [
                     navLink({
                         title: 'Drivers',
@@ -120,15 +120,17 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                         icon: Truck,
                         permissions: ['manage-drivers'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Shifts',
+                        href: '/platform/shifts',
                         icon: CalendarClock,
-                        permissions: ['manage-drivers'],
+                        permissions: ['manage-shifts'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Assign to shift',
+                        href: '/platform/shifts/assign',
                         icon: UserPlus,
-                        permissions: ['manage-drivers'],
+                        permissions: ['manage-shifts'],
                     }),
                     navSoon({
                         title: 'Live tracking',
@@ -150,6 +152,7 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                     'view-branches',
                     'manage-branch-users',
                     'manage-branch-inventories',
+                    'view-transfers',
                 ],
                 items: [
                     navLink({
@@ -163,6 +166,12 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                         href: '/platform/branch-staff',
                         icon: Users,
                         permissions: ['manage-branch-users'],
+                    }),
+                    navLink({
+                        title: 'Transfers',
+                        href: '/platform/transfers',
+                        icon: History,
+                        permissions: ['view-transfers'],
                     }),
                     navLink({
                         title: 'Manage stock',

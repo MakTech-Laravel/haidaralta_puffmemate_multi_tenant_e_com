@@ -3,7 +3,8 @@ import { IdCard, Mail, MapPin, Phone } from 'lucide-react';
 import type { ReactNode } from 'react';
 import BranchDriverController from '@/actions/App/Http/Controllers/Platform/BranchDriverController';
 import PlatformDriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
-import { formatRosterPeriodLine } from '@/components/admin/driver-roster-fields';
+import { ShiftAssignmentList } from '@/components/admin/workforce-timeline';
+import type { ShiftAssignmentRow } from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
 import { filteredBranchDriversUrl } from '@/lib/branch-people-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,7 +17,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -38,16 +38,8 @@ type Driver = {
         status_label: string | null;
         branch_name: string | null;
     }[];
-    rosters: {
-        id: number;
-        start_date: string | null;
-        end_date: string | null;
-        start_time: string | null;
-        end_time: string | null;
-        days_label: string | null;
-        period_label: string | null;
-        status_label: string | null;
-    }[];
+    current_duty: ShiftAssignmentRow | null;
+    shift_assignments: ShiftAssignmentRow[];
 };
 
 function initials(name: string): string {
@@ -252,36 +244,15 @@ export default function PlatformBranchDriversShow({
 
                 <Card className="shadow-sm">
                     <CardHeader>
-                        <CardTitle>Recent rosters</CardTitle>
+                        <CardTitle>Duty windows</CardTitle>
                         <CardDescription>
-                            Shift duty times by date period. Manage shifts from
-                            the full driver profile.
+                            Shift assignments at {branch.name}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {driver.rosters.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
-                                No roster shifts at this branch yet.
-                            </p>
-                        ) : (
-                            <div className="flex flex-col">
-                                {driver.rosters.map((roster, index) => (
-                                    <div key={roster.id}>
-                                        {index > 0 ? (
-                                            <Separator className="my-4" />
-                                        ) : null}
-                                        <div>
-                                            <p className="text-sm font-medium">
-                                                {formatRosterPeriodLine(roster)}
-                                            </p>
-                                            <p className="text-muted-foreground text-sm">
-                                                {roster.status_label}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <ShiftAssignmentList
+                            assignments={driver.shift_assignments}
+                        />
                     </CardContent>
                 </Card>
             </div>

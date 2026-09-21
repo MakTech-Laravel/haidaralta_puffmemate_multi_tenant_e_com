@@ -4,12 +4,13 @@ namespace App\Support;
 
 use App\Enums\DriverAssignmentStatus;
 use App\Enums\DriverAvailabilityStatus;
-use App\Enums\DriverRosterStatus;
 use App\Enums\DriverVehicleType;
+use App\Enums\ShiftAssignmentStatus;
 use App\Enums\UserType;
 use App\Models\Branch;
-use App\Models\DriverRoster;
 use App\Models\User;
+use App\Models\UserShiftAssignment;
+use App\Models\UserTransferHistory;
 
 final class DriverPayload
 {
@@ -30,11 +31,24 @@ final class DriverPayload
         $driver->loadMissing([
             'driverProfile',
             'driverBranchAssignments.branch:id,name,slug,status',
-            'driverRosters' => function ($query) use ($scopedBranch): void {
-                $query->with('branch:id,name,slug')->orderByDesc('start_date')->orderBy('start_time');
+            'shiftAssignments' => function ($query) use ($scopedBranch): void {
+                $query->with(['shiftTemplate', 'shiftRosterPeriod', 'branch:id,name,slug'])
+                    ->orderByDesc('start_date');
 
                 if ($scopedBranch !== null) {
                     $query->where('branch_id', $scopedBranch->id);
+                }
+            },
+            'transferHistories' => function ($query) use ($scopedBranch): void {
+                $query->with(['fromBranch:id,name,slug', 'toBranch:id,name,slug', 'transferredBy:id,name'])
+                    ->orderByDesc('effective_date')
+                    ->orderByDesc('id');
+
+                if ($scopedBranch !== null) {
+                    $query->where(function ($scope) use ($scopedBranch): void {
+                        $scope->where('from_branch_id', $scopedBranch->id)
+                            ->orWhere('to_branch_id', $scopedBranch->id);
+                    });
                 }
             },
         ]);
@@ -87,30 +101,13 @@ final class DriverPayload
                 ->map(fn ($id): int => (int) $id)
                 ->values()
                 ->all(),
-            'rosters' => $driver->driverRosters
-                ->map(function (DriverRoster $roster): array {
-                    $startDate = $roster->start_date?->format('Y-m-d');
-                    $endDate = $roster->end_date?->format('Y-m-d');
-                    $days = $roster->normalizedDaysOfWeek();
-                    $periodLabel = $startDate === $endDate
-                        ? $roster->start_date?->format('j M Y')
-                        : $roster->start_date?->format('j M Y').' – '.$roster->end_date?->format('j M Y');
-
-                    return [
-                        'id' => $roster->id,
-                        'branch_id' => $roster->branch_id,
-                        'branch_name' => $roster->branch?->name,
-                        'start_date' => $startDate,
-                        'end_date' => $endDate,
-                        'start_time' => $roster->start_time?->format('H:i'),
-                        'end_time' => $roster->end_time?->format('H:i'),
-                        'days_of_week' => $days,
-                        'days_label' => DriverRoster::daysLabel($days),
-                        'period_label' => $periodLabel,
-                        'status' => $roster->status?->value,
-                        'status_label' => $roster->status?->label(),
-                    ];
-                })
+            'current_duty' => WorkforcePayload::currentDuty($driver),
+            'shift_assignments' => $driver->shiftAssignments
+                ->map(fn (UserShiftAssignment $assignment): array => WorkforcePayload::assignment($assignment))
+                ->values()
+                ->all(),
+            'transfers' => $driver->transferHistories
+                ->map(fn (UserTransferHistory $history): array => WorkforcePayload::transfer($history))
                 ->values()
                 ->all(),
         ];
@@ -163,8 +160,8 @@ final class DriverPayload
      */
     public static function rosterStatusOptions(): array
     {
-        return collect(DriverRosterStatus::cases())
-            ->map(fn (DriverRosterStatus $status): array => [
+        return collect(ShiftAssignmentStatus::cases())
+            ->map(fn (ShiftAssignmentStatus $status): array => [
                 'value' => $status->value,
                 'label' => $status->label(),
             ])

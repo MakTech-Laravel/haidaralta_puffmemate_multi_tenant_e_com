@@ -24,6 +24,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
 | config/*.php, config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/Driver/** | .ai/rules/controllers-driver.md |
+| app/Services/Workforce/**,app/Http/Controllers/{Platform,Branch}/** | .ai/rules/controllers-platform-branch.md |
 | app/Http/Controllers/Platform/AdminController.php, app/Http/Controllers/Platform/BranchStaffController.php | .ai/rules/controllers-platform.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
 | app/Services/Conversation/**,resources/js/components/conversation/** | .ai/rules/conversation.md |
@@ -47,6 +48,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/Fcm/** | .ai/rules/fcm.md |
 | package.json, vite.config.ts, package.json, vite.config.ts | .ai/rules/general.md |
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
+| app/Services/Driver/**,app/Models/Driver*.php,app/Http/Controllers/{Platform,Branch}/*Driver*.php | .ai/rules/http-controllers-platform-branch.md |
 | resources/js/components/admin/role-*.tsx, resources/js/pages/{platform,branch}/roles/**, app/Http/Controllers/{Platform,Branch}/RoleController.php, app/Http/Requests/{Platform,Branch}/*RoleRequest.php | .ai/rules/http-requests-platform-branch.md |
 | app/Services/Driver/**,app/Http/Requests/{Platform,Branch}/*Driver*.php,resources/js/pages/{platform,branch}/drivers/**,resources/js/components/admin/driver-branch-assign-sheet.tsx | .ai/rules/js-components-admin.md |
 | resources/js/components/branch/**, resources/js/components/branch/product-inventory-panel.tsx | .ai/rules/js-components-branch.md |
@@ -91,5 +93,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/stock.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts | .ai/rules/storefront.md |
 | app/Support/Storefront/DemoCatalog.php | .ai/rules/support-storefront.md |
+| app/Models/UserShiftAssignment.php,app/Support/DutyWindow.php,app/Support/DriverAvailability.php | .ai/rules/support-support.md |
 | app/Support/OpsDashboardAccess.php, config/cache.php | .ai/rules/support.md |
 | resources/js/components/ui/{time-picker,wheel-picker}.tsx | .ai/rules/ui.md |

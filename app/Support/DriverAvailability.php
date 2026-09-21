@@ -3,9 +3,9 @@
 namespace App\Support;
 
 use App\Enums\DriverAvailabilityStatus;
-use App\Enums\DriverRosterStatus;
-use App\Models\DriverRoster;
+use App\Enums\ShiftAssignmentStatus;
 use App\Models\User;
+use App\Models\UserShiftAssignment;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -14,7 +14,7 @@ final class DriverAvailability
     /**
      * Effective status for display:
      * - stored on_break / busy overrides win
-     * - else scheduled roster covering "now" → available
+     * - else a scheduled shift assignment covering "now" → available
      * - else offline
      */
     public static function effective(User $driver, ?CarbonInterface $at = null): DriverAvailabilityStatus
@@ -29,30 +29,30 @@ final class DriverAvailability
 
         $moment = $at?->copy() ?? now();
 
-        if ($driver->relationLoaded('driverRosters')) {
-            $onDuty = self::coversMoment($driver->driverRosters, $moment);
+        if ($driver->relationLoaded('shiftAssignments')) {
+            $assignments = $driver->shiftAssignments;
         } else {
-            $onDuty = DriverRoster::query()
-                ->where('driver_id', $driver->id)
-                ->where('status', DriverRosterStatus::Scheduled->value)
+            $assignments = UserShiftAssignment::query()
+                ->with('shiftTemplate')
+                ->where('user_id', $driver->id)
+                ->where('status', ShiftAssignmentStatus::Scheduled->value)
                 ->whereDate('start_date', '<=', $moment->toDateString())
                 ->whereDate('end_date', '>=', $moment->toDateString())
-                ->get()
-                ->contains(fn (DriverRoster $roster): bool => $roster->coversMoment($moment));
+                ->get();
         }
 
-        return $onDuty
+        return self::coversMoment($assignments, $moment)
             ? DriverAvailabilityStatus::Available
             : DriverAvailabilityStatus::Offline;
     }
 
     /**
-     * @param  Collection<int, DriverRoster>|iterable<DriverRoster>  $rosters
+     * @param  Collection<int, UserShiftAssignment>|iterable<UserShiftAssignment>  $assignments
      */
-    public static function coversMoment(iterable $rosters, CarbonInterface $moment): bool
+    public static function coversMoment(iterable $assignments, CarbonInterface $moment): bool
     {
-        foreach ($rosters as $roster) {
-            if ($roster->coversMoment($moment)) {
+        foreach ($assignments as $assignment) {
+            if ($assignment instanceof UserShiftAssignment && $assignment->coversMoment($moment)) {
                 return true;
             }
         }

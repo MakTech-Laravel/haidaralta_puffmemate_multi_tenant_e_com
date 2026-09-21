@@ -23,6 +23,7 @@ import {
     Store,
     Tags,
     Truck,
+    UserPlus,
     Users,
 } from 'lucide-react';
 import {
@@ -127,7 +128,7 @@ export function buildBranchNav(
                 title: 'Driver management',
                 href: `/branch/${slug}/drivers`,
                 icon: Truck,
-                permissions: ['manage-branch-drivers'],
+                permissions: ['manage-branch-drivers', 'manage-branch-shifts'],
                 items: [
                     navLink({
                         title: 'Drivers',
@@ -135,10 +136,17 @@ export function buildBranchNav(
                         icon: Truck,
                         permissions: ['manage-branch-drivers'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Shifts',
+                        href: `/branch/${slug}/shifts`,
                         icon: CalendarClock,
-                        permissions: ['manage-branch-drivers'],
+                        permissions: ['manage-branch-shifts'],
+                    }),
+                    navLink({
+                        title: 'Assign to shift',
+                        href: `/branch/${slug}/shifts/assign`,
+                        icon: UserPlus,
+                        permissions: ['manage-branch-shifts'],
                     }),
                     navSoon({
                         title: 'Live tracking',

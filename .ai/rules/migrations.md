@@ -28,3 +28,6 @@ Pre-handover: categories.slogan, show_in_nav, nav_sort (and products.brand, tags
 ## Inventory transaction reason belongs on create
 
 inventory_transactions.reason, reason_note, and unit_cost belong on the original create_inventory_transactions migration. buying_price and regular_price belong on create_branch_product_prices. Do not add a Schema::table modification for greenfield columns on these tables. Price history is a new create_* table (`branch_product_price_histories`).
+
+## Post-handover workforce schema changes
+Post-handover: do not rewrite shipped create_driver_* migrations. Add started_at/ended_at on driver_branch_assignments via Schema::table. Each new workforce table is its own create migration. Data backfill lives in artisan workforce:backfill-transfers-and-shifts, not in migrations. Unique remains (driver_id, branch_id) — never unique-on-active. Platform-owned shift/period names use partial unique indexes (WHERE branch_id IS NULL / IS NOT NULL) so sqlite tests and pgsql both work.

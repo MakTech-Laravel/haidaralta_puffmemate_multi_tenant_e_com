@@ -1,13 +1,10 @@
-import { Form, Head, Link, router, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { IdCard, Mail, MapPin, Phone } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
 import DriverController from '@/actions/App/Http/Controllers/Branch/DriverController';
-import {
-    DriverRosterFields,
-    emptyRosterFields,
-    formatRosterPeriodLine,
-} from '@/components/admin/driver-roster-fields';
+import ShiftAssignmentController from '@/actions/App/Http/Controllers/Branch/ShiftAssignmentController';
+import { ShiftAssignmentList } from '@/components/admin/workforce-timeline';
+import type { ShiftAssignmentRow } from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +16,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Spinner } from '@/components/ui/spinner';
 
 type Option = { value: string; label: string };
 type Branch = { id: number; name: string; slug: string };
@@ -44,16 +39,8 @@ type Driver = {
         status_label: string | null;
         branch_name: string | null;
     }[];
-    rosters: {
-        id: number;
-        start_date: string | null;
-        end_date: string | null;
-        start_time: string | null;
-        end_time: string | null;
-        days_label: string | null;
-        period_label: string | null;
-        status_label: string | null;
-    }[];
+    current_duty: ShiftAssignmentRow | null;
+    shift_assignments: ShiftAssignmentRow[];
 };
 
 function initials(name: string): string {
@@ -94,22 +81,11 @@ function DetailItem({
 export default function BranchDriversShow({
     branch,
     driver,
-    rosterStatuses,
 }: {
     branch: Branch;
     driver: Driver;
     rosterStatuses: Option[];
 }) {
-    const defaultRosterStatus =
-        rosterStatuses.find((item) => item.value === 'scheduled')?.value ??
-        rosterStatuses[0]?.value ??
-        'scheduled';
-    const [rosterDraft, setRosterDraft] = useState(() =>
-        emptyRosterFields({
-            branchId: String(branch.id),
-            status: defaultRosterStatus,
-        }),
-    );
 
     setLayoutProps({
         breadcrumbs: [
@@ -259,103 +235,37 @@ export default function BranchDriversShow({
                 </div>
 
                 <Card className="shadow-sm">
-                    <CardHeader>
-                        <CardTitle>Rosters at {branch.name}</CardTitle>
-                        <CardDescription>
-                            Shift duty times by date period
-                        </CardDescription>
+                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-1.5">
+                            <CardTitle>Duty windows at {branch.name}</CardTitle>
+                            <CardDescription>
+                                Assigned templates and roster periods
+                            </CardDescription>
+                        </div>
+                        <Button size="sm" variant="outline" asChild>
+                            <Link
+                                href={ShiftAssignmentController.create.url(
+                                    branch.slug,
+                                )}
+                            >
+                                Assign shift
+                            </Link>
+                        </Button>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <Form
-                            action={DriverController.storeRoster.url({
-                                branch: branch.slug,
-                                user: driver.id,
-                            })}
-                            method="post"
-                            className="space-y-3 rounded-xl border p-3"
-                            options={{ preserveScroll: true }}
-                            onSuccess={() => {
-                                setRosterDraft(
-                                    emptyRosterFields({
-                                        branchId: String(branch.id),
-                                        status: defaultRosterStatus,
-                                    }),
-                                );
-                            }}
-                        >
-                            {({ errors, processing }) => (
-                                <DriverRosterFields
-                                    value={rosterDraft}
-                                    includeHiddenInputs
-                                    rosterStatuses={rosterStatuses}
-                                    errors={errors}
-                                    onChange={(patch) =>
-                                        setRosterDraft((current) => ({
-                                            ...current,
-                                            ...patch,
-                                        }))
-                                    }
-                                    statusTrailing={
-                                        <Button
-                                            type="submit"
-                                            disabled={processing}
-                                        >
-                                            {processing ? <Spinner /> : null}
-                                            Add
-                                        </Button>
-                                    }
-                                />
-                            )}
-                        </Form>
-
-                        {driver.rosters.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
-                                No roster shifts yet.
+                        {driver.current_duty ? (
+                            <p className="text-sm">
+                                On duty now:{' '}
+                                {driver.current_duty.shift_template_name}
                             </p>
                         ) : (
-                            <div className="flex flex-col">
-                                {driver.rosters.map((roster, index) => (
-                                    <div key={roster.id}>
-                                        {index > 0 ? (
-                                            <Separator className="my-4" />
-                                        ) : null}
-                                        <div className="flex flex-wrap items-center justify-between gap-3">
-                                            <div>
-                                                <p className="text-sm font-medium">
-                                                    {formatRosterPeriodLine(
-                                                        roster,
-                                                    )}
-                                                </p>
-                                                <p className="text-muted-foreground text-sm">
-                                                    {roster.status_label}
-                                                </p>
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-destructive"
-                                                onClick={() =>
-                                                    router.delete(
-                                                        DriverController.destroyRoster.url(
-                                                            {
-                                                                branch: branch.slug,
-                                                                user: driver.id,
-                                                                roster: roster.id,
-                                                            },
-                                                        ),
-                                                        {
-                                                            preserveScroll: true,
-                                                        },
-                                                    )
-                                                }
-                                            >
-                                                Remove
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                            <p className="text-muted-foreground text-sm">
+                                Not on duty right now.
+                            </p>
                         )}
+                        <ShiftAssignmentList
+                            assignments={driver.shift_assignments}
+                        />
                     </CardContent>
                 </Card>
             </div>

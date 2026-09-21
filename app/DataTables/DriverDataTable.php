@@ -3,7 +3,7 @@
 namespace App\DataTables;
 
 use App\DataTables\Filters\StatusBooleanFilter;
-use App\Enums\DriverRosterStatus;
+use App\Enums\ShiftAssignmentStatus;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\User;
@@ -12,7 +12,6 @@ use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\AllowedSort;
 
 /**
  * @extends AbstractDataTable<User>
@@ -39,9 +38,10 @@ class DriverDataTable extends AbstractDataTable
             ->with([
                 'driverProfile',
                 'driverBranchAssignments.branch:id,name,slug',
-                'driverRosters' => function ($query) use ($today): void {
+                'shiftAssignments' => function ($query) use ($today): void {
                     $query
-                        ->where('status', DriverRosterStatus::Scheduled->value)
+                        ->with('shiftTemplate')
+                        ->where('status', ShiftAssignmentStatus::Scheduled->value)
                         ->whereDate('start_date', '<=', $today)
                         ->whereDate('end_date', '>=', $today);
                 },

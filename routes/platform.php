@@ -22,7 +22,11 @@ use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeControll
 use App\Http\Controllers\Platform\Reports\PriceHistoryController as PlatformPriceHistoryController;
 use App\Http\Controllers\Platform\Reports\StockTransactionController as PlatformStockTransactionController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
+use App\Http\Controllers\Platform\ShiftAssignmentController as PlatformShiftAssignmentController;
+use App\Http\Controllers\Platform\ShiftRosterPeriodController as PlatformShiftRosterPeriodController;
+use App\Http\Controllers\Platform\ShiftTemplateController as PlatformShiftTemplateController;
 use App\Http\Controllers\Platform\StockController as PlatformStockController;
+use App\Http\Controllers\Platform\TransferController as PlatformTransferController;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -71,6 +75,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->names('platform.branch-staff')
             ->middlewareFor(['store', 'update'], 'precognitive');
 
+        Route::post('branch-staff/{user}/transfer', [PlatformTransferController::class, 'storeStaff'])
+            ->name('platform.staff.transfer');
+
         Route::resource('branches.staff', PlatformBranchScopedStaffController::class)
             ->parameters(['staff' => 'user'])
             ->names('platform.branches.staff')
@@ -87,6 +94,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.drivers.branch-options');
         Route::put('drivers/{user}/branches', [PlatformDriverController::class, 'syncBranches'])
             ->name('platform.drivers.branches.sync');
+        Route::post('drivers/{user}/transfer', [PlatformTransferController::class, 'storeDriver'])
+            ->name('platform.drivers.transfer');
         Route::post('drivers/{user}/rosters', [PlatformDriverController::class, 'storeRoster'])
             ->name('platform.drivers.rosters.store');
         Route::put('drivers/{user}/rosters/{roster}', [PlatformDriverController::class, 'updateRoster'])
@@ -110,6 +119,35 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::put('branches/{branch}/drivers/{user}', [PlatformBranchDriverController::class, 'update'])
             ->middleware('precognitive')
             ->name('platform.branches.drivers.update');
+    });
+
+    Route::middleware(['permission:view-transfers'])->group(function () {
+        Route::get('transfers', [PlatformTransferController::class, 'index'])->name('platform.transfers.index');
+    });
+
+    Route::middleware(['permission:manage-shifts'])->group(function () {
+        Route::get('shifts', [PlatformShiftTemplateController::class, 'index'])->name('platform.shift-templates.index');
+        Route::get('shifts/create', [PlatformShiftTemplateController::class, 'create'])->name('platform.shift-templates.create');
+        Route::get('shifts/assign', [PlatformShiftAssignmentController::class, 'create'])->name('platform.shift-assignments.create');
+        Route::post('shift-templates', [PlatformShiftTemplateController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.shift-templates.store');
+        Route::get('shifts/{shift_template}/edit', [PlatformShiftTemplateController::class, 'edit'])->name('platform.shift-templates.edit');
+        Route::put('shift-templates/{shift_template}', [PlatformShiftTemplateController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.shift-templates.update');
+
+        Route::get('shift-periods/create', [PlatformShiftRosterPeriodController::class, 'create'])->name('platform.shift-roster-periods.create');
+        Route::post('shift-roster-periods', [PlatformShiftRosterPeriodController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.shift-roster-periods.store');
+        Route::get('shift-periods/{shift_roster_period}/edit', [PlatformShiftRosterPeriodController::class, 'edit'])->name('platform.shift-roster-periods.edit');
+        Route::put('shift-roster-periods/{shift_roster_period}', [PlatformShiftRosterPeriodController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.shift-roster-periods.update');
+
+        Route::post('shift-assignments', [PlatformShiftAssignmentController::class, 'store'])->name('platform.shift-assignments.store');
+        Route::put('shift-assignments/{user_shift_assignment}', [PlatformShiftAssignmentController::class, 'update'])->name('platform.shift-assignments.update');
     });
 
     Route::middleware(['permission:create-branches'])->group(function () {
