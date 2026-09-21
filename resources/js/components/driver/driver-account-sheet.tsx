@@ -2,6 +2,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { CircleHelp, CircleUser, LogOut, Phone, ScrollText, Settings, Shield, UserRound } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
+import { PwaInstallMenuItem } from '@/components/pwa/pwa-install-menu-item';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -164,12 +165,16 @@ export function DriverAccountSheet({ user }: DriverAccountSheetProps) {
                         >
                             Security
                         </AccountSheetItem>
-                        <AccountSheetItem
-                            href={activityIndex.url()}
-                            icon={ScrollText}
-                        >
-                            My activity
-                        </AccountSheetItem>
+                            <AccountSheetItem
+                                href={activityIndex.url()}
+                                icon={ScrollText}
+                            >
+                                My activity
+                            </AccountSheetItem>
+                            <PwaInstallMenuItem
+                                className="hover:bg-accent flex min-h-12 items-center gap-3 rounded-xl px-3 text-base font-medium transition-colors [&_svg]:size-5"
+                                onInstalledNavigate={closeSheet}
+                            />
                     </section>
 
                     <Separator />

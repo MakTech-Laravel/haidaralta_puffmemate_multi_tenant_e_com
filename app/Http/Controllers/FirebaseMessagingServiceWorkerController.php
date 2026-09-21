@@ -7,9 +7,42 @@ use Illuminate\Http\Response;
 class FirebaseMessagingServiceWorkerController extends Controller
 {
     /**
-     * Serve the FCM service worker with public web config from env.
+     * Serve the origin service worker (FCM + PWA installability). Network-only.
      */
     public function __invoke(): Response
+    {
+        $headers = [
+            'Content-Type' => 'application/javascript; charset=UTF-8',
+            'Service-Worker-Allowed' => '/',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ];
+
+        if (! config('pwa.sw_enabled')) {
+            return response($this->killSwitchScript(), 200, $headers);
+        }
+
+        return response($this->fcmScript(), 200, $headers);
+    }
+
+    private function killSwitchScript(): string
+    {
+        return <<<'JS'
+/* PWA_SW_ENABLED=false — unregister this origin's worker. */
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    await self.registration.unregister();
+    const windowClients = await self.clients.matchAll({ type: 'window' });
+    await Promise.all(windowClients.map((client) => client.navigate(client.url)));
+  })());
+});
+JS;
+    }
+
+    private function fcmScript(): string
     {
         $config = [
             'apiKey' => (string) config('services.firebase.api_key'),
@@ -26,9 +59,48 @@ class FirebaseMessagingServiceWorkerController extends Controller
 
         $json = json_encode($config, JSON_THROW_ON_ERROR);
         $showNotification = config('services.firebase.sw_show_notification') ? 'true' : 'false';
+        $version = hash('xxh3', $json.$showNotification.(string) filemtime(__FILE__));
 
-        $script = <<<JS
+        return <<<JS
 /* global importScripts, firebase */
+const SW_VERSION = '{$version}';
+
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const data = event.notification.data || {};
+  const targetUrl = data.url || data.link || '/';
+
+  event.waitUntil((async () => {
+    const windowClients = await self.clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true,
+    });
+
+    for (const client of windowClients) {
+      if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+        await client.focus();
+
+        if ('navigate' in client) {
+          await client.navigate(targetUrl);
+        }
+
+        return;
+      }
+    }
+
+    await self.clients.openWindow(targetUrl);
+  })());
+});
+
 importScripts('https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/12.18.0/firebase-messaging-compat.js');
 
@@ -52,11 +124,5 @@ messaging.onBackgroundMessage((payload) => {
   self.registration.showNotification(title, options);
 });
 JS;
-
-        return response($script, 200, [
-            'Content-Type' => 'application/javascript; charset=UTF-8',
-            'Service-Worker-Allowed' => '/',
-            'Cache-Control' => 'no-cache, no-store, must-revalidate',
-        ]);
     }
 }
