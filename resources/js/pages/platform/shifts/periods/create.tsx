@@ -1,28 +1,40 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
+import { ShiftPageHeader } from '@/components/admin/shift-page-header';
 import { ShiftPeriodForm } from '@/components/admin/shift-period-form';
 import {
     platformShiftWorkspace,
+    shiftBranchQuery,
     type ShiftWorkspace,
 } from '@/components/admin/platform-shift-workspace';
 import type { BranchOption } from '@/components/admin/workforce-types';
-import Heading from '@/components/heading';
 
 export default function PlatformShiftPeriodsCreate({
     workspace = 'platform',
     branches = [],
+    selectedBranchId = null,
     defaultOwnerType,
 }: {
     workspace?: ShiftWorkspace;
     branches?: BranchOption[];
+    selectedBranchId?: number | null;
     defaultOwnerType: string;
 }) {
     const routes = platformShiftWorkspace(workspace);
+    const branchQuery = shiftBranchQuery(selectedBranchId);
+    const lockBranch =
+        workspace === 'branch' && Boolean(selectedBranchId);
 
     setLayoutProps({
         breadcrumbs: [
             { title: 'Dashboard', href: '/platform/dashboard' },
-            { title: routes.title, href: routes.templates.index.url() },
-            { title: 'New period', href: routes.periods.create.url() },
+            {
+                title: routes.title,
+                href: routes.templates.index.url(branchQuery),
+            },
+            {
+                title: 'New period',
+                href: routes.periods.create.url(branchQuery),
+            },
         ],
     });
 
@@ -30,8 +42,9 @@ export default function PlatformShiftPeriodsCreate({
         <>
             <Head title="Create roster period" />
 
-            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
-                <Heading
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+                <ShiftPageHeader
+                    kicker="Roster"
                     title="Create roster period"
                     description="A named date range. Assignments must stay inside these dates."
                 />
@@ -39,9 +52,12 @@ export default function PlatformShiftPeriodsCreate({
                     action={routes.periods.store.form()}
                     branches={branches}
                     lockOwner
-                    showBranchSelect={routes.showBranchSelect}
-                    defaults={{ owner_type: defaultOwnerType }}
-                    cancelHref={routes.templates.index.url()}
+                    showBranchSelect={!lockBranch && routes.showBranchSelect}
+                    defaults={{
+                        owner_type: defaultOwnerType,
+                        branch_id: selectedBranchId,
+                    }}
+                    cancelHref={routes.templates.index.url(branchQuery)}
                     submitLabel="Create period"
                 />
             </div>

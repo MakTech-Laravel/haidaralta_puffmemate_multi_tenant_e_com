@@ -6,6 +6,8 @@ use App\Enums\ShiftOwnerType;
 use App\Models\ShiftRosterPeriod;
 use App\Models\ShiftTemplate;
 use App\Models\UserShiftAssignment;
+use App\Support\WorkforcePayload;
+use Illuminate\Http\RedirectResponse;
 
 trait ResolvesShiftOwnerWorkspace
 {
@@ -14,6 +16,64 @@ trait ResolvesShiftOwnerWorkspace
     protected function shiftWorkspace(): string
     {
         return $this->shiftOwner() === ShiftOwnerType::Platform ? 'platform' : 'branch';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function workspaceIndexProps(): array
+    {
+        $selected = $this->selectedBranch();
+        $branchId = $selected['id'] ?? null;
+        $templates = WorkforcePayload::templatesOwnedBy($this->shiftOwner(), false, $branchId);
+        $periods = WorkforcePayload::periodsOwnedBy($this->shiftOwner(), false, $branchId);
+        $onDuty = WorkforcePayload::onDutyOwnedBy($this->shiftOwner(), null, $branchId);
+
+        return [
+            'workspace' => $this->shiftWorkspace(),
+            'templates' => $templates,
+            'periods' => $periods,
+            'onDuty' => $onDuty,
+            'stats' => WorkforcePayload::workspaceStats($templates, $periods, $onDuty),
+            'selectedBranchId' => $branchId,
+            'selectedBranch' => $selected,
+        ];
+    }
+
+    /**
+     * @return array{id: int, name: string, slug: string}|null
+     */
+    protected function selectedBranch(): ?array
+    {
+        if ($this->shiftOwner() !== ShiftOwnerType::Branch) {
+            return null;
+        }
+
+        return WorkforcePayload::branchOption((int) request()->query('branch_id', 0));
+    }
+
+    protected function redirectUnlessBranchSelected(): ?RedirectResponse
+    {
+        if ($this->shiftOwner() !== ShiftOwnerType::Branch || $this->selectedBranch() !== null) {
+            return null;
+        }
+
+        return redirect()->route('platform.branch-shift-templates.index');
+    }
+
+    protected function selectedBranchId(): ?int
+    {
+        return $this->selectedBranch()['id'] ?? null;
+    }
+
+    /**
+     * @return array{branch_id?: int}
+     */
+    protected function branchIndexQuery(?int $branchId = null): array
+    {
+        $id = $branchId ?? $this->selectedBranchId();
+
+        return $id === null ? [] : ['branch_id' => $id];
     }
 
     protected function assertOwnedTemplate(ShiftTemplate $template): void

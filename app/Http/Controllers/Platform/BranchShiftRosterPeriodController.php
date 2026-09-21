@@ -27,11 +27,18 @@ class BranchShiftRosterPeriodController extends Controller
         return ShiftOwnerType::Branch;
     }
 
-    public function create(): Response
+    public function create(): RedirectResponse|Response
     {
+        if ($redirect = $this->redirectUnlessBranchSelected()) {
+            return $redirect;
+        }
+
+        $selected = $this->selectedBranch();
+
         return Inertia::render('platform/shifts/periods/create', [
             'workspace' => $this->shiftWorkspace(),
-            'branches' => WorkforcePayload::branchOptions(),
+            'selectedBranchId' => $selected['id'] ?? null,
+            'selectedBranch' => $selected,
             'defaultOwnerType' => $this->shiftOwner()->value,
         ]);
     }
@@ -39,7 +46,7 @@ class BranchShiftRosterPeriodController extends Controller
     public function store(StoreBranchShiftRosterPeriodRequest $request): RedirectResponse
     {
         try {
-            $this->periods->create($request->validated(), $request->user('platform'));
+            $period = $this->periods->create($request->validated(), $request->user('platform'));
         } catch (InvalidArgumentException $exception) {
             Toast::error($exception->getMessage());
 
@@ -48,7 +55,10 @@ class BranchShiftRosterPeriodController extends Controller
 
         Toast::success('Roster period created.');
 
-        return redirect()->route('platform.branch-shift-templates.index');
+        return redirect()->route(
+            'platform.branch-shift-templates.index',
+            $this->branchIndexQuery($period->branch_id),
+        );
     }
 
     public function edit(ShiftRosterPeriod $shiftRosterPeriod): Response
@@ -60,7 +70,8 @@ class BranchShiftRosterPeriodController extends Controller
         return Inertia::render('platform/shifts/periods/edit', [
             'workspace' => $this->shiftWorkspace(),
             'period' => WorkforcePayload::period($shiftRosterPeriod),
-            'branches' => WorkforcePayload::branchOptions(),
+            'selectedBranchId' => $shiftRosterPeriod->branch_id,
+            'selectedBranch' => WorkforcePayload::branchOption($shiftRosterPeriod->branch_id),
         ]);
     }
 
@@ -78,6 +89,9 @@ class BranchShiftRosterPeriodController extends Controller
 
         Toast::success('Roster period updated.');
 
-        return redirect()->route('platform.branch-shift-templates.index');
+        return redirect()->route(
+            'platform.branch-shift-templates.index',
+            $this->branchIndexQuery($shiftRosterPeriod->branch_id),
+        );
     }
 }

@@ -7,14 +7,21 @@ import ShiftTemplateController from '@/actions/App/Http/Controllers/Platform/Shi
 
 export type ShiftWorkspace = 'platform' | 'branch';
 
+export function shiftBranchQuery(branchId?: number | null) {
+    if (!branchId) {
+        return undefined;
+    }
+
+    return { query: { branch_id: branchId } };
+}
+
 export function platformShiftWorkspace(
     workspace: ShiftWorkspace = 'platform',
 ) {
     if (workspace === 'branch') {
         return {
             title: 'Branch shifts',
-            description:
-                'Duty windows owned by a branch. Platform templates live under Administrator.',
+            description: 'Choose a branch to see that store.',
             templates: BranchShiftTemplateController,
             periods: BranchShiftRosterPeriodController,
             assignments: BranchShiftAssignmentController,
@@ -25,7 +32,7 @@ export function platformShiftWorkspace(
     return {
         title: 'Platform shifts',
         description:
-            'Duty windows owned by the platform. Branch templates live under Branch management.',
+            'Platform-owned shifts. Branch shifts live under Branch management.',
         templates: ShiftTemplateController,
         periods: ShiftRosterPeriodController,
         assignments: ShiftAssignmentController,

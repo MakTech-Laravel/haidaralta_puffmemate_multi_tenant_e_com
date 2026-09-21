@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Branch;
 
+use App\Enums\ShiftAssignmentStatus;
 use App\Enums\ShiftOwnerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\StoreShiftTemplateRequest;
@@ -24,6 +25,11 @@ class ShiftTemplateController extends Controller
     {
         $templates = ShiftTemplate::query()
             ->with('branch:id,name')
+            ->withCount([
+                'assignments as scheduled_count' => fn ($query) => $query
+                    ->where('status', ShiftAssignmentStatus::Scheduled)
+                    ->where('branch_id', $branch->id),
+            ])
             ->availableToBranch($branch->id)
             ->orderBy('name')
             ->get()
@@ -31,10 +37,15 @@ class ShiftTemplateController extends Controller
             ->values()
             ->all();
 
+        $periods = WorkforcePayload::periodsForBranch($branch->id);
+        $onDuty = WorkforcePayload::onDutyAtBranch($branch->id);
+
         return Inertia::render('branch/shifts/index', [
             'branch' => $branch->only(['id', 'name', 'slug']),
             'templates' => $templates,
-            'periods' => WorkforcePayload::periodsForBranch($branch->id),
+            'periods' => $periods,
+            'onDuty' => $onDuty,
+            'stats' => WorkforcePayload::workspaceStats($templates, $periods, $onDuty),
         ]);
     }
 
@@ -56,7 +67,7 @@ class ShiftTemplateController extends Controller
             return redirect()->back();
         }
 
-        Toast::success('Shift template created.');
+        Toast::success('Shift created.');
 
         return redirect()->route('branch.shift-templates.index', $branch);
     }
@@ -83,7 +94,7 @@ class ShiftTemplateController extends Controller
             return redirect()->back();
         }
 
-        Toast::success('Shift template updated.');
+        Toast::success('Shift updated.');
 
         return redirect()->route('branch.shift-templates.index', $branch);
     }

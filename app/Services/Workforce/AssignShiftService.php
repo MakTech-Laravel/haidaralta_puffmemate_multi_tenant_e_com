@@ -265,13 +265,11 @@ class AssignShiftService
                 $template->startTimeValue(),
                 $template->endTimeValue(),
                 $days,
-                $template->is_overnight,
                 $existing->start_date->format('Y-m-d'),
                 $existing->end_date->format('Y-m-d'),
                 $other->startTimeValue(),
                 $other->endTimeValue(),
                 $existing->normalizedDaysOfWeek(),
-                $other->is_overnight,
             );
         });
 
@@ -313,13 +311,11 @@ class AssignShiftService
                     $template->startTimeValue(),
                     $template->endTimeValue(),
                     $days,
-                    $template->is_overnight,
                     $existing->start_date->format('Y-m-d'),
                     $existing->end_date->format('Y-m-d'),
                     $other->startTimeValue(),
                     $other->endTimeValue(),
                     $existing->normalizedDaysOfWeek(),
-                    $other->is_overnight,
                 );
             });
 

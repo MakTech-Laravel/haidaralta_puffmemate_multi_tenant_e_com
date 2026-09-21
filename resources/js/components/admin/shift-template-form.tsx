@@ -1,5 +1,6 @@
 import { Form, Link } from '@inertiajs/react';
 import { useState } from 'react';
+import { ShiftTimeBar } from '@/components/admin/shift-time-bar';
 import type {
     BranchOption,
     Option,
@@ -19,6 +20,10 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { TimePicker } from '@/components/ui/time-picker';
+import {
+    durationLabel,
+    formatWindow,
+} from '@/lib/shift-format';
 import { cn } from '@/lib/utils';
 
 type FormAction = {
@@ -74,16 +79,21 @@ export function ShiftTemplateForm({
             options={{ preserveScroll: true }}
             validationTimeout={500}
         >
-            {({ processing, errors, validate }) => (
+            {({ processing, errors, validate }) => {
+                const invalidWindow =
+                    Boolean(startTime && endTime) &&
+                    durationLabel(startTime, endTime) === '';
+
+                return (
                 <>
+                    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
                     <section className={sectionClassName()}>
                         <div className="mb-5 space-y-1">
                             <h2 className="text-base font-semibold tracking-tight">
-                                Template
+                                Shift
                             </h2>
                             <p className="text-muted-foreground text-sm">
-                                Named duty window. Overnight is inferred when
-                                end time is on or before start time.
+                                Named start and end times on the same day.
                             </p>
                         </div>
 
@@ -277,17 +287,41 @@ export function ShiftTemplateForm({
                         </div>
                     </section>
 
+                    <aside className="bg-card lg:sticky lg:top-6 space-y-4 rounded-2xl border p-5">
+                        <div>
+                            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
+                                Preview
+                            </p>
+                            <p className="mt-1 text-sm font-medium">
+                                {formatWindow(startTime, endTime)}
+                            </p>
+                            <p className="text-muted-foreground mt-1 text-xs">
+                                {invalidWindow
+                                    ? 'End time must be after start time on the same day.'
+                                    : startTime && endTime
+                                      ? `${durationLabel(startTime, endTime)} coverage`
+                                      : 'Pick both times to see the window'}
+                            </p>
+                        </div>
+                        <ShiftTimeBar
+                            start={startTime}
+                            end={endTime}
+                        />
+                    </aside>
+                    </div>
+
                     <div className="flex items-center gap-3">
                         <Button type="submit" disabled={processing}>
                             {processing ? <Spinner /> : null}
-                            {submitLabel ?? 'Save template'}
+                            {submitLabel ?? 'Save shift'}
                         </Button>
                         <Button variant="secondary" asChild>
                             <Link href={cancelHref}>Cancel</Link>
                         </Button>
                     </div>
                 </>
-            )}
+                );
+            }}
         </Form>
     );
 }

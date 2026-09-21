@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             BranchInventorySeeder::class,
             OrderConversationSeeder::class,
             ConversationVolumeSeeder::class,
+            WorkforceShiftSeeder::class,
         ]);
     }
 }

@@ -6,6 +6,7 @@ paths:
   - resources/js/components/admin/driver-roster-fields.tsx
   - resources/js/components/admin/branch-location-map-dialog.tsx
   - resources/js/components/admin/driver-branch-assign-sheet.tsx
+  - 'resources/js/components/admin/shift-*.tsx'
 ---
 
 # Admin
@@ -32,3 +33,18 @@ BranchLocationMapDialog is view-only. Preview uses an OpenStreetMap embed until 
 
 ## Assigner select mode follows shared flag
 DriverBranchAssignSheet and driver form/pages copy read Inertia drivers.single_active_branch. True: exclusive select and one-branch/transfer copy. False: multi-checkbox and manage-branches copy. Do not hardcode one-branch UI.
+
+## One Branch dropdown, nothing extra
+Branch management shifts use one Branch dropdown only — pick a store, reload that store. No All-branches, extra chips, or filter bars. Keep it obvious for a non-technical operator.
+
+## Shift branch picker pages 20 at a time
+Branch shifts picker is InfiniteScrollCombobox against platform.branch-shift-templates.branch-options (20 per page, filter[search], append on scroll). Never dump every branch into Inertia props. Opening Branch shifts with no `?branch_id=` shows an empty choose-a-branch state — do not auto-select a store.
+
+## Say shift, not template
+User-facing shift copy says shift, never template. Keep ShiftTemplate in code, routes, and props. Buttons, headings, empty states, and toasts use New shift / Create shift / Shift created.
+
+## No overnight shift UI
+Shift board, coverage map, and forms never show overnight wrap, Overnight stats, or Overnight filters. End must be after start on the same day. User-facing copy still says shift, never template.
+
+## No default branch on Branch shifts
+Opening Branch shifts with no ?branch_id= shows an empty choose-a-branch state. Do not auto-select a store. After picking a branch, reload that store only.

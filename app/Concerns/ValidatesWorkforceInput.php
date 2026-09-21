@@ -5,6 +5,8 @@ namespace App\Concerns;
 use App\Enums\ShiftAssignmentStatus;
 use App\Enums\ShiftOwnerType;
 use App\Models\DriverRoster;
+use App\Support\DutyWindow;
+use Closure;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 
@@ -23,7 +25,21 @@ trait ValidatesWorkforceInput
                 $this->uniqueOwnerName('shift_templates', $this->routeModelId('shift_template')),
             ],
             'start_time' => [$nameRequired ? 'required' : 'sometimes', 'date_format:H:i'],
-            'end_time' => [$nameRequired ? 'required' : 'sometimes', 'date_format:H:i'],
+            'end_time' => [
+                $nameRequired ? 'required' : 'sometimes',
+                'date_format:H:i',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    $startTime = $this->input('start_time');
+
+                    if (! is_string($startTime) || ! is_string($value)) {
+                        return;
+                    }
+
+                    if (! DutyWindow::isSameDayWindow($startTime, $value)) {
+                        $fail('End time must be after start time on the same day.');
+                    }
+                },
+            ],
             'owner_type' => ['sometimes', Rule::enum(ShiftOwnerType::class)],
             'branch_id' => ['nullable', 'integer', Rule::exists('branches', 'id')],
             'is_active' => ['sometimes', 'boolean'],

@@ -17,3 +17,9 @@ Platform nested staff index (platform.branches.staff.index) 302s to /platform/br
 
 ## Platform Shift controllers are owner-scoped
 Administrator Shift* controllers are platform-owned only (owner_type=platform, branch_id null). Branch management uses BranchShift* controllers for branch-owned records. Separate classes are required so Wayfinder stays callable. Cross-owner edit or assign is 404.
+
+## Branch shifts load one store
+Branch-owned shift pages never dump every store. Always scope templates, periods, on-duty, and assign lists to a single `?branch_id=` (integer, not Spatie filter). With no branch_id, the index is empty until the operator picks a store. There is no All-branches option and no auto-selected default. Redirects after create/update must keep that branch_id. Platform-owned shifts stay unscoped.
+
+## Do not dump every branch into shift pages
+Branch shift combobox loads GET platform.branch-shift-templates.branch-options (20/page, filter[search]). Index/create/assign pass only selectedBranch, never the full branch list. Create, new period, and assign without `?branch_id=` redirect to the empty Branch shifts index.

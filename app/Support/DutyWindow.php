@@ -16,7 +16,6 @@ final class DutyWindow
         string $startTime,
         string $endTime,
         array $daysOfWeek,
-        bool $isOvernight = false,
     ): bool {
         $day = $moment->toDateString();
 
@@ -28,18 +27,18 @@ final class DutyWindow
             return false;
         }
 
-        return self::coversTime($moment->format('H:i:s'), $startTime, $endTime, $isOvernight);
+        return self::coversTime($moment->format('H:i:s'), $startTime, $endTime);
     }
 
-    public static function coversTime(string $time, string $startTime, string $endTime, bool $isOvernight = false): bool
+    public static function coversTime(string $time, string $startTime, string $endTime): bool
     {
+        if (! self::isSameDayWindow($startTime, $endTime)) {
+            return false;
+        }
+
         $normalized = self::normalizeTime($time);
         $start = self::normalizeTime($startTime);
         $end = self::normalizeTime($endTime);
-
-        if ($isOvernight || $end <= $start) {
-            return $normalized >= $start || $normalized < $end;
-        }
 
         return $start <= $normalized && $normalized < $end;
     }
@@ -54,13 +53,11 @@ final class DutyWindow
         string $leftStartTime,
         string $leftEndTime,
         array $leftDays,
-        bool $leftOvernight,
         string $rightStartDate,
         string $rightEndDate,
         string $rightStartTime,
         string $rightEndTime,
         array $rightDays,
-        bool $rightOvernight,
     ): bool {
         if ($leftStartDate > $rightEndDate || $rightStartDate > $leftEndDate) {
             return false;
@@ -73,57 +70,36 @@ final class DutyWindow
         return self::timesOverlap(
             $leftStartTime,
             $leftEndTime,
-            $leftOvernight,
             $rightStartTime,
             $rightEndTime,
-            $rightOvernight,
         );
     }
 
     public static function timesOverlap(
         string $leftStartTime,
         string $leftEndTime,
-        bool $leftOvernight,
         string $rightStartTime,
         string $rightEndTime,
-        bool $rightOvernight,
     ): bool {
-        foreach (self::segments($leftStartTime, $leftEndTime, $leftOvernight) as $left) {
-            foreach (self::segments($rightStartTime, $rightEndTime, $rightOvernight) as $right) {
-                if ($left[0] < $right[1] && $right[0] < $left[1]) {
-                    return true;
-                }
-            }
+        if (! self::isSameDayWindow($leftStartTime, $leftEndTime) || ! self::isSameDayWindow($rightStartTime, $rightEndTime)) {
+            return false;
         }
 
-        return false;
+        $leftStart = self::normalizeTime($leftStartTime);
+        $leftEnd = self::normalizeTime($leftEndTime);
+        $rightStart = self::normalizeTime($rightStartTime);
+        $rightEnd = self::normalizeTime($rightEndTime);
+
+        return $leftStart < $rightEnd && $rightStart < $leftEnd;
     }
 
-    public static function isOvernight(string $startTime, string $endTime): bool
+    public static function isSameDayWindow(string $startTime, string $endTime): bool
     {
-        return self::normalizeTime($endTime) <= self::normalizeTime($startTime);
+        return self::normalizeTime($endTime) > self::normalizeTime($startTime);
     }
 
     public static function normalizeTime(string $time): string
     {
         return strlen($time) === 5 ? "{$time}:00" : $time;
-    }
-
-    /**
-     * @return list<array{0: string, 1: string}>
-     */
-    private static function segments(string $startTime, string $endTime, bool $isOvernight): array
-    {
-        $start = self::normalizeTime($startTime);
-        $end = self::normalizeTime($endTime);
-
-        if ($isOvernight || $end <= $start) {
-            return [
-                [$start, '24:00:00'],
-                ['00:00:00', $end],
-            ];
-        }
-
-        return [[$start, $end]];
     }
 }

@@ -123,7 +123,8 @@ export function ShiftAssignmentFields({
                                     key={person.id}
                                     value={String(person.id)}
                                 >
-                                    {person.name} · {person.user_type}
+                                    {person.name} ·{' '}
+                                    {person.user_type_label ?? person.user_type}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -131,36 +132,39 @@ export function ShiftAssignmentFields({
                     <InputError message={errors.user_id} />
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-1.5">
-                    <Label>Branch</Label>
-                    <Select
-                        value={value.branch_id}
-                        onValueChange={(branchId) =>
-                            onChange({ branch_id: branchId })
-                        }
-                        disabled={lockBranch}
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select branch" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {branches.map((branch) => (
-                                <SelectItem
-                                    key={branch.id}
-                                    value={String(branch.id)}
-                                >
-                                    {branch.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                {lockBranch ? (
                     <InputError message={errors.branch_id} />
-                </div>
+                ) : (
+                    <div className="flex min-w-0 flex-col gap-1.5">
+                        <Label>Branch</Label>
+                        <Select
+                            value={value.branch_id}
+                            onValueChange={(branchId) =>
+                                onChange({ branch_id: branchId })
+                            }
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select branch" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {branches.map((branch) => (
+                                    <SelectItem
+                                        key={branch.id}
+                                        value={String(branch.id)}
+                                    >
+                                        {branch.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <InputError message={errors.branch_id} />
+                    </div>
+                )}
             </div>
 
             <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                 <div className="flex min-w-0 flex-col gap-1.5">
-                    <Label>Shift template</Label>
+                    <Label>Shift</Label>
                     <Select
                         value={value.shift_template_id}
                         onValueChange={(shiftTemplateId) =>
@@ -168,7 +172,7 @@ export function ShiftAssignmentFields({
                         }
                     >
                         <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select template" />
+                            <SelectValue placeholder="Select shift" />
                         </SelectTrigger>
                         <SelectContent>
                             {templates.map((template) => (

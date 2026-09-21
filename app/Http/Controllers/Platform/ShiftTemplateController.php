@@ -29,11 +29,7 @@ class ShiftTemplateController extends Controller
 
     public function index(): Response
     {
-        return Inertia::render('platform/shifts/index', [
-            'workspace' => $this->shiftWorkspace(),
-            'templates' => WorkforcePayload::templatesOwnedBy($this->shiftOwner()),
-            'periods' => WorkforcePayload::periodsOwnedBy($this->shiftOwner()),
-        ]);
+        return Inertia::render('platform/shifts/index', $this->workspaceIndexProps());
     }
 
     public function create(): Response
@@ -54,7 +50,7 @@ class ShiftTemplateController extends Controller
             return redirect()->back();
         }
 
-        Toast::success('Shift template created.');
+        Toast::success('Shift created.');
 
         return redirect()->route('platform.shift-templates.index');
     }
@@ -83,7 +79,7 @@ class ShiftTemplateController extends Controller
             return redirect()->back();
         }
 
-        Toast::success('Shift template updated.');
+        Toast::success('Shift updated.');
 
         return redirect()->route('platform.shift-templates.index');
     }

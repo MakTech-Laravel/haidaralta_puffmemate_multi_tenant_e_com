@@ -22,6 +22,7 @@ class ShiftTemplateService
         $endTime = $data['end_time'];
 
         $this->assertUniqueName($data['name'], $branchId);
+        $this->assertSameDayWindow($startTime, $endTime);
 
         return ShiftTemplate::query()->create([
             'owner_type' => $ownerType->value,
@@ -29,7 +30,6 @@ class ShiftTemplateService
             'name' => $data['name'],
             'start_time' => $startTime,
             'end_time' => $endTime,
-            'is_overnight' => DutyWindow::isOvernight($startTime, $endTime),
             'is_active' => $data['is_active'] ?? true,
             'created_by' => $actor?->id,
         ]);
@@ -45,12 +45,12 @@ class ShiftTemplateService
         $endTime = $data['end_time'] ?? $template->end_time->format('H:i');
 
         $this->assertUniqueName($name, $template->branch_id, $template->id);
+        $this->assertSameDayWindow($startTime, $endTime);
 
         $template->update([
             'name' => $name,
             'start_time' => $startTime,
             'end_time' => $endTime,
-            'is_overnight' => DutyWindow::isOvernight($startTime, $endTime),
             'is_active' => $data['is_active'] ?? $template->is_active,
         ]);
 
@@ -84,6 +84,15 @@ class ShiftTemplateService
         }
 
         return $id;
+    }
+
+    private function assertSameDayWindow(string $startTime, string $endTime): void
+    {
+        if (! DutyWindow::isSameDayWindow($startTime, $endTime)) {
+            throw ValidationException::withMessages([
+                'end_time' => 'End time must be after start time on the same day.',
+            ]);
+        }
     }
 
     private function assertUniqueName(string $name, ?int $branchId, ?int $exceptId = null): void

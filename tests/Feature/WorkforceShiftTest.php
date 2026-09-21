@@ -65,10 +65,13 @@ test('platform assigns a shift with required branch and roster period', function
         ->and(UserTransferHistory::query()->where('user_id', $driver->id)->exists())->toBeFalse();
 });
 
-test('overnight duty window covers 02:00 and not 12:00', function () {
+test('same-day duty window covers 10:00 and not 02:00', function () {
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-    $template = ShiftTemplate::factory()->overnight()->create();
+    $template = ShiftTemplate::factory()->create([
+        'start_time' => '08:00',
+        'end_time' => '17:00',
+    ]);
     $period = ShiftRosterPeriod::factory()->create([
         'start_date' => '2026-09-01',
         'end_date' => '2026-09-30',
@@ -87,13 +90,31 @@ test('overnight duty window covers 02:00 and not 12:00', function () {
         'availability_status' => DriverAvailabilityStatus::Offline,
     ]);
 
-    $this->travelTo('2026-09-16 02:00:00');
+    $this->travelTo('2026-09-16 10:00:00');
     expect(DriverAvailability::effective($driver->fresh())->value)->toBe('available')
-        ->and(DutyWindow::coversTime('02:00', '22:00', '06:00', true))->toBeTrue()
-        ->and(DutyWindow::coversTime('12:00', '22:00', '06:00', true))->toBeFalse();
+        ->and(DutyWindow::coversTime('10:00', '08:00', '17:00'))->toBeTrue()
+        ->and(DutyWindow::coversTime('02:00', '08:00', '17:00'))->toBeFalse()
+        ->and(DutyWindow::coversTime('02:00', '22:00', '06:00'))->toBeFalse();
 
-    $this->travelTo('2026-09-16 12:00:00');
+    $this->travelTo('2026-09-16 02:00:00');
     expect(DriverAvailability::effective($driver->fresh())->value)->toBe('offline');
+});
+
+test('platform rejects a shift that wraps past midnight', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->from(route('platform.shift-templates.create'))
+        ->post(route('platform.shift-templates.store'), [
+            'name' => 'Night wrap',
+            'start_time' => '22:00',
+            'end_time' => '06:00',
+            'owner_type' => ShiftOwnerType::Platform->value,
+        ])
+        ->assertRedirect(route('platform.shift-templates.create'))
+        ->assertSessionHasErrors('end_time');
+
+    expect(ShiftTemplate::query()->where('name', 'Night wrap')->exists())->toBeFalse();
 });
 
 test('changing a shift writes shift history only', function () {
@@ -225,7 +246,6 @@ test('platform creates a unique-named shift template', function () {
     $this->assertDatabaseHas('shift_templates', [
         'name' => 'Morning',
         'owner_type' => ShiftOwnerType::Platform->value,
-        'is_overnight' => false,
     ]);
 
     $this->actingAs($admin, 'platform')
@@ -260,15 +280,145 @@ test('administrator shifts index lists only platform-owned templates', function 
             ->where('periods.0.name', 'Platform September'));
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.branch-shift-templates.index'))
+        ->get(route('platform.branch-shift-templates.index', [
+            'branch_id' => $sydney->id,
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/shifts/index')
             ->where('workspace', 'branch')
+            ->where('selectedBranchId', $sydney->id)
             ->has('templates', 1)
             ->where('templates.0.name', 'Sydney Counter')
             ->has('periods', 1)
             ->where('periods.0.name', 'Sydney September'));
+});
+
+test('branch shifts board loads one store at a time', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $brisbane = Branch::query()->where('slug', BranchSeeder::BRISBANE_QUEEN)->firstOrFail();
+
+    ShiftTemplate::factory()->forBranch($sydney)->create(['name' => 'Sydney Floor']);
+    ShiftTemplate::factory()->forBranch($melbourne)->create(['name' => 'Melbourne Floor']);
+    ShiftTemplate::factory()->forBranch($brisbane)->create(['name' => 'Brisbane Floor']);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-templates.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/shifts/index')
+            ->where('selectedBranchId', null)
+            ->where('selectedBranch', null)
+            ->has('templates', 0)
+            ->has('periods', 0)
+            ->has('onDuty', 0));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-templates.index', [
+            'branch_id' => 999_999,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('selectedBranchId', null)
+            ->has('templates', 0));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-templates.index', [
+            'branch_id' => $sydney->id,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('selectedBranchId', $sydney->id)
+            ->has('templates', 1)
+            ->where('templates.0.name', 'Sydney Floor'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-templates.index', [
+            'branch_id' => $melbourne->id,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('selectedBranchId', $melbourne->id)
+            ->has('templates', 1)
+            ->where('templates.0.name', 'Melbourne Floor'));
+});
+
+test('branch shift create and assign without a store redirect to the empty board', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-templates.create'))
+        ->assertRedirect(route('platform.branch-shift-templates.index'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-roster-periods.create'))
+        ->assertRedirect(route('platform.branch-shift-templates.index'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-assignments.create'))
+        ->assertRedirect(route('platform.branch-shift-templates.index'));
+});
+
+test('branch assign page only lists the selected store windows', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    ShiftTemplate::factory()->forBranch($sydney)->create(['name' => 'Sydney Floor']);
+    ShiftTemplate::factory()->forBranch($melbourne)->create(['name' => 'Melbourne Floor']);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-assignments.create', [
+            'branch_id' => $sydney->id,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/shifts/assign')
+            ->where('selectedBranchId', $sydney->id)
+            ->has('templates', 1)
+            ->where('templates.0.name', 'Sydney Floor'));
+});
+
+test('branch shift options page active stores twenty at a time', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    Branch::factory()->create([
+        'name' => 'Closed Store',
+        'status' => false,
+    ]);
+    Branch::factory()->count(18)->create();
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.branch-shift-templates.branch-options'))
+        ->assertOk()
+        ->assertJsonCount(20, 'data')
+        ->assertJsonPath('meta.per_page', 20)
+        ->assertJsonPath('meta.last_page', 2)
+        ->assertJsonPath('meta.total', 21)
+        ->assertJsonMissing(['name' => 'Closed Store']);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.branch-shift-templates.branch-options', [
+            'filter' => ['search' => 'Melbourne'],
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $melbourne->id);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.branch-shift-templates.branch-options', [
+            'page' => 2,
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('meta.current_page', 2);
+});
+
+test('guests cannot list branch shift options', function () {
+    $this->getJson(route('platform.branch-shift-templates.branch-options'))
+        ->assertRedirect(route('login'));
 });
 
 test('administrator cannot open a branch-owned shift template', function () {
@@ -319,7 +469,9 @@ test('branch management creates a branch-owned shift template', function () {
             'owner_type' => ShiftOwnerType::Platform->value,
             'branch_id' => $sydney->id,
         ])
-        ->assertRedirect(route('platform.branch-shift-templates.index'));
+        ->assertRedirect(route('platform.branch-shift-templates.index', [
+            'branch_id' => $sydney->id,
+        ]));
 
     $this->assertDatabaseHas('shift_templates', [
         'name' => 'Counter',

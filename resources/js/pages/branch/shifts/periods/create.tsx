@@ -1,8 +1,8 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import ShiftRosterPeriodController from '@/actions/App/Http/Controllers/Branch/ShiftRosterPeriodController';
 import ShiftTemplateController from '@/actions/App/Http/Controllers/Branch/ShiftTemplateController';
+import { ShiftPageHeader } from '@/components/admin/shift-page-header';
 import { ShiftPeriodForm } from '@/components/admin/shift-period-form';
-import Heading from '@/components/heading';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -34,10 +34,11 @@ export default function BranchShiftPeriodsCreate({
         <>
             <Head title="Create roster period" />
 
-            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
-                <Heading
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+                <ShiftPageHeader
+                    kicker="Roster"
                     title="Create roster period"
-                    description={`A named date range for ${branch.name}`}
+                    description={`A named date range for ${branch.name}. Assignments must stay inside these dates.`}
                 />
                 <ShiftPeriodForm
                     action={ShiftRosterPeriodController.store.form(branch.slug)}

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Enums\ShiftOwnerType;
 use App\Models\Concerns\AuditsChanges;
-use App\Support\DutyWindow;
 use Database\Factories\ShiftTemplateFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +19,6 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property Carbon $start_time
  * @property Carbon $end_time
- * @property bool $is_overnight
  * @property bool $is_active
  * @property int|null $created_by
  */
@@ -38,7 +36,6 @@ class ShiftTemplate extends Model
         'name',
         'start_time',
         'end_time',
-        'is_overnight',
         'is_active',
         'created_by',
     ];
@@ -123,11 +120,6 @@ class ShiftTemplate extends Model
             });
     }
 
-    public static function overnightFromTimes(string $startTime, string $endTime): bool
-    {
-        return DutyWindow::isOvernight($startTime, $endTime);
-    }
-
     /**
      * @return array<string, string>
      */
@@ -137,7 +129,6 @@ class ShiftTemplate extends Model
             'owner_type' => ShiftOwnerType::class,
             'start_time' => 'datetime:H:i',
             'end_time' => 'datetime:H:i',
-            'is_overnight' => 'boolean',
             'is_active' => 'boolean',
         ];
     }
