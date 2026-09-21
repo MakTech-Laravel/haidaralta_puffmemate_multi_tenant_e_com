@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
 import { index as activityIndex } from '@/routes/driver/activity';
 import { edit as editProfile, index as profileIndex } from '@/routes/driver/profile';
-import { edit as editSecurity } from '@/routes/security';
+import { index as securityIndex } from '@/routes/driver/security';
 import type { User } from '@/types';
 
 function demoOnly(message: string): void {
@@ -160,7 +160,7 @@ export function DriverAccountSheet({ user }: DriverAccountSheetProps) {
                             Edit details
                         </AccountSheetItem>
                         <AccountSheetItem
-                            href={editSecurity.url()}
+                            href={securityIndex.url()}
                             icon={Settings}
                         >
                             Security
