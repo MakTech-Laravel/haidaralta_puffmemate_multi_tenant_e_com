@@ -1,7 +1,7 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import ShiftTemplateController from '@/actions/App/Http/Controllers/Branch/ShiftTemplateController';
+import { ShiftPageHeader } from '@/components/admin/shift-page-header';
 import { ShiftTemplateForm } from '@/components/admin/shift-template-form';
-import Heading from '@/components/heading';
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -22,17 +22,22 @@ export default function BranchShiftsCreate({
                 title: 'Shifts',
                 href: ShiftTemplateController.index.url(branch.slug),
             },
-            { title: 'Create', href: ShiftTemplateController.create.url(branch.slug) },
+            {
+                title: 'Create',
+                href: ShiftTemplateController.create.url(branch.slug),
+            },
         ],
     });
+
     return (
         <>
-            <Head title="Create shift template" />
+            <Head title="Create shift" />
 
-            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
-                <Heading
-                    title="Create shift template"
-                    description={`A duty window owned by ${branch.name}`}
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+                <ShiftPageHeader
+                    kicker="Shift"
+                    title="Create shift"
+                    description={`A shift owned by ${branch.name}.`}
                 />
                 <ShiftTemplateForm
                     action={ShiftTemplateController.store.form(branch.slug)}
@@ -42,10 +47,9 @@ export default function BranchShiftsCreate({
                         branch_id: branch.id,
                     }}
                     cancelHref={ShiftTemplateController.index.url(branch.slug)}
-                    submitLabel="Create template"
+                    submitLabel="Create shift"
                 />
             </div>
         </>
     );
 }
-

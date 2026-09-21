@@ -17,6 +17,7 @@ export type ShiftTemplateOption = {
     end_time: string | null;
     is_overnight: boolean;
     is_active: boolean;
+    scheduled_count?: number;
 };
 
 export type ShiftPeriodOption = {
@@ -29,19 +30,36 @@ export type ShiftPeriodOption = {
     start_date: string | null;
     end_date: string | null;
     is_active: boolean;
+    scheduled_count?: number;
+    contains_today?: boolean;
+    days_total?: number;
+    days_elapsed?: number;
 };
 
 export type AssignablePerson = {
     id: number;
     name: string;
     user_type: string;
+    user_type_label?: string;
     branch_id: number | null;
+    avatar_url?: string | null;
+};
+
+export type ShiftWorkspaceStats = {
+    on_duty: number;
+    templates: number;
+    active_templates: number;
+    periods: number;
+    overnight: number;
 };
 
 export type ShiftAssignmentRow = {
     id: number;
     user_id: number;
     user_name?: string | null;
+    user_type?: string | null;
+    user_type_label?: string | null;
+    avatar_url?: string | null;
     branch_id: number;
     branch_name?: string | null;
     shift_template_id: number;

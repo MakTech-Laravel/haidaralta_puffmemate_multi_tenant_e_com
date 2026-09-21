@@ -6,12 +6,13 @@ import {
     emptyShiftAssignmentFields,
     ShiftAssignmentFields,
 } from '@/components/admin/shift-assignment-fields';
+import { ShiftAssignmentPreview } from '@/components/admin/shift-assignment-preview';
+import { ShiftPageHeader } from '@/components/admin/shift-page-header';
 import type {
     AssignablePerson,
     ShiftPeriodOption,
     ShiftTemplateOption,
 } from '@/components/admin/workforce-types';
-import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -50,19 +51,28 @@ export default function BranchShiftsAssign({
         branch_id: String(branch.id),
     }));
 
+    const person = people.find((item) => String(item.id) === fields.user_id);
+    const template = templates.find(
+        (item) => String(item.id) === fields.shift_template_id,
+    );
+    const period = periods.find(
+        (item) => String(item.id) === fields.shift_roster_period_id,
+    );
+
     return (
         <>
             <Head title="Assign to shift" />
 
-            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
-                <Heading
+            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+                <ShiftPageHeader
+                    kicker="Coverage"
                     title="Assign to shift"
-                    description={`Duty windows for people at ${branch.name}`}
+                    description={`Place a person onto a duty window at ${branch.name}.`}
                 />
 
                 <Form
                     {...ShiftAssignmentController.store.form(branch.slug)}
-                    className="border-border/80 bg-card space-y-6 rounded-2xl border p-5 shadow-sm sm:p-6"
+                    className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]"
                     options={{ preserveScroll: true }}
                     onSuccess={() =>
                         setFields({
@@ -73,37 +83,46 @@ export default function BranchShiftsAssign({
                 >
                     {({ errors, processing }) => (
                         <>
-                            <ShiftAssignmentFields
-                                value={fields}
-                                people={people}
-                                templates={templates}
-                                periods={periods}
-                                branches={[branch]}
-                                lockBranch
-                                errors={errors}
-                                onChange={(patch) =>
-                                    setFields((current) => ({
-                                        ...current,
-                                        ...patch,
-                                        branch_id: String(branch.id),
-                                    }))
-                                }
-                            />
-                            <div className="flex items-center gap-3">
-                                <Button type="submit" disabled={processing}>
-                                    {processing ? <Spinner /> : null}
-                                    Assign shift
-                                </Button>
-                                <Button variant="secondary" asChild>
-                                    <Link
-                                        href={ShiftTemplateController.index.url(
-                                            branch.slug,
-                                        )}
-                                    >
-                                        Back to shifts
-                                    </Link>
-                                </Button>
+                            <div className="border-border/80 bg-card space-y-6 rounded-2xl border p-5 shadow-sm sm:p-6">
+                                <ShiftAssignmentFields
+                                    value={fields}
+                                    people={people}
+                                    templates={templates}
+                                    periods={periods}
+                                    branches={[branch]}
+                                    lockBranch
+                                    errors={errors}
+                                    onChange={(patch) =>
+                                        setFields((current) => ({
+                                            ...current,
+                                            ...patch,
+                                            branch_id: String(branch.id),
+                                        }))
+                                    }
+                                />
+                                <div className="flex items-center gap-3">
+                                    <Button type="submit" disabled={processing}>
+                                        {processing ? <Spinner /> : null}
+                                        Assign shift
+                                    </Button>
+                                    <Button variant="secondary" asChild>
+                                        <Link
+                                            href={ShiftTemplateController.index.url(
+                                                branch.slug,
+                                            )}
+                                        >
+                                            Back to shifts
+                                        </Link>
+                                    </Button>
+                                </div>
                             </div>
+
+                            <ShiftAssignmentPreview
+                                person={person}
+                                template={template}
+                                period={period}
+                                branch={branch}
+                            />
                         </>
                     )}
                 </Form>

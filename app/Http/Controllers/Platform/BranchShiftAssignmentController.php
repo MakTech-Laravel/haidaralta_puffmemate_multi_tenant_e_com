@@ -29,19 +29,24 @@ class BranchShiftAssignmentController extends Controller
 
     public function create(): Response
     {
+        $selected = $this->selectedBranch();
+        $branchId = $selected['id'] ?? null;
+
         return Inertia::render('platform/shifts/assign', [
             'workspace' => $this->shiftWorkspace(),
-            'people' => WorkforcePayload::assignablePeople(),
-            'templates' => WorkforcePayload::templatesOwnedBy($this->shiftOwner(), activeOnly: true),
-            'periods' => WorkforcePayload::periodsOwnedBy($this->shiftOwner(), activeOnly: true),
-            'branches' => WorkforcePayload::branchOptions(),
+            'people' => WorkforcePayload::assignablePeople($branchId),
+            'templates' => WorkforcePayload::templatesOwnedBy($this->shiftOwner(), activeOnly: true, branchId: $branchId),
+            'periods' => WorkforcePayload::periodsOwnedBy($this->shiftOwner(), activeOnly: true, branchId: $branchId),
+            'branches' => $selected === null ? [] : [$selected],
+            'selectedBranchId' => $branchId,
+            'selectedBranch' => $selected,
         ]);
     }
 
     public function store(StoreShiftAssignmentRequest $request): RedirectResponse
     {
         try {
-            $this->assignments->assign($request->validated(), $request->user('platform'), $this->shiftOwner());
+            $assignment = $this->assignments->assign($request->validated(), $request->user('platform'), $this->shiftOwner());
         } catch (InvalidArgumentException $exception) {
             Toast::error($exception->getMessage());
 
@@ -50,7 +55,10 @@ class BranchShiftAssignmentController extends Controller
 
         Toast::success('Shift assigned.');
 
-        return redirect()->route('platform.branch-shift-assignments.create');
+        return redirect()->route(
+            'platform.branch-shift-assignments.create',
+            $this->branchIndexQuery($assignment->branch_id),
+        );
     }
 
     public function update(UpdateShiftAssignmentRequest $request, UserShiftAssignment $userShiftAssignment): RedirectResponse

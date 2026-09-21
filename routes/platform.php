@@ -155,6 +155,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::put('shift-assignments/{user_shift_assignment}', [PlatformShiftAssignmentController::class, 'update'])->name('platform.shift-assignments.update');
 
         Route::get('branch-shifts', [PlatformBranchShiftTemplateController::class, 'index'])->name('platform.branch-shift-templates.index');
+        Route::get('branch-shift-branch-options', [PlatformBranchShiftTemplateController::class, 'branchOptions'])
+            ->name('platform.branch-shift-templates.branch-options');
         Route::get('branch-shifts/create', [PlatformBranchShiftTemplateController::class, 'create'])->name('platform.branch-shift-templates.create');
         Route::get('branch-shifts/periods/create', [PlatformBranchShiftRosterPeriodController::class, 'create'])->name('platform.branch-shift-roster-periods.create');
         Route::get('branch-shifts/periods/{shift_roster_period}/edit', [PlatformBranchShiftRosterPeriodController::class, 'edit'])->name('platform.branch-shift-roster-periods.edit');
