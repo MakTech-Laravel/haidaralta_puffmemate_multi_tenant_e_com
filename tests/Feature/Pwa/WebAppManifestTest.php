@@ -98,15 +98,15 @@ test('storefront home includes pwa head tags', function () {
         ->assertSee('apple-touch-startup-image', false);
 });
 
-test('authenticated platform staff are redirected from the storefront home', function () {
+test('authenticated platform staff can open the storefront home', function () {
     $user = User::factory()->create(['user_type' => UserType::PLATFORM]);
 
     $this->actingAs($user, 'platform')
         ->get(route('home'))
-        ->assertRedirect('/platform/dashboard');
+        ->assertOk();
 });
 
-test('authenticated branch staff are redirected from the storefront home', function () {
+test('authenticated branch staff can open the storefront home', function () {
     $branch = Branch::factory()->create(['slug' => 'parramatta']);
     $user = User::factory()->create([
         'user_type' => UserType::BRANCH,
@@ -115,15 +115,15 @@ test('authenticated branch staff are redirected from the storefront home', funct
 
     $this->actingAs($user, 'branch')
         ->get(route('home'))
-        ->assertRedirect('/branch/parramatta/dashboard');
+        ->assertOk();
 });
 
-test('authenticated drivers are redirected from the storefront home', function () {
+test('authenticated drivers can open the storefront home', function () {
     $user = User::factory()->create(['user_type' => UserType::DRIVER]);
 
     $this->actingAs($user, 'driver')
         ->get(route('home'))
-        ->assertRedirect('/driver/dashboard');
+        ->assertOk();
 });
 
 test('authenticated customers still see the storefront home', function () {
