@@ -16,7 +16,6 @@ declare module '@inertiajs/core' {
                 description: string | null;
                 logoUrl: string | null;
                 faviconUrl: string | null;
-                timezone: string;
                 dateFormat: string;
                 timeFormat: string;
                 themeColor: string;

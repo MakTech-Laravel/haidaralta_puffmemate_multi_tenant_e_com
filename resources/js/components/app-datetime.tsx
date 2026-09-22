@@ -23,7 +23,7 @@ function useSharedApplication(): ApplicationDateTimeProps | null {
 }
 
 /**
- * Renders a date using Application Settings timezone + date_format.
+ * Renders a date using the viewer timezone + Application Settings date_format.
  */
 export function AppDate({
     value,
@@ -44,7 +44,7 @@ export function AppDate({
 }
 
 /**
- * Renders a time using Application Settings timezone + time_format.
+ * Renders a time using the viewer timezone + Application Settings time_format.
  */
 export function AppTime({
     value,
@@ -65,7 +65,7 @@ export function AppTime({
 }
 
 /**
- * Renders date + time using Application Settings.
+ * Renders date + time using the viewer timezone + Application Settings formats.
  */
 export function AppDateTime({
     value,

@@ -19,7 +19,6 @@ use Illuminate\Support\Carbon;
  * @property string|null $apple_touch_icon_path
  * @property string $theme_color
  * @property string $background_color
- * @property string $display_timezone
  * @property string $date_format
  * @property string $time_format
  * @property int|null $updated_by
@@ -43,7 +42,6 @@ class ApplicationSetting extends Model
         'apple_touch_icon_path',
         'theme_color',
         'background_color',
-        'display_timezone',
         'date_format',
         'time_format',
         'updated_by',

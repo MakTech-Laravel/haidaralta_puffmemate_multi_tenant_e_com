@@ -24,7 +24,6 @@ return new class extends Migration
             $table->string('apple_touch_icon_path')->nullable();
             $table->string('theme_color', 32)->default('#C4472F');
             $table->string('background_color', 32)->default('#FFFFFF');
-            $table->string('display_timezone', 64)->default('Asia/Dhaka');
             $table->string('date_format', 32)->default('Y-m-d');
             $table->string('time_format', 32)->default('H:i');
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();

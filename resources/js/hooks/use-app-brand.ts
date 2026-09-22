@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/react';
+import { resolveViewerTimezone } from '@/lib/datetime';
 
 const FALLBACK_LOGO = '/images/storefront/logo.png';
 
@@ -11,6 +12,7 @@ export type AppBrand = {
     faviconUrl: string | null;
     themeColor: string;
     backgroundColor: string;
+    /** Viewer browser timezone (not an application setting). */
     timezone: string;
     dateFormat: string;
     timeFormat: string;
@@ -18,6 +20,7 @@ export type AppBrand = {
 
 /**
  * Brand + format settings from Application Settings (shared Inertia props).
+ * Timezone comes from the viewer's browser, not admin settings.
  */
 export function useAppBrand(): AppBrand {
     const { name, application } = usePage().props;
@@ -32,7 +35,7 @@ export function useAppBrand(): AppBrand {
         faviconUrl: application?.faviconUrl ?? null,
         themeColor: application?.themeColor || '#C4472F',
         backgroundColor: application?.backgroundColor || '#FFFFFF',
-        timezone: application?.timezone || 'Asia/Dhaka',
+        timezone: resolveViewerTimezone(),
         dateFormat: application?.dateFormat || 'Y-m-d',
         timeFormat: application?.timeFormat || 'H:i',
     };

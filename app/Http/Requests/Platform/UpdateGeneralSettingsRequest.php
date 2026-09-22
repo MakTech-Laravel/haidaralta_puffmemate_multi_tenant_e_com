@@ -24,7 +24,6 @@ class UpdateGeneralSettingsRequest extends FormRequest
             'short_description' => ['nullable', 'string', 'max:500'],
             'theme_color' => ['required', 'string', 'max:32'],
             'background_color' => ['required', 'string', 'max:32'],
-            'display_timezone' => ['required', 'timezone:all'],
             'date_format' => ['required', 'string', Rule::in(ApplicationSettingsService::DATE_FORMAT_PRESETS)],
             'time_format' => ['required', 'string', Rule::in(ApplicationSettingsService::TIME_FORMAT_PRESETS)],
             'logo' => ['nullable', 'image', 'max:2048'],
