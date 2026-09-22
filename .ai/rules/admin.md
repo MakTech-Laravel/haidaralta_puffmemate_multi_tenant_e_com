@@ -49,11 +49,8 @@ Shift board, coverage map, and forms never show overnight wrap, Overnight stats,
 ## No default branch on Branch shifts
 Opening Branch shifts with no ?branch_id= shows an empty choose-a-branch state. Do not auto-select a store. After picking a branch, reload that store only.
 
-## Assign is a personal calendar, not a roster period
-The Assign page is a full-width calendar: person, dates, main shift, working days. Choosing shift + dates fills working days immediately. A day can be Keep, Leave, or a different shift; Apply to a date span covers multi-day leave. There is no New period, roster-period list, or period form. Other assignments for that person show as read-only chips. Covering someone is a second assignment.
-
-## Assign calendar has no period UI
-Assign is a full-width personal calendar: person, dates, main shift, working days. Fill working days immediately. Day actions are Keep, Leave this day, or Different shift, plus Apply to a date span. No New period or roster-period UI. Other assignments for that person are read-only chips. Covering someone is a second assignment.
+## Assign Shift uses one staged calendar workspace
+Assign is Branch → User Type → User → month calendar. Stage additions/replacements/removals, then Save atomically via applyChanges(). Target persisted edits by user_shift_days.id, never date alone. Do not reintroduce Leave, weekly-off, weekday chips, exception dialogs, or the legacy period editor.
 
 ## Filled board filters by named shift
 After a store is chosen, Today's coverage sits under the branch picker and Type filter. Named-shift chips (and coverage lanes) scope stats, on-duty, and the shifts list to that window. The Shifts stat card becomes that window's hours when one shift is selected. These chips are shift filters, not All-branches chips. Coverage always draws every window on a 12-hour clock (12a through 12a, one mark per hour). Selecting a shift dims other lanes but does not hide hours or switch the axis to 0–24.

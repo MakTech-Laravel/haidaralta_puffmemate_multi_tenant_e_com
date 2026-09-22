@@ -251,11 +251,15 @@ test('non-consecutive assignment dates are accepted without a roster period', fu
             'replace_day_ids' => [],
             'remove_day_ids' => [],
         ])
-        ->assertRedirect();
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
 
     expect(UserShiftDay::query()
         ->where('user_id', $driver->id)
-        ->whereIn('duty_on', ['2026-09-02', '2026-11-02'])
+        ->where(function ($query): void {
+            $query->whereDate('duty_on', '2026-09-02')
+                ->orWhereDate('duty_on', '2026-11-02');
+        })
         ->onDuty()
         ->count())->toBe(2)
         ->and(UserShiftAssignment::query()
@@ -450,7 +454,7 @@ test('platform users cannot be assigned a shift', function () {
             'replace_day_ids' => [],
             'remove_day_ids' => [],
         ])
-        ->assertSessionHasErrors('schedule');
+        ->assertNotFound();
 
     expect(UserShiftAssignment::query()->where('user_id', $admin->id)->exists())->toBeFalse()
         ->and($admin->fresh()->user_type)->toBe(UserType::PLATFORM);

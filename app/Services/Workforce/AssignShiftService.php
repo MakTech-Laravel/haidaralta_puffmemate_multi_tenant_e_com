@@ -123,18 +123,24 @@ class AssignShiftService
             $deleteDays = $removeDays->concat($effectiveReplaceDays)->keyBy('id');
 
             /** @var EloquentCollection<int, UserShiftDay> $existingDays */
-            $existingDays = UserShiftDay::query()
-                ->with('shiftTemplate')
-                ->where('user_id', $lockedUser->id)
-                ->whereIn('duty_on', $affectedDates)
-                ->onDuty()
-                ->whereHas('assignment', function ($query): void {
-                    $query->where('status', ShiftAssignmentStatus::Scheduled);
-                })
-                ->orderBy('duty_on')
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->get();
+            $existingDays = $affectedDates === []
+                ? new EloquentCollection
+                : UserShiftDay::query()
+                    ->with('shiftTemplate')
+                    ->where('user_id', $lockedUser->id)
+                    ->where(function ($query) use ($affectedDates): void {
+                        foreach ($affectedDates as $date) {
+                            $query->orWhereDate('duty_on', $date);
+                        }
+                    })
+                    ->onDuty()
+                    ->whereHas('assignment', function ($query): void {
+                        $query->where('status', ShiftAssignmentStatus::Scheduled);
+                    })
+                    ->orderBy('duty_on')
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get();
 
             $assignDatesToPersist = $lockedTarget === null
                 ? []
@@ -882,7 +888,11 @@ class AssignShiftService
             ->with('shiftTemplate')
             ->where('user_id', $user->id)
             ->onDuty()
-            ->whereIn('duty_on', $onDuty->pluck('duty_on')->all())
+            ->where(function ($query) use ($onDuty): void {
+                foreach ($onDuty->pluck('duty_on')->unique()->all() as $date) {
+                    $query->orWhereDate('duty_on', (string) $date);
+                }
+            })
             ->whereHas('assignment', function ($query) use ($exceptAssignmentId): void {
                 $query->where('status', ShiftAssignmentStatus::Scheduled);
 

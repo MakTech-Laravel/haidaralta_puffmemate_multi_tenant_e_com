@@ -5,5 +5,5 @@ paths:
 
 # Platform Shifts
 
-## Assign empty is not the shifts empty page
-Assign empty is ShiftAssignEmptyState: personal calendar sample (Keep / Leave / Different shift), not ShiftBranchEmptyState coverage bars. Same picker, different layout and copy. Do not reuse the shifts empty page.
+## Assign empty waits for Branch Type User
+Assign empty is the cascading gate (Branch → User Type → User) inside ShiftAssignWorkspace, not ShiftBranchEmptyState coverage bars and not the old Keep/Leave sample. Branch portal locks Branch as read-only. Do not restore the legacy period empty state.
