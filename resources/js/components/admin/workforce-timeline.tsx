@@ -76,9 +76,7 @@ export function ShiftAssignmentList({
                                 {formatDutyLine(assignment)}
                             </p>
                             <p className="text-muted-foreground text-sm">
-                                {assignment.shift_roster_period_name ??
-                                    'Roster period'}
-                                {assignment.covers_now ? ' · On duty now' : ''}
+                                {assignment.covers_now ? 'On duty now' : assignment.days_label}
                             </p>
                         </div>
                         <Badge variant="secondary">

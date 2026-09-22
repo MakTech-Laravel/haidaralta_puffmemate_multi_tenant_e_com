@@ -239,7 +239,7 @@ export default function BranchDriversShow({
                         <div className="space-y-1.5">
                             <CardTitle>Duty windows at {branch.name}</CardTitle>
                             <CardDescription>
-                                Assigned templates and roster periods
+                                Assigned shifts and personal date ranges
                             </CardDescription>
                         </div>
                         <Button size="sm" variant="outline" asChild>

@@ -1,30 +1,31 @@
 import { Link } from '@inertiajs/react';
-import {
-    CalendarRange,
-    Clock3,
-    Plus,
-    Search,
-    Users,
-} from 'lucide-react';
+import { CalendarRange, Clock3, Plus, Search, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ShiftBranchEmptyState } from '@/components/admin/shift-branch-empty-state';
 import { ShiftBranchPicker } from '@/components/admin/shift-branch-picker';
 import { ShiftCoverageMap } from '@/components/admin/shift-coverage-map';
 import { ShiftPageHeader } from '@/components/admin/shift-page-header';
-import { ShiftPeriodSpan } from '@/components/admin/shift-period-span';
 import { ShiftTimeBar } from '@/components/admin/shift-time-bar';
+import { toWallClockDate, useAppDateTime } from '@/lib/datetime';
 import type {
     BranchOption,
     ShiftAssignmentRow,
-    ShiftPeriodOption,
     ShiftTemplateOption,
     ShiftWorkspaceStats,
+    UncoveredShift,
 } from '@/components/admin/workforce-types';
 import { StatCard } from '@/components/portal/stat-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     durationLabel,
     formatClock,
@@ -36,67 +37,100 @@ import {
 } from '@/lib/shift-format';
 import { cn } from '@/lib/utils';
 
-type ShiftFilter = 'all' | 'live';
-
 type ShiftBoardProps = {
     kicker: string;
     title: string;
     description: string;
     templates: ShiftTemplateOption[];
-    periods: ShiftPeriodOption[];
+    scheduled?: ShiftAssignmentRow[];
+    uncovered?: UncoveredShift[];
     onDuty: ShiftAssignmentRow[];
     stats: ShiftWorkspaceStats;
     createTemplateHref: string;
-    createPeriodHref: string;
     assignHref: string;
     templateEditHref?: (template: ShiftTemplateOption) => string | null;
-    periodEditHref?: (period: ShiftPeriodOption) => string | null;
+    assignmentEditHref?: (assignment: ShiftAssignmentRow) => string | null;
     selectedBranch?: BranchOption | null;
     selectedBranchId?: number | null;
     branchOptionsUrl?: string | null;
     onSelectBranch?: (branchId: number) => void;
 };
 
+const PEOPLE_PAGE = 20;
+
+type PeopleKind = 'all' | 'staff' | 'driver';
+
 export function ShiftBoard({
     kicker,
     title,
     description,
     templates,
-    periods,
+    scheduled = [],
+    uncovered = [],
     onDuty,
     stats,
     createTemplateHref,
-    createPeriodHref,
     assignHref,
     templateEditHref,
-    periodEditHref,
+    assignmentEditHref,
     selectedBranch = null,
     selectedBranchId = null,
     branchOptionsUrl = null,
     onSelectBranch,
 }: ShiftBoardProps) {
+    const { settings } = useAppDateTime();
     const [query, setQuery] = useState('');
-    const [filter, setFilter] = useState<ShiftFilter>('all');
-    const [now, setNow] = useState(() => new Date());
+    const [peopleKind, setPeopleKind] = useState<PeopleKind>('all');
+    const [visiblePeople, setVisiblePeople] = useState(PEOPLE_PAGE);
+    const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
+    const [now, setNow] = useState(() =>
+        toWallClockDate(new Date(), settings.timezone),
+    );
     const needle = query.trim().toLowerCase();
 
     useEffect(() => {
-        const timer = window.setInterval(() => setNow(new Date()), 30_000);
+        const tick = () =>
+            setNow(toWallClockDate(new Date(), settings.timezone));
+
+        tick();
+        const timer = window.setInterval(tick, 30_000);
 
         return () => window.clearInterval(timer);
-    }, []);
+    }, [settings.timezone]);
 
-    const visibleTemplates = useMemo(
+    useEffect(() => {
+        setSelectedShiftId(null);
+        setQuery('');
+        setPeopleKind('all');
+        setVisiblePeople(PEOPLE_PAGE);
+    }, [selectedBranchId]);
+
+    useEffect(() => {
+        if (
+            selectedShiftId !== null &&
+            !templates.some((template) => template.id === selectedShiftId)
+        ) {
+            setSelectedShiftId(null);
+        }
+    }, [selectedShiftId, templates]);
+
+    const selectedTemplate =
+        templates.find((template) => template.id === selectedShiftId) ?? null;
+    const scopedTemplates = selectedTemplate ? [selectedTemplate] : templates;
+    const scopedOnDuty = selectedShiftId
+        ? onDuty.filter((row) => row.shift_template_id === selectedShiftId)
+        : onDuty;
+    const scopedScheduled = selectedShiftId
+        ? scheduled.filter((row) => row.shift_template_id === selectedShiftId)
+        : scheduled;
+    const scopedUncovered = selectedShiftId
+        ? uncovered.filter((shift) => shift.id === selectedShiftId)
+        : uncovered;
+
+    const visibleScheduled = useMemo(
         () =>
-            templates.filter((template) => {
-                if (
-                    filter === 'live' &&
-                    !windowCoversNow(
-                        template.start_time,
-                        template.end_time,
-                        now,
-                    )
-                ) {
+            scopedScheduled.filter((row) => {
+                if (!matchesPeopleKind(row, peopleKind)) {
                     return false;
                 }
 
@@ -105,64 +139,89 @@ export function ShiftBoard({
                 }
 
                 return [
-                    template.name,
-                    template.branch_name,
-                    template.owner_type_label,
-                    template.start_time,
-                    template.end_time,
+                    row.user_name,
+                    row.shift_template_name,
+                    row.days_label,
+                    row.branch_name,
+                    row.user_type_label,
+                    row.role_label,
                 ]
                     .filter(Boolean)
                     .join(' ')
                     .toLowerCase()
                     .includes(needle);
             }),
-        [filter, needle, now, templates],
+        [needle, peopleKind, scopedScheduled],
     );
 
-    const visiblePeriods = useMemo(
-        () =>
-            periods.filter((period) => {
-                if (needle === '') {
-                    return true;
-                }
+    useEffect(() => {
+        setVisiblePeople(PEOPLE_PAGE);
+    }, [needle, peopleKind, selectedShiftId]);
 
-                return [
-                    period.name,
-                    period.branch_name,
-                    period.start_date,
-                    period.end_date,
-                ]
-                    .filter(Boolean)
-                    .join(' ')
-                    .toLowerCase()
-                    .includes(needle);
-            }),
-        [needle, periods],
+    const hasMorePeople = visiblePeople < visibleScheduled.length;
+
+    const liveOnDuty = useMemo(
+        () =>
+            scopedOnDuty.filter((row) =>
+                windowCoversNow(row.start_time, row.end_time, now),
+            ),
+        [now, scopedOnDuty],
     );
 
     const groupedTemplates = useMemo(
-        () => groupByBranch(visibleTemplates),
-        [visibleTemplates],
+        () => groupByBranch(scopedTemplates),
+        [scopedTemplates],
     );
+
+    const peopleGroups = useMemo(
+        () => groupByUserType(visibleScheduled),
+        [visibleScheduled],
+    );
+
+    const shownGroups = useMemo(() => {
+        let remaining = visiblePeople;
+        const groups: {
+            label: string;
+            total: number;
+            items: ShiftAssignmentRow[];
+        }[] = [];
+
+        for (const group of peopleGroups) {
+            if (remaining <= 0) {
+                break;
+            }
+
+            const items = group.items.slice(0, remaining);
+            remaining -= items.length;
+            groups.push({
+                label: group.label,
+                total: group.items.length,
+                items,
+            });
+        }
+
+        return groups;
+    }, [peopleGroups, visiblePeople]);
 
     const waitingForBranch = Boolean(
         onSelectBranch && branchOptionsUrl && !selectedBranchId,
     );
 
-    const branchPicker = onSelectBranch && branchOptionsUrl ? (
-        <ShiftBranchPicker
-            optionsUrl={branchOptionsUrl}
-            value={selectedBranchId ? String(selectedBranchId) : ''}
-            selectedLabel={selectedBranch?.name}
-            onChange={(branchId) => onSelectBranch(Number(branchId))}
-        />
-    ) : null;
+    const branchPicker =
+        onSelectBranch && branchOptionsUrl ? (
+            <ShiftBranchPicker
+                optionsUrl={branchOptionsUrl}
+                value={selectedBranchId ? String(selectedBranchId) : ''}
+                selectedLabel={selectedBranch?.name}
+                onChange={(branchId) => onSelectBranch(Number(branchId))}
+            />
+        ) : null;
 
     return (
         <div
             className={cn(
-                'flex w-full flex-col gap-6 p-2 md:p-4',
-                waitingForBranch && 'min-h-[calc(100svh-7rem)]',
+                'flex w-full flex-col p-2 md:p-4',
+                waitingForBranch ? 'gap-5' : 'gap-6',
             )}
         >
             <ShiftPageHeader
@@ -171,34 +230,31 @@ export function ShiftBoard({
                 description={description}
                 actions={
                     waitingForBranch ? null : (
-                    <>
-                        <div className="border-border/80 bg-card hidden items-center gap-3 rounded-full border px-3 py-1.5 sm:flex">
-                            <span className="relative flex size-2">
-                                <span className="bg-primary absolute inline-flex size-full animate-ping rounded-full opacity-60" />
-                                <span className="bg-primary relative inline-flex size-2 rounded-full" />
-                            </span>
-                            <div className="leading-tight">
-                                <p className="text-sm font-semibold tabular-nums">
-                                    {formatLiveClock(now)}
-                                </p>
-                                <p className="text-muted-foreground text-[11px]">
-                                    {formatLiveDate(now)}
-                                </p>
+                        <>
+                            <div className="border-border/80 bg-card hidden items-center gap-3 rounded-full border px-3 py-1.5 sm:flex">
+                                <span className="relative flex size-2">
+                                    <span className="bg-primary absolute inline-flex size-full animate-ping rounded-full opacity-60" />
+                                    <span className="bg-primary relative inline-flex size-2 rounded-full" />
+                                </span>
+                                <div className="leading-tight">
+                                    <p className="text-sm font-semibold tabular-nums">
+                                        {formatLiveClock(now)}
+                                    </p>
+                                    <p className="text-muted-foreground text-[11px]">
+                                        {formatLiveDate(now)}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                        <Button variant="secondary" asChild>
-                            <Link href={createPeriodHref}>New period</Link>
-                        </Button>
-                        <Button variant="secondary" asChild>
-                            <Link href={assignHref}>Assign to shift</Link>
-                        </Button>
-                        <Button asChild>
-                            <Link href={createTemplateHref}>
-                                <Plus className="size-4" />
-                                New shift
-                            </Link>
-                        </Button>
-                    </>
+                            <Button variant="secondary" asChild>
+                                <Link href={assignHref}>Assign to shift</Link>
+                            </Button>
+                            <Button asChild>
+                                <Link href={createTemplateHref}>
+                                    <Plus className="size-4" />
+                                    New shift
+                                </Link>
+                            </Button>
+                        </>
                     )
                 }
             />
@@ -220,269 +276,444 @@ export function ShiftBoard({
                 />
             ) : (
                 <>
-            {branchPicker}
+                    {branchPicker}
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <StatCard
-                    icon={Users}
-                    label="On duty now"
-                    value={String(stats.on_duty)}
-                    hint={
-                        stats.on_duty === 1
-                            ? 'Person inside a live window'
-                            : 'People inside a live window'
-                    }
-                />
-                <StatCard
-                    icon={Clock3}
-                    label="Shifts"
-                    value={String(stats.templates)}
-                    hint={`${stats.active_templates} active`}
-                />
-                <StatCard
-                    icon={CalendarRange}
-                    label="Roster periods"
-                    value={String(stats.periods)}
-                    hint="Named date ranges"
-                />
-            </div>
-
-            <section className="bg-card overflow-hidden rounded-2xl border">
-                <header className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
-                    <div>
-                        <h2 className="text-base font-semibold tracking-tight">
-                            On duty now
-                        </h2>
-                        <p className="text-muted-foreground text-sm">
-                            Live coverage from scheduled assignments.
-                        </p>
-                    </div>
-                    <Button size="sm" variant="outline" asChild>
-                        <Link href={assignHref}>Assign someone</Link>
-                    </Button>
-                </header>
-                {onDuty.length === 0 ? (
-                    <div className="text-muted-foreground px-5 py-8 text-sm">
-                        Nobody is inside a duty window right now.
-                    </div>
-                ) : (
-                    <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {onDuty.map((person) => (
-                            <article
-                                key={person.id}
-                                className="flex items-center gap-3 rounded-xl border px-3 py-3"
-                            >
-                                <div className="relative">
-                                    <Avatar className="size-10">
-                                        {person.avatar_url ? (
-                                            <AvatarImage
-                                                src={person.avatar_url}
-                                                alt={person.user_name ?? ''}
-                                            />
-                                        ) : null}
-                                        <AvatarFallback>
-                                            {initials(person.user_name ?? '?')}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <span className="bg-primary ring-card absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-medium">
-                                        {person.user_name}
-                                    </p>
-                                    <p className="text-muted-foreground truncate text-xs">
-                                        {person.shift_template_name} ·{' '}
-                                        {formatClock(person.start_time)}–
-                                        {formatClock(person.end_time)}
-                                    </p>
-                                    <p className="text-muted-foreground truncate text-xs">
-                                        {person.user_type_label ??
-                                            person.branch_name}
-                                    </p>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                )}
-            </section>
-
-            <ShiftCoverageMap templates={templates} now={now} />
-
-            <div className="flex flex-wrap items-center gap-3">
-                <div className="relative min-w-56 flex-1 max-w-md">
-                    <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-                    <Input
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Filter shifts and periods"
-                        className="pl-9"
+                    <ShiftCoverageMap
+                        templates={templates}
+                        now={now}
+                        selectedTemplateId={selectedShiftId}
+                        onSelectTemplate={setSelectedShiftId}
                     />
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                    {(
-                        [
-                            ['all', 'All windows'],
-                            ['live', 'Live now'],
-                        ] as const
-                    ).map(([value, label]) => (
-                        <button
-                            key={value}
-                            type="button"
-                            onClick={() => setFilter(value)}
-                            className={cn(
-                                'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                                filter === value
-                                    ? 'border-transparent bg-primary text-primary-foreground'
-                                    : 'hover:bg-muted',
-                            )}
-                        >
-                            {label}
-                        </button>
-                    ))}
-                </div>
-            </div>
 
-            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(20rem,1fr)]">
-                <section className="space-y-5">
-                    <div className="flex items-end justify-between gap-3">
-                        <div>
-                            <h2 className="text-base font-semibold tracking-tight">
-                                Shifts
-                            </h2>
-                            <p className="text-muted-foreground text-sm">
-                                Named start and end times on the same day.
-                            </p>
-                        </div>
-                        <span className="text-muted-foreground text-xs tabular-nums">
-                            {visibleTemplates.length}
-                        </span>
-                    </div>
-                    {visibleTemplates.length === 0 ? (
-                        <EmptyPanel
-                            icon={Clock3}
-                            title="No shifts yet"
-                            body="Create a named shift, then assign people into a roster period."
-                            actionHref={createTemplateHref}
-                            actionLabel="New shift"
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        <StatCard
+                            icon={Users}
+                            label="On duty now"
+                            value={String(liveOnDuty.length)}
+                            hint={
+                                selectedTemplate
+                                    ? `On ${selectedTemplate.name} now`
+                                    : liveOnDuty.length === 1
+                                      ? 'Person inside a live window'
+                                      : 'People inside a live window'
+                            }
                         />
-                    ) : (
-                        groupedTemplates.map((group) => (
-                            <div key={group.label} className="space-y-3">
-                                {groupedTemplates.length > 1 ? (
-                                    <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
-                                        {group.label}
-                                    </p>
-                                ) : null}
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    {group.items.map((template) => (
-                                        <TemplateCard
-                                            key={template.id}
-                                            template={template}
-                                            now={now}
-                                            editHref={templateEditHref?.(
-                                                template,
-                                            )}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </section>
-
-                <section className="space-y-4">
-                    <div className="flex items-end justify-between gap-3">
-                        <div>
-                            <h2 className="text-base font-semibold tracking-tight">
-                                Roster periods
-                            </h2>
-                            <p className="text-muted-foreground text-sm">
-                                Date ranges assignments must stay inside.
-                            </p>
-                        </div>
-                        <span className="text-muted-foreground text-xs tabular-nums">
-                            {visiblePeriods.length}
-                        </span>
-                    </div>
-                    {visiblePeriods.length === 0 ? (
-                        <EmptyPanel
+                        {selectedTemplate ? (
+                            <StatCard
+                                icon={Clock3}
+                                label={selectedTemplate.name}
+                                value={`${formatClock(selectedTemplate.start_time)} – ${formatClock(selectedTemplate.end_time)}`}
+                                valueClassName="text-lg"
+                                hint={`${durationLabel(selectedTemplate.start_time, selectedTemplate.end_time) || 'Same-day window'}${
+                                    windowCoversNow(
+                                        selectedTemplate.start_time,
+                                        selectedTemplate.end_time,
+                                        now,
+                                    )
+                                        ? ' · Live'
+                                        : selectedTemplate.is_active
+                                          ? ' · Active'
+                                          : ' · Inactive'
+                                }`}
+                            />
+                        ) : (
+                            <StatCard
+                                icon={Clock3}
+                                label="Shifts"
+                                value={String(stats.templates)}
+                                hint={`${stats.active_templates} active`}
+                            />
+                        )}
+                        <StatCard
                             icon={CalendarRange}
-                            title="No periods yet"
-                            body="A period is a named date span. It does not generate daily rows."
-                            actionHref={createPeriodHref}
-                            actionLabel="New period"
+                            label="Scheduled people"
+                            value={String(scopedScheduled.length)}
+                            hint={
+                                selectedTemplate
+                                    ? 'Assigned to this shift'
+                                    : 'Personal duty periods'
+                            }
                         />
-                    ) : (
-                        <div className="space-y-3">
-                            {visiblePeriods.map((period) => {
-                                const editHref = periodEditHref?.(period);
+                    </div>
 
-                                return (
+                    <section className="bg-card overflow-hidden rounded-2xl border">
+                        <header className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
+                            <div>
+                                <h2 className="text-base font-semibold tracking-tight">
+                                    On duty now
+                                </h2>
+                                <p className="text-muted-foreground text-sm">
+                                    {selectedTemplate
+                                        ? `Live people on ${selectedTemplate.name}.`
+                                        : 'Live coverage from today’s scheduled days.'}
+                                </p>
+                            </div>
+                            <Button size="sm" variant="outline" asChild>
+                                <Link href={assignHref}>Assign someone</Link>
+                            </Button>
+                        </header>
+                        {liveOnDuty.length === 0 ? (
+                            <div className="text-muted-foreground px-5 py-8 text-sm">
+                                {selectedTemplate
+                                    ? `Nobody is inside ${selectedTemplate.name} right now.`
+                                    : 'Nobody is inside a duty window right now.'}
+                            </div>
+                        ) : (
+                            <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+                                {liveOnDuty.map((person) => (
                                     <article
-                                        key={period.id}
-                                        className="bg-card flex flex-col gap-3 rounded-2xl border p-4"
+                                        key={person.id}
+                                        className="flex items-center gap-3 rounded-xl border px-3 py-3"
                                     >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <p className="truncate font-medium">
-                                                    {period.name}
-                                                </p>
-                                                <p className="text-muted-foreground mt-0.5 text-sm">
-                                                    {formatDayRange(
-                                                        period.start_date,
-                                                        period.end_date,
+                                        <div className="relative">
+                                            <Avatar className="size-10">
+                                                {person.avatar_url ? (
+                                                    <AvatarImage
+                                                        src={person.avatar_url}
+                                                        alt={
+                                                            person.user_name ??
+                                                            ''
+                                                        }
+                                                    />
+                                                ) : null}
+                                                <AvatarFallback>
+                                                    {initials(
+                                                        person.user_name ??
+                                                            '?',
                                                     )}
-                                                </p>
-                                            </div>
-                                            <Badge
-                                                variant={
-                                                    period.contains_today
-                                                        ? 'secondary'
-                                                        : 'outline'
-                                                }
-                                            >
-                                                {periodBadge(period)}
-                                            </Badge>
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <span className="bg-primary ring-card absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2" />
                                         </div>
-                                        <ShiftPeriodSpan
-                                            startDate={period.start_date}
-                                            endDate={period.end_date}
-                                            containsToday={
-                                                period.contains_today
-                                            }
-                                            daysElapsed={period.days_elapsed}
-                                            daysTotal={period.days_total}
-                                        />
-                                        <div className="flex items-center justify-between gap-2 text-xs">
-                                            <p className="text-muted-foreground">
-                                                {period.branch_name ??
-                                                    period.owner_type_label}
-                                                {' · '}
-                                                {period.scheduled_count ?? 0}{' '}
-                                                assigned
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-medium">
+                                                {person.user_name}
                                             </p>
-                                            {editHref ? (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    asChild
-                                                >
-                                                    <Link href={editHref}>
-                                                        Edit
-                                                    </Link>
-                                                </Button>
-                                            ) : null}
+                                            <p className="text-muted-foreground truncate text-xs">
+                                                {person.shift_template_name} ·{' '}
+                                                {formatClock(person.start_time)}
+                                                –
+                                                {formatClock(person.end_time)}
+                                            </p>
+                                            <p className="text-muted-foreground truncate text-xs">
+                                                {person.role_label ??
+                                                    person.user_type_label ??
+                                                    person.branch_name}
+                                            </p>
                                         </div>
                                     </article>
-                                );
-                            })}
+                                ))}
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="bg-card overflow-hidden rounded-2xl border">
+                        <header className="border-b px-5 py-4">
+                            <h2 className="text-base font-semibold tracking-tight">
+                                Uncovered today
+                            </h2>
+                            <p className="text-muted-foreground text-sm">
+                                {selectedTemplate
+                                    ? `Whether ${selectedTemplate.name} has anyone scheduled today.`
+                                    : 'Named shifts with nobody scheduled for today.'}
+                            </p>
+                        </header>
+                        {scopedUncovered.length === 0 ? (
+                            <div className="text-muted-foreground px-5 py-6 text-sm">
+                                {selectedTemplate
+                                    ? `${selectedTemplate.name} has someone scheduled today.`
+                                    : 'Every named shift has someone scheduled today.'}
+                            </div>
+                        ) : (
+                            <div className="flex flex-wrap gap-2 p-4">
+                                {scopedUncovered.map((shift) => (
+                                    <Badge
+                                        key={shift.id}
+                                        variant="outline"
+                                        className="rounded-full px-3 py-1"
+                                    >
+                                        {shift.name} ·{' '}
+                                        {formatClock(shift.start_time)}–
+                                        {formatClock(shift.end_time)}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="bg-card overflow-hidden rounded-2xl border">
+                        <header className="flex flex-wrap items-end justify-between gap-3 border-b px-5 py-4">
+                            <div>
+                                <h2 className="text-base font-semibold tracking-tight">
+                                    Scheduled people
+                                </h2>
+                                <p className="text-muted-foreground text-sm">
+                                    {selectedTemplate
+                                        ? `People assigned to ${selectedTemplate.name}.`
+                                        : 'Search and filter — the list stays in this panel.'}
+                                </p>
+                            </div>
+                            <span className="text-muted-foreground text-xs tabular-nums">
+                                {visibleScheduled.length}
+                            </span>
+                        </header>
+                        <div className="flex flex-wrap items-center gap-2 border-b px-5 py-3">
+                            <div className="relative min-w-48 max-w-md flex-1">
+                                <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                                <Input
+                                    value={query}
+                                    onChange={(event) =>
+                                        setQuery(event.target.value)
+                                    }
+                                    placeholder="Search people"
+                                    className="h-9 pl-9"
+                                />
+                            </div>
+                            {templates.length > 0 ? (
+                                <Select
+                                    value={
+                                        selectedShiftId === null
+                                            ? 'all'
+                                            : String(selectedShiftId)
+                                    }
+                                    onValueChange={(value) =>
+                                        setSelectedShiftId(
+                                            value === 'all'
+                                                ? null
+                                                : Number(value),
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger
+                                        size="sm"
+                                        className="w-44 max-w-full"
+                                    >
+                                        <SelectValue placeholder="All shifts" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All shifts
+                                        </SelectItem>
+                                        {templates.map((template) => (
+                                            <SelectItem
+                                                key={template.id}
+                                                value={String(template.id)}
+                                            >
+                                                {template.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            ) : null}
+                            <Select
+                                value={peopleKind}
+                                onValueChange={(value) =>
+                                    setPeopleKind(value as PeopleKind)
+                                }
+                            >
+                                <SelectTrigger
+                                    size="sm"
+                                    className="w-36 max-w-full"
+                                >
+                                    <SelectValue placeholder="All people" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        All people
+                                    </SelectItem>
+                                    <SelectItem value="staff">Staff</SelectItem>
+                                    <SelectItem value="driver">
+                                        Drivers
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                    )}
-                </section>
-            </div>
+                        {visibleScheduled.length === 0 ? (
+                            <div className="px-5 py-8">
+                                <p className="font-medium">
+                                    {selectedTemplate
+                                        ? `Nobody on ${selectedTemplate.name}`
+                                        : query || peopleKind !== 'all'
+                                          ? 'No matching people'
+                                          : 'Nobody scheduled'}
+                                </p>
+                                <p className="text-muted-foreground mt-1 max-w-sm text-sm">
+                                    {selectedTemplate
+                                        ? 'Assign someone to this shift and date range.'
+                                        : query || peopleKind !== 'all'
+                                          ? 'Try a different name, shift, or type.'
+                                          : 'Assign a person, a date range, and a usual shift.'}
+                                </p>
+                                {!query && peopleKind === 'all' ? (
+                                    <Button size="sm" className="mt-3" asChild>
+                                        <Link href={assignHref}>
+                                            Assign to shift
+                                        </Link>
+                                    </Button>
+                                ) : null}
+                            </div>
+                        ) : (
+                            <div className="max-h-[28rem] overflow-y-auto">
+                                {shownGroups.map((group) => (
+                                    <div key={group.label}>
+                                        {peopleGroups.length > 1 ? (
+                                            <p className="bg-muted/70 text-muted-foreground sticky top-0 z-10 px-5 py-1.5 text-[11px] font-medium tracking-[0.14em] uppercase">
+                                                {group.label}
+                                                <span className="ml-2 tabular-nums">
+                                                    {group.total}
+                                                </span>
+                                            </p>
+                                        ) : null}
+                                        <ul className="divide-y">
+                                            {group.items.map((row) => (
+                                                <PersonRow
+                                                    key={row.id}
+                                                    row={row}
+                                                    editHref={
+                                                        assignmentEditHref?.(
+                                                            row,
+                                                        ) ?? null
+                                                    }
+                                                />
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                                {hasMorePeople ? (
+                                    <div className="border-t px-5 py-3">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                                setVisiblePeople(
+                                                    (count) =>
+                                                        count + PEOPLE_PAGE,
+                                                )
+                                            }
+                                        >
+                                            Show more
+                                            <span className="text-muted-foreground ml-1 tabular-nums">
+                                                {visibleScheduled.length -
+                                                    visiblePeople}{' '}
+                                                left
+                                            </span>
+                                        </Button>
+                                    </div>
+                                ) : null}
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="space-y-5">
+                        <div className="flex items-end justify-between gap-3">
+                            <div>
+                                <h2 className="text-base font-semibold tracking-tight">
+                                    Shifts
+                                </h2>
+                                <p className="text-muted-foreground text-sm">
+                                    {selectedTemplate
+                                        ? 'This named window at this store.'
+                                        : 'Named start and end times on the same day.'}
+                                </p>
+                            </div>
+                            <span className="text-muted-foreground text-xs tabular-nums">
+                                {scopedTemplates.length}
+                            </span>
+                        </div>
+                        {scopedTemplates.length === 0 ? (
+                            <EmptyPanel
+                                icon={Clock3}
+                                title="No shifts yet"
+                                body="Create a named shift, then assign people to their own dates."
+                                actionHref={createTemplateHref}
+                                actionLabel="New shift"
+                            />
+                        ) : (
+                            groupedTemplates.map((group) => (
+                                <div key={group.label} className="space-y-3">
+                                    {groupedTemplates.length > 1 ? (
+                                        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
+                                            {group.label}
+                                        </p>
+                                    ) : null}
+                                    <div
+                                        className={cn(
+                                            'grid gap-3',
+                                            selectedTemplate
+                                                ? 'md:max-w-xl md:grid-cols-1'
+                                                : 'md:grid-cols-2 xl:grid-cols-3',
+                                        )}
+                                    >
+                                        {group.items.map((template) => (
+                                            <TemplateCard
+                                                key={template.id}
+                                                template={template}
+                                                now={now}
+                                                editHref={templateEditHref?.(
+                                                    template,
+                                                )}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </section>
                 </>
             )}
         </div>
+    );
+}
+
+function PersonRow({
+    row,
+    editHref,
+}: {
+    row: ShiftAssignmentRow;
+    editHref?: string | null;
+}) {
+    return (
+        <li className="flex items-center gap-3 px-5 py-2.5">
+            <Avatar className="size-8">
+                {row.avatar_url ? (
+                    <AvatarImage
+                        src={row.avatar_url}
+                        alt={row.user_name ?? ''}
+                    />
+                ) : null}
+                <AvatarFallback className="text-[11px]">
+                    {initials(row.user_name ?? '?')}
+                </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-2">
+                    <p className="truncate text-sm font-medium">
+                        {row.user_name}
+                    </p>
+                    {row.role_label ? (
+                        <Badge
+                            variant="secondary"
+                            className="shrink-0 font-normal"
+                        >
+                            {row.role_label}
+                        </Badge>
+                    ) : null}
+                </div>
+                <p className="text-muted-foreground truncate text-xs">
+                    {row.shift_template_name} · {formatClock(row.start_time)}–
+                    {formatClock(row.end_time)}
+                    {row.days_label ? ` · ${row.days_label}` : ''}
+                </p>
+            </div>
+            <p className="text-muted-foreground hidden shrink-0 text-xs sm:block">
+                {formatDayRange(row.start_date, row.end_date)}
+            </p>
+            {editHref ? (
+                <Button size="sm" variant="ghost" asChild>
+                    <Link href={editHref}>Edit</Link>
+                </Button>
+            ) : null}
+        </li>
     );
 }
 
@@ -495,11 +726,7 @@ function TemplateCard({
     now: Date;
     editHref?: string | null;
 }) {
-    const live = windowCoversNow(
-        template.start_time,
-        template.end_time,
-        now,
-    );
+    const live = windowCoversNow(template.start_time, template.end_time, now);
 
     return (
         <article className="bg-card flex flex-col gap-4 rounded-2xl border p-4">
@@ -536,10 +763,7 @@ function TemplateCard({
                 <p className="text-muted-foreground">
                     {template.branch_name ?? template.owner_type_label}
                     {' · '}
-                    {durationLabel(
-                        template.start_time,
-                        template.end_time,
-                    )}
+                    {durationLabel(template.start_time, template.end_time)}
                     {' · '}
                     {template.scheduled_count ?? 0} scheduled
                 </p>
@@ -580,28 +804,34 @@ function groupByBranch(
     return [...groups.entries()].map(([label, items]) => ({ label, items }));
 }
 
-function periodBadge(period: ShiftPeriodOption): string {
-    if (!period.is_active) {
-        return 'Inactive';
+function groupByUserType(
+    rows: ShiftAssignmentRow[],
+): { label: string; items: ShiftAssignmentRow[] }[] {
+    const groups = new Map<string, ShiftAssignmentRow[]>();
+
+    for (const row of rows) {
+        const label = row.user_type_label || row.user_type || 'People';
+        const items = groups.get(label) ?? [];
+        items.push(row);
+        groups.set(label, items);
     }
 
-    if (period.contains_today) {
-        return 'Current';
-    }
-
-    if (period.end_date && period.end_date < todayIso()) {
-        return 'Closed';
-    }
-
-    return 'Upcoming';
+    return [...groups.entries()].map(([label, items]) => ({ label, items }));
 }
 
-function todayIso(): string {
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+function matchesPeopleKind(
+    row: ShiftAssignmentRow,
+    kind: PeopleKind,
+): boolean {
+    if (kind === 'all') {
+        return true;
+    }
 
-    return `${now.getFullYear()}-${month}-${day}`;
+    if (kind === 'driver') {
+        return row.user_type === 'driver';
+    }
+
+    return row.user_type !== 'driver';
 }
 
 function EmptyPanel({

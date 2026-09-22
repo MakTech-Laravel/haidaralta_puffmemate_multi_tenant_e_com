@@ -3,7 +3,6 @@
 namespace App\Concerns;
 
 use App\Enums\ShiftOwnerType;
-use App\Models\ShiftRosterPeriod;
 use App\Models\ShiftTemplate;
 use App\Models\UserShiftAssignment;
 use App\Support\WorkforcePayload;
@@ -26,15 +25,16 @@ trait ResolvesShiftOwnerWorkspace
         $selected = $this->selectedBranch();
         $branchId = $selected['id'] ?? null;
         $templates = WorkforcePayload::templatesOwnedBy($this->shiftOwner(), false, $branchId);
-        $periods = WorkforcePayload::periodsOwnedBy($this->shiftOwner(), false, $branchId);
         $onDuty = WorkforcePayload::onDutyOwnedBy($this->shiftOwner(), null, $branchId);
+        $scheduled = WorkforcePayload::scheduledPeople($this->shiftOwner(), $branchId);
 
         return [
             'workspace' => $this->shiftWorkspace(),
             'templates' => $templates,
-            'periods' => $periods,
             'onDuty' => $onDuty,
-            'stats' => WorkforcePayload::workspaceStats($templates, $periods, $onDuty),
+            'scheduled' => $scheduled,
+            'uncovered' => WorkforcePayload::uncoveredToday($templates),
+            'stats' => WorkforcePayload::workspaceStats($templates, $onDuty, $scheduled),
             'selectedBranchId' => $branchId,
             'selectedBranch' => $selected,
         ];
@@ -81,19 +81,13 @@ trait ResolvesShiftOwnerWorkspace
         abort_unless($this->matchesShiftOwner($template->isPlatformOwned(), $template->isBranchOwned()), 404);
     }
 
-    protected function assertOwnedPeriod(ShiftRosterPeriod $period): void
-    {
-        abort_unless($this->matchesShiftOwner($period->isPlatformOwned(), $period->isBranchOwned()), 404);
-    }
-
     protected function assertOwnedAssignment(UserShiftAssignment $assignment): void
     {
-        $assignment->loadMissing(['shiftTemplate', 'shiftRosterPeriod']);
+        $assignment->loadMissing(['shiftTemplate']);
 
-        abort_unless($assignment->shiftTemplate !== null && $assignment->shiftRosterPeriod !== null, 404);
+        abort_unless($assignment->shiftTemplate !== null, 404);
 
         $this->assertOwnedTemplate($assignment->shiftTemplate);
-        $this->assertOwnedPeriod($assignment->shiftRosterPeriod);
     }
 
     private function matchesShiftOwner(bool $isPlatformOwned, bool $isBranchOwned): bool

@@ -29,4 +29,7 @@ Reports → Stock transactions then Price history. Same permissions as the stock
 Shifts and Assign to shift are platform/branch participant duty windows, not a driver catalog. Platform: live under Administrator and Branch management. Branch portal: live under Administrator. Never put them under Driver management.
 
 ## Shift nav URLs are owner-scoped siblings
-Administrator Shifts is /platform/shifts and Assign is /platform/shift-assignments (platform-owned only). Branch management Shifts is /platform/branch-shifts and Assign is /platform/branch-shift-assignments (branch-owned only). Branch portal Assign is /branch/{slug}/shift-assignments, not a child of /shifts. Never reuse the same href in two groups; isPathActive prefix-matches children so assign must not live under /shifts.
+Administrator Shifts is /platform/shifts and Assign is /platform/shift-assignments (platform-owned only). Branch management Shifts is /platform/branch-shifts and Assign is /platform/branch-shift-assignments (branch-owned only). Branch portal Assign is /branch/{slug}/shift-assignments, not a child of /shifts. Edit assignment is /shift-assignments/{id}/edit (and branch-shift-assignments sibling). Never reuse the same href in two groups; isPathActive prefix-matches children so assign must not live under /shifts. There are no /shifts/periods URLs.
+
+## No /shifts/periods URLs
+Shift URLs are /platform/shifts and /platform/shift-assignments (edit /shift-assignments/{id}/edit) and the branch-shifts siblings. There are no /shifts/periods routes. Keep assign off the /shifts prefix.

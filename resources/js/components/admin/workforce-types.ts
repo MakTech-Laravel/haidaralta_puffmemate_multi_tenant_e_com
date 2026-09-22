@@ -21,22 +21,6 @@ export type ShiftTemplateOption = {
     scheduled_count?: number;
 };
 
-export type ShiftPeriodOption = {
-    id: number;
-    name: string;
-    owner_type: string;
-    owner_type_label: string;
-    branch_id: number | null;
-    branch_name?: string | null;
-    start_date: string | null;
-    end_date: string | null;
-    is_active: boolean;
-    scheduled_count?: number;
-    contains_today?: boolean;
-    days_total?: number;
-    days_elapsed?: number;
-};
-
 export type AssignablePerson = {
     id: number;
     name: string;
@@ -50,7 +34,40 @@ export type ShiftWorkspaceStats = {
     on_duty: number;
     templates: number;
     active_templates: number;
-    periods: number;
+    scheduled: number;
+};
+
+export type UncoveredShift = {
+    id: number;
+    name: string;
+    start_time: string | null;
+    end_time: string | null;
+};
+
+export type ShiftDayKind =
+    | 'scheduled'
+    | 'override'
+    | 'weekly_off'
+    | 'leave';
+
+export type ShiftDutyDay = {
+    id?: number;
+    assignment_id?: number;
+    user_id?: number;
+    branch_id?: number;
+    date: string;
+    kind: ShiftDayKind;
+    kind_label?: string;
+    shift_template_id: number | null;
+    shift_template_name?: string | null;
+    start_time?: string | null;
+    end_time?: string | null;
+};
+
+export type ShiftDayException = {
+    date: string;
+    kind: ShiftDayKind;
+    shift_template_id: number | null;
 };
 
 export type ShiftAssignmentRow = {
@@ -59,13 +76,12 @@ export type ShiftAssignmentRow = {
     user_name?: string | null;
     user_type?: string | null;
     user_type_label?: string | null;
+    role_label?: string | null;
     avatar_url?: string | null;
     branch_id: number;
     branch_name?: string | null;
     shift_template_id: number;
     shift_template_name?: string | null;
-    shift_roster_period_id: number;
-    shift_roster_period_name?: string | null;
     start_date: string | null;
     end_date: string | null;
     start_time: string | null;

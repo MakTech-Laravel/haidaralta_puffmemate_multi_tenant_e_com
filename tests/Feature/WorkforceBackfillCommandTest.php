@@ -55,5 +55,7 @@ test('backfill command is idempotent for assignment dates rosters and inferred t
     expect($active->fresh()->started_at)->not->toBeNull()
         ->and(UserTransferHistory::query()->where('user_id', $driver->id)->count())->toBe(1)
         ->and(UserShiftAssignment::query()->where('user_id', $driver->id)->count())->toBe(1)
-        ->and(ShiftTemplate::query()->where('name', 'Migrated 08:00–17:00')->count())->toBe(1);
+        ->and(ShiftTemplate::query()->where('name', 'Migrated 08:00–17:00')->count())->toBe(1)
+        ->and($assignment = UserShiftAssignment::query()->where('user_id', $driver->id)->first())->not->toBeNull()
+        ->and($assignment?->days()->count())->toBe(15);
 });

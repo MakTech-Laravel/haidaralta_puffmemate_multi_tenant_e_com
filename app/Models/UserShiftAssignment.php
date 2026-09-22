@@ -4,12 +4,12 @@ namespace App\Models;
 
 use App\Enums\ShiftAssignmentStatus;
 use App\Models\Concerns\AuditsChanges;
-use App\Support\DutyWindow;
 use Carbon\CarbonInterface;
 use Database\Factories\UserShiftAssignmentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -17,14 +17,12 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property int $branch_id
  * @property int $shift_template_id
- * @property int $shift_roster_period_id
  * @property Carbon $start_date
  * @property Carbon $end_date
  * @property array<mixed>|null $days_of_week
  * @property ShiftAssignmentStatus $status
  * @property int|null $assigned_by
  * @property-read ShiftTemplate|null $shiftTemplate
- * @property-read ShiftRosterPeriod|null $shiftRosterPeriod
  */
 class UserShiftAssignment extends Model
 {
@@ -38,7 +36,6 @@ class UserShiftAssignment extends Model
         'user_id',
         'branch_id',
         'shift_template_id',
-        'shift_roster_period_id',
         'start_date',
         'end_date',
         'days_of_week',
@@ -63,20 +60,18 @@ class UserShiftAssignment extends Model
             return false;
         }
 
-        $template = $this->shiftTemplate;
-
-        if ($template === null) {
-            return false;
+        if ($this->relationLoaded('days')) {
+            return $this->days->contains(
+                fn (UserShiftDay $day): bool => $day->coversMoment($moment),
+            );
         }
 
-        return DutyWindow::coversMoment(
-            $moment,
-            $this->start_date->format('Y-m-d'),
-            $this->end_date->format('Y-m-d'),
-            $template->startTimeValue(),
-            $template->endTimeValue(),
-            $this->normalizedDaysOfWeek(),
-        );
+        return $this->days()
+            ->with('shiftTemplate')
+            ->onDuty()
+            ->whereDate('duty_on', $moment->toDateString())
+            ->get()
+            ->contains(fn (UserShiftDay $day): bool => $day->coversMoment($moment));
     }
 
     /**
@@ -104,11 +99,11 @@ class UserShiftAssignment extends Model
     }
 
     /**
-     * @return BelongsTo<ShiftRosterPeriod, $this>
+     * @return HasMany<UserShiftDay, $this>
      */
-    public function shiftRosterPeriod(): BelongsTo
+    public function days(): HasMany
     {
-        return $this->belongsTo(ShiftRosterPeriod::class);
+        return $this->hasMany(UserShiftDay::class);
     }
 
     /**

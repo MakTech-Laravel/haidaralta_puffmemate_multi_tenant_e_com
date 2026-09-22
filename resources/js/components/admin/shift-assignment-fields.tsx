@@ -5,7 +5,6 @@ import {
 import type {
     AssignablePerson,
     BranchOption,
-    ShiftPeriodOption,
     ShiftTemplateOption,
 } from '@/components/admin/workforce-types';
 import InputError from '@/components/input-error';
@@ -24,7 +23,6 @@ export type ShiftAssignmentFieldsValue = {
     user_id: string;
     branch_id: string;
     shift_template_id: string;
-    shift_roster_period_id: string;
     start_date: string;
     end_date: string;
     days_of_week: number[];
@@ -36,7 +34,6 @@ export function emptyShiftAssignmentFields(): ShiftAssignmentFieldsValue {
         user_id: '',
         branch_id: '',
         shift_template_id: '',
-        shift_roster_period_id: '',
         start_date: '',
         end_date: '',
         days_of_week: [...ALL_DUTY_DAYS],
@@ -49,9 +46,9 @@ type ShiftAssignmentFieldsProps = {
     onChange: (patch: Partial<ShiftAssignmentFieldsValue>) => void;
     people: AssignablePerson[];
     templates: ShiftTemplateOption[];
-    periods: ShiftPeriodOption[];
     branches: BranchOption[];
     lockBranch?: boolean;
+    lockPerson?: boolean;
     errors?: Record<string, string | undefined>;
 };
 
@@ -60,15 +57,11 @@ export function ShiftAssignmentFields({
     onChange,
     people,
     templates,
-    periods,
     branches,
     lockBranch = false,
+    lockPerson = false,
     errors = {},
 }: ShiftAssignmentFieldsProps) {
-    const selectedPeriod = periods.find(
-        (period) => String(period.id) === value.shift_roster_period_id,
-    );
-
     return (
         <div className="grid gap-4">
             <input type="hidden" name="user_id" value={value.user_id} />
@@ -77,11 +70,6 @@ export function ShiftAssignmentFields({
                 type="hidden"
                 name="shift_template_id"
                 value={value.shift_template_id}
-            />
-            <input
-                type="hidden"
-                name="shift_roster_period_id"
-                value={value.shift_roster_period_id}
             />
             <input type="hidden" name="start_date" value={value.start_date} />
             <input type="hidden" name="end_date" value={value.end_date} />
@@ -94,11 +82,12 @@ export function ShiftAssignmentFields({
                 />
             ))}
 
-            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <div className="flex min-w-0 flex-col gap-1.5">
                     <Label>Person</Label>
                     <Select
                         value={value.user_id}
+                        disabled={lockPerson}
                         onValueChange={(userId) => {
                             const person = people.find(
                                 (item) => String(item.id) === userId,
@@ -160,11 +149,9 @@ export function ShiftAssignmentFields({
                         <InputError message={errors.branch_id} />
                     </div>
                 )}
-            </div>
 
-            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                 <div className="flex min-w-0 flex-col gap-1.5">
-                    <Label>Shift</Label>
+                    <Label>Main shift</Label>
                     <Select
                         value={value.shift_template_id}
                         onValueChange={(shiftTemplateId) =>
@@ -188,53 +175,15 @@ export function ShiftAssignmentFields({
                     </Select>
                     <InputError message={errors.shift_template_id} />
                 </div>
-
-                <div className="flex min-w-0 flex-col gap-1.5">
-                    <Label>Roster period</Label>
-                    <Select
-                        value={value.shift_roster_period_id}
-                        onValueChange={(periodId) => {
-                            const period = periods.find(
-                                (item) => String(item.id) === periodId,
-                            );
-
-                            onChange({
-                                shift_roster_period_id: periodId,
-                                start_date:
-                                    value.start_date ||
-                                    period?.start_date ||
-                                    '',
-                                end_date:
-                                    value.end_date || period?.end_date || '',
-                            });
-                        }}
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select period" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {periods.map((period) => (
-                                <SelectItem
-                                    key={period.id}
-                                    value={String(period.id)}
-                                >
-                                    {period.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <InputError message={errors.shift_roster_period_id} />
-                </div>
             </div>
 
-            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <div className="flex min-w-0 flex-col gap-1.5">
                     <Label>Start date</Label>
                     <DatePicker
                         value={value.start_date}
                         placeholder="Start date"
-                        min={selectedPeriod?.start_date}
-                        max={value.end_date || selectedPeriod?.end_date}
+                        max={value.end_date || undefined}
                         onChange={(startDate) =>
                             onChange({
                                 start_date: startDate,
@@ -249,8 +198,7 @@ export function ShiftAssignmentFields({
                     <DatePicker
                         value={value.end_date}
                         placeholder="End date"
-                        min={value.start_date || selectedPeriod?.start_date}
-                        max={selectedPeriod?.end_date}
+                        min={value.start_date || undefined}
                         onChange={(endDate) =>
                             onChange({
                                 end_date: endDate,
@@ -265,31 +213,33 @@ export function ShiftAssignmentFields({
                     />
                     <InputError message={errors.end_date} />
                 </div>
+                <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2 xl:col-span-1">
+                    <Label htmlFor="shift-reason">Reason</Label>
+                    <Textarea
+                        id="shift-reason"
+                        name="reason"
+                        value={value.reason}
+                        onChange={(event) =>
+                            onChange({ reason: event.target.value })
+                        }
+                        placeholder="Optional note"
+                        className="min-h-11"
+                    />
+                    <InputError message={errors.reason} />
+                </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-                <Label>Days</Label>
+                <Label>Working days</Label>
                 <DutyDaysPicker
                     value={value.days_of_week}
-                    onChange={(daysOfWeek) => onChange({ days_of_week: daysOfWeek })}
+                    onChange={(daysOfWeek) =>
+                        onChange({ days_of_week: daysOfWeek })
+                    }
                 />
                 <InputError
                     message={errors.days_of_week ?? errors['days_of_week.0']}
                 />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-                <Label htmlFor="shift-reason">Reason</Label>
-                <Textarea
-                    id="shift-reason"
-                    name="reason"
-                    value={value.reason}
-                    onChange={(event) =>
-                        onChange({ reason: event.target.value })
-                    }
-                    placeholder="Optional note for this assignment"
-                />
-                <InputError message={errors.reason} />
             </div>
         </div>
     );

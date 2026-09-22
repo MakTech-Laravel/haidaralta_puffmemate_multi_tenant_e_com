@@ -372,7 +372,7 @@ export default function PlatformDriversShow({
                     <CardHeader>
                         <CardTitle>Duty windows</CardTitle>
                         <CardDescription>
-                            Assigned templates and roster periods
+                            Assigned shifts and personal date ranges
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

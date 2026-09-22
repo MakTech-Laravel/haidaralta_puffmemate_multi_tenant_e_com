@@ -100,6 +100,14 @@ class User extends Authenticatable implements PasskeyUser, ScoutSearchable
     }
 
     /**
+     * @return HasMany<UserShiftDay, $this>
+     */
+    public function shiftDays(): HasMany
+    {
+        return $this->hasMany(UserShiftDay::class);
+    }
+
+    /**
      * @return HasMany<UserShiftHistory, $this>
      */
     public function shiftHistories(): HasMany

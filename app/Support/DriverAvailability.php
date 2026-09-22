@@ -5,7 +5,7 @@ namespace App\Support;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\ShiftAssignmentStatus;
 use App\Models\User;
-use App\Models\UserShiftAssignment;
+use App\Models\UserShiftDay;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -14,7 +14,7 @@ final class DriverAvailability
     /**
      * Effective status for display:
      * - stored on_break / busy overrides win
-     * - else a scheduled shift assignment covering "now" → available
+     * - else a scheduled shift day covering "now" → available
      * - else offline
      */
     public static function effective(User $driver, ?CarbonInterface $at = null): DriverAvailabilityStatus
@@ -27,32 +27,38 @@ final class DriverAvailability
             return $stored;
         }
 
-        $moment = $at?->copy() ?? now();
+        $moment = DateTimeFormat::at($at);
 
-        if ($driver->relationLoaded('shiftAssignments')) {
-            $assignments = $driver->shiftAssignments;
+        if ($driver->relationLoaded('shiftDays')) {
+            $days = $driver->shiftDays;
+        } elseif ($driver->relationLoaded('shiftAssignments')) {
+            $days = $driver->shiftAssignments
+                ->filter(fn ($assignment): bool => $assignment->status === ShiftAssignmentStatus::Scheduled)
+                ->flatMap(fn ($assignment) => $assignment->relationLoaded('days')
+                    ? $assignment->days
+                    : $assignment->days()->with('shiftTemplate')->onDuty()->whereDate('duty_on', $moment->toDateString())->get());
         } else {
-            $assignments = UserShiftAssignment::query()
+            $days = UserShiftDay::query()
                 ->with('shiftTemplate')
                 ->where('user_id', $driver->id)
-                ->where('status', ShiftAssignmentStatus::Scheduled->value)
-                ->whereDate('start_date', '<=', $moment->toDateString())
-                ->whereDate('end_date', '>=', $moment->toDateString())
+                ->onDuty()
+                ->whereDate('duty_on', $moment->toDateString())
+                ->whereHas('assignment', fn ($query) => $query->where('status', ShiftAssignmentStatus::Scheduled))
                 ->get();
         }
 
-        return self::coversMoment($assignments, $moment)
+        return self::coversMoment($days, $moment)
             ? DriverAvailabilityStatus::Available
             : DriverAvailabilityStatus::Offline;
     }
 
     /**
-     * @param  Collection<int, UserShiftAssignment>|iterable<UserShiftAssignment>  $assignments
+     * @param  Collection<int, UserShiftDay>|iterable<mixed>  $days
      */
-    public static function coversMoment(iterable $assignments, CarbonInterface $moment): bool
+    public static function coversMoment(iterable $days, CarbonInterface $moment): bool
     {
-        foreach ($assignments as $assignment) {
-            if ($assignment instanceof UserShiftAssignment && $assignment->coversMoment($moment)) {
+        foreach ($days as $day) {
+            if ($day instanceof UserShiftDay && $day->coversMoment($moment)) {
                 return true;
             }
         }

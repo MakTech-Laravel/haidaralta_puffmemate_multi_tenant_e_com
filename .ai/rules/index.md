@@ -7,7 +7,9 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/actions/** | .ai/rules/actions.md |
 | resources/js/pages/driver/activity/**,resources/js/components/driver/driver-activity.ts | .ai/rules/activity-js-components-driver.md |
 | app/Services/ActivityLog/** | .ai/rules/activity-log.md |
+| resources/js/components/admin/shift-*.tsx,app/Support/WorkforcePayload.php | .ai/rules/admin-support.md |
 | resources/js/components/admin/branch-form.tsx, resources/js/components/admin/driver-form.tsx, resources/js/components/admin/duty-days-picker.tsx, resources/js/components/admin/driver-roster-fields.tsx, resources/js/components/admin/branch-location-map-dialog.tsx, resources/js/components/admin/driver-branch-assign-sheet.tsx, resources/js/components/admin/shift-*.tsx | .ai/rules/admin.md |
+| app/Services/Application/**, app/Models/ApplicationSetting.php, app/Models/SmtpSetting.php, app/Models/PaymentGatewaySetting.php, app/Http/Controllers/Platform/*SettingsController.php, app/Http/Requests/Platform/*Settings*.php, app/Support/DateTimeFormat.php, resources/js/pages/platform/settings/**, resources/js/lib/datetime.ts, database/migrations/*_create_application_settings_table.php, database/migrations/*_create_smtp_settings_table.php, database/migrations/*_create_payment_gateway_settings_table.php, app/Http/Controllers/Platform/*Shift*.php, database/migrations/**, app/Support/DriverAvailability.php | .ai/rules/application-settings.md |
 | resources/js/pages/auth/**,app/Actions/Fortify/CreateNewUser.php,app/Http/Requests/Auth/StoreRegisteredUserRequest.php,resources/js/layouts/auth/** | .ai/rules/auth.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php | .ai/rules/backup.md |
 | app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php, app/Models/Driver*.php, app/Models/User.php | .ai/rules/branch.md |
@@ -91,9 +93,8 @@ Before planning or editing, find the row whose globs match the file's path and r
 | routes/settings.php, routes/*.php | .ai/rules/routes.md |
 | resources/js/pages/driver/security/**,resources/js/components/driver/driver-account-sheet.tsx | .ai/rules/security-js-components-driver.md |
 | resources/js/components/admin/shift-*.tsx,database/seeders/WorkforceShiftSeeder.php,app/Support/WorkforcePayload.php | .ai/rules/seeders-support.md |
-| database/seeders/** | .ai/rules/seeders.md |
+| database/seeders/**, database/seeders/WorkforceShiftSeeder.php | .ai/rules/seeders.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
-| app/Services/Application/**, app/Models/{Application,Smtp,PaymentGateway}Setting.php, resources/js/pages/platform/settings/**, resources/js/lib/datetime.ts | .ai/rules/application-settings.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/stock.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts | .ai/rules/storefront.md |

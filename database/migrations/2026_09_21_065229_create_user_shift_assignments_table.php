@@ -13,7 +13,6 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->foreignId('shift_template_id')->constrained()->restrictOnDelete();
-            $table->foreignId('shift_roster_period_id')->constrained()->restrictOnDelete();
             $table->date('start_date');
             $table->date('end_date');
             $table->jsonb('days_of_week')->default('[1,2,3,4,5,6,7]');
