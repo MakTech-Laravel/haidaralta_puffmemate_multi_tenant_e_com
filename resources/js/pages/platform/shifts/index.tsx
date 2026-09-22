@@ -9,28 +9,18 @@ import type {
     BranchOption,
     ShiftAssignmentRow,
     ShiftTemplateOption,
-    ShiftWorkspaceStats,
 } from '@/components/admin/workforce-types';
 
 export default function PlatformShiftsIndex({
     workspace = 'platform',
     templates,
-    scheduled = [],
     onDuty = [],
-    stats = {
-        on_duty: 0,
-        templates: 0,
-        active_templates: 0,
-        scheduled: 0,
-    },
     selectedBranchId = null,
     selectedBranch = null,
 }: {
     workspace?: ShiftWorkspace;
     templates: ShiftTemplateOption[];
-    scheduled?: ShiftAssignmentRow[];
     onDuty?: ShiftAssignmentRow[];
-    stats?: ShiftWorkspaceStats;
     selectedBranchId?: number | null;
     selectedBranch?: BranchOption | null;
 }) {
@@ -67,16 +57,12 @@ export default function PlatformShiftsIndex({
                         : routes.description
                 }
                 templates={templates}
-                scheduled={scheduled}
                 onDuty={onDuty}
-                stats={stats}
                 createTemplateHref={routes.templates.create.url(branchQuery)}
                 assignHref={routes.assignments.create.url(branchQuery)}
+                assignedPeopleHref={routes.assignments.index.url(branchQuery)}
                 templateEditHref={(template) =>
                     routes.templates.edit.url(template.id, branchQuery)
-                }
-                assignmentEditHref={(row) =>
-                    routes.assignments.edit.url(row.id, branchQuery)
                 }
                 selectedBranch={selectedBranch}
                 selectedBranchId={selectedBranchId}

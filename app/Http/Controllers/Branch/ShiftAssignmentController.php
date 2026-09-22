@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Branch;
 
+use App\DataTables\ShiftAssignmentDataTable;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\StoreShiftAssignmentRequest;
 use App\Http\Requests\Branch\UpdateShiftAssignmentRequest;
@@ -12,6 +13,7 @@ use App\Services\Workforce\AssignShiftService;
 use App\Support\Toast;
 use App\Support\WorkforcePayload;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use InvalidArgumentException;
@@ -19,6 +21,14 @@ use InvalidArgumentException;
 class ShiftAssignmentController extends Controller
 {
     public function __construct(private AssignShiftService $assignments) {}
+
+    public function index(Request $request, Branch $branch): Response
+    {
+        return Inertia::render('branch/shifts/assigned-people', [
+            'branch' => $branch->only(['id', 'name', 'slug']),
+            'table' => ShiftAssignmentDataTable::forBranchPortal($request, $branch->id),
+        ]);
+    }
 
     public function create(Branch $branch): Response
     {

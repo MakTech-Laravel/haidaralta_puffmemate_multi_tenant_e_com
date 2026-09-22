@@ -5,7 +5,6 @@ import { ShiftBoard } from '@/components/admin/shift-board';
 import type {
     ShiftAssignmentRow,
     ShiftTemplateOption,
-    ShiftWorkspaceStats,
 } from '@/components/admin/workforce-types';
 
 type Branch = { id: number; name: string; slug: string };
@@ -13,20 +12,11 @@ type Branch = { id: number; name: string; slug: string };
 export default function BranchShiftsIndex({
     branch,
     templates,
-    scheduled = [],
     onDuty = [],
-    stats = {
-        on_duty: 0,
-        templates: 0,
-        active_templates: 0,
-        scheduled: 0,
-    },
 }: {
     branch: Branch;
     templates: ShiftTemplateOption[];
-    scheduled?: ShiftAssignmentRow[];
     onDuty?: ShiftAssignmentRow[];
-    stats?: ShiftWorkspaceStats;
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -49,13 +39,14 @@ export default function BranchShiftsIndex({
                 title="Shifts"
                 description={`Shifts at ${branch.name}. Platform shifts can be assigned here; only this store’s own shifts can be edited.`}
                 templates={templates}
-                scheduled={scheduled}
                 onDuty={onDuty}
-                stats={stats}
                 createTemplateHref={ShiftTemplateController.create.url(
                     branch.slug,
                 )}
                 assignHref={ShiftAssignmentController.create.url(branch.slug)}
+                assignedPeopleHref={ShiftAssignmentController.index.url(
+                    branch.slug,
+                )}
                 templateEditHref={(template) =>
                     template.branch_id === branch.id
                         ? ShiftTemplateController.edit.url({
@@ -63,12 +54,6 @@ export default function BranchShiftsIndex({
                               shift_template: template.id,
                           })
                         : null
-                }
-                assignmentEditHref={(row) =>
-                    ShiftAssignmentController.edit.url({
-                        branch: branch.slug,
-                        user_shift_assignment: row.id,
-                    })
                 }
             />
         </>

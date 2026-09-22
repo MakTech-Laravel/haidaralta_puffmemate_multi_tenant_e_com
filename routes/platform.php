@@ -133,6 +133,7 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::redirect('shifts/assign', '/platform/shift-assignments');
 
         Route::get('shifts', [PlatformShiftTemplateController::class, 'index'])->name('platform.shift-templates.index');
+        Route::get('shifts/assigned-people', [PlatformShiftAssignmentController::class, 'index'])->name('platform.shift-assignments.index');
         Route::get('shifts/create', [PlatformShiftTemplateController::class, 'create'])->name('platform.shift-templates.create');
         Route::post('shift-templates', [PlatformShiftTemplateController::class, 'store'])
             ->middleware('precognitive')
@@ -148,6 +149,7 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::put('shift-assignments/{user_shift_assignment}', [PlatformShiftAssignmentController::class, 'update'])->name('platform.shift-assignments.update');
 
         Route::get('branch-shifts', [PlatformBranchShiftTemplateController::class, 'index'])->name('platform.branch-shift-templates.index');
+        Route::get('branch-shifts/assigned-people', [PlatformBranchShiftAssignmentController::class, 'index'])->name('platform.branch-shift-assignments.index');
         Route::get('branch-shift-branch-options', [PlatformBranchShiftTemplateController::class, 'branchOptions'])
             ->name('platform.branch-shift-templates.branch-options');
         Route::get('branch-shifts/create', [PlatformBranchShiftTemplateController::class, 'create'])->name('platform.branch-shift-templates.create');

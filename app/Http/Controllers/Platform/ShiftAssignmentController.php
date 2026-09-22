@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Concerns\ResolvesShiftOwnerWorkspace;
+use App\DataTables\ShiftAssignmentDataTable;
 use App\Enums\ShiftOwnerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreShiftAssignmentRequest;
@@ -13,6 +14,7 @@ use App\Services\Workforce\AssignShiftService;
 use App\Support\Toast;
 use App\Support\WorkforcePayload;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use InvalidArgumentException;
@@ -26,6 +28,14 @@ class ShiftAssignmentController extends Controller
     protected function shiftOwner(): ShiftOwnerType
     {
         return ShiftOwnerType::Platform;
+    }
+
+    public function index(Request $request): Response
+    {
+        return Inertia::render('platform/shifts/assigned-people', [
+            'workspace' => $this->shiftWorkspace(),
+            'table' => ShiftAssignmentDataTable::forPlatform($request),
+        ]);
     }
 
     public function create(): Response

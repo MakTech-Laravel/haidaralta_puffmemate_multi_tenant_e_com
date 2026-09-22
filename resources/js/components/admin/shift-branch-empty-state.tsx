@@ -102,8 +102,8 @@ const WHAT_YOU_GET = [
     },
     {
         icon: CalendarRange,
-        label: 'Scheduled people',
-        hint: 'Personal dates and working days',
+        label: 'Assigned people',
+        hint: 'Who has a shift and on which dates',
     },
 ] as const;
 

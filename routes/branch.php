@@ -170,6 +170,7 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         });
 
         Route::get('shifts', [BranchShiftTemplateController::class, 'index'])->name('branch.shift-templates.index');
+        Route::get('shifts/assigned-people', [BranchShiftAssignmentController::class, 'index'])->name('branch.shift-assignments.index');
         Route::get('shifts/create', [BranchShiftTemplateController::class, 'create'])->name('branch.shift-templates.create');
         Route::post('shift-templates', [BranchShiftTemplateController::class, 'store'])
             ->middleware('precognitive')

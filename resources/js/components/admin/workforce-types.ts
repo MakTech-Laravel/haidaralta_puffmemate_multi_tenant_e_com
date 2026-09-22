@@ -47,7 +47,21 @@ export type ShiftWorkspaceStats = {
     on_duty: number;
     templates: number;
     active_templates: number;
-    scheduled: number;
+};
+
+export type AssignedShiftPersonRow = {
+    id: number;
+    user_id: number;
+    user_name?: string | null;
+    avatar_url?: string | null;
+    branch_id: number;
+    branch_name?: string | null;
+    shift_template_id: number;
+    shift_template_name?: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    start_time: string | null;
+    end_time: string | null;
 };
 
 export type ShiftDayKind =

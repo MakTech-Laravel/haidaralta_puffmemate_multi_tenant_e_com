@@ -557,7 +557,7 @@ test('administrator shifts index lists only platform-owned templates', function 
             ->has('templates', 1)
             ->where('templates.0.name', 'Platform Morning')
             ->missing('periods')
-            ->has('scheduled')
+            ->missing('scheduled')
             ->missing('uncovered')
             ->where('templates.0.audience', ShiftAudience::All->value));
 
@@ -593,7 +593,7 @@ test('branch shifts board loads one store at a time', function () {
             ->where('selectedBranchId', null)
             ->where('selectedBranch', null)
             ->has('templates', 0)
-            ->has('scheduled', 0)
+            ->missing('scheduled')
             ->has('onDuty', 0));
 
     $this->actingAs($admin, 'platform')
@@ -873,53 +873,172 @@ test('old assign urls redirect to sibling paths so the shifts item is not also a
     expect(route('platform.shift-templates.index', absolute: false))->toBe('/platform/shifts')
         ->and(route('platform.branch-shift-templates.index', absolute: false))->toBe('/platform/branch-shifts')
         ->and(route('platform.shift-assignments.create', absolute: false))->toBe('/platform/shift-assignments')
+        ->and(route('platform.shift-assignments.index', absolute: false))->toBe('/platform/shifts/assigned-people')
         ->and(route('platform.branch-shift-assignments.create', absolute: false))->toBe('/platform/branch-shift-assignments')
-        ->and(route('branch.shift-assignments.create', $sydney, absolute: false))->toBe("/branch/{$sydney->slug}/shift-assignments");
+        ->and(route('platform.branch-shift-assignments.index', absolute: false))->toBe('/platform/branch-shifts/assigned-people')
+        ->and(route('branch.shift-assignments.create', $sydney, absolute: false))->toBe("/branch/{$sydney->slug}/shift-assignments")
+        ->and(route('branch.shift-assignments.index', $sydney, absolute: false))->toBe("/branch/{$sydney->slug}/shifts/assigned-people");
 });
 
-test('scheduled people include staff role names and driver labels', function () {
+test('assigned people lists name dates and shift without staff or driver labels', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_STAFF)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-    $template = ShiftTemplate::factory()->forBranch($sydney)->create(['name' => 'Floor']);
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $floor = ShiftTemplate::factory()->forBranch($sydney)->create(['name' => 'Floor']);
+    $dispatch = ShiftTemplate::factory()->forBranch($sydney)->create(['name' => 'Dispatch']);
+    $platformMorning = ShiftTemplate::factory()->create(['name' => 'Network support']);
+    $melbourneFloor = ShiftTemplate::factory()->forBranch($melbourne)->create(['name' => 'Collins floor']);
 
-    UserShiftAssignment::factory()->create([
+    $staffAssignment = UserShiftAssignment::factory()->create([
         'user_id' => $staff->id,
         'branch_id' => $sydney->id,
-        'shift_template_id' => $template->id,
-        'start_date' => '2026-09-01',
-        'end_date' => '2026-09-15',
+        'shift_template_id' => $floor->id,
+        'start_date' => '2026-09-10',
+        'end_date' => '2026-09-10',
         'days_of_week' => DriverRoster::DAYS_ALL,
     ]);
     UserShiftAssignment::factory()->create([
         'user_id' => $driver->id,
         'branch_id' => $sydney->id,
-        'shift_template_id' => $template->id,
+        'shift_template_id' => $dispatch->id,
         'start_date' => '2026-09-01',
         'end_date' => '2026-09-15',
         'days_of_week' => DriverRoster::DAYS_ALL,
     ]);
+    UserShiftAssignment::factory()->cancelled()->create([
+        'user_id' => $staff->id,
+        'branch_id' => $sydney->id,
+        'shift_template_id' => $floor->id,
+        'start_date' => '2026-08-01',
+        'end_date' => '2026-08-31',
+        'days_of_week' => DriverRoster::DAYS_ALL,
+    ]);
+    UserShiftAssignment::factory()->create([
+        'user_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'shift_template_id' => $platformMorning->id,
+        'start_date' => '2026-09-01',
+        'end_date' => '2026-09-30',
+        'days_of_week' => DriverRoster::DAYS_ALL,
+    ]);
+    UserShiftAssignment::factory()->create([
+        'user_id' => User::query()->where('email', UserSeeder::BRANCH_2_STAFF)->firstOrFail()->id,
+        'branch_id' => $melbourne->id,
+        'shift_template_id' => $melbourneFloor->id,
+        'start_date' => '2026-09-01',
+        'end_date' => '2026-09-30',
+        'days_of_week' => DriverRoster::DAYS_ALL,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-templates.index', [
+            'branch_id' => $sydney->id,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/shifts/index')
+            ->missing('scheduled'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-assignments.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/shifts/assigned-people')
+            ->where('selectedBranchId', null)
+            ->has('table.data', 0));
 
     $response = $this->actingAs($admin, 'platform')
-        ->get(route('platform.branch-shift-templates.index', [
+        ->get(route('platform.branch-shift-assignments.index', [
             'branch_id' => $sydney->id,
         ]));
 
     $response->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('platform/shifts/index')
-            ->has('scheduled', 2));
+            ->component('platform/shifts/assigned-people')
+            ->where('workspace', 'branch')
+            ->where('selectedBranchId', $sydney->id)
+            ->has('table.data', 2)
+            ->missing('table.data.0.role_label')
+            ->missing('table.data.0.user_type')
+            ->missing('table.data.0.user_type_label'));
 
-    $scheduled = collect($response->inertiaProps('scheduled'));
+    $rows = collect($response->inertiaProps('table.data'));
 
-    expect($scheduled->firstWhere('user_id', $staff->id))->toMatchArray([
-        'user_type' => UserType::BRANCH->value,
-        'role_label' => 'Staff',
-    ]);
+    expect($rows->pluck('user_id')->all())
+        ->toContain($staff->id, $driver->id)
+        ->and($rows->every(fn (array $row): bool => $row['shift_template_id'] !== $platformMorning->id))->toBeTrue();
 
-    expect($scheduled->firstWhere('user_id', $driver->id))->toMatchArray([
-        'user_type' => UserType::DRIVER->value,
-        'role_label' => 'Driver',
-    ]);
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-assignments.index', [
+            'branch_id' => $sydney->id,
+            'filter' => ['search' => 'Priya'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('table.data', 1)
+            ->where('table.data.0.id', $staffAssignment->id)
+            ->where('table.data.0.user_name', 'Priya Nair')
+            ->where('table.data.0.start_date', '2026-09-10')
+            ->where('table.data.0.end_date', '2026-09-10'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-assignments.index', [
+            'branch_id' => $sydney->id,
+            'filter' => ['shift_template_id' => $dispatch->id],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('table.data', 1)
+            ->where('table.data.0.shift_template_name', 'Dispatch')
+            ->where('table.data.0.user_id', $driver->id));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-assignments.index', [
+            'branch_id' => $sydney->id,
+            'filter' => ['people_kind' => 'driver'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('table.data', 1)
+            ->where('table.data.0.user_id', $driver->id));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.shift-assignments.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/shifts/assigned-people')
+            ->where('workspace', 'platform')
+            ->has('table.data', 1)
+            ->where('table.data.0.shift_template_name', 'Network support')
+            ->missing('table.data.0.role_label'));
+
+    $branchAdmin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($branchAdmin, 'branch')
+        ->get(route('branch.shift-assignments.index', $sydney))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/shifts/assigned-people')
+            ->has('table.data', 3)
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['shift_template_name'] === 'Network support',
+            ))
+            ->where('table.data', fn ($rows) => collect($rows)->every(
+                fn ($row) => $row['branch_id'] === $sydney->id && ! array_key_exists('role_label', $row),
+            )));
+});
+
+test('guests cannot open assigned people', function () {
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->get(route('platform.shift-assignments.index'))
+        ->assertRedirect(route('login'));
+
+    $this->get(route('platform.branch-shift-assignments.index'))
+        ->assertRedirect(route('login'));
+
+    $this->get(route('branch.shift-assignments.index', $sydney))
+        ->assertRedirect(route('login'));
 });

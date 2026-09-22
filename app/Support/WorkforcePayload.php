@@ -79,6 +79,34 @@ final class WorkforcePayload
     }
 
     /**
+     * Compact assignment row for the Assigned people table — name, dates, shift.
+     *
+     * @return array<string, mixed>
+     */
+    public static function assignedPerson(UserShiftAssignment $assignment): array
+    {
+        $assignment->loadMissing(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,avatar']);
+        $template = $assignment->shiftTemplate;
+        $startDate = $assignment->start_date?->format('Y-m-d');
+        $endDate = $assignment->end_date?->format('Y-m-d');
+
+        return [
+            'id' => $assignment->id,
+            'user_id' => $assignment->user_id,
+            'user_name' => $assignment->user?->name,
+            'avatar_url' => MediaUrl::resolve($assignment->user?->avatar, fallback: null),
+            'branch_id' => $assignment->branch_id,
+            'branch_name' => $assignment->branch?->name,
+            'shift_template_id' => $assignment->shift_template_id,
+            'shift_template_name' => $template?->name,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'start_time' => $template?->start_time?->format('H:i'),
+            'end_time' => $template?->end_time?->format('H:i'),
+        ];
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public static function assignmentDays(UserShiftAssignment $assignment): array
@@ -230,59 +258,6 @@ final class WorkforcePayload
     }
 
     /**
-     * @return list<array<string, mixed>>
-     */
-    public static function scheduledPeople(ShiftOwnerType $owner, ?int $branchId = null): array
-    {
-        if ($owner === ShiftOwnerType::Branch && $branchId === null) {
-            return [];
-        }
-
-        $assignments = UserShiftAssignment::query()
-            ->with(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar,branch_id'])
-            ->where('status', ShiftAssignmentStatus::Scheduled)
-            ->when($branchId !== null, fn ($query) => $query->where('branch_id', $branchId))
-            ->whereHas('shiftTemplate', function ($templates) use ($owner): void {
-                if ($owner === ShiftOwnerType::Platform) {
-                    $templates->platformOwned();
-                } else {
-                    $templates->branchOwned();
-                }
-            })
-            ->orderByDesc('start_date')
-            ->orderBy('id')
-            ->get();
-
-        self::attachRoleLabels($assignments->pluck('user')->filter());
-
-        return $assignments
-            ->map(fn (UserShiftAssignment $assignment): array => self::assignment($assignment))
-            ->values()
-            ->all();
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public static function scheduledPeopleAtBranch(int $branchId): array
-    {
-        $assignments = UserShiftAssignment::query()
-            ->with(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar,branch_id'])
-            ->where('status', ShiftAssignmentStatus::Scheduled)
-            ->where('branch_id', $branchId)
-            ->orderByDesc('start_date')
-            ->orderBy('id')
-            ->get();
-
-        self::attachRoleLabels($assignments->pluck('user')->filter());
-
-        return $assignments
-            ->map(fn (UserShiftAssignment $assignment): array => self::assignment($assignment))
-            ->values()
-            ->all();
-    }
-
-    /**
      * On-duty day rows for scheduled assignments, used as read-only chips on Assign.
      *
      * @return list<array<string, mixed>>
@@ -386,10 +361,9 @@ final class WorkforcePayload
     /**
      * @param  list<array<string, mixed>>  $templates
      * @param  list<array<string, mixed>>  $onDuty
-     * @param  list<array<string, mixed>>  $scheduled
-     * @return array{on_duty: int, templates: int, active_templates: int, scheduled: int}
+     * @return array{on_duty: int, templates: int, active_templates: int}
      */
-    public static function workspaceStats(array $templates, array $onDuty, array $scheduled = []): array
+    public static function workspaceStats(array $templates, array $onDuty): array
     {
         return [
             'on_duty' => count($onDuty),
@@ -398,7 +372,6 @@ final class WorkforcePayload
                 $templates,
                 fn (array $template): bool => (bool) $template['is_active'],
             )),
-            'scheduled' => count($scheduled),
         ];
     }
 
