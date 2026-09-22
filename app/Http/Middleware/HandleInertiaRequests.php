@@ -67,6 +67,9 @@ class HandleInertiaRequests extends Middleware
             'drivers' => [
                 'single_active_branch' => (bool) config('drivers.single_active_branch'),
             ],
+            'shifts' => [
+                'allow_multiple_per_day' => (bool) config('shifts.allow_multiple_per_day'),
+            ],
             'storefront' => [
                 'navCategories' => StorefrontCatalog::navCategories(),
                 'selectedBranchId' => $request->session()->get(StorefrontCatalog::BRANCH_SESSION_KEY),

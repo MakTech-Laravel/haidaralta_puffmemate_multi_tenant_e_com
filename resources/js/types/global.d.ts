@@ -43,6 +43,9 @@ declare module '@inertiajs/core' {
             drivers: {
                 single_active_branch: boolean;
             };
+            shifts: {
+                allow_multiple_per_day: boolean;
+            };
             driverSupport: {
                 supportPhone: string;
                 branchPhone: string;

@@ -410,6 +410,62 @@ final class WorkforcePayload
     }
 
     /**
+     * @return array{
+     *     data: list<array{id: int, name: string, user_type: string, avatar_url: string|null}>,
+     *     meta: array{current_page: int, last_page: int, per_page: int, total: int}
+     * }
+     */
+    public static function paginatedAssignablePeople(
+        int $branchId,
+        string $peopleKind,
+        ?string $search = null,
+        int $perPage = 20,
+    ): array {
+        $term = trim((string) $search);
+        $perPage = min(50, max(10, $perPage));
+        $userType = $peopleKind === 'driver' ? UserType::DRIVER : UserType::BRANCH;
+
+        $paginator = User::query()
+            ->where('is_active', true)
+            ->where('user_type', $userType)
+            ->when($userType === UserType::BRANCH, function ($query) use ($branchId): void {
+                $query->where('branch_id', $branchId);
+            })
+            ->when($userType === UserType::DRIVER, function ($query) use ($branchId): void {
+                $query->whereHas('driverBranchAssignments', function ($assignments) use ($branchId): void {
+                    $assignments
+                        ->where('branch_id', $branchId)
+                        ->where('status', 'active');
+                });
+            })
+            ->when($term !== '', function ($query) use ($term): void {
+                $query->where('name', 'like', '%'.$term.'%');
+            })
+            ->orderBy('name')
+            ->orderBy('id')
+            ->paginate($perPage);
+
+        return [
+            'data' => array_values(
+                collect($paginator->items())
+                    ->map(fn (User $user): array => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'user_type' => $user->user_type->value,
+                        'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+                    ])
+                    ->all(),
+            ),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ];
+    }
+
+    /**
      * People currently inside a scheduled duty window for this owner.
      *
      * @return list<array<string, mixed>>

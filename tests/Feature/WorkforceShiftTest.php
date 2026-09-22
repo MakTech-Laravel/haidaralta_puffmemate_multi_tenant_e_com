@@ -6,7 +6,10 @@ use App\Enums\ShiftAudience;
 use App\Enums\ShiftDayKind;
 use App\Enums\ShiftOwnerType;
 use App\Enums\UserType;
+use App\Http\Requests\Branch\ApplyShiftAssignmentChangesRequest as BranchApplyShiftAssignmentChangesRequest;
+use App\Http\Requests\Platform\ApplyShiftAssignmentChangesRequest as PlatformApplyShiftAssignmentChangesRequest;
 use App\Models\Branch;
+use App\Models\DriverBranchAssignment;
 use App\Models\DriverRoster;
 use App\Models\ShiftTemplate;
 use App\Models\User;
@@ -20,7 +23,9 @@ use App\Support\DutyWindow;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 beforeEach(function () {
     config(['drivers.single_active_branch' => true]);
@@ -647,7 +652,7 @@ test('on duty now uses the viewer timezone', function () {
         ])
         ->assertRedirect();
 
-    $viewerRequest = \Illuminate\Http\Request::create('/');
+    $viewerRequest = Request::create('/');
     $viewerRequest->headers->set(DateTimeFormat::VIEWER_TIMEZONE_HEADER, 'Australia/Sydney');
     $this->app->instance('request', $viewerRequest);
 
@@ -770,6 +775,238 @@ test('branch shift options page active stores twenty at a time', function () {
 test('guests cannot list branch shift options', function () {
     $this->getJson(route('platform.branch-shift-templates.branch-options'))
         ->assertRedirect(route('login'));
+});
+
+test('shift configuration is shared with inertia pages', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    expect(config('shifts.allow_multiple_per_day'))->toBeFalse();
+
+    config(['shifts.allow_multiple_per_day' => true]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.shift-assignments.create'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('shifts.allow_multiple_per_day', true));
+});
+
+test('platform shift people options paginate active staff for the selected branch', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    foreach (range(1, 9) as $index) {
+        User::factory()->create([
+            'name' => sprintf('Assignable Staff %02d', $index),
+            'user_type' => UserType::BRANCH,
+            'branch_id' => $sydney->id,
+        ]);
+    }
+
+    User::factory()->create([
+        'name' => 'Searchable Staff',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $sydney->id,
+    ]);
+    User::factory()->create([
+        'name' => 'Searchable Inactive Staff',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $sydney->id,
+        'is_active' => false,
+    ]);
+    User::factory()->create([
+        'name' => 'Searchable Wrong Branch Staff',
+        'user_type' => UserType::BRANCH,
+        'branch_id' => $melbourne->id,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.shift-assignments.people-options', [
+            'branch_id' => $sydney->id,
+            'people_kind' => 'staff',
+            'per_page' => 10,
+        ]))
+        ->assertOk()
+        ->assertJsonCount(10, 'data')
+        ->assertJsonPath('meta.current_page', 1)
+        ->assertJsonPath('meta.per_page', 10)
+        ->assertJsonPath('meta.last_page', 2)
+        ->assertJsonPath('meta.total', 13)
+        ->assertJsonStructure([
+            'data' => [['id', 'name', 'user_type', 'avatar_url']],
+            'meta' => ['current_page', 'last_page', 'per_page', 'total'],
+        ]);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.branch-shift-assignments.people-options', [
+            'branch_id' => $sydney->id,
+            'people_kind' => 'staff',
+            'filter' => ['search' => 'Searchable'],
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.name', 'Searchable Staff')
+        ->assertJsonPath('data.0.user_type', UserType::BRANCH->value);
+});
+
+test('shift people options only include active drivers assigned to the selected branch', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $activeDriver = User::factory()->create([
+        'name' => 'Active Searchable Driver',
+        'user_type' => UserType::DRIVER,
+    ]);
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $activeDriver->id,
+        'branch_id' => $sydney->id,
+    ]);
+
+    $inactiveDriver = User::factory()->create([
+        'name' => 'Inactive Searchable Driver',
+        'user_type' => UserType::DRIVER,
+        'is_active' => false,
+    ]);
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $inactiveDriver->id,
+        'branch_id' => $sydney->id,
+    ]);
+
+    $wrongBranchDriver = User::factory()->create([
+        'name' => 'Wrong Branch Searchable Driver',
+        'user_type' => UserType::DRIVER,
+    ]);
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $wrongBranchDriver->id,
+        'branch_id' => $melbourne->id,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.shift-assignments.people-options', [
+            'branch_id' => $sydney->id,
+            'people_kind' => 'driver',
+            'filter' => ['search' => 'Searchable Driver'],
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $activeDriver->id)
+        ->assertJsonPath('data.0.user_type', UserType::DRIVER->value);
+});
+
+test('branch shift people options derive the branch from the route', function () {
+    $branchAdmin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_STAFF)->firstOrFail();
+
+    $this->actingAs($branchAdmin, 'branch')
+        ->getJson(route('branch.shift-assignments.people-options', [
+            'branch' => $sydney,
+            'people_kind' => 'staff',
+            'filter' => ['search' => $staff->name],
+        ]))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $staff->id);
+
+    $this->actingAs($branchAdmin, 'branch')
+        ->getJson(route('branch.shift-assignments.people-options', [
+            'branch' => $sydney,
+            'branch_id' => $melbourne->id,
+            'people_kind' => 'staff',
+        ]))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('branch_id');
+
+    $this->actingAs($branchAdmin, 'branch')
+        ->getJson(route('branch.shift-assignments.people-options', [
+            'branch' => $melbourne,
+            'people_kind' => 'staff',
+        ]))
+        ->assertForbidden();
+});
+
+test('shift people options require authentication and valid query contracts', function () {
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $platformUserWithoutPermission = User::factory()->create([
+        'user_type' => UserType::PLATFORM,
+    ]);
+
+    $this->getJson(route('platform.shift-assignments.people-options', [
+        'branch_id' => $sydney->id,
+        'people_kind' => 'staff',
+    ]))->assertRedirect(route('login'));
+
+    $this->actingAs($platformUserWithoutPermission, 'platform')
+        ->getJson(route('platform.shift-assignments.people-options', [
+            'branch_id' => $sydney->id,
+            'people_kind' => 'staff',
+        ]))
+        ->assertForbidden();
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.shift-assignments.people-options', [
+            'people_kind' => 'customer',
+            'per_page' => 100,
+        ]))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['branch_id', 'people_kind', 'per_page']);
+});
+
+test('atomic shift change requests enforce the approved structural contract', function () {
+    $branch = Branch::factory()->create();
+    $user = User::factory()->create();
+    $template = ShiftTemplate::factory()->create();
+    $day = UserShiftDay::factory()->create();
+
+    $validRequest = PlatformApplyShiftAssignmentChangesRequest::create('/', 'POST', [
+        'branch_id' => $branch->id,
+        'user_id' => $user->id,
+        'shift_template_id' => $template->id,
+        'assign_dates' => ['2026-09-22'],
+        'replace_day_ids' => [],
+        'remove_day_ids' => [],
+        'month' => '2026-09',
+        'assignment_page' => 1,
+    ]);
+    $validValidator = Validator::make($validRequest->all(), $validRequest->rules());
+    $validRequest->withValidator($validValidator);
+
+    $emptyRequest = PlatformApplyShiftAssignmentChangesRequest::create('/', 'POST', [
+        'branch_id' => $branch->id,
+        'user_id' => $user->id,
+    ]);
+    $emptyValidator = Validator::make($emptyRequest->all(), $emptyRequest->rules());
+    $emptyRequest->withValidator($emptyValidator);
+
+    $ambiguousRequest = PlatformApplyShiftAssignmentChangesRequest::create('/', 'POST', [
+        'branch_id' => $branch->id,
+        'user_id' => $user->id,
+        'shift_template_id' => $template->id,
+        'replace_day_ids' => [$day->id],
+        'remove_day_ids' => [$day->id],
+    ]);
+    $ambiguousValidator = Validator::make($ambiguousRequest->all(), $ambiguousRequest->rules());
+    $ambiguousRequest->withValidator($ambiguousValidator);
+
+    $branchRequest = BranchApplyShiftAssignmentChangesRequest::create('/', 'POST', [
+        'branch_id' => $branch->id,
+        'user_id' => $user->id,
+        'remove_day_ids' => [$day->id],
+    ]);
+    $branchValidator = Validator::make($branchRequest->all(), $branchRequest->rules());
+    $branchRequest->withValidator($branchValidator);
+
+    expect($validValidator->passes())->toBeTrue()
+        ->and($emptyValidator->fails())->toBeTrue()
+        ->and($emptyValidator->errors()->has('schedule'))->toBeTrue()
+        ->and($ambiguousValidator->fails())->toBeTrue()
+        ->and($ambiguousValidator->errors()->has('schedule'))->toBeTrue()
+        ->and($branchValidator->fails())->toBeTrue()
+        ->and($branchValidator->errors()->has('branch_id'))->toBeTrue();
 });
 
 test('administrator cannot open a branch-owned shift template', function () {

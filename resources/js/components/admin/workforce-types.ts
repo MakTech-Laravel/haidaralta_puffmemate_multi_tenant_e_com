@@ -43,6 +43,44 @@ export type AssignablePerson = {
     avatar_url?: string | null;
 };
 
+export type ShiftAssignmentPeopleKind = 'staff' | 'driver';
+
+export type ShiftAssignmentWorkspaceQuery = {
+    branch_id?: number;
+    people_kind?: ShiftAssignmentPeopleKind;
+    user_id?: number;
+    month?: string;
+    assignment_page?: number;
+};
+
+export type ShiftAssignmentChangePayload = {
+    branch_id?: number;
+    user_id: number;
+    shift_template_id: number | null;
+    assign_dates: string[];
+    replace_day_ids: number[];
+    remove_day_ids: number[];
+    month?: string;
+    assignment_page?: number;
+};
+
+export type ShiftAssignmentPeopleOption = {
+    id: number;
+    name: string;
+    user_type: string;
+    avatar_url: string | null;
+};
+
+export type ShiftAssignmentPeopleOptionsPayload = {
+    data: ShiftAssignmentPeopleOption[];
+    meta: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+    };
+};
+
 export type ShiftWorkspaceStats = {
     on_duty: number;
     templates: number;
@@ -64,11 +102,7 @@ export type AssignedShiftPersonRow = {
     end_time: string | null;
 };
 
-export type ShiftDayKind =
-    | 'scheduled'
-    | 'override'
-    | 'weekly_off'
-    | 'leave';
+export type ShiftDayKind = 'scheduled' | 'override' | 'weekly_off' | 'leave';
 
 export type ShiftDutyDay = {
     id?: number;
@@ -142,8 +176,7 @@ export function formatDutyLine(row: {
 }): string {
     const start = row.start_date ? formatAppDate(row.start_date) : '';
     const end = row.end_date ? formatAppDate(row.end_date) : '';
-    const dates =
-        start && end ? `${start} – ${end}` : start || end || null;
+    const dates = start && end ? `${start} – ${end}` : start || end || null;
     const startTime = row.start_time ? formatAppClock(row.start_time) : '';
     const endTime = row.end_time ? formatAppClock(row.end_time) : '';
     const hours =
@@ -182,10 +215,7 @@ export function assignmentMatchesAudience(
         (item) => item.id === row.shift_template_id,
     );
 
-    if (
-        template === undefined ||
-        !templateMatchesAudience(template, filter)
-    ) {
+    if (template === undefined || !templateMatchesAudience(template, filter)) {
         return false;
     }
 

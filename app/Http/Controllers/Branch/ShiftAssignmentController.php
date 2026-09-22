@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Branch;
 
 use App\DataTables\ShiftAssignmentDataTable;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Branch\ShiftAssignmentPeopleOptionsRequest;
 use App\Http\Requests\Branch\StoreShiftAssignmentRequest;
 use App\Http\Requests\Branch\UpdateShiftAssignmentRequest;
 use App\Models\Branch;
@@ -12,6 +13,7 @@ use App\Models\UserShiftAssignment;
 use App\Services\Workforce\AssignShiftService;
 use App\Support\Toast;
 use App\Support\WorkforcePayload;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,6 +35,18 @@ class ShiftAssignmentController extends Controller
     public function create(Branch $branch): Response
     {
         return Inertia::render('branch/shifts/assign', $this->formProps($branch));
+    }
+
+    public function peopleOptions(ShiftAssignmentPeopleOptionsRequest $request, Branch $branch): JsonResponse
+    {
+        $validated = $request->validated();
+
+        return response()->json(WorkforcePayload::paginatedAssignablePeople(
+            branchId: $branch->id,
+            peopleKind: (string) $validated['people_kind'],
+            search: isset($validated['filter']['search']) ? (string) $validated['filter']['search'] : null,
+            perPage: (int) ($validated['per_page'] ?? 20),
+        ));
     }
 
     public function store(StoreShiftAssignmentRequest $request, Branch $branch): RedirectResponse
