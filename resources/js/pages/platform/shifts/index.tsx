@@ -10,14 +10,12 @@ import type {
     ShiftAssignmentRow,
     ShiftTemplateOption,
     ShiftWorkspaceStats,
-    UncoveredShift,
 } from '@/components/admin/workforce-types';
 
 export default function PlatformShiftsIndex({
     workspace = 'platform',
     templates,
     scheduled = [],
-    uncovered = [],
     onDuty = [],
     stats = {
         on_duty: 0,
@@ -31,7 +29,6 @@ export default function PlatformShiftsIndex({
     workspace?: ShiftWorkspace;
     templates: ShiftTemplateOption[];
     scheduled?: ShiftAssignmentRow[];
-    uncovered?: UncoveredShift[];
     onDuty?: ShiftAssignmentRow[];
     stats?: ShiftWorkspaceStats;
     selectedBranchId?: number | null;
@@ -71,7 +68,6 @@ export default function PlatformShiftsIndex({
                 }
                 templates={templates}
                 scheduled={scheduled}
-                uncovered={uncovered}
                 onDuty={onDuty}
                 stats={stats}
                 createTemplateHref={routes.templates.create.url(branchQuery)}

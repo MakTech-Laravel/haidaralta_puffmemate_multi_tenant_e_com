@@ -45,7 +45,6 @@ class ShiftTemplateController extends Controller
             'templates' => $templates,
             'onDuty' => $onDuty,
             'scheduled' => $scheduled,
-            'uncovered' => WorkforcePayload::uncoveredToday($templates),
             'stats' => WorkforcePayload::workspaceStats($templates, $onDuty, $scheduled),
         ]);
     }

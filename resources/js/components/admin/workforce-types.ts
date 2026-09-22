@@ -8,6 +8,17 @@ export type BranchOption = {
     slug?: string;
 };
 
+export type ShiftAudience = 'all' | 'staff' | 'driver';
+
+export const SHIFT_AUDIENCE_OPTIONS: {
+    value: ShiftAudience;
+    label: string;
+}[] = [
+    { value: 'all', label: 'All' },
+    { value: 'staff', label: 'Staff only' },
+    { value: 'driver', label: 'Drivers only' },
+];
+
 export type ShiftTemplateOption = {
     id: number;
     name: string;
@@ -15,6 +26,8 @@ export type ShiftTemplateOption = {
     owner_type_label: string;
     branch_id: number | null;
     branch_name?: string | null;
+    audience?: ShiftAudience;
+    audience_label?: string | null;
     start_time: string | null;
     end_time: string | null;
     is_active: boolean;
@@ -35,13 +48,6 @@ export type ShiftWorkspaceStats = {
     templates: number;
     active_templates: number;
     scheduled: number;
-};
-
-export type UncoveredShift = {
-    id: number;
-    name: string;
-    start_time: string | null;
-    end_time: string | null;
 };
 
 export type ShiftDayKind =
@@ -134,4 +140,44 @@ export function formatDutyLine(row: {
     return [row.shift_template_name, dates, hours, row.days_label]
         .filter((part): part is string => Boolean(part))
         .join(' · ');
+}
+
+export function templateMatchesAudience(
+    template: Pick<ShiftTemplateOption, 'audience'>,
+    filter: ShiftAudience,
+): boolean {
+    if (filter === 'all') {
+        return true;
+    }
+
+    const audience = template.audience ?? 'all';
+
+    return audience === 'all' || audience === filter;
+}
+
+export function assignmentMatchesAudience(
+    row: Pick<ShiftAssignmentRow, 'user_type' | 'shift_template_id'>,
+    filter: ShiftAudience,
+    templates: ShiftTemplateOption[],
+): boolean {
+    if (filter === 'all') {
+        return true;
+    }
+
+    const template = templates.find(
+        (item) => item.id === row.shift_template_id,
+    );
+
+    if (
+        template === undefined ||
+        !templateMatchesAudience(template, filter)
+    ) {
+        return false;
+    }
+
+    if (filter === 'driver') {
+        return row.user_type === 'driver';
+    }
+
+    return row.user_type !== 'driver';
 }

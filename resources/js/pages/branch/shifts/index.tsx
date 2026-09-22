@@ -6,7 +6,6 @@ import type {
     ShiftAssignmentRow,
     ShiftTemplateOption,
     ShiftWorkspaceStats,
-    UncoveredShift,
 } from '@/components/admin/workforce-types';
 
 type Branch = { id: number; name: string; slug: string };
@@ -15,7 +14,6 @@ export default function BranchShiftsIndex({
     branch,
     templates,
     scheduled = [],
-    uncovered = [],
     onDuty = [],
     stats = {
         on_duty: 0,
@@ -27,7 +25,6 @@ export default function BranchShiftsIndex({
     branch: Branch;
     templates: ShiftTemplateOption[];
     scheduled?: ShiftAssignmentRow[];
-    uncovered?: UncoveredShift[];
     onDuty?: ShiftAssignmentRow[];
     stats?: ShiftWorkspaceStats;
 }) {
@@ -53,7 +50,6 @@ export default function BranchShiftsIndex({
                 description={`Shifts at ${branch.name}. Platform shifts can be assigned here; only this store’s own shifts can be edited.`}
                 templates={templates}
                 scheduled={scheduled}
-                uncovered={uncovered}
                 onDuty={onDuty}
                 stats={stats}
                 createTemplateHref={ShiftTemplateController.create.url(

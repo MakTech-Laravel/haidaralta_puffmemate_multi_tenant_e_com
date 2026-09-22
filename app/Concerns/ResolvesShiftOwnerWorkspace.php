@@ -33,7 +33,6 @@ trait ResolvesShiftOwnerWorkspace
             'templates' => $templates,
             'onDuty' => $onDuty,
             'scheduled' => $scheduled,
-            'uncovered' => WorkforcePayload::uncoveredToday($templates),
             'stats' => WorkforcePayload::workspaceStats($templates, $onDuty, $scheduled),
             'selectedBranchId' => $branchId,
             'selectedBranch' => $selected,

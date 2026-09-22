@@ -28,12 +28,8 @@ class BranchShiftAssignmentController extends Controller
         return ShiftOwnerType::Branch;
     }
 
-    public function create(): RedirectResponse|Response
+    public function create(): Response
     {
-        if ($redirect = $this->redirectUnlessBranchSelected()) {
-            return $redirect;
-        }
-
         return Inertia::render('platform/shifts/assign', $this->formProps());
     }
 
@@ -101,6 +97,22 @@ class BranchShiftAssignmentController extends Controller
     {
         $selected = $this->selectedBranch();
         $branchId = $assignment?->branch_id ?? ($selected['id'] ?? null);
+
+        if ($assignment === null && $branchId === null) {
+            return [
+                'workspace' => $this->shiftWorkspace(),
+                'people' => [],
+                'templates' => [],
+                'branches' => [],
+                'selectedBranchId' => null,
+                'selectedBranch' => null,
+                'assignment' => null,
+                'days' => [],
+                'otherDays' => [],
+                'scheduledDays' => [],
+            ];
+        }
+
         $assignment?->loadMissing(['user', 'shiftTemplate', 'days.shiftTemplate']);
         $user = $assignment?->user;
         $otherDays = $user instanceof User && $assignment !== null

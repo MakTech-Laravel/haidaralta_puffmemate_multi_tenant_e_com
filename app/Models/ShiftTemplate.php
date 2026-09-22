@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ShiftAudience;
 use App\Enums\ShiftOwnerType;
 use App\Models\Concerns\AuditsChanges;
 use Database\Factories\ShiftTemplateFactory;
@@ -17,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property ShiftOwnerType $owner_type
  * @property int|null $branch_id
  * @property string $name
+ * @property ShiftAudience $audience
  * @property Carbon $start_time
  * @property Carbon $end_time
  * @property bool $is_active
@@ -28,12 +30,20 @@ class ShiftTemplate extends Model
     use AuditsChanges, HasFactory;
 
     /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'audience' => 'all',
+    ];
+
+    /**
      * @var list<string>
      */
     protected $fillable = [
         'owner_type',
         'branch_id',
         'name',
+        'audience',
         'start_time',
         'end_time',
         'is_active',
@@ -127,6 +137,7 @@ class ShiftTemplate extends Model
     {
         return [
             'owner_type' => ShiftOwnerType::class,
+            'audience' => ShiftAudience::class,
             'start_time' => 'datetime:H:i',
             'end_time' => 'datetime:H:i',
             'is_active' => 'boolean',

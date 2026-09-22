@@ -3,6 +3,7 @@
 namespace App\Concerns;
 
 use App\Enums\ShiftAssignmentStatus;
+use App\Enums\ShiftAudience;
 use App\Enums\ShiftDayKind;
 use App\Enums\ShiftOwnerType;
 use App\Models\DriverRoster;
@@ -43,6 +44,7 @@ trait ValidatesWorkforceInput
                     }
                 },
             ],
+            'audience' => ['sometimes', Rule::enum(ShiftAudience::class)],
             'owner_type' => ['sometimes', Rule::enum(ShiftOwnerType::class)],
             'branch_id' => ['nullable', 'integer', Rule::exists('branches', 'id')],
             'is_active' => ['sometimes', 'boolean'],

@@ -7,18 +7,22 @@ import { ShiftCoverageMap } from '@/components/admin/shift-coverage-map';
 import { ShiftPageHeader } from '@/components/admin/shift-page-header';
 import { ShiftTimeBar } from '@/components/admin/shift-time-bar';
 import { toWallClockDate, useAppDateTime } from '@/lib/datetime';
-import type {
-    BranchOption,
-    ShiftAssignmentRow,
-    ShiftTemplateOption,
-    ShiftWorkspaceStats,
-    UncoveredShift,
+import {
+    SHIFT_AUDIENCE_OPTIONS,
+    assignmentMatchesAudience,
+    templateMatchesAudience,
+    type BranchOption,
+    type ShiftAssignmentRow,
+    type ShiftAudience,
+    type ShiftTemplateOption,
+    type ShiftWorkspaceStats,
 } from '@/components/admin/workforce-types';
 import { StatCard } from '@/components/portal/stat-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -43,9 +47,8 @@ type ShiftBoardProps = {
     description: string;
     templates: ShiftTemplateOption[];
     scheduled?: ShiftAssignmentRow[];
-    uncovered?: UncoveredShift[];
     onDuty: ShiftAssignmentRow[];
-    stats: ShiftWorkspaceStats;
+    stats?: ShiftWorkspaceStats;
     createTemplateHref: string;
     assignHref: string;
     templateEditHref?: (template: ShiftTemplateOption) => string | null;
@@ -58,17 +61,13 @@ type ShiftBoardProps = {
 
 const PEOPLE_PAGE = 20;
 
-type PeopleKind = 'all' | 'staff' | 'driver';
-
 export function ShiftBoard({
     kicker,
     title,
     description,
     templates,
     scheduled = [],
-    uncovered = [],
     onDuty,
-    stats,
     createTemplateHref,
     assignHref,
     templateEditHref,
@@ -80,7 +79,7 @@ export function ShiftBoard({
 }: ShiftBoardProps) {
     const { settings } = useAppDateTime();
     const [query, setQuery] = useState('');
-    const [peopleKind, setPeopleKind] = useState<PeopleKind>('all');
+    const [audienceKind, setAudienceKind] = useState<ShiftAudience>('all');
     const [visiblePeople, setVisiblePeople] = useState(PEOPLE_PAGE);
     const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
     const [now, setNow] = useState(() =>
@@ -101,39 +100,59 @@ export function ShiftBoard({
     useEffect(() => {
         setSelectedShiftId(null);
         setQuery('');
-        setPeopleKind('all');
+        setAudienceKind('all');
         setVisiblePeople(PEOPLE_PAGE);
     }, [selectedBranchId]);
+
+    const audienceTemplates = useMemo(
+        () =>
+            templates.filter((template) =>
+                templateMatchesAudience(template, audienceKind),
+            ),
+        [audienceKind, templates],
+    );
 
     useEffect(() => {
         if (
             selectedShiftId !== null &&
-            !templates.some((template) => template.id === selectedShiftId)
+            !audienceTemplates.some((template) => template.id === selectedShiftId)
         ) {
             setSelectedShiftId(null);
         }
-    }, [selectedShiftId, templates]);
+    }, [audienceTemplates, selectedShiftId]);
 
     const selectedTemplate =
-        templates.find((template) => template.id === selectedShiftId) ?? null;
-    const scopedTemplates = selectedTemplate ? [selectedTemplate] : templates;
+        audienceTemplates.find((template) => template.id === selectedShiftId) ??
+        null;
+    const scopedTemplates = selectedTemplate
+        ? [selectedTemplate]
+        : audienceTemplates;
+    const audienceOnDuty = useMemo(
+        () =>
+            onDuty.filter((row) =>
+                assignmentMatchesAudience(row, audienceKind, templates),
+            ),
+        [audienceKind, onDuty, templates],
+    );
+    const audienceScheduled = useMemo(
+        () =>
+            scheduled.filter((row) =>
+                assignmentMatchesAudience(row, audienceKind, templates),
+            ),
+        [audienceKind, scheduled, templates],
+    );
     const scopedOnDuty = selectedShiftId
-        ? onDuty.filter((row) => row.shift_template_id === selectedShiftId)
-        : onDuty;
+        ? audienceOnDuty.filter((row) => row.shift_template_id === selectedShiftId)
+        : audienceOnDuty;
     const scopedScheduled = selectedShiftId
-        ? scheduled.filter((row) => row.shift_template_id === selectedShiftId)
-        : scheduled;
-    const scopedUncovered = selectedShiftId
-        ? uncovered.filter((shift) => shift.id === selectedShiftId)
-        : uncovered;
+        ? audienceScheduled.filter(
+              (row) => row.shift_template_id === selectedShiftId,
+          )
+        : audienceScheduled;
 
     const visibleScheduled = useMemo(
         () =>
             scopedScheduled.filter((row) => {
-                if (!matchesPeopleKind(row, peopleKind)) {
-                    return false;
-                }
-
                 if (needle === '') {
                     return true;
                 }
@@ -151,12 +170,12 @@ export function ShiftBoard({
                     .toLowerCase()
                     .includes(needle);
             }),
-        [needle, peopleKind, scopedScheduled],
+        [needle, scopedScheduled],
     );
 
     useEffect(() => {
         setVisiblePeople(PEOPLE_PAGE);
-    }, [needle, peopleKind, selectedShiftId]);
+    }, [audienceKind, needle, selectedShiftId]);
 
     const hasMorePeople = visiblePeople < visibleScheduled.length;
 
@@ -217,6 +236,29 @@ export function ShiftBoard({
             />
         ) : null;
 
+    const typeFilter = (
+        <div className="flex w-full max-w-[14rem] flex-col gap-1.5">
+            <Label>Type</Label>
+            <Select
+                value={audienceKind}
+                onValueChange={(value) =>
+                    setAudienceKind(value as ShiftAudience)
+                }
+            >
+                <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                    {SHIFT_AUDIENCE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+    );
+
     return (
         <div
             className={cn(
@@ -276,10 +318,13 @@ export function ShiftBoard({
                 />
             ) : (
                 <>
-                    {branchPicker}
+                    <div className="flex flex-wrap items-end gap-3">
+                        {branchPicker}
+                        {typeFilter}
+                    </div>
 
                     <ShiftCoverageMap
-                        templates={templates}
+                        templates={audienceTemplates}
                         now={now}
                         selectedTemplateId={selectedShiftId}
                         onSelectTemplate={setSelectedShiftId}
@@ -320,8 +365,8 @@ export function ShiftBoard({
                             <StatCard
                                 icon={Clock3}
                                 label="Shifts"
-                                value={String(stats.templates)}
-                                hint={`${stats.active_templates} active`}
+                                value={String(scopedTemplates.length)}
+                                hint={`${scopedTemplates.filter((template) => template.is_active).length} active`}
                             />
                         )}
                         <StatCard
@@ -408,40 +453,6 @@ export function ShiftBoard({
                     </section>
 
                     <section className="bg-card overflow-hidden rounded-2xl border">
-                        <header className="border-b px-5 py-4">
-                            <h2 className="text-base font-semibold tracking-tight">
-                                Uncovered today
-                            </h2>
-                            <p className="text-muted-foreground text-sm">
-                                {selectedTemplate
-                                    ? `Whether ${selectedTemplate.name} has anyone scheduled today.`
-                                    : 'Named shifts with nobody scheduled for today.'}
-                            </p>
-                        </header>
-                        {scopedUncovered.length === 0 ? (
-                            <div className="text-muted-foreground px-5 py-6 text-sm">
-                                {selectedTemplate
-                                    ? `${selectedTemplate.name} has someone scheduled today.`
-                                    : 'Every named shift has someone scheduled today.'}
-                            </div>
-                        ) : (
-                            <div className="flex flex-wrap gap-2 p-4">
-                                {scopedUncovered.map((shift) => (
-                                    <Badge
-                                        key={shift.id}
-                                        variant="outline"
-                                        className="rounded-full px-3 py-1"
-                                    >
-                                        {shift.name} ·{' '}
-                                        {formatClock(shift.start_time)}–
-                                        {formatClock(shift.end_time)}
-                                    </Badge>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-
-                    <section className="bg-card overflow-hidden rounded-2xl border">
                         <header className="flex flex-wrap items-end justify-between gap-3 border-b px-5 py-4">
                             <div>
                                 <h2 className="text-base font-semibold tracking-tight">
@@ -469,7 +480,7 @@ export function ShiftBoard({
                                     className="h-9 pl-9"
                                 />
                             </div>
-                            {templates.length > 0 ? (
+                            {audienceTemplates.length > 0 ? (
                                 <Select
                                     value={
                                         selectedShiftId === null
@@ -494,7 +505,7 @@ export function ShiftBoard({
                                         <SelectItem value="all">
                                             All shifts
                                         </SelectItem>
-                                        {templates.map((template) => (
+                                        {audienceTemplates.map((template) => (
                                             <SelectItem
                                                 key={template.id}
                                                 value={String(template.id)}
@@ -505,46 +516,24 @@ export function ShiftBoard({
                                     </SelectContent>
                                 </Select>
                             ) : null}
-                            <Select
-                                value={peopleKind}
-                                onValueChange={(value) =>
-                                    setPeopleKind(value as PeopleKind)
-                                }
-                            >
-                                <SelectTrigger
-                                    size="sm"
-                                    className="w-36 max-w-full"
-                                >
-                                    <SelectValue placeholder="All people" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        All people
-                                    </SelectItem>
-                                    <SelectItem value="staff">Staff</SelectItem>
-                                    <SelectItem value="driver">
-                                        Drivers
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
                         </div>
                         {visibleScheduled.length === 0 ? (
                             <div className="px-5 py-8">
                                 <p className="font-medium">
                                     {selectedTemplate
                                         ? `Nobody on ${selectedTemplate.name}`
-                                        : query || peopleKind !== 'all'
+                                        : query
                                           ? 'No matching people'
                                           : 'Nobody scheduled'}
                                 </p>
                                 <p className="text-muted-foreground mt-1 max-w-sm text-sm">
                                     {selectedTemplate
                                         ? 'Assign someone to this shift and date range.'
-                                        : query || peopleKind !== 'all'
-                                          ? 'Try a different name, shift, or type.'
+                                        : query
+                                          ? 'Try a different name or shift.'
                                           : 'Assign a person, a date range, and a usual shift.'}
                                 </p>
-                                {!query && peopleKind === 'all' ? (
+                                {!query ? (
                                     <Button size="sm" className="mt-3" asChild>
                                         <Link href={assignHref}>
                                             Assign to shift
@@ -742,6 +731,11 @@ function TemplateCard({
                     </p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
+                    {template.audience && template.audience !== 'all' ? (
+                        <Badge variant="outline" className="font-normal">
+                            {template.audience_label ?? template.audience}
+                        </Badge>
+                    ) : null}
                     {live ? (
                         <Badge>Live</Badge>
                     ) : (
@@ -817,21 +811,6 @@ function groupByUserType(
     }
 
     return [...groups.entries()].map(([label, items]) => ({ label, items }));
-}
-
-function matchesPeopleKind(
-    row: ShiftAssignmentRow,
-    kind: PeopleKind,
-): boolean {
-    if (kind === 'all') {
-        return true;
-    }
-
-    if (kind === 'driver') {
-        return row.user_type === 'driver';
-    }
-
-    return row.user_type !== 'driver';
 }
 
 function EmptyPanel({

@@ -34,8 +34,8 @@ BranchLocationMapDialog is view-only. Preview uses an OpenStreetMap embed until 
 ## Assigner select mode follows shared flag
 DriverBranchAssignSheet and driver form/pages copy read Inertia drivers.single_active_branch. True: exclusive select and one-branch/transfer copy. False: multi-checkbox and manage-branches copy. Do not hardcode one-branch UI.
 
-## One Branch dropdown, nothing extra
-Branch management shifts use one Branch dropdown only — pick a store, reload that store. No All-branches, extra chips, or filter bars. Keep it obvious for a non-technical operator.
+## One Branch dropdown plus type
+Branch management shifts use one Branch dropdown — pick a store, reload that store — plus a Type filter beside it (All / Staff only / Drivers only). No All-branches chips or extra filter bars.
 
 ## Shift branch picker pages 20 at a time
 Branch shifts picker is InfiniteScrollCombobox against platform.branch-shift-templates.branch-options (20 per page, filter[search], append on scroll). Never dump every branch into Inertia props. Opening Branch shifts with no `?branch_id=` shows an empty choose-a-branch state — do not auto-select a store.
@@ -56,7 +56,10 @@ The Assign page is a full-width calendar: person, dates, main shift, working day
 Assign is a full-width personal calendar: person, dates, main shift, working days. Fill working days immediately. Day actions are Keep, Leave this day, or Different shift, plus Apply to a date span. No New period or roster-period UI. Other assignments for that person are read-only chips. Covering someone is a second assignment.
 
 ## Filled board filters by named shift
-After a store is chosen, Today's coverage sits under the branch picker. Default filter is All shifts. Named-shift chips (and coverage lanes) scope stats, on-duty, uncovered, people, and the shifts list to that window. The Shifts stat card becomes that window's hours when one shift is selected. These chips are shift filters, not All-branches chips.
+After a store is chosen, Today's coverage sits under the branch picker and Type filter. Default named-shift filter is All shifts. Named-shift chips (and coverage lanes) scope stats, on-duty, people, and the shifts list to that window. The Shifts stat card becomes that window's hours when one shift is selected. These chips are shift filters, not All-branches chips.
 
 ## Scheduled people is a capped roster
 Scheduled people is a compact scrolling roster (max-height, 20 then Show more, search, grouped by person type). Do not render a card grid of every assignment. The named-shift filter lives in that roster toolbar as All shifts select, not as chips under coverage. Coverage always draws every window on a 12-hour clock (12a through 12a, one mark per hour). Selecting a shift dims other lanes but does not hide hours or switch the axis to 0–24.
+
+## Board type filter beside branch
+Type filter sits beside the Branch picker (default All). Staff = audience all|staff and branch people; Drivers = all|driver and drivers. It scopes coverage, stats, on duty, scheduled people, and the shifts list. Roster no longer has a people-type select. Uncovered today is gone from this page.

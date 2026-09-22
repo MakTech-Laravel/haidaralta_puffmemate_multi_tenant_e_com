@@ -14,6 +14,7 @@ return new class extends Migration
             $table->string('owner_type');
             $table->foreignId('branch_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('name');
+            $table->string('audience')->default('all');
             $table->time('start_time');
             $table->time('end_time');
             $table->boolean('is_active')->default(true);

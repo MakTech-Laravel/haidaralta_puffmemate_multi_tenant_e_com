@@ -2,6 +2,7 @@
 
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\ShiftAssignmentStatus;
+use App\Enums\ShiftAudience;
 use App\Enums\ShiftDayKind;
 use App\Enums\ShiftOwnerType;
 use App\Enums\UserType;
@@ -448,6 +449,7 @@ test('platform creates a unique-named shift template', function () {
     $this->assertDatabaseHas('shift_templates', [
         'name' => 'Morning',
         'owner_type' => ShiftOwnerType::Platform->value,
+        'audience' => ShiftAudience::All->value,
     ]);
 
     $this->actingAs($admin, 'platform')
@@ -460,6 +462,84 @@ test('platform creates a unique-named shift template', function () {
         ])
         ->assertRedirect(route('platform.shift-templates.create'))
         ->assertSessionHasErrors('name');
+});
+
+test('creating a shift stores who it is for', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.shift-templates.store'), [
+            'name' => 'Floor desk',
+            'start_time' => '09:00',
+            'end_time' => '17:00',
+            'owner_type' => ShiftOwnerType::Platform->value,
+            'audience' => ShiftAudience::Staff->value,
+        ])
+        ->assertRedirect(route('platform.shift-templates.index'));
+
+    $this->assertDatabaseHas('shift_templates', [
+        'name' => 'Floor desk',
+        'audience' => ShiftAudience::Staff->value,
+    ]);
+});
+
+test('an invalid shift audience is rejected', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->from(route('platform.shift-templates.create'))
+        ->post(route('platform.shift-templates.store'), [
+            'name' => 'Van run',
+            'start_time' => '07:00',
+            'end_time' => '15:00',
+            'owner_type' => ShiftOwnerType::Platform->value,
+            'audience' => 'customers',
+        ])
+        ->assertRedirect(route('platform.shift-templates.create'))
+        ->assertSessionHasErrors('audience');
+});
+
+test('updating a shift can change who it is for', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $template = ShiftTemplate::factory()->create([
+        'name' => 'Dispatch desk',
+        'start_time' => '07:00',
+        'end_time' => '15:00',
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.shift-templates.update', $template), [
+            'name' => 'Dispatch desk',
+            'start_time' => '07:00',
+            'end_time' => '15:00',
+            'audience' => ShiftAudience::Driver->value,
+        ])
+        ->assertRedirect(route('platform.shift-templates.index'));
+
+    $this->assertDatabaseHas('shift_templates', [
+        'id' => $template->id,
+        'audience' => ShiftAudience::Driver->value,
+    ]);
+});
+
+test('the shifts board payload includes who each shift is for', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    ShiftTemplate::factory()->forStaff()->create(['name' => 'Floor desk']);
+    ShiftTemplate::factory()->forDrivers()->create(['name' => 'Van run']);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.shift-templates.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/shifts/index')
+            ->has('templates', 2)
+            ->where('templates.0.name', 'Floor desk')
+            ->where('templates.0.audience', ShiftAudience::Staff->value)
+            ->where('templates.0.audience_label', 'Staff only')
+            ->where('templates.1.name', 'Van run')
+            ->where('templates.1.audience', ShiftAudience::Driver->value)
+            ->where('templates.1.audience_label', 'Drivers only')
+            ->missing('uncovered'));
 });
 
 test('administrator shifts index lists only platform-owned templates', function () {
@@ -478,7 +558,8 @@ test('administrator shifts index lists only platform-owned templates', function 
             ->where('templates.0.name', 'Platform Morning')
             ->missing('periods')
             ->has('scheduled')
-            ->has('uncovered'));
+            ->missing('uncovered')
+            ->where('templates.0.audience', ShiftAudience::All->value));
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-shift-templates.index', [
@@ -579,16 +660,27 @@ test('on duty now uses the application display timezone', function () {
             ->where('onDuty.0.user_id', $staff->id));
 });
 
-test('branch shift create and assign without a store redirect to the empty board', function () {
+test('branch shift create without a store redirects to the empty board', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-shift-templates.create'))
         ->assertRedirect(route('platform.branch-shift-templates.index'));
+});
+
+test('branch assign without a store shows the choose-a-branch page', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-shift-assignments.create'))
-        ->assertRedirect(route('platform.branch-shift-templates.index'));
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/shifts/assign')
+            ->where('selectedBranchId', null)
+            ->where('selectedBranch', null)
+            ->has('people', 0)
+            ->has('templates', 0)
+            ->missing('periods'));
 });
 
 test('branch assign page only lists the selected store windows', function () {

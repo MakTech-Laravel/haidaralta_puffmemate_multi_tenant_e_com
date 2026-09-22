@@ -35,6 +35,8 @@ final class WorkforcePayload
             'branch_id' => $template->branch_id,
             'branch_name' => $template->branch?->name,
             'name' => $template->name,
+            'audience' => $template->audience->value,
+            'audience_label' => $template->audience->label(),
             'start_time' => $template->start_time?->format('H:i'),
             'end_time' => $template->end_time?->format('H:i'),
             'is_active' => (bool) $template->is_active,
@@ -276,42 +278,6 @@ final class WorkforcePayload
 
         return $assignments
             ->map(fn (UserShiftAssignment $assignment): array => self::assignment($assignment))
-            ->values()
-            ->all();
-    }
-
-    /**
-     * Named shifts with nobody scheduled today.
-     *
-     * @param  list<array<string, mixed>>  $templates
-     * @return list<array{id: int, name: string, start_time: string|null, end_time: string|null}>
-     */
-    public static function uncoveredToday(array $templates, ?CarbonInterface $at = null): array
-    {
-        if ($templates === []) {
-            return [];
-        }
-
-        $moment = DateTimeFormat::at($at);
-        $templateIds = collect($templates)->pluck('id')->all();
-        $todayIds = UserShiftDay::query()
-            ->onDuty()
-            ->whereDate('duty_on', $moment->toDateString())
-            ->whereIn('shift_template_id', $templateIds)
-            ->whereHas('assignment', fn ($query) => $query->where('status', ShiftAssignmentStatus::Scheduled))
-            ->pluck('shift_template_id')
-            ->unique()
-            ->all();
-
-        return collect($templates)
-            ->filter(fn (array $template): bool => (bool) ($template['is_active'] ?? true))
-            ->filter(fn (array $template): bool => ! in_array($template['id'], $todayIds, true))
-            ->map(fn (array $template): array => [
-                'id' => $template['id'],
-                'name' => $template['name'],
-                'start_time' => $template['start_time'] ?? null,
-                'end_time' => $template['end_time'] ?? null,
-            ])
             ->values()
             ->all();
     }

@@ -5,6 +5,7 @@ import {
     emptyShiftAssignmentFields,
     ShiftAssignmentFields,
 } from '@/components/admin/shift-assignment-fields';
+import { ShiftAssignEmptyState } from '@/components/admin/shift-assign-empty-state';
 import { ShiftBranchPicker } from '@/components/admin/shift-branch-picker';
 import { exceptionsFromSavedDays } from '@/components/admin/shift-duty-calendar';
 import {
@@ -52,6 +53,12 @@ export default function PlatformShiftsAssign({
     const lockBranch = workspace === 'branch' && Boolean(selectedBranchId);
     const branchOptionsUrl =
         workspace === 'branch' ? routes.templates.branchOptions.url() : null;
+    const waitingForBranch = Boolean(
+        workspace === 'branch' &&
+            !assignment &&
+            !selectedBranchId &&
+            branchOptionsUrl,
+    );
     const [fields, setFields] = useState(() => ({
         ...emptyShiftAssignmentFields(),
         user_id: assignment ? String(assignment.user_id) : '',
@@ -154,48 +161,85 @@ export default function PlatformShiftsAssign({
                 title={assignment ? 'Edit assignment' : 'Assign to shift'}
             />
 
-            <div className="flex w-full flex-col gap-6 p-2 md:p-4">
+            <div
+                className={
+                    waitingForBranch
+                        ? 'flex w-full flex-col gap-5 p-2 md:p-4'
+                        : 'flex w-full flex-col gap-6 p-2 md:p-4'
+                }
+            >
                 <ShiftPageHeader
                     kicker="Coverage"
                     title={assignment ? 'Edit assignment' : 'Assign to shift'}
-                    description="Pick the person, the dates they work, and the usual shift. Change a day only when they are off or covering someone else."
+                    description={
+                        waitingForBranch
+                            ? 'Choose a branch to assign someone at that store.'
+                            : 'Pick the person, the dates they work, and the usual shift. Change a day only when they are off or covering someone else.'
+                    }
                 />
 
-                {workspace === 'branch' && branchOptionsUrl ? (
-                    <ShiftBranchPicker
-                        optionsUrl={branchOptionsUrl}
-                        value={
-                            selectedBranchId ? String(selectedBranchId) : ''
-                        }
-                        selectedLabel={selectedBranch?.name}
-                        onChange={(branchId) =>
-                            router.get(
-                                routes.assignments.create.url({
-                                    query: { branch_id: Number(branchId) },
-                                }),
-                            )
+                {waitingForBranch && branchOptionsUrl ? (
+                    <ShiftAssignEmptyState
+                        picker={
+                            <ShiftBranchPicker
+                                optionsUrl={branchOptionsUrl}
+                                value=""
+                                selectedLabel={null}
+                                size="lg"
+                                className="max-w-none"
+                                onChange={(branchId) =>
+                                    router.get(
+                                        routes.assignments.create.url({
+                                            query: {
+                                                branch_id: Number(branchId),
+                                            },
+                                        }),
+                                    )
+                                }
+                            />
                         }
                     />
-                ) : null}
+                ) : (
+                    <>
+                        {workspace === 'branch' && branchOptionsUrl ? (
+                            <ShiftBranchPicker
+                                optionsUrl={branchOptionsUrl}
+                                value={
+                                    selectedBranchId
+                                        ? String(selectedBranchId)
+                                        : ''
+                                }
+                                selectedLabel={selectedBranch?.name}
+                                onChange={(branchId) =>
+                                    router.get(
+                                        routes.assignments.create.url({
+                                            query: {
+                                                branch_id: Number(branchId),
+                                            },
+                                        }),
+                                    )
+                                }
+                            />
+                        ) : null}
 
-                <Form
-                    {...formProps}
-                    className="flex flex-col gap-6"
-                    options={{ preserveScroll: true }}
-                    onSuccess={() => {
-                        if (assignment) {
-                            return;
-                        }
+                        <Form
+                            {...formProps}
+                            className="flex flex-col gap-6"
+                            options={{ preserveScroll: true }}
+                            onSuccess={() => {
+                                if (assignment) {
+                                    return;
+                                }
 
-                        setFields({
-                            ...emptyShiftAssignmentFields(),
-                            branch_id: selectedBranchId
-                                ? String(selectedBranchId)
-                                : '',
-                        });
-                        setExceptions([]);
-                    }}
-                >
+                                setFields({
+                                    ...emptyShiftAssignmentFields(),
+                                    branch_id: selectedBranchId
+                                        ? String(selectedBranchId)
+                                        : '',
+                                });
+                                setExceptions([]);
+                            }}
+                        >
                     {({ errors, processing }) => (
                         <>
                             <div className="border-border/80 bg-card space-y-6 rounded-2xl border p-5 shadow-sm sm:p-6">
@@ -253,6 +297,8 @@ export default function PlatformShiftsAssign({
                         </>
                     )}
                 </Form>
+                    </>
+                )}
             </div>
         </>
     );
