@@ -1,10 +1,9 @@
 import { Head, useForm } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import GeneralSettingsController from '@/actions/App/Http/Controllers/Platform/GeneralSettingsController';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +35,6 @@ type Settings = {
     short_description: string | null;
     theme_color: string;
     background_color: string;
-    display_timezone: string;
     date_format: string;
     time_format: string;
     logo_path: string | null;
@@ -65,7 +63,6 @@ type Props = {
     settings: Settings;
     dateFormatPresets: string[];
     timeFormatPresets: string[];
-    timezones: string[];
     runtime: Runtime;
 };
 
@@ -110,7 +107,6 @@ export default function PlatformGeneralSettings({
     settings,
     dateFormatPresets,
     timeFormatPresets,
-    timezones,
     runtime,
 }: Props) {
     const form = useForm({
@@ -119,7 +115,6 @@ export default function PlatformGeneralSettings({
         short_description: settings.short_description ?? '',
         theme_color: settings.theme_color,
         background_color: settings.background_color,
-        display_timezone: settings.display_timezone,
         date_format: settings.date_format,
         time_format: settings.time_format,
         logo: null as File | null,
@@ -185,15 +180,6 @@ export default function PlatformGeneralSettings({
         ),
     );
 
-    const timezoneOptions = useMemo(
-        () =>
-            timezones.map((zone) => ({
-                value: zone,
-                label: zone,
-            })),
-        [timezones],
-    );
-
     const setMediaFile = (
         key: MediaKey,
         removeKey: RemoveKey,
@@ -229,7 +215,7 @@ export default function PlatformGeneralSettings({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="General"
-                    description="Brand identity, display timezone, formats, PWA assets, and maintenance mode."
+                    description="Brand identity, date/time formats, PWA assets, and maintenance mode."
                 />
 
                 <form
@@ -392,40 +378,15 @@ export default function PlatformGeneralSettings({
                     <section className={settingsCardClass}>
                         <div className="mb-5 space-y-1">
                             <h2 className="text-base font-semibold tracking-tight">
-                                Timezone and formats
+                                Formats
                             </h2>
                             <p className="text-muted-foreground text-sm">
-                                Controls how dates and times appear across the
-                                app.
+                                Controls how dates and times appear. Each
+                                visitor sees times in their own timezone.
                             </p>
                         </div>
 
                         <div className="grid gap-5 sm:grid-cols-2">
-                            <div className="flex flex-col gap-2 sm:col-span-2">
-                                <Label htmlFor="display_timezone">
-                                    Display timezone
-                                </Label>
-                                <InfiniteScrollCombobox
-                                    id="display_timezone"
-                                    staticOptions={timezoneOptions}
-                                    value={form.data.display_timezone}
-                                    onValueChange={(value) => {
-                                        if (value) {
-                                            form.setData(
-                                                'display_timezone',
-                                                value,
-                                            );
-                                        }
-                                    }}
-                                    selectedLabel={form.data.display_timezone}
-                                    placeholder="Select timezone"
-                                    searchPlaceholder="Search timezones…"
-                                    emptyText="No timezones match."
-                                />
-                                <InputError
-                                    message={form.errors.display_timezone}
-                                />
-                            </div>
                             <div className="flex flex-col gap-2">
                                 <Label>Date format</Label>
                                 <Select

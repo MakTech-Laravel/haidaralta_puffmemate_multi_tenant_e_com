@@ -2,12 +2,15 @@ import { router, usePage } from '@inertiajs/react';
 import { format, isValid, parseISO } from 'date-fns';
 
 export type ApplicationDateTimeProps = {
+    /** Optional override; otherwise the viewer browser timezone is used. */
     timezone?: string;
     dateFormat?: string;
     timeFormat?: string;
 };
 
-const DEFAULT_TIMEZONE = 'Asia/Dhaka';
+export const VIEWER_TIMEZONE_COOKIE = 'app_timezone';
+
+const DEFAULT_TIMEZONE = 'UTC';
 const DEFAULT_DATE_FORMAT = 'Y-m-d';
 const DEFAULT_TIME_FORMAT = 'H:i';
 
@@ -41,6 +44,39 @@ export function phpDateFormatToDateFns(phpFormat: string): string {
 }
 
 /**
+ * Resolve the viewer's IANA timezone from the browser.
+ */
+export function resolveViewerTimezone(): string {
+    try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        if (timezone && timezone.trim() !== '') {
+            return timezone;
+        }
+    } catch {
+        // Fall through to UTC.
+    }
+
+    return DEFAULT_TIMEZONE;
+}
+
+/**
+ * Persist the viewer timezone so PHP exports / DateTimeFormat can match.
+ */
+export function syncViewerTimezoneCookie(timezone?: string): string {
+    const resolved = timezone || resolveViewerTimezone();
+
+    if (typeof document === 'undefined') {
+        return resolved;
+    }
+
+    const maxAge = 60 * 60 * 24 * 365;
+    document.cookie = `${VIEWER_TIMEZONE_COOKIE}=${encodeURIComponent(resolved)}; path=/; max-age=${maxAge}; samesite=lax`;
+
+    return resolved;
+}
+
+/**
  * Prefer an explicit settings object; otherwise read live Inertia shared props.
  */
 export function resolveApplicationDateTime(
@@ -67,7 +103,7 @@ export function getApplicationDateTime(
     const resolved = resolveApplicationDateTime(application);
 
     return {
-        timezone: resolved?.timezone || DEFAULT_TIMEZONE,
+        timezone: resolved?.timezone || resolveViewerTimezone(),
         dateFormat: resolved?.dateFormat || DEFAULT_DATE_FORMAT,
         timeFormat: resolved?.timeFormat || DEFAULT_TIME_FORMAT,
     };

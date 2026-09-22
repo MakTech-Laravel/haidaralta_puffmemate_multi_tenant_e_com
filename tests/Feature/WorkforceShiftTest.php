@@ -626,7 +626,7 @@ test('branch shifts board loads one store at a time', function () {
             ->where('templates.0.name', 'Melbourne Floor'));
 });
 
-test('on duty now uses the application display timezone', function () {
+test('on duty now uses the viewer timezone', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_STAFF)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -647,9 +647,14 @@ test('on duty now uses the application display timezone', function () {
         ])
         ->assertRedirect();
 
+    $viewerRequest = \Illuminate\Http\Request::create('/');
+    $viewerRequest->headers->set(DateTimeFormat::VIEWER_TIMEZONE_HEADER, 'Australia/Sydney');
+    $this->app->instance('request', $viewerRequest);
+
     $this->travelTo(Carbon::parse('2026-09-22 09:42:00', DateTimeFormat::displayTimezone()));
 
     $this->actingAs($admin, 'platform')
+        ->withUnencryptedCookie(DateTimeFormat::VIEWER_TIMEZONE_COOKIE, 'Australia/Sydney')
         ->get(route('platform.branch-shift-templates.index', [
             'branch_id' => $sydney->id,
         ]))

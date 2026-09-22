@@ -715,7 +715,6 @@ Table application_settings {
   apple_touch_icon_path varchar
   theme_color varchar [default: '#C4472F']
   background_color varchar [default: '#FFFFFF']
-  display_timezone varchar [default: 'Asia/Dhaka']
   date_format varchar [default: 'Y-m-d']
   time_format varchar [default: 'H:i']
   updated_by bigint [ref: > users.id]

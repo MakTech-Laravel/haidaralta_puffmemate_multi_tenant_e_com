@@ -28,7 +28,6 @@ class GeneralSettingsController extends Controller
                 'short_description' => $current->short_description,
                 'theme_color' => $current->theme_color,
                 'background_color' => $current->background_color,
-                'display_timezone' => $current->display_timezone,
                 'date_format' => $current->date_format,
                 'time_format' => $current->time_format,
                 'logo_path' => $current->logo_path,
@@ -46,7 +45,6 @@ class GeneralSettingsController extends Controller
             ],
             'dateFormatPresets' => ApplicationSettingsService::DATE_FORMAT_PRESETS,
             'timeFormatPresets' => ApplicationSettingsService::TIME_FORMAT_PRESETS,
-            'timezones' => timezone_identifiers_list(),
             'runtime' => [
                 'environment' => (string) config('app.env'),
                 'debug' => (bool) config('app.debug'),

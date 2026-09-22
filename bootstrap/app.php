@@ -31,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 | Request::HEADER_X_FORWARDED_PROTO,
         );
 
-        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->encryptCookies(except: ['appearance', 'sidebar_state', 'app_timezone']);
 
         // Platform ops stay reachable while Application Settings maintenance is on.
         $middleware->preventRequestsDuringMaintenance(except: [

@@ -9,6 +9,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { getEcho, logEchoConfig } from '@/echo';
 import { initializeTheme } from '@/hooks/use-appearance';
 import { useDevErrorFallback } from '@/hooks/useDevErrorFallback';
+import { syncViewerTimezoneCookie } from '@/lib/datetime';
 import { startPwaServiceWorkerLifecycle } from '@/lib/pwa';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
@@ -24,6 +25,7 @@ const fallbackAppName = import.meta.env.VITE_APP_NAME || 'Laravel';
 let resolvedAppName = fallbackAppName;
 
 if (typeof window !== 'undefined') {
+    syncViewerTimezoneCookie();
     getEcho();
     logEchoConfig();
     startPwaServiceWorkerLifecycle();

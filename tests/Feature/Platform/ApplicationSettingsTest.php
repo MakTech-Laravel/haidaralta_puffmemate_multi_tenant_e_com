@@ -62,7 +62,7 @@ test('platform staff without manage-application-settings cannot open general set
         ->assertForbidden();
 });
 
-test('platform admin can update general branding timezone and formats', function () {
+test('platform admin can update general branding and formats', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
@@ -72,7 +72,6 @@ test('platform admin can update general branding timezone and formats', function
             'short_description' => 'Multi-vendor tobacco marketplace',
             'theme_color' => '#C4472F',
             'background_color' => '#FFFFFF',
-            'display_timezone' => 'Australia/Sydney',
             'date_format' => 'd/m/Y',
             'time_format' => 'g:i A',
             'maintenance_mode' => false,
@@ -83,21 +82,23 @@ test('platform admin can update general branding timezone and formats', function
 
     expect($settings)->not->toBeNull()
         ->and($settings->app_name)->toBe('PuffMeMate Ops')
-        ->and($settings->display_timezone)->toBe('Australia/Sydney')
         ->and($settings->date_format)->toBe('d/m/Y')
         ->and(config('app.name'))->toBe('PuffMeMate Ops');
 });
 
-test('datetime format helper uses display timezone', function () {
+test('datetime format helper uses viewer timezone from request', function () {
     app(ApplicationSettingsService::class)->update([
         'app_name' => 'PuffMeMate',
         'app_short_name' => 'PuffMeMate',
-        'display_timezone' => 'Asia/Dhaka',
         'date_format' => 'Y-m-d',
         'time_format' => 'H:i',
         'theme_color' => '#C4472F',
         'background_color' => '#FFFFFF',
     ]);
+
+    $request = \Illuminate\Http\Request::create('/');
+    $request->headers->set(DateTimeFormat::VIEWER_TIMEZONE_HEADER, 'Asia/Dhaka');
+    $this->app->instance('request', $request);
 
     $formatted = DateTimeFormat::dateTime(Carbon::parse('2026-01-01 00:00:00', 'UTC'));
 
@@ -231,7 +232,6 @@ test('general settings share branding and formats on inertia pages', function ()
             'short_description' => 'Shared description for SEO',
             'theme_color' => '#112233',
             'background_color' => '#FFFFFF',
-            'display_timezone' => 'Australia/Sydney',
             'date_format' => 'd/m/Y',
             'time_format' => 'g:i A',
             'maintenance_mode' => false,
@@ -245,10 +245,10 @@ test('general settings share branding and formats on inertia pages', function ()
             ->where('name', 'Brand Shared')
             ->where('application.shortName', 'Brand')
             ->where('application.description', 'Shared description for SEO')
-            ->where('application.timezone', 'Australia/Sydney')
             ->where('application.dateFormat', 'd/m/Y')
             ->where('application.timeFormat', 'g:i A')
-            ->where('application.themeColor', '#112233'))
+            ->where('application.themeColor', '#112233')
+            ->missing('application.timezone'))
         ->assertSee('name="theme-color" content="#112233"', false)
         ->assertSee('name="description" content="Shared description for SEO"', false);
 });
