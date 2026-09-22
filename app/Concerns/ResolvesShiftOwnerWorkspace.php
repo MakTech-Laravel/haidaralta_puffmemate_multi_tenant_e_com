@@ -26,15 +26,12 @@ trait ResolvesShiftOwnerWorkspace
         $branchId = $selected['id'] ?? null;
         $templates = WorkforcePayload::templatesOwnedBy($this->shiftOwner(), false, $branchId);
         $onDuty = WorkforcePayload::onDutyOwnedBy($this->shiftOwner(), null, $branchId);
-        $scheduled = WorkforcePayload::scheduledPeople($this->shiftOwner(), $branchId);
 
         return [
             'workspace' => $this->shiftWorkspace(),
             'templates' => $templates,
             'onDuty' => $onDuty,
-            'scheduled' => $scheduled,
-            'uncovered' => WorkforcePayload::uncoveredToday($templates),
-            'stats' => WorkforcePayload::workspaceStats($templates, $onDuty, $scheduled),
+            'stats' => WorkforcePayload::workspaceStats($templates, $onDuty),
             'selectedBranchId' => $branchId,
             'selectedBranch' => $selected,
         ];

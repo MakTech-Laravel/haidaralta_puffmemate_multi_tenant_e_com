@@ -102,8 +102,8 @@ const WHAT_YOU_GET = [
     },
     {
         icon: CalendarRange,
-        label: 'Scheduled people',
-        hint: 'Personal dates and working days',
+        label: 'Assigned people',
+        hint: 'Who has a shift and on which dates',
     },
 ] as const;
 
@@ -144,57 +144,57 @@ function CoveragePreview() {
 
             <div className="overflow-x-auto border-t">
                 <div className="flex min-w-[56rem]">
-                <div className="border-border/80 w-28 shrink-0 border-r sm:w-36">
-                    <div
-                        className={cn(
-                            'text-muted-foreground flex items-end px-3 pb-1 text-[10px] font-medium tracking-wide uppercase',
-                            COVERAGE_SCALE_HEADER,
-                        )}
-                    >
-                        Window
-                    </div>
-                    {SAMPLE_WINDOWS.map((window) => (
+                    <div className="border-border/80 w-28 shrink-0 border-r sm:w-36">
                         <div
-                            key={window.name}
-                            className="flex h-11 flex-col justify-center gap-0.5 border-t px-3"
+                            className={cn(
+                                'text-muted-foreground flex items-end px-3 pb-1 text-[10px] font-medium tracking-wide uppercase',
+                                COVERAGE_SCALE_HEADER,
+                            )}
                         >
-                            <p className="truncate text-sm font-medium">
-                                {window.name}
-                            </p>
-                            <p className="text-muted-foreground truncate text-[11px] tabular-nums">
-                                {formatClock(window.start)} –{' '}
-                                {formatClock(window.end)}
-                            </p>
+                            Window
                         </div>
-                    ))}
-                </div>
-
-                <ShiftCoverageScale now={now}>
-                    {SAMPLE_WINDOWS.map((window) => {
-                        const segments = timeBarSegments(
-                            window.start,
-                            window.end,
-                        );
-
-                        return (
+                        {SAMPLE_WINDOWS.map((window) => (
                             <div
                                 key={window.name}
-                                className="relative h-11 border-t"
+                                className="flex h-11 flex-col justify-center gap-0.5 border-t px-3"
                             >
-                                {segments.map((segment, index) => (
-                                    <span
-                                        key={`${window.name}-${index}`}
-                                        className="bg-primary/70 absolute top-2.5 bottom-2.5 rounded-md"
-                                        style={{
-                                            left: `${segment.startPct}%`,
-                                            width: `${Math.max(segment.widthPct, 1.2)}%`,
-                                        }}
-                                    />
-                                ))}
+                                <p className="truncate text-sm font-medium">
+                                    {window.name}
+                                </p>
+                                <p className="text-muted-foreground truncate text-[11px] tabular-nums">
+                                    {formatClock(window.start)} –{' '}
+                                    {formatClock(window.end)}
+                                </p>
                             </div>
-                        );
-                    })}
-                </ShiftCoverageScale>
+                        ))}
+                    </div>
+
+                    <ShiftCoverageScale now={now}>
+                        {SAMPLE_WINDOWS.map((window) => {
+                            const segments = timeBarSegments(
+                                window.start,
+                                window.end,
+                            );
+
+                            return (
+                                <div
+                                    key={window.name}
+                                    className="relative h-11 border-t"
+                                >
+                                    {segments.map((segment, index) => (
+                                        <span
+                                            key={`${window.name}-${index}`}
+                                            className="bg-primary/70 absolute top-2.5 bottom-2.5 rounded-md"
+                                            style={{
+                                                left: `${segment.startPct}%`,
+                                                width: `${Math.max(segment.widthPct, 1.2)}%`,
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            );
+                        })}
+                    </ShiftCoverageScale>
                 </div>
             </div>
         </div>

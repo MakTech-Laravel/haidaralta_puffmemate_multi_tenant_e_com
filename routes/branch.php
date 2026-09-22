@@ -170,6 +170,7 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         });
 
         Route::get('shifts', [BranchShiftTemplateController::class, 'index'])->name('branch.shift-templates.index');
+        Route::get('shifts/assigned-people', [BranchShiftAssignmentController::class, 'index'])->name('branch.shift-assignments.index');
         Route::get('shifts/create', [BranchShiftTemplateController::class, 'create'])->name('branch.shift-templates.create');
         Route::post('shift-templates', [BranchShiftTemplateController::class, 'store'])
             ->middleware('precognitive')
@@ -180,8 +181,9 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.shift-templates.update');
 
         Route::get('shift-assignments', [BranchShiftAssignmentController::class, 'create'])->name('branch.shift-assignments.create');
+        Route::get('shift-assignment-people-options', [BranchShiftAssignmentController::class, 'peopleOptions'])
+            ->name('branch.shift-assignments.people-options');
         Route::post('shift-assignments', [BranchShiftAssignmentController::class, 'store'])->name('branch.shift-assignments.store');
         Route::get('shift-assignments/{user_shift_assignment}/edit', [BranchShiftAssignmentController::class, 'edit'])->name('branch.shift-assignments.edit');
-        Route::put('shift-assignments/{user_shift_assignment}', [BranchShiftAssignmentController::class, 'update'])->name('branch.shift-assignments.update');
     });
 });

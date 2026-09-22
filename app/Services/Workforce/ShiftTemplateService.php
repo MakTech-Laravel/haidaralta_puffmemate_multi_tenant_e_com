@@ -2,6 +2,7 @@
 
 namespace App\Services\Workforce;
 
+use App\Enums\ShiftAudience;
 use App\Enums\ShiftOwnerType;
 use App\Models\ShiftTemplate;
 use App\Models\User;
@@ -12,7 +13,7 @@ use InvalidArgumentException;
 class ShiftTemplateService
 {
     /**
-     * @param  array{name: string, start_time: string, end_time: string, owner_type?: string, branch_id?: int|null, is_active?: bool}  $data
+     * @param  array{name: string, start_time: string, end_time: string, audience?: string, owner_type?: string, branch_id?: int|null, is_active?: bool}  $data
      */
     public function create(array $data, ?User $actor = null): ShiftTemplate
     {
@@ -28,6 +29,7 @@ class ShiftTemplateService
             'owner_type' => $ownerType->value,
             'branch_id' => $branchId,
             'name' => $data['name'],
+            'audience' => $this->audience($data)->value,
             'start_time' => $startTime,
             'end_time' => $endTime,
             'is_active' => $data['is_active'] ?? true,
@@ -36,19 +38,23 @@ class ShiftTemplateService
     }
 
     /**
-     * @param  array{name?: string, start_time?: string, end_time?: string, is_active?: bool}  $data
+     * @param  array{name?: string, start_time?: string, end_time?: string, audience?: string, is_active?: bool}  $data
      */
     public function update(ShiftTemplate $template, array $data): ShiftTemplate
     {
         $name = $data['name'] ?? $template->name;
         $startTime = $data['start_time'] ?? $template->start_time->format('H:i');
         $endTime = $data['end_time'] ?? $template->end_time->format('H:i');
+        $audience = isset($data['audience'])
+            ? ShiftAudience::from($data['audience'])
+            : $template->audience;
 
         $this->assertUniqueName($name, $template->branch_id, $template->id);
         $this->assertSameDayWindow($startTime, $endTime);
 
         $template->update([
             'name' => $name,
+            'audience' => $audience->value,
             'start_time' => $startTime,
             'end_time' => $endTime,
             'is_active' => $data['is_active'] ?? $template->is_active,
@@ -62,6 +68,13 @@ class ShiftTemplateService
         $template->update(['is_active' => false]);
 
         return $template->refresh();
+    }
+
+    private function audience(array $data): ShiftAudience
+    {
+        $value = $data['audience'] ?? ShiftAudience::All->value;
+
+        return ShiftAudience::from($value);
     }
 
     private function ownerType(array $data): ShiftOwnerType

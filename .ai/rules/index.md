@@ -36,6 +36,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/css/app.css | .ai/rules/css.md |
 | resources/js/layouts/customer/** | .ai/rules/customer.md |
 | app/DataTables/**, resources/js/components/data-table/** | .ai/rules/data-table.md |
+| resources/js/components/admin/shift-*.tsx,app/DataTables/ShiftAssignmentDataTable.php,app/Http/Controllers/{Platform,Branch}/*ShiftAssignment*.php | .ai/rules/data-tables-http-controllers-platform-branch.md |
 | app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php, app/DataTables/BranchProductListingDataTable.php, app/DataTables/BranchCategoryDataTable.php, app/DataTables/ProductBranchInventoryDataTable.php, app/DataTables/BranchStaffDataTable.php | .ai/rules/data-tables.md |
 | resources/js/components/{ui/date-picker,branch/product-inventory-panel}.tsx | .ai/rules/date-pickerbranch.md |
 | resources/js/components/branch/product-inventory-panel.tsx, resources/js/pages/{platform,branch}/**/products/show.tsx, resources/js/pages/{platform,branch}/stock/manage.tsx, app/Support/ProductManageRedirect.php, routes/{platform,branch}.php, app/Support/BranchProductPriceDisplay.php, routes/platform.php, routes/*.php | .ai/rules/discounts.md |
@@ -46,6 +47,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/driver/route/**,resources/js/components/driver/driver-route-map-panel.tsx | .ai/rules/driver-route-js-components-driver.md |
 | app/Services/Driver/**, app/Models/Driver*.php, app/Http/Controllers/{Platform,Branch}/*Driver*.php, resources/js/pages/{platform,branch}/drivers/**, resources/js/pages/platform/branches/drivers/**, app/Http/Controllers/{Platform,Branch}/** | .ai/rules/driver.md |
 | app/Http/Controllers/Driver/EarningsController.php,resources/js/pages/driver/earnings/**,app/Support/Storefront/DemoCatalog.php | .ai/rules/earnings-support-storefront.md |
+| app/Enums/ShiftAudience.php | .ai/rules/enums.md |
 | app/Events/** | .ai/rules/events.md |
 | resources/js/components/export/** | .ai/rules/export.md |
 | app/Exports/** | .ai/rules/exports.md |
@@ -74,10 +76,12 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | app/Http/Controllers/{Platform,Branch}/**, app/Http/Controllers/{Platform,Branch}/*Driver*.php | .ai/rules/platform-branch.md |
 | resources/js/lib/stock-query.ts, resources/js/pages/**/products/index.tsx, resources/js/pages/platform/catalog/products/branches.tsx | .ai/rules/platform-catalog-products.md |
+| resources/js/components/admin/shift-*-empty-state.tsx,resources/js/pages/platform/shifts/assign.tsx | .ai/rules/platform-shifts.md |
 | resources/js/components/platform/product-form.tsx, resources/js/components/platform/category-form.tsx, resources/js/components/platform/{category,product}-form.tsx, resources/js/components/platform/category-profile.tsx | .ai/rules/platform.md |
 | resources/js/components/{platform,admin}/*-form.tsx | .ai/rules/platformadmin.md |
 | resources/js/pages/{platform,branch}/catalog/products/show.tsx | .ai/rules/platformbranch-catalog-products.md |
 | app/Http/Controllers/{Platform,Branch}/Reports/**, resources/js/pages/{platform,branch}/reports/** | .ai/rules/platformbranch-reports.md |
+| app/Http/Controllers/{Platform,Branch}/*ShiftAssignmentController.php,app/Services/Workforce/**,app/Support/WorkforcePayload.php,resources/js/components/admin/shift-*.{ts,tsx},resources/js/pages/{platform,branch}/shifts/assign.tsx | .ai/rules/platformbranch-shifts.md |
 | resources/js/components/{platform,branch}/nav.ts | .ai/rules/platformbranch.md |
 | resources/js/components/portal/** | .ai/rules/portal.md |
 | resources/js/pages/platform/catalog/products/show.tsx, resources/js/pages/platform/catalog/products/**, resources/js/pages/branch/catalog/products/show.tsx | .ai/rules/products.md |
@@ -96,6 +100,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/seeders/**, database/seeders/WorkforceShiftSeeder.php | .ai/rules/seeders.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |
+| app/Http/Controllers/Platform/*Shift*.php,resources/js/pages/platform/shifts/assign.tsx | .ai/rules/shifts.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/stock.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts | .ai/rules/storefront.md |
 | app/Support/Storefront/DemoCatalog.php | .ai/rules/support-storefront.md |
