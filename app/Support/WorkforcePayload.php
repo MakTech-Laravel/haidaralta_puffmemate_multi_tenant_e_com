@@ -9,10 +9,10 @@ use App\Enums\TransferType;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\DriverRoster;
-use App\Models\ShiftRosterPeriod;
 use App\Models\ShiftTemplate;
 use App\Models\User;
 use App\Models\UserShiftAssignment;
+use App\Models\UserShiftDay;
 use App\Models\UserTransferHistory;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -42,39 +42,9 @@ final class WorkforcePayload
     /**
      * @return array<string, mixed>
      */
-    public static function period(ShiftRosterPeriod $period): array
-    {
-        $today = now()->startOfDay();
-        $start = $period->start_date?->copy()->startOfDay();
-        $end = $period->end_date?->copy()->startOfDay();
-        $containsToday = $start !== null && $end !== null && $today->betweenIncluded($start, $end);
-        $daysTotal = $start !== null && $end !== null ? (int) $start->diffInDays($end) + 1 : 0;
-
-        return [
-            'id' => $period->id,
-            'owner_type' => $period->owner_type->value,
-            'owner_type_label' => $period->owner_type->label(),
-            'branch_id' => $period->branch_id,
-            'branch_name' => $period->branch?->name,
-            'name' => $period->name,
-            'start_date' => $period->start_date?->format('Y-m-d'),
-            'end_date' => $period->end_date?->format('Y-m-d'),
-            'is_active' => (bool) $period->is_active,
-            'scheduled_count' => (int) ($period->scheduled_count ?? 0),
-            'contains_today' => $containsToday,
-            'days_total' => $daysTotal,
-            'days_elapsed' => $containsToday && $start !== null
-                ? (int) $start->diffInDays($today) + 1
-                : 0,
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
     public static function assignment(UserShiftAssignment $assignment, ?CarbonInterface $at = null): array
     {
-        $assignment->loadMissing(['shiftTemplate', 'shiftRosterPeriod', 'branch:id,name,slug', 'user:id,name,user_type,avatar']);
+        $assignment->loadMissing(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar']);
         $days = $assignment->normalizedDaysOfWeek();
         $template = $assignment->shiftTemplate;
         $moment = $at ?? now();
@@ -90,8 +60,6 @@ final class WorkforcePayload
             'branch_name' => $assignment->branch?->name,
             'shift_template_id' => $assignment->shift_template_id,
             'shift_template_name' => $template?->name,
-            'shift_roster_period_id' => $assignment->shift_roster_period_id,
-            'shift_roster_period_name' => $assignment->shiftRosterPeriod?->name,
             'start_date' => $assignment->start_date?->format('Y-m-d'),
             'end_date' => $assignment->end_date?->format('Y-m-d'),
             'start_time' => $template?->start_time?->format('H:i'),
@@ -105,25 +73,95 @@ final class WorkforcePayload
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    public static function assignmentDays(UserShiftAssignment $assignment): array
+    {
+        return $assignment->days()
+            ->with('shiftTemplate')
+            ->orderBy('duty_on')
+            ->get()
+            ->map(fn (UserShiftDay $day): array => self::day($day))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Other scheduled duty days for this person in the same store and date span.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function otherDutyDays(User $user, int $branchId, string $startDate, string $endDate, ?int $exceptAssignmentId = null): array
+    {
+        return UserShiftDay::query()
+            ->with('shiftTemplate')
+            ->where('user_id', $user->id)
+            ->where('branch_id', $branchId)
+            ->whereDate('duty_on', '>=', $startDate)
+            ->whereDate('duty_on', '<=', $endDate)
+            ->onDuty()
+            ->when(
+                $exceptAssignmentId !== null,
+                fn ($query) => $query->where('user_shift_assignment_id', '!=', $exceptAssignmentId),
+            )
+            ->whereHas('assignment', fn ($query) => $query->where('status', ShiftAssignmentStatus::Scheduled))
+            ->orderBy('duty_on')
+            ->get()
+            ->map(fn (UserShiftDay $day): array => self::day($day))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function day(UserShiftDay $day): array
+    {
+        $day->loadMissing('shiftTemplate');
+
+        return [
+            'id' => $day->id,
+            'assignment_id' => $day->user_shift_assignment_id,
+            'user_id' => $day->user_id,
+            'branch_id' => $day->branch_id,
+            'date' => $day->duty_on->format('Y-m-d'),
+            'kind' => $day->kind->value,
+            'kind_label' => $day->kind->label(),
+            'shift_template_id' => $day->shift_template_id,
+            'shift_template_name' => $day->shiftTemplate?->name,
+            'start_time' => $day->shiftTemplate?->start_time?->format('H:i'),
+            'end_time' => $day->shiftTemplate?->end_time?->format('H:i'),
+        ];
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public static function currentDuty(User $user, ?CarbonInterface $at = null): ?array
     {
         $moment = $at ?? now();
 
-        $assignment = $user->relationLoaded('shiftAssignments')
-            ? $user->shiftAssignments
-                ->first(fn (UserShiftAssignment $row): bool => $row->coversMoment($moment))
-            : UserShiftAssignment::query()
-                ->with(['shiftTemplate', 'shiftRosterPeriod', 'branch:id,name,slug'])
-                ->where('user_id', $user->id)
-                ->where('status', ShiftAssignmentStatus::Scheduled)
-                ->whereDate('start_date', '<=', $moment->toDateString())
-                ->whereDate('end_date', '>=', $moment->toDateString())
-                ->get()
-                ->first(fn (UserShiftAssignment $row): bool => $row->coversMoment($moment));
+        $day = UserShiftDay::query()
+            ->with(['shiftTemplate', 'assignment.branch:id,name,slug', 'user:id,name,user_type,avatar'])
+            ->where('user_id', $user->id)
+            ->onDuty()
+            ->whereDate('duty_on', $moment->toDateString())
+            ->whereHas('assignment', fn ($query) => $query->where('status', ShiftAssignmentStatus::Scheduled))
+            ->get()
+            ->first(fn (UserShiftDay $row): bool => $row->coversMoment($moment));
 
-        return $assignment === null ? null : self::assignment($assignment, $moment);
+        if ($day === null || $day->assignment === null) {
+            return null;
+        }
+
+        $payload = self::assignment($day->assignment, $moment);
+        $payload['shift_template_id'] = $day->shift_template_id;
+        $payload['shift_template_name'] = $day->shiftTemplate?->name;
+        $payload['start_time'] = $day->shiftTemplate?->start_time?->format('H:i');
+        $payload['end_time'] = $day->shiftTemplate?->end_time?->format('H:i');
+        $payload['covers_now'] = true;
+
+        return $payload;
     }
 
     /**
@@ -188,31 +226,103 @@ final class WorkforcePayload
     /**
      * @return list<array<string, mixed>>
      */
-    public static function periodsOwnedBy(ShiftOwnerType $owner, bool $activeOnly = false, ?int $branchId = null): array
+    public static function scheduledPeople(ShiftOwnerType $owner, ?int $branchId = null): array
     {
         if ($owner === ShiftOwnerType::Branch && $branchId === null) {
             return [];
         }
 
-        return ShiftRosterPeriod::query()
-            ->with('branch:id,name')
-            ->withCount([
-                'assignments as scheduled_count' => fn ($query) => $query->where('status', ShiftAssignmentStatus::Scheduled),
-            ])
-            ->when($activeOnly, fn ($query) => $query->where('is_active', true))
-            ->when(
-                $owner === ShiftOwnerType::Platform,
-                fn ($query) => $query->platformOwned(),
-                fn ($query) => $query->branchOwned(),
-            )
-            ->when(
-                $owner === ShiftOwnerType::Branch && $branchId !== null,
-                fn ($query) => $query->where('branch_id', $branchId),
-            )
+        return UserShiftAssignment::query()
+            ->with(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar'])
+            ->where('status', ShiftAssignmentStatus::Scheduled)
+            ->when($branchId !== null, fn ($query) => $query->where('branch_id', $branchId))
+            ->whereHas('shiftTemplate', function ($templates) use ($owner): void {
+                if ($owner === ShiftOwnerType::Platform) {
+                    $templates->platformOwned();
+                } else {
+                    $templates->branchOwned();
+                }
+            })
             ->orderByDesc('start_date')
-            ->orderBy('name')
+            ->orderBy('id')
             ->get()
-            ->map(fn (ShiftRosterPeriod $period): array => self::period($period))
+            ->map(fn (UserShiftAssignment $assignment): array => self::assignment($assignment))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public static function scheduledPeopleAtBranch(int $branchId): array
+    {
+        return UserShiftAssignment::query()
+            ->with(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar'])
+            ->where('status', ShiftAssignmentStatus::Scheduled)
+            ->where('branch_id', $branchId)
+            ->orderByDesc('start_date')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (UserShiftAssignment $assignment): array => self::assignment($assignment))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Named shifts with nobody scheduled today.
+     *
+     * @param  list<array<string, mixed>>  $templates
+     * @return list<array{id: int, name: string, start_time: string|null, end_time: string|null}>
+     */
+    public static function uncoveredToday(array $templates, ?CarbonInterface $at = null): array
+    {
+        if ($templates === []) {
+            return [];
+        }
+
+        $moment = $at ?? now();
+        $templateIds = collect($templates)->pluck('id')->all();
+        $todayIds = UserShiftDay::query()
+            ->onDuty()
+            ->whereDate('duty_on', $moment->toDateString())
+            ->whereIn('shift_template_id', $templateIds)
+            ->whereHas('assignment', fn ($query) => $query->where('status', ShiftAssignmentStatus::Scheduled))
+            ->pluck('shift_template_id')
+            ->unique()
+            ->all();
+
+        return collect($templates)
+            ->filter(fn (array $template): bool => (bool) ($template['is_active'] ?? true))
+            ->filter(fn (array $template): bool => ! in_array($template['id'], $todayIds, true))
+            ->map(fn (array $template): array => [
+                'id' => $template['id'],
+                'name' => $template['name'],
+                'start_time' => $template['start_time'] ?? null,
+                'end_time' => $template['end_time'] ?? null,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * On-duty day rows for scheduled assignments, used as read-only chips on Assign.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function scheduledDutyDays(?int $branchId = null, ?int $exceptAssignmentId = null): array
+    {
+        return UserShiftDay::query()
+            ->with('shiftTemplate')
+            ->onDuty()
+            ->when($branchId !== null, fn ($query) => $query->where('branch_id', $branchId))
+            ->when(
+                $exceptAssignmentId !== null,
+                fn ($query) => $query->where('user_shift_assignment_id', '!=', $exceptAssignmentId),
+            )
+            ->whereHas('assignment', fn ($query) => $query->where('status', ShiftAssignmentStatus::Scheduled))
+            ->orderBy('duty_on')
+            ->get()
+            ->map(fn (UserShiftDay $day): array => self::day($day))
             ->values()
             ->all();
     }
@@ -240,25 +350,70 @@ final class WorkforcePayload
     }
 
     /**
+     * @param  callable(Builder<UserShiftDay>): void  $constrain
      * @return list<array<string, mixed>>
      */
-    public static function periodsForBranch(?int $branchId = null): array
+    private static function onDutyQuery(?CarbonInterface $at, callable $constrain): array
     {
-        return ShiftRosterPeriod::query()
-            ->with('branch:id,name')
-            ->withCount([
-                'assignments as scheduled_count' => fn ($query) => $query->where('status', ShiftAssignmentStatus::Scheduled),
-            ])
-            ->where('is_active', true)
-            ->when(
-                $branchId === null,
-                fn ($query) => $query->orderByDesc('start_date')->orderBy('name'),
-                fn ($query) => $query->availableToBranch($branchId)->orderByDesc('start_date'),
-            )
+        $moment = $at ?? now();
+
+        $query = UserShiftDay::query()
+            ->with(['shiftTemplate', 'assignment.branch:id,name,slug', 'user:id,name,user_type,avatar'])
+            ->onDuty()
+            ->whereDate('duty_on', $moment->toDateString())
+            ->whereHas('assignment', fn ($assignments) => $assignments->where('status', ShiftAssignmentStatus::Scheduled));
+
+        $constrain($query);
+
+        return $query
             ->get()
-            ->map(fn (ShiftRosterPeriod $period): array => self::period($period))
+            ->filter(fn (UserShiftDay $day): bool => $day->coversMoment($moment))
             ->values()
+            ->map(function (UserShiftDay $day) use ($moment): array {
+                $assignment = $day->assignment;
+                $payload = $assignment === null
+                    ? [
+                        'id' => $day->id,
+                        'user_id' => $day->user_id,
+                        'user_name' => $day->user?->name,
+                        'user_type' => $day->user?->user_type?->value,
+                        'user_type_label' => $day->user?->user_type?->label(),
+                        'avatar_url' => MediaUrl::resolve($day->user?->avatar, fallback: null),
+                        'branch_id' => $day->branch_id,
+                        'branch_name' => null,
+                    ]
+                    : self::assignment($assignment, $moment);
+
+                $payload['id'] = $day->id;
+                $payload['assignment_id'] = $day->user_shift_assignment_id;
+                $payload['shift_template_id'] = $day->shift_template_id;
+                $payload['shift_template_name'] = $day->shiftTemplate?->name;
+                $payload['start_time'] = $day->shiftTemplate?->start_time?->format('H:i');
+                $payload['end_time'] = $day->shiftTemplate?->end_time?->format('H:i');
+                $payload['covers_now'] = true;
+
+                return $payload;
+            })
             ->all();
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $templates
+     * @param  list<array<string, mixed>>  $onDuty
+     * @param  list<array<string, mixed>>  $scheduled
+     * @return array{on_duty: int, templates: int, active_templates: int, scheduled: int}
+     */
+    public static function workspaceStats(array $templates, array $onDuty, array $scheduled = []): array
+    {
+        return [
+            'on_duty' => count($onDuty),
+            'templates' => count($templates),
+            'active_templates' => count(array_filter(
+                $templates,
+                fn (array $template): bool => (bool) $template['is_active'],
+            )),
+            'scheduled' => count($scheduled),
+        ];
     }
 
     /**
@@ -331,49 +486,6 @@ final class WorkforcePayload
         return self::onDutyQuery($at, function ($query) use ($branchId): void {
             $query->where('branch_id', $branchId);
         });
-    }
-
-    /**
-     * @param  callable(Builder<UserShiftAssignment>): void  $constrain
-     * @return list<array<string, mixed>>
-     */
-    private static function onDutyQuery(?CarbonInterface $at, callable $constrain): array
-    {
-        $moment = $at ?? now();
-
-        $query = UserShiftAssignment::query()
-            ->with(['shiftTemplate', 'shiftRosterPeriod', 'branch:id,name,slug', 'user:id,name,user_type,avatar'])
-            ->where('status', ShiftAssignmentStatus::Scheduled)
-            ->whereDate('start_date', '<=', $moment->toDateString())
-            ->whereDate('end_date', '>=', $moment->toDateString());
-
-        $constrain($query);
-
-        return $query
-            ->get()
-            ->filter(fn (UserShiftAssignment $assignment): bool => $assignment->coversMoment($moment))
-            ->values()
-            ->map(fn (UserShiftAssignment $assignment): array => self::assignment($assignment, $moment))
-            ->all();
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $templates
-     * @param  list<array<string, mixed>>  $periods
-     * @param  list<array<string, mixed>>  $onDuty
-     * @return array{on_duty: int, templates: int, active_templates: int, periods: int}
-     */
-    public static function workspaceStats(array $templates, array $periods, array $onDuty): array
-    {
-        return [
-            'on_duty' => count($onDuty),
-            'templates' => count($templates),
-            'active_templates' => count(array_filter(
-                $templates,
-                fn (array $template): bool => (bool) $template['is_active'],
-            )),
-            'periods' => count($periods),
-        ];
     }
 
     /**

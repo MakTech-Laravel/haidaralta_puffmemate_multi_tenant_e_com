@@ -38,12 +38,15 @@ class DriverDataTable extends AbstractDataTable
             ->with([
                 'driverProfile',
                 'driverBranchAssignments.branch:id,name,slug',
-                'shiftAssignments' => function ($query) use ($today): void {
+                'shiftDays' => function ($query) use ($today): void {
                     $query
                         ->with('shiftTemplate')
-                        ->where('status', ShiftAssignmentStatus::Scheduled->value)
-                        ->whereDate('start_date', '<=', $today)
-                        ->whereDate('end_date', '>=', $today);
+                        ->onDuty()
+                        ->whereDate('duty_on', $today)
+                        ->whereHas(
+                            'assignment',
+                            fn ($assignments) => $assignments->where('status', ShiftAssignmentStatus::Scheduled->value),
+                        );
                 },
             ]);
     }

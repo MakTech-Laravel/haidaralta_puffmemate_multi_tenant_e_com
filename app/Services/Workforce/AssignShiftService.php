@@ -4,17 +4,19 @@ namespace App\Services\Workforce;
 
 use App\Enums\DriverAssignmentStatus;
 use App\Enums\ShiftAssignmentStatus;
+use App\Enums\ShiftDayKind;
 use App\Enums\ShiftOwnerType;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\DriverBranchAssignment;
 use App\Models\DriverRoster;
-use App\Models\ShiftRosterPeriod;
 use App\Models\ShiftTemplate;
 use App\Models\User;
 use App\Models\UserShiftAssignment;
+use App\Models\UserShiftDay;
 use App\Models\UserShiftHistory;
 use App\Support\DutyWindow;
+use App\Support\ShiftDutyCalendar;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -22,38 +24,36 @@ use InvalidArgumentException;
 class AssignShiftService
 {
     /**
-     * @param  array{user_id: int, branch_id: int, shift_template_id: int, shift_roster_period_id: int, start_date: string, end_date: string, days_of_week?: list<int>, reason?: string|null, note?: string|null, effective_date?: string|null}  $data
+     * @param  array{user_id: int, branch_id: int, shift_template_id: int, start_date: string, end_date: string, days_of_week?: list<int>, days?: list<array{date?: mixed, kind?: mixed, shift_template_id?: mixed}>, reason?: string|null, note?: string|null, effective_date?: string|null}  $data
      */
     public function assign(array $data, ?User $actor = null, ?ShiftOwnerType $expectedOwner = null): UserShiftAssignment
     {
         $user = User::query()->findOrFail((int) $data['user_id']);
         $branch = Branch::query()->findOrFail((int) $data['branch_id']);
         $template = ShiftTemplate::query()->findOrFail((int) $data['shift_template_id']);
-        $period = ShiftRosterPeriod::query()->findOrFail((int) $data['shift_roster_period_id']);
         $days = DriverRoster::normalizeDays($data['days_of_week'] ?? null);
+        $exceptions = $data['days'] ?? [];
 
         $this->assertAssignableUser($user, $branch);
-        $this->assertExpectedOwner($template, $period, $branch, $expectedOwner);
+        $this->assertExpectedOwner($template, $expectedOwner, $branch);
         $this->assertTemplateVisible($template, $branch);
-        $this->assertPeriodVisible($period, $branch);
-        $this->assertDatesInsidePeriod($data['start_date'], $data['end_date'], $period);
+        $this->assertDateRange($data['start_date'], $data['end_date']);
 
-        return DB::transaction(function () use ($user, $branch, $template, $period, $data, $days, $actor): UserShiftAssignment {
-            $previous = $this->cancelOverlappingScheduled(
-                $user,
-                $branch,
-                $data['start_date'],
-                $data['end_date'],
-                $template,
-                $days,
-            );
-            $this->assertNoOverlap($user, $data['start_date'], $data['end_date'], $template, $days);
+        $rows = ShiftDutyCalendar::expand(
+            $data['start_date'],
+            $data['end_date'],
+            $template->id,
+            $days,
+            $exceptions,
+        );
 
+        $this->assertNoDayOverlap($user, $rows, $template);
+
+        return DB::transaction(function () use ($user, $branch, $template, $data, $days, $rows, $actor): UserShiftAssignment {
             $assignment = UserShiftAssignment::query()->create([
                 'user_id' => $user->id,
                 'branch_id' => $branch->id,
                 'shift_template_id' => $template->id,
-                'shift_roster_period_id' => $period->id,
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
                 'days_of_week' => $days,
@@ -61,10 +61,11 @@ class AssignShiftService
                 'assigned_by' => $actor?->id,
             ]);
 
+            $this->writeDays($assignment, $rows);
             $this->recordHistory(
                 $user,
                 $branch,
-                $previous,
+                null,
                 $template,
                 $data['effective_date'] ?? $data['start_date'],
                 $data['reason'] ?? null,
@@ -77,22 +78,19 @@ class AssignShiftService
     }
 
     /**
-     * @param  array{shift_template_id?: int, shift_roster_period_id?: int, start_date?: string, end_date?: string, days_of_week?: list<int>, status?: string, reason?: string|null, note?: string|null, effective_date?: string|null}  $data
+     * @param  array{shift_template_id?: int, start_date?: string, end_date?: string, days_of_week?: list<int>, days?: list<array{date?: mixed, kind?: mixed, shift_template_id?: mixed}>, status?: string, reason?: string|null, note?: string|null, effective_date?: string|null}  $data
      */
     public function change(UserShiftAssignment $assignment, array $data, ?User $actor = null, ?ShiftOwnerType $expectedOwner = null): UserShiftAssignment
     {
-        $assignment->loadMissing(['user', 'branch', 'shiftTemplate', 'shiftRosterPeriod']);
+        $assignment->loadMissing(['user', 'branch', 'shiftTemplate']);
 
         $user = $assignment->user;
         $branch = $assignment->branch;
         $template = isset($data['shift_template_id'])
             ? ShiftTemplate::query()->findOrFail((int) $data['shift_template_id'])
             : $assignment->shiftTemplate;
-        $period = isset($data['shift_roster_period_id'])
-            ? ShiftRosterPeriod::query()->findOrFail((int) $data['shift_roster_period_id'])
-            : $assignment->shiftRosterPeriod;
 
-        if ($user === null || $branch === null || $template === null || $period === null) {
+        if ($user === null || $branch === null || $template === null) {
             throw new InvalidArgumentException('Shift assignment is missing required relations.');
         }
 
@@ -102,29 +100,32 @@ class AssignShiftService
         $status = isset($data['status'])
             ? ShiftAssignmentStatus::from($data['status'])
             : $assignment->status;
+        $exceptions = $data['days'] ?? $this->existingExceptions($assignment);
 
-        $this->assertExpectedOwner($template, $period, $branch, $expectedOwner);
-        $this->assertDatesInsidePeriod($startDate, $endDate, $period);
+        $this->assertExpectedOwner($template, $expectedOwner, $branch);
         $this->assertTemplateVisible($template, $branch);
-        $this->assertPeriodVisible($period, $branch);
+        $this->assertDateRange($startDate, $endDate);
+
+        $rows = ShiftDutyCalendar::expand($startDate, $endDate, $template->id, $days, $exceptions);
 
         if ($status === ShiftAssignmentStatus::Scheduled) {
-            $this->assertNoOverlap($user, $startDate, $endDate, $template, $days, $assignment->id);
+            $this->assertNoDayOverlap($user, $rows, $template, $assignment->id);
         }
 
-        return DB::transaction(function () use ($assignment, $user, $branch, $template, $period, $startDate, $endDate, $days, $status, $data, $actor): UserShiftAssignment {
+        return DB::transaction(function () use ($assignment, $user, $branch, $template, $startDate, $endDate, $days, $status, $rows, $data, $actor): UserShiftAssignment {
             $previousTemplate = $assignment->shiftTemplate;
 
             $assignment->update([
                 'shift_template_id' => $template->id,
-                'shift_roster_period_id' => $period->id,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'days_of_week' => $days,
                 'status' => $status->value,
             ]);
 
-            if ($previousTemplate?->id !== $template->id) {
+            $this->writeDays($assignment->refresh(), $rows);
+
+            if ($previousTemplate?->id !== $template->id || isset($data['days']) || filled($data['reason'] ?? null)) {
                 $this->recordHistory(
                     $user,
                     $branch,
@@ -140,6 +141,63 @@ class AssignShiftService
 
             return $assignment->refresh();
         });
+    }
+
+    /**
+     * @param  list<array{date?: mixed, kind?: mixed, shift_template_id?: mixed}>  $exceptions
+     */
+    public function syncDays(UserShiftAssignment $assignment, array $exceptions = []): void
+    {
+        $templateId = (int) $assignment->shift_template_id;
+        $rows = ShiftDutyCalendar::expand(
+            $assignment->start_date->format('Y-m-d'),
+            $assignment->end_date->format('Y-m-d'),
+            $templateId,
+            $assignment->normalizedDaysOfWeek(),
+            $exceptions,
+        );
+
+        $this->writeDays($assignment, $rows);
+    }
+
+    /**
+     * @param  list<array{duty_on: string, shift_template_id: int|null, kind: string}>  $rows
+     */
+    private function writeDays(UserShiftAssignment $assignment, array $rows): void
+    {
+        $dates = collect($rows)->pluck('duty_on')->all();
+
+        $assignment->days()
+            ->when($dates !== [], fn ($query) => $query->whereNotIn('duty_on', $dates), fn ($query) => $query)
+            ->delete();
+
+        if ($dates === []) {
+            $assignment->days()->delete();
+
+            return;
+        }
+
+        $now = now();
+        $payload = collect($rows)
+            ->map(fn (array $row): array => [
+                'user_shift_assignment_id' => $assignment->id,
+                'user_id' => $assignment->user_id,
+                'branch_id' => $assignment->branch_id,
+                'duty_on' => $row['duty_on'],
+                'shift_template_id' => $row['shift_template_id'],
+                'kind' => $row['kind'],
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->all();
+
+        foreach (array_chunk($payload, 100) as $chunk) {
+            UserShiftDay::query()->upsert(
+                $chunk,
+                uniqueBy: ['user_shift_assignment_id', 'duty_on'],
+                update: ['shift_template_id', 'kind', 'user_id', 'branch_id', 'updated_at'],
+            );
+        }
     }
 
     private function assertAssignableUser(User $user, Branch $branch): void
@@ -169,25 +227,21 @@ class AssignShiftService
 
     private function assertExpectedOwner(
         ShiftTemplate $template,
-        ShiftRosterPeriod $period,
-        Branch $branch,
         ?ShiftOwnerType $expectedOwner,
+        Branch $branch,
     ): void {
         if ($expectedOwner === null) {
             return;
         }
 
         if ($expectedOwner === ShiftOwnerType::Platform) {
-            abort_unless($template->isPlatformOwned() && $period->isPlatformOwned(), 404);
+            abort_unless($template->isPlatformOwned(), 404);
 
             return;
         }
 
         abort_unless(
-            $template->isBranchOwned()
-                && $period->isBranchOwned()
-                && (int) $template->branch_id === $branch->id
-                && (int) $period->branch_id === $branch->id,
+            $template->isBranchOwned() && (int) $template->branch_id === $branch->id,
             404,
         );
     }
@@ -195,135 +249,114 @@ class AssignShiftService
     private function assertTemplateVisible(ShiftTemplate $template, Branch $branch): void
     {
         if (! $template->is_active) {
-            throw new InvalidArgumentException('This shift template is inactive.');
+            throw new InvalidArgumentException('This shift is inactive.');
         }
 
         $visible = $template->isPlatformOwned() || $template->branch_id === $branch->id;
 
         if (! $visible) {
-            throw new InvalidArgumentException('This shift template is not available for this branch.');
+            throw new InvalidArgumentException('This shift is not available for this branch.');
         }
     }
 
-    private function assertPeriodVisible(ShiftRosterPeriod $period, Branch $branch): void
-    {
-        if (! $period->is_active) {
-            throw new InvalidArgumentException('This roster period is inactive.');
-        }
-
-        $visible = $period->isPlatformOwned() || $period->branch_id === $branch->id;
-
-        if (! $visible) {
-            throw new InvalidArgumentException('This roster period is not available for this branch.');
-        }
-    }
-
-    private function assertDatesInsidePeriod(string $startDate, string $endDate, ShiftRosterPeriod $period): void
+    private function assertDateRange(string $startDate, string $endDate): void
     {
         if ($endDate < $startDate) {
             throw new InvalidArgumentException('Assignment end date must be on or after the start date.');
         }
 
-        $periodStart = $period->start_date->format('Y-m-d');
-        $periodEnd = $period->end_date->format('Y-m-d');
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->startOfDay();
 
-        if ($startDate < $periodStart || $endDate > $periodEnd) {
-            throw new InvalidArgumentException('Assignment dates must fall inside the roster period.');
+        if ((int) $start->diffInDays($end) + 1 > ShiftDutyCalendar::MAX_DAYS) {
+            throw new InvalidArgumentException('A duty period cannot be longer than 366 days.');
         }
     }
 
     /**
-     * @param  list<int>  $days
+     * @param  list<array{duty_on: string, shift_template_id: int|null, kind: string}>  $rows
      */
-    private function assertNoOverlap(
+    private function assertNoDayOverlap(
         User $user,
-        string $startDate,
-        string $endDate,
-        ShiftTemplate $template,
-        array $days,
-        ?int $exceptId = null,
+        array $rows,
+        ShiftTemplate $fallbackTemplate,
+        ?int $exceptAssignmentId = null,
     ): void {
-        $candidates = UserShiftAssignment::query()
+        $onDuty = collect($rows)
+            ->filter(function (array $row): bool {
+                $kind = ShiftDayKind::tryFrom($row['kind']);
+
+                return $kind?->isOnDuty() === true && $row['shift_template_id'] !== null;
+            })
+            ->values();
+
+        if ($onDuty->isEmpty()) {
+            return;
+        }
+
+        $templates = ShiftTemplate::query()
+            ->whereIn('id', $onDuty->pluck('shift_template_id')->unique()->filter()->all())
+            ->get()
+            ->keyBy('id');
+
+        $existing = UserShiftDay::query()
             ->with('shiftTemplate')
             ->where('user_id', $user->id)
-            ->where('status', ShiftAssignmentStatus::Scheduled)
-            ->when($exceptId !== null, fn ($query) => $query->whereKeyNot($exceptId))
-            ->whereDate('start_date', '<=', $endDate)
-            ->whereDate('end_date', '>=', $startDate)
+            ->onDuty()
+            ->whereIn('duty_on', $onDuty->pluck('duty_on')->all())
+            ->whereHas('assignment', function ($query) use ($exceptAssignmentId): void {
+                $query->where('status', ShiftAssignmentStatus::Scheduled);
+
+                if ($exceptAssignmentId !== null) {
+                    $query->whereKeyNot($exceptAssignmentId);
+                }
+            })
             ->get();
 
-        $overlaps = $candidates->contains(function (UserShiftAssignment $existing) use ($startDate, $endDate, $template, $days): bool {
-            $other = $existing->shiftTemplate;
+        foreach ($onDuty as $row) {
+            $template = $templates->get((int) $row['shift_template_id']) ?? $fallbackTemplate;
 
-            if ($other === null) {
-                return false;
-            }
-
-            return DutyWindow::overlaps(
-                $startDate,
-                $endDate,
-                $template->startTimeValue(),
-                $template->endTimeValue(),
-                $days,
-                $existing->start_date->format('Y-m-d'),
-                $existing->end_date->format('Y-m-d'),
-                $other->startTimeValue(),
-                $other->endTimeValue(),
-                $existing->normalizedDaysOfWeek(),
-            );
-        });
-
-        if ($overlaps) {
-            throw new InvalidArgumentException('This person already has an overlapping scheduled shift in this period.');
-        }
-    }
-
-    /**
-     * @param  list<int>  $days
-     */
-    private function cancelOverlappingScheduled(
-        User $user,
-        Branch $branch,
-        string $startDate,
-        string $endDate,
-        ShiftTemplate $template,
-        array $days,
-    ): ?UserShiftAssignment {
-        $previous = UserShiftAssignment::query()
-            ->with('shiftTemplate')
-            ->where('user_id', $user->id)
-            ->where('branch_id', $branch->id)
-            ->where('status', ShiftAssignmentStatus::Scheduled)
-            ->whereDate('start_date', '<=', $endDate)
-            ->whereDate('end_date', '>=', $startDate)
-            ->orderByDesc('id')
-            ->get()
-            ->first(function (UserShiftAssignment $existing) use ($startDate, $endDate, $template, $days): bool {
-                $other = $existing->shiftTemplate;
-
-                if ($other === null) {
+            $conflict = $existing->first(function (UserShiftDay $day) use ($row, $template): bool {
+                if ($day->duty_on->toDateString() !== $row['duty_on'] || $day->shiftTemplate === null) {
                     return false;
                 }
 
-                return DutyWindow::overlaps(
-                    $startDate,
-                    $endDate,
+                return DutyWindow::timesOverlap(
                     $template->startTimeValue(),
                     $template->endTimeValue(),
-                    $days,
-                    $existing->start_date->format('Y-m-d'),
-                    $existing->end_date->format('Y-m-d'),
-                    $other->startTimeValue(),
-                    $other->endTimeValue(),
-                    $existing->normalizedDaysOfWeek(),
+                    $day->shiftTemplate->startTimeValue(),
+                    $day->shiftTemplate->endTimeValue(),
                 );
             });
 
-        if ($previous !== null) {
-            $previous->update(['status' => ShiftAssignmentStatus::Cancelled->value]);
+            if ($conflict !== null) {
+                throw new InvalidArgumentException('This person already has an overlapping shift on '.$row['duty_on'].'.');
+            }
         }
+    }
 
-        return $previous;
+    /**
+     * @return list<array{date: string, kind: string, shift_template_id: int|null}>
+     */
+    private function existingExceptions(UserShiftAssignment $assignment): array
+    {
+        return $assignment->days()
+            ->orderBy('duty_on')
+            ->get()
+            ->filter(function (UserShiftDay $day) use ($assignment): bool {
+                $isWorking = in_array($day->duty_on->isoWeekday(), $assignment->normalizedDaysOfWeek(), true);
+
+                return $day->kind === ShiftDayKind::Leave
+                    || $day->kind === ShiftDayKind::Override
+                    || ($day->kind === ShiftDayKind::WeeklyOff && $isWorking);
+            })
+            ->map(fn (UserShiftDay $day): array => [
+                'date' => $day->duty_on->toDateString(),
+                'kind' => $day->kind->value,
+                'shift_template_id' => $day->shift_template_id,
+            ])
+            ->values()
+            ->all();
     }
 
     private function recordHistory(

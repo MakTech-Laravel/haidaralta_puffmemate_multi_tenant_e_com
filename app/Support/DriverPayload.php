@@ -32,7 +32,7 @@ final class DriverPayload
             'driverProfile',
             'driverBranchAssignments.branch:id,name,slug,status',
             'shiftAssignments' => function ($query) use ($scopedBranch): void {
-                $query->with(['shiftTemplate', 'shiftRosterPeriod', 'branch:id,name,slug'])
+                $query->with(['shiftTemplate', 'days.shiftTemplate', 'branch:id,name,slug'])
                     ->orderByDesc('start_date');
 
                 if ($scopedBranch !== null) {

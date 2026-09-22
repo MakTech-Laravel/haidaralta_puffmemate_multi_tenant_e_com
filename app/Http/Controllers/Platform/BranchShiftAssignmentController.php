@@ -7,6 +7,7 @@ use App\Enums\ShiftOwnerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreShiftAssignmentRequest;
 use App\Http\Requests\Platform\UpdateShiftAssignmentRequest;
+use App\Models\User;
 use App\Models\UserShiftAssignment;
 use App\Services\Workforce\AssignShiftService;
 use App\Support\Toast;
@@ -33,18 +34,7 @@ class BranchShiftAssignmentController extends Controller
             return $redirect;
         }
 
-        $selected = $this->selectedBranch();
-        $branchId = $selected['id'] ?? null;
-
-        return Inertia::render('platform/shifts/assign', [
-            'workspace' => $this->shiftWorkspace(),
-            'people' => WorkforcePayload::assignablePeople($branchId),
-            'templates' => WorkforcePayload::templatesOwnedBy($this->shiftOwner(), activeOnly: true, branchId: $branchId),
-            'periods' => WorkforcePayload::periodsOwnedBy($this->shiftOwner(), activeOnly: true, branchId: $branchId),
-            'branches' => $selected === null ? [] : [$selected],
-            'selectedBranchId' => $branchId,
-            'selectedBranch' => $selected,
-        ]);
+        return Inertia::render('platform/shifts/assign', $this->formProps());
     }
 
     public function store(StoreShiftAssignmentRequest $request): RedirectResponse
@@ -65,6 +55,22 @@ class BranchShiftAssignmentController extends Controller
         );
     }
 
+    public function edit(UserShiftAssignment $userShiftAssignment): RedirectResponse|Response
+    {
+        $this->assertOwnedAssignment($userShiftAssignment);
+
+        if ($redirect = $this->redirectUnlessBranchSelected()) {
+            return $redirect;
+        }
+
+        abort_unless(
+            $this->selectedBranchId() === null || $this->selectedBranchId() === $userShiftAssignment->branch_id,
+            404,
+        );
+
+        return Inertia::render('platform/shifts/assign', $this->formProps($userShiftAssignment));
+    }
+
     public function update(UpdateShiftAssignmentRequest $request, UserShiftAssignment $userShiftAssignment): RedirectResponse
     {
         $this->assertOwnedAssignment($userShiftAssignment);
@@ -79,6 +85,45 @@ class BranchShiftAssignmentController extends Controller
 
         Toast::success('Shift updated.');
 
-        return redirect()->back();
+        return redirect()->route(
+            'platform.branch-shift-assignments.edit',
+            array_merge(
+                ['user_shift_assignment' => $userShiftAssignment->id],
+                $this->branchIndexQuery($userShiftAssignment->branch_id),
+            ),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formProps(?UserShiftAssignment $assignment = null): array
+    {
+        $selected = $this->selectedBranch();
+        $branchId = $assignment?->branch_id ?? ($selected['id'] ?? null);
+        $assignment?->loadMissing(['user', 'shiftTemplate', 'days.shiftTemplate']);
+        $user = $assignment?->user;
+        $otherDays = $user instanceof User && $assignment !== null
+            ? WorkforcePayload::otherDutyDays(
+                $user,
+                $assignment->branch_id,
+                $assignment->start_date->format('Y-m-d'),
+                $assignment->end_date->format('Y-m-d'),
+                $assignment->id,
+            )
+            : [];
+
+        return [
+            'workspace' => $this->shiftWorkspace(),
+            'people' => WorkforcePayload::assignablePeople($branchId),
+            'templates' => WorkforcePayload::templatesOwnedBy($this->shiftOwner(), activeOnly: true, branchId: $branchId),
+            'branches' => $selected === null ? [] : [$selected],
+            'selectedBranchId' => $branchId,
+            'selectedBranch' => $selected ?? WorkforcePayload::branchOption($branchId),
+            'assignment' => $assignment === null ? null : WorkforcePayload::assignment($assignment),
+            'days' => $assignment === null ? [] : WorkforcePayload::assignmentDays($assignment),
+            'otherDays' => $otherDays,
+            'scheduledDays' => WorkforcePayload::scheduledDutyDays($branchId, $assignment?->id),
+        ];
     }
 }

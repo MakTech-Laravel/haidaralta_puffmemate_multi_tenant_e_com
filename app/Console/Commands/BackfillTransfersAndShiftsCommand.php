@@ -10,10 +10,10 @@ use App\Enums\TransferSubjectType;
 use App\Enums\TransferType;
 use App\Models\DriverBranchAssignment;
 use App\Models\DriverRoster;
-use App\Models\ShiftRosterPeriod;
 use App\Models\ShiftTemplate;
 use App\Models\UserShiftAssignment;
 use App\Models\UserTransferHistory;
+use App\Services\Workforce\AssignShiftService;
 use App\Services\Workforce\TransferEmployeeService;
 use App\Support\DutyWindow;
 use Illuminate\Console\Attributes\Description;
@@ -169,33 +169,18 @@ class BackfillTransfersAndShiftsCommand extends Command
                         ],
                     );
 
-                    $periodName = "Migrated {$roster->branch?->name} {$startDate}–{$endDate}";
-
-                    $period = ShiftRosterPeriod::query()->firstOrCreate(
-                        [
-                            'owner_type' => ShiftOwnerType::Branch->value,
-                            'branch_id' => $roster->branch_id,
-                            'name' => $periodName,
-                        ],
-                        [
-                            'start_date' => $startDate,
-                            'end_date' => $endDate,
-                            'is_active' => true,
-                            'created_by' => null,
-                        ],
-                    );
-
-                    UserShiftAssignment::query()->create([
+                    $assignment = UserShiftAssignment::query()->create([
                         'user_id' => $roster->driver_id,
                         'branch_id' => $roster->branch_id,
                         'shift_template_id' => $template->id,
-                        'shift_roster_period_id' => $period->id,
                         'start_date' => $startDate,
                         'end_date' => $endDate,
                         'days_of_week' => $roster->normalizedDaysOfWeek(),
                         'status' => ShiftAssignmentStatus::Scheduled,
                         'assigned_by' => null,
                     ]);
+
+                    app(AssignShiftService::class)->syncDays($assignment);
 
                     $created++;
                 });

@@ -74,8 +74,8 @@ const WHAT_YOU_GET = [
     },
     {
         icon: CalendarRange,
-        label: 'Roster periods',
-        hint: 'Date ranges for assignments',
+        label: 'Scheduled people',
+        hint: 'Personal dates and working days',
     },
 ] as const;
 
@@ -155,7 +155,7 @@ const HOW_IT_WORKS = [
     },
     {
         title: 'Add a shift or assign staff',
-        hint: 'Set hours first, then place people on a roster period.',
+        hint: 'Set hours first, then assign people to their own dates.',
     },
 ] as const;
 

@@ -8,7 +8,6 @@ use App\Models\Branch;
 use App\Models\DriverBranchAssignment;
 use App\Models\DriverProfile;
 use App\Models\DriverRoster;
-use App\Models\ShiftRosterPeriod;
 use App\Models\ShiftTemplate;
 use App\Models\User;
 use App\Models\UserShiftAssignment;
@@ -149,15 +148,10 @@ test('driver list payload includes branch slug and effective availability from s
         'start_time' => '08:00',
         'end_time' => '17:00',
     ]);
-    $period = ShiftRosterPeriod::factory()->create([
-        'start_date' => '2026-09-01',
-        'end_date' => '2026-10-15',
-    ]);
     UserShiftAssignment::factory()->create([
         'user_id' => $driver->id,
         'branch_id' => $sydney->id,
         'shift_template_id' => $template->id,
-        'shift_roster_period_id' => $period->id,
         'start_date' => '2026-09-01',
         'end_date' => '2026-10-15',
         'days_of_week' => DriverRoster::DAYS_WEEKDAYS,
@@ -362,15 +356,10 @@ test('busy override wins over a scheduled shift assignment for effective availab
         'start_time' => now()->copy()->subHour()->format('H:i'),
         'end_time' => now()->copy()->addHour()->format('H:i'),
     ]);
-    $period = ShiftRosterPeriod::factory()->create([
-        'start_date' => now()->toDateString(),
-        'end_date' => now()->toDateString(),
-    ]);
     UserShiftAssignment::factory()->create([
         'user_id' => $driver->id,
         'branch_id' => $sydney->id,
         'shift_template_id' => $template->id,
-        'shift_roster_period_id' => $period->id,
         'start_date' => now()->toDateString(),
         'end_date' => now()->toDateString(),
         'days_of_week' => DriverRoster::DAYS_ALL,

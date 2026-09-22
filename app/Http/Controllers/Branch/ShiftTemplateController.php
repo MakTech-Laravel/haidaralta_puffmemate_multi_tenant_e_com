@@ -37,15 +37,16 @@ class ShiftTemplateController extends Controller
             ->values()
             ->all();
 
-        $periods = WorkforcePayload::periodsForBranch($branch->id);
         $onDuty = WorkforcePayload::onDutyAtBranch($branch->id);
+        $scheduled = WorkforcePayload::scheduledPeopleAtBranch($branch->id);
 
         return Inertia::render('branch/shifts/index', [
             'branch' => $branch->only(['id', 'name', 'slug']),
             'templates' => $templates,
-            'periods' => $periods,
             'onDuty' => $onDuty,
-            'stats' => WorkforcePayload::workspaceStats($templates, $periods, $onDuty),
+            'scheduled' => $scheduled,
+            'uncovered' => WorkforcePayload::uncoveredToday($templates),
+            'stats' => WorkforcePayload::workspaceStats($templates, $onDuty, $scheduled),
         ]);
     }
 

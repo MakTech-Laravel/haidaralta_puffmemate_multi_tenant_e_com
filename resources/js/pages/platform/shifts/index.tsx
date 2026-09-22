@@ -8,28 +8,30 @@ import {
 import type {
     BranchOption,
     ShiftAssignmentRow,
-    ShiftPeriodOption,
     ShiftTemplateOption,
     ShiftWorkspaceStats,
+    UncoveredShift,
 } from '@/components/admin/workforce-types';
 
 export default function PlatformShiftsIndex({
     workspace = 'platform',
     templates,
-    periods,
+    scheduled = [],
+    uncovered = [],
     onDuty = [],
     stats = {
         on_duty: 0,
         templates: 0,
         active_templates: 0,
-        periods: 0,
+        scheduled: 0,
     },
     selectedBranchId = null,
     selectedBranch = null,
 }: {
     workspace?: ShiftWorkspace;
     templates: ShiftTemplateOption[];
-    periods: ShiftPeriodOption[];
+    scheduled?: ShiftAssignmentRow[];
+    uncovered?: UncoveredShift[];
     onDuty?: ShiftAssignmentRow[];
     stats?: ShiftWorkspaceStats;
     selectedBranchId?: number | null;
@@ -68,17 +70,17 @@ export default function PlatformShiftsIndex({
                         : routes.description
                 }
                 templates={templates}
-                periods={periods}
+                scheduled={scheduled}
+                uncovered={uncovered}
                 onDuty={onDuty}
                 stats={stats}
                 createTemplateHref={routes.templates.create.url(branchQuery)}
-                createPeriodHref={routes.periods.create.url(branchQuery)}
                 assignHref={routes.assignments.create.url(branchQuery)}
                 templateEditHref={(template) =>
                     routes.templates.edit.url(template.id, branchQuery)
                 }
-                periodEditHref={(period) =>
-                    routes.periods.edit.url(period.id, branchQuery)
+                assignmentEditHref={(row) =>
+                    routes.assignments.edit.url(row.id, branchQuery)
                 }
                 selectedBranch={selectedBranch}
                 selectedBranchId={selectedBranchId}

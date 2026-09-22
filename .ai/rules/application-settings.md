@@ -1,17 +1,19 @@
 ---
 paths:
-  - app/Services/Application/**
+  - 'app/Services/Application/**'
   - app/Models/ApplicationSetting.php
   - app/Models/SmtpSetting.php
   - app/Models/PaymentGatewaySetting.php
-  - app/Http/Controllers/Platform/*SettingsController.php
-  - app/Http/Requests/Platform/*Settings*.php
+  - 'app/Http/Controllers/Platform/*SettingsController.php'
+  - 'app/Http/Requests/Platform/*Settings*.php'
   - app/Support/DateTimeFormat.php
-  - resources/js/pages/platform/settings/**
+  - 'resources/js/pages/platform/settings/**'
   - resources/js/lib/datetime.ts
-  - database/migrations/*_create_application_settings_table.php
-  - database/migrations/*_create_smtp_settings_table.php
-  - database/migrations/*_create_payment_gateway_settings_table.php
+  - 'database/migrations/*_create_application_settings_table.php'
+  - 'database/migrations/*_create_smtp_settings_table.php'
+  - 'database/migrations/*_create_payment_gateway_settings_table.php'
+  - 'app/Http/Controllers/Platform/*Shift*.php'
+  - 'database/migrations/**'
 ---
 
 # Application settings

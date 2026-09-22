@@ -1,24 +1,17 @@
 import { Link } from '@inertiajs/react';
-import {
-    CalendarRange,
-    Clock3,
-    Plus,
-    Search,
-    Users,
-} from 'lucide-react';
+import { CalendarRange, Clock3, Plus, Search, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ShiftBranchEmptyState } from '@/components/admin/shift-branch-empty-state';
 import { ShiftBranchPicker } from '@/components/admin/shift-branch-picker';
 import { ShiftCoverageMap } from '@/components/admin/shift-coverage-map';
 import { ShiftPageHeader } from '@/components/admin/shift-page-header';
-import { ShiftPeriodSpan } from '@/components/admin/shift-period-span';
 import { ShiftTimeBar } from '@/components/admin/shift-time-bar';
 import type {
     BranchOption,
     ShiftAssignmentRow,
-    ShiftPeriodOption,
     ShiftTemplateOption,
     ShiftWorkspaceStats,
+    UncoveredShift,
 } from '@/components/admin/workforce-types';
 import { StatCard } from '@/components/portal/stat-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -43,14 +36,14 @@ type ShiftBoardProps = {
     title: string;
     description: string;
     templates: ShiftTemplateOption[];
-    periods: ShiftPeriodOption[];
+    scheduled?: ShiftAssignmentRow[];
+    uncovered?: UncoveredShift[];
     onDuty: ShiftAssignmentRow[];
     stats: ShiftWorkspaceStats;
     createTemplateHref: string;
-    createPeriodHref: string;
     assignHref: string;
     templateEditHref?: (template: ShiftTemplateOption) => string | null;
-    periodEditHref?: (period: ShiftPeriodOption) => string | null;
+    assignmentEditHref?: (assignment: ShiftAssignmentRow) => string | null;
     selectedBranch?: BranchOption | null;
     selectedBranchId?: number | null;
     branchOptionsUrl?: string | null;
@@ -62,14 +55,14 @@ export function ShiftBoard({
     title,
     description,
     templates,
-    periods,
+    scheduled = [],
+    uncovered = [],
     onDuty,
     stats,
     createTemplateHref,
-    createPeriodHref,
     assignHref,
     templateEditHref,
-    periodEditHref,
+    assignmentEditHref,
     selectedBranch = null,
     selectedBranchId = null,
     branchOptionsUrl = null,
@@ -119,25 +112,25 @@ export function ShiftBoard({
         [filter, needle, now, templates],
     );
 
-    const visiblePeriods = useMemo(
+    const visibleScheduled = useMemo(
         () =>
-            periods.filter((period) => {
+            scheduled.filter((row) => {
                 if (needle === '') {
                     return true;
                 }
 
                 return [
-                    period.name,
-                    period.branch_name,
-                    period.start_date,
-                    period.end_date,
+                    row.user_name,
+                    row.shift_template_name,
+                    row.days_label,
+                    row.branch_name,
                 ]
                     .filter(Boolean)
                     .join(' ')
                     .toLowerCase()
                     .includes(needle);
             }),
-        [needle, periods],
+        [needle, scheduled],
     );
 
     const groupedTemplates = useMemo(
@@ -149,14 +142,15 @@ export function ShiftBoard({
         onSelectBranch && branchOptionsUrl && !selectedBranchId,
     );
 
-    const branchPicker = onSelectBranch && branchOptionsUrl ? (
-        <ShiftBranchPicker
-            optionsUrl={branchOptionsUrl}
-            value={selectedBranchId ? String(selectedBranchId) : ''}
-            selectedLabel={selectedBranch?.name}
-            onChange={(branchId) => onSelectBranch(Number(branchId))}
-        />
-    ) : null;
+    const branchPicker =
+        onSelectBranch && branchOptionsUrl ? (
+            <ShiftBranchPicker
+                optionsUrl={branchOptionsUrl}
+                value={selectedBranchId ? String(selectedBranchId) : ''}
+                selectedLabel={selectedBranch?.name}
+                onChange={(branchId) => onSelectBranch(Number(branchId))}
+            />
+        ) : null;
 
     return (
         <div
@@ -171,34 +165,31 @@ export function ShiftBoard({
                 description={description}
                 actions={
                     waitingForBranch ? null : (
-                    <>
-                        <div className="border-border/80 bg-card hidden items-center gap-3 rounded-full border px-3 py-1.5 sm:flex">
-                            <span className="relative flex size-2">
-                                <span className="bg-primary absolute inline-flex size-full animate-ping rounded-full opacity-60" />
-                                <span className="bg-primary relative inline-flex size-2 rounded-full" />
-                            </span>
-                            <div className="leading-tight">
-                                <p className="text-sm font-semibold tabular-nums">
-                                    {formatLiveClock(now)}
-                                </p>
-                                <p className="text-muted-foreground text-[11px]">
-                                    {formatLiveDate(now)}
-                                </p>
+                        <>
+                            <div className="border-border/80 bg-card hidden items-center gap-3 rounded-full border px-3 py-1.5 sm:flex">
+                                <span className="relative flex size-2">
+                                    <span className="bg-primary absolute inline-flex size-full animate-ping rounded-full opacity-60" />
+                                    <span className="bg-primary relative inline-flex size-2 rounded-full" />
+                                </span>
+                                <div className="leading-tight">
+                                    <p className="text-sm font-semibold tabular-nums">
+                                        {formatLiveClock(now)}
+                                    </p>
+                                    <p className="text-muted-foreground text-[11px]">
+                                        {formatLiveDate(now)}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                        <Button variant="secondary" asChild>
-                            <Link href={createPeriodHref}>New period</Link>
-                        </Button>
-                        <Button variant="secondary" asChild>
-                            <Link href={assignHref}>Assign to shift</Link>
-                        </Button>
-                        <Button asChild>
-                            <Link href={createTemplateHref}>
-                                <Plus className="size-4" />
-                                New shift
-                            </Link>
-                        </Button>
-                    </>
+                            <Button variant="secondary" asChild>
+                                <Link href={assignHref}>Assign to shift</Link>
+                            </Button>
+                            <Button asChild>
+                                <Link href={createTemplateHref}>
+                                    <Plus className="size-4" />
+                                    New shift
+                                </Link>
+                            </Button>
+                        </>
                     )
                 }
             />
@@ -220,266 +211,309 @@ export function ShiftBoard({
                 />
             ) : (
                 <>
-            {branchPicker}
+                    {branchPicker}
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <StatCard
-                    icon={Users}
-                    label="On duty now"
-                    value={String(stats.on_duty)}
-                    hint={
-                        stats.on_duty === 1
-                            ? 'Person inside a live window'
-                            : 'People inside a live window'
-                    }
-                />
-                <StatCard
-                    icon={Clock3}
-                    label="Shifts"
-                    value={String(stats.templates)}
-                    hint={`${stats.active_templates} active`}
-                />
-                <StatCard
-                    icon={CalendarRange}
-                    label="Roster periods"
-                    value={String(stats.periods)}
-                    hint="Named date ranges"
-                />
-            </div>
-
-            <section className="bg-card overflow-hidden rounded-2xl border">
-                <header className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
-                    <div>
-                        <h2 className="text-base font-semibold tracking-tight">
-                            On duty now
-                        </h2>
-                        <p className="text-muted-foreground text-sm">
-                            Live coverage from scheduled assignments.
-                        </p>
-                    </div>
-                    <Button size="sm" variant="outline" asChild>
-                        <Link href={assignHref}>Assign someone</Link>
-                    </Button>
-                </header>
-                {onDuty.length === 0 ? (
-                    <div className="text-muted-foreground px-5 py-8 text-sm">
-                        Nobody is inside a duty window right now.
-                    </div>
-                ) : (
-                    <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {onDuty.map((person) => (
-                            <article
-                                key={person.id}
-                                className="flex items-center gap-3 rounded-xl border px-3 py-3"
-                            >
-                                <div className="relative">
-                                    <Avatar className="size-10">
-                                        {person.avatar_url ? (
-                                            <AvatarImage
-                                                src={person.avatar_url}
-                                                alt={person.user_name ?? ''}
-                                            />
-                                        ) : null}
-                                        <AvatarFallback>
-                                            {initials(person.user_name ?? '?')}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <span className="bg-primary ring-card absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-medium">
-                                        {person.user_name}
-                                    </p>
-                                    <p className="text-muted-foreground truncate text-xs">
-                                        {person.shift_template_name} ·{' '}
-                                        {formatClock(person.start_time)}–
-                                        {formatClock(person.end_time)}
-                                    </p>
-                                    <p className="text-muted-foreground truncate text-xs">
-                                        {person.user_type_label ??
-                                            person.branch_name}
-                                    </p>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                )}
-            </section>
-
-            <ShiftCoverageMap templates={templates} now={now} />
-
-            <div className="flex flex-wrap items-center gap-3">
-                <div className="relative min-w-56 flex-1 max-w-md">
-                    <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-                    <Input
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Filter shifts and periods"
-                        className="pl-9"
-                    />
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                    {(
-                        [
-                            ['all', 'All windows'],
-                            ['live', 'Live now'],
-                        ] as const
-                    ).map(([value, label]) => (
-                        <button
-                            key={value}
-                            type="button"
-                            onClick={() => setFilter(value)}
-                            className={cn(
-                                'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                                filter === value
-                                    ? 'border-transparent bg-primary text-primary-foreground'
-                                    : 'hover:bg-muted',
-                            )}
-                        >
-                            {label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(20rem,1fr)]">
-                <section className="space-y-5">
-                    <div className="flex items-end justify-between gap-3">
-                        <div>
-                            <h2 className="text-base font-semibold tracking-tight">
-                                Shifts
-                            </h2>
-                            <p className="text-muted-foreground text-sm">
-                                Named start and end times on the same day.
-                            </p>
-                        </div>
-                        <span className="text-muted-foreground text-xs tabular-nums">
-                            {visibleTemplates.length}
-                        </span>
-                    </div>
-                    {visibleTemplates.length === 0 ? (
-                        <EmptyPanel
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        <StatCard
+                            icon={Users}
+                            label="On duty now"
+                            value={String(stats.on_duty)}
+                            hint={
+                                stats.on_duty === 1
+                                    ? 'Person inside a live window'
+                                    : 'People inside a live window'
+                            }
+                        />
+                        <StatCard
                             icon={Clock3}
-                            title="No shifts yet"
-                            body="Create a named shift, then assign people into a roster period."
-                            actionHref={createTemplateHref}
-                            actionLabel="New shift"
+                            label="Shifts"
+                            value={String(stats.templates)}
+                            hint={`${stats.active_templates} active`}
                         />
-                    ) : (
-                        groupedTemplates.map((group) => (
-                            <div key={group.label} className="space-y-3">
-                                {groupedTemplates.length > 1 ? (
-                                    <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
-                                        {group.label}
-                                    </p>
-                                ) : null}
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    {group.items.map((template) => (
-                                        <TemplateCard
-                                            key={template.id}
-                                            template={template}
-                                            now={now}
-                                            editHref={templateEditHref?.(
-                                                template,
-                                            )}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </section>
-
-                <section className="space-y-4">
-                    <div className="flex items-end justify-between gap-3">
-                        <div>
-                            <h2 className="text-base font-semibold tracking-tight">
-                                Roster periods
-                            </h2>
-                            <p className="text-muted-foreground text-sm">
-                                Date ranges assignments must stay inside.
-                            </p>
-                        </div>
-                        <span className="text-muted-foreground text-xs tabular-nums">
-                            {visiblePeriods.length}
-                        </span>
-                    </div>
-                    {visiblePeriods.length === 0 ? (
-                        <EmptyPanel
+                        <StatCard
                             icon={CalendarRange}
-                            title="No periods yet"
-                            body="A period is a named date span. It does not generate daily rows."
-                            actionHref={createPeriodHref}
-                            actionLabel="New period"
+                            label="Scheduled people"
+                            value={String(stats.scheduled)}
+                            hint="Personal duty periods"
                         />
-                    ) : (
-                        <div className="space-y-3">
-                            {visiblePeriods.map((period) => {
-                                const editHref = periodEditHref?.(period);
+                    </div>
 
-                                return (
+                    <section className="bg-card overflow-hidden rounded-2xl border">
+                        <header className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
+                            <div>
+                                <h2 className="text-base font-semibold tracking-tight">
+                                    On duty now
+                                </h2>
+                                <p className="text-muted-foreground text-sm">
+                                    Live coverage from today’s scheduled days.
+                                </p>
+                            </div>
+                            <Button size="sm" variant="outline" asChild>
+                                <Link href={assignHref}>Assign someone</Link>
+                            </Button>
+                        </header>
+                        {onDuty.length === 0 ? (
+                            <div className="text-muted-foreground px-5 py-8 text-sm">
+                                Nobody is inside a duty window right now.
+                            </div>
+                        ) : (
+                            <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+                                {onDuty.map((person) => (
                                     <article
-                                        key={period.id}
-                                        className="bg-card flex flex-col gap-3 rounded-2xl border p-4"
+                                        key={person.id}
+                                        className="flex items-center gap-3 rounded-xl border px-3 py-3"
                                     >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <p className="truncate font-medium">
-                                                    {period.name}
-                                                </p>
-                                                <p className="text-muted-foreground mt-0.5 text-sm">
-                                                    {formatDayRange(
-                                                        period.start_date,
-                                                        period.end_date,
+                                        <div className="relative">
+                                            <Avatar className="size-10">
+                                                {person.avatar_url ? (
+                                                    <AvatarImage
+                                                        src={person.avatar_url}
+                                                        alt={
+                                                            person.user_name ??
+                                                            ''
+                                                        }
+                                                    />
+                                                ) : null}
+                                                <AvatarFallback>
+                                                    {initials(
+                                                        person.user_name ??
+                                                            '?',
                                                     )}
-                                                </p>
-                                            </div>
-                                            <Badge
-                                                variant={
-                                                    period.contains_today
-                                                        ? 'secondary'
-                                                        : 'outline'
-                                                }
-                                            >
-                                                {periodBadge(period)}
-                                            </Badge>
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <span className="bg-primary ring-card absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2" />
                                         </div>
-                                        <ShiftPeriodSpan
-                                            startDate={period.start_date}
-                                            endDate={period.end_date}
-                                            containsToday={
-                                                period.contains_today
-                                            }
-                                            daysElapsed={period.days_elapsed}
-                                            daysTotal={period.days_total}
-                                        />
-                                        <div className="flex items-center justify-between gap-2 text-xs">
-                                            <p className="text-muted-foreground">
-                                                {period.branch_name ??
-                                                    period.owner_type_label}
-                                                {' · '}
-                                                {period.scheduled_count ?? 0}{' '}
-                                                assigned
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-medium">
+                                                {person.user_name}
                                             </p>
-                                            {editHref ? (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    asChild
-                                                >
-                                                    <Link href={editHref}>
-                                                        Edit
-                                                    </Link>
-                                                </Button>
-                                            ) : null}
+                                            <p className="text-muted-foreground truncate text-xs">
+                                                {person.shift_template_name} ·{' '}
+                                                {formatClock(person.start_time)}
+                                                –
+                                                {formatClock(person.end_time)}
+                                            </p>
+                                            <p className="text-muted-foreground truncate text-xs">
+                                                {person.user_type_label ??
+                                                    person.branch_name}
+                                            </p>
                                         </div>
                                     </article>
-                                );
-                            })}
+                                ))}
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="bg-card overflow-hidden rounded-2xl border">
+                        <header className="border-b px-5 py-4">
+                            <h2 className="text-base font-semibold tracking-tight">
+                                Uncovered today
+                            </h2>
+                            <p className="text-muted-foreground text-sm">
+                                Named shifts with nobody scheduled for today.
+                            </p>
+                        </header>
+                        {uncovered.length === 0 ? (
+                            <div className="text-muted-foreground px-5 py-6 text-sm">
+                                Every named shift has someone scheduled today.
+                            </div>
+                        ) : (
+                            <div className="flex flex-wrap gap-2 p-4">
+                                {uncovered.map((shift) => (
+                                    <Badge
+                                        key={shift.id}
+                                        variant="outline"
+                                        className="rounded-full px-3 py-1"
+                                    >
+                                        {shift.name} ·{' '}
+                                        {formatClock(shift.start_time)}–
+                                        {formatClock(shift.end_time)}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+
+                    <ShiftCoverageMap templates={templates} now={now} />
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative min-w-56 max-w-md flex-1">
+                            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                            <Input
+                                value={query}
+                                onChange={(event) => setQuery(event.target.value)}
+                                placeholder="Filter shifts and people"
+                                className="pl-9"
+                            />
                         </div>
-                    )}
-                </section>
-            </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {(
+                                [
+                                    ['all', 'All windows'],
+                                    ['live', 'Live now'],
+                                ] as const
+                            ).map(([value, label]) => (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => setFilter(value)}
+                                    className={cn(
+                                        'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                                        filter === value
+                                            ? 'border-transparent bg-primary text-primary-foreground'
+                                            : 'hover:bg-muted',
+                                    )}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <section className="space-y-4">
+                        <div className="flex items-end justify-between gap-3">
+                            <div>
+                                <h2 className="text-base font-semibold tracking-tight">
+                                    Scheduled people
+                                </h2>
+                                <p className="text-muted-foreground text-sm">
+                                    Each person has their own dates and working
+                                    days.
+                                </p>
+                            </div>
+                            <span className="text-muted-foreground text-xs tabular-nums">
+                                {visibleScheduled.length}
+                            </span>
+                        </div>
+                        {visibleScheduled.length === 0 ? (
+                            <EmptyPanel
+                                icon={Users}
+                                title="Nobody scheduled"
+                                body="Assign a person, a date range, and a usual shift."
+                                actionHref={assignHref}
+                                actionLabel="Assign to shift"
+                            />
+                        ) : (
+                            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                {visibleScheduled.map((row) => {
+                                    const editHref =
+                                        assignmentEditHref?.(row) ?? null;
+
+                                    return (
+                                        <article
+                                            key={row.id}
+                                            className="bg-card flex flex-col gap-3 rounded-2xl border p-4"
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <Avatar className="size-10">
+                                                    {row.avatar_url ? (
+                                                        <AvatarImage
+                                                            src={row.avatar_url}
+                                                            alt={
+                                                                row.user_name ??
+                                                                ''
+                                                            }
+                                                        />
+                                                    ) : null}
+                                                    <AvatarFallback>
+                                                        {initials(
+                                                            row.user_name ??
+                                                                '?',
+                                                        )}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate font-medium">
+                                                        {row.user_name}
+                                                    </p>
+                                                    <p className="text-muted-foreground truncate text-sm">
+                                                        {row.shift_template_name}{' '}
+                                                        ·{' '}
+                                                        {formatClock(
+                                                            row.start_time,
+                                                        )}
+                                                        –
+                                                        {formatClock(
+                                                            row.end_time,
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <p className="text-muted-foreground text-sm">
+                                                {formatDayRange(
+                                                    row.start_date,
+                                                    row.end_date,
+                                                )}
+                                                {row.days_label
+                                                    ? ` · ${row.days_label}`
+                                                    : ''}
+                                            </p>
+                                            {editHref ? (
+                                                <div className="flex justify-end">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        asChild
+                                                    >
+                                                        <Link href={editHref}>
+                                                            Edit
+                                                        </Link>
+                                                    </Button>
+                                                </div>
+                                            ) : null}
+                                        </article>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="space-y-5">
+                        <div className="flex items-end justify-between gap-3">
+                            <div>
+                                <h2 className="text-base font-semibold tracking-tight">
+                                    Shifts
+                                </h2>
+                                <p className="text-muted-foreground text-sm">
+                                    Named start and end times on the same day.
+                                </p>
+                            </div>
+                            <span className="text-muted-foreground text-xs tabular-nums">
+                                {visibleTemplates.length}
+                            </span>
+                        </div>
+                        {visibleTemplates.length === 0 ? (
+                            <EmptyPanel
+                                icon={Clock3}
+                                title="No shifts yet"
+                                body="Create a named shift, then assign people to their own dates."
+                                actionHref={createTemplateHref}
+                                actionLabel="New shift"
+                            />
+                        ) : (
+                            groupedTemplates.map((group) => (
+                                <div key={group.label} className="space-y-3">
+                                    {groupedTemplates.length > 1 ? (
+                                        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.16em] uppercase">
+                                            {group.label}
+                                        </p>
+                                    ) : null}
+                                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                        {group.items.map((template) => (
+                                            <TemplateCard
+                                                key={template.id}
+                                                template={template}
+                                                now={now}
+                                                editHref={templateEditHref?.(
+                                                    template,
+                                                )}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </section>
                 </>
             )}
         </div>
@@ -495,11 +529,7 @@ function TemplateCard({
     now: Date;
     editHref?: string | null;
 }) {
-    const live = windowCoversNow(
-        template.start_time,
-        template.end_time,
-        now,
-    );
+    const live = windowCoversNow(template.start_time, template.end_time, now);
 
     return (
         <article className="bg-card flex flex-col gap-4 rounded-2xl border p-4">
@@ -536,10 +566,7 @@ function TemplateCard({
                 <p className="text-muted-foreground">
                     {template.branch_name ?? template.owner_type_label}
                     {' · '}
-                    {durationLabel(
-                        template.start_time,
-                        template.end_time,
-                    )}
+                    {durationLabel(template.start_time, template.end_time)}
                     {' · '}
                     {template.scheduled_count ?? 0} scheduled
                 </p>
@@ -578,30 +605,6 @@ function groupByBranch(
     }
 
     return [...groups.entries()].map(([label, items]) => ({ label, items }));
-}
-
-function periodBadge(period: ShiftPeriodOption): string {
-    if (!period.is_active) {
-        return 'Inactive';
-    }
-
-    if (period.contains_today) {
-        return 'Current';
-    }
-
-    if (period.end_date && period.end_date < todayIso()) {
-        return 'Closed';
-    }
-
-    return 'Upcoming';
-}
-
-function todayIso(): string {
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-
-    return `${now.getFullYear()}-${month}-${day}`;
 }
 
 function EmptyPanel({

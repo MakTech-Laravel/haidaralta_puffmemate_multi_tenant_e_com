@@ -48,3 +48,9 @@ Shift board, coverage map, and forms never show overnight wrap, Overnight stats,
 
 ## No default branch on Branch shifts
 Opening Branch shifts with no ?branch_id= shows an empty choose-a-branch state. Do not auto-select a store. After picking a branch, reload that store only.
+
+## Assign is a personal calendar, not a roster period
+The Assign page is a full-width calendar: person, dates, main shift, working days. Choosing shift + dates fills working days immediately. A day can be Keep, Leave, or a different shift; Apply to a date span covers multi-day leave. There is no New period, roster-period list, or period form. Other assignments for that person show as read-only chips. Covering someone is a second assignment.
+
+## Assign calendar has no period UI
+Assign is a full-width personal calendar: person, dates, main shift, working days. Fill working days immediately. Day actions are Keep, Leave this day, or Different shift, plus Apply to a date span. No New period or roster-period UI. Other assignments for that person are read-only chips. Covering someone is a second assignment.

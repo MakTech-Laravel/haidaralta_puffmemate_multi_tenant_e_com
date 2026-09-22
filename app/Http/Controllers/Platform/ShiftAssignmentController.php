@@ -7,6 +7,7 @@ use App\Enums\ShiftOwnerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreShiftAssignmentRequest;
 use App\Http\Requests\Platform\UpdateShiftAssignmentRequest;
+use App\Models\User;
 use App\Models\UserShiftAssignment;
 use App\Services\Workforce\AssignShiftService;
 use App\Support\Toast;
@@ -29,13 +30,7 @@ class ShiftAssignmentController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('platform/shifts/assign', [
-            'workspace' => $this->shiftWorkspace(),
-            'people' => WorkforcePayload::assignablePeople(),
-            'templates' => WorkforcePayload::templatesOwnedBy($this->shiftOwner(), activeOnly: true),
-            'periods' => WorkforcePayload::periodsOwnedBy($this->shiftOwner(), activeOnly: true),
-            'branches' => WorkforcePayload::branchOptions(),
-        ]);
+        return Inertia::render('platform/shifts/assign', $this->formProps());
     }
 
     public function store(StoreShiftAssignmentRequest $request): RedirectResponse
@@ -53,6 +48,13 @@ class ShiftAssignmentController extends Controller
         return redirect()->route('platform.shift-assignments.create');
     }
 
+    public function edit(UserShiftAssignment $userShiftAssignment): Response
+    {
+        $this->assertOwnedAssignment($userShiftAssignment);
+
+        return Inertia::render('platform/shifts/assign', $this->formProps($userShiftAssignment));
+    }
+
     public function update(UpdateShiftAssignmentRequest $request, UserShiftAssignment $userShiftAssignment): RedirectResponse
     {
         $this->assertOwnedAssignment($userShiftAssignment);
@@ -67,6 +69,37 @@ class ShiftAssignmentController extends Controller
 
         Toast::success('Shift updated.');
 
-        return redirect()->back();
+        return redirect()->route('platform.shift-assignments.edit', $userShiftAssignment);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formProps(?UserShiftAssignment $assignment = null): array
+    {
+        $assignment?->loadMissing(['user', 'shiftTemplate', 'days.shiftTemplate']);
+
+        $people = WorkforcePayload::assignablePeople();
+        $user = $assignment?->user;
+        $otherDays = $user instanceof User && $assignment !== null
+            ? WorkforcePayload::otherDutyDays(
+                $user,
+                $assignment->branch_id,
+                $assignment->start_date->format('Y-m-d'),
+                $assignment->end_date->format('Y-m-d'),
+                $assignment->id,
+            )
+            : [];
+
+        return [
+            'workspace' => $this->shiftWorkspace(),
+            'people' => $people,
+            'templates' => WorkforcePayload::templatesOwnedBy($this->shiftOwner(), activeOnly: true),
+            'branches' => WorkforcePayload::branchOptions(),
+            'assignment' => $assignment === null ? null : WorkforcePayload::assignment($assignment),
+            'days' => $assignment === null ? [] : WorkforcePayload::assignmentDays($assignment),
+            'otherDays' => $otherDays,
+            'scheduledDays' => WorkforcePayload::scheduledDutyDays(null, $assignment?->id),
+        ];
     }
 }
