@@ -3,11 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { wholesaleFormCopy } from '@/lib/storefront-wholesale';
 import { cn } from '@/lib/utils';
+
+type WholesaleFormCopy = Record<string, string>;
 
 type WholesaleFormProps = {
     className?: string;
+    copy: WholesaleFormCopy;
 };
 
 const boxedFieldClass =
@@ -17,7 +19,7 @@ function RequiredMark() {
     return <span className="text-primary">*</span>;
 }
 
-export function WholesaleForm({ className }: WholesaleFormProps) {
+export function WholesaleForm({ className, copy }: WholesaleFormProps) {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [phone, setPhone] = useState('');
@@ -44,7 +46,7 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                 <div className="grid gap-5 sm:grid-cols-2">
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-first-name">
-                            {wholesaleFormCopy.firstName} <RequiredMark />
+                            {copy.firstName ?? 'First Name'} <RequiredMark />
                         </Label>
                         <Input
                             id="wholesale-first-name"
@@ -53,13 +55,13 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                             onChange={(event) =>
                                 setFirstName(event.target.value)
                             }
-                            placeholder={wholesaleFormCopy.firstNamePlaceholder}
+                            placeholder={copy.firstNamePlaceholder}
                             className={boxedFieldClass}
                         />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-last-name">
-                            {wholesaleFormCopy.lastName}
+                            {copy.lastName ?? 'Last Name'}
                         </Label>
                         <Input
                             id="wholesale-last-name"
@@ -67,13 +69,13 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                             onChange={(event) =>
                                 setLastName(event.target.value)
                             }
-                            placeholder={wholesaleFormCopy.lastNamePlaceholder}
+                            placeholder={copy.lastNamePlaceholder}
                             className={boxedFieldClass}
                         />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-phone">
-                            {wholesaleFormCopy.phone} <RequiredMark />
+                            {copy.phone ?? 'Phone'} <RequiredMark />
                         </Label>
                         <Input
                             id="wholesale-phone"
@@ -81,13 +83,13 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                             required
                             value={phone}
                             onChange={(event) => setPhone(event.target.value)}
-                            placeholder={wholesaleFormCopy.phonePlaceholder}
+                            placeholder={copy.phonePlaceholder}
                             className={boxedFieldClass}
                         />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-email">
-                            {wholesaleFormCopy.email} <RequiredMark />
+                            {copy.email ?? 'Email'} <RequiredMark />
                         </Label>
                         <Input
                             id="wholesale-email"
@@ -95,25 +97,25 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                             required
                             value={email}
                             onChange={(event) => setEmail(event.target.value)}
-                            placeholder={wholesaleFormCopy.emailPlaceholder}
+                            placeholder={copy.emailPlaceholder}
                             className={boxedFieldClass}
                         />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-company">
-                            {wholesaleFormCopy.company}
+                            {copy.company ?? 'Company (If Applicable)'}
                         </Label>
                         <Input
                             id="wholesale-company"
                             value={company}
                             onChange={(event) => setCompany(event.target.value)}
-                            placeholder={wholesaleFormCopy.companyPlaceholder}
+                            placeholder={copy.companyPlaceholder}
                             className={boxedFieldClass}
                         />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-ask-question">
-                            {wholesaleFormCopy.askQuestion}
+                            {copy.askQuestion ?? 'Ask Question'}
                         </Label>
                         <Input
                             id="wholesale-ask-question"
@@ -121,9 +123,7 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                             onChange={(event) =>
                                 setAskQuestion(event.target.value)
                             }
-                            placeholder={
-                                wholesaleFormCopy.askQuestionPlaceholder
-                            }
+                            placeholder={copy.askQuestionPlaceholder}
                             className={boxedFieldClass}
                         />
                     </div>
@@ -131,13 +131,13 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
 
                 <div className="space-y-2">
                     <Label htmlFor="wholesale-message">
-                        {wholesaleFormCopy.message}
+                        {copy.message ?? 'Message'}
                     </Label>
                     <Textarea
                         id="wholesale-message"
                         value={message}
                         onChange={(event) => setMessage(event.target.value)}
-                        placeholder={wholesaleFormCopy.messagePlaceholder}
+                        placeholder={copy.messagePlaceholder}
                         rows={4}
                         className="border-border min-h-24 resize-none rounded-none bg-transparent shadow-none"
                     />
@@ -148,17 +148,10 @@ export function WholesaleForm({ className }: WholesaleFormProps) {
                         type="submit"
                         className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-md px-6 font-semibold"
                     >
-                        {wholesaleFormCopy.submitLabel}
+                        {copy.submitLabel ?? 'Send Message'}
                     </Button>
                 </div>
             </form>
-
-            {/* <img
-                src="/images/storefront/contact-paper-plane.png"
-                alt=""
-                aria-hidden
-                className="pointer-events-none absolute right-2 bottom-2 z-0 h-auto w-40 -rotate-6 object-contain invert mix-blend-multiply sm:right-4 sm:bottom-4 sm:w-52 sm:-rotate-3"
-            /> */}
         </div>
     );
 }

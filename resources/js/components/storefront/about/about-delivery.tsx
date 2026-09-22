@@ -1,24 +1,34 @@
 import { Check } from 'lucide-react';
-import { aboutDelivery } from '@/lib/storefront-about';
 import { cn } from '@/lib/utils';
 
+type AboutDeliveryData = {
+    eyebrow: string;
+    heading: string;
+    paragraphs: string[];
+    statuses: {
+        label: string;
+        state: 'done' | 'active' | 'pending';
+    }[];
+};
+
 type AboutDeliveryProps = {
+    data: AboutDeliveryData;
     className?: string;
 };
 
-export function AboutDelivery({ className }: AboutDeliveryProps) {
+export function AboutDelivery({ data, className }: AboutDeliveryProps) {
     return (
         <section className={cn('bg-background py-16 sm:py-20', className)}>
             <div className="container mx-auto grid items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14">
                 <div>
                     <p className="text-primary text-xs font-semibold tracking-[0.14em] uppercase">
-                        {aboutDelivery.eyebrow}
+                        {data.eyebrow}
                     </p>
                     <h2 className="text-foreground mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
-                        {aboutDelivery.heading}
+                        {data.heading}
                     </h2>
                     <div className="text-muted-foreground font-inter mt-4 max-w-xl space-y-3 text-sm leading-relaxed font-normal sm:text-lg">
-                        {aboutDelivery.paragraphs.map((paragraph) => (
+                        {data.paragraphs.map((paragraph) => (
                             <p key={paragraph}>{paragraph}</p>
                         ))}
                     </div>
@@ -41,9 +51,8 @@ export function AboutDelivery({ className }: AboutDeliveryProps) {
                         </div>
                     </div>
                     <ol className="mt-5 space-y-0">
-                        {aboutDelivery.statuses.map((status, index) => {
-                            const isLast =
-                                index === aboutDelivery.statuses.length - 1;
+                        {data.statuses.map((status, index) => {
+                            const isLast = index === data.statuses.length - 1;
 
                             return (
                                 <li

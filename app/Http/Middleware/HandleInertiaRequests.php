@@ -6,6 +6,7 @@ use App\Enums\RoleEnum;
 use App\Models\Branch;
 use App\Models\User;
 use App\Services\Application\ApplicationSettingsService;
+use App\Services\Application\ContactSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Support\MediaUrl;
 use App\Support\PortalAuth;
@@ -51,6 +52,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'application' => app(ApplicationSettingsService::class)->sharedPayload(),
+            'contacts' => app(ContactSettingsService::class)->sharedPayload(),
             'paymentGateways' => app(PaymentGatewaySettingsService::class)->enabledMethods(),
             'auth' => $auth,
             'portal' => $portal,

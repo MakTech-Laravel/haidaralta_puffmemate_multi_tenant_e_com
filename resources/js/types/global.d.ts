@@ -21,6 +21,20 @@ declare module '@inertiajs/core' {
                 themeColor: string;
                 backgroundColor: string;
             };
+            contacts: {
+                phone: string | null;
+                fax: string | null;
+                email: string | null;
+                whatsapp: string | null;
+                address: string | null;
+                map_embed_url: string | null;
+                socials: Array<{
+                    key: string;
+                    label: string;
+                    url: string;
+                    icon: string | null;
+                }>;
+            };
             paymentGateways: Array<{
                 id: string;
                 label: string;

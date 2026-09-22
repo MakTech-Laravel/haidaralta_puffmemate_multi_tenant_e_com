@@ -1,11 +1,23 @@
-import { aboutMultiBranch } from '@/lib/storefront-about';
 import { cn } from '@/lib/utils';
 
+type AboutMultiBranchData = {
+    eyebrow: string;
+    heading: string;
+    body: string;
+    promise: string;
+    factors: {
+        number: string;
+        title: string;
+        description: string;
+    }[];
+};
+
 type AboutMultiBranchProps = {
+    data: AboutMultiBranchData;
     className?: string;
 };
 
-export function AboutMultiBranch({ className }: AboutMultiBranchProps) {
+export function AboutMultiBranch({ data, className }: AboutMultiBranchProps) {
     return (
         <section
             className={cn(
@@ -16,22 +28,22 @@ export function AboutMultiBranch({ className }: AboutMultiBranchProps) {
             <div className="container mx-auto grid items-start gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14">
                 <div>
                     <p className="text-primary text-xs font-semibold tracking-[0.14em] uppercase">
-                        {aboutMultiBranch.eyebrow}
+                        {data.eyebrow}
                     </p>
                     <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
-                        {aboutMultiBranch.heading}
+                        {data.heading}
                     </h2>
                     <p className="font-inter mt-4 max-w-xl text-sm leading-relaxed font-normal text-white/75 sm:text-lg">
-                        {aboutMultiBranch.body}
+                        {data.body}
                     </p>
                     <p className="font-inter mt-4 max-w-xl text-sm leading-relaxed font-normal text-white/75 sm:text-lg">
-                        {aboutMultiBranch.body}
+                        {data.body}
                     </p>
                     <div className="border-primary/60 bg-primary/10 font-inter mt-8 rounded-lg border px-4 py-3 text-base leading-relaxed font-medium">
                         <p className="text-primary font-inter text-sm leading-relaxed font-medium tracking-[0.10em] uppercase">
                             Important
                         </p>
-                        {aboutMultiBranch.promise}
+                        {data.promise}
                     </div>
                 </div>
 
@@ -39,7 +51,7 @@ export function AboutMultiBranch({ className }: AboutMultiBranchProps) {
                     <p className="text-muted-foreground font-inter text-sm leading-relaxed font-semibold tracking-[0.10em] uppercase">
                         Branch Routing
                     </p>
-                    {aboutMultiBranch.factors.map((factor) => (
+                    {data.factors.map((factor) => (
                         <li
                             key={factor.number}
                             className="flex items-start gap-4 border-b border-white/10 pb-4 last:border-b-0 last:pb-0"

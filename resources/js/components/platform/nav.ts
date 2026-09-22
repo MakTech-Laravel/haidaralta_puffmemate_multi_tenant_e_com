@@ -10,6 +10,7 @@ import {
     ChartColumn,
     CreditCard,
     Database,
+    FileText,
     Gauge,
     History,
     IdCard,
@@ -22,6 +23,7 @@ import {
     Megaphone,
     MessageCircle,
     MessagesSquare,
+    Phone,
     Package,
     Package2,
     PackagePlus,
@@ -268,9 +270,22 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                 ],
             }),
             navGroup({
+                title: 'CMS',
+                icon: FileText,
+                permissions: ['manage-pages'],
+                items: [
+                    navLink({
+                        title: 'All pages',
+                        href: '/platform/pages',
+                        icon: FileText,
+                        permissions: ['manage-pages'],
+                    }),
+                ],
+            }),
+            navGroup({
                 title: 'Marketing',
                 icon: Megaphone,
-                permissions: ['manage-reports'],
+                permissions: ['manage-reports', 'manage-pages'],
                 items: [
                     navSoon({
                         title: 'Coupons',
@@ -334,6 +349,12 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                         title: 'General',
                         href: '/platform/settings/general',
                         icon: Settings2,
+                        permissions: ['manage-application-settings'],
+                    }),
+                    navLink({
+                        title: 'Contacts',
+                        href: '/platform/settings/contacts',
+                        icon: Phone,
                         permissions: ['manage-application-settings'],
                     }),
                     navLink({

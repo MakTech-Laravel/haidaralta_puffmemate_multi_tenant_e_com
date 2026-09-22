@@ -14,7 +14,8 @@ export type StorefrontChromeItem = {
         | 'faqs'
         | 'contact'
         | 'wholesale'
-        | 'privacy';
+        | 'privacy'
+        | 'terms';
     /** Category slug for /shop/{category} links. */
     categorySlug?: string;
 };
@@ -47,6 +48,7 @@ export const storefrontFooterBrand: StorefrontChromeItem[] = [
     { label: 'About Us', route: 'about' },
     { label: 'Wholesale', route: 'wholesale' },
     { label: 'Privacy', route: 'privacy' },
+    { label: 'Terms', route: 'terms' },
 ];
 
 export const storefrontFooterBlurb =

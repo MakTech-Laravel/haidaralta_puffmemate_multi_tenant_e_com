@@ -1,11 +1,11 @@
-import { faqHero } from '@/lib/storefront-faq';
 import { cn } from '@/lib/utils';
 
 type FaqHeroProps = {
     className?: string;
+    data: { badge: string; title: string; subtitle: string };
 };
 
-export function FaqHero({ className }: FaqHeroProps) {
+export function FaqHero({ className, data }: FaqHeroProps) {
     return (
         <section className={cn('bg-background py-12 sm:py-16', className)}>
             <div className="container mx-auto max-w-4xl px-4 text-center sm:px-6">
@@ -14,13 +14,13 @@ export function FaqHero({ className }: FaqHeroProps) {
                         className="bg-primary size-1.5 shrink-0 rounded-full"
                         aria-hidden
                     />
-                    {faqHero.badge}
+                    {data.badge}
                 </p>
                 <h1 className="text-foreground font-inter mt-6 text-3xl font-bold tracking-tight sm:text-4xl lg:text-6xl">
-                    {faqHero.title}
+                    {data.title}
                 </h1>
                 <p className="text-muted-foreground font-inter mx-auto mt-4 max-w-2xl text-sm leading-relaxed font-normal sm:text-lg">
-                    {faqHero.subtitle}
+                    {data.subtitle}
                 </p>
             </div>
         </section>

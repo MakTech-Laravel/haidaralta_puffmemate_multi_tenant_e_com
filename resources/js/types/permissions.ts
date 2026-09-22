@@ -8,6 +8,7 @@ export type PermissionKey =
     | 'view-activity-logs'
     | 'manage-database-backups'
     | 'manage-application-settings'
+    | 'manage-pages'
     | 'view-horizon'
     | 'view-pulse'
     | 'view-branch-dashboard'
