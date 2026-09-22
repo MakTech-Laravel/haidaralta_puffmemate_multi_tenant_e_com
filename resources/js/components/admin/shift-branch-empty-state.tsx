@@ -6,15 +6,11 @@ import {
     Users,
 } from 'lucide-react';
 import {
-    formatClock,
-    hourTickLabel,
-    nowMarkerPct,
-    timeBarSegments,
-} from '@/lib/shift-format';
+    COVERAGE_SCALE_HEADER,
+    ShiftCoverageScale,
+} from '@/components/admin/shift-coverage-scale';
+import { formatClock, timeBarSegments } from '@/lib/shift-format';
 import { cn } from '@/lib/utils';
-
-const HOURS = 24;
-const HOUR_TICKS = [0, 3, 6, 9, 12, 15, 18, 21, 24];
 
 const SAMPLE_WINDOWS = [
     { name: 'Opening', start: '07:00', end: '15:00' },
@@ -128,11 +124,6 @@ const HOW_IT_WORKS = [
 
 function CoveragePreview() {
     const now = new Date();
-    const nowPct = nowMarkerPct(now);
-    const nowLabel = now.toLocaleTimeString(undefined, {
-        hour: 'numeric',
-        minute: '2-digit',
-    });
 
     return (
         <div className="flex flex-col">
@@ -142,8 +133,8 @@ function CoveragePreview() {
                         Today&apos;s coverage
                     </p>
                     <p className="text-muted-foreground text-xs">
-                        Midnight to midnight. Real names appear after you pick
-                        a store.
+                        00:00 to 24:00. Real names appear after you pick a
+                        store.
                     </p>
                 </div>
                 <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
@@ -153,13 +144,18 @@ function CoveragePreview() {
 
             <div className="flex min-w-0 border-t">
                 <div className="border-border/80 w-28 shrink-0 border-r sm:w-36">
-                    <div className="text-muted-foreground flex h-9 items-end px-3 pb-1.5 text-[10px] font-medium tracking-wide uppercase">
+                    <div
+                        className={cn(
+                            'text-muted-foreground flex items-end px-3 pb-1 text-[10px] font-medium tracking-wide uppercase',
+                            COVERAGE_SCALE_HEADER,
+                        )}
+                    >
                         Window
                     </div>
                     {SAMPLE_WINDOWS.map((window) => (
                         <div
                             key={window.name}
-                            className="flex h-10 flex-col justify-center gap-0.5 border-t px-3"
+                            className="flex h-11 flex-col justify-center gap-0.5 border-t px-3"
                         >
                             <p className="truncate text-sm font-medium">
                                 {window.name}
@@ -172,96 +168,32 @@ function CoveragePreview() {
                     ))}
                 </div>
 
-                <div className="min-w-0 flex-1 overflow-hidden">
-                    <div className="relative">
-                        <div className="relative h-9">
-                            {HOUR_TICKS.map((hour) => (
-                                <span
-                                    key={hour}
-                                    className={cn(
-                                        'text-muted-foreground absolute bottom-1 text-[10px] font-medium tabular-nums',
-                                        hour === 0
-                                            ? 'left-1.5'
-                                            : hour === 24
-                                              ? 'right-1.5'
-                                              : '-translate-x-1/2',
-                                        (hour === 0 ||
-                                            hour === 12 ||
-                                            hour === 24) &&
-                                            'text-foreground',
-                                    )}
-                                    style={
-                                        hour === 0 || hour === 24
-                                            ? undefined
-                                            : {
-                                                  left: `${(hour / HOURS) * 100}%`,
-                                              }
-                                    }
-                                >
-                                    {hourTickLabel(hour)}
-                                </span>
-                            ))}
-                            <span
-                                className="bg-primary text-primary-foreground absolute top-1 z-20 -translate-x-1/2 rounded-full px-1.5 py-px text-[10px] font-semibold whitespace-nowrap tabular-nums"
-                                style={{ left: `${nowPct}%` }}
+                <ShiftCoverageScale now={now}>
+                    {SAMPLE_WINDOWS.map((window) => {
+                        const segments = timeBarSegments(
+                            window.start,
+                            window.end,
+                        );
+
+                        return (
+                            <div
+                                key={window.name}
+                                className="relative h-11 border-t"
                             >
-                                Now {nowLabel}
-                            </span>
-                        </div>
-
-                        <div
-                            className="bg-muted/40 pointer-events-none absolute top-9 bottom-0 w-1/2"
-                            aria-hidden
-                        />
-
-                        <div className="relative overflow-hidden">
-                            {HOUR_TICKS.map((hour) => (
-                                <span
-                                    key={`line-${hour}`}
-                                    className={cn(
-                                        'pointer-events-none absolute top-0 bottom-0 w-px',
-                                        hour === 0 || hour === 12 || hour === 24
-                                            ? 'bg-border'
-                                            : 'bg-border/40',
-                                    )}
-                                    style={{
-                                        left: `${(hour / HOURS) * 100}%`,
-                                    }}
-                                />
-                            ))}
-
-                            <span
-                                className="bg-primary pointer-events-none absolute top-0 bottom-0 z-10 w-px"
-                                style={{ left: `${nowPct}%` }}
-                            />
-
-                            {SAMPLE_WINDOWS.map((window) => {
-                                const segments = timeBarSegments(
-                                    window.start,
-                                    window.end,
-                                );
-
-                                return (
-                                    <div
-                                        key={window.name}
-                                        className="relative h-10 border-t"
-                                    >
-                                        {segments.map((segment, index) => (
-                                            <span
-                                                key={`${window.name}-${index}`}
-                                                className="bg-primary/70 absolute top-2 bottom-2 rounded-md"
-                                                style={{
-                                                    left: `${segment.startPct}%`,
-                                                    width: `${Math.max(segment.widthPct, 1.2)}%`,
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
+                                {segments.map((segment, index) => (
+                                    <span
+                                        key={`${window.name}-${index}`}
+                                        className="bg-primary/70 absolute top-2.5 bottom-2.5 rounded-md"
+                                        style={{
+                                            left: `${segment.startPct}%`,
+                                            width: `${Math.max(segment.widthPct, 1.2)}%`,
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        );
+                    })}
+                </ShiftCoverageScale>
             </div>
         </div>
     );

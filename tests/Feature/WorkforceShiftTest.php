@@ -13,11 +13,13 @@ use App\Models\UserShiftAssignment;
 use App\Models\UserShiftDay;
 use App\Models\UserShiftHistory;
 use App\Models\UserTransferHistory;
+use App\Support\DateTimeFormat;
 use App\Support\DriverAvailability;
 use App\Support\DutyWindow;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Support\Carbon;
 
 beforeEach(function () {
     config(['drivers.single_active_branch' => true]);
@@ -306,13 +308,13 @@ test('same-day duty window covers 10:00 and not 02:00', function () {
         'availability_status' => DriverAvailabilityStatus::Offline,
     ]);
 
-    $this->travelTo('2026-09-16 10:00:00');
+    $this->travelTo(Carbon::parse('2026-09-16 10:00:00', DateTimeFormat::displayTimezone()));
     expect(DriverAvailability::effective($driver->fresh())->value)->toBe('available')
         ->and(DutyWindow::coversTime('10:00', '08:00', '17:00'))->toBeTrue()
         ->and(DutyWindow::coversTime('02:00', '08:00', '17:00'))->toBeFalse()
         ->and(DutyWindow::coversTime('02:00', '22:00', '06:00'))->toBeFalse();
 
-    $this->travelTo('2026-09-16 02:00:00');
+    $this->travelTo(Carbon::parse('2026-09-16 02:00:00', DateTimeFormat::displayTimezone()));
     expect(DriverAvailability::effective($driver->fresh())->value)->toBe('offline');
 });
 
@@ -541,6 +543,40 @@ test('branch shifts board loads one store at a time', function () {
             ->where('selectedBranchId', $melbourne->id)
             ->has('templates', 1)
             ->where('templates.0.name', 'Melbourne Floor'));
+});
+
+test('on duty now uses the application display timezone', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_STAFF)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $template = ShiftTemplate::factory()->forBranch($sydney)->create([
+        'name' => 'Floor open',
+        'start_time' => '09:00',
+        'end_time' => '17:00',
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branch-shift-assignments.store'), [
+            'user_id' => $staff->id,
+            'branch_id' => $sydney->id,
+            'shift_template_id' => $template->id,
+            'start_date' => '2026-09-22',
+            'end_date' => '2026-09-22',
+            'days_of_week' => DriverRoster::DAYS_ALL,
+        ])
+        ->assertRedirect();
+
+    $this->travelTo(Carbon::parse('2026-09-22 09:42:00', DateTimeFormat::displayTimezone()));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-templates.index', [
+            'branch_id' => $sydney->id,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('onDuty', 1)
+            ->where('onDuty.0.shift_template_name', 'Floor open')
+            ->where('onDuty.0.user_id', $staff->id));
 });
 
 test('branch shift create and assign without a store redirect to the empty board', function () {

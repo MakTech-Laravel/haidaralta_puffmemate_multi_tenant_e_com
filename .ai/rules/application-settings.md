@@ -14,6 +14,7 @@ paths:
   - 'database/migrations/*_create_payment_gateway_settings_table.php'
   - 'app/Http/Controllers/Platform/*Shift*.php'
   - 'database/migrations/**'
+  - app/Support/DriverAvailability.php
 ---
 
 # Application settings
@@ -40,3 +41,6 @@ Boot overlays in `AppServiceProvider`. Share `application` + `paymentGateways` f
 - Backend display strings: use `App\Support\DateTimeFormat`.
 - SMTP: when `smtp_settings.enabled`, overlay mailer + from + reply_to globally; `ApplyMailReplyTo` listener stamps reply-to on outbound mail. Backup notification from address is overlaid too.
 - Maintenance mode excepts `platform` / `platform/*` so ops can disable it; optional `MAINTENANCE_SECRET` bypass.
+
+## On-duty uses display timezone
+On-duty and DriverAvailability compare windows against DateTimeFormat::at() (application display timezone), not UTC now(). config/app.php stays UTC for storage. Tests that freeze clock times must travelTo a wall-clock instant in DateTimeFormat::displayTimezone().

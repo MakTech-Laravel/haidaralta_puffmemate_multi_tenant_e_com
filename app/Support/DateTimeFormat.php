@@ -50,6 +50,20 @@ final class DateTimeFormat
         return app(ApplicationSettingsService::class)->current()->display_timezone;
     }
 
+    public static function now(): Carbon
+    {
+        return Carbon::now(new DateTimeZone(self::displayTimezone()));
+    }
+
+    public static function at(?CarbonInterface $moment = null): Carbon
+    {
+        $carbon = $moment === null
+            ? self::now()
+            : Carbon::instance($moment);
+
+        return $carbon->copy()->setTimezone(new DateTimeZone(self::displayTimezone()));
+    }
+
     private static function toDisplayCarbon(DateTimeInterface|string|null $value): ?Carbon
     {
         if ($value === null || $value === '') {

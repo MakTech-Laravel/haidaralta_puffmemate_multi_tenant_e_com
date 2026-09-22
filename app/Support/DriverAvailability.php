@@ -27,7 +27,7 @@ final class DriverAvailability
             return $stored;
         }
 
-        $moment = $at?->copy() ?? now();
+        $moment = DateTimeFormat::at($at);
 
         if ($driver->relationLoaded('shiftDays')) {
             $days = $driver->shiftDays;

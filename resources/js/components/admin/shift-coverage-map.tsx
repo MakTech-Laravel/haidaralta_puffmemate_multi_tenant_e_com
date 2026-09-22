@@ -1,22 +1,25 @@
 import type { ShiftTemplateOption } from '@/components/admin/workforce-types';
 import {
+    COVERAGE_SCALE_HEADER,
+    ShiftCoverageScale,
+} from '@/components/admin/shift-coverage-scale';
+import {
     formatClock,
-    hourTickLabel,
-    nowMarkerPct,
     timeBarSegments,
     windowCoversNow,
 } from '@/lib/shift-format';
 import { cn } from '@/lib/utils';
 
-const HOURS = 24;
-const HOUR_TICKS = Array.from({ length: HOURS + 1 }, (_, hour) => hour);
-
 export function ShiftCoverageMap({
     templates,
     now,
+    selectedTemplateId = null,
+    onSelectTemplate,
 }: {
     templates: ShiftTemplateOption[];
     now: Date;
+    selectedTemplateId?: number | null;
+    onSelectTemplate?: (templateId: number | null) => void;
 }) {
     const lanes = uniqueWindows(
         templates.filter(
@@ -28,11 +31,8 @@ export function ShiftCoverageMap({
         return null;
     }
 
-    const nowPct = nowMarkerPct(now);
-    const nowLabel = now.toLocaleTimeString(undefined, {
-        hour: 'numeric',
-        minute: '2-digit',
-    });
+    const selectable = Boolean(onSelectTemplate);
+    const filtered = selectedTemplateId !== null;
 
     return (
         <section className="bg-card overflow-hidden rounded-2xl border">
@@ -42,152 +42,163 @@ export function ShiftCoverageMap({
                         Today&apos;s coverage
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                        Full day, midnight to midnight. Red is on now.
+                        Full day, 00:00 to 24:00. Red is on now.
+                        {selectable
+                            ? ' Pick a window, or filter people below.'
+                            : null}
                     </p>
                 </div>
-                <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                    {lanes.length}{' '}
-                    {lanes.length === 1 ? 'window' : 'windows'}
-                </p>
+                <div className="flex items-center gap-2">
+                    {filtered ? (
+                        <button
+                            type="button"
+                            className="text-muted-foreground hover:text-foreground text-xs font-medium"
+                            onClick={() => onSelectTemplate?.(null)}
+                        >
+                            All shifts
+                        </button>
+                    ) : null}
+                    <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                        {lanes.length} {lanes.length === 1 ? 'window' : 'windows'}
+                    </p>
+                </div>
             </header>
 
             <div className="flex min-w-0">
-                <div className="border-border/80 w-36 shrink-0 border-r sm:w-44">
-                    <div className="text-muted-foreground flex h-12 items-end px-4 pb-2 text-[11px] font-medium tracking-wide uppercase">
+                <div className="border-border/80 w-32 shrink-0 border-r sm:w-40">
+                    <div
+                        className={cn(
+                            'text-muted-foreground flex items-end px-3 pb-1 text-[11px] font-medium tracking-wide uppercase',
+                            COVERAGE_SCALE_HEADER,
+                        )}
+                    >
                         Window
                     </div>
-                    {lanes.map((template) => (
-                        <div
-                            key={template.id}
-                            className="flex h-11 flex-col justify-center gap-0.5 border-t px-4"
-                        >
-                            <p className="truncate text-sm font-medium">
-                                {template.name}
-                            </p>
-                            <p className="text-muted-foreground truncate text-[11px] tabular-nums">
-                                {formatClock(template.start_time)} –{' '}
-                                {formatClock(template.end_time)}
-                            </p>
-                        </div>
-                    ))}
+                    {lanes.map((template) => {
+                        const active =
+                            selectedTemplateId === null ||
+                            selectedTemplateId === template.id;
+
+                        return (
+                            <LaneLabel
+                                key={template.id}
+                                template={template}
+                                active={active}
+                                selectable={selectable}
+                                onSelect={() =>
+                                    onSelectTemplate?.(
+                                        selectedTemplateId === template.id
+                                            ? null
+                                            : template.id,
+                                    )
+                                }
+                            />
+                        );
+                    })}
                 </div>
 
-                <div className="min-w-0 flex-1 overflow-x-auto">
-                    <div className="relative min-w-[48rem]">
-                        <div className="text-muted-foreground/80 flex h-5 pt-2 text-[10px] font-medium tracking-wide uppercase">
-                            <span className="w-1/2 pl-2">Morning</span>
-                            <span className="w-1/2 pl-2">
-                                Afternoon / night
-                            </span>
-                        </div>
-                        <div className="relative h-7">
-                            {HOUR_TICKS.map((hour) => (
-                                <span
-                                    key={hour}
-                                    className={cn(
-                                        'text-muted-foreground absolute bottom-1 text-[10px] font-medium tabular-nums',
-                                        hour === 0
-                                            ? 'left-0'
-                                            : hour === 24
-                                              ? 'right-0'
-                                              : '-translate-x-1/2',
-                                        (hour === 0 ||
-                                            hour === 12 ||
-                                            hour === 24) &&
-                                            'text-foreground',
-                                    )}
-                                    style={
-                                        hour === 0 || hour === 24
-                                            ? undefined
-                                            : {
-                                                  left: `${(hour / HOURS) * 100}%`,
-                                              }
-                                    }
-                                >
-                                    {hourTickLabel(hour)}
-                                </span>
-                            ))}
-                        </div>
+                <ShiftCoverageScale now={now}>
+                    {lanes.map((template) => {
+                        const live = windowCoversNow(
+                            template.start_time,
+                            template.end_time,
+                            now,
+                        );
+                        const active =
+                            selectedTemplateId === null ||
+                            selectedTemplateId === template.id;
+                        const segments = timeBarSegments(
+                            template.start_time,
+                            template.end_time,
+                        );
 
-                        <div
-                            className="bg-muted/35 pointer-events-none absolute top-12 bottom-0 w-1/2"
-                            aria-hidden
-                        />
-
-                        <div className="relative">
-                            {HOUR_TICKS.map((hour) => (
-                                <span
-                                    key={`line-${hour}`}
-                                    className={cn(
-                                        'pointer-events-none absolute top-0 bottom-0 w-px',
-                                        hour === 0 || hour === 24
-                                            ? 'bg-border'
-                                            : hour === 12
-                                              ? 'bg-border/80'
-                                              : 'bg-border/35',
-                                    )}
-                                    style={{
-                                        left: `${(hour / HOURS) * 100}%`,
-                                    }}
-                                />
-                            ))}
-
-                            <span
-                                className="bg-primary pointer-events-none absolute top-0 bottom-0 z-20 w-0.5"
-                                style={{ left: `${nowPct}%` }}
+                        return (
+                            <button
+                                key={template.id}
+                                type="button"
+                                disabled={!selectable}
+                                onClick={() =>
+                                    onSelectTemplate?.(
+                                        selectedTemplateId === template.id
+                                            ? null
+                                            : template.id,
+                                    )
+                                }
+                                className={cn(
+                                    'relative block h-11 w-full border-t text-left transition-opacity',
+                                    !active && 'opacity-35',
+                                    selectable && 'hover:bg-muted/40',
+                                )}
                             >
-                                <span className="bg-primary text-primary-foreground absolute top-1 left-1/2 z-30 -translate-x-1/2 rounded-full px-1.5 py-px text-[10px] font-semibold whitespace-nowrap tabular-nums shadow-sm">
-                                    Now {nowLabel}
-                                </span>
-                            </span>
-
-                            {lanes.map((template) => {
-                                const live = windowCoversNow(
-                                    template.start_time,
-                                    template.end_time,
-                                    now,
-                                );
-                                const segments = timeBarSegments(
-                                    template.start_time,
-                                    template.end_time,
-                                );
-
-                                return (
-                                    <div
-                                        key={template.id}
-                                        className="relative h-11 border-t"
+                                {segments.map((segment, index) => (
+                                    <span
+                                        key={`${template.id}-${index}`}
+                                        className={cn(
+                                            'absolute top-2.5 bottom-2.5 flex items-center overflow-hidden rounded-md px-2 text-[11px] font-medium text-white shadow-sm',
+                                            live
+                                                ? 'bg-primary'
+                                                : 'bg-primary/55',
+                                        )}
+                                        style={{
+                                            left: `${segment.startPct}%`,
+                                            width: `${Math.max(segment.widthPct, 1.2)}%`,
+                                        }}
                                     >
-                                        {segments.map((segment, index) => (
-                                            <span
-                                                key={`${template.id}-${index}`}
-                                                className={cn(
-                                                    'absolute top-2.5 bottom-2.5 flex items-center overflow-hidden rounded-md px-2 text-[11px] font-medium text-white shadow-sm',
-                                                    live
-                                                        ? 'bg-primary'
-                                                        : 'bg-primary/55',
+                                        {segment.widthPct > 8 ? (
+                                            <span className="truncate">
+                                                {formatClock(
+                                                    template.start_time,
                                                 )}
-                                                style={{
-                                                    left: `${segment.startPct}%`,
-                                                    width: `${Math.max(segment.widthPct, 1.2)}%`,
-                                                }}
-                                            >
-                                                {segment.widthPct > 10 ? (
-                                                    <span className="truncate">
-                                                        {formatClock(
-                                                            template.start_time,
-                                                        )}
-                                                    </span>
-                                                ) : null}
+                                                {' – '}
+                                                {formatClock(template.end_time)}
                                             </span>
-                                        ))}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
+                                        ) : null}
+                                    </span>
+                                ))}
+                            </button>
+                        );
+                    })}
+                </ShiftCoverageScale>
             </div>
         </section>
+    );
+}
+
+function LaneLabel({
+    template,
+    active,
+    selectable,
+    onSelect,
+}: {
+    template: ShiftTemplateOption;
+    active: boolean;
+    selectable: boolean;
+    onSelect: () => void;
+}) {
+    const className = cn(
+        'flex h-11 w-full flex-col justify-center gap-0.5 border-t px-3 text-left transition-opacity',
+        !active && 'opacity-35',
+        selectable && 'hover:bg-muted/40',
+    );
+
+    const body = (
+        <>
+            <p className="truncate text-sm font-medium">{template.name}</p>
+            <p className="text-muted-foreground truncate text-[11px] tabular-nums">
+                {formatClock(template.start_time)} –{' '}
+                {formatClock(template.end_time)}
+            </p>
+        </>
+    );
+
+    if (!selectable) {
+        return <div className={className}>{body}</div>;
+    }
+
+    return (
+        <button type="button" className={className} onClick={onSelect}>
+            {body}
+        </button>
     );
 }
 

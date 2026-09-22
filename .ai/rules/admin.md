@@ -54,3 +54,9 @@ The Assign page is a full-width calendar: person, dates, main shift, working day
 
 ## Assign calendar has no period UI
 Assign is a full-width personal calendar: person, dates, main shift, working days. Fill working days immediately. Day actions are Keep, Leave this day, or Different shift, plus Apply to a date span. No New period or roster-period UI. Other assignments for that person are read-only chips. Covering someone is a second assignment.
+
+## Filled board filters by named shift
+After a store is chosen, Today's coverage sits under the branch picker. Default filter is All shifts. Named-shift chips (and coverage lanes) scope stats, on-duty, uncovered, people, and the shifts list to that window. The Shifts stat card becomes that window's hours when one shift is selected. These chips are shift filters, not All-branches chips.
+
+## Scheduled people is a capped roster
+Scheduled people is a compact scrolling roster (max-height, 20 then Show more, search, grouped by person type). Do not render a card grid of every assignment. The named-shift filter lives in that roster toolbar as All shifts select, not as chips under coverage. Coverage always draws every window on a 00–24 hour grid; selecting a shift dims other lanes but does not hide hours.

@@ -6,6 +6,7 @@ import { ShiftBranchPicker } from '@/components/admin/shift-branch-picker';
 import { ShiftCoverageMap } from '@/components/admin/shift-coverage-map';
 import { ShiftPageHeader } from '@/components/admin/shift-page-header';
 import { ShiftTimeBar } from '@/components/admin/shift-time-bar';
+import { toWallClockDate, useAppDateTime } from '@/lib/datetime';
 import type {
     BranchOption,
     ShiftAssignmentRow,
@@ -19,6 +20,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
     durationLabel,
     formatClock,
     formatDayRange,
@@ -28,8 +36,6 @@ import {
     windowCoversNow,
 } from '@/lib/shift-format';
 import { cn } from '@/lib/utils';
-
-type ShiftFilter = 'all' | 'live';
 
 type ShiftBoardProps = {
     kicker: string;
@@ -50,6 +56,8 @@ type ShiftBoardProps = {
     onSelectBranch?: (branchId: number) => void;
 };
 
+const PEOPLE_PAGE = 20;
+
 export function ShiftBoard({
     kicker,
     title,
@@ -68,53 +76,56 @@ export function ShiftBoard({
     branchOptionsUrl = null,
     onSelectBranch,
 }: ShiftBoardProps) {
+    const { settings } = useAppDateTime();
     const [query, setQuery] = useState('');
-    const [filter, setFilter] = useState<ShiftFilter>('all');
-    const [now, setNow] = useState(() => new Date());
+    const [visiblePeople, setVisiblePeople] = useState(PEOPLE_PAGE);
+    const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
+    const [now, setNow] = useState(() =>
+        toWallClockDate(new Date(), settings.timezone),
+    );
     const needle = query.trim().toLowerCase();
 
     useEffect(() => {
-        const timer = window.setInterval(() => setNow(new Date()), 30_000);
+        const tick = () =>
+            setNow(toWallClockDate(new Date(), settings.timezone));
+
+        tick();
+        const timer = window.setInterval(tick, 30_000);
 
         return () => window.clearInterval(timer);
-    }, []);
+    }, [settings.timezone]);
 
-    const visibleTemplates = useMemo(
-        () =>
-            templates.filter((template) => {
-                if (
-                    filter === 'live' &&
-                    !windowCoversNow(
-                        template.start_time,
-                        template.end_time,
-                        now,
-                    )
-                ) {
-                    return false;
-                }
+    useEffect(() => {
+        setSelectedShiftId(null);
+        setQuery('');
+        setVisiblePeople(PEOPLE_PAGE);
+    }, [selectedBranchId]);
 
-                if (needle === '') {
-                    return true;
-                }
+    useEffect(() => {
+        if (
+            selectedShiftId !== null &&
+            !templates.some((template) => template.id === selectedShiftId)
+        ) {
+            setSelectedShiftId(null);
+        }
+    }, [selectedShiftId, templates]);
 
-                return [
-                    template.name,
-                    template.branch_name,
-                    template.owner_type_label,
-                    template.start_time,
-                    template.end_time,
-                ]
-                    .filter(Boolean)
-                    .join(' ')
-                    .toLowerCase()
-                    .includes(needle);
-            }),
-        [filter, needle, now, templates],
-    );
+    const selectedTemplate =
+        templates.find((template) => template.id === selectedShiftId) ?? null;
+    const scopedTemplates = selectedTemplate ? [selectedTemplate] : templates;
+    const scopedOnDuty = selectedShiftId
+        ? onDuty.filter((row) => row.shift_template_id === selectedShiftId)
+        : onDuty;
+    const scopedScheduled = selectedShiftId
+        ? scheduled.filter((row) => row.shift_template_id === selectedShiftId)
+        : scheduled;
+    const scopedUncovered = selectedShiftId
+        ? uncovered.filter((shift) => shift.id === selectedShiftId)
+        : uncovered;
 
     const visibleScheduled = useMemo(
         () =>
-            scheduled.filter((row) => {
+            scopedScheduled.filter((row) => {
                 if (needle === '') {
                     return true;
                 }
@@ -124,19 +135,64 @@ export function ShiftBoard({
                     row.shift_template_name,
                     row.days_label,
                     row.branch_name,
+                    row.user_type_label,
                 ]
                     .filter(Boolean)
                     .join(' ')
                     .toLowerCase()
                     .includes(needle);
             }),
-        [needle, scheduled],
+        [needle, scopedScheduled],
+    );
+
+    useEffect(() => {
+        setVisiblePeople(PEOPLE_PAGE);
+    }, [needle, selectedShiftId]);
+
+    const hasMorePeople = visiblePeople < visibleScheduled.length;
+
+    const liveOnDuty = useMemo(
+        () =>
+            scopedOnDuty.filter((row) =>
+                windowCoversNow(row.start_time, row.end_time, now),
+            ),
+        [now, scopedOnDuty],
     );
 
     const groupedTemplates = useMemo(
-        () => groupByBranch(visibleTemplates),
-        [visibleTemplates],
+        () => groupByBranch(scopedTemplates),
+        [scopedTemplates],
     );
+
+    const peopleGroups = useMemo(
+        () => groupByUserType(visibleScheduled),
+        [visibleScheduled],
+    );
+
+    const shownGroups = useMemo(() => {
+        let remaining = visiblePeople;
+        const groups: {
+            label: string;
+            total: number;
+            items: ShiftAssignmentRow[];
+        }[] = [];
+
+        for (const group of peopleGroups) {
+            if (remaining <= 0) {
+                break;
+            }
+
+            const items = group.items.slice(0, remaining);
+            remaining -= items.length;
+            groups.push({
+                label: group.label,
+                total: group.items.length,
+                items,
+            });
+        }
+
+        return groups;
+    }, [peopleGroups, visiblePeople]);
 
     const waitingForBranch = Boolean(
         onSelectBranch && branchOptionsUrl && !selectedBranchId,
@@ -213,28 +269,61 @@ export function ShiftBoard({
                 <>
                     {branchPicker}
 
+                    <ShiftCoverageMap
+                        templates={templates}
+                        now={now}
+                        selectedTemplateId={selectedShiftId}
+                        onSelectTemplate={setSelectedShiftId}
+                    />
+
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         <StatCard
                             icon={Users}
                             label="On duty now"
-                            value={String(stats.on_duty)}
+                            value={String(liveOnDuty.length)}
                             hint={
-                                stats.on_duty === 1
-                                    ? 'Person inside a live window'
-                                    : 'People inside a live window'
+                                selectedTemplate
+                                    ? `On ${selectedTemplate.name} now`
+                                    : liveOnDuty.length === 1
+                                      ? 'Person inside a live window'
+                                      : 'People inside a live window'
                             }
                         />
-                        <StatCard
-                            icon={Clock3}
-                            label="Shifts"
-                            value={String(stats.templates)}
-                            hint={`${stats.active_templates} active`}
-                        />
+                        {selectedTemplate ? (
+                            <StatCard
+                                icon={Clock3}
+                                label={selectedTemplate.name}
+                                value={`${formatClock(selectedTemplate.start_time)} – ${formatClock(selectedTemplate.end_time)}`}
+                                valueClassName="text-lg"
+                                hint={`${durationLabel(selectedTemplate.start_time, selectedTemplate.end_time) || 'Same-day window'}${
+                                    windowCoversNow(
+                                        selectedTemplate.start_time,
+                                        selectedTemplate.end_time,
+                                        now,
+                                    )
+                                        ? ' · Live'
+                                        : selectedTemplate.is_active
+                                          ? ' · Active'
+                                          : ' · Inactive'
+                                }`}
+                            />
+                        ) : (
+                            <StatCard
+                                icon={Clock3}
+                                label="Shifts"
+                                value={String(stats.templates)}
+                                hint={`${stats.active_templates} active`}
+                            />
+                        )}
                         <StatCard
                             icon={CalendarRange}
                             label="Scheduled people"
-                            value={String(stats.scheduled)}
-                            hint="Personal duty periods"
+                            value={String(scopedScheduled.length)}
+                            hint={
+                                selectedTemplate
+                                    ? 'Assigned to this shift'
+                                    : 'Personal duty periods'
+                            }
                         />
                     </div>
 
@@ -245,20 +334,24 @@ export function ShiftBoard({
                                     On duty now
                                 </h2>
                                 <p className="text-muted-foreground text-sm">
-                                    Live coverage from today’s scheduled days.
+                                    {selectedTemplate
+                                        ? `Live people on ${selectedTemplate.name}.`
+                                        : 'Live coverage from today’s scheduled days.'}
                                 </p>
                             </div>
                             <Button size="sm" variant="outline" asChild>
                                 <Link href={assignHref}>Assign someone</Link>
                             </Button>
                         </header>
-                        {onDuty.length === 0 ? (
+                        {liveOnDuty.length === 0 ? (
                             <div className="text-muted-foreground px-5 py-8 text-sm">
-                                Nobody is inside a duty window right now.
+                                {selectedTemplate
+                                    ? `Nobody is inside ${selectedTemplate.name} right now.`
+                                    : 'Nobody is inside a duty window right now.'}
                             </div>
                         ) : (
                             <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
-                                {onDuty.map((person) => (
+                                {liveOnDuty.map((person) => (
                                     <article
                                         key={person.id}
                                         className="flex items-center gap-3 rounded-xl border px-3 py-3"
@@ -310,16 +403,20 @@ export function ShiftBoard({
                                 Uncovered today
                             </h2>
                             <p className="text-muted-foreground text-sm">
-                                Named shifts with nobody scheduled for today.
+                                {selectedTemplate
+                                    ? `Whether ${selectedTemplate.name} has anyone scheduled today.`
+                                    : 'Named shifts with nobody scheduled for today.'}
                             </p>
                         </header>
-                        {uncovered.length === 0 ? (
+                        {scopedUncovered.length === 0 ? (
                             <div className="text-muted-foreground px-5 py-6 text-sm">
-                                Every named shift has someone scheduled today.
+                                {selectedTemplate
+                                    ? `${selectedTemplate.name} has someone scheduled today.`
+                                    : 'Every named shift has someone scheduled today.'}
                             </div>
                         ) : (
                             <div className="flex flex-wrap gap-2 p-4">
-                                {uncovered.map((shift) => (
+                                {scopedUncovered.map((shift) => (
                                     <Badge
                                         key={shift.id}
                                         variant="outline"
@@ -334,136 +431,143 @@ export function ShiftBoard({
                         )}
                     </section>
 
-                    <ShiftCoverageMap templates={templates} now={now} />
-
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="relative min-w-56 max-w-md flex-1">
-                            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-                            <Input
-                                value={query}
-                                onChange={(event) => setQuery(event.target.value)}
-                                placeholder="Filter shifts and people"
-                                className="pl-9"
-                            />
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                            {(
-                                [
-                                    ['all', 'All windows'],
-                                    ['live', 'Live now'],
-                                ] as const
-                            ).map(([value, label]) => (
-                                <button
-                                    key={value}
-                                    type="button"
-                                    onClick={() => setFilter(value)}
-                                    className={cn(
-                                        'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                                        filter === value
-                                            ? 'border-transparent bg-primary text-primary-foreground'
-                                            : 'hover:bg-muted',
-                                    )}
-                                >
-                                    {label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <section className="space-y-4">
-                        <div className="flex items-end justify-between gap-3">
+                    <section className="bg-card overflow-hidden rounded-2xl border">
+                        <header className="flex flex-wrap items-end justify-between gap-3 border-b px-5 py-4">
                             <div>
                                 <h2 className="text-base font-semibold tracking-tight">
                                     Scheduled people
                                 </h2>
                                 <p className="text-muted-foreground text-sm">
-                                    Each person has their own dates and working
-                                    days.
+                                    {selectedTemplate
+                                        ? `People assigned to ${selectedTemplate.name}.`
+                                        : 'Search and filter — the list stays in this panel.'}
                                 </p>
                             </div>
                             <span className="text-muted-foreground text-xs tabular-nums">
                                 {visibleScheduled.length}
                             </span>
+                        </header>
+                        <div className="flex flex-wrap items-center gap-2 border-b px-5 py-3">
+                            <div className="relative min-w-48 max-w-md flex-1">
+                                <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                                <Input
+                                    value={query}
+                                    onChange={(event) =>
+                                        setQuery(event.target.value)
+                                    }
+                                    placeholder="Search people"
+                                    className="h-9 pl-9"
+                                />
+                            </div>
+                            {templates.length > 0 ? (
+                                <Select
+                                    value={
+                                        selectedShiftId === null
+                                            ? 'all'
+                                            : String(selectedShiftId)
+                                    }
+                                    onValueChange={(value) =>
+                                        setSelectedShiftId(
+                                            value === 'all'
+                                                ? null
+                                                : Number(value),
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger
+                                        size="sm"
+                                        className="w-44 max-w-full"
+                                    >
+                                        <SelectValue placeholder="All shifts" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All shifts
+                                        </SelectItem>
+                                        {templates.map((template) => (
+                                            <SelectItem
+                                                key={template.id}
+                                                value={String(template.id)}
+                                            >
+                                                {template.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            ) : null}
                         </div>
                         {visibleScheduled.length === 0 ? (
-                            <EmptyPanel
-                                icon={Users}
-                                title="Nobody scheduled"
-                                body="Assign a person, a date range, and a usual shift."
-                                actionHref={assignHref}
-                                actionLabel="Assign to shift"
-                            />
+                            <div className="px-5 py-8">
+                                <p className="font-medium">
+                                    {selectedTemplate
+                                        ? `Nobody on ${selectedTemplate.name}`
+                                        : query
+                                          ? 'No matching people'
+                                          : 'Nobody scheduled'}
+                                </p>
+                                <p className="text-muted-foreground mt-1 max-w-sm text-sm">
+                                    {selectedTemplate
+                                        ? 'Assign someone to this shift and date range.'
+                                        : query
+                                          ? 'Try a different name or shift.'
+                                          : 'Assign a person, a date range, and a usual shift.'}
+                                </p>
+                                {!query ? (
+                                    <Button size="sm" className="mt-3" asChild>
+                                        <Link href={assignHref}>
+                                            Assign to shift
+                                        </Link>
+                                    </Button>
+                                ) : null}
+                            </div>
                         ) : (
-                            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                {visibleScheduled.map((row) => {
-                                    const editHref =
-                                        assignmentEditHref?.(row) ?? null;
-
-                                    return (
-                                        <article
-                                            key={row.id}
-                                            className="bg-card flex flex-col gap-3 rounded-2xl border p-4"
-                                        >
-                                            <div className="flex items-start gap-3">
-                                                <Avatar className="size-10">
-                                                    {row.avatar_url ? (
-                                                        <AvatarImage
-                                                            src={row.avatar_url}
-                                                            alt={
-                                                                row.user_name ??
-                                                                ''
-                                                            }
-                                                        />
-                                                    ) : null}
-                                                    <AvatarFallback>
-                                                        {initials(
-                                                            row.user_name ??
-                                                                '?',
-                                                        )}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="truncate font-medium">
-                                                        {row.user_name}
-                                                    </p>
-                                                    <p className="text-muted-foreground truncate text-sm">
-                                                        {row.shift_template_name}{' '}
-                                                        ·{' '}
-                                                        {formatClock(
-                                                            row.start_time,
-                                                        )}
-                                                        –
-                                                        {formatClock(
-                                                            row.end_time,
-                                                        )}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <p className="text-muted-foreground text-sm">
-                                                {formatDayRange(
-                                                    row.start_date,
-                                                    row.end_date,
-                                                )}
-                                                {row.days_label
-                                                    ? ` · ${row.days_label}`
-                                                    : ''}
+                            <div className="max-h-[28rem] overflow-y-auto">
+                                {shownGroups.map((group) => (
+                                    <div key={group.label}>
+                                        {peopleGroups.length > 1 ? (
+                                            <p className="bg-muted/70 text-muted-foreground sticky top-0 z-10 px-5 py-1.5 text-[11px] font-medium tracking-[0.14em] uppercase">
+                                                {group.label}
+                                                <span className="ml-2 tabular-nums">
+                                                    {group.total}
+                                                </span>
                                             </p>
-                                            {editHref ? (
-                                                <div className="flex justify-end">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        asChild
-                                                    >
-                                                        <Link href={editHref}>
-                                                            Edit
-                                                        </Link>
-                                                    </Button>
-                                                </div>
-                                            ) : null}
-                                        </article>
-                                    );
-                                })}
+                                        ) : null}
+                                        <ul className="divide-y">
+                                            {group.items.map((row) => (
+                                                <PersonRow
+                                                    key={row.id}
+                                                    row={row}
+                                                    editHref={
+                                                        assignmentEditHref?.(
+                                                            row,
+                                                        ) ?? null
+                                                    }
+                                                />
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                                {hasMorePeople ? (
+                                    <div className="border-t px-5 py-3">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                                setVisiblePeople(
+                                                    (count) =>
+                                                        count + PEOPLE_PAGE,
+                                                )
+                                            }
+                                        >
+                                            Show more
+                                            <span className="text-muted-foreground ml-1 tabular-nums">
+                                                {visibleScheduled.length -
+                                                    visiblePeople}{' '}
+                                                left
+                                            </span>
+                                        </Button>
+                                    </div>
+                                ) : null}
                             </div>
                         )}
                     </section>
@@ -475,14 +579,16 @@ export function ShiftBoard({
                                     Shifts
                                 </h2>
                                 <p className="text-muted-foreground text-sm">
-                                    Named start and end times on the same day.
+                                    {selectedTemplate
+                                        ? 'This named window at this store.'
+                                        : 'Named start and end times on the same day.'}
                                 </p>
                             </div>
                             <span className="text-muted-foreground text-xs tabular-nums">
-                                {visibleTemplates.length}
+                                {scopedTemplates.length}
                             </span>
                         </div>
-                        {visibleTemplates.length === 0 ? (
+                        {scopedTemplates.length === 0 ? (
                             <EmptyPanel
                                 icon={Clock3}
                                 title="No shifts yet"
@@ -498,7 +604,14 @@ export function ShiftBoard({
                                             {group.label}
                                         </p>
                                     ) : null}
-                                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                    <div
+                                        className={cn(
+                                            'grid gap-3',
+                                            selectedTemplate
+                                                ? 'md:max-w-xl md:grid-cols-1'
+                                                : 'md:grid-cols-2 xl:grid-cols-3',
+                                        )}
+                                    >
                                         {group.items.map((template) => (
                                             <TemplateCard
                                                 key={template.id}
@@ -517,6 +630,46 @@ export function ShiftBoard({
                 </>
             )}
         </div>
+    );
+}
+
+function PersonRow({
+    row,
+    editHref,
+}: {
+    row: ShiftAssignmentRow;
+    editHref?: string | null;
+}) {
+    return (
+        <li className="flex items-center gap-3 px-5 py-2.5">
+            <Avatar className="size-8">
+                {row.avatar_url ? (
+                    <AvatarImage
+                        src={row.avatar_url}
+                        alt={row.user_name ?? ''}
+                    />
+                ) : null}
+                <AvatarFallback className="text-[11px]">
+                    {initials(row.user_name ?? '?')}
+                </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{row.user_name}</p>
+                <p className="text-muted-foreground truncate text-xs">
+                    {row.shift_template_name} · {formatClock(row.start_time)}–
+                    {formatClock(row.end_time)}
+                    {row.days_label ? ` · ${row.days_label}` : ''}
+                </p>
+            </div>
+            <p className="text-muted-foreground hidden shrink-0 text-xs sm:block">
+                {formatDayRange(row.start_date, row.end_date)}
+            </p>
+            {editHref ? (
+                <Button size="sm" variant="ghost" asChild>
+                    <Link href={editHref}>Edit</Link>
+                </Button>
+            ) : null}
+        </li>
     );
 }
 
@@ -601,6 +754,21 @@ function groupByBranch(
             template.branch_name ?? template.owner_type_label ?? 'Platform';
         const items = groups.get(label) ?? [];
         items.push(template);
+        groups.set(label, items);
+    }
+
+    return [...groups.entries()].map(([label, items]) => ({ label, items }));
+}
+
+function groupByUserType(
+    rows: ShiftAssignmentRow[],
+): { label: string; items: ShiftAssignmentRow[] }[] {
+    const groups = new Map<string, ShiftAssignmentRow[]>();
+
+    for (const row of rows) {
+        const label = row.user_type_label || row.user_type || 'People';
+        const items = groups.get(label) ?? [];
+        items.push(row);
         groups.set(label, items);
     }
 

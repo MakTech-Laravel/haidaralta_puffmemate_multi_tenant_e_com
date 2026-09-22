@@ -47,7 +47,7 @@ final class WorkforcePayload
         $assignment->loadMissing(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar']);
         $days = $assignment->normalizedDaysOfWeek();
         $template = $assignment->shiftTemplate;
-        $moment = $at ?? now();
+        $moment = DateTimeFormat::at($at);
 
         return [
             'id' => $assignment->id,
@@ -139,7 +139,7 @@ final class WorkforcePayload
      */
     public static function currentDuty(User $user, ?CarbonInterface $at = null): ?array
     {
-        $moment = $at ?? now();
+        $moment = DateTimeFormat::at($at);
 
         $day = UserShiftDay::query()
             ->with(['shiftTemplate', 'assignment.branch:id,name,slug', 'user:id,name,user_type,avatar'])
@@ -280,7 +280,7 @@ final class WorkforcePayload
             return [];
         }
 
-        $moment = $at ?? now();
+        $moment = DateTimeFormat::at($at);
         $templateIds = collect($templates)->pluck('id')->all();
         $todayIds = UserShiftDay::query()
             ->onDuty()
@@ -355,7 +355,7 @@ final class WorkforcePayload
      */
     private static function onDutyQuery(?CarbonInterface $at, callable $constrain): array
     {
-        $moment = $at ?? now();
+        $moment = DateTimeFormat::at($at);
 
         $query = UserShiftDay::query()
             ->with(['shiftTemplate', 'assignment.branch:id,name,slug', 'user:id,name,user_type,avatar'])
