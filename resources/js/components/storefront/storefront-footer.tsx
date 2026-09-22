@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { useAppBrand } from '@/hooks/use-app-brand';
+import { useContacts } from '@/hooks/use-contacts';
 import {
     storefrontFooterBlurb,
     storefrontFooterBrand,
@@ -30,6 +31,8 @@ function resolveHref(item: StorefrontChromeItem): string {
             return wholesale.url();
         case 'privacy':
             return privacy.url();
+        case 'terms':
+            return '/terms';
         default:
             return shop.url();
     }
@@ -72,6 +75,7 @@ function FooterColumn({
 
 export function StorefrontFooter() {
     const brand = useAppBrand();
+    const contacts = useContacts();
 
     return (
         <footer className="border-border bg-muted mt-auto border-t">
@@ -91,6 +95,24 @@ export function StorefrontFooter() {
                     <p className="text-muted-foreground max-w-xs text-sm leading-relaxed font-normal">
                         {brand.description || storefrontFooterBlurb}
                     </p>
+                    <div className="text-muted-foreground flex flex-col gap-1 text-sm">
+                        {contacts.phone ? (
+                            <a
+                                href={`tel:${contacts.phone.replace(/\s+/g, '')}`}
+                                className="hover:text-foreground transition-colors"
+                            >
+                                {contacts.phone}
+                            </a>
+                        ) : null}
+                        {contacts.email ? (
+                            <a
+                                href={`mailto:${contacts.email}`}
+                                className="hover:text-foreground transition-colors"
+                            >
+                                {contacts.email}
+                            </a>
+                        ) : null}
+                    </div>
                 </div>
 
                 <FooterColumn title="Shop" items={storefrontFooterShop} />

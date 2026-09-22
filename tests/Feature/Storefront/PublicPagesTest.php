@@ -1,8 +1,12 @@
 <?php
 
 use App\Models\Category;
+use App\Models\CmsPage;
+use App\Services\Cms\CmsPageService;
+use Database\Seeders\ApplicationSettingsSeeder;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\CatalogSeeder;
+use Database\Seeders\CmsPageSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -11,6 +15,8 @@ beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(BranchSeeder::class);
     $this->seed(UserSeeder::class);
+    $this->seed(ApplicationSettingsSeeder::class);
+    $this->seed(CmsPageSeeder::class);
     $this->seed(CatalogSeeder::class);
 });
 
@@ -26,7 +32,15 @@ test('public storefront pages render', function (string $route, string $componen
     'contact' => ['contact', 'storefront/contact'],
     'wholesale' => ['wholesale', 'storefront/wholesale'],
     'privacy' => ['privacy', 'storefront/privacy'],
+    'terms' => ['terms', 'storefront/terms'],
 ]);
+
+test('unpublished cms page returns 404', function () {
+    CmsPage::query()->where('slug', 'about')->update(['is_published' => false]);
+    app(CmsPageService::class)->refresh('about');
+
+    $this->get(route('about'))->assertNotFound();
+});
 
 test('storefront home shares featured categories and tagged products', function () {
     $this->get(route('home'))

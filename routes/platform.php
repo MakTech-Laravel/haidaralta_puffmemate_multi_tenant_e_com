@@ -10,6 +10,8 @@ use App\Http\Controllers\Platform\BranchShiftAssignmentController as PlatformBra
 use App\Http\Controllers\Platform\BranchShiftTemplateController as PlatformBranchShiftTemplateController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
 use App\Http\Controllers\Platform\CategoryController as PlatformCategoryController;
+use App\Http\Controllers\Platform\CmsPageController as PlatformCmsPageController;
+use App\Http\Controllers\Platform\ContactSettingsController as PlatformContactSettingsController;
 use App\Http\Controllers\Platform\ConversationController as PlatformConversationController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
@@ -313,11 +315,25 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::get('activity-logs/{activity}', [PlatformActivityLogController::class, 'show'])->name('platform.activity-logs.show');
     });
 
+    Route::middleware(['permission:manage-pages'])->group(function () {
+        Route::get('pages', [PlatformCmsPageController::class, 'index'])
+            ->name('platform.pages.index');
+        Route::get('pages/{slug}/edit', [PlatformCmsPageController::class, 'edit'])
+            ->name('platform.pages.edit');
+        Route::put('pages/{slug}', [PlatformCmsPageController::class, 'update'])
+            ->name('platform.pages.update');
+    });
+
     Route::middleware(['permission:manage-application-settings'])->prefix('settings')->group(function () {
         Route::get('general', [PlatformGeneralSettingsController::class, 'edit'])
             ->name('platform.settings.general.edit');
         Route::put('general', [PlatformGeneralSettingsController::class, 'update'])
             ->name('platform.settings.general.update');
+
+        Route::get('contacts', [PlatformContactSettingsController::class, 'edit'])
+            ->name('platform.settings.contacts.edit');
+        Route::put('contacts', [PlatformContactSettingsController::class, 'update'])
+            ->name('platform.settings.contacts.update');
 
         Route::get('smtp', [PlatformSmtpSettingsController::class, 'edit'])
             ->name('platform.settings.smtp.edit');

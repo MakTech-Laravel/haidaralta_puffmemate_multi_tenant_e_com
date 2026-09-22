@@ -13,18 +13,62 @@ const ICON_ALIASES: Record<string, string> = {
     funnel: 'filter',
 };
 
+/** PascalCase / camelCase Lucide component names → kebab-case catalog keys. */
+function toKebabIconKey(value: string): string {
+    return value
+        .replace(/([a-z\d])([A-Z])/g, '$1-$2')
+        .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+        .replace(/([a-zA-Z])(\d+)/g, '$1-$2')
+        .toLowerCase();
+}
+
 function normalizeIconKey(value: string): string {
-    return ICON_ALIASES[value] ?? value;
+    const aliased = ICON_ALIASES[value] ?? value;
+
+    if (VALID_LUCIDE_KEYS.has(aliased)) {
+        return aliased;
+    }
+
+    const kebab = toKebabIconKey(aliased);
+
+    if (VALID_LUCIDE_KEYS.has(kebab)) {
+        return kebab;
+    }
+
+    return aliased;
 }
 
 export function isIconKey(value: string | null | undefined): value is IconKey {
-    return Boolean(value && VALID_LUCIDE_KEYS.has(value));
+    if (!value) {
+        return false;
+    }
+
+    return VALID_LUCIDE_KEYS.has(normalizeIconKey(value));
 }
 
 export function isValidLucideIconKey(
     value: string | null | undefined,
 ): boolean {
-    return Boolean(value && VALID_LUCIDE_KEYS.has(value));
+    if (!value) {
+        return false;
+    }
+
+    return VALID_LUCIDE_KEYS.has(normalizeIconKey(value));
+}
+
+/**
+ * Normalize PascalCase / aliases to a Lucide catalog key, or null if unknown.
+ */
+export function coerceValidLucideIconKey(
+    value: string | null | undefined,
+): string | null {
+    if (!value) {
+        return null;
+    }
+
+    const normalized = normalizeIconKey(value);
+
+    return VALID_LUCIDE_KEYS.has(normalized) ? normalized : null;
 }
 
 export function resolveIconKey(

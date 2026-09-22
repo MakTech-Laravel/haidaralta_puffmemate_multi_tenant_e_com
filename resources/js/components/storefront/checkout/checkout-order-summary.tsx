@@ -136,7 +136,16 @@ export function CheckoutOrderSummary({
                     className="text-muted-foreground text-xs leading-relaxed font-normal"
                 >
                     By placing your order, you confirm your details are correct
-                    and agree to {brand.name}&apos;s terms.
+                    and agree to{' '}
+                    <a
+                        href="/terms"
+                        className="text-foreground underline underline-offset-2"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        {brand.name}&apos;s terms
+                    </a>
+                    .
                 </Label>
             </div>
 
