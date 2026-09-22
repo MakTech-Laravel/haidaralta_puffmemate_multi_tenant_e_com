@@ -155,8 +155,8 @@ export function ShiftBoard({
     return (
         <div
             className={cn(
-                'flex w-full flex-col gap-6 p-2 md:p-4',
-                waitingForBranch && 'min-h-[calc(100svh-7rem)]',
+                'flex w-full flex-col p-2 md:p-4',
+                waitingForBranch ? 'gap-5' : 'gap-6',
             )}
         >
             <ShiftPageHeader
