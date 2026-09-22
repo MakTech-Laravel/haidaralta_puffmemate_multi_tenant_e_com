@@ -133,8 +133,8 @@ function CoveragePreview() {
                         Today&apos;s coverage
                     </p>
                     <p className="text-muted-foreground text-xs">
-                        00:00 to 24:00. Real names appear after you pick a
-                        store.
+                        Midnight to midnight. Real names appear after you pick
+                        a store.
                     </p>
                 </div>
                 <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
@@ -142,7 +142,8 @@ function CoveragePreview() {
                 </p>
             </header>
 
-            <div className="flex min-w-0 border-t">
+            <div className="overflow-x-auto border-t">
+                <div className="flex min-w-[56rem]">
                 <div className="border-border/80 w-28 shrink-0 border-r sm:w-36">
                     <div
                         className={cn(
@@ -194,6 +195,7 @@ function CoveragePreview() {
                         );
                     })}
                 </ShiftCoverageScale>
+                </div>
             </div>
         </div>
     );

@@ -162,18 +162,6 @@ export function hourTickLabel(hour: number): string {
     return hour < 12 ? `${hour}a` : `${hour - 12}p`;
 }
 
-export function hourAxisLabel(hour: number): string {
-    if (hour === 24) {
-        return '24';
-    }
-
-    return String(hour).padStart(2, '0');
-}
-
-export function formatNowClock(now: Date): string {
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-}
-
 export function windowCoversNow(
     start: string | null | undefined,
     end: string | null | undefined,

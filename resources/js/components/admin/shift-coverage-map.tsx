@@ -42,7 +42,7 @@ export function ShiftCoverageMap({
                         Today&apos;s coverage
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                        Full day, 00:00 to 24:00. Red is on now.
+                        Full day, midnight to midnight. Red is on now.
                         {selectable
                             ? ' Pick a window, or filter people below.'
                             : null}
@@ -64,7 +64,8 @@ export function ShiftCoverageMap({
                 </div>
             </header>
 
-            <div className="flex min-w-0">
+            <div className="overflow-x-auto">
+                <div className="flex min-w-[56rem]">
                 <div className="border-border/80 w-32 shrink-0 border-r sm:w-40">
                     <div
                         className={cn(
@@ -159,6 +160,7 @@ export function ShiftCoverageMap({
                         );
                     })}
                 </ShiftCoverageScale>
+                </div>
             </div>
         </section>
     );

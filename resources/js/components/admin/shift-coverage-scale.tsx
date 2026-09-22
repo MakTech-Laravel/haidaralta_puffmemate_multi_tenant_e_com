@@ -1,14 +1,17 @@
 import type { ReactNode } from 'react';
 import {
-    formatNowClock,
-    hourAxisLabel,
+    formatLiveClock,
+    hourTickLabel,
     nowMarkerPct,
 } from '@/lib/shift-format';
 import { cn } from '@/lib/utils';
 
 export const COVERAGE_HOURS = 24;
-export const COVERAGE_LABELS = [0, 3, 6, 9, 12, 15, 18, 21, 24];
-export const COVERAGE_SCALE_HEADER = 'h-10';
+export const COVERAGE_LABELS = Array.from(
+    { length: COVERAGE_HOURS + 1 },
+    (_, hour) => hour,
+);
+export const COVERAGE_SCALE_HEADER = 'h-[3.75rem]';
 
 export function ShiftCoverageScale({
     now,
@@ -20,11 +23,11 @@ export function ShiftCoverageScale({
     children: ReactNode;
 }) {
     const nowPct = now ? nowMarkerPct(now) : null;
-    const nowLabel = now ? formatNowClock(now) : null;
+    const nowLabel = now ? formatLiveClock(now) : null;
 
     return (
         <div className="min-w-0 flex-1">
-            <div className="pr-1">
+            <div className="relative">
                 <div className="relative h-5">
                     {showNow && nowPct !== null && nowLabel ? (
                         <span
@@ -38,7 +41,13 @@ export function ShiftCoverageScale({
                         </span>
                     ) : null}
                 </div>
-                <div className={cn('relative', 'h-5')}>
+                <div className="text-muted-foreground/80 flex h-5 text-[10px] font-medium tracking-wide uppercase">
+                    <span className="w-1/2 self-end pb-0.5 pl-1.5">Morning</span>
+                    <span className="w-1/2 self-end pb-0.5 pl-1.5">
+                        Afternoon / night
+                    </span>
+                </div>
+                <div className="relative h-5">
                     {COVERAGE_LABELS.map((hour) => (
                         <span
                             key={hour}
@@ -53,7 +62,7 @@ export function ShiftCoverageScale({
                                 transform: hourLabelTransform(hour),
                             }}
                         >
-                            {hourAxisLabel(hour)}
+                            {hourTickLabel(hour)}
                         </span>
                     ))}
                 </div>
@@ -71,9 +80,8 @@ export function ShiftCoverageScale({
                         <div
                             key={hour}
                             className={cn(
-                                'border-border/25 border-l',
-                                hour % 3 === 0 && 'border-border/70',
-                                hour === 0 && 'border-l-border',
+                                'border-border/30 border-l',
+                                (hour === 0 || hour === 12) && 'border-border',
                                 hour >= 12 && 'bg-muted/20',
                             )}
                         />
