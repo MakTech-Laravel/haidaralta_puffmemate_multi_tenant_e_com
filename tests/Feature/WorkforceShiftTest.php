@@ -29,12 +29,13 @@ use Illuminate\Support\Facades\Validator;
 
 beforeEach(function () {
     config(['drivers.single_active_branch' => true]);
+    $this->travelTo('2026-09-01 00:00:00');
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(BranchSeeder::class);
     $this->seed(UserSeeder::class);
 });
 
-test('platform assigns a shift and expands working days', function () {
+test('platform assigns explicit calendar dates as scheduled days', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -49,10 +50,11 @@ test('platform assigns a shift and expands working days', function () {
             'user_id' => $driver->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $template->id,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-15',
-            'days_of_week' => [1, 2, 3, 4, 5, 7],
-            'reason' => 'Opening coverage.',
+            'assign_dates' => collect(range(1, 15))
+                ->map(fn (int $day): string => sprintf('2026-09-%02d', $day))
+                ->all(),
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect();
 
@@ -64,19 +66,19 @@ test('platform assigns a shift and expands working days', function () {
         ->and(UserShiftDay::query()
             ->where('user_shift_assignment_id', $assignment?->id)
             ->whereDate('duty_on', '2026-09-05')
-            ->where('kind', ShiftDayKind::WeeklyOff)
-            ->whereNull('shift_template_id')
+            ->where('kind', ShiftDayKind::Scheduled)
+            ->where('shift_template_id', $template->id)
             ->exists())->toBeTrue()
         ->and(UserShiftDay::query()
             ->where('user_shift_assignment_id', $assignment?->id)
             ->whereDate('duty_on', '2026-09-05')
             ->onDuty()
-            ->exists())->toBeFalse()
+            ->exists())->toBeTrue()
         ->and(UserShiftHistory::query()->where('user_id', $driver->id)->count())->toBe(1)
         ->and(UserTransferHistory::query()->where('user_id', $driver->id)->exists())->toBeFalse();
 });
 
-test('leave one day removes that person from duty so another person can cover the same window', function () {
+test('removing one scheduled day lets another person cover that window', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $cover = User::query()->where('email', UserSeeder::BRANCH_1_STAFF)->firstOrFail();
@@ -92,26 +94,25 @@ test('leave one day removes that person from duty so another person can cover th
             'user_id' => $driver->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $template->id,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-15',
-            'days_of_week' => DriverRoster::DAYS_ALL,
-            'days' => [
-                [
-                    'date' => '2026-09-10',
-                    'kind' => ShiftDayKind::Leave->value,
-                ],
-            ],
+            'assign_dates' => ['2026-09-10'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect();
 
     $assignment = UserShiftAssignment::query()->where('user_id', $driver->id)->firstOrFail();
+    $scheduledDay = $assignment->days()->whereDate('duty_on', '2026-09-10')->firstOrFail();
 
-    expect(UserShiftDay::query()
-        ->where('user_shift_assignment_id', $assignment->id)
-        ->whereDate('duty_on', '2026-09-10')
-        ->where('kind', ShiftDayKind::Leave)
-        ->whereNull('shift_template_id')
-        ->exists())->toBeTrue();
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branch-shift-assignments.store'), [
+            'user_id' => $driver->id,
+            'branch_id' => $sydney->id,
+            'shift_template_id' => null,
+            'assign_dates' => [],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [$scheduledDay->id],
+        ])
+        ->assertRedirect();
 
     $this->travelTo('2026-09-10 10:00:00');
 
@@ -122,16 +123,16 @@ test('leave one day removes that person from duty so another person can cover th
             'user_id' => $cover->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $template->id,
-            'start_date' => '2026-09-10',
-            'end_date' => '2026-09-10',
-            'days_of_week' => DriverRoster::DAYS_ALL,
+            'assign_dates' => ['2026-09-10'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect();
 
     expect(UserShiftAssignment::query()
         ->where('shift_template_id', $template->id)
         ->where('status', ShiftAssignmentStatus::Scheduled)
-        ->count())->toBe(2)
+        ->count())->toBe(1)
         ->and(UserShiftDay::query()
             ->where('user_id', $cover->id)
             ->whereDate('duty_on', '2026-09-10')
@@ -140,6 +141,7 @@ test('leave one day removes that person from duty so another person can cover th
 });
 
 test('same person can hold two non-overlapping windows on one day', function () {
+    config(['shifts.allow_multiple_per_day' => true]);
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -159,9 +161,9 @@ test('same person can hold two non-overlapping windows on one day', function () 
             'user_id' => $staff->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $late->id,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-30',
-            'days_of_week' => [1, 2, 3, 4, 5, 6],
+            'assign_dates' => ['2026-09-10'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect();
 
@@ -170,9 +172,9 @@ test('same person can hold two non-overlapping windows on one day', function () 
             'user_id' => $staff->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $dispatch->id,
-            'start_date' => '2026-09-10',
-            'end_date' => '2026-09-10',
-            'days_of_week' => DriverRoster::DAYS_ALL,
+            'assign_dates' => ['2026-09-10'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect();
 
@@ -188,6 +190,7 @@ test('same person can hold two non-overlapping windows on one day', function () 
 });
 
 test('overlapping times for the same person are rejected', function () {
+    config(['shifts.allow_multiple_per_day' => true]);
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -205,9 +208,9 @@ test('overlapping times for the same person are rejected', function () {
             'user_id' => $driver->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $morning->id,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-15',
-            'days_of_week' => DriverRoster::DAYS_ALL,
+            'assign_dates' => ['2026-09-10'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect();
 
@@ -217,11 +220,12 @@ test('overlapping times for the same person are rejected', function () {
             'user_id' => $driver->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $overlap->id,
-            'start_date' => '2026-09-10',
-            'end_date' => '2026-09-10',
-            'days_of_week' => DriverRoster::DAYS_ALL,
+            'assign_dates' => ['2026-09-10'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
-        ->assertRedirect(route('platform.shift-assignments.create'));
+        ->assertRedirect(route('platform.shift-assignments.create'))
+        ->assertSessionHasErrors('schedule');
 
     expect(UserShiftAssignment::query()
         ->where('user_id', $driver->id)
@@ -229,7 +233,7 @@ test('overlapping times for the same person are rejected', function () {
         ->count())->toBe(1);
 });
 
-test('assignment dates are not constrained by a roster period', function () {
+test('non-consecutive assignment dates are accepted without a roster period', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -243,20 +247,24 @@ test('assignment dates are not constrained by a roster period', function () {
             'user_id' => $driver->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $template->id,
-            'start_date' => '2026-08-20',
-            'end_date' => '2026-11-02',
-            'days_of_week' => DriverRoster::DAYS_WEEKDAYS,
+            'assign_dates' => ['2026-09-02', '2026-11-02'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect();
 
-    $assignment = UserShiftAssignment::query()->where('user_id', $driver->id)->first();
-
-    expect($assignment)->not->toBeNull()
-        ->and($assignment?->start_date->toDateString())->toBe('2026-08-20')
-        ->and($assignment?->end_date->toDateString())->toBe('2026-11-02');
+    expect(UserShiftDay::query()
+        ->where('user_id', $driver->id)
+        ->whereIn('duty_on', ['2026-09-02', '2026-11-02'])
+        ->onDuty()
+        ->count())->toBe(2)
+        ->and(UserShiftAssignment::query()
+            ->where('user_id', $driver->id)
+            ->where('status', ShiftAssignmentStatus::Scheduled)
+            ->count())->toBe(2);
 });
 
-test('a duty period cannot be longer than 366 days', function () {
+test('calendar changes cannot span more than 366 days', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -268,12 +276,12 @@ test('a duty period cannot be longer than 366 days', function () {
             'user_id' => $driver->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $template->id,
-            'start_date' => '2026-01-01',
-            'end_date' => '2027-01-03',
-            'days_of_week' => DriverRoster::DAYS_ALL,
+            'assign_dates' => ['2026-09-02', '2027-09-04'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect(route('platform.shift-assignments.create'))
-        ->assertSessionHasErrors('end_date');
+        ->assertSessionHasErrors('schedule');
 });
 
 test('period routes are gone', function () {
@@ -341,7 +349,7 @@ test('platform rejects a shift that wraps past midnight', function () {
     expect(ShiftTemplate::query()->where('name', 'Night wrap')->exists())->toBeFalse();
 });
 
-test('changing a shift writes shift history only', function () {
+test('changing an exact scheduled day writes shift history only', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -363,11 +371,16 @@ test('changing a shift writes shift history only', function () {
         'end_date' => '2026-09-15',
         'days_of_week' => DriverRoster::DAYS_ALL,
     ]);
+    $day = $assignment->days()->whereDate('duty_on', '2026-09-10')->firstOrFail();
 
     $this->actingAs($admin, 'platform')
-        ->put(route('platform.shift-assignments.update', $assignment), [
+        ->post(route('platform.shift-assignments.store'), [
+            'user_id' => $driver->id,
+            'branch_id' => $sydney->id,
             'shift_template_id' => $evening->id,
-            'reason' => 'Moved to evening.',
+            'assign_dates' => [],
+            'replace_day_ids' => [$day->id],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect();
 
@@ -378,11 +391,11 @@ test('changing a shift writes shift history only', function () {
         'user_id' => $driver->id,
         'previous_shift_template_id' => $morning->id,
         'new_shift_template_id' => $evening->id,
-        'reason' => 'Moved to evening.',
+        'reason' => null,
     ]);
 });
 
-test('weekday-only and weekend-only assignments that share dates are allowed', function () {
+test('adjacent and non-consecutive dates are canonicalized without duplicate shifts', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -396,9 +409,9 @@ test('weekday-only and weekend-only assignments that share dates are allowed', f
             'user_id' => $driver->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $template->id,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-15',
-            'days_of_week' => DriverRoster::DAYS_WEEKDAYS,
+            'assign_dates' => ['2026-09-02', '2026-09-03'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect();
 
@@ -407,16 +420,20 @@ test('weekday-only and weekend-only assignments that share dates are allowed', f
             'user_id' => $driver->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $template->id,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-15',
-            'days_of_week' => [6, 7],
+            'assign_dates' => ['2026-09-03', '2026-09-05'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect();
 
     expect(UserShiftAssignment::query()
         ->where('user_id', $driver->id)
         ->where('status', ShiftAssignmentStatus::Scheduled)
-        ->count())->toBe(2);
+        ->count())->toBe(2)
+        ->and(UserShiftDay::query()
+            ->where('user_id', $driver->id)
+            ->onDuty()
+            ->count())->toBe(3);
 });
 
 test('platform users cannot be assigned a shift', function () {
@@ -429,11 +446,11 @@ test('platform users cannot be assigned a shift', function () {
             'user_id' => $admin->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $template->id,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-15',
-            'days_of_week' => DriverRoster::DAYS_ALL,
+            'assign_dates' => ['2026-09-02'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
-        ->assertNotFound();
+        ->assertSessionHasErrors('schedule');
 
     expect(UserShiftAssignment::query()->where('user_id', $admin->id)->exists())->toBeFalse()
         ->and($admin->fresh()->user_type)->toBe(UserType::PLATFORM);
@@ -646,9 +663,9 @@ test('on duty now uses the viewer timezone', function () {
             'user_id' => $staff->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $template->id,
-            'start_date' => '2026-09-22',
-            'end_date' => '2026-09-22',
-            'days_of_week' => DriverRoster::DAYS_ALL,
+            'assign_dates' => ['2026-09-22'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertRedirect();
 
@@ -686,10 +703,11 @@ test('branch assign without a store shows the choose-a-branch page', function ()
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/shifts/assign')
-            ->where('selectedBranchId', null)
             ->where('selectedBranch', null)
-            ->has('people', 0)
+            ->where('selectedPeopleKind', null)
+            ->where('selectedPerson', null)
             ->has('templates', 0)
+            ->where('calendar', null)
             ->missing('periods'));
 });
 
@@ -704,11 +722,13 @@ test('branch assign page only lists the selected store windows', function () {
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-shift-assignments.create', [
             'branch_id' => $sydney->id,
+            'people_kind' => 'staff',
         ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/shifts/assign')
-            ->where('selectedBranchId', $sydney->id)
+            ->where('selectedBranch.id', $sydney->id)
+            ->where('selectedPeopleKind', 'staff')
             ->has('templates', 1)
             ->where('templates.0.name', 'Sydney Floor')
             ->missing('periods'));
@@ -730,11 +750,12 @@ test('assignment edit opens the personal calendar', function () {
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.shift-assignments.edit', $assignment))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('platform/shifts/assign')
-            ->where('assignment.id', $assignment->id)
-            ->has('days'));
+        ->assertRedirect(route('platform.shift-assignments.create', [
+            'branch_id' => $sydney->id,
+            'people_kind' => 'driver',
+            'user_id' => $driver->id,
+            'month' => '2026-09',
+        ]));
 });
 
 test('branch shift options page active stores twenty at a time', function () {
@@ -1079,9 +1100,9 @@ test('administrator cannot assign a branch-owned shift template', function () {
             'user_id' => $driver->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $template->id,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-15',
-            'days_of_week' => DriverRoster::DAYS_ALL,
+            'assign_dates' => ['2026-09-02'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertNotFound();
 });
@@ -1097,9 +1118,9 @@ test('branch management cannot assign a platform-owned shift template', function
             'user_id' => $driver->id,
             'branch_id' => $sydney->id,
             'shift_template_id' => $template->id,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-15',
-            'days_of_week' => DriverRoster::DAYS_ALL,
+            'assign_dates' => ['2026-09-02'],
+            'replace_day_ids' => [],
+            'remove_day_ids' => [],
         ])
         ->assertNotFound();
 });
@@ -1203,7 +1224,7 @@ test('assigned people lists name dates and shift without staff or driver labels'
             ->where('selectedBranchId', $sydney->id)
             ->has('table.data', 2)
             ->missing('table.data.0.role_label')
-            ->missing('table.data.0.user_type')
+            ->where('table.data.0.user_type', fn ($value): bool => in_array($value, ['branch', 'driver'], true))
             ->missing('table.data.0.user_type_label'));
 
     $rows = collect($response->inertiaProps('table.data'));

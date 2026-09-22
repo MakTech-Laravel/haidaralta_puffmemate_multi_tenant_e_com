@@ -1,4 +1,5 @@
 import { Head, router, setLayoutProps } from '@inertiajs/react';
+import BranchShiftTemplateController from '@/actions/App/Http/Controllers/Platform/BranchShiftTemplateController';
 import { ShiftBoard } from '@/components/admin/shift-board';
 import {
     platformShiftWorkspace,
@@ -27,7 +28,9 @@ export default function PlatformShiftsIndex({
     const routes = platformShiftWorkspace(workspace);
     const branchQuery = shiftBranchQuery(selectedBranchId);
     const branchOptionsUrl =
-        workspace === 'branch' ? routes.templates.branchOptions.url() : null;
+        workspace === 'branch'
+            ? BranchShiftTemplateController.branchOptions.url()
+            : null;
 
     setLayoutProps({
         breadcrumbs: [

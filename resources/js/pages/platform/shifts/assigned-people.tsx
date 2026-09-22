@@ -1,4 +1,5 @@
 import { Head, router, setLayoutProps } from '@inertiajs/react';
+import BranchShiftTemplateController from '@/actions/App/Http/Controllers/Platform/BranchShiftTemplateController';
 import { ShiftAssignedPeoplePage } from '@/components/admin/shift-assigned-people-page';
 import type { AssignedPeopleTablePayload } from '@/components/admin/shift-assigned-people-page';
 import { ShiftBranchPicker } from '@/components/admin/shift-branch-picker';
@@ -23,7 +24,9 @@ export default function PlatformAssignedPeople({
     const routes = platformShiftWorkspace(workspace);
     const branchQuery = shiftBranchQuery(selectedBranchId);
     const branchOptionsUrl =
-        workspace === 'branch' ? routes.templates.branchOptions.url() : null;
+        workspace === 'branch'
+            ? BranchShiftTemplateController.branchOptions.url()
+            : null;
     const waitingForBranch = Boolean(
         workspace === 'branch' && branchOptionsUrl && !selectedBranchId,
     );
@@ -67,7 +70,7 @@ export default function PlatformAssignedPeople({
             <ShiftAssignedPeoplePage
                 kicker={
                     workspace === 'branch'
-                        ? selectedBranch?.name ?? 'Branch management'
+                        ? (selectedBranch?.name ?? 'Branch management')
                         : 'Administrator'
                 }
                 title="Assigned people"
@@ -81,7 +84,17 @@ export default function PlatformAssignedPeople({
                 }
                 assignHref={routes.assignments.create.url(branchQuery)}
                 editHref={(row) =>
-                    routes.assignments.edit.url(row.id, branchQuery)
+                    routes.assignments.create.url({
+                        query: {
+                            branch_id: row.branch_id,
+                            people_kind:
+                                row.user_type === 'driver' ? 'driver' : 'staff',
+                            user_id: row.user_id,
+                            ...(row.start_date
+                                ? { month: row.start_date.slice(0, 7) }
+                                : {}),
+                        },
+                    })
                 }
                 waitingForBranch={waitingForBranch}
                 branchPicker={branchPicker}

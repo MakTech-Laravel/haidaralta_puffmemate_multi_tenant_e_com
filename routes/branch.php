@@ -185,6 +185,5 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.shift-assignments.people-options');
         Route::post('shift-assignments', [BranchShiftAssignmentController::class, 'store'])->name('branch.shift-assignments.store');
         Route::get('shift-assignments/{user_shift_assignment}/edit', [BranchShiftAssignmentController::class, 'edit'])->name('branch.shift-assignments.edit');
-        Route::put('shift-assignments/{user_shift_assignment}', [BranchShiftAssignmentController::class, 'update'])->name('branch.shift-assignments.update');
     });
 });

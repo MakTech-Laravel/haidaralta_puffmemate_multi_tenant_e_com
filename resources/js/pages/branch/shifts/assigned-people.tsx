@@ -41,9 +41,15 @@ export default function BranchAssignedPeople({
                 indexUrl={ShiftAssignmentController.index.url(branch.slug)}
                 assignHref={ShiftAssignmentController.create.url(branch.slug)}
                 editHref={(row) =>
-                    ShiftAssignmentController.edit.url({
-                        branch: branch.slug,
-                        user_shift_assignment: row.id,
+                    ShiftAssignmentController.create.url(branch.slug, {
+                        query: {
+                            people_kind:
+                                row.user_type === 'driver' ? 'driver' : 'staff',
+                            user_id: row.user_id,
+                            ...(row.start_date
+                                ? { month: row.start_date.slice(0, 7) }
+                                : {}),
+                        },
                     })
                 }
             />

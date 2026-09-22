@@ -71,6 +71,56 @@ export type ShiftAssignmentPeopleOption = {
     avatar_url: string | null;
 };
 
+export type ShiftAssignmentCalendarDay = {
+    id: number;
+    assignment_id: number;
+    shift_template_id: number;
+    name: string | null;
+    start_time: string | null;
+    end_time: string | null;
+    editable: boolean;
+};
+
+export type ShiftAssignmentCalendarPayload = {
+    month: string;
+    today: string;
+    grid_start: string;
+    grid_end: string;
+    days: Record<string, ShiftAssignmentCalendarDay[]>;
+};
+
+export type ShiftAssignmentGroup = {
+    key: string;
+    shift_template_id: number;
+    name: string;
+    start_time: string;
+    end_time: string;
+    start_date: string;
+    end_date: string;
+    date_count: number;
+    editable: boolean;
+    is_past: boolean;
+};
+
+export type ShiftAssignmentGroupsPayload = {
+    data: ShiftAssignmentGroup[];
+    meta: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+    };
+};
+
+export type ShiftAssignmentWorkspaceProps = {
+    selectedBranch: BranchOption | null;
+    selectedPeopleKind: ShiftAssignmentPeopleKind | null;
+    selectedPerson: ShiftAssignmentPeopleOption | null;
+    templates: ShiftTemplateOption[];
+    calendar: ShiftAssignmentCalendarPayload | null;
+    assignmentGroups: ShiftAssignmentGroupsPayload;
+};
+
 export type ShiftAssignmentPeopleOptionsPayload = {
     data: ShiftAssignmentPeopleOption[];
     meta: {
@@ -91,6 +141,7 @@ export type AssignedShiftPersonRow = {
     id: number;
     user_id: number;
     user_name?: string | null;
+    user_type?: string | null;
     avatar_url?: string | null;
     branch_id: number;
     branch_name?: string | null;
