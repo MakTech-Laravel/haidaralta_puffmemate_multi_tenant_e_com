@@ -1,5 +1,5 @@
 import type { CatalogIconOption } from '@/components/icons/lucide-icon-picker-types';
-import { getIconLabel, isValidLucideIconKey } from '@/lib/icons';
+import { coerceValidLucideIconKey, getIconLabel } from '@/lib/icons';
 
 type IconCatalogModule = {
     ICON_OPTIONS: readonly CatalogIconOption[];
@@ -61,16 +61,18 @@ export function buildAllowListOptions(
     const options: CatalogIconOption[] = [];
 
     for (const raw of allowedIcons) {
-        if (!raw || seen.has(raw) || !isValidLucideIconKey(raw)) {
+        const key = coerceValidLucideIconKey(raw);
+
+        if (!key || seen.has(key)) {
             continue;
         }
 
-        seen.add(raw);
-        const label = getIconLabel(raw);
+        seen.add(key);
+        const label = getIconLabel(key);
         options.push({
-            key: raw,
+            key,
             label,
-            searchText: `${raw} ${label}`.toLowerCase(),
+            searchText: `${key} ${label}`.toLowerCase(),
             categories: [],
         });
     }

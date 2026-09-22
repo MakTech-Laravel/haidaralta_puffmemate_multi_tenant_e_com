@@ -3,17 +3,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { contactFormCopy } from '@/lib/storefront-contact';
 import { cn } from '@/lib/utils';
+
+type ContactFormCopy = {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+    message?: string;
+    lastNamePlaceholder?: string;
+    phonePlaceholder?: string;
+    messagePlaceholder?: string;
+    submitLabel?: string;
+};
 
 type ContactFormProps = {
     className?: string;
+    copy: ContactFormCopy;
 };
 
 const underlineFieldClass =
     'border-border h-10 rounded-none border-0 border-b bg-transparent px-0 shadow-none focus-visible:border-foreground focus-visible:ring-0';
 
-export function ContactForm({ className }: ContactFormProps) {
+export function ContactForm({ className, copy }: ContactFormProps) {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -38,7 +50,7 @@ export function ContactForm({ className }: ContactFormProps) {
                 <div className="grid gap-6 sm:grid-cols-2">
                     <div className="space-y-2">
                         <Label htmlFor="contact-first-name">
-                            {contactFormCopy.firstName}
+                            {copy.firstName ?? 'First Name'}
                         </Label>
                         <Input
                             id="contact-first-name"
@@ -51,7 +63,7 @@ export function ContactForm({ className }: ContactFormProps) {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="contact-last-name">
-                            {contactFormCopy.lastName}
+                            {copy.lastName ?? 'Last Name'}
                         </Label>
                         <Input
                             id="contact-last-name"
@@ -59,13 +71,13 @@ export function ContactForm({ className }: ContactFormProps) {
                             onChange={(event) =>
                                 setLastName(event.target.value)
                             }
-                            placeholder={contactFormCopy.lastNamePlaceholder}
+                            placeholder={copy.lastNamePlaceholder}
                             className={underlineFieldClass}
                         />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="contact-email">
-                            {contactFormCopy.email}
+                            {copy.email ?? 'Email'}
                         </Label>
                         <Input
                             id="contact-email"
@@ -77,14 +89,14 @@ export function ContactForm({ className }: ContactFormProps) {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="contact-phone">
-                            {contactFormCopy.phone}
+                            {copy.phone ?? 'Phone Number'}
                         </Label>
                         <Input
                             id="contact-phone"
                             type="tel"
                             value={phone}
                             onChange={(event) => setPhone(event.target.value)}
-                            placeholder={contactFormCopy.phonePlaceholder}
+                            placeholder={copy.phonePlaceholder}
                             className={underlineFieldClass}
                         />
                     </div>
@@ -92,13 +104,13 @@ export function ContactForm({ className }: ContactFormProps) {
 
                 <div className="space-y-2">
                     <Label htmlFor="contact-message">
-                        {contactFormCopy.message}
+                        {copy.message ?? 'Message'}
                     </Label>
                     <Textarea
                         id="contact-message"
                         value={message}
                         onChange={(event) => setMessage(event.target.value)}
-                        placeholder={contactFormCopy.messagePlaceholder}
+                        placeholder={copy.messagePlaceholder}
                         rows={3}
                         className="border-border focus-visible:border-foreground min-h-20 resize-none rounded-none border-0 border-b bg-transparent px-0 shadow-none focus-visible:ring-0"
                     />
@@ -109,17 +121,10 @@ export function ContactForm({ className }: ContactFormProps) {
                         type="submit"
                         className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-md px-6 font-semibold"
                     >
-                        {contactFormCopy.submitLabel}
+                        {copy.submitLabel ?? 'Send Message'}
                     </Button>
                 </div>
             </form>
-
-            {/* <img
-                src="/images/storefront/contact-paper-plane.png"
-                alt=""
-                aria-hidden
-                className="pb-16 pointer-events-none absolute right-2 bottom-2 z-0 h-auto w-40 -rotate-6 object-contain invert mix-blend-multiply sm:right-4 sm:bottom-4 sm:w-52 sm:-rotate-40"
-            /> */}
         </div>
     );
 }

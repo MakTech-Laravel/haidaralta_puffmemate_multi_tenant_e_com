@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { BadgeCheck, Home } from 'lucide-react';
+import { AppDate } from '@/components/app-datetime';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -8,15 +9,31 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { privacyPage } from '@/lib/storefront-privacy';
 import { cn } from '@/lib/utils';
 import { home } from '@/routes';
 
-type PrivacyIntroProps = {
-    className?: string;
+type PrivacyIntroData = {
+    eyebrow: string;
+    intro: string;
+    versionLabel: string;
+    updatedAt: string;
+    applicableEntity: string;
+    summaryPoints: Array<{ id: string; title: string; body: string }>;
 };
 
-export function PrivacyIntro({ className }: PrivacyIntroProps) {
+type PrivacyIntroProps = {
+    className?: string;
+    title: string;
+    data: PrivacyIntroData;
+};
+
+function isIsoDate(value: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value.trim());
+}
+
+export function PrivacyIntro({ className, title, data }: PrivacyIntroProps) {
+    const updatedAt = data.updatedAt?.trim() ?? '';
+
     return (
         <section className={cn('bg-background pt-8 pb-6 sm:pt-10', className)}>
             <div className="container mx-auto max-w-3xl px-4 sm:px-6">
@@ -41,22 +58,22 @@ export function PrivacyIntro({ className }: PrivacyIntroProps) {
                         <BreadcrumbSeparator>/</BreadcrumbSeparator>
                         <BreadcrumbItem>
                             <BreadcrumbPage className="text-primary font-semibold">
-                                {privacyPage.title}
+                                {title}
                             </BreadcrumbPage>
                         </BreadcrumbItem>
                     </BreadcrumbList>
                 </Breadcrumb>
 
                 <p className="text-primary mt-8 text-[0.7rem] font-bold tracking-[0.12em] uppercase sm:text-xs">
-                    {privacyPage.eyebrow}
+                    {data.eyebrow}
                 </p>
 
                 <h1 className="text-foreground mt-3 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-                    {privacyPage.title}
+                    {title}
                 </h1>
 
                 <p className="text-muted-foreground mt-5 max-w-2xl text-sm leading-relaxed sm:text-base">
-                    {privacyPage.intro}
+                    {data.intro}
                 </p>
 
                 <div className="text-muted-foreground mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm">
@@ -66,44 +83,54 @@ export function PrivacyIntro({ className }: PrivacyIntroProps) {
                             aria-hidden
                         />
                         <span className="text-foreground/80">
-                            {privacyPage.versionLabel}
+                            {data.versionLabel}
                         </span>
                     </span>
-                    <span className="text-muted-foreground/80">
-                        {privacyPage.updatedAt}
+                    <span className="text-muted-foreground/80 inline-flex items-center gap-1">
+                        {updatedAt ? (
+                            isIsoDate(updatedAt) ? (
+                                <>
+                                    Last Updated: <AppDate value={updatedAt} />
+                                </>
+                            ) : (
+                                updatedAt
+                            )
+                        ) : null}
                     </span>
                 </div>
 
                 <p className="text-muted-foreground mt-2 text-xs sm:text-sm">
-                    {privacyPage.applicableEntity}
+                    {data.applicableEntity}
                 </p>
 
                 <hr className="border-border mt-8" />
 
-                <ul className="mt-8 space-y-6">
-                    {privacyPage.summaryPoints.map((point) => (
-                        <li
-                            key={point.title}
-                            className="flex items-start gap-2.5"
-                        >
-                            <span
-                                className="bg-primary mt-2 size-1.5 shrink-0 rounded-full"
-                                aria-hidden
-                            />
-                            <div className="min-w-0">
-                                <a
-                                    href={`#${point.id}`}
-                                    className="text-primary hover:text-primary/80 text-sm font-bold transition-colors sm:text-base"
-                                >
-                                    {point.title}
-                                </a>
-                                <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-                                    {point.body}
-                                </p>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+                {data.summaryPoints.length > 0 ? (
+                    <ul className="mt-8 space-y-6">
+                        {data.summaryPoints.map((point) => (
+                            <li
+                                key={point.id || point.title}
+                                className="flex items-start gap-2.5"
+                            >
+                                <span
+                                    className="bg-primary mt-2 size-1.5 shrink-0 rounded-full"
+                                    aria-hidden
+                                />
+                                <div className="min-w-0">
+                                    <a
+                                        href={`#${point.id}`}
+                                        className="text-primary hover:text-primary/80 text-sm font-bold transition-colors sm:text-base"
+                                    >
+                                        {point.title}
+                                    </a>
+                                    <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                                        {point.body}
+                                    </p>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                ) : null}
             </div>
         </section>
     );

@@ -1,16 +1,36 @@
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { SafeHtml } from '@/components/editor/safe-html';
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { faqCategories, type FaqItem } from '@/lib/storefront-faq';
+import { resolveLucideIcon } from '@/lib/cms-icons';
 import { cn } from '@/lib/utils';
+
+type FaqItem = {
+    id: string;
+    question: string;
+    answer: string;
+    defaultOpen?: boolean;
+};
+
+type FaqCategory = {
+    id: string;
+    title: string;
+    icon: string;
+    items: FaqItem[];
+};
 
 type FaqCategoriesProps = {
     className?: string;
+    categories: FaqCategory[];
 };
+
+function looksLikeHtml(value: string): boolean {
+    return /<\/?[a-z][\s\S]*>/i.test(value);
+}
 
 function FaqQuestion({ item }: { item: FaqItem }) {
     const [open, setOpen] = useState(item.defaultOpen ?? false);
@@ -40,21 +60,30 @@ function FaqQuestion({ item }: { item: FaqItem }) {
                     />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                    <p className="text-muted-foreground border-border font-inter border-t px-4 pt-3 pb-4 pl-[1.625rem] text-base leading-relaxed font-normal">
-                        {item.answer}
-                    </p>
+                    <div className="border-border border-t px-4 pt-3 pb-4 pl-[1.625rem]">
+                        {looksLikeHtml(item.answer) ? (
+                            <SafeHtml
+                                html={item.answer}
+                                className="text-muted-foreground font-inter text-base leading-relaxed font-normal"
+                            />
+                        ) : (
+                            <p className="text-muted-foreground font-inter text-base leading-relaxed font-normal">
+                                {item.answer}
+                            </p>
+                        )}
+                    </div>
                 </CollapsibleContent>
             </div>
         </Collapsible>
     );
 }
 
-export function FaqCategories({ className }: FaqCategoriesProps) {
+export function FaqCategories({ className, categories }: FaqCategoriesProps) {
     return (
         <section className={cn('bg-background pb-16 sm:pb-20', className)}>
             <div className="container mx-auto max-w-3xl space-y-10 px-4 sm:max-w-4xl sm:space-y-12 sm:px-6">
-                {faqCategories.map((category) => {
-                    const Icon = category.icon;
+                {categories.map((category) => {
+                    const Icon = resolveLucideIcon(category.icon);
                     const count = category.items.length;
 
                     return (

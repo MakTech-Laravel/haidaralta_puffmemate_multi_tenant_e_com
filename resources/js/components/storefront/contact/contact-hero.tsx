@@ -1,9 +1,9 @@
 import { AtSign, Mail, MessageCircle, Phone } from 'lucide-react';
-import { contactHero } from '@/lib/storefront-contact';
 import { cn } from '@/lib/utils';
 
 type ContactHeroProps = {
     className?: string;
+    data: { title: string; subtitle: string; image: string };
 };
 
 const heroIcons = [
@@ -13,7 +13,7 @@ const heroIcons = [
     { id: 'mail', Icon: Mail },
 ] as const;
 
-export function ContactHero({ className }: ContactHeroProps) {
+export function ContactHero({ className, data }: ContactHeroProps) {
     return (
         <section
             className={cn(
@@ -23,7 +23,7 @@ export function ContactHero({ className }: ContactHeroProps) {
         >
             <div
                 className="bg-foreground absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${contactHero.image})` }}
+                style={{ backgroundImage: `url(${data.image})` }}
                 aria-hidden
             />
             <div
@@ -34,10 +34,10 @@ export function ContactHero({ className }: ContactHeroProps) {
             <div className="relative container mx-auto flex min-h-[36vh] items-center justify-between gap-8 px-4 py-14 sm:min-h-[42vh] sm:px-6 sm:py-16">
                 <div className="text-primary-foreground max-w-xl">
                     <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-                        {contactHero.title}
+                        {data.title}
                     </h1>
                     <p className="font-inter mt-4 max-w-md text-sm leading-relaxed font-normal opacity-90 sm:text-base">
-                        {contactHero.subtitle}
+                        {data.subtitle}
                     </p>
                 </div>
 
