@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ApplicationSettingsSeeder::class,
             CmsPageSeeder::class,
+            HomeBannerSeeder::class,
             CatalogSeeder::class,
             BranchInventorySeeder::class,
             OrderConversationSeeder::class,

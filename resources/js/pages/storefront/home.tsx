@@ -7,19 +7,21 @@ import { HomeHeroSlider } from '@/components/storefront/home/hero-slider';
 import { ProductCarousel } from '@/components/storefront/home/product-carousel';
 import {
     storefrontFeatures,
-    storefrontHeroSlides,
     type StorefrontCategoryItem,
+    type StorefrontHeroSlide,
     type StorefrontProduct,
 } from '@/lib/storefront-demo';
 import { shop } from '@/routes';
 
 type HomePageProps = {
+    heroSlides: StorefrontHeroSlide[];
     featuredCategories: StorefrontCategoryItem[];
     bestSellingProducts: StorefrontProduct[];
     newArrivalProducts: StorefrontProduct[];
 };
 
 export default function StorefrontHome({
+    heroSlides,
     featuredCategories,
     bestSellingProducts,
     newArrivalProducts,
@@ -35,7 +37,7 @@ export default function StorefrontHome({
         <>
             <Head title="Home" />
 
-            <HomeHeroSlider slides={storefrontHeroSlides} />
+            <HomeHeroSlider slides={heroSlides} />
 
             <section className="container mx-auto px-4 py-14 sm:px-6 sm:py-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
