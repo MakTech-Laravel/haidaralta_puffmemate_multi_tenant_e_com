@@ -76,6 +76,7 @@ export type ShiftAssignmentRow = {
     user_name?: string | null;
     user_type?: string | null;
     user_type_label?: string | null;
+    role_label?: string | null;
     avatar_url?: string | null;
     branch_id: number;
     branch_name?: string | null;

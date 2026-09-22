@@ -14,4 +14,17 @@ enum RoleEnum: string
     case ADMIN = 'admin';
     case MANAGER = 'manager';
     case STAFF = 'staff';
+
+    /**
+     * Human-readable label for display in the UI.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::SUPER_ADMIN => 'Super admin',
+            self::ADMIN => 'Admin',
+            self::MANAGER => 'Manager',
+            self::STAFF => 'Staff',
+        };
+    }
 }

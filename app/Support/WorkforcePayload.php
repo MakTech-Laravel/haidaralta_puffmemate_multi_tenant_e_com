@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\RoleEnum;
 use App\Enums\ShiftAssignmentStatus;
 use App\Enums\ShiftOwnerType;
 use App\Enums\TransferSubjectType;
@@ -17,6 +18,8 @@ use App\Models\UserTransferHistory;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 final class WorkforcePayload
 {
@@ -44,7 +47,7 @@ final class WorkforcePayload
      */
     public static function assignment(UserShiftAssignment $assignment, ?CarbonInterface $at = null): array
     {
-        $assignment->loadMissing(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar']);
+        $assignment->loadMissing(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar,branch_id']);
         $days = $assignment->normalizedDaysOfWeek();
         $template = $assignment->shiftTemplate;
         $moment = DateTimeFormat::at($at);
@@ -55,6 +58,7 @@ final class WorkforcePayload
             'user_name' => $assignment->user?->name,
             'user_type' => $assignment->user?->user_type?->value,
             'user_type_label' => $assignment->user?->user_type?->label(),
+            'role_label' => self::roleLabelFor($assignment->user),
             'avatar_url' => MediaUrl::resolve($assignment->user?->avatar, fallback: null),
             'branch_id' => $assignment->branch_id,
             'branch_name' => $assignment->branch?->name,
@@ -142,7 +146,7 @@ final class WorkforcePayload
         $moment = DateTimeFormat::at($at);
 
         $day = UserShiftDay::query()
-            ->with(['shiftTemplate', 'assignment.branch:id,name,slug', 'user:id,name,user_type,avatar'])
+            ->with(['shiftTemplate', 'assignment.branch:id,name,slug', 'user:id,name,user_type,avatar,branch_id'])
             ->where('user_id', $user->id)
             ->onDuty()
             ->whereDate('duty_on', $moment->toDateString())
@@ -232,8 +236,8 @@ final class WorkforcePayload
             return [];
         }
 
-        return UserShiftAssignment::query()
-            ->with(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar'])
+        $assignments = UserShiftAssignment::query()
+            ->with(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar,branch_id'])
             ->where('status', ShiftAssignmentStatus::Scheduled)
             ->when($branchId !== null, fn ($query) => $query->where('branch_id', $branchId))
             ->whereHas('shiftTemplate', function ($templates) use ($owner): void {
@@ -245,7 +249,11 @@ final class WorkforcePayload
             })
             ->orderByDesc('start_date')
             ->orderBy('id')
-            ->get()
+            ->get();
+
+        self::attachRoleLabels($assignments->pluck('user')->filter());
+
+        return $assignments
             ->map(fn (UserShiftAssignment $assignment): array => self::assignment($assignment))
             ->values()
             ->all();
@@ -256,13 +264,17 @@ final class WorkforcePayload
      */
     public static function scheduledPeopleAtBranch(int $branchId): array
     {
-        return UserShiftAssignment::query()
-            ->with(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar'])
+        $assignments = UserShiftAssignment::query()
+            ->with(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar,branch_id'])
             ->where('status', ShiftAssignmentStatus::Scheduled)
             ->where('branch_id', $branchId)
             ->orderByDesc('start_date')
             ->orderBy('id')
-            ->get()
+            ->get();
+
+        self::attachRoleLabels($assignments->pluck('user')->filter());
+
+        return $assignments
             ->map(fn (UserShiftAssignment $assignment): array => self::assignment($assignment))
             ->values()
             ->all();
@@ -358,17 +370,24 @@ final class WorkforcePayload
         $moment = DateTimeFormat::at($at);
 
         $query = UserShiftDay::query()
-            ->with(['shiftTemplate', 'assignment.branch:id,name,slug', 'user:id,name,user_type,avatar'])
+            ->with(['shiftTemplate', 'assignment.branch:id,name,slug', 'assignment.user:id,name,user_type,avatar,branch_id', 'user:id,name,user_type,avatar,branch_id'])
             ->onDuty()
             ->whereDate('duty_on', $moment->toDateString())
             ->whereHas('assignment', fn ($assignments) => $assignments->where('status', ShiftAssignmentStatus::Scheduled));
 
         $constrain($query);
 
-        return $query
+        $days = $query
             ->get()
             ->filter(fn (UserShiftDay $day): bool => $day->coversMoment($moment))
-            ->values()
+            ->values();
+
+        self::attachRoleLabels($days->flatMap(fn (UserShiftDay $day): array => array_values(array_filter([
+            $day->user,
+            $day->assignment?->user,
+        ]))));
+
+        return $days
             ->map(function (UserShiftDay $day) use ($moment): array {
                 $assignment = $day->assignment;
                 $payload = $assignment === null
@@ -378,6 +397,7 @@ final class WorkforcePayload
                         'user_name' => $day->user?->name,
                         'user_type' => $day->user?->user_type?->value,
                         'user_type_label' => $day->user?->user_type?->label(),
+                        'role_label' => self::roleLabelFor($day->user),
                         'avatar_url' => MediaUrl::resolve($day->user?->avatar, fallback: null),
                         'branch_id' => $day->branch_id,
                         'branch_name' => null,
@@ -613,5 +633,107 @@ final class WorkforcePayload
             'name' => $branch->name,
             'slug' => $branch->slug,
         ];
+    }
+
+    /**
+     * @param  Collection<int, mixed>  $users
+     */
+    private static function attachRoleLabels(Collection $users): void
+    {
+        $staffAndDrivers = $users->filter(fn (mixed $user): bool => $user instanceof User);
+        $labels = self::roleLabelsByUserId($staffAndDrivers->unique('id')->values());
+
+        foreach ($staffAndDrivers as $user) {
+            $user->setAttribute(
+                'workforce_role_label',
+                $labels[$user->id] ?? $user->user_type?->label() ?? 'Person',
+            );
+        }
+    }
+
+    /**
+     * Spatie roles() is team-scoped to the current request team (platform id 0
+     * or the branch from ResolveBranchContext). Load names from the pivot so
+     * branch staff still resolve on the platform board.
+     *
+     * @param  Collection<int, User>  $users
+     * @return array<int, string>
+     */
+    private static function roleLabelsByUserId(Collection $users): array
+    {
+        $labels = [];
+
+        foreach ($users as $user) {
+            if ($user->user_type === UserType::DRIVER) {
+                $labels[$user->id] = UserType::DRIVER->label();
+            }
+        }
+
+        $staff = $users->reject(fn (User $user): bool => $user->user_type === UserType::DRIVER);
+
+        if ($staff->isEmpty()) {
+            return $labels;
+        }
+
+        $pivot = config('permission.table_names.model_has_roles');
+        $rolesTable = config('permission.table_names.roles');
+        $teamKey = config('permission.column_names.team_foreign_key');
+        $morphKey = config('permission.column_names.model_morph_key');
+
+        $rows = DB::table($pivot)
+            ->join($rolesTable, "{$rolesTable}.id", '=', "{$pivot}.role_id")
+            ->where("{$pivot}.model_type", (new User)->getMorphClass())
+            ->whereIn("{$pivot}.{$morphKey}", $staff->pluck('id'))
+            ->get([
+                "{$pivot}.{$morphKey} as user_id",
+                "{$pivot}.{$teamKey} as team_id",
+                "{$rolesTable}.name as role_name",
+            ]);
+
+        foreach ($staff as $user) {
+            $teamId = $user->user_type === UserType::PLATFORM
+                ? PlatformTeamResolver::PLATFORM_TEAM_ID
+                : $user->branch_id;
+
+            $match = $rows->first(function (object $row) use ($user, $teamId): bool {
+                if ((int) $row->user_id !== $user->id) {
+                    return false;
+                }
+
+                if ($teamId === null) {
+                    return true;
+                }
+
+                return (int) $row->team_id === (int) $teamId;
+            }) ?? $rows->first(fn (object $row): bool => (int) $row->user_id === $user->id);
+
+            $labels[$user->id] = is_object($match)
+                ? self::formatRoleName((string) $match->role_name)
+                : ($user->user_type?->label() ?? 'Person');
+        }
+
+        return $labels;
+    }
+
+    private static function roleLabelFor(?User $user): ?string
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        $cached = $user->getAttribute('workforce_role_label');
+
+        if (is_string($cached) && $cached !== '') {
+            return $cached;
+        }
+
+        return self::roleLabelsByUserId(collect([$user]))[$user->id]
+            ?? $user->user_type?->label();
+    }
+
+    private static function formatRoleName(string $name): string
+    {
+        return RoleEnum::tryFrom($name)?->label()
+            ?? str($name)->replace('-', ' ')->title()->toString();
     }
 }

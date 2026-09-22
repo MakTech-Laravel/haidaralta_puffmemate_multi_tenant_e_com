@@ -784,3 +784,50 @@ test('old assign urls redirect to sibling paths so the shifts item is not also a
         ->and(route('platform.branch-shift-assignments.create', absolute: false))->toBe('/platform/branch-shift-assignments')
         ->and(route('branch.shift-assignments.create', $sydney, absolute: false))->toBe("/branch/{$sydney->slug}/shift-assignments");
 });
+
+test('scheduled people include staff role names and driver labels', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_STAFF)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $template = ShiftTemplate::factory()->forBranch($sydney)->create(['name' => 'Floor']);
+
+    UserShiftAssignment::factory()->create([
+        'user_id' => $staff->id,
+        'branch_id' => $sydney->id,
+        'shift_template_id' => $template->id,
+        'start_date' => '2026-09-01',
+        'end_date' => '2026-09-15',
+        'days_of_week' => DriverRoster::DAYS_ALL,
+    ]);
+    UserShiftAssignment::factory()->create([
+        'user_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'shift_template_id' => $template->id,
+        'start_date' => '2026-09-01',
+        'end_date' => '2026-09-15',
+        'days_of_week' => DriverRoster::DAYS_ALL,
+    ]);
+
+    $response = $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-shift-templates.index', [
+            'branch_id' => $sydney->id,
+        ]));
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/shifts/index')
+            ->has('scheduled', 2));
+
+    $scheduled = collect($response->inertiaProps('scheduled'));
+
+    expect($scheduled->firstWhere('user_id', $staff->id))->toMatchArray([
+        'user_type' => UserType::BRANCH->value,
+        'role_label' => 'Staff',
+    ]);
+
+    expect($scheduled->firstWhere('user_id', $driver->id))->toMatchArray([
+        'user_type' => UserType::DRIVER->value,
+        'role_label' => 'Driver',
+    ]);
+});

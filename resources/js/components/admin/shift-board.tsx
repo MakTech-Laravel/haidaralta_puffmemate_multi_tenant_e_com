@@ -58,6 +58,8 @@ type ShiftBoardProps = {
 
 const PEOPLE_PAGE = 20;
 
+type PeopleKind = 'all' | 'staff' | 'driver';
+
 export function ShiftBoard({
     kicker,
     title,
@@ -78,6 +80,7 @@ export function ShiftBoard({
 }: ShiftBoardProps) {
     const { settings } = useAppDateTime();
     const [query, setQuery] = useState('');
+    const [peopleKind, setPeopleKind] = useState<PeopleKind>('all');
     const [visiblePeople, setVisiblePeople] = useState(PEOPLE_PAGE);
     const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
     const [now, setNow] = useState(() =>
@@ -98,6 +101,7 @@ export function ShiftBoard({
     useEffect(() => {
         setSelectedShiftId(null);
         setQuery('');
+        setPeopleKind('all');
         setVisiblePeople(PEOPLE_PAGE);
     }, [selectedBranchId]);
 
@@ -126,6 +130,10 @@ export function ShiftBoard({
     const visibleScheduled = useMemo(
         () =>
             scopedScheduled.filter((row) => {
+                if (!matchesPeopleKind(row, peopleKind)) {
+                    return false;
+                }
+
                 if (needle === '') {
                     return true;
                 }
@@ -136,18 +144,19 @@ export function ShiftBoard({
                     row.days_label,
                     row.branch_name,
                     row.user_type_label,
+                    row.role_label,
                 ]
                     .filter(Boolean)
                     .join(' ')
                     .toLowerCase()
                     .includes(needle);
             }),
-        [needle, scopedScheduled],
+        [needle, peopleKind, scopedScheduled],
     );
 
     useEffect(() => {
         setVisiblePeople(PEOPLE_PAGE);
-    }, [needle, selectedShiftId]);
+    }, [needle, peopleKind, selectedShiftId]);
 
     const hasMorePeople = visiblePeople < visibleScheduled.length;
 
@@ -387,7 +396,8 @@ export function ShiftBoard({
                                                 {formatClock(person.end_time)}
                                             </p>
                                             <p className="text-muted-foreground truncate text-xs">
-                                                {person.user_type_label ??
+                                                {person.role_label ??
+                                                    person.user_type_label ??
                                                     person.branch_name}
                                             </p>
                                         </div>
@@ -495,24 +505,46 @@ export function ShiftBoard({
                                     </SelectContent>
                                 </Select>
                             ) : null}
+                            <Select
+                                value={peopleKind}
+                                onValueChange={(value) =>
+                                    setPeopleKind(value as PeopleKind)
+                                }
+                            >
+                                <SelectTrigger
+                                    size="sm"
+                                    className="w-36 max-w-full"
+                                >
+                                    <SelectValue placeholder="All people" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        All people
+                                    </SelectItem>
+                                    <SelectItem value="staff">Staff</SelectItem>
+                                    <SelectItem value="driver">
+                                        Drivers
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         {visibleScheduled.length === 0 ? (
                             <div className="px-5 py-8">
                                 <p className="font-medium">
                                     {selectedTemplate
                                         ? `Nobody on ${selectedTemplate.name}`
-                                        : query
+                                        : query || peopleKind !== 'all'
                                           ? 'No matching people'
                                           : 'Nobody scheduled'}
                                 </p>
                                 <p className="text-muted-foreground mt-1 max-w-sm text-sm">
                                     {selectedTemplate
                                         ? 'Assign someone to this shift and date range.'
-                                        : query
-                                          ? 'Try a different name or shift.'
+                                        : query || peopleKind !== 'all'
+                                          ? 'Try a different name, shift, or type.'
                                           : 'Assign a person, a date range, and a usual shift.'}
                                 </p>
-                                {!query ? (
+                                {!query && peopleKind === 'all' ? (
                                     <Button size="sm" className="mt-3" asChild>
                                         <Link href={assignHref}>
                                             Assign to shift
@@ -654,7 +686,19 @@ function PersonRow({
                 </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{row.user_name}</p>
+                <div className="flex min-w-0 items-center gap-2">
+                    <p className="truncate text-sm font-medium">
+                        {row.user_name}
+                    </p>
+                    {row.role_label ? (
+                        <Badge
+                            variant="secondary"
+                            className="shrink-0 font-normal"
+                        >
+                            {row.role_label}
+                        </Badge>
+                    ) : null}
+                </div>
                 <p className="text-muted-foreground truncate text-xs">
                     {row.shift_template_name} · {formatClock(row.start_time)}–
                     {formatClock(row.end_time)}
@@ -773,6 +817,21 @@ function groupByUserType(
     }
 
     return [...groups.entries()].map(([label, items]) => ({ label, items }));
+}
+
+function matchesPeopleKind(
+    row: ShiftAssignmentRow,
+    kind: PeopleKind,
+): boolean {
+    if (kind === 'all') {
+        return true;
+    }
+
+    if (kind === 'driver') {
+        return row.user_type === 'driver';
+    }
+
+    return row.user_type !== 'driver';
 }
 
 function EmptyPanel({
