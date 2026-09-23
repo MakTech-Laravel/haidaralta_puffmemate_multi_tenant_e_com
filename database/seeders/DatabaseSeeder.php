@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             OrderConversationSeeder::class,
             ConversationVolumeSeeder::class,
             WorkforceShiftSeeder::class,
+            TransferHistorySeeder::class,
         ]);
     }
 }

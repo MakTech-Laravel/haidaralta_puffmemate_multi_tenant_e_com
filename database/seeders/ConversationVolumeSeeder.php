@@ -29,13 +29,13 @@ use Illuminate\Support\Str;
 class ConversationVolumeSeeder extends Seeder
 {
     /** Threads created per branch. */
-    private const THREADS_PER_BRANCH = 34;
+    private const THREADS_PER_BRANCH = 48;
 
     /** Messages in the single deep thread used to test transcript paging. */
-    private const DEEP_THREAD_MESSAGES = 620;
+    private const DEEP_THREAD_MESSAGES = 720;
 
     /** Orders left without a conversation, for the New conversation picker. */
-    private const SPARE_ORDERS = 12;
+    private const SPARE_ORDERS = 18;
 
     /**
      * @return list<string>
@@ -58,6 +58,13 @@ class ConversationVolumeSeeder extends Seeder
             'The invoice total looks higher than what I saw at checkout.',
             'Sorry, one more question before you dispatch it.',
             'Received it, everything looks correct. Appreciate the help.',
+            'Can you hold the order until I finish work at seven?',
+            'The building has a loading dock on York Lane, not the front door.',
+            'I need a tax invoice emailed for my employer reimbursement.',
+            'Is the 20mg mango still the one on the shelf photo?',
+            'Driver called but I missed it — are they coming back around?',
+            'Please swap the menthol for the berry blend if you still have stock.',
+            'Confirming I am home now, send the driver whenever ready.',
         ];
     }
 
@@ -82,6 +89,13 @@ class ConversationVolumeSeeder extends Seeder
             'Happy to help, let us know if anything else comes up.',
             'I have flagged this for the shift supervisor.',
             'All sorted on our side.',
+            'I have put a hold on the order until seven as requested.',
+            'York Lane note is on the delivery slip now.',
+            'Tax invoice is attached to the order confirmation email.',
+            'Yes, that shelf photo is the 20mg mango SKU.',
+            'The driver will loop back on the next pass, about twenty minutes.',
+            'Swapped to berry blend, same strength, no price change.',
+            'Great, assigning the next available courier now.',
         ];
     }
 
