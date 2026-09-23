@@ -8,6 +8,7 @@ paths:
   - resources/js/components/admin/driver-branch-assign-sheet.tsx
   - 'resources/js/components/admin/shift-*.tsx'
   - 'resources/js/components/admin/{admin,staff}-form.tsx'
+  - resources/js/components/admin/shift-board.tsx
 ---
 
 # Admin
@@ -64,3 +65,6 @@ Type filter sits beside the Branch picker (default All). Staff = audience all|st
 
 ## Admin and staff phone email Precognition
 AdminForm and StaffForm live-validate phone and email uniqueness via Inertia useForm Precognition on blur (validationTimeout 500). Empty email clears errors instead of validating. Store/update routes keep precognitive middleware.
+
+## Shift board on-duty stats are split by people kind
+The shift board shows two on-duty StatCards (Staff on duty + Drivers on duty), counted from liveOnDuty by user_type branch vs driver, plus the Shifts/selected-template card. Do not combine staff and drivers into one on-duty count card.

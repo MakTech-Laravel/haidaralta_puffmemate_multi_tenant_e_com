@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Clock3, Plus, Users } from 'lucide-react';
+import { Bike, Clock3, Plus, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ShiftBranchEmptyState } from '@/components/admin/shift-branch-empty-state';
 import { ShiftBranchPicker } from '@/components/admin/shift-branch-picker';
@@ -133,6 +133,15 @@ export function ShiftBoard({
         [now, scopedOnDuty],
     );
 
+    const liveStaffOnDuty = useMemo(
+        () => liveOnDuty.filter((row) => row.user_type === 'branch'),
+        [liveOnDuty],
+    );
+    const liveDriversOnDuty = useMemo(
+        () => liveOnDuty.filter((row) => row.user_type === 'driver'),
+        [liveOnDuty],
+    );
+
     const groupedTemplates = useMemo(
         () => groupByBranch(scopedTemplates),
         [scopedTemplates],
@@ -252,17 +261,27 @@ export function ShiftBoard({
                         onSelectTemplate={setSelectedShiftId}
                     />
 
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         <StatCard
                             icon={Users}
-                            label="On duty now"
-                            value={String(liveOnDuty.length)}
+                            label="Staff on duty"
+                            value={String(liveStaffOnDuty.length)}
                             hint={
                                 selectedTemplate
-                                    ? `On ${selectedTemplate.name} now`
-                                    : liveOnDuty.length === 1
-                                      ? 'Person inside a live window'
-                                      : 'People inside a live window'
+                                    ? `Staff on ${selectedTemplate.name} now`
+                                    : 'Staff inside a live window'
+                            }
+                        />
+                        <StatCard
+                            icon={Bike}
+                            label="Drivers on duty"
+                            value={String(liveDriversOnDuty.length)}
+                            hint={
+                                selectedTemplate
+                                    ? `Drivers on ${selectedTemplate.name} now`
+                                    : liveDriversOnDuty.length === 1
+                                      ? 'Driver inside a live window'
+                                      : 'Drivers inside a live window'
                             }
                         />
                         {selectedTemplate ? (
