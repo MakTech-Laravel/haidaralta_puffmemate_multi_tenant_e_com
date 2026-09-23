@@ -1,4 +1,5 @@
 import { Head, router, setLayoutProps } from '@inertiajs/react';
+import BranchShiftTemplateController from '@/actions/App/Http/Controllers/Platform/BranchShiftTemplateController';
 import { ShiftBoard } from '@/components/admin/shift-board';
 import {
     platformShiftWorkspace,
@@ -9,38 +10,27 @@ import type {
     BranchOption,
     ShiftAssignmentRow,
     ShiftTemplateOption,
-    ShiftWorkspaceStats,
-    UncoveredShift,
 } from '@/components/admin/workforce-types';
 
 export default function PlatformShiftsIndex({
     workspace = 'platform',
     templates,
-    scheduled = [],
-    uncovered = [],
     onDuty = [],
-    stats = {
-        on_duty: 0,
-        templates: 0,
-        active_templates: 0,
-        scheduled: 0,
-    },
     selectedBranchId = null,
     selectedBranch = null,
 }: {
     workspace?: ShiftWorkspace;
     templates: ShiftTemplateOption[];
-    scheduled?: ShiftAssignmentRow[];
-    uncovered?: UncoveredShift[];
     onDuty?: ShiftAssignmentRow[];
-    stats?: ShiftWorkspaceStats;
     selectedBranchId?: number | null;
     selectedBranch?: BranchOption | null;
 }) {
     const routes = platformShiftWorkspace(workspace);
     const branchQuery = shiftBranchQuery(selectedBranchId);
     const branchOptionsUrl =
-        workspace === 'branch' ? routes.templates.branchOptions.url() : null;
+        workspace === 'branch'
+            ? BranchShiftTemplateController.branchOptions.url()
+            : null;
 
     setLayoutProps({
         breadcrumbs: [
@@ -70,17 +60,12 @@ export default function PlatformShiftsIndex({
                         : routes.description
                 }
                 templates={templates}
-                scheduled={scheduled}
-                uncovered={uncovered}
                 onDuty={onDuty}
-                stats={stats}
                 createTemplateHref={routes.templates.create.url(branchQuery)}
                 assignHref={routes.assignments.create.url(branchQuery)}
+                assignedPeopleHref={routes.assignments.index.url(branchQuery)}
                 templateEditHref={(template) =>
                     routes.templates.edit.url(template.id, branchQuery)
-                }
-                assignmentEditHref={(row) =>
-                    routes.assignments.edit.url(row.id, branchQuery)
                 }
                 selectedBranch={selectedBranch}
                 selectedBranchId={selectedBranchId}

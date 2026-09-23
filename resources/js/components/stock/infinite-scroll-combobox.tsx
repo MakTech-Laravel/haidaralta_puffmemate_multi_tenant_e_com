@@ -1,4 +1,4 @@
-import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2, RefreshCw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,6 +34,8 @@ type InfiniteScrollComboboxBaseProps = {
     noneLabel?: string;
     className?: string;
     id?: string;
+    disabled?: boolean;
+    loadErrorText?: string;
 };
 
 type InfiniteScrollComboboxRemoteProps = InfiniteScrollComboboxBaseProps & {
@@ -63,6 +65,8 @@ export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
         noneLabel,
         className,
         id,
+        disabled = false,
+        loadErrorText = 'Could not load options.',
     } = props;
 
     const optionsUrl =
@@ -81,6 +85,7 @@ export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [options, setOptions] = useState<ComboboxOption[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const loadingRef = useRef(false);
     const pageRef = useRef(1);
     const lastPageRef = useRef(1);
@@ -126,9 +131,7 @@ export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
                   (option) =>
                       option.label.toLowerCase().includes(query) ||
                       option.value.toLowerCase().includes(query) ||
-                      (option.description ?? '')
-                          .toLowerCase()
-                          .includes(query),
+                      (option.description ?? '').toLowerCase().includes(query),
               )
             : staticOptions;
 
@@ -168,6 +171,7 @@ export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
 
         loadingRef.current = true;
         setLoading(true);
+        setLoadError(null);
 
         if (staticOptions) {
             loadStaticPage(nextPage, nextSearch, replace);
@@ -225,6 +229,8 @@ export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
             if (replace) {
                 setOptions([]);
             }
+
+            setLoadError(loadErrorText);
         } finally {
             if (!signal?.aborted) {
                 loadingRef.current = false;
@@ -266,7 +272,11 @@ export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
     return (
         <Popover
             open={open}
-            onOpenChange={(next) => {
+            onOpenChange={(next: boolean) => {
+                if (disabled) {
+                    return;
+                }
+
                 setOpen(next);
 
                 if (next) {
@@ -285,6 +295,7 @@ export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
+                    disabled={disabled}
                     className={cn(
                         'h-9 w-full justify-between px-3 font-normal',
                         className,
@@ -363,10 +374,33 @@ export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
                                     />
                                 </CommandItem>
                             ))}
-                            {options.length === 0 && !loading ? (
+                            {options.length === 0 && !loading && !loadError ? (
                                 <p className="text-muted-foreground py-4 text-center text-sm">
                                     {emptyText}
                                 </p>
+                            ) : null}
+                            {loadError && !loading ? (
+                                <div className="flex flex-col items-center gap-2 px-3 py-4 text-center">
+                                    <p className="text-destructive text-sm">
+                                        {loadError}
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            void loadPage(
+                                                1,
+                                                debouncedSearch,
+                                                true,
+                                                controllerRef.current?.signal,
+                                            )
+                                        }
+                                    >
+                                        <RefreshCw className="size-3.5" />
+                                        Retry
+                                    </Button>
+                                </div>
                             ) : null}
                             {loading ? (
                                 <div className="text-muted-foreground flex items-center justify-center gap-2 py-2 text-xs">

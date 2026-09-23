@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\ShiftAudience;
 use App\Enums\ShiftDayKind;
 use App\Enums\ShiftOwnerType;
 use App\Enums\UserType;
@@ -43,24 +44,26 @@ class WorkforceShiftSeeder extends Seeder
             'name' => 'Network support',
             'start_time' => '09:00',
             'end_time' => '18:00',
+            'audience' => ShiftAudience::Staff->value,
             'owner_type' => ShiftOwnerType::Platform->value,
         ]);
         $this->template($templates, $actor, [
             'name' => 'Evening ops',
             'start_time' => '18:00',
             'end_time' => '22:00',
+            'audience' => ShiftAudience::All->value,
             'owner_type' => ShiftOwnerType::Platform->value,
         ]);
 
-        $sydneyFloor = $this->branchTemplate($templates, $actor, $sydney, 'Floor open', '09:00', '17:00');
-        $sydneyLate = $this->branchTemplate($templates, $actor, $sydney, 'Late trade', '16:00', '23:00');
-        $sydneyDispatch = $this->branchTemplate($templates, $actor, $sydney, 'Dispatch', '07:00', '15:00');
+        $sydneyFloor = $this->branchTemplate($templates, $actor, $sydney, 'Floor open', '09:00', '17:00', ShiftAudience::Staff);
+        $sydneyLate = $this->branchTemplate($templates, $actor, $sydney, 'Late trade', '16:00', '23:00', ShiftAudience::Staff);
+        $sydneyDispatch = $this->branchTemplate($templates, $actor, $sydney, 'Dispatch', '07:00', '15:00', ShiftAudience::Driver);
 
-        $melbourneFloor = $this->branchTemplate($templates, $actor, $melbourne, 'Floor open', '09:00', '17:00');
-        $melbourneLate = $this->branchTemplate($templates, $actor, $melbourne, 'Late trade', '12:00', '21:00');
+        $melbourneFloor = $this->branchTemplate($templates, $actor, $melbourne, 'Floor open', '09:00', '17:00', ShiftAudience::Staff);
+        $melbourneLate = $this->branchTemplate($templates, $actor, $melbourne, 'Late trade', '12:00', '21:00', ShiftAudience::Staff);
 
-        $brisbaneFloor = $this->branchTemplate($templates, $actor, $brisbane, 'Floor open', '09:00', '17:00');
-        $brisbaneLate = $this->branchTemplate($templates, $actor, $brisbane, 'Late trade', '12:00', '21:00');
+        $brisbaneFloor = $this->branchTemplate($templates, $actor, $brisbane, 'Floor open', '09:00', '17:00', ShiftAudience::Staff);
+        $brisbaneLate = $this->branchTemplate($templates, $actor, $brisbane, 'Late trade', '12:00', '21:00', ShiftAudience::Staff);
 
         $this->assignOnce($assign, $actor, [
             'user_email' => UserSeeder::BRANCH_1_SUPER_ADMIN,
@@ -170,7 +173,7 @@ class WorkforceShiftSeeder extends Seeder
     }
 
     /**
-     * @param  array{name: string, start_time: string, end_time: string, owner_type: string, branch_id?: int}  $data
+     * @param  array{name: string, start_time: string, end_time: string, audience?: string, owner_type: string, branch_id?: int}  $data
      */
     private function template(ShiftTemplateService $service, ?User $actor, array $data): ShiftTemplate
     {
@@ -184,7 +187,15 @@ class WorkforceShiftSeeder extends Seeder
             )
             ->first();
 
-        return $existing ?? $service->create($data, $actor);
+        if ($existing === null) {
+            return $service->create($data, $actor);
+        }
+
+        if (isset($data['audience']) && $existing->audience->value !== $data['audience']) {
+            $existing->update(['audience' => $data['audience']]);
+        }
+
+        return $existing->refresh();
     }
 
     private function branchTemplate(
@@ -194,11 +205,13 @@ class WorkforceShiftSeeder extends Seeder
         string $name,
         string $startTime,
         string $endTime,
+        ShiftAudience $audience = ShiftAudience::All,
     ): ShiftTemplate {
         return $this->template($templates, $actor, [
             'name' => $name,
             'start_time' => $startTime,
             'end_time' => $endTime,
+            'audience' => $audience->value,
             'owner_type' => ShiftOwnerType::Branch->value,
             'branch_id' => $branch->id,
         ]);

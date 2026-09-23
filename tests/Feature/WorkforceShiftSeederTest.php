@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ShiftAudience;
 use App\Enums\ShiftDayKind;
 use App\Enums\ShiftOwnerType;
 use App\Models\Branch;
@@ -34,6 +35,14 @@ test('the workforce seeder writes the sydney day-level roster without global per
 
     expect(ShiftTemplate::query()->where('branch_id', $sydney->id)->pluck('name')->all())
         ->toContain('Floor open', 'Late trade', 'Dispatch')
+        ->and(ShiftTemplate::query()->where('name', 'Dispatch')->where('branch_id', $sydney->id)->firstOrFail()->audience)
+        ->toBe(ShiftAudience::Driver)
+        ->and(ShiftTemplate::query()->where('name', 'Floor open')->where('branch_id', $sydney->id)->firstOrFail()->audience)
+        ->toBe(ShiftAudience::Staff)
+        ->and(ShiftTemplate::query()->platformOwned()->where('name', 'Network support')->firstOrFail()->audience)
+        ->toBe(ShiftAudience::Staff)
+        ->and(ShiftTemplate::query()->platformOwned()->where('name', 'Evening ops')->firstOrFail()->audience)
+        ->toBe(ShiftAudience::All)
         ->and(UserShiftAssignment::query()->where('user_id', $priya->id)->exists())->toBeTrue()
         ->and(UserShiftDay::query()
             ->where('user_id', $daniel->id)
@@ -63,7 +72,8 @@ test('the workforce seeder writes the sydney day-level roster without global per
             ->where('selectedBranch', null)
             ->has('templates', 0)
             ->has('onDuty', 0)
-            ->missing('periods'));
+            ->missing('periods')
+            ->missing('uncovered'));
 });
 
 test('the workforce seeder is safe to run twice', function () {

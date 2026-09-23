@@ -1,10 +1,12 @@
 import { Form, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import { ShiftTimeBar } from '@/components/admin/shift-time-bar';
-import type {
-    BranchOption,
-    Option,
-    ShiftTemplateOption,
+import {
+    SHIFT_AUDIENCE_OPTIONS,
+    type BranchOption,
+    type Option,
+    type ShiftAudience,
+    type ShiftTemplateOption,
 } from '@/components/admin/workforce-types';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -69,6 +71,9 @@ export function ShiftTemplateForm({
     );
     const [startTime, setStartTime] = useState(defaults?.start_time ?? '');
     const [endTime, setEndTime] = useState(defaults?.end_time ?? '');
+    const [audience, setAudience] = useState<ShiftAudience>(
+        defaults?.audience ?? 'all',
+    );
     const [isActive, setIsActive] = useState(defaults?.is_active ?? true);
 
     return (
@@ -98,19 +103,53 @@ export function ShiftTemplateForm({
                         </div>
 
                         <div className="grid gap-4">
-                            <div className="flex max-w-md flex-col gap-1.5">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    name="name"
-                                    defaultValue={defaults?.name ?? ''}
-                                    required
-                                    placeholder="Morning"
-                                    autoComplete="off"
-                                    aria-invalid={Boolean(errors.name)}
-                                    onBlur={() => validate('name')}
-                                />
-                                <InputError message={errors.name} />
+                            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+                                <div className="flex min-w-0 flex-col gap-1.5">
+                                    <Label htmlFor="name">Name</Label>
+                                    <Input
+                                        id="name"
+                                        name="name"
+                                        defaultValue={defaults?.name ?? ''}
+                                        required
+                                        placeholder="Morning"
+                                        autoComplete="off"
+                                        aria-invalid={Boolean(errors.name)}
+                                        onBlur={() => validate('name')}
+                                    />
+                                    <InputError message={errors.name} />
+                                </div>
+
+                                <div className="flex min-w-0 flex-col gap-1.5">
+                                    <Label>For whom?</Label>
+                                    <Select
+                                        value={audience}
+                                        onValueChange={(value) =>
+                                            setAudience(value as ShiftAudience)
+                                        }
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="All" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {SHIFT_AUDIENCE_OPTIONS.map(
+                                                (option) => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    <input
+                                        type="hidden"
+                                        name="audience"
+                                        value={audience}
+                                    />
+                                    <InputError message={errors.audience} />
+                                </div>
                             </div>
 
                             {lockOwner ? (

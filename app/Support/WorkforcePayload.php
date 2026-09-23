@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Enums\RoleEnum;
 use App\Enums\ShiftAssignmentStatus;
+use App\Enums\ShiftAudience;
 use App\Enums\ShiftOwnerType;
 use App\Enums\TransferSubjectType;
 use App\Enums\TransferType;
@@ -18,11 +19,297 @@ use App\Models\UserTransferHistory;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 final class WorkforcePayload
 {
+    /**
+     * Build the gated Assign Shift workspace for one branch.
+     *
+     * @return array<string, mixed>
+     */
+    public static function shiftAssignmentWorkspace(
+        ?Branch $branch,
+        ?string $peopleKind,
+        ?int $userId,
+        ?string $month,
+        int $assignmentPage,
+        ?ShiftOwnerType $expectedOwner,
+    ): array {
+        $selectedPerson = $branch === null || $peopleKind === null || $userId === null
+            ? null
+            : self::selectedAssignablePerson($branch->id, $peopleKind, $userId);
+        $selectedMonth = $month ?? DateTimeFormat::now()->format('Y-m');
+
+        return [
+            'selectedBranch' => $branch?->only(['id', 'name', 'slug']),
+            'selectedPeopleKind' => $peopleKind,
+            'selectedPerson' => $selectedPerson === null ? null : self::assignablePersonOption($selectedPerson),
+            'templates' => $branch === null || $peopleKind === null
+                ? []
+                : self::assignmentTemplates($branch->id, $peopleKind, $expectedOwner),
+            'calendar' => $selectedPerson === null
+                ? null
+                : self::shiftAssignmentCalendar(
+                    $selectedPerson,
+                    $branch,
+                    $selectedMonth,
+                    $expectedOwner,
+                ),
+            'assignmentGroups' => $selectedPerson === null
+                ? self::emptyAssignmentGroups($assignmentPage)
+                : self::shiftAssignmentGroups(
+                    $selectedPerson,
+                    $branch,
+                    $assignmentPage,
+                    $expectedOwner,
+                ),
+        ];
+    }
+
+    private static function selectedAssignablePerson(int $branchId, string $peopleKind, int $userId): ?User
+    {
+        $userType = $peopleKind === 'driver' ? UserType::DRIVER : UserType::BRANCH;
+
+        $user = self::assignablePeopleQuery($branchId, $userType)
+            ->whereKey($userId)
+            ->first(['id', 'name', 'user_type', 'branch_id', 'avatar']);
+
+        return $user;
+    }
+
+    /**
+     * @return array{id: int, name: string, user_type: string, avatar_url: string|null}
+     */
+    private static function assignablePersonOption(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'user_type' => $user->user_type->value,
+            'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+        ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function assignmentTemplates(
+        int $branchId,
+        string $peopleKind,
+        ?ShiftOwnerType $expectedOwner,
+    ): array {
+        $audience = $peopleKind === 'driver' ? ShiftAudience::Driver : ShiftAudience::Staff;
+
+        return array_values(ShiftTemplate::query()
+            ->with('branch:id,name')
+            ->where('is_active', true)
+            ->whereIn('audience', [ShiftAudience::All, $audience])
+            ->when(
+                $expectedOwner === ShiftOwnerType::Platform,
+                fn (Builder $query) => $query->platformOwned(),
+            )
+            ->when(
+                $expectedOwner === ShiftOwnerType::Branch,
+                fn (Builder $query) => $query->branchOwned()->where('branch_id', $branchId),
+            )
+            ->when(
+                $expectedOwner === null,
+                fn (Builder $query) => $query->availableToBranch($branchId),
+            )
+            ->orderBy('name')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (ShiftTemplate $template): array => self::template($template))
+            ->values()
+            ->all());
+    }
+
+    /**
+     * @return array{
+     *     month: string,
+     *     today: string,
+     *     grid_start: string,
+     *     grid_end: string,
+     *     days: array<string, list<array<string, mixed>>>
+     * }
+     */
+    private static function shiftAssignmentCalendar(
+        User $user,
+        Branch $branch,
+        string $month,
+        ?ShiftOwnerType $expectedOwner,
+    ): array {
+        $monthStart = Carbon::createFromFormat(
+            'Y-m-d',
+            $month.'-01',
+            DateTimeFormat::displayTimezone(),
+        )->startOfDay();
+        $gridStart = $monthStart->copy()->startOfWeek(Carbon::MONDAY);
+        $gridEnd = $monthStart->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
+        $today = DateTimeFormat::now()->startOfDay()->toDateString();
+
+        $shiftDays = UserShiftDay::query()
+            ->with('shiftTemplate:id,owner_type,branch_id,name,start_time,end_time,is_active,audience')
+            ->where('user_id', $user->id)
+            ->where('branch_id', $branch->id)
+            ->whereBetween('duty_on', [$gridStart->toDateString(), $gridEnd->toDateString()])
+            ->onDuty()
+            ->whereHas('assignment', fn (Builder $query) => $query->where('status', ShiftAssignmentStatus::Scheduled))
+            ->orderBy('duty_on')
+            ->orderBy('id')
+            ->get();
+        $days = [];
+
+        foreach ($shiftDays as $day) {
+            $date = $day->duty_on->toDateString();
+            $template = $day->shiftTemplate;
+            $days[$date] ??= [];
+            $days[$date][] = [
+                'id' => $day->id,
+                'assignment_id' => $day->user_shift_assignment_id,
+                'shift_template_id' => $day->shift_template_id,
+                'name' => $template?->name,
+                'start_time' => $template?->start_time?->format('H:i'),
+                'end_time' => $template?->end_time?->format('H:i'),
+                'editable' => $date >= $today
+                    && $template !== null
+                    && self::templateEditableInWorkspace($template, $branch, $expectedOwner),
+            ];
+        }
+
+        return [
+            'month' => $month,
+            'today' => $today,
+            'grid_start' => $gridStart->toDateString(),
+            'grid_end' => $gridEnd->toDateString(),
+            'days' => $days,
+        ];
+    }
+
+    /**
+     * @return array{
+     *     data: list<array<string, mixed>>,
+     *     meta: array{current_page: int, last_page: int, per_page: int, total: int}
+     * }
+     */
+    private static function shiftAssignmentGroups(
+        User $user,
+        Branch $branch,
+        int $page,
+        ?ShiftOwnerType $expectedOwner,
+    ): array {
+        $today = DateTimeFormat::now()->startOfDay()->toDateString();
+        $days = UserShiftDay::query()
+            ->with('shiftTemplate:id,owner_type,branch_id,name,start_time,end_time,is_active,audience')
+            ->where('user_id', $user->id)
+            ->where('branch_id', $branch->id)
+            ->onDuty()
+            ->whereHas('assignment', fn (Builder $query) => $query->where('status', ShiftAssignmentStatus::Scheduled))
+            ->orderBy('duty_on')
+            ->orderBy('id')
+            ->get();
+
+        $groups = $days
+            ->groupBy('shift_template_id')
+            ->flatMap(function (Collection $templateDays) use ($branch, $expectedOwner, $today): array {
+                /** @var UserShiftDay|null $firstDay */
+                $firstDay = $templateDays->first();
+                $template = $firstDay?->shiftTemplate;
+
+                if ($template === null) {
+                    return [];
+                }
+
+                $dates = array_values($templateDays
+                    ->map(fn (UserShiftDay $day): string => $day->duty_on->toDateString())
+                    ->values()
+                    ->all());
+
+                return collect(ShiftDateRuns::partition($dates))
+                    ->map(function (array $run) use ($branch, $expectedOwner, $template, $today): array {
+                        $isPast = $run['end_date'] < $today;
+
+                        return [
+                            'key' => $template->id.':'.$run['start_date'].':'.$run['end_date'],
+                            'shift_template_id' => $template->id,
+                            'name' => $template->name,
+                            'start_time' => $template->start_time->format('H:i'),
+                            'end_time' => $template->end_time->format('H:i'),
+                            'start_date' => $run['start_date'],
+                            'end_date' => $run['end_date'],
+                            'date_count' => count($run['dates']),
+                            'editable' => ! $isPast
+                                && self::templateEditableInWorkspace($template, $branch, $expectedOwner),
+                            'is_past' => $isPast,
+                        ];
+                    })
+                    ->all();
+            })
+            ->values();
+
+        $upcoming = $groups
+            ->reject(fn (array $group): bool => $group['is_past'])
+            ->sortBy([
+                ['start_date', 'asc'],
+                ['shift_template_id', 'asc'],
+            ]);
+        $past = $groups
+            ->filter(fn (array $group): bool => $group['is_past'])
+            ->sortBy([
+                ['end_date', 'desc'],
+                ['shift_template_id', 'asc'],
+            ]);
+        $ordered = $upcoming->concat($past)->values();
+        $perPage = 20;
+        $lastPage = max(1, (int) ceil($ordered->count() / $perPage));
+        $currentPage = min(max(1, $page), $lastPage);
+
+        return [
+            'data' => array_values($ordered->forPage($currentPage, $perPage)->values()->all()),
+            'meta' => [
+                'current_page' => $currentPage,
+                'last_page' => $lastPage,
+                'per_page' => $perPage,
+                'total' => $ordered->count(),
+            ],
+        ];
+    }
+
+    /**
+     * @return array{
+     *     data: list<array<string, mixed>>,
+     *     meta: array{current_page: int, last_page: int, per_page: int, total: int}
+     * }
+     */
+    private static function emptyAssignmentGroups(int $page): array
+    {
+        return [
+            'data' => [],
+            'meta' => [
+                'current_page' => max(1, $page),
+                'last_page' => 1,
+                'per_page' => 20,
+                'total' => 0,
+            ],
+        ];
+    }
+
+    private static function templateEditableInWorkspace(
+        ShiftTemplate $template,
+        Branch $branch,
+        ?ShiftOwnerType $expectedOwner,
+    ): bool {
+        return match ($expectedOwner) {
+            ShiftOwnerType::Platform => $template->isPlatformOwned(),
+            ShiftOwnerType::Branch => $template->isBranchOwned() && (int) $template->branch_id === $branch->id,
+            null => $template->isPlatformOwned()
+                || ($template->isBranchOwned() && (int) $template->branch_id === $branch->id),
+        };
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -35,8 +322,10 @@ final class WorkforcePayload
             'branch_id' => $template->branch_id,
             'branch_name' => $template->branch?->name,
             'name' => $template->name,
-            'start_time' => $template->start_time?->format('H:i'),
-            'end_time' => $template->end_time?->format('H:i'),
+            'audience' => $template->audience->value,
+            'audience_label' => $template->audience->label(),
+            'start_time' => $template->start_time->format('H:i'),
+            'end_time' => $template->end_time->format('H:i'),
             'is_active' => (bool) $template->is_active,
             'scheduled_count' => (int) ($template->scheduled_count ?? 0),
         ];
@@ -64,15 +353,72 @@ final class WorkforcePayload
             'branch_name' => $assignment->branch?->name,
             'shift_template_id' => $assignment->shift_template_id,
             'shift_template_name' => $template?->name,
-            'start_date' => $assignment->start_date?->format('Y-m-d'),
-            'end_date' => $assignment->end_date?->format('Y-m-d'),
+            'start_date' => $assignment->start_date->format('Y-m-d'),
+            'end_date' => $assignment->end_date->format('Y-m-d'),
             'start_time' => $template?->start_time?->format('H:i'),
             'end_time' => $template?->end_time?->format('H:i'),
             'days_of_week' => $days,
             'days_label' => DriverRoster::daysLabel($days),
-            'status' => $assignment->status?->value,
-            'status_label' => $assignment->status?->label(),
+            'status' => $assignment->status->value,
+            'status_label' => $assignment->status->label(),
             'covers_now' => $assignment->coversMoment($moment),
+        ];
+    }
+
+    /**
+     * Compact assignment row for the Assigned people table — name, dates, shift.
+     *
+     * @return array<string, mixed>
+     */
+    /**
+     * Monthly Assigned people row: one person, compressed duty days in that month.
+     *
+     * @param  list<string>  $dates  Y-m-d duty dates already scoped to the month.
+     * @return array<string, mixed>
+     */
+    public static function assignedPersonMonth(User $user, string $month, array $dates, ?int $branchId = null): array
+    {
+        $peopleKindLabel = $user->user_type === UserType::DRIVER ? 'Driver' : 'Staff';
+
+        return [
+            'id' => $user->id,
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'phone' => $user->phone,
+            'user_type' => $user->user_type?->value,
+            'people_kind_label' => $peopleKindLabel,
+            'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+            'branch_id' => $branchId ?? $user->branch_id,
+            'assigned_dates_label' => ShiftDateRuns::compactMonthDayLabel($dates),
+            'assigned_day_count' => count($dates),
+            'month' => $month,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function assignedPerson(UserShiftAssignment $assignment): array
+    {
+        $assignment->loadMissing(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar']);
+        $template = $assignment->shiftTemplate;
+        $startDate = $assignment->start_date->format('Y-m-d');
+        $endDate = $assignment->end_date->format('Y-m-d');
+
+        return [
+            'id' => $assignment->id,
+            'user_id' => $assignment->user_id,
+            'user_name' => $assignment->user?->name,
+            'user_type' => $assignment->user?->user_type?->value,
+            'avatar_url' => MediaUrl::resolve($assignment->user?->avatar, fallback: null),
+            'branch_id' => $assignment->branch_id,
+            'branch_name' => $assignment->branch?->name,
+            'shift_template_id' => $assignment->shift_template_id,
+            'shift_template_name' => $template?->name,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'start_time' => $template?->start_time?->format('H:i'),
+            'end_time' => $template?->end_time?->format('H:i'),
         ];
     }
 
@@ -81,13 +427,13 @@ final class WorkforcePayload
      */
     public static function assignmentDays(UserShiftAssignment $assignment): array
     {
-        return $assignment->days()
+        return array_values($assignment->days()
             ->with('shiftTemplate')
             ->orderBy('duty_on')
             ->get()
             ->map(fn (UserShiftDay $day): array => self::day($day))
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -97,7 +443,7 @@ final class WorkforcePayload
      */
     public static function otherDutyDays(User $user, int $branchId, string $startDate, string $endDate, ?int $exceptAssignmentId = null): array
     {
-        return UserShiftDay::query()
+        return array_values(UserShiftDay::query()
             ->with('shiftTemplate')
             ->where('user_id', $user->id)
             ->where('branch_id', $branchId)
@@ -113,7 +459,7 @@ final class WorkforcePayload
             ->get()
             ->map(fn (UserShiftDay $day): array => self::day($day))
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -189,7 +535,7 @@ final class WorkforcePayload
             'to_branch_name' => $history->toBranch?->name,
             'from_role' => $history->from_role,
             'to_role' => $history->to_role,
-            'effective_date' => $history->effective_date?->format('Y-m-d'),
+            'effective_date' => $history->effective_date->format('Y-m-d'),
             'reason' => $history->reason,
             'transferred_by_name' => $history->transferredBy?->name,
             'created_at' => $history->created_at?->toIso8601String(),
@@ -205,7 +551,7 @@ final class WorkforcePayload
             return [];
         }
 
-        return ShiftTemplate::query()
+        return array_values(ShiftTemplate::query()
             ->with('branch:id,name')
             ->withCount([
                 'assignments as scheduled_count' => fn ($query) => $query->where('status', ShiftAssignmentStatus::Scheduled),
@@ -217,103 +563,14 @@ final class WorkforcePayload
                 fn ($query) => $query->branchOwned(),
             )
             ->when(
-                $owner === ShiftOwnerType::Branch && $branchId !== null,
+                $owner === ShiftOwnerType::Branch,
                 fn ($query) => $query->where('branch_id', $branchId),
             )
             ->orderBy('name')
             ->get()
             ->map(fn (ShiftTemplate $template): array => self::template($template))
             ->values()
-            ->all();
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public static function scheduledPeople(ShiftOwnerType $owner, ?int $branchId = null): array
-    {
-        if ($owner === ShiftOwnerType::Branch && $branchId === null) {
-            return [];
-        }
-
-        $assignments = UserShiftAssignment::query()
-            ->with(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar,branch_id'])
-            ->where('status', ShiftAssignmentStatus::Scheduled)
-            ->when($branchId !== null, fn ($query) => $query->where('branch_id', $branchId))
-            ->whereHas('shiftTemplate', function ($templates) use ($owner): void {
-                if ($owner === ShiftOwnerType::Platform) {
-                    $templates->platformOwned();
-                } else {
-                    $templates->branchOwned();
-                }
-            })
-            ->orderByDesc('start_date')
-            ->orderBy('id')
-            ->get();
-
-        self::attachRoleLabels($assignments->pluck('user')->filter());
-
-        return $assignments
-            ->map(fn (UserShiftAssignment $assignment): array => self::assignment($assignment))
-            ->values()
-            ->all();
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public static function scheduledPeopleAtBranch(int $branchId): array
-    {
-        $assignments = UserShiftAssignment::query()
-            ->with(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar,branch_id'])
-            ->where('status', ShiftAssignmentStatus::Scheduled)
-            ->where('branch_id', $branchId)
-            ->orderByDesc('start_date')
-            ->orderBy('id')
-            ->get();
-
-        self::attachRoleLabels($assignments->pluck('user')->filter());
-
-        return $assignments
-            ->map(fn (UserShiftAssignment $assignment): array => self::assignment($assignment))
-            ->values()
-            ->all();
-    }
-
-    /**
-     * Named shifts with nobody scheduled today.
-     *
-     * @param  list<array<string, mixed>>  $templates
-     * @return list<array{id: int, name: string, start_time: string|null, end_time: string|null}>
-     */
-    public static function uncoveredToday(array $templates, ?CarbonInterface $at = null): array
-    {
-        if ($templates === []) {
-            return [];
-        }
-
-        $moment = DateTimeFormat::at($at);
-        $templateIds = collect($templates)->pluck('id')->all();
-        $todayIds = UserShiftDay::query()
-            ->onDuty()
-            ->whereDate('duty_on', $moment->toDateString())
-            ->whereIn('shift_template_id', $templateIds)
-            ->whereHas('assignment', fn ($query) => $query->where('status', ShiftAssignmentStatus::Scheduled))
-            ->pluck('shift_template_id')
-            ->unique()
-            ->all();
-
-        return collect($templates)
-            ->filter(fn (array $template): bool => (bool) ($template['is_active'] ?? true))
-            ->filter(fn (array $template): bool => ! in_array($template['id'], $todayIds, true))
-            ->map(fn (array $template): array => [
-                'id' => $template['id'],
-                'name' => $template['name'],
-                'start_time' => $template['start_time'] ?? null,
-                'end_time' => $template['end_time'] ?? null,
-            ])
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -323,7 +580,7 @@ final class WorkforcePayload
      */
     public static function scheduledDutyDays(?int $branchId = null, ?int $exceptAssignmentId = null): array
     {
-        return UserShiftDay::query()
+        return array_values(UserShiftDay::query()
             ->with('shiftTemplate')
             ->onDuty()
             ->when($branchId !== null, fn ($query) => $query->where('branch_id', $branchId))
@@ -336,7 +593,7 @@ final class WorkforcePayload
             ->get()
             ->map(fn (UserShiftDay $day): array => self::day($day))
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -344,7 +601,7 @@ final class WorkforcePayload
      */
     public static function templatesForBranch(?int $branchId = null): array
     {
-        return ShiftTemplate::query()
+        return array_values(ShiftTemplate::query()
             ->with('branch:id,name')
             ->withCount([
                 'assignments as scheduled_count' => fn ($query) => $query->where('status', ShiftAssignmentStatus::Scheduled),
@@ -358,7 +615,7 @@ final class WorkforcePayload
             ->get()
             ->map(fn (ShiftTemplate $template): array => self::template($template))
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -387,7 +644,7 @@ final class WorkforcePayload
             $day->assignment?->user,
         ]))));
 
-        return $days
+        return array_values($days
             ->map(function (UserShiftDay $day) use ($moment): array {
                 $assignment = $day->assignment;
                 $payload = $assignment === null
@@ -414,16 +671,15 @@ final class WorkforcePayload
 
                 return $payload;
             })
-            ->all();
+            ->all());
     }
 
     /**
      * @param  list<array<string, mixed>>  $templates
      * @param  list<array<string, mixed>>  $onDuty
-     * @param  list<array<string, mixed>>  $scheduled
-     * @return array{on_duty: int, templates: int, active_templates: int, scheduled: int}
+     * @return array{on_duty: int, templates: int, active_templates: int}
      */
-    public static function workspaceStats(array $templates, array $onDuty, array $scheduled = []): array
+    public static function workspaceStats(array $templates, array $onDuty): array
     {
         return [
             'on_duty' => count($onDuty),
@@ -432,16 +688,15 @@ final class WorkforcePayload
                 $templates,
                 fn (array $template): bool => (bool) $template['is_active'],
             )),
-            'scheduled' => count($scheduled),
         ];
     }
 
     /**
-     * @return list<array{id: int, name: string, user_type: string, branch_id: int|null}>
+     * @return list<array{id: int, name: string, user_type: string, user_type_label: string, branch_id: int|null, avatar_url: string|null}>
      */
     public static function assignablePeople(?int $branchId = null): array
     {
-        return User::query()
+        return array_values(User::query()
             ->whereIn('user_type', [UserType::DRIVER, UserType::BRANCH])
             ->when($branchId !== null, function ($query) use ($branchId): void {
                 $query->where(function ($scope) use ($branchId): void {
@@ -467,7 +722,71 @@ final class WorkforcePayload
                 'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
             ])
             ->values()
-            ->all();
+            ->all());
+    }
+
+    /**
+     * @return array{
+     *     data: list<array{id: int, name: string, user_type: string, avatar_url: string|null}>,
+     *     meta: array{current_page: int, last_page: int, per_page: int, total: int}
+     * }
+     */
+    public static function paginatedAssignablePeople(
+        int $branchId,
+        string $peopleKind,
+        ?string $search = null,
+        int $perPage = 20,
+    ): array {
+        $term = trim((string) $search);
+        $perPage = min(50, max(10, $perPage));
+        $userType = $peopleKind === 'driver' ? UserType::DRIVER : UserType::BRANCH;
+
+        $paginator = self::assignablePeopleQuery($branchId, $userType)
+            ->when($term !== '', function ($query) use ($term): void {
+                $query->where('name', 'like', '%'.$term.'%');
+            })
+            ->orderBy('name')
+            ->orderBy('id')
+            ->paginate($perPage);
+
+        return [
+            'data' => array_values(
+                collect($paginator->items())
+                    ->map(fn (User $user): array => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'user_type' => $user->user_type->value,
+                        'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+                    ])
+                    ->all(),
+            ),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ];
+    }
+
+    /**
+     * @return Builder<User>
+     */
+    private static function assignablePeopleQuery(int $branchId, UserType $userType): Builder
+    {
+        return User::query()
+            ->where('is_active', true)
+            ->where('user_type', $userType)
+            ->when($userType === UserType::BRANCH, function (Builder $query) use ($branchId): void {
+                $query->where('branch_id', $branchId);
+            })
+            ->when($userType === UserType::DRIVER, function (Builder $query) use ($branchId): void {
+                $query->whereHas('driverBranchAssignments', function (Builder $assignments) use ($branchId): void {
+                    $assignments
+                        ->where('branch_id', $branchId)
+                        ->where('status', 'active');
+                });
+            });
     }
 
     /**
@@ -487,11 +806,7 @@ final class WorkforcePayload
             }
 
             $query->whereHas('shiftTemplate', function ($templates) use ($owner): void {
-                if ($owner === ShiftOwnerType::Platform) {
-                    $templates->platformOwned();
-                } else {
-                    $templates->branchOwned();
-                }
+                $templates->where('owner_type', $owner);
             });
         });
     }
@@ -513,13 +828,13 @@ final class WorkforcePayload
      */
     public static function ownerTypeOptions(): array
     {
-        return collect(ShiftOwnerType::cases())
+        return array_values(collect(ShiftOwnerType::cases())
             ->map(fn (ShiftOwnerType $type): array => [
                 'value' => $type->value,
                 'label' => $type->label(),
             ])
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -527,13 +842,13 @@ final class WorkforcePayload
      */
     public static function subjectTypeOptions(): array
     {
-        return collect(TransferSubjectType::cases())
+        return array_values(collect(TransferSubjectType::cases())
             ->map(fn (TransferSubjectType $type): array => [
                 'value' => $type->value,
                 'label' => $type->label(),
             ])
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -541,13 +856,13 @@ final class WorkforcePayload
      */
     public static function transferTypeOptions(): array
     {
-        return collect(TransferType::cases())
+        return array_values(collect(TransferType::cases())
             ->map(fn (TransferType $type): array => [
                 'value' => $type->value,
                 'label' => $type->label(),
             ])
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -555,13 +870,13 @@ final class WorkforcePayload
      */
     public static function branchOptions(): array
     {
-        return Branch::query()
+        return array_values(Branch::query()
             ->where('status', true)
             ->orderBy('name')
             ->orderBy('id')
             ->get(['id', 'name', 'slug'])
             ->map(fn (Branch $branch): array => self::mapBranchOption($branch))
-            ->all();
+            ->all());
     }
 
     /**
@@ -593,10 +908,10 @@ final class WorkforcePayload
             ->appends($request->query());
 
         return [
-            'data' => collect($paginator->items())
+            'data' => array_values(collect($paginator->items())
                 ->map(fn (Branch $branch): array => self::mapBranchOption($branch))
                 ->values()
-                ->all(),
+                ->all()),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
@@ -646,7 +961,7 @@ final class WorkforcePayload
         foreach ($staffAndDrivers as $user) {
             $user->setAttribute(
                 'workforce_role_label',
-                $labels[$user->id] ?? $user->user_type?->label() ?? 'Person',
+                $labels[$user->id] ?? $user->user_type->label(),
             );
         }
     }
@@ -709,7 +1024,7 @@ final class WorkforcePayload
 
             $labels[$user->id] = is_object($match)
                 ? self::formatRoleName((string) $match->role_name)
-                : ($user->user_type?->label() ?? 'Person');
+                : $user->user_type->label();
         }
 
         return $labels;
@@ -728,7 +1043,7 @@ final class WorkforcePayload
         }
 
         return self::roleLabelsByUserId(collect([$user]))[$user->id]
-            ?? $user->user_type?->label();
+            ?? $user->user_type->label();
     }
 
     private static function formatRoleName(string $name): string

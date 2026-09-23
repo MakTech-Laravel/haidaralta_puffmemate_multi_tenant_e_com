@@ -34,8 +34,8 @@ BranchLocationMapDialog is view-only. Preview uses an OpenStreetMap embed until 
 ## Assigner select mode follows shared flag
 DriverBranchAssignSheet and driver form/pages copy read Inertia drivers.single_active_branch. True: exclusive select and one-branch/transfer copy. False: multi-checkbox and manage-branches copy. Do not hardcode one-branch UI.
 
-## One Branch dropdown, nothing extra
-Branch management shifts use one Branch dropdown only — pick a store, reload that store. No All-branches, extra chips, or filter bars. Keep it obvious for a non-technical operator.
+## One Branch dropdown plus type
+Branch management shifts use one Branch dropdown — pick a store, reload that store — plus a Type filter beside it (All / Staff only / Drivers only). No All-branches chips or extra filter bars.
 
 ## Shift branch picker pages 20 at a time
 Branch shifts picker is InfiniteScrollCombobox against platform.branch-shift-templates.branch-options (20 per page, filter[search], append on scroll). Never dump every branch into Inertia props. Opening Branch shifts with no `?branch_id=` shows an empty choose-a-branch state — do not auto-select a store.
@@ -49,14 +49,14 @@ Shift board, coverage map, and forms never show overnight wrap, Overnight stats,
 ## No default branch on Branch shifts
 Opening Branch shifts with no ?branch_id= shows an empty choose-a-branch state. Do not auto-select a store. After picking a branch, reload that store only.
 
-## Assign is a personal calendar, not a roster period
-The Assign page is a full-width calendar: person, dates, main shift, working days. Choosing shift + dates fills working days immediately. A day can be Keep, Leave, or a different shift; Apply to a date span covers multi-day leave. There is no New period, roster-period list, or period form. Other assignments for that person show as read-only chips. Covering someone is a second assignment.
-
-## Assign calendar has no period UI
-Assign is a full-width personal calendar: person, dates, main shift, working days. Fill working days immediately. Day actions are Keep, Leave this day, or Different shift, plus Apply to a date span. No New period or roster-period UI. Other assignments for that person are read-only chips. Covering someone is a second assignment.
+## Assign Shift uses one staged calendar workspace
+Assign is Branch → User Type → User → month calendar. Stage additions/replacements/removals, then Save atomically via applyChanges(). Target persisted edits by user_shift_days.id, never date alone. Do not reintroduce Leave, weekly-off, weekday chips, exception dialogs, or the legacy period editor.
 
 ## Filled board filters by named shift
-After a store is chosen, Today's coverage sits under the branch picker. Default filter is All shifts. Named-shift chips (and coverage lanes) scope stats, on-duty, uncovered, people, and the shifts list to that window. The Shifts stat card becomes that window's hours when one shift is selected. These chips are shift filters, not All-branches chips.
+After a store is chosen, Today's coverage sits under the branch picker and Type filter. Named-shift chips (and coverage lanes) scope stats, on-duty, and the shifts list to that window. The Shifts stat card becomes that window's hours when one shift is selected. These chips are shift filters, not All-branches chips. Coverage always draws every window on a 12-hour clock (12a through 12a, one mark per hour). Selecting a shift dims other lanes but does not hide hours or switch the axis to 0–24.
 
-## Scheduled people is a capped roster
-Scheduled people is a compact scrolling roster (max-height, 20 then Show more, search, grouped by person type). Do not render a card grid of every assignment. The named-shift filter lives in that roster toolbar as All shifts select, not as chips under coverage. Coverage always draws every window on a 12-hour clock (12a through 12a, one mark per hour). Selecting a shift dims other lanes but does not hide hours or switch the axis to 0–24.
+## Assigned people is a list page, not a board roster
+The shifts board has no Scheduled people stat or roster. Use the Assigned people action after a store is chosen — hide it on the choose-a-branch empty state, same as Assign to shift and New shift. The list is a monthly DataTable at GET `*/shifts/assigned-people` (named `*.shift-assignments.index`) so the Shifts nav stays active. Assign create stays off the `/shifts` prefix. One row per person for `month=YYYY-MM` (default: viewer today). Columns are Person (avatar, name, phone), Type (Staff/Driver), Assigned dates (`1-10,13,15-20`), and Actions. Search/filters are SQL (`filter[search]` on name/phone, `filter[shift_template_id]`, `filter[people_kind]`), not Meilisearch. Branch-owned lists wait for `?branch_id=`.
+
+## Board type filter beside branch
+Type filter sits beside the Branch picker (default All). Staff = audience all|staff and branch people; Drivers = all|driver and drivers. It scopes coverage, stats, on duty, and the shifts list. Uncovered today is gone from this page.
