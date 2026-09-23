@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Branch\BranchStaffService;
 use App\Support\Toast;
 use App\Support\WorkforcePayload;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -35,9 +36,26 @@ class BranchStaffController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('platform/branch-staff/create', [
-            'branches' => $this->branchStaffService->branchOptions(),
-            'rolesByBranch' => $this->branchStaffService->rolesByBranch(),
+        return Inertia::render('platform/branch-staff/create');
+    }
+
+    /**
+     * Paginated branch options for the staff create combobox.
+     */
+    public function branchOptions(Request $request): JsonResponse
+    {
+        return response()->json(WorkforcePayload::paginatedBranchOptions($request));
+    }
+
+    /**
+     * Role options for a selected branch on the staff form.
+     */
+    public function roleOptions(Request $request): JsonResponse
+    {
+        $branch = Branch::query()->findOrFail($request->integer('branch_id'));
+
+        return response()->json([
+            'data' => $this->branchStaffService->roleOptionsForBranch($branch),
         ]);
     }
 
@@ -113,17 +131,13 @@ class BranchStaffController extends Controller
         $branch = $user->branch;
 
         return Inertia::render('platform/branch-staff/edit', [
-            'branches' => [
-                [
-                    'value' => (string) $branch->id,
-                    'label' => $branch->name,
-                ],
-            ],
-            'rolesByBranch' => [
-                (string) $branch->id => $this->branchStaffService->roleOptionsForBranch($branch),
-            ],
+            'roles' => $this->branchStaffService->roleOptionsForBranch($branch),
             'lockedSuperAdmin' => $this->branchStaffService->isLastSuperAdminInBranch($user, $branch),
             'staffMember' => $this->branchStaffService->mapStaffMember($user, $branch),
+            'selectedBranch' => [
+                'value' => (string) $branch->id,
+                'label' => $branch->name,
+            ],
         ]);
     }
 

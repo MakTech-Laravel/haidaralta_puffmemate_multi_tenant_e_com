@@ -10,12 +10,12 @@ type Branch = {
     code: string;
 };
 
-type BranchOption = {
+type RoleOption = {
     value: string;
     label: string;
 };
 
-type RoleOption = {
+type SelectedBranch = {
     value: string;
     label: string;
 };
@@ -35,14 +35,14 @@ type StaffMember = {
 export default function PlatformBranchScopedStaffEdit({
     branch,
     staffMember,
-    branches,
-    rolesByBranch,
+    roles,
+    selectedBranch,
     lockedSuperAdmin,
 }: {
     branch: Branch;
     staffMember: StaffMember;
-    branches: BranchOption[];
-    rolesByBranch: Record<string, RoleOption[]>;
+    roles: RoleOption[];
+    selectedBranch: SelectedBranch;
     lockedSuperAdmin: boolean;
 }) {
     return (
@@ -61,8 +61,8 @@ export default function PlatformBranchScopedStaffEdit({
                         staffMember.id,
                     ])}
                     isEdit
-                    branches={branches}
-                    rolesByBranch={rolesByBranch}
+                    roles={roles}
+                    selectedBranch={selectedBranch}
                     branchLocked
                     lockedSuperAdmin={lockedSuperAdmin}
                     defaults={{

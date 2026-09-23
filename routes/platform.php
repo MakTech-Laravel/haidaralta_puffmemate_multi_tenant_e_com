@@ -78,6 +78,11 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::permanentRedirect('staff/{user}/edit', '/platform/admins/{user}/edit');
 
     Route::middleware(['permission:manage-branch-users'])->group(function () {
+        Route::get('branch-staff-branch-options', [PlatformBranchStaffController::class, 'branchOptions'])
+            ->name('platform.branch-staff.branch-options');
+        Route::get('branch-staff-role-options', [PlatformBranchStaffController::class, 'roleOptions'])
+            ->name('platform.branch-staff.role-options');
+
         Route::resource('branch-staff', PlatformBranchStaffController::class)
             ->parameters(['branch-staff' => 'user'])
             ->names('platform.branch-staff')

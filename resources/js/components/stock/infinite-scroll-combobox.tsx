@@ -26,7 +26,7 @@ const PAGE_SIZE = 20;
 
 type InfiniteScrollComboboxBaseProps = {
     value: string | null;
-    onValueChange: (value: string | null) => void;
+    onValueChange: (value: string | null, option?: ComboboxOption) => void;
     selectedLabel?: string | null;
     placeholder: string;
     searchPlaceholder: string;
@@ -350,7 +350,7 @@ export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
                                     key={option.value}
                                     value={`${option.label} ${option.value}`}
                                     onSelect={() => {
-                                        onValueChange(option.value);
+                                        onValueChange(option.value, option);
                                         setOpen(false);
                                     }}
                                 >

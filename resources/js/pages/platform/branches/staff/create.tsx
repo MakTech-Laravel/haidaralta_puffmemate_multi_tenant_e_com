@@ -11,24 +11,24 @@ type Branch = {
     code: string;
 };
 
-type BranchOption = {
+type RoleOption = {
     value: string;
     label: string;
 };
 
-type RoleOption = {
+type SelectedBranch = {
     value: string;
     label: string;
 };
 
 export default function PlatformBranchScopedStaffCreate({
     branch,
-    branches,
-    rolesByBranch,
+    roles,
+    selectedBranch,
 }: {
     branch: Branch;
-    branches: BranchOption[];
-    rolesByBranch: Record<string, RoleOption[]>;
+    roles: RoleOption[];
+    selectedBranch: SelectedBranch;
 }) {
     return (
         <>
@@ -42,8 +42,8 @@ export default function PlatformBranchScopedStaffCreate({
 
                 <StaffForm
                     action={BranchScopedStaffController.store.form(branch.slug)}
-                    branches={branches}
-                    rolesByBranch={rolesByBranch}
+                    roles={roles}
+                    selectedBranch={selectedBranch}
                     branchLocked
                     defaults={{ branch_id: branch.id }}
                     cancelHref={filteredBranchStaffUrl(branch.id)}

@@ -5,18 +5,11 @@ import { useEffect, useMemo, useState } from 'react';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +23,7 @@ type RoleOption = {
     label: string;
 };
 
-type BranchOption = {
+type SelectedBranch = {
     value: string;
     label: string;
 };
@@ -49,8 +42,9 @@ interface StaffFormDefaults {
 interface StaffFormProps {
     action: FormAction;
     roles?: RoleOption[];
-    rolesByBranch?: Record<string, RoleOption[]>;
-    branches?: BranchOption[];
+    branchOptionsUrl?: string | null;
+    roleOptionsUrl?: string | null;
+    selectedBranch?: SelectedBranch | null;
     branchLocked?: boolean;
     defaults?: StaffFormDefaults;
     isEdit?: boolean;
@@ -61,6 +55,14 @@ interface StaffFormProps {
 
 const SUPER_ADMIN_ROLE = 'super-admin';
 const MEDIA_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
+
+function RequiredMark() {
+    return (
+        <span className="text-primary" aria-hidden>
+            *
+        </span>
+    );
+}
 
 function sectionClassName(): string {
     return cn(
@@ -98,7 +100,9 @@ function RoleCheckboxList({
 
     return (
         <div className="flex flex-col gap-3">
-            <Label>Roles</Label>
+            <Label>
+                Roles <RequiredMark />
+            </Label>
             <div className="relative">
                 <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                 <Input
@@ -243,8 +247,9 @@ function AccountStatusCards({
 export function StaffForm({
     action,
     roles = [],
-    rolesByBranch,
-    branches,
+    branchOptionsUrl = null,
+    roleOptionsUrl = null,
+    selectedBranch = null,
     branchLocked = false,
     defaults,
     isEdit = false,
@@ -252,10 +257,17 @@ export function StaffForm({
     cancelHref,
     submitLabel,
 }: StaffFormProps) {
+    const showBranchPicker = Boolean(branchOptionsUrl) || Boolean(selectedBranch);
     const initialBranchId =
         defaults?.branch_id !== null && defaults?.branch_id !== undefined
             ? String(defaults.branch_id)
-            : (branches?.[0]?.value ?? '');
+            : (selectedBranch?.value ?? '');
+
+    const [branchLabel, setBranchLabel] = useState<string | null>(
+        selectedBranch?.label ?? null,
+    );
+    const [availableRoles, setAvailableRoles] = useState<RoleOption[]>(roles);
+    const [rolesLoading, setRolesLoading] = useState(false);
 
     const [existingAvatar, setExistingAvatar] = useState<ExistingFile[]>(() =>
         defaults?.avatar && defaults?.avatar_url
@@ -308,15 +320,62 @@ export function StaffForm({
         setValidationTimeout(500);
     }, [setValidationTimeout]);
 
-    const availableRoles =
-        rolesByBranch && data.branch_id
-            ? (rolesByBranch[data.branch_id] ?? [])
-            : roles;
+    useEffect(() => {
+        setAvailableRoles(roles);
+    }, [roles]);
 
-    const changeBranch = (nextBranchId: string): void => {
+    useEffect(() => {
+        if (!roleOptionsUrl || !data.branch_id || roles.length > 0) {
+            return;
+        }
+
+        const controller = new AbortController();
+
+        setRolesLoading(true);
+
+        const url = new URL(roleOptionsUrl, window.location.origin);
+        url.searchParams.set('branch_id', data.branch_id);
+
+        void fetch(url.toString(), {
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+            signal: controller.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error('Failed to load roles');
+                }
+
+                return (await response.json()) as { data: RoleOption[] };
+            })
+            .then((payload) => {
+                setAvailableRoles(payload.data);
+            })
+            .catch((error: Error) => {
+                if (error.name === 'AbortError') {
+                    return;
+                }
+
+                setAvailableRoles([]);
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) {
+                    setRolesLoading(false);
+                }
+            });
+
+        return () => controller.abort();
+    }, [data.branch_id, roleOptionsUrl, roles.length]);
+
+    const changeBranch = (nextBranchId: string | null, label?: string): void => {
+        setBranchLabel(label ?? null);
+        setAvailableRoles([]);
         setData((current) => ({
             ...current,
-            branch_id: nextBranchId,
+            branch_id: nextBranchId ?? '',
             roles: [],
         }));
     };
@@ -351,9 +410,7 @@ export function StaffForm({
 
             return {
                 ...rest,
-                ...(branches && branches.length > 0 && !isEdit
-                    ? { branch_id }
-                    : {}),
+                ...(showBranchPicker && !isEdit ? { branch_id } : {}),
                 ...(password ? { password, password_confirmation } : {}),
                 ...(avatar ? { avatar } : {}),
                 ...(remove_avatar ? { remove_avatar: true } : {}),
@@ -365,6 +422,8 @@ export function StaffForm({
             preserveScroll: true,
         });
     };
+
+    const branchPickerDisabled = branchLocked || isEdit;
 
     return (
         <form onSubmit={submit} className="w-full space-y-6" autoComplete="off">
@@ -390,34 +449,54 @@ export function StaffForm({
                     </p>
                 </div>
 
-                {branches && branches.length > 0 ? (
+                {showBranchPicker ? (
                     <div className="mb-4 flex flex-col gap-1.5">
-                        <Label htmlFor="branch_id">Branch</Label>
-                        <Select
-                            value={data.branch_id || undefined}
-                            onValueChange={changeBranch}
-                            disabled={branchLocked || isEdit}
-                        >
-                            <SelectTrigger
+                        <Label htmlFor="branch_id">
+                            Branch <RequiredMark />
+                        </Label>
+                        {branchOptionsUrl && !branchPickerDisabled ? (
+                            <InfiniteScrollCombobox
                                 id="branch_id"
-                                className="w-full"
-                                aria-invalid={Boolean(errors.branch_id)}
-                            >
-                                <SelectValue placeholder="Select a branch" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    {branches.map((branch) => (
-                                        <SelectItem
-                                            key={branch.value}
-                                            value={branch.value}
-                                        >
-                                            {branch.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
+                                optionsUrl={branchOptionsUrl}
+                                value={data.branch_id || null}
+                                onValueChange={(next, option) => {
+                                    changeBranch(next, option?.label);
+                                }}
+                                selectedLabel={branchLabel}
+                                placeholder="Select a branch"
+                                searchPlaceholder="Search branches…"
+                                emptyText="No branches found."
+                                descriptionKey={null}
+                                className={
+                                    errors.branch_id
+                                        ? 'border-destructive'
+                                        : undefined
+                                }
+                            />
+                        ) : (
+                            <InfiniteScrollCombobox
+                                id="branch_id"
+                                staticOptions={
+                                    selectedBranch
+                                        ? [
+                                              {
+                                                  value: selectedBranch.value,
+                                                  label: selectedBranch.label,
+                                              },
+                                          ]
+                                        : []
+                                }
+                                value={data.branch_id || null}
+                                onValueChange={() => undefined}
+                                selectedLabel={
+                                    branchLabel ?? selectedBranch?.label
+                                }
+                                placeholder="Select a branch"
+                                searchPlaceholder="Search branches…"
+                                emptyText="No branches found."
+                                disabled
+                            />
+                        )}
                         <InputError message={errors.branch_id} />
                     </div>
                 ) : null}
@@ -469,7 +548,9 @@ export function StaffForm({
 
                     <div className="flex min-w-0 flex-1 flex-col gap-3">
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="name">Name</Label>
+                            <Label htmlFor="name">
+                                Name <RequiredMark />
+                            </Label>
                             <Input
                                 id="name"
                                 autoComplete="off"
@@ -484,7 +565,9 @@ export function StaffForm({
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="phone">Phone</Label>
+                                <Label htmlFor="phone">
+                                    Phone <RequiredMark />
+                                </Label>
                                 <Input
                                     id="phone"
                                     type="tel"
@@ -527,9 +610,13 @@ export function StaffForm({
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="password">
-                                    {isEdit
-                                        ? 'New password (optional)'
-                                        : 'Password'}
+                                    {isEdit ? (
+                                        'New password (optional)'
+                                    ) : (
+                                        <>
+                                            Password <RequiredMark />
+                                        </>
+                                    )}
                                 </Label>
                                 <PasswordInput
                                     id="password"
@@ -545,7 +632,13 @@ export function StaffForm({
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="password_confirmation">
-                                    Confirm password
+                                    {isEdit ? (
+                                        'Confirm password'
+                                    ) : (
+                                        <>
+                                            Confirm password <RequiredMark />
+                                        </>
+                                    )}
                                 </Label>
                                 <PasswordInput
                                     id="password_confirmation"
@@ -578,9 +671,14 @@ export function StaffForm({
                 </div>
 
                 <div className="flex flex-col gap-5">
-                    {availableRoles.length === 0 ? (
+                    {rolesLoading ? (
+                        <p className="text-muted-foreground flex items-center gap-2 text-sm">
+                            <Spinner />
+                            Loading roles…
+                        </p>
+                    ) : availableRoles.length === 0 ? (
                         <p className="text-muted-foreground text-sm">
-                            {branches
+                            {showBranchPicker && !data.branch_id
                                 ? 'Select a branch to load its roles.'
                                 : 'No roles available.'}
                         </p>
@@ -595,7 +693,9 @@ export function StaffForm({
                     <InputError message={errors.roles ?? errors['roles.0']} />
 
                     <div className="flex flex-col gap-2">
-                        <Label>Status</Label>
+                        <Label>
+                            Status <RequiredMark />
+                        </Label>
                         <AccountStatusCards
                             value={data.is_active}
                             disabled={lockedSuperAdmin && data.is_active}

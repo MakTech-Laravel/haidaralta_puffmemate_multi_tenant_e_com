@@ -36,14 +36,10 @@ class BranchScopedStaffController extends Controller
     {
         return Inertia::render('platform/branches/staff/create', [
             'branch' => $branch->only(['id', 'name', 'slug', 'code']),
-            'branches' => [
-                [
-                    'value' => (string) $branch->id,
-                    'label' => $branch->name,
-                ],
-            ],
-            'rolesByBranch' => [
-                (string) $branch->id => $this->branchStaffService->roleOptionsForBranch($branch),
+            'roles' => $this->branchStaffService->roleOptionsForBranch($branch),
+            'selectedBranch' => [
+                'value' => (string) $branch->id,
+                'label' => $branch->name,
             ],
         ]);
     }
@@ -93,17 +89,13 @@ class BranchScopedStaffController extends Controller
 
         return Inertia::render('platform/branches/staff/edit', [
             'branch' => $branch->only(['id', 'name', 'slug', 'code']),
-            'branches' => [
-                [
-                    'value' => (string) $branch->id,
-                    'label' => $branch->name,
-                ],
-            ],
-            'rolesByBranch' => [
-                (string) $branch->id => $this->branchStaffService->roleOptionsForBranch($branch),
-            ],
+            'roles' => $this->branchStaffService->roleOptionsForBranch($branch),
             'lockedSuperAdmin' => $this->branchStaffService->isLastSuperAdminInBranch($user, $branch),
             'staffMember' => $this->branchStaffService->mapStaffMember($user, $branch),
+            'selectedBranch' => [
+                'value' => (string) $branch->id,
+                'label' => $branch->name,
+            ],
         ]);
     }
 

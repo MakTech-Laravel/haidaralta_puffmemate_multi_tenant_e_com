@@ -3,12 +3,12 @@ import BranchStaffController from '@/actions/App/Http/Controllers/Platform/Branc
 import { StaffForm } from '@/components/admin/staff-form';
 import Heading from '@/components/heading';
 
-type BranchOption = {
+type RoleOption = {
     value: string;
     label: string;
 };
 
-type RoleOption = {
+type SelectedBranch = {
     value: string;
     label: string;
 };
@@ -27,13 +27,13 @@ type StaffMember = {
 
 export default function PlatformBranchStaffEdit({
     staffMember,
-    branches,
-    rolesByBranch,
+    roles,
+    selectedBranch,
     lockedSuperAdmin,
 }: {
     staffMember: StaffMember;
-    branches: BranchOption[];
-    rolesByBranch: Record<string, RoleOption[]>;
+    roles: RoleOption[];
+    selectedBranch: SelectedBranch;
     lockedSuperAdmin: boolean;
 }) {
     return (
@@ -49,8 +49,8 @@ export default function PlatformBranchStaffEdit({
                 <StaffForm
                     action={BranchStaffController.update.form(staffMember.id)}
                     isEdit
-                    branches={branches}
-                    rolesByBranch={rolesByBranch}
+                    roles={roles}
+                    selectedBranch={selectedBranch}
                     branchLocked
                     lockedSuperAdmin={lockedSuperAdmin}
                     defaults={{

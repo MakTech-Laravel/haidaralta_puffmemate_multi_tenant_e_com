@@ -205,6 +205,40 @@ test('platform cannot delete the last branch super admin', function () {
     expect(User::query()->whereKey($branchSuper->id)->exists())->toBeTrue();
 });
 
+test('platform can paginate branch and role options for staff form', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.branch-staff.branch-options', [
+            'per_page' => 20,
+            'filter' => ['search' => 'Sydney'],
+        ]))
+        ->assertOk()
+        ->assertJsonStructure([
+            'data' => [['id', 'name', 'slug']],
+            'meta' => ['current_page', 'last_page', 'per_page', 'total'],
+        ])
+        ->assertJsonPath('data.0.id', $downtown->id);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.branch-staff.role-options', [
+            'branch_id' => $downtown->id,
+        ]))
+        ->assertOk()
+        ->assertJsonStructure([
+            'data' => [['value', 'label']],
+        ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-staff.create'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branch-staff/create')
+            ->missing('branches')
+            ->missing('rolesByBranch'));
+});
+
 test('platform super admin can create and update branch staff with an avatar', function () {
     Storage::fake('public');
 
