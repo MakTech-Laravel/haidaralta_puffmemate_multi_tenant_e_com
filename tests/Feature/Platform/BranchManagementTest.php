@@ -255,6 +255,7 @@ test('platform admin can update a branch', function () {
             'phone' => '0387654321',
             'opening_time' => '08:00',
             'closing_time' => '20:00',
+            'delivery_radius_km' => 12.5,
             'status' => true,
         ])
         ->assertRedirect(route('platform.branches.show', 'new-name'));
@@ -265,9 +266,31 @@ test('platform admin can update a branch', function () {
         ->and($branch->slug)->toBe('new-name')
         ->and($branch->code)->toBe('NEW-001')
         ->and($branch->phone)->toBe('+61387654321')
+        ->and((float) $branch->delivery_radius_km)->toBe(12.5)
         ->and($branch->logo)->not->toBeNull();
 
     Storage::disk('public')->assertExists($branch->logo);
+});
+
+test('branch delivery radius can be cleared so the branch delivers anywhere', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::factory()->create([
+        'slug' => 'radius-clear',
+        'code' => 'RAD-001',
+        'delivery_radius_km' => 8,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branches.update', $branch), [
+            'name' => $branch->name,
+            'slug' => $branch->slug,
+            'code' => $branch->code,
+            'delivery_radius_km' => '',
+            'status' => true,
+        ])
+        ->assertRedirect(route('platform.branches.show', $branch));
+
+    expect($branch->fresh()->delivery_radius_km)->toBeNull();
 });
 
 test('invalid branch contact phone is rejected', function () {

@@ -198,6 +198,7 @@ class BranchController extends Controller
             'address' => $branch->address,
             'latitude' => $branch->latitude,
             'longitude' => $branch->longitude,
+            'delivery_radius_km' => $branch->delivery_radius_km,
             'opening_time' => $branch->opening_time?->format('H:i'),
             'closing_time' => $branch->closing_time?->format('H:i'),
         ];

@@ -35,3 +35,6 @@ Development / pre-handover: `started_at` and `ended_at` belong on `create_driver
 
 ## Catalog discount columns on create_products
 Pre-handover: products.discount_type (default none), discount_price, discount_start_date, and discount_end_date belong on create_products alongside selling_price/regular_price. Do not add a Schema::table modification for these greenfield columns.
+
+## Delivery radius on create_branches
+Pre-handover: branches.delivery_radius_km nullable decimal belongs on create_branches beside lat/lng. Do not add a Schema::table modification for this greenfield column.
