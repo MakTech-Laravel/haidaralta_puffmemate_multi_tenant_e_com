@@ -374,14 +374,22 @@ test('platform transfers index defaults to latest created and includes avatar an
     expect($newest->id)->toBeGreaterThan($older->id);
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.transfers.index'))
+        ->get(route('platform.reports.transfer-history'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('platform/transfers/index')
+            ->component('platform/reports/transfer-history')
             ->where('table.data.0.id', $newest->id)
             ->where('table.data.0.reason', 'Newest transfer row.')
             ->where('table.data.0.from_role', RoleEnum::STAFF->value)
             ->where('table.data.0.to_role', RoleEnum::MANAGER->value)
             ->has('table.data.0.avatar_url')
         );
+});
+
+test('legacy transfers url redirects to transfer history report', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get('/platform/transfers')
+        ->assertRedirect('/platform/reports/transfer-history');
 });

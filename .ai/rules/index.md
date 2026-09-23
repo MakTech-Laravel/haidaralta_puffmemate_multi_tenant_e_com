@@ -112,5 +112,5 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Support/Storefront/DemoCatalog.php | .ai/rules/support-storefront.md |
 | app/Models/UserShiftAssignment.php,app/Support/DutyWindow.php,app/Support/DriverAvailability.php | .ai/rules/support-support.md |
 | app/Support/OpsDashboardAccess.php, config/cache.php | .ai/rules/support.md |
-| resources/js/pages/platform/transfers/**,app/DataTables/TransferDataTable.php | .ai/rules/transfers-data-tables.md |
+| resources/js/pages/platform/reports/transfer-history.tsx,app/DataTables/TransferDataTable.php | .ai/rules/transfers-data-tables.md |
 | resources/js/components/ui/{time-picker,wheel-picker}.tsx | .ai/rules/ui.md |

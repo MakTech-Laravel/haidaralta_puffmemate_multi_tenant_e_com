@@ -52,7 +52,7 @@ function personHref(row: TransferRow): string {
         : BranchStaffController.show.url(row.user_id);
 }
 
-export default function PlatformTransfersIndex({
+export default function PlatformTransferHistory({
     table: tablePayload,
 }: {
     table: DataTablePayload<TransferRow> & {
@@ -177,11 +177,11 @@ export default function PlatformTransfersIndex({
 
     return (
         <>
-            <Head title="Transfers" />
+            <Head title="Transfer history" />
 
             <div className="space-y-4 p-2 md:p-4">
                 <Heading
-                    title="Transfers"
+                    title="Transfer history"
                     description="Branch and role moves for drivers and branch staff"
                 />
 
@@ -313,9 +313,12 @@ export default function PlatformTransfersIndex({
     );
 }
 
-PlatformTransfersIndex.layout = {
+PlatformTransferHistory.layout = {
     breadcrumbs: [
         { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Transfers', href: '/platform/transfers' },
+        {
+            title: 'Transfer history',
+            href: '/platform/reports/transfer-history',
+        },
     ],
 };

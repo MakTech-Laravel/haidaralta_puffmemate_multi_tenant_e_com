@@ -27,7 +27,7 @@ class TransferController extends Controller
 
     public function index(Request $request): Response
     {
-        return Inertia::render('platform/transfers/index', [
+        return Inertia::render('platform/reports/transfer-history', [
             'table' => TransferDataTable::make($request),
         ]);
     }

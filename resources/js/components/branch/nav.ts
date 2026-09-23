@@ -229,7 +229,7 @@ export function buildBranchNav(
                 ],
             }),
             navGroup({
-                title: 'Reports',
+                title: 'Reports and history',
                 icon: ChartColumn,
                 permissions: ['manage-branch-orders', 'manage-branch-products'],
                 items: [

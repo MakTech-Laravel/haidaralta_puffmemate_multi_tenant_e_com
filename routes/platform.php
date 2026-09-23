@@ -135,7 +135,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     });
 
     Route::middleware(['permission:view-transfers'])->group(function () {
-        Route::get('transfers', [PlatformTransferController::class, 'index'])->name('platform.transfers.index');
+        Route::redirect('transfers', '/platform/reports/transfer-history', 301);
+        Route::get('reports/transfer-history', [PlatformTransferController::class, 'index'])
+            ->name('platform.reports.transfer-history');
     });
 
     Route::middleware(['permission:manage-shifts'])->group(function () {
