@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
 /**
@@ -180,11 +179,13 @@ class BranchProductListingDataTable extends AbstractDataTable
 
         $this->loadBranchContext($paginator->getCollection()->pluck('id'));
 
-        $paginator->setCollection(
-            $paginator->getCollection()->map(fn (Model $model): array => $this->mapRow($model)),
-        );
+        $rows = [];
 
-        return $this->formatPaginator($paginator);
+        foreach ($paginator->getCollection() as $model) {
+            $rows[] = $this->mapRow($model);
+        }
+
+        return $this->formatPaginator($paginator, $rows);
     }
 
     /**
