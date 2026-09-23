@@ -18,6 +18,7 @@ use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBa
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\GeneralSettingsController as PlatformGeneralSettingsController;
+use App\Http\Controllers\Platform\HomeBannerController as PlatformHomeBannerController;
 use App\Http\Controllers\Platform\NotificationController as PlatformNotificationController;
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
 use App\Http\Controllers\Platform\PaymentGatewaySettingsController as PlatformPaymentGatewaySettingsController;
@@ -322,6 +323,23 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.pages.edit');
         Route::put('pages/{slug}', [PlatformCmsPageController::class, 'update'])
             ->name('platform.pages.update');
+
+        Route::get('home-banners', [PlatformHomeBannerController::class, 'index'])
+            ->name('platform.home-banners.index');
+        Route::get('home-banners/create', [PlatformHomeBannerController::class, 'create'])
+            ->name('platform.home-banners.create');
+        Route::post('home-banners', [PlatformHomeBannerController::class, 'store'])
+            ->name('platform.home-banners.store');
+        Route::get('home-banners/{home_banner}/edit', [PlatformHomeBannerController::class, 'edit'])
+            ->name('platform.home-banners.edit');
+        Route::put('home-banners/{home_banner}', [PlatformHomeBannerController::class, 'update'])
+            ->name('platform.home-banners.update');
+        Route::delete('home-banners/{home_banner}', [PlatformHomeBannerController::class, 'destroy'])
+            ->name('platform.home-banners.destroy');
+        Route::post('home-banners/{home_banner}/move', [PlatformHomeBannerController::class, 'move'])
+            ->name('platform.home-banners.move');
+        Route::patch('home-banners/{home_banner}/toggle', [PlatformHomeBannerController::class, 'toggle'])
+            ->name('platform.home-banners.toggle');
     });
 
     Route::middleware(['permission:manage-application-settings'])->prefix('settings')->group(function () {
