@@ -27,7 +27,11 @@ export function ShiftCalendarDay({
     shifts: ShiftAssignmentCalendarDay[];
     selection: ShiftAssignmentSelectionState;
     allowMultiplePerDay: boolean;
-    onSelect: (event: { ctrlKey: boolean; metaKey: boolean }) => void;
+    onSelect: (event: {
+        ctrlKey: boolean;
+        metaKey: boolean;
+        shiftKey: boolean;
+    }) => void;
     onAddAnother: () => void;
     onReplace: (dayId: number) => void;
     onRemove: (dayId: number) => void;

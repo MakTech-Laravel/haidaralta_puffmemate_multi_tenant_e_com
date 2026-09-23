@@ -68,7 +68,7 @@ export function ShiftMonthCalendar({
 
     const selectDate = (
         date: string,
-        event: { ctrlKey: boolean; metaKey: boolean },
+        event: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean },
     ): void => {
         setSelectionNotice(null);
 
@@ -78,13 +78,14 @@ export function ShiftMonthCalendar({
             return;
         }
 
-        const manualOverride = event.ctrlKey || event.metaKey;
+        const forceManual = event.ctrlKey || event.metaKey;
+        const forceRange = event.shiftKey && !forceManual;
+        const useRangeMode =
+            forceRange || (!forceManual && selection.selectionMode === 'range');
+        const shifts = calendar.days[date] ?? [];
+        const editableShifts = shifts.filter((shift) => shift.editable);
 
-        if (
-            selection.selectionMode === 'range' &&
-            !manualOverride &&
-            selection.rangeAnchor !== null
-        ) {
+        if (selection.rangeAnchor !== null && !forceManual) {
             const anchor = parseISO(selection.rangeAnchor);
             const target = parseISO(date);
             const start = anchor <= target ? anchor : target;
@@ -92,57 +93,136 @@ export function ShiftMonthCalendar({
             const candidates = eachDayOfInterval({ start, end }).map((day) =>
                 format(day, 'yyyy-MM-dd'),
             );
-            const eligible = candidates.filter(
-                (candidate) =>
-                    candidate >= calendar.today &&
-                    (calendar.days[candidate]?.length ?? 0) === 0,
-            );
-            const skipped = candidates.length - eligible.length;
 
-            dispatch({ type: 'add-assign-dates', dates: eligible });
+            const eligibleAssignDates: string[] = [];
+            const eligibleReplaceDayIds: number[] = [];
+            let skipped = 0;
+            let ambiguous = 0;
+
+            for (const candidate of candidates) {
+                if (candidate < calendar.today) {
+                    skipped += 1;
+                    continue;
+                }
+
+                const dayShifts = calendar.days[candidate] ?? [];
+
+                if (dayShifts.length === 0) {
+                    eligibleAssignDates.push(candidate);
+                    continue;
+                }
+
+                const dayEditable = dayShifts.filter((shift) => shift.editable);
+
+                if (dayEditable.length === 1 && dayShifts.length === 1) {
+                    eligibleReplaceDayIds.push(dayEditable[0].id);
+                    continue;
+                }
+
+                if (dayEditable.length > 1 || dayShifts.length > 1) {
+                    ambiguous += 1;
+                    continue;
+                }
+
+                skipped += 1;
+            }
+
+            if (
+                eligibleAssignDates.length > 0 ||
+                eligibleReplaceDayIds.length > 0
+            ) {
+                dispatch({
+                    type: 'apply-range-selection',
+                    dates: eligibleAssignDates,
+                    replaceDayIds: eligibleReplaceDayIds,
+                });
+            } else {
+                dispatch({ type: 'set-range-anchor', date: null });
+            }
+
+            const parts: string[] = [];
+
+            if (eligibleAssignDates.length > 0) {
+                parts.push(
+                    `${eligibleAssignDates.length} new date${eligibleAssignDates.length === 1 ? '' : 's'}`,
+                );
+            }
+
+            if (eligibleReplaceDayIds.length > 0) {
+                parts.push(
+                    `${eligibleReplaceDayIds.length} assigned date${eligibleReplaceDayIds.length === 1 ? '' : 's'} to change`,
+                );
+            }
+
+            if (ambiguous > 0) {
+                parts.push(
+                    `${ambiguous} multi-shift date${ambiguous === 1 ? '' : 's'} skipped`,
+                );
+            }
+
+            if (skipped > 0) {
+                parts.push(
+                    `${skipped} past or read-only date${skipped === 1 ? '' : 's'} skipped`,
+                );
+            }
+
             setSelectionNotice(
-                skipped > 0
-                    ? `${eligible.length} dates selected; ${skipped} past or assigned dates skipped.`
-                    : `${eligible.length} dates selected.`,
+                parts.length > 0
+                    ? parts.join('; ') + '.'
+                    : 'No eligible dates in that range.',
             );
 
             return;
         }
 
-        const shifts = calendar.days[date] ?? [];
-        const editableShifts = shifts.filter((shift) => shift.editable);
-
         if (shifts.length > 0) {
-            if (editableShifts.length === 1 && shifts.length === 1) {
+            if (editableShifts.length === 0) {
+                setSelectionNotice(
+                    'This shift is read-only in this workspace.',
+                );
+
+                return;
+            }
+
+            if (editableShifts.length > 1 || shifts.length > 1) {
+                setSelectionNotice(
+                    'This date has multiple shifts. Use the menu on the specific shift you want to change.',
+                );
+
+                return;
+            }
+
+            if (!useRangeMode) {
                 dispatch({
                     type: 'toggle-replace-day',
                     dayId: editableShifts[0].id,
                 });
-            } else if (editableShifts.length > 0) {
-                setSelectionNotice(
-                    'This date has multiple shifts. Use the menu on the specific shift you want to change.',
-                );
-            } else {
-                setSelectionNotice(
-                    'This shift is read-only in this workspace.',
-                );
+
+                return;
             }
+
+            dispatch({ type: 'set-range-anchor', date });
+            setSelectionNotice(
+                forceRange
+                    ? 'Shift-click or click the other end to change that range of assigned dates.'
+                    : 'Choose the other end to change that range of assigned dates.',
+            );
 
             return;
         }
 
-        if (selection.selectionMode === 'manual' || manualOverride) {
+        if (!useRangeMode) {
             dispatch({ type: 'toggle-assign-date', date });
 
             return;
         }
 
-        if (selection.rangeAnchor === null) {
-            dispatch({ type: 'set-range-anchor', date });
-            setSelectionNotice('Choose the other end of the date range.');
-
-            return;
-        }
+        dispatch({ type: 'set-range-anchor', date });
+        setSelectionNotice(
+            forceRange
+                ? 'Shift-click or click the other end of the date range.'
+                : 'Choose the other end of the date range.',
+        );
     };
 
     const handleKeyboardNavigation = (
@@ -294,8 +374,8 @@ export function ShiftMonthCalendar({
             >
                 {selectionNotice ??
                     (selection.selectionMode === 'range'
-                        ? 'Click any empty day to start or finish a range. Ctrl/Cmd-click toggles one date. Amber = unsaved new dates.'
-                        : 'Click any day to select it. Amber chips are unsaved; solid red chips are already assigned. Use ⋯ to change or remove.')}
+                        ? 'Click two days for a range (empty = new, assigned = change). Ctrl/Cmd-click one date. Shift-click also starts a range.'
+                        : 'Click one-by-one. Shift-click a range on empty or assigned days; Ctrl/Cmd-click keeps single select.')}
             </p>
         </section>
     );
