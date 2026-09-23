@@ -805,15 +805,30 @@ test('guests cannot list branch shift options', function () {
 test('shift configuration is shared with inertia pages', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
-    expect(config('shifts.allow_multiple_per_day'))->toBeFalse();
+    expect(config('shifts.allow_multiple_per_day'))->toBeFalse()
+        ->and(config('shifts.show_platform_administrator_shifts'))->toBeFalse();
 
-    config(['shifts.allow_multiple_per_day' => true]);
+    config([
+        'shifts.allow_multiple_per_day' => true,
+        'shifts.show_platform_administrator_shifts' => true,
+    ]);
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.shift-assignments.create'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('shifts.allow_multiple_per_day', true));
+            ->where('shifts.allow_multiple_per_day', true)
+            ->where('shifts.show_platform_administrator_shifts', true));
+});
+
+test('platform administrator shifts stay hidden in shared props by default', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.admins.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('shifts.show_platform_administrator_shifts', false));
 });
 
 test('platform shift people options paginate active staff for the selected branch', function () {

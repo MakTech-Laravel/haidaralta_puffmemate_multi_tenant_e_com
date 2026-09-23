@@ -1,9 +1,10 @@
 ---
 paths:
-    - resources/js/components/platform/product-form.tsx
-    - resources/js/components/platform/category-form.tsx
-    - 'resources/js/components/platform/{category,product}-form.tsx'
-    - resources/js/components/platform/category-profile.tsx
+  - resources/js/components/platform/product-form.tsx
+  - resources/js/components/platform/category-form.tsx
+  - 'resources/js/components/platform/{category,product}-form.tsx'
+  - resources/js/components/platform/category-profile.tsx
+  - resources/js/components/platform/nav.ts
 ---
 
 # Platform
@@ -79,3 +80,6 @@ CategoryProfile Image background is a fact in the listing grid, not a full-width
 ## Branch ops fields omit minimum_stock
 
 branchOpsFields is buying_price + regular_price + selling_price + quantity on branch create. Do not include minimum_stock.
+
+## Administrator shifts nav gated by config
+Platform Administrator Shifts + Assign to shift only render when config shifts.show_platform_administrator_shifts (env SHIFTS_SHOW_PLATFORM_ADMINISTRATOR_SHIFTS) is true. Default false. Branch management Shifts/Assign stay visible. Shared via Inertia shifts.show_platform_administrator_shifts into buildPlatformNav.

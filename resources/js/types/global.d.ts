@@ -61,6 +61,7 @@ declare module '@inertiajs/core' {
             };
             shifts: {
                 allow_multiple_per_day: boolean;
+                show_platform_administrator_shifts: boolean;
             };
             driverSupport: {
                 supportPhone: string;

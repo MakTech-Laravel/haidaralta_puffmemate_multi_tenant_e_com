@@ -4,6 +4,7 @@ paths:
   - config/backup.php
   - config/scout.php
   - config/catalog.php
+  - config/shifts.php
 ---
 
 # Backup

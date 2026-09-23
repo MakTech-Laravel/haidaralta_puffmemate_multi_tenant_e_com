@@ -54,6 +54,7 @@ import type { NavSection } from '@/components/navigation/types';
 export function buildPlatformNav(
     showBulkImport = false,
     showBranchPricing = false,
+    showPlatformAdministratorShifts = false,
 ): NavSection[] {
     return [
         navSection(undefined, [
@@ -66,7 +67,9 @@ export function buildPlatformNav(
             navGroup({
                 title: 'Administrator',
                 icon: Shield,
-                permissions: ['manage-users', 'manage-roles', 'manage-shifts'],
+                permissions: showPlatformAdministratorShifts
+                    ? ['manage-users', 'manage-roles', 'manage-shifts']
+                    : ['manage-users', 'manage-roles'],
                 items: [
                     navLink({
                         title: 'Admins',
@@ -86,18 +89,22 @@ export function buildPlatformNav(
                         icon: KeyRound,
                         permissions: ['manage-roles'],
                     }),
-                    navLink({
-                        title: 'Shifts',
-                        href: '/platform/shifts',
-                        icon: CalendarClock,
-                        permissions: ['manage-shifts'],
-                    }),
-                    navLink({
-                        title: 'Assign to shift',
-                        href: '/platform/shift-assignments',
-                        icon: UserPlus,
-                        permissions: ['manage-shifts'],
-                    }),
+                    ...(showPlatformAdministratorShifts
+                        ? [
+                              navLink({
+                                  title: 'Shifts',
+                                  href: '/platform/shifts',
+                                  icon: CalendarClock,
+                                  permissions: ['manage-shifts'],
+                              }),
+                              navLink({
+                                  title: 'Assign to shift',
+                                  href: '/platform/shift-assignments',
+                                  icon: UserPlus,
+                                  permissions: ['manage-shifts'],
+                              }),
+                          ]
+                        : []),
                 ],
             }),
             navGroup({

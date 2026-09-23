@@ -26,7 +26,7 @@ Platform sidebar order: Dashboard, Administrator, Customer management, Driver ma
 Reports and history → Stock transactions, Price history (when branch pricing on), then Transfer history (`/platform/reports/transfer-history`, `view-transfers`). Old `/platform/transfers` 301s. Do not put Transfer history under Branch management.
 
 ## Shifts live under Administrator and Branch management
-Shifts and Assign to shift are platform/branch participant duty windows, not a driver catalog. Platform: live under Administrator and Branch management. Branch portal: live under Administrator. Never put them under Driver management.
+Shifts and Assign to shift are platform/branch participant duty windows, not a driver catalog. Platform Branch management always shows Shifts / Assign. Platform Administrator Shifts / Assign only when `shifts.show_platform_administrator_shifts` is true (default false). Branch portal: live under Administrator. Never put them under Driver management.
 
 ## Shift nav URLs are owner-scoped siblings
 Administrator Shifts is /platform/shifts and Assign is /platform/shift-assignments (platform-owned only). Branch management Shifts is /platform/branch-shifts and Assign is /platform/branch-shift-assignments (branch-owned only). Branch portal Assign is /branch/{slug}/shift-assignments, not a child of /shifts. Edit assignment is /shift-assignments/{id}/edit (and branch-shift-assignments sibling). Never reuse the same href in two groups; isPathActive prefix-matches children so assign must not live under /shifts. There are no /shifts/periods URLs.

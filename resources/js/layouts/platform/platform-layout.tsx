@@ -10,7 +10,7 @@ export default function PlatformLayout({
     breadcrumbs?: BreadcrumbItem[];
     children: React.ReactNode;
 }) {
-    const { catalog } = usePage().props;
+    const { catalog, shifts } = usePage().props;
 
     return (
         <PortalShellLayout
@@ -20,6 +20,7 @@ export default function PlatformLayout({
             sections={buildPlatformNav(
                 catalog.show_bulk_import,
                 catalog.show_branch_pricing,
+                shifts.show_platform_administrator_shifts,
             )}
             sidebarVariant="inset"
             sidebarWidth="16.5rem"

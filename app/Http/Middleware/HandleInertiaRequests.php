@@ -73,6 +73,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'shifts' => [
                 'allow_multiple_per_day' => (bool) config('shifts.allow_multiple_per_day'),
+                'show_platform_administrator_shifts' => (bool) config('shifts.show_platform_administrator_shifts'),
             ],
             'storefront' => [
                 'navCategories' => StorefrontCatalog::navCategories(),

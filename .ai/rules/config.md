@@ -18,3 +18,7 @@ Redis, Meilisearch, and Reverb stay external Coolify resources. Prefer discrete 
 
 Driver assignment mode is `config('drivers.single_active_branch')` from env `DRIVER_SINGLE_ACTIVE_BRANCH` (default true). Read via `config()`, never `env()`, in services/requests. Share as Inertia `drivers.single_active_branch`. Do not add a unique-on-active DB index — the flag must be togglable without a migration.
 
+## Platform administrator shifts nav flag
+
+`shifts.show_platform_administrator_shifts` (env `SHIFTS_SHOW_PLATFORM_ADMINISTRATOR_SHIFTS`, default false) toggles only the platform Administrator dropdown Shifts / Assign to shift links. Branch management shifts stay visible. Read via `config()`, share on Inertia `shifts.show_platform_administrator_shifts`.
+
