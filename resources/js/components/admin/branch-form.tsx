@@ -495,36 +495,34 @@ export function BranchForm({
                         }}
                     />
 
-                    <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="delivery_radius_km">
-                            Delivery radius{' '}
-                            <span className="text-muted-foreground font-normal">
-                                (km, optional)
-                            </span>
-                        </Label>
-                        <Input
-                            id="delivery_radius_km"
-                            type="number"
-                            step="0.1"
-                            min={0.1}
-                            value={data.delivery_radius_km}
-                            onChange={(event) =>
-                                setData(
-                                    'delivery_radius_km',
-                                    event.target.value,
-                                )
-                            }
-                            placeholder="e.g. 15"
-                        />
-                        <p className="text-muted-foreground text-xs">
-                            Leave empty to deliver anywhere. When set, this
-                            branch is limited to that distance from its map pin
-                            (enforced later at checkout).
-                        </p>
-                        <InputError message={errors.delivery_radius_km} />
-                    </div>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <div className="flex flex-col gap-1.5">
+                            <Label htmlFor="delivery_radius_km">
+                                Delivery radius{' '}
+                                <span className="text-muted-foreground font-normal">
+                                    (km, optional)
+                                </span>
+                            </Label>
+                            <Input
+                                id="delivery_radius_km"
+                                type="number"
+                                step="0.1"
+                                min={0.1}
+                                value={data.delivery_radius_km}
+                                onChange={(event) =>
+                                    setData(
+                                        'delivery_radius_km',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="e.g. 15"
+                            />
+                            <p className="text-muted-foreground text-xs">
+                                Empty = deliver anywhere.
+                            </p>
+                            <InputError message={errors.delivery_radius_km} />
+                        </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="opening_time">Opens</Label>
                             <TimeSelect
