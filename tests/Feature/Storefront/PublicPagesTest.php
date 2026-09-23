@@ -7,6 +7,7 @@ use Database\Seeders\ApplicationSettingsSeeder;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\CatalogSeeder;
 use Database\Seeders\CmsPageSeeder;
+use Database\Seeders\HomeBannerSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -17,6 +18,7 @@ beforeEach(function () {
     $this->seed(UserSeeder::class);
     $this->seed(ApplicationSettingsSeeder::class);
     $this->seed(CmsPageSeeder::class);
+    $this->seed(HomeBannerSeeder::class);
     $this->seed(CatalogSeeder::class);
 });
 
@@ -47,6 +49,7 @@ test('storefront home shares featured categories and tagged products', function 
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/home')
+            ->has('heroSlides', 2)
             ->has('featuredCategories')
             ->has('bestSellingProducts')
             ->has('newArrivalProducts')
