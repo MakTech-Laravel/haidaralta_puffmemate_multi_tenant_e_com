@@ -28,15 +28,13 @@ class WorkforceShiftSeeder extends Seeder
 
     private const EXCEPT_SATURDAY = [1, 2, 3, 4, 5, 7];
 
+    private const ALL_DAYS = [1, 2, 3, 4, 5, 6, 7];
+
     public function run(): void
     {
         $this->replaceOvernightOps();
 
         $actor = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->first();
-        $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-        $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
-        $brisbane = Branch::query()->where('slug', BranchSeeder::BRISBANE_QUEEN)->firstOrFail();
-
         $templates = app(ShiftTemplateService::class);
         $assign = app(AssignShiftService::class);
 
@@ -55,15 +53,192 @@ class WorkforceShiftSeeder extends Seeder
             'owner_type' => ShiftOwnerType::Platform->value,
         ]);
 
-        $sydneyFloor = $this->branchTemplate($templates, $actor, $sydney, 'Floor open', '09:00', '17:00', ShiftAudience::Staff);
-        $sydneyLate = $this->branchTemplate($templates, $actor, $sydney, 'Late trade', '16:00', '23:00', ShiftAudience::Staff);
-        $sydneyDispatch = $this->branchTemplate($templates, $actor, $sydney, 'Dispatch', '07:00', '15:00', ShiftAudience::Driver);
+        $branchPlans = [
+            BranchSeeder::SYDNEY_CBD => [
+                'floor' => ['09:00', '17:00'],
+                'late' => ['16:00', '23:00'],
+                'dispatch' => ['07:00', '15:00'],
+                'floor_emails' => [
+                    UserSeeder::BRANCH_1_STAFF,
+                    'harper.cole@sydney-cbd.dev',
+                    'owen.fitzgerald@sydney-cbd.dev',
+                ],
+                'late_emails' => [
+                    UserSeeder::BRANCH_1_ADMIN,
+                    'zara.malik@sydney-cbd.dev',
+                    'benjamin.shaw@sydney-cbd.dev',
+                ],
+                'dispatch_emails' => [
+                    'oscar.knight@puffmemate.dev',
+                    'tessa.moran@puffmemate.dev',
+                ],
+            ],
+            BranchSeeder::MELBOURNE_COLLINS => [
+                'floor' => ['09:00', '17:00'],
+                'late' => ['12:00', '21:00'],
+                'dispatch' => ['08:00', '16:00'],
+                'floor_emails' => [
+                    UserSeeder::BRANCH_2_STAFF,
+                    'isla.thompson@melbourne-collins.dev',
+                    'marcus.delgado@melbourne-collins.dev',
+                ],
+                'late_emails' => [
+                    UserSeeder::BRANCH_2_ADMIN,
+                    'nina.volkov@melbourne-collins.dev',
+                ],
+                'dispatch_emails' => [
+                    'kai.nguyen@puffmemate.dev',
+                    'bella.hart@puffmemate.dev',
+                ],
+            ],
+            BranchSeeder::BRISBANE_QUEEN => [
+                'floor' => ['09:00', '17:00'],
+                'late' => ['12:00', '21:00'],
+                'dispatch' => ['07:30', '15:30'],
+                'floor_emails' => [
+                    UserSeeder::BRANCH_3_ADMIN,
+                    'sophie.grant@brisbane-queen.dev',
+                    'ethan.park@brisbane-queen.dev',
+                ],
+                'late_emails' => [
+                    UserSeeder::BRANCH_3_SUPER_ADMIN,
+                    'amelia.ruiz@brisbane-queen.dev',
+                ],
+                'dispatch_emails' => [
+                    'ryan.cho@puffmemate.dev',
+                    'nina.blake@puffmemate.dev',
+                ],
+            ],
+            BranchSeeder::PERTH_HAY => [
+                'floor' => ['09:00', '17:00'],
+                'late' => ['13:00', '20:00'],
+                'dispatch' => ['08:00', '16:00'],
+                'floor_emails' => ['harvey.knox@perth-hay.dev', 'freya.sutton@perth-hay.dev'],
+                'late_emails' => ['lucia.bennett@perth-hay.dev', 'tate.morrison@perth-hay.dev'],
+                'dispatch_emails' => ['hugo.price@puffmemate.dev'],
+            ],
+            BranchSeeder::ADELAIDE_RUNDLE => [
+                'floor' => ['09:00', '17:00'],
+                'late' => ['12:00', '21:00'],
+                'dispatch' => ['08:00', '16:00'],
+                'floor_emails' => ['noah.carr@adelaide-rundle.dev', 'piper.hughes@adelaide-rundle.dev'],
+                'late_emails' => ['jade.osullivan@adelaide-rundle.dev', 'callum.reid@adelaide-rundle.dev'],
+                'dispatch_emails' => ['aria.wells@puffmemate.dev'],
+            ],
+            BranchSeeder::GOLD_COAST_SURFERS => [
+                'floor' => ['10:00', '18:00'],
+                'late' => ['14:00', '22:00'],
+                'dispatch' => ['09:00', '17:00'],
+                'floor_emails' => ['mason.quinn@gold-coast-surfers.dev', 'ruby.ellis@gold-coast-surfers.dev'],
+                'late_emails' => ['keira.bond@gold-coast-surfers.dev', 'dylan.hayes@gold-coast-surfers.dev'],
+                'dispatch_emails' => ['felix.drake@puffmemate.dev'],
+            ],
+            BranchSeeder::CANBERRA_CIVIC => [
+                'floor' => ['09:30', '17:30'],
+                'late' => ['12:00', '20:00'],
+                'dispatch' => ['08:00', '16:00'],
+                'floor_emails' => ['clara.west@canberra-civic.dev', 'george.lambert@canberra-civic.dev'],
+                'late_emails' => ['helen.frost@canberra-civic.dev'],
+                'dispatch_emails' => ['olivia.kent@puffmemate.dev'],
+            ],
+            BranchSeeder::NEWCASTLE_HUNTER => [
+                'floor' => ['09:00', '17:00'],
+                'late' => ['12:00', '20:00'],
+                'dispatch' => ['07:30', '15:30'],
+                'floor_emails' => ['leo.cameron@newcastle-hunter.dev', 'ivy.patel@newcastle-hunter.dev'],
+                'late_emails' => ['emma.nash@newcastle-hunter.dev', 'tom.bradley@newcastle-hunter.dev'],
+                'dispatch_emails' => ['miles.carter@puffmemate.dev'],
+            ],
+            BranchSeeder::PARRAMATTA_CHURCH => [
+                'floor' => ['09:00', '17:00'],
+                'late' => ['15:00', '21:00'],
+                'dispatch' => ['07:00', '15:00'],
+                'floor_emails' => [
+                    'seth.obrien@parramatta-church.dev',
+                    'maya.singh@parramatta-church.dev',
+                    'jack.torres@parramatta-church.dev',
+                ],
+                'late_emails' => ['grace.liu@parramatta-church.dev', 'arjun.mehta@parramatta-church.dev'],
+                'dispatch_emails' => [
+                    'sienna.park@puffmemate.dev',
+                    'jasper.lin@puffmemate.dev',
+                ],
+            ],
+        ];
 
-        $melbourneFloor = $this->branchTemplate($templates, $actor, $melbourne, 'Floor open', '09:00', '17:00', ShiftAudience::Staff);
-        $melbourneLate = $this->branchTemplate($templates, $actor, $melbourne, 'Late trade', '12:00', '21:00', ShiftAudience::Staff);
+        foreach ($branchPlans as $slug => $plan) {
+            $branch = Branch::query()->where('slug', $slug)->firstOrFail();
 
-        $brisbaneFloor = $this->branchTemplate($templates, $actor, $brisbane, 'Floor open', '09:00', '17:00', ShiftAudience::Staff);
-        $brisbaneLate = $this->branchTemplate($templates, $actor, $brisbane, 'Late trade', '12:00', '21:00', ShiftAudience::Staff);
+            $floor = $this->branchTemplate(
+                $templates,
+                $actor,
+                $branch,
+                'Floor open',
+                $plan['floor'][0],
+                $plan['floor'][1],
+                ShiftAudience::Staff,
+            );
+            $late = $this->branchTemplate(
+                $templates,
+                $actor,
+                $branch,
+                'Late trade',
+                $plan['late'][0],
+                $plan['late'][1],
+                ShiftAudience::Staff,
+            );
+            $dispatch = $this->branchTemplate(
+                $templates,
+                $actor,
+                $branch,
+                'Dispatch',
+                $plan['dispatch'][0],
+                $plan['dispatch'][1],
+                ShiftAudience::Driver,
+            );
+
+            foreach ($plan['floor_emails'] as $email) {
+                $this->assignOnce($assign, $actor, [
+                    'user_email' => $email,
+                    'branch' => $branch,
+                    'template' => $floor,
+                    'start_date' => '2026-09-01',
+                    'end_date' => '2026-10-31',
+                    'days_of_week' => self::WEEKDAYS,
+                    'reason' => 'Weekday retail floor at '.$branch->name.'.',
+                ]);
+            }
+
+            foreach ($plan['late_emails'] as $email) {
+                $this->assignOnce($assign, $actor, [
+                    'user_email' => $email,
+                    'branch' => $branch,
+                    'template' => $late,
+                    'start_date' => '2026-09-01',
+                    'end_date' => '2026-10-31',
+                    'days_of_week' => self::LATE_DAYS,
+                    'reason' => 'Late trade coverage at '.$branch->name.'.',
+                ]);
+            }
+
+            foreach ($plan['dispatch_emails'] as $email) {
+                $this->assignOnce($assign, $actor, [
+                    'user_email' => $email,
+                    'branch' => $branch,
+                    'template' => $dispatch,
+                    'start_date' => '2026-09-01',
+                    'end_date' => '2026-10-31',
+                    'days_of_week' => self::EXCEPT_SATURDAY,
+                    'reason' => 'Morning dispatch from '.$branch->name.'.',
+                ]);
+            }
+        }
+
+        $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+        $sydneyDispatch = ShiftTemplate::query()
+            ->where('branch_id', $sydney->id)
+            ->where('name', 'Dispatch')
+            ->firstOrFail();
 
         $this->assignOnce($assign, $actor, [
             'user_email' => UserSeeder::BRANCH_1_SUPER_ADMIN,
@@ -73,16 +248,6 @@ class WorkforceShiftSeeder extends Seeder
             'end_date' => '2026-10-10',
             'days_of_week' => self::WEEKDAYS,
             'reason' => 'HQ desk coverage from Sydney CBD.',
-        ]);
-
-        $this->assignOnce($assign, $actor, [
-            'user_email' => UserSeeder::BRANCH_1_STAFF,
-            'branch' => $sydney,
-            'template' => $sydneyFloor,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-30',
-            'days_of_week' => self::WEEKDAYS,
-            'reason' => 'Weekday retail floor.',
         ]);
 
         $this->assignOnce($assign, $actor, [
@@ -104,59 +269,11 @@ class WorkforceShiftSeeder extends Seeder
         $this->assignOnce($assign, $actor, [
             'user_email' => UserSeeder::BRANCH_1_ADMIN,
             'branch' => $sydney,
-            'template' => $sydneyLate,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-30',
-            'days_of_week' => self::LATE_DAYS,
-            'reason' => 'Late trade, Sunday off.',
-        ]);
-
-        $this->assignOnce($assign, $actor, [
-            'user_email' => UserSeeder::BRANCH_1_ADMIN,
-            'branch' => $sydney,
             'template' => $sydneyDispatch,
             'start_date' => '2026-09-10',
             'end_date' => '2026-09-10',
-            'days_of_week' => self::EXCEPT_SATURDAY,
+            'days_of_week' => self::ALL_DAYS,
             'reason' => 'Covering dispatch while Daniel is on leave.',
-        ]);
-
-        $this->assignOnce($assign, $actor, [
-            'user_email' => UserSeeder::BRANCH_2_STAFF,
-            'branch' => $melbourne,
-            'template' => $melbourneFloor,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-30',
-            'days_of_week' => self::WEEKDAYS,
-            'reason' => 'Weekday Collins Street floor.',
-        ]);
-        $this->assignOnce($assign, $actor, [
-            'user_email' => UserSeeder::BRANCH_2_ADMIN,
-            'branch' => $melbourne,
-            'template' => $melbourneLate,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-30',
-            'days_of_week' => self::LATE_DAYS,
-            'reason' => 'Late trade on Collins Street.',
-        ]);
-
-        $this->assignOnce($assign, $actor, [
-            'user_email' => UserSeeder::BRANCH_3_ADMIN,
-            'branch' => $brisbane,
-            'template' => $brisbaneFloor,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-30',
-            'days_of_week' => self::WEEKDAYS,
-            'reason' => 'Queen Street weekday floor.',
-        ]);
-        $this->assignOnce($assign, $actor, [
-            'user_email' => UserSeeder::BRANCH_3_SUPER_ADMIN,
-            'branch' => $brisbane,
-            'template' => $brisbaneLate,
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-09-30',
-            'days_of_week' => self::LATE_DAYS,
-            'reason' => 'Queen Street late trade.',
         ]);
     }
 

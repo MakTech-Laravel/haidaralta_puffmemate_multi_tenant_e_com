@@ -548,6 +548,465 @@ class CatalogSeeder extends Seeder
             'image_url' => 'https://images.unsplash.com/photo-1620799140408-edac6e80be8e?auto=format&fit=crop&w=800&q=80',
             'variants' => [],
         ]);
+
+        // ——— Extra cigarettes (AU retail staples) ———
+        $this->product([$cigarettes], $creator, [
+            'name' => 'Benson & Hedges Smooth Soft Pack 20s',
+            'slug' => 'benson-hedges-smooth-soft-pack-20s',
+            'sku' => 'CIG-BH-SMOOTH-20',
+            'brand' => 'Benson & Hedges',
+            'tags' => ['popular', 'best_selling'],
+            'specifications' => [
+                ['label' => 'Variant', 'value' => 'Smooth'],
+                ['label' => 'Pack Format', 'value' => 'Soft Pack'],
+                ['label' => 'Quantity', 'value' => '20 cigarettes'],
+                ['label' => 'Market', 'value' => 'Australia'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Premium smooth Virginia blend in a soft pack of 20. Long-standing favourite among adult Australian smokers. Age-restricted — 18+ only.',
+            'image' => 'images/storefront/product-marlboro-gold.jpg',
+            'color_code' => ['mode' => 'solid', 'color' => '#FEF9C3'],
+            'variants' => [
+                ['name' => 'Single pack', 'sku' => 'CIG-BH-SMOOTH-20-PK', 'attributes' => ['pack_size' => '20', 'format' => 'Soft pack']],
+                ['name' => 'Carton (10 packs)', 'sku' => 'CIG-BH-SMOOTH-20-CTN', 'attributes' => ['pack_size' => '200', 'format' => 'Carton']],
+            ],
+        ]);
+
+        $this->product([$cigarettes], $creator, [
+            'name' => 'Dunhill Fine Cut Soft Pack 20s',
+            'slug' => 'dunhill-fine-cut-soft-pack-20s',
+            'sku' => 'CIG-DH-FINE-20',
+            'brand' => 'Dunhill',
+            'tags' => ['new_arrival'],
+            'specifications' => [
+                ['label' => 'Variant', 'value' => 'Fine Cut'],
+                ['label' => 'Pack Format', 'value' => 'Soft Pack'],
+                ['label' => 'Quantity', 'value' => '20 cigarettes'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Fine-cut premium cigarettes in a soft pack of 20. Refined taste profile for adult smokers seeking a smoother draw. Age-restricted — 18+ only.',
+            'image' => 'images/storefront/product-marlboro-gold.jpg',
+            'color_code' => ['mode' => 'solid', 'color' => '#E7E5E4'],
+            'variants' => [
+                ['name' => 'Single pack', 'sku' => 'CIG-DH-FINE-20-PK', 'attributes' => ['pack_size' => '20', 'format' => 'Soft pack']],
+                ['name' => 'Carton (10 packs)', 'sku' => 'CIG-DH-FINE-20-CTN', 'attributes' => ['pack_size' => '200', 'format' => 'Carton']],
+            ],
+        ]);
+
+        $this->product([$cigarettes], $creator, [
+            'name' => 'Rothmans Blue Soft Pack 20s',
+            'slug' => 'rothmans-blue-soft-pack-20s',
+            'sku' => 'CIG-RM-BLUE-20',
+            'brand' => 'Rothmans',
+            'tags' => ['on_offer', 'popular'],
+            'specifications' => [
+                ['label' => 'Variant', 'value' => 'Blue'],
+                ['label' => 'Pack Format', 'value' => 'Soft Pack'],
+                ['label' => 'Quantity', 'value' => '20 cigarettes'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Classic blue Rothmans soft pack of 20. Balanced everyday smoke popular across Australian metros. Age-restricted — 18+ only.',
+            'image' => 'images/storefront/product-winfield-blue.jpg',
+            'color_code' => ['mode' => 'solid', 'color' => '#DBEAFE'],
+            'variants' => [
+                ['name' => 'Single pack', 'sku' => 'CIG-RM-BLUE-20-PK', 'attributes' => ['pack_size' => '20', 'format' => 'Soft pack']],
+                ['name' => 'Carton (10 packs)', 'sku' => 'CIG-RM-BLUE-20-CTN', 'attributes' => ['pack_size' => '200', 'format' => 'Carton']],
+            ],
+        ]);
+
+        $this->product([$cigarettes], $creator, [
+            'name' => 'Winfield Red Soft Pack 20s',
+            'slug' => 'winfield-red-soft-pack-20s',
+            'sku' => 'CIG-WF-RED-20',
+            'brand' => 'Winfield',
+            'tags' => ['best_selling'],
+            'specifications' => [
+                ['label' => 'Variant', 'value' => 'Red'],
+                ['label' => 'Pack Format', 'value' => 'Soft Pack'],
+                ['label' => 'Quantity', 'value' => '20 cigarettes'],
+                ['label' => 'Market', 'value' => 'Australia'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Full-flavour Winfield red in a soft pack of 20. Core Australian brand for adult smokers who prefer a stronger profile. Age-restricted — 18+ only.',
+            'image' => 'images/storefront/product-winfield-blue.jpg',
+            'color_code' => ['mode' => 'solid', 'color' => '#FEE2E2'],
+            'variants' => [
+                ['name' => 'Single pack', 'sku' => 'CIG-WF-RED-20-PK', 'attributes' => ['pack_size' => '20', 'format' => 'Soft pack']],
+                ['name' => 'Carton (10 packs)', 'sku' => 'CIG-WF-RED-20-CTN', 'attributes' => ['pack_size' => '200', 'format' => 'Carton']],
+            ],
+        ]);
+
+        $this->product([$cigarettes], $creator, [
+            'name' => 'Escort Red Soft Pack 25s',
+            'slug' => 'escort-red-soft-pack-25s',
+            'sku' => 'CIG-ES-RED-25',
+            'brand' => 'Escort',
+            'tags' => ['on_offer'],
+            'specifications' => [
+                ['label' => 'Variant', 'value' => 'Red'],
+                ['label' => 'Pack Format', 'value' => 'Soft Pack'],
+                ['label' => 'Quantity', 'value' => '25 cigarettes'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Value red cigarettes in a 25s soft pack. Popular larger-pack option for adult smokers watching their spend. Age-restricted — 18+ only.',
+            'image_url' => 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=80',
+            'color_code' => ['mode' => 'solid', 'color' => '#FECACA'],
+            'variants' => [
+                ['name' => 'Single pack', 'sku' => 'CIG-ES-RED-25-PK', 'attributes' => ['pack_size' => '25', 'format' => 'Soft pack']],
+            ],
+        ]);
+
+        // ——— Extra heated / specialty tobacco ———
+        $this->product([$heated], $creator, [
+            'name' => 'Drum Original Hand Rolling Tobacco 50g',
+            'slug' => 'drum-original-hand-rolling-tobacco-50g',
+            'sku' => 'HTP-DRUM-50G',
+            'brand' => 'Drum',
+            'tags' => ['popular'],
+            'specifications' => [
+                ['label' => 'Pack Format', 'value' => 'Pouch'],
+                ['label' => 'Quantity', 'value' => '50g'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Classic hand-rolling tobacco pouch. Pair with king-size papers for DIY rollies. Age-restricted — 18+ only.',
+            'image' => 'images/storefront/category-tobacco.png',
+            'color_code' => ['mode' => 'solid', 'color' => '#D6D3D1'],
+            'variants' => [
+                ['name' => '50g pouch', 'sku' => 'HTP-DRUM-50G-PK', 'attributes' => ['weight' => '50g', 'format' => 'Pouch']],
+            ],
+        ]);
+
+        $this->product([$heated], $creator, [
+            'name' => 'TEREA Menthol Sticks (Pack of 20)',
+            'slug' => 'terea-menthol-sticks-20',
+            'sku' => 'HTP-TEREA-MENTH-20',
+            'brand' => 'TEREA',
+            'tags' => ['new_arrival'],
+            'specifications' => [
+                ['label' => 'Quantity', 'value' => '20 sticks'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Cool menthol heat-not-burn sticks for IQOS ILUMA. Pack of 20. Age-restricted — 18+ only.',
+            'image_url' => 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80',
+            'color_code' => ['mode' => 'solid', 'color' => '#D1FAE5'],
+            'variants' => [
+                ['name' => 'Turquoise Menthol', 'sku' => 'HTP-TEREA-MENTH-TURQ', 'attributes' => ['flavor' => 'Turquoise Menthol']],
+                ['name' => 'Silver Menthol', 'sku' => 'HTP-TEREA-MENTH-SLV', 'attributes' => ['flavor' => 'Silver Menthol']],
+            ],
+        ]);
+
+        // ——— Extra vapes & disposables ———
+        $this->product([$vapes], $creator, [
+            'name' => 'IGET Bar Plus Disposable',
+            'slug' => 'iget-bar-plus-disposable',
+            'sku' => 'VAPE-IGET-BAR-PLUS',
+            'brand' => 'IGET',
+            'tags' => ['best_selling', 'popular'],
+            'specifications' => [
+                ['label' => 'Pack Format', 'value' => 'Disposable'],
+                ['label' => 'Quantity', 'value' => '~6000 puffs'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'High-capacity disposable bar with mesh coil and draw activation. Popular AU retail format for adult nicotine consumers. Age-restricted — 18+ only.',
+            'image' => 'images/storefront/907b72737ecd36dbee5ac6c27fa0b02b906a44ee.jpg',
+            'color_code' => ['mode' => 'solid', 'color' => '#E0E7FF'],
+            'variants' => [
+                ['name' => 'Lychee Ice', 'sku' => 'VAPE-IGET-BAR-LYCH', 'attributes' => ['flavor' => 'Lychee Ice', 'nicotine' => '20mg', 'puffs' => '~6000']],
+                ['name' => 'Cola Ice', 'sku' => 'VAPE-IGET-BAR-COLA', 'attributes' => ['flavor' => 'Cola Ice', 'nicotine' => '20mg', 'puffs' => '~6000']],
+                ['name' => 'Grape Ice', 'sku' => 'VAPE-IGET-BAR-GRP', 'attributes' => ['flavor' => 'Grape Ice', 'nicotine' => '20mg', 'puffs' => '~6000']],
+                ['name' => 'Tobacco', 'sku' => 'VAPE-IGET-BAR-TOB', 'attributes' => ['flavor' => 'Tobacco', 'nicotine' => '20mg', 'puffs' => '~6000']],
+            ],
+        ]);
+
+        $this->product([$vapes], $creator, [
+            'name' => 'PuffMeMate Cloud Bar 6000',
+            'slug' => 'puffmemate-cloud-bar-6000',
+            'sku' => 'POM-CLOUD-6000',
+            'brand' => 'PuffMeMate',
+            'tags' => ['new_arrival', 'on_offer'],
+            'specifications' => [
+                ['label' => 'Pack Format', 'value' => 'Disposable'],
+                ['label' => 'Quantity', 'value' => '~6000 puffs'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'House-brand Elf Bar–style disposable with ~6000 puffs, USB-C recharge, and soft-touch body. Ready out of the pack for adult users.',
+            'image' => 'images/storefront/product-vuse.png',
+            'color_code' => ['mode' => 'solid', 'color' => '#FCE7F3'],
+            'variants' => [
+                ['name' => 'Strawberry Kiwi', 'sku' => 'POM-CLOUD-6000-SK', 'attributes' => ['flavor' => 'Strawberry Kiwi', 'nicotine' => '20mg']],
+                ['name' => 'Peach Ice', 'sku' => 'POM-CLOUD-6000-PEACH', 'attributes' => ['flavor' => 'Peach Ice', 'nicotine' => '20mg']],
+                ['name' => 'Blueberry Sour', 'sku' => 'POM-CLOUD-6000-BLU', 'attributes' => ['flavor' => 'Blueberry Sour', 'nicotine' => '20mg']],
+                ['name' => 'Cool Menthol', 'sku' => 'POM-CLOUD-6000-MENTH', 'attributes' => ['flavor' => 'Cool Menthol', 'nicotine' => '20mg']],
+            ],
+        ]);
+
+        $this->product([$vapes], $creator, [
+            'name' => 'PuffMeMate Soft Touch 3500',
+            'slug' => 'puffmemate-soft-touch-3500',
+            'sku' => 'POM-SOFT-3500',
+            'brand' => 'PuffMeMate',
+            'tags' => ['popular'],
+            'specifications' => [
+                ['label' => 'Pack Format', 'value' => 'Disposable'],
+                ['label' => 'Quantity', 'value' => '~3500 puffs'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Mid-size house disposable with soft silicone grip and mesh coil. Mid-range puff count for everyday adult use.',
+            'image_url' => 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80',
+            'color_code' => ['mode' => 'solid', 'color' => '#F3E8FF'],
+            'variants' => [
+                ['name' => 'Pineapple Ice', 'sku' => 'POM-SOFT-3500-PINE', 'attributes' => ['flavor' => 'Pineapple Ice', 'nicotine' => '20mg']],
+                ['name' => 'Apple Peach', 'sku' => 'POM-SOFT-3500-AP', 'attributes' => ['flavor' => 'Apple Peach', 'nicotine' => '20mg']],
+                ['name' => 'Classic Tobacco', 'sku' => 'POM-SOFT-3500-TOB', 'attributes' => ['flavor' => 'Classic Tobacco', 'nicotine' => '20mg']],
+            ],
+        ]);
+
+        $this->product([$vapes], $creator, [
+            'name' => 'Vuse ePod 2 Device Kit',
+            'slug' => 'vuse-epod-2-device-kit',
+            'sku' => 'VAPE-VUSE-EPOD2',
+            'brand' => 'Vuse',
+            'tags' => ['best_selling', 'new_arrival'],
+            'specifications' => [
+                ['label' => 'Pack Format', 'value' => 'Device Kit'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Closed-pod Vuse ePod 2 starter kit with USB charging cable. Pair with Vuse ePod pods (sold separately). Age-restricted — 18+ only.',
+            'image' => 'images/storefront/product-vuse.png',
+            'color_code' => ['mode' => 'solid', 'color' => '#E0F2FE'],
+            'variants' => [
+                ['name' => 'Black', 'sku' => 'VAPE-VUSE-EPOD2-BLK', 'attributes' => ['color' => 'Black']],
+                ['name' => 'Rose Gold', 'sku' => 'VAPE-VUSE-EPOD2-RSG', 'attributes' => ['color' => 'Rose Gold']],
+                ['name' => 'Silver', 'sku' => 'VAPE-VUSE-EPOD2-SLV', 'attributes' => ['color' => 'Silver']],
+            ],
+        ]);
+
+        $this->product([$vapes], $creator, [
+            'name' => 'PuffMeMate Max Mesh 8000',
+            'slug' => 'puffmemate-max-mesh-8000',
+            'sku' => 'POM-MAX-8000',
+            'brand' => 'PuffMeMate',
+            'tags' => ['on_offer', 'best_selling'],
+            'specifications' => [
+                ['label' => 'Pack Format', 'value' => 'Disposable'],
+                ['label' => 'Quantity', 'value' => '~8000 puffs'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Flagship house disposable with dual mesh coils, ~8000 puffs, and USB-C recharge. Built for heavy adult users who want longevity.',
+            'image' => 'images/storefront/b4343f447a376e4db4da6328e10eddefc632ddeb.jpg',
+            'color_code' => ['mode' => 'solid', 'color' => '#CFFAFE'],
+            'variants' => [
+                ['name' => 'Watermelon Bubblegum', 'sku' => 'POM-MAX-8000-WM', 'attributes' => ['flavor' => 'Watermelon Bubblegum', 'nicotine' => '20mg']],
+                ['name' => 'Mixed Berries', 'sku' => 'POM-MAX-8000-BERRY', 'attributes' => ['flavor' => 'Mixed Berries', 'nicotine' => '20mg']],
+                ['name' => 'Lemon Lime', 'sku' => 'POM-MAX-8000-LL', 'attributes' => ['flavor' => 'Lemon Lime', 'nicotine' => '20mg']],
+                ['name' => 'Rich Tobacco', 'sku' => 'POM-MAX-8000-TOB', 'attributes' => ['flavor' => 'Rich Tobacco', 'nicotine' => '20mg']],
+            ],
+        ]);
+
+        $this->product([$vapes], $creator, [
+            'name' => 'PuffMeMate Nano Pod Kit',
+            'slug' => 'puffmemate-nano-pod-kit',
+            'sku' => 'POM-NANO-KIT',
+            'brand' => 'PuffMeMate',
+            'tags' => ['new_arrival'],
+            'specifications' => [
+                ['label' => 'Pack Format', 'value' => 'Device Kit'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Ultra-slim closed-pod kit with 800mAh battery and magnetic pods. Includes USB-C cable. Compatible with Nano prefilled pods.',
+            'image_url' => 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80',
+            'variants' => [
+                ['name' => 'Matte Black', 'sku' => 'POM-NANO-KIT-BLK', 'attributes' => ['color' => 'Matte Black']],
+                ['name' => 'Pearl White', 'sku' => 'POM-NANO-KIT-WHT', 'attributes' => ['color' => 'Pearl White']],
+            ],
+        ]);
+
+        // ——— Extra e-liquids ———
+        $this->product([$fruitLiquids, $eLiquids], $creator, [
+            'name' => 'Mango Madness Freebase 60ml',
+            'slug' => 'mango-madness-freebase-60ml',
+            'sku' => 'MMF-60',
+            'brand' => 'PuffMeMate',
+            'tags' => ['popular', 'best_selling'],
+            'description' => 'Ripe mango freebase liquid with a soft tropical finish. 70/30 VG/PG, child-resistant cap. For adult vapers only.',
+            'image_url' => 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80',
+            'variants' => [
+                ['name' => '0mg', 'sku' => 'MMF-60-0', 'attributes' => ['nicotine' => '0mg', 'volume' => '60ml']],
+                ['name' => '3mg', 'sku' => 'MMF-60-3', 'attributes' => ['nicotine' => '3mg', 'volume' => '60ml']],
+                ['name' => '6mg', 'sku' => 'MMF-60-6', 'attributes' => ['nicotine' => '6mg', 'volume' => '60ml']],
+            ],
+        ]);
+
+        $this->product([$fruitLiquids, $eLiquids], $creator, [
+            'name' => 'Berry Blast Salt 30ml',
+            'slug' => 'berry-blast-salt-30ml',
+            'sku' => 'BBS-30',
+            'brand' => 'PuffMeMate',
+            'tags' => ['new_arrival', 'on_offer'],
+            'description' => 'Nicotine salt e-liquid with mixed berry and light ice. Tuned for low-wattage pod systems. Age-restricted — 18+ only.',
+            'image_url' => 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=800&q=80',
+            'variants' => [
+                ['name' => '20mg', 'sku' => 'BBS-30-20', 'attributes' => ['nicotine' => '20mg', 'volume' => '30ml']],
+                ['name' => '35mg', 'sku' => 'BBS-30-35', 'attributes' => ['nicotine' => '35mg', 'volume' => '30ml']],
+            ],
+        ]);
+
+        $this->product([$dessertLiquids, $eLiquids], $creator, [
+            'name' => 'Chocolate Fudge Reserve 60ml',
+            'slug' => 'chocolate-fudge-reserve-60ml',
+            'sku' => 'CFR-60',
+            'brand' => 'PuffMeMate',
+            'tags' => ['popular'],
+            'description' => 'Dense chocolate fudge dessert profile with a soft cocoa finish. Steeped for batch consistency. Adult use only.',
+            'image_url' => 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80',
+            'variants' => [
+                ['name' => '0mg', 'sku' => 'CFR-60-0', 'attributes' => ['nicotine' => '0mg', 'volume' => '60ml']],
+                ['name' => '3mg', 'sku' => 'CFR-60-3', 'attributes' => ['nicotine' => '3mg', 'volume' => '60ml']],
+                ['name' => '6mg', 'sku' => 'CFR-60-6', 'attributes' => ['nicotine' => '6mg', 'volume' => '60ml']],
+            ],
+        ]);
+
+        $this->product([$tobaccoLiquids, $eLiquids], $creator, [
+            'name' => 'Smooth Virginia Tobacco Salt 30ml',
+            'slug' => 'smooth-virginia-tobacco-salt-30ml',
+            'sku' => 'SVT-30',
+            'brand' => 'PuffMeMate',
+            'tags' => ['best_selling'],
+            'description' => 'Mild Virginia tobacco nicotine salt for pod devices. Familiar cigarette-adjacent profile for adult switchers.',
+            'image_url' => 'https://images.unsplash.com/photo-1601050690117-94f5f6fa1a6e?auto=format&fit=crop&w=800&q=80',
+            'variants' => [
+                ['name' => '20mg', 'sku' => 'SVT-30-20', 'attributes' => ['nicotine' => '20mg', 'volume' => '30ml']],
+                ['name' => '35mg', 'sku' => 'SVT-30-35', 'attributes' => ['nicotine' => '35mg', 'volume' => '30ml']],
+            ],
+        ]);
+
+        // ——— Extra nicotine pouches ———
+        $this->product([$pouches], $creator, [
+            'name' => 'VELO Cool Mint Pouches',
+            'slug' => 'velo-cool-mint-pouches',
+            'sku' => 'POUCH-VELO-MINT',
+            'brand' => 'VELO',
+            'tags' => ['best_selling', 'popular'],
+            'specifications' => [
+                ['label' => 'Format', 'value' => 'Slim tin'],
+                ['label' => 'Count', 'value' => '20 pouches'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Tobacco-free nicotine pouches with a crisp cool mint profile. Slim tin of 20. Age-restricted — 18+ only.',
+            'image' => 'images/storefront/category-pouches.png',
+            'color_code' => ['mode' => 'solid', 'color' => '#ECFDF5'],
+            'variants' => [
+                ['name' => '6mg', 'sku' => 'POUCH-VELO-MINT-6', 'attributes' => ['strength' => '6mg', 'count' => '20']],
+                ['name' => '10mg', 'sku' => 'POUCH-VELO-MINT-10', 'attributes' => ['strength' => '10mg', 'count' => '20']],
+                ['name' => '14mg', 'sku' => 'POUCH-VELO-MINT-14', 'attributes' => ['strength' => '14mg', 'count' => '20']],
+            ],
+        ]);
+
+        $this->product([$pouches], $creator, [
+            'name' => 'PuffMeMate Spearmint Pouches',
+            'slug' => 'puffmemate-spearmint-pouches',
+            'sku' => 'POUCH-POM-SPEAR',
+            'brand' => 'PuffMeMate',
+            'tags' => ['new_arrival', 'on_offer'],
+            'specifications' => [
+                ['label' => 'Format', 'value' => 'Slim tin'],
+                ['label' => 'Count', 'value' => '20 pouches'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'House-brand tobacco-free nicotine pouches with clean spearmint flavour. Slim tin of 20. Age-restricted — 18+ only.',
+            'image_url' => 'https://images.unsplash.com/photo-1550572017-edd951aa8f72?auto=format&fit=crop&w=800&q=80',
+            'color_code' => ['mode' => 'solid', 'color' => '#D1FAE5'],
+            'variants' => [
+                ['name' => '8mg', 'sku' => 'POUCH-POM-SPEAR-8', 'attributes' => ['strength' => '8mg', 'count' => '20']],
+                ['name' => '12mg', 'sku' => 'POUCH-POM-SPEAR-12', 'attributes' => ['strength' => '12mg', 'count' => '20']],
+            ],
+        ]);
+
+        $this->product([$pouches], $creator, [
+            'name' => 'Nordic Coffee Pouches',
+            'slug' => 'nordic-coffee-pouches',
+            'sku' => 'POUCH-NORDIC-COFFEE',
+            'brand' => 'Nordic',
+            'tags' => ['popular'],
+            'specifications' => [
+                ['label' => 'Format', 'value' => 'Slim tin'],
+                ['label' => 'Count', 'value' => '20 pouches'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Tobacco-free nicotine pouches with roasted coffee notes. Slim tin of 20 for adult use. Age-restricted — 18+ only.',
+            'image_url' => 'https://images.unsplash.com/photo-1550572017-edd951aa8f72?auto=format&fit=crop&w=800&q=80',
+            'color_code' => ['mode' => 'solid', 'color' => '#FEF3C7'],
+            'variants' => [
+                ['name' => '8mg', 'sku' => 'POUCH-NORDIC-COFFEE-8', 'attributes' => ['strength' => '8mg', 'count' => '20']],
+                ['name' => '12mg', 'sku' => 'POUCH-NORDIC-COFFEE-12', 'attributes' => ['strength' => '12mg', 'count' => '20']],
+            ],
+        ]);
+
+        // ——— Extra coils & pods ———
+        $this->product([$coilsPods], $creator, [
+            'name' => 'Nano Prefilled Pods (2-pack)',
+            'slug' => 'nano-prefilled-pods-2-pack',
+            'sku' => 'POM-NANO-POD-2PK',
+            'brand' => 'PuffMeMate',
+            'tags' => ['new_arrival'],
+            'description' => 'Replacement prefilled pods for the PuffMeMate Nano Pod Kit. Mesh coil, 2ml, sold as a twin pack.',
+            'image_url' => 'https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&w=800&q=80',
+            'variants' => [
+                ['name' => 'Iced Mango', 'sku' => 'POM-NANO-POD-MANGO', 'attributes' => ['flavor' => 'Iced Mango', 'resistance' => '1.0Ω']],
+                ['name' => 'Mint Fresh', 'sku' => 'POM-NANO-POD-MINT', 'attributes' => ['flavor' => 'Mint Fresh', 'resistance' => '1.0Ω']],
+                ['name' => 'Berry Mix', 'sku' => 'POM-NANO-POD-BERRY', 'attributes' => ['flavor' => 'Berry Mix', 'resistance' => '1.0Ω']],
+            ],
+        ]);
+
+        $this->product([$coilsPods], $creator, [
+            'name' => 'Vuse ePod Refill Pods (2-pack)',
+            'slug' => 'vuse-epod-refill-pods-2-pack',
+            'sku' => 'VAPE-VUSE-EPOD-POD-2PK',
+            'brand' => 'Vuse',
+            'tags' => ['best_selling'],
+            'description' => 'Official Vuse ePod refill pods. Twin pack for ePod / ePod 2 devices. Age-restricted — 18+ only.',
+            'image' => 'images/storefront/product-vuse.png',
+            'variants' => [
+                ['name' => 'Berry Blend', 'sku' => 'VAPE-VUSE-EPOD-POD-BERRY', 'attributes' => ['flavor' => 'Berry Blend', 'nicotine' => '18mg']],
+                ['name' => 'Mint', 'sku' => 'VAPE-VUSE-EPOD-POD-MINT', 'attributes' => ['flavor' => 'Mint', 'nicotine' => '18mg']],
+                ['name' => 'Tobacco', 'sku' => 'VAPE-VUSE-EPOD-POD-TOB', 'attributes' => ['flavor' => 'Tobacco', 'nicotine' => '18mg']],
+            ],
+        ]);
+
+        // ——— Extra accessories ———
+        $this->product([$accessories, $cigarettes], $creator, [
+            'name' => 'Bic Maxi Lighter',
+            'slug' => 'bic-maxi-lighter',
+            'sku' => 'ACC-BIC-MAXI',
+            'brand' => 'Bic',
+            'tags' => ['popular'],
+            'description' => 'Disposable Maxi lighter with fixed flame. Counter staple for cigarette customers. Adult-use product.',
+            'image' => 'images/storefront/product-marlboro-gold.jpg',
+            'variants' => [
+                ['name' => 'Assorted', 'sku' => 'ACC-BIC-MAXI-AST', 'attributes' => ['color' => 'Assorted']],
+            ],
+        ]);
+
+        $this->product([$accessories, $heated], $creator, [
+            'name' => 'OCB Slim Filter Tips',
+            'slug' => 'ocb-slim-filter-tips',
+            'sku' => 'ACC-OCB-SLIM',
+            'brand' => 'OCB',
+            'tags' => ['on_offer'],
+            'description' => 'Slim cellulose filter tips for hand-rolled cigarettes. Pack of 120 tips. Adult-use product.',
+            'image_url' => 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?auto=format&fit=crop&w=800&q=80',
+            'variants' => [],
+        ]);
+
+        $this->product([$accessories], $creator, [
+            'name' => 'Device Screen Wipe Pack',
+            'slug' => 'device-screen-wipe-pack',
+            'sku' => 'ACC-SCREEN-WIPE',
+            'brand' => 'PuffMeMate',
+            'description' => 'Alcohol-free screen and contact wipes for pod devices and IQOS holders. Pack of 20 individually wrapped sheets.',
+            'image_url' => 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=800&q=80',
+            'variants' => [],
+        ]);
     }
 
     /**
@@ -731,6 +1190,31 @@ class CatalogSeeder extends Seeder
             'silicone-device-sleeve' => '7.99',
             'travel-hard-case' => '19.99',
             'lanyard-clip' => '4.99',
+            'benson-hedges-smooth-soft-pack-20s' => '49.50',
+            'dunhill-fine-cut-soft-pack-20s' => '51.90',
+            'rothmans-blue-soft-pack-20s' => '45.80',
+            'winfield-red-soft-pack-20s' => '46.50',
+            'escort-red-soft-pack-25s' => '49.90',
+            'drum-original-hand-rolling-tobacco-50g' => '62.00',
+            'terea-menthol-sticks-20' => '28.00',
+            'iget-bar-plus-disposable' => '36.99',
+            'puffmemate-cloud-bar-6000' => '32.99',
+            'puffmemate-soft-touch-3500' => '24.99',
+            'vuse-epod-2-device-kit' => '29.95',
+            'puffmemate-max-mesh-8000' => '39.99',
+            'puffmemate-nano-pod-kit' => '34.99',
+            'mango-madness-freebase-60ml' => '24.99',
+            'berry-blast-salt-30ml' => '19.99',
+            'chocolate-fudge-reserve-60ml' => '24.99',
+            'smooth-virginia-tobacco-salt-30ml' => '19.99',
+            'velo-cool-mint-pouches' => '19.50',
+            'puffmemate-spearmint-pouches' => '16.99',
+            'nordic-coffee-pouches' => '18.50',
+            'nano-prefilled-pods-2-pack' => '14.99',
+            'vuse-epod-refill-pods-2-pack' => '15.95',
+            'bic-maxi-lighter' => '2.50',
+            'ocb-slim-filter-tips' => '3.20',
+            'device-screen-wipe-pack' => '5.99',
             default => null,
         };
 

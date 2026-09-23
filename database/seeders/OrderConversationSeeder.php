@@ -82,6 +82,62 @@ class OrderConversationSeeder extends Seeder
                     ['from' => 'customer', 'body' => 'Picked it up, all correct. Thanks both.', 'minutes_ago' => 2_600],
                 ],
             ],
+            [
+                'order_number' => 'PMM-2026-1048',
+                'branch_email' => UserSeeder::BRANCH_3_ADMIN,
+                'order_status' => OrderStatus::OutForDelivery,
+                'with_driver' => true,
+                'messages' => [
+                    ['from' => 'customer', 'body' => 'Running late from work — can the driver wait until 6:15?', 'minutes_ago' => 70],
+                    ['from' => 'branch', 'body' => 'I have passed that to the courier. They will call from downstairs.', 'minutes_ago' => 64],
+                    ['from' => 'driver', 'body' => 'Parked on Queen Street near the mall entrance. Text or call when you are close.', 'minutes_ago' => 12],
+                ],
+            ],
+            [
+                'order_number' => 'PMM-2026-1051',
+                'branch_email' => 'lucia.bennett@perth-hay.dev',
+                'order_status' => OrderStatus::Confirmed,
+                'with_driver' => false,
+                'messages' => [
+                    ['from' => 'customer', 'body' => 'Do you still have the Velo cool mint pouches in 10mg?', 'minutes_ago' => 140],
+                    ['from' => 'branch', 'body' => 'Yes, two tins left on Hay Street. Want them added to this order?', 'minutes_ago' => 132],
+                    ['from' => 'customer', 'body' => 'One tin is enough, thanks.', 'minutes_ago' => 126],
+                    ['from' => 'branch', 'body' => 'Added. Ready for the afternoon dispatch run.', 'minutes_ago' => 118],
+                ],
+            ],
+            [
+                'order_number' => 'PMM-2026-1054',
+                'branch_email' => 'grace.liu@parramatta-church.dev',
+                'order_status' => OrderStatus::Pending,
+                'with_driver' => false,
+                'messages' => [
+                    ['from' => 'customer', 'body' => 'Checkout failed after I entered the OTP. Has the payment gone through?', 'minutes_ago' => 18],
+                    ['from' => 'customer', 'body' => 'My bank shows a pending hold for $64.50.', 'minutes_ago' => 14],
+                ],
+            ],
+            [
+                'order_number' => 'PMM-2026-1044',
+                'branch_email' => UserSeeder::BRANCH_1_ADMIN,
+                'order_status' => OrderStatus::Delivered,
+                'with_driver' => true,
+                'messages' => [
+                    ['from' => 'customer', 'body' => 'Please use the service elevator — the main lift is booked for moving day.', 'minutes_ago' => 4_200],
+                    ['from' => 'branch', 'body' => 'Noted. Driver briefed before leaving George Street.', 'minutes_ago' => 4_180],
+                    ['from' => 'driver', 'body' => 'Delivered via service elevator, left with unit 12B.', 'minutes_ago' => 4_020],
+                    ['from' => 'customer', 'body' => 'All good, appreciate the detail.', 'minutes_ago' => 3_900],
+                ],
+            ],
+            [
+                'order_number' => 'PMM-2026-1057',
+                'branch_email' => 'keira.bond@gold-coast-surfers.dev',
+                'order_status' => OrderStatus::OutForDelivery,
+                'with_driver' => true,
+                'messages' => [
+                    ['from' => 'customer', 'body' => 'I am in a beachfront tower — ask for the visitor parking gate code 4421.', 'minutes_ago' => 55],
+                    ['from' => 'branch', 'body' => 'Code is on the delivery slip. Felix has the run.', 'minutes_ago' => 48],
+                    ['from' => 'driver', 'body' => 'Through the gate, heading up now.', 'minutes_ago' => 8],
+                ],
+            ],
         ];
     }
 
