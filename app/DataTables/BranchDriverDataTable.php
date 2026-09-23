@@ -4,6 +4,7 @@ namespace App\DataTables;
 
 use App\DataTables\Filters\StatusBooleanFilter;
 use App\Enums\DriverAssignmentStatus;
+use App\Enums\DriverVehicleType;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\User;
@@ -11,7 +12,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\AllowedSort;
 
 /**
  * @extends AbstractDataTable<User>
@@ -91,6 +91,16 @@ class BranchDriverDataTable extends AbstractDataTable
                         ->where('status', (string) $value),
                 );
             }),
+            AllowedFilter::callback('vehicle_type', function (Builder $query, mixed $value): void {
+                if ($value === null || $value === '' || $value === 'all') {
+                    return;
+                }
+
+                $query->whereHas(
+                    'driverProfile',
+                    fn (Builder $profile): Builder => $profile->where('vehicle_type', (string) $value),
+                );
+            }),
             $this->searchFilter(),
         ];
     }
@@ -135,6 +145,16 @@ class BranchDriverDataTable extends AbstractDataTable
                 ['value' => DriverAssignmentStatus::Active->value, 'label' => 'Active'],
                 ['value' => DriverAssignmentStatus::Inactive->value, 'label' => 'Inactive'],
                 ['value' => DriverAssignmentStatus::Suspended->value, 'label' => 'Suspended'],
+            ],
+            'vehicle_type' => [
+                ['value' => 'all', 'label' => 'All vehicles'],
+                ...array_map(
+                    fn (DriverVehicleType $type): array => [
+                        'value' => $type->value,
+                        'label' => $type->label(),
+                    ],
+                    DriverVehicleType::cases(),
+                ),
             ],
             'is_active' => [
                 ['value' => 'all', 'label' => 'All status'],

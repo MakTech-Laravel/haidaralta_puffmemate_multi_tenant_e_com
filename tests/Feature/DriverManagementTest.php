@@ -17,6 +17,7 @@ use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -506,7 +507,42 @@ test('branch drivers index only lists this branch and never exposes assignable d
                 fn ($row) => $row['id'] === $otherBranchDriver->id,
             )));
 
-    expect(\Illuminate\Support\Facades\Route::has('branch.drivers.assign'))->toBeFalse();
+    expect(Route::has('branch.drivers.assign'))->toBeFalse();
+});
+
+test('branch drivers index supports availability assignment vehicle and status filters', function () {
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $motorcycleDriver = User::query()->where('phone', '+61488888888')->firstOrFail();
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.drivers.index', [
+            'branch' => $sydney,
+            'filter' => [
+                'vehicle_type' => DriverVehicleType::Motorcycle->value,
+                'assignment_status' => DriverAssignmentStatus::Active->value,
+                'is_active' => '1',
+            ],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/drivers/index')
+            ->where('table.filters.vehicle_type', DriverVehicleType::Motorcycle->value)
+            ->where('table.filters.assignment_status', DriverAssignmentStatus::Active->value)
+            ->where('table.filters.is_active', '1')
+            ->has('table.filterOptions.vehicle_type')
+            ->has('table.filterOptions.availability_status')
+            ->has('table.filterOptions.assignment_status')
+            ->has('table.filterOptions.is_active')
+            ->where('table.data', fn ($rows) => collect($rows)->contains(
+                fn ($row) => $row['id'] === $motorcycleDriver->id
+                    && $row['vehicle_type_label'] === 'Motorcycle',
+            ))
+            ->where('table.data', fn ($rows) => collect($rows)->every(
+                fn ($row) => $row['vehicle_type_label'] === 'Motorcycle'
+                    && $row['is_active'] === true
+                    && $row['assignment_status_label'] === 'Active',
+            )));
 });
 
 test('platform creates a driver with two active branches when multiple are allowed', function () {
@@ -575,7 +611,7 @@ test('branch cannot assign an existing driver via the removed assign endpoint', 
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
 
-    expect(\Illuminate\Support\Facades\Route::has('branch.drivers.assign'))->toBeFalse();
+    expect(Route::has('branch.drivers.assign'))->toBeFalse();
 
     $this->actingAs($staff, 'branch')
         ->post("/branch/{$melbourne->slug}/drivers/assign", [

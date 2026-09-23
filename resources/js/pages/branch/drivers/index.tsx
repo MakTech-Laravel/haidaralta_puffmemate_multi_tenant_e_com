@@ -15,6 +15,14 @@ import {
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type DriverRow = {
     id: number;
@@ -28,6 +36,8 @@ type DriverRow = {
 };
 
 type Branch = { id: number; name: string; slug: string };
+
+type FilterOption = { value: string; label: string };
 
 export default function BranchDriversIndex({
     branch,
@@ -49,6 +59,15 @@ export default function BranchDriversIndex({
         ],
     });
 
+    const availabilityOptions = (tablePayload.filterOptions
+        ?.availability_status ?? []) as FilterOption[];
+    const assignmentOptions = (tablePayload.filterOptions
+        ?.assignment_status ?? []) as FilterOption[];
+    const vehicleOptions = (tablePayload.filterOptions?.vehicle_type ??
+        []) as FilterOption[];
+    const statusOptions = (tablePayload.filterOptions?.is_active ??
+        []) as FilterOption[];
+
     const query = useDataTableQuery({
         indexUrl: BranchDriverController.index.url(branch.slug),
         initial: {
@@ -59,6 +78,7 @@ export default function BranchDriversIndex({
                     tablePayload.filters.availability_status ?? null,
                 assignment_status:
                     tablePayload.filters.assignment_status ?? null,
+                vehicle_type: tablePayload.filters.vehicle_type ?? null,
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,
@@ -176,13 +196,151 @@ export default function BranchDriversIndex({
                     payload={tablePayload}
                     perPage={query.perPage}
                     onPerPageChange={query.changePerPage}
-                    emptyMessage="No drivers assigned to this branch."
+                    emptyMessage="No drivers match this filter."
                     toolbar={
                         <DataTableToolbar
                             search={query.search}
                             onSearchChange={query.setSearch}
-                            searchPlaceholder="Search drivers…"
+                            searchPlaceholder="Search name, phone, or email…"
                             onClear={query.clearFilters}
+                            filters={
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label>Availability</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters
+                                                    .availability_status ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'availability_status',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Availability" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {availabilityOptions.map(
+                                                    (option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Assignment</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters
+                                                    .assignment_status ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'assignment_status',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Assignment" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {assignmentOptions.map(
+                                                    (option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Vehicle</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.vehicle_type ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'vehicle_type',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Vehicle" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {vehicleOptions.map(
+                                                    (option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Status</Label>
+                                        <Select
+                                            value={String(
+                                                query.filters.is_active ??
+                                                    'all',
+                                            )}
+                                            onValueChange={(value) =>
+                                                query.setFilter(
+                                                    'is_active',
+                                                    value === 'all'
+                                                        ? null
+                                                        : value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[10rem]">
+                                                <SelectValue placeholder="Status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {statusOptions.map(
+                                                    (option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
+                            }
                         />
                     }
                 />
