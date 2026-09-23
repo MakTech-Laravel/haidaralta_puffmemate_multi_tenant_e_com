@@ -14,6 +14,7 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,7 @@ type StaffRow = {
     roles: string[];
 };
 
-type BranchOption = { id: number; name: string; slug: string };
+type SelectedBranch = { id: number; name: string; slug: string };
 
 function initials(name: string): string {
     return name
@@ -52,7 +53,7 @@ export default function PlatformBranchStaffIndex({
     table: tablePayload,
 }: {
     table: DataTablePayload<StaffRow> & {
-        filterOptions?: { branches?: BranchOption[] };
+        filterOptions?: { selected_branch?: SelectedBranch | null };
     };
 }) {
     const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -71,7 +72,8 @@ export default function PlatformBranchStaffIndex({
         },
     });
 
-    const branches = tablePayload.filterOptions?.branches ?? [];
+    const selectedBranch = tablePayload.filterOptions?.selected_branch;
+    const branchFilter = String(query.filters.branch_id ?? 'all');
 
     const columns = useMemo<ColumnDef<StaffRow>[]>(
         () => [
@@ -218,39 +220,29 @@ export default function PlatformBranchStaffIndex({
                                 <>
                                     <div className="grid gap-2">
                                         <Label>Branch</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.branch_id ??
-                                                    'all',
-                                            )}
+                                        <InfiniteScrollCombobox
+                                            optionsUrl={BranchStaffController.branchOptions.url()}
+                                            value={
+                                                branchFilter === 'all'
+                                                    ? null
+                                                    : branchFilter
+                                            }
                                             onValueChange={(value) =>
                                                 query.setFilter(
                                                     'branch_id',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
+                                                    value,
                                                 )
                                             }
-                                        >
-                                            <SelectTrigger className="w-[12rem]">
-                                                <SelectValue placeholder="Branch" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All branches
-                                                </SelectItem>
-                                                {branches.map((branch) => (
-                                                    <SelectItem
-                                                        key={branch.id}
-                                                        value={String(
-                                                            branch.id,
-                                                        )}
-                                                    >
-                                                        {branch.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                            selectedLabel={
+                                                selectedBranch?.name ?? null
+                                            }
+                                            placeholder="All branches"
+                                            searchPlaceholder="Search branches…"
+                                            emptyText="No branch found."
+                                            noneLabel="All branches"
+                                            descriptionKey={null}
+                                            className="w-52"
+                                        />
                                     </div>
                                     <div className="grid gap-2">
                                         <Label>Status</Label>

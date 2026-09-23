@@ -75,6 +75,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/orders-js-components-driver.md |
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx | .ai/rules/orders.md |
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |
+| resources/js/pages/platform/branch-staff/** | .ai/rules/pages-platform-branch-staff.md |
 | resources/js/components/admin/shift-*.{ts,tsx},resources/js/pages/{platform,branch}/shifts/assign.tsx | .ai/rules/pagesplatformbranch-shifts.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/platform/branch-staff/** | .ai/rules/platform-branch-staff.md |

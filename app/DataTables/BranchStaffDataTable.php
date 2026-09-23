@@ -129,16 +129,44 @@ class BranchStaffDataTable extends AbstractDataTable
             ];
         }
 
+        $filters = $this->normalizedFilters();
+        $branchId = $this->optionId($filters['branch_id'] ?? null);
+
         return [
-            'branches' => Branch::query()
-                ->orderBy('name')
-                ->get(['id', 'name', 'slug'])
-                ->map(fn (Branch $branch): array => [
-                    'id' => $branch->id,
-                    'name' => $branch->name,
-                    'slug' => $branch->slug,
-                ])
-                ->all(),
+            'selected_branch' => $this->selectedBranch($branchId),
+        ];
+    }
+
+    private function optionId(mixed $value): ?int
+    {
+        if ($value === null || $value === '' || $value === 'all') {
+            return null;
+        }
+
+        $id = (int) $value;
+
+        return $id > 0 ? $id : null;
+    }
+
+    /**
+     * @return array{id: int, name: string, slug: string}|null
+     */
+    private function selectedBranch(?int $branchId): ?array
+    {
+        if ($branchId === null) {
+            return null;
+        }
+
+        $branch = Branch::query()->find($branchId, ['id', 'name', 'slug']);
+
+        if ($branch === null) {
+            return null;
+        }
+
+        return [
+            'id' => $branch->id,
+            'name' => $branch->name,
+            'slug' => $branch->slug,
         ];
     }
 
