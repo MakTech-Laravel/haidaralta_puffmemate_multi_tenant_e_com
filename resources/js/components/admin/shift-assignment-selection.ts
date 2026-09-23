@@ -20,6 +20,7 @@ export type ShiftAssignmentSelectionAction =
           replaceDayIds: number[];
       }
     | { type: 'toggle-remove-day'; dayId: number }
+    | { type: 'clear-staged' }
     | { type: 'reset' };
 
 export function emptyShiftAssignmentSelection(): ShiftAssignmentSelectionState {
@@ -38,6 +39,16 @@ export function shiftAssignmentSelectionReducer(
 ): ShiftAssignmentSelectionState {
     if (action.type === 'reset') {
         return emptyShiftAssignmentSelection();
+    }
+
+    if (action.type === 'clear-staged') {
+        return {
+            ...state,
+            rangeAnchor: null,
+            assignDates: new Set<string>(),
+            replaceDayIds: new Set<number>(),
+            removeDayIds: new Set<number>(),
+        };
     }
 
     if (action.type === 'set-mode') {

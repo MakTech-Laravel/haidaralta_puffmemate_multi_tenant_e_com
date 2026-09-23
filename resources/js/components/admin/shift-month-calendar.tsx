@@ -2,17 +2,19 @@ import {
     addDays,
     addMonths,
     eachDayOfInterval,
+    endOfMonth,
     format,
     parseISO,
     setMonth,
     setYear,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarRange, ChevronLeft, ChevronRight, Eraser } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ShiftCalendarDay } from '@/components/admin/shift-calendar-day';
-import type {
-    ShiftAssignmentSelectionAction,
-    ShiftAssignmentSelectionState,
+import {
+    hasPendingShiftChanges,
+    type ShiftAssignmentSelectionAction,
+    type ShiftAssignmentSelectionState,
 } from '@/components/admin/shift-assignment-selection';
 import { ShiftSelectionModeToggle } from '@/components/admin/shift-selection-mode-toggle';
 import type { ShiftAssignmentCalendarPayload } from '@/components/admin/workforce-types';
@@ -61,9 +63,108 @@ export function ShiftMonthCalendar({
             String(2020 + index),
         );
     }, []);
+    const monthEndDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+    const monthIsFullyPast = monthEndDate < calendar.today;
+    const remainingMonthDates = useMemo(() => {
+        if (monthIsFullyPast) {
+            return [];
+        }
+
+        return eachDayOfInterval({
+            start: monthDate,
+            end: endOfMonth(monthDate),
+        })
+            .map((day) => format(day, 'yyyy-MM-dd'))
+            .filter((date) => date >= calendar.today);
+    }, [calendar.today, monthDate, monthIsFullyPast]);
 
     const navigateTo = (date: Date): void => {
         onMonthChange(format(date, 'yyyy-MM'));
+    };
+
+    const selectRemainingMonth = (): void => {
+        if (monthIsFullyPast || remainingMonthDates.length === 0) {
+            return;
+        }
+
+        setSelectionNotice(null);
+
+        const eligibleAssignDates: string[] = [];
+        const eligibleReplaceDayIds: number[] = [];
+        let skipped = 0;
+        let ambiguous = 0;
+
+        for (const candidate of remainingMonthDates) {
+            const dayShifts = calendar.days[candidate] ?? [];
+
+            if (dayShifts.length === 0) {
+                eligibleAssignDates.push(candidate);
+                continue;
+            }
+
+            const dayEditable = dayShifts.filter((shift) => shift.editable);
+
+            if (dayEditable.length === 1 && dayShifts.length === 1) {
+                eligibleReplaceDayIds.push(dayEditable[0].id);
+                continue;
+            }
+
+            if (dayEditable.length > 1 || dayShifts.length > 1) {
+                ambiguous += 1;
+                continue;
+            }
+
+            skipped += 1;
+        }
+
+        if (
+            eligibleAssignDates.length === 0 &&
+            eligibleReplaceDayIds.length === 0
+        ) {
+            setSelectionNotice(
+                ambiguous > 0
+                    ? 'No dates could be selected. Multi-shift days need the ⋯ menu.'
+                    : 'No eligible dates left in this month.',
+            );
+
+            return;
+        }
+
+        dispatch({
+            type: 'apply-range-selection',
+            dates: eligibleAssignDates,
+            replaceDayIds: eligibleReplaceDayIds,
+        });
+
+        const parts: string[] = [];
+
+        if (eligibleAssignDates.length > 0) {
+            parts.push(
+                `${eligibleAssignDates.length} new date${eligibleAssignDates.length === 1 ? '' : 's'}`,
+            );
+        }
+
+        if (eligibleReplaceDayIds.length > 0) {
+            parts.push(
+                `${eligibleReplaceDayIds.length} assigned date${eligibleReplaceDayIds.length === 1 ? '' : 's'} to change`,
+            );
+        }
+
+        if (ambiguous > 0) {
+            parts.push(
+                `${ambiguous} multi-shift date${ambiguous === 1 ? '' : 's'} skipped`,
+            );
+        }
+
+        if (skipped > 0) {
+            parts.push(
+                `${skipped} read-only date${skipped === 1 ? '' : 's'} skipped`,
+            );
+        }
+
+        setSelectionNotice(
+            `${parts.join('; ')}. Past dates were not selected.`,
+        );
     };
 
     const selectDate = (
@@ -260,10 +361,46 @@ export function ShiftMonthCalendar({
                         change.
                     </p>
                 </div>
-                <ShiftSelectionModeToggle
-                    mode={selection.selectionMode}
-                    onChange={(mode) => dispatch({ type: 'set-mode', mode })}
-                />
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={monthIsFullyPast}
+                        title={
+                            monthIsFullyPast
+                                ? 'This month is entirely in the past'
+                                : 'Select every remaining day in this month'
+                        }
+                        onClick={selectRemainingMonth}
+                    >
+                        <CalendarRange />
+                        Select remaining days
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                            !hasPendingShiftChanges(selection) &&
+                            selection.rangeAnchor === null
+                        }
+                        title="Clear staged date selections"
+                        onClick={() => {
+                            dispatch({ type: 'clear-staged' });
+                            setSelectionNotice(null);
+                        }}
+                    >
+                        <Eraser />
+                        Clear selection
+                    </Button>
+                    <ShiftSelectionModeToggle
+                        mode={selection.selectionMode}
+                        onChange={(mode) =>
+                            dispatch({ type: 'set-mode', mode })
+                        }
+                    />
+                </div>
             </div>
 
             <div className="mb-4 flex items-center justify-between gap-2">
