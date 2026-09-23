@@ -11,30 +11,30 @@ type Branch = {
     code: string;
 };
 
-type BranchOption = {
+type RoleOption = {
     value: string;
     label: string;
 };
 
-type RoleOption = {
+type SelectedBranch = {
     value: string;
     label: string;
 };
 
 export default function PlatformBranchScopedStaffCreate({
     branch,
-    branches,
-    rolesByBranch,
+    roles,
+    selectedBranch,
 }: {
     branch: Branch;
-    branches: BranchOption[];
-    rolesByBranch: Record<string, RoleOption[]>;
+    roles: RoleOption[];
+    selectedBranch: SelectedBranch;
 }) {
     return (
         <>
             <Head title={`Add staff · ${branch.name}`} />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Add staff"
                     description={`Create a staff account for ${branch.name}`}
@@ -42,8 +42,8 @@ export default function PlatformBranchScopedStaffCreate({
 
                 <StaffForm
                     action={BranchScopedStaffController.store.form(branch.slug)}
-                    branches={branches}
-                    rolesByBranch={rolesByBranch}
+                    roles={roles}
+                    selectedBranch={selectedBranch}
                     branchLocked
                     defaults={{ branch_id: branch.id }}
                     cancelHref={filteredBranchStaffUrl(branch.id)}

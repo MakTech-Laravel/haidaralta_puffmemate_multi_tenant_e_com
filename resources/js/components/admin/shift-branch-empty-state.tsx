@@ -92,8 +92,8 @@ export function ShiftBranchEmptyState({
 const WHAT_YOU_GET = [
     {
         icon: Users,
-        label: 'On duty now',
-        hint: 'People inside a live window',
+        label: 'Staff & drivers on duty',
+        hint: 'Separate live counts by type',
     },
     {
         icon: Clock3,

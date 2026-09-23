@@ -53,7 +53,7 @@ class UpdateBranchStaffRequest extends FormRequest
                 Rule::unique('users', 'email')->ignore($user->id),
             ],
             'password' => ['nullable', 'confirmed', Password::defaults()],
-            'roles' => ['required', 'array', 'min:1'],
+            'roles' => ['required', 'array', 'min:1', 'max:1'],
             'roles.*' => [
                 'string',
                 Rule::exists('roles', 'name')
@@ -61,6 +61,8 @@ class UpdateBranchStaffRequest extends FormRequest
                     ->where($teamKey, $branch->id),
             ],
             'is_active' => ['required', 'boolean'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_avatar' => ['sometimes', 'boolean'],
         ];
     }
 

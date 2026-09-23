@@ -44,7 +44,7 @@ class StorePlatformBranchStaffRequest extends FormRequest
             'phone' => ['required', 'string', ...Phone::validationRule(), Rule::unique('users', 'phone')],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'roles' => ['required', 'array', 'min:1'],
+            'roles' => ['required', 'array', 'min:1', 'max:1'],
             'roles.*' => [
                 'string',
                 Rule::exists('roles', 'name')
@@ -52,6 +52,7 @@ class StorePlatformBranchStaffRequest extends FormRequest
                     ->where($teamKey, $branchId),
             ],
             'is_active' => ['sometimes', 'boolean'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 

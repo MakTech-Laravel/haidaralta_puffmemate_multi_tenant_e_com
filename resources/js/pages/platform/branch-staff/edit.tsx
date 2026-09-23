@@ -3,12 +3,12 @@ import BranchStaffController from '@/actions/App/Http/Controllers/Platform/Branc
 import { StaffForm } from '@/components/admin/staff-form';
 import Heading from '@/components/heading';
 
-type BranchOption = {
+type RoleOption = {
     value: string;
     label: string;
 };
 
-type RoleOption = {
+type SelectedBranch = {
     value: string;
     label: string;
 };
@@ -21,35 +21,38 @@ type StaffMember = {
     is_active: boolean;
     branch_id: number;
     roles: string[];
+    avatar: string | null;
+    avatar_url: string | null;
 };
 
 export default function PlatformBranchStaffEdit({
     staffMember,
-    branches,
-    rolesByBranch,
+    roles,
+    selectedBranch,
     lockedSuperAdmin,
 }: {
     staffMember: StaffMember;
-    branches: BranchOption[];
-    rolesByBranch: Record<string, RoleOption[]>;
+    roles: RoleOption[];
+    selectedBranch: SelectedBranch;
     lockedSuperAdmin: boolean;
 }) {
     return (
         <>
             <Head title={`Edit ${staffMember.name}`} />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${staffMember.name}`}
-                    description="Update branch staff details and roles"
+                    description="Update branch staff details and roles. Changing branch records a transfer."
                 />
 
                 <StaffForm
                     action={BranchStaffController.update.form(staffMember.id)}
                     isEdit
-                    branches={branches}
-                    rolesByBranch={rolesByBranch}
-                    branchLocked
+                    roles={roles}
+                    selectedBranch={selectedBranch}
+                    branchOptionsUrl={BranchStaffController.branchOptions.url()}
+                    roleOptionsUrl={BranchStaffController.roleOptions.url()}
                     lockedSuperAdmin={lockedSuperAdmin}
                     defaults={{
                         name: staffMember.name,
@@ -58,6 +61,8 @@ export default function PlatformBranchStaffEdit({
                         roles: staffMember.roles,
                         is_active: staffMember.is_active,
                         branch_id: staffMember.branch_id,
+                        avatar: staffMember.avatar,
+                        avatar_url: staffMember.avatar_url,
                     }}
                     cancelHref={BranchStaffController.show.url(staffMember.id)}
                 />

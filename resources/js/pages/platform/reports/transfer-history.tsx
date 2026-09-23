@@ -1,6 +1,5 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye } from 'lucide-react';
 import { useMemo } from 'react';
 import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
 import DriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
@@ -10,12 +9,13 @@ import { AppDate } from '@/components/app-datetime';
 import {
     DataTable,
     DataTableColumnHeader,
-    DataTableRowActions,
     DataTableToolbar,
+    DataTableTruncated,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import {
@@ -29,7 +29,30 @@ import {
 type BranchOption = { id: number; name: string; slug: string };
 type Option = { value: string; label: string };
 
-export default function PlatformTransfersIndex({
+function initials(name: string): string {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
+}
+
+function roleLabel(role: string | null | undefined): string {
+    if (!role) {
+        return '—';
+    }
+
+    return role.replaceAll('-', ' ');
+}
+
+function personHref(row: TransferRow): string {
+    return row.subject_type === 'driver'
+        ? DriverController.show.url(row.user_id)
+        : BranchStaffController.show.url(row.user_id);
+}
+
+export default function PlatformTransferHistory({
     table: tablePayload,
 }: {
     table: DataTablePayload<TransferRow> & {
@@ -61,14 +84,33 @@ export default function PlatformTransfersIndex({
     const columns = useMemo<ColumnDef<TransferRow>[]>(
         () => [
             {
-                accessorKey: 'user_name',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Person"
-                        sortable={false}
-                    />
-                ),
+                id: 'person',
+                header: 'Person',
+                meta: { truncate: false },
+                cell: ({ row }) => {
+                    const name = row.original.user_name ?? '—';
+                    const href = personHref(row.original);
+
+                    return (
+                        <Link
+                            href={href}
+                            className="hover:text-primary flex min-w-0 items-center gap-3"
+                        >
+                            <Avatar className="size-10">
+                                <AvatarImage
+                                    src={row.original.avatar_url ?? undefined}
+                                    alt={name}
+                                />
+                                <AvatarFallback>
+                                    {initials(name)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <DataTableTruncated className="font-medium">
+                                {name}
+                            </DataTableTruncated>
+                        </Link>
+                    );
+                },
             },
             {
                 accessorKey: 'subject_type_label',
@@ -86,12 +128,32 @@ export default function PlatformTransfersIndex({
             {
                 id: 'from_to',
                 header: 'From → To',
+                meta: { truncate: false },
                 cell: ({ row }) => (
-                    <span>
-                        {row.original.from_branch_name ?? '—'} →{' '}
-                        {row.original.to_branch_name ?? '—'}
-                    </span>
+                    <div className="min-w-0 space-y-0.5">
+                        <DataTableTruncated>
+                            {row.original.from_branch_name ?? '—'} →{' '}
+                            {row.original.to_branch_name ?? '—'}
+                        </DataTableTruncated>
+                        <DataTableTruncated className="text-muted-foreground text-xs capitalize">
+                            {roleLabel(row.original.from_role)} →{' '}
+                            {roleLabel(row.original.to_role)}
+                        </DataTableTruncated>
+                    </div>
                 ),
+            },
+            {
+                id: 'reason',
+                header: 'Reason',
+                meta: { truncate: false },
+                cell: ({ row }) =>
+                    row.original.reason ? (
+                        <DataTableTruncated className="max-w-[14rem]">
+                            {row.original.reason}
+                        </DataTableTruncated>
+                    ) : (
+                        <span className="text-muted-foreground">—</span>
+                    ),
             },
             {
                 accessorKey: 'effective_date',
@@ -109,39 +171,17 @@ export default function PlatformTransfersIndex({
                     <AppDate value={row.original.effective_date} />
                 ),
             },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => (
-                    <DataTableRowActions
-                        items={[
-                            {
-                                label: 'View person',
-                                icon: Eye,
-                                href:
-                                    row.original.subject_type === 'driver'
-                                        ? DriverController.show.url(
-                                              row.original.user_id,
-                                          )
-                                        : BranchStaffController.show.url(
-                                              row.original.user_id,
-                                          ),
-                            },
-                        ]}
-                    />
-                ),
-            },
         ],
         [query.sort, query.toggleSort],
     );
 
     return (
         <>
-            <Head title="Transfers" />
+            <Head title="Transfer history" />
 
             <div className="space-y-4 p-2 md:p-4">
                 <Heading
-                    title="Transfers"
+                    title="Transfer history"
                     description="Branch and role moves for drivers and branch staff"
                 />
 
@@ -273,9 +313,12 @@ export default function PlatformTransfersIndex({
     );
 }
 
-PlatformTransfersIndex.layout = {
+PlatformTransferHistory.layout = {
     breadcrumbs: [
         { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Transfers', href: '/platform/transfers' },
+        {
+            title: 'Transfer history',
+            href: '/platform/reports/transfer-history',
+        },
     ],
 };

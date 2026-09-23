@@ -1,8 +1,9 @@
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil } from 'lucide-react';
+import { CalendarClock, Eye, Pencil } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchDriverController from '@/actions/App/Http/Controllers/Branch/DriverController';
+import ShiftAssignmentController from '@/actions/App/Http/Controllers/Branch/ShiftAssignmentController';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -142,6 +143,19 @@ export default function BranchDriversIndex({
                                     branch: branch.slug,
                                     user: row.original.id,
                                 }),
+                            },
+                            {
+                                label: 'Assign to shift',
+                                icon: CalendarClock,
+                                href: ShiftAssignmentController.create.url(
+                                    branch.slug,
+                                    {
+                                        query: {
+                                            people_kind: 'driver',
+                                            user_id: row.original.id,
+                                        },
+                                    },
+                                ),
                             },
                         ]}
                     />

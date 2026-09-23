@@ -3,8 +3,6 @@ import { IdCard, Mail, MapPin, Phone } from 'lucide-react';
 import type { ReactNode } from 'react';
 import BranchDriverController from '@/actions/App/Http/Controllers/Platform/BranchDriverController';
 import PlatformDriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
-import { ShiftAssignmentList } from '@/components/admin/workforce-timeline';
-import type { ShiftAssignmentRow } from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
 import { filteredBranchDriversUrl } from '@/lib/branch-people-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -38,8 +36,6 @@ type Driver = {
         status_label: string | null;
         branch_name: string | null;
     }[];
-    current_duty: ShiftAssignmentRow | null;
-    shift_assignments: ShiftAssignmentRow[];
 };
 
 function initials(name: string): string {
@@ -83,7 +79,6 @@ export default function PlatformBranchDriversShow({
 }: {
     branch: Branch;
     driver: Driver;
-    rosterStatuses: { value: string; label: string }[];
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -241,20 +236,6 @@ export default function PlatformBranchDriversShow({
                         </CardContent>
                     </Card>
                 </div>
-
-                <Card className="shadow-sm">
-                    <CardHeader>
-                        <CardTitle>Duty windows</CardTitle>
-                        <CardDescription>
-                            Shift assignments at {branch.name}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ShiftAssignmentList
-                            assignments={driver.shift_assignments}
-                        />
-                    </CardContent>
-                </Card>
             </div>
         </>
     );

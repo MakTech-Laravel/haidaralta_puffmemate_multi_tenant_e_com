@@ -45,6 +45,14 @@ interface AdminFormProps {
 const SUPER_ADMIN_ROLE = 'super-admin';
 const MEDIA_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
 
+function RequiredMark() {
+    return (
+        <span className="text-primary" aria-hidden>
+            *
+        </span>
+    );
+}
+
 function sectionClassName(): string {
     return cn(
         'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
@@ -82,7 +90,9 @@ function RoleRadioList({
 
     return (
         <div className="flex flex-col gap-3">
-            <Label>Role</Label>
+            <Label>
+                Role <RequiredMark />
+            </Label>
             <div className="relative">
                 <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                 <Input
@@ -262,6 +272,7 @@ export function AdminForm({
         transform,
         validate,
         setValidationTimeout,
+        clearErrors,
         cancel,
     } = useForm(formMethod, action.action, {
         name: defaults?.name ?? '',
@@ -279,6 +290,20 @@ export function AdminForm({
     useEffect(() => {
         setValidationTimeout(500);
     }, [setValidationTimeout]);
+
+    const validatePhone = (): void => {
+        validate('phone');
+    };
+
+    const validateEmail = (value: string): void => {
+        if (value.trim() === '') {
+            clearErrors('email');
+
+            return;
+        }
+
+        validate('email');
+    };
 
     const selectRole = (value: string): void => {
         if (
@@ -389,7 +414,9 @@ export function AdminForm({
 
                     <div className="flex min-w-0 flex-1 flex-col gap-3">
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="name">Name</Label>
+                            <Label htmlFor="name">
+                                Name <RequiredMark />
+                            </Label>
                             <Input
                                 id="name"
                                 autoComplete="off"
@@ -404,7 +431,9 @@ export function AdminForm({
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="phone">Phone</Label>
+                                <Label htmlFor="phone">
+                                    Phone <RequiredMark />
+                                </Label>
                                 <Input
                                     id="phone"
                                     type="tel"
@@ -414,7 +443,8 @@ export function AdminForm({
                                     onChange={(event) =>
                                         setData('phone', event.target.value)
                                     }
-                                    onBlur={() => validate('phone')}
+                                    onBlur={validatePhone}
+                                    aria-invalid={Boolean(errors.phone)}
                                     required
                                 />
                                 <InputError message={errors.phone} />
@@ -435,11 +465,10 @@ export function AdminForm({
                                     onChange={(event) =>
                                         setData('email', event.target.value)
                                     }
-                                    onBlur={() => {
-                                        if (data.email) {
-                                            validate('email');
-                                        }
-                                    }}
+                                    onBlur={(event) =>
+                                        validateEmail(event.target.value)
+                                    }
+                                    aria-invalid={Boolean(errors.email)}
                                 />
                                 <InputError message={errors.email} />
                             </div>
@@ -447,9 +476,13 @@ export function AdminForm({
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="password">
-                                    {isEdit
-                                        ? 'New password (optional)'
-                                        : 'Password'}
+                                    {isEdit ? (
+                                        'New password (optional)'
+                                    ) : (
+                                        <>
+                                            Password <RequiredMark />
+                                        </>
+                                    )}
                                 </Label>
                                 <PasswordInput
                                     id="password"
@@ -465,7 +498,13 @@ export function AdminForm({
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="password_confirmation">
-                                    Confirm password
+                                    {isEdit ? (
+                                        'Confirm password'
+                                    ) : (
+                                        <>
+                                            Confirm password <RequiredMark />
+                                        </>
+                                    )}
                                 </Label>
                                 <PasswordInput
                                     id="password_confirmation"
@@ -513,7 +552,9 @@ export function AdminForm({
                     <InputError message={errors.roles ?? errors['roles.0']} />
 
                     <div className="flex flex-col gap-2">
-                        <Label>Status</Label>
+                        <Label>
+                            Status <RequiredMark />
+                        </Label>
                         <AccountStatusCards
                             value={data.is_active}
                             disabled={lockedSuperAdmin && data.is_active}

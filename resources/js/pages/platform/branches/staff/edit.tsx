@@ -10,12 +10,12 @@ type Branch = {
     code: string;
 };
 
-type BranchOption = {
+type RoleOption = {
     value: string;
     label: string;
 };
 
-type RoleOption = {
+type SelectedBranch = {
     value: string;
     label: string;
 };
@@ -28,26 +28,28 @@ type StaffMember = {
     is_active: boolean;
     branch_id: number;
     roles: string[];
+    avatar: string | null;
+    avatar_url: string | null;
 };
 
 export default function PlatformBranchScopedStaffEdit({
     branch,
     staffMember,
-    branches,
-    rolesByBranch,
+    roles,
+    selectedBranch,
     lockedSuperAdmin,
 }: {
     branch: Branch;
     staffMember: StaffMember;
-    branches: BranchOption[];
-    rolesByBranch: Record<string, RoleOption[]>;
+    roles: RoleOption[];
+    selectedBranch: SelectedBranch;
     lockedSuperAdmin: boolean;
 }) {
     return (
         <>
             <Head title={`Edit ${staffMember.name}`} />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${staffMember.name}`}
                     description={`Update staff for ${branch.name}`}
@@ -59,8 +61,8 @@ export default function PlatformBranchScopedStaffEdit({
                         staffMember.id,
                     ])}
                     isEdit
-                    branches={branches}
-                    rolesByBranch={rolesByBranch}
+                    roles={roles}
+                    selectedBranch={selectedBranch}
                     branchLocked
                     lockedSuperAdmin={lockedSuperAdmin}
                     defaults={{
@@ -70,6 +72,8 @@ export default function PlatformBranchScopedStaffEdit({
                         roles: staffMember.roles,
                         is_active: staffMember.is_active,
                         branch_id: staffMember.branch_id,
+                        avatar: staffMember.avatar,
+                        avatar_url: staffMember.avatar_url,
                     }}
                     cancelHref={BranchScopedStaffController.show.url([
                         branch.slug,

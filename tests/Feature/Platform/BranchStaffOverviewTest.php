@@ -42,6 +42,8 @@ test('platform admin can view branch staff across branches and filter by branch'
         ->assertInertia(fn ($page) => $page
             ->component('platform/branch-staff/index')
             ->has('table.data', $seededBranchStaffCount + 1)
+            ->missing('table.filterOptions.branches')
+            ->where('table.filterOptions.selected_branch', null)
         );
 
     $downtownStaffCount = User::query()
@@ -57,6 +59,8 @@ test('platform admin can view branch staff across branches and filter by branch'
         ->assertInertia(fn ($page) => $page
             ->component('platform/branch-staff/index')
             ->has('table.data', $downtownStaffCount)
+            ->where('table.filterOptions.selected_branch.id', $downtown->id)
+            ->where('table.filterOptions.selected_branch.name', $downtown->name)
             ->where('table.data', fn ($staff) => collect($staff)->contains(
                 fn ($row) => $row['email'] === UserSeeder::BRANCH_1_SUPER_ADMIN,
             ))

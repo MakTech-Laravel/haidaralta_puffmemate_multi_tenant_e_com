@@ -78,6 +78,11 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::permanentRedirect('staff/{user}/edit', '/platform/admins/{user}/edit');
 
     Route::middleware(['permission:manage-branch-users'])->group(function () {
+        Route::get('branch-staff-branch-options', [PlatformBranchStaffController::class, 'branchOptions'])
+            ->name('platform.branch-staff.branch-options');
+        Route::get('branch-staff-role-options', [PlatformBranchStaffController::class, 'roleOptions'])
+            ->name('platform.branch-staff.role-options');
+
         Route::resource('branch-staff', PlatformBranchStaffController::class)
             ->parameters(['branch-staff' => 'user'])
             ->names('platform.branch-staff')
@@ -104,12 +109,6 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.drivers.branches.sync');
         Route::post('drivers/{user}/transfer', [PlatformTransferController::class, 'storeDriver'])
             ->name('platform.drivers.transfer');
-        Route::post('drivers/{user}/rosters', [PlatformDriverController::class, 'storeRoster'])
-            ->name('platform.drivers.rosters.store');
-        Route::put('drivers/{user}/rosters/{roster}', [PlatformDriverController::class, 'updateRoster'])
-            ->name('platform.drivers.rosters.update');
-        Route::delete('drivers/{user}/rosters/{roster}', [PlatformDriverController::class, 'destroyRoster'])
-            ->name('platform.drivers.rosters.destroy');
 
         Route::get('branches/{branch}/drivers', [PlatformBranchDriverController::class, 'index'])
             ->name('platform.branches.drivers.index');
@@ -130,7 +129,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     });
 
     Route::middleware(['permission:view-transfers'])->group(function () {
-        Route::get('transfers', [PlatformTransferController::class, 'index'])->name('platform.transfers.index');
+        Route::redirect('transfers', '/platform/reports/transfer-history', 301);
+        Route::get('reports/transfer-history', [PlatformTransferController::class, 'index'])
+            ->name('platform.reports.transfer-history');
     });
 
     Route::middleware(['permission:manage-shifts'])->group(function () {

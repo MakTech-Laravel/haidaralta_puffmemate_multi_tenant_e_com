@@ -3,28 +3,12 @@ import BranchStaffController from '@/actions/App/Http/Controllers/Platform/Branc
 import { StaffForm } from '@/components/admin/staff-form';
 import Heading from '@/components/heading';
 
-type BranchOption = {
-    value: string;
-    label: string;
-};
-
-type RoleOption = {
-    value: string;
-    label: string;
-};
-
-export default function PlatformBranchStaffCreate({
-    branches,
-    rolesByBranch,
-}: {
-    branches: BranchOption[];
-    rolesByBranch: Record<string, RoleOption[]>;
-}) {
+export default function PlatformBranchStaffCreate() {
     return (
         <>
             <Head title="Add branch staff" />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Add branch staff"
                     description="Create a staff account for any branch"
@@ -32,8 +16,8 @@ export default function PlatformBranchStaffCreate({
 
                 <StaffForm
                     action={BranchStaffController.store.form()}
-                    branches={branches}
-                    rolesByBranch={rolesByBranch}
+                    branchOptionsUrl={BranchStaffController.branchOptions.url()}
+                    roleOptionsUrl={BranchStaffController.roleOptions.url()}
                     cancelHref={BranchStaffController.index.url()}
                     submitLabel="Create staff"
                 />

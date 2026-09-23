@@ -76,6 +76,75 @@ test('precognitive admin update ignores the current users phone', function () {
         ->assertHeader('Precognition', 'true');
 });
 
+test('precognitive admin store returns 422 for a taken email without creating a user', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $before = User::query()->count();
+
+    $this->actingAs($admin, 'platform')
+        ->withHeaders(precognitionHeaders('email'))
+        ->post(route('platform.admins.store'), [
+            'email' => $admin->email,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['email'])
+        ->assertHeader('Precognition', 'true');
+
+    expect(User::query()->count())->toBe($before);
+});
+
+test('precognitive branch staff store returns 422 for a taken phone without creating a user', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $before = User::query()->count();
+
+    $this->actingAs($admin, 'platform')
+        ->withHeaders(precognitionHeaders('phone'))
+        ->post(route('platform.branch-staff.store'), [
+            'branch_id' => $downtown->id,
+            'phone' => $admin->phone,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['phone'])
+        ->assertHeader('Precognition', 'true');
+
+    expect(User::query()->count())->toBe($before);
+});
+
+test('precognitive branch staff store returns 422 for a taken email without creating a user', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $before = User::query()->count();
+
+    $this->actingAs($admin, 'platform')
+        ->withHeaders(precognitionHeaders('email'))
+        ->post(route('platform.branch-staff.store'), [
+            'branch_id' => $downtown->id,
+            'email' => $admin->email,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['email'])
+        ->assertHeader('Precognition', 'true');
+
+    expect(User::query()->count())->toBe($before);
+});
+
+test('precognitive branch staff store returns 204 for an available phone without creating a user', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $before = User::query()->count();
+
+    $this->actingAs($admin, 'platform')
+        ->withHeaders(precognitionHeaders('phone'))
+        ->post(route('platform.branch-staff.store'), [
+            'branch_id' => $downtown->id,
+            'phone' => '0412987654',
+        ])
+        ->assertNoContent()
+        ->assertHeader('Precognition', 'true');
+
+    expect(User::query()->count())->toBe($before);
+});
+
 test('precognitive branch store returns 422 for a taken slug without creating a branch', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $before = Branch::query()->count();

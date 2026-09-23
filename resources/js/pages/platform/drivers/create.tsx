@@ -15,12 +15,10 @@ export default function PlatformDriversCreate({
     branches,
     vehicleTypes,
     availabilityStatuses,
-    rosterStatuses,
 }: {
     branches: BranchOption[];
     vehicleTypes: Option[];
     availabilityStatuses: Option[];
-    rosterStatuses: Option[];
 }) {
     const singleActiveBranch = usePage().props.drivers.single_active_branch;
 
@@ -42,7 +40,6 @@ export default function PlatformDriversCreate({
                     action={DriverController.store.form()}
                     vehicleTypes={vehicleTypes}
                     availabilityStatuses={availabilityStatuses}
-                    rosterStatuses={rosterStatuses}
                     branches={branches}
                     requireBranches
                     cancelHref={DriverController.index.url()}

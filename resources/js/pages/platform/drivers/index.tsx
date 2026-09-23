@@ -1,8 +1,9 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Building2, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Building2, CalendarClock, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
+import BranchShiftAssignmentController from '@/actions/App/Http/Controllers/Platform/BranchShiftAssignmentController';
 import DriverController from '@/actions/App/Http/Controllers/Platform/DriverController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import { DriverBranchAssignSheet } from '@/components/admin/driver-branch-assign-sheet';
@@ -191,6 +192,25 @@ export default function PlatformDriversIndex({
                                 icon: Building2,
                                 onSelect: () => setManagingDriver(row.original),
                             },
+                            ...(row.original.branches[0]
+                                ? [
+                                      {
+                                          label: 'Assign to shift',
+                                          icon: CalendarClock,
+                                          href: BranchShiftAssignmentController.create.url(
+                                              {
+                                                  query: {
+                                                      branch_id:
+                                                          row.original
+                                                              .branches[0].id,
+                                                      people_kind: 'driver',
+                                                      user_id: row.original.id,
+                                                  },
+                                              },
+                                          ),
+                                      },
+                                  ]
+                                : []),
                             {
                                 label: 'Deactivate',
                                 icon: Trash2,

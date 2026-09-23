@@ -7,9 +7,12 @@ use App\Models\Branch;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\PlatformTeamResolver;
+use App\Support\SuperAdmin;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
@@ -96,6 +99,26 @@ test('platform admin with manage-branch-users can create branch staff', function
         ->assertRedirect();
 
     expect(User::query()->where('email', 'admin-created-clerk@test.com')->exists())->toBeTrue();
+});
+
+test('platform branch staff store rejects more than one role', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branch-staff.store'), [
+            'branch_id' => $downtown->id,
+            'name' => 'Two Roles Clerk',
+            'phone' => '0412000007',
+            'email' => 'two-roles-clerk@test.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'roles' => [RoleEnum::STAFF->value, RoleEnum::MANAGER->value],
+            'is_active' => true,
+        ])
+        ->assertInvalid(['roles']);
+
+    expect(User::query()->where('email', 'two-roles-clerk@test.com')->exists())->toBeFalse();
 });
 
 test('platform manager without manage-branch-users cannot access branch staff routes', function () {
@@ -197,8 +220,95 @@ test('platform cannot delete the last branch super admin', function () {
         ->assertRedirect()
         ->assertInertiaFlash('toast', [
             'type' => 'error',
-            'message' => 'Cannot remove or deactivate the last super-admin for this branch.',
+            'message' => SuperAdmin::LAST_ACTIVE_BRANCH_MESSAGE,
         ]);
 
     expect(User::query()->whereKey($branchSuper->id)->exists())->toBeTrue();
+});
+
+test('platform can paginate branch and role options for staff form', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.branch-staff.branch-options', [
+            'per_page' => 20,
+            'filter' => ['search' => 'Sydney'],
+        ]))
+        ->assertOk()
+        ->assertJsonStructure([
+            'data' => [['id', 'name', 'slug']],
+            'meta' => ['current_page', 'last_page', 'per_page', 'total'],
+        ])
+        ->assertJsonPath('data.0.id', $downtown->id);
+
+    $this->actingAs($admin, 'platform')
+        ->getJson(route('platform.branch-staff.role-options', [
+            'branch_id' => $downtown->id,
+        ]))
+        ->assertOk()
+        ->assertJsonStructure([
+            'data' => [['value', 'label']],
+        ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-staff.create'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branch-staff/create')
+            ->missing('branches')
+            ->missing('rolesByBranch'));
+});
+
+test('platform super admin can create and update branch staff with an avatar', function () {
+    Storage::fake('public');
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branch-staff.store'), [
+            'branch_id' => $downtown->id,
+            'name' => 'Avatar Clerk',
+            'phone' => '0412000099',
+            'email' => 'avatar-clerk@test.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'roles' => [RoleEnum::STAFF->value],
+            'is_active' => true,
+            'avatar' => UploadedFile::fake()->image('staff-avatar.jpg'),
+        ])
+        ->assertRedirect();
+
+    $clerk = User::query()->where('email', 'avatar-clerk@test.com')->firstOrFail();
+
+    expect($clerk->avatar)->not->toBeNull();
+    Storage::disk('public')->assertExists($clerk->avatar);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-staff.show', $clerk))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branch-staff/show')
+            ->where('staffMember.avatar_url', fn ($url) => is_string($url) && $url !== '')
+            ->has('staffMember.permission_groups')
+            ->missing('branches')
+            ->missing('rolesByBranch'));
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branch-staff.update', $clerk), [
+            'name' => 'Avatar Clerk Updated',
+            'phone' => '0412000099',
+            'email' => 'avatar-clerk@test.com',
+            'roles' => [RoleEnum::STAFF->value],
+            'is_active' => true,
+            'avatar' => UploadedFile::fake()->image('staff-avatar-2.jpg'),
+        ])
+        ->assertRedirect(route('platform.branch-staff.show', $clerk));
+
+    $clerk->refresh();
+
+    expect($clerk->name)->toBe('Avatar Clerk Updated')
+        ->and($clerk->avatar)->not->toBeNull();
+    Storage::disk('public')->assertExists($clerk->avatar);
 });

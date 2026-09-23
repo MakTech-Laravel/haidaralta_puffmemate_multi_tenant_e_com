@@ -5,7 +5,6 @@ namespace App\Support;
 use App\Enums\DriverAssignmentStatus;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\DriverVehicleType;
-use App\Enums\ShiftAssignmentStatus;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\User;
@@ -148,20 +147,6 @@ final class DriverPayload
     {
         return collect(DriverAssignmentStatus::cases())
             ->map(fn (DriverAssignmentStatus $status): array => [
-                'value' => $status->value,
-                'label' => $status->label(),
-            ])
-            ->values()
-            ->all();
-    }
-
-    /**
-     * @return list<array{value: string, label: string}>
-     */
-    public static function rosterStatusOptions(): array
-    {
-        return collect(ShiftAssignmentStatus::cases())
-            ->map(fn (ShiftAssignmentStatus $status): array => [
                 'value' => $status->value,
                 'label' => $status->label(),
             ])

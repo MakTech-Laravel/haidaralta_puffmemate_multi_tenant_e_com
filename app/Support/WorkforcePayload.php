@@ -519,12 +519,13 @@ final class WorkforcePayload
      */
     public static function transfer(UserTransferHistory $history): array
     {
-        $history->loadMissing(['user:id,name,user_type', 'fromBranch:id,name,slug', 'toBranch:id,name,slug', 'transferredBy:id,name']);
+        $history->loadMissing(['user:id,name,user_type,avatar', 'fromBranch:id,name,slug', 'toBranch:id,name,slug', 'transferredBy:id,name']);
 
         return [
             'id' => $history->id,
             'user_id' => $history->user_id,
             'user_name' => $history->user?->name,
+            'avatar_url' => MediaUrl::resolve($history->user?->avatar, fallback: null),
             'subject_type' => $history->subject_type->value,
             'subject_type_label' => $history->subject_type->label(),
             'transfer_type' => $history->transfer_type->value,

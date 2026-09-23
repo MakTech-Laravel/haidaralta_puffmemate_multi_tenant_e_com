@@ -10,6 +10,7 @@ use App\Models\DriverBranchAssignment;
 use App\Models\User;
 use App\Models\UserTransferHistory;
 use App\Services\Workforce\TransferEmployeeService;
+use App\Support\SuperAdmin;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -205,6 +206,7 @@ test('platform users cannot transfer and drivers cannot use the staff transfer r
     $this->actingAs($admin, 'platform')
         ->post(route('platform.staff.transfer', $admin), [
             'to_branch_id' => $melbourne->id,
+            'roles' => [RoleEnum::STAFF->value],
             'effective_date' => '2026-09-21',
             'reason' => 'Invalid.',
         ])
@@ -213,6 +215,7 @@ test('platform users cannot transfer and drivers cannot use the staff transfer r
     $this->actingAs($admin, 'platform')
         ->post(route('platform.staff.transfer', $driver), [
             'to_branch_id' => $melbourne->id,
+            'roles' => [RoleEnum::STAFF->value],
             'effective_date' => '2026-09-21',
             'reason' => 'Invalid.',
         ])
@@ -230,4 +233,163 @@ test('platform users cannot transfer and drivers cannot use the staff transfer r
         ->and($admin->fresh()->user_type)->toBe(UserType::PLATFORM)
         ->and($driver->fresh()->user_type)->toBe(UserType::DRIVER)
         ->and($staff->fresh()->user_type)->toBe(UserType::BRANCH);
+});
+
+test('staff transfer requires a destination role', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_STAFF)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->from(route('platform.branch-staff.show', $staff))
+        ->post(route('platform.staff.transfer', $staff), [
+            'to_branch_id' => $melbourne->id,
+            'effective_date' => '2026-09-21',
+            'reason' => 'Missing role.',
+        ])
+        ->assertRedirect(route('platform.branch-staff.show', $staff))
+        ->assertSessionHasErrors('roles');
+
+    expect($staff->fresh()->branch_id)->not->toBe($melbourne->id)
+        ->and(UserTransferHistory::query()->where('user_id', $staff->id)->exists())->toBeFalse();
+});
+
+test('cannot transfer the last super-admin away from an active branch', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branchSuper = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->from(route('platform.branch-staff.show', $branchSuper))
+        ->post(route('platform.staff.transfer', $branchSuper), [
+            'to_branch_id' => $melbourne->id,
+            'roles' => [RoleEnum::SUPER_ADMIN->value],
+            'effective_date' => '2026-09-21',
+            'reason' => 'Attempted last SA move.',
+        ])
+        ->assertRedirect(route('platform.branch-staff.show', $branchSuper))
+        ->assertInertiaFlash('toast', [
+            'type' => 'error',
+            'message' => SuperAdmin::LAST_ACTIVE_BRANCH_MESSAGE,
+        ]);
+
+    expect($branchSuper->fresh()->branch_id)->not->toBe($melbourne->id)
+        ->and(UserTransferHistory::query()->where('user_id', $branchSuper->id)->exists())->toBeFalse();
+});
+
+test('can transfer the last super-admin away after the branch is deactivated', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branchSuper = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $sydney->update(['status' => false]);
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.staff.transfer', $branchSuper), [
+            'to_branch_id' => $melbourne->id,
+            'roles' => [RoleEnum::ADMIN->value],
+            'effective_date' => '2026-09-21',
+            'reason' => 'Branch closed.',
+        ])
+        ->assertRedirect();
+
+    expect($branchSuper->fresh()->branch_id)->toBe($melbourne->id);
+
+    $this->assertDatabaseHas('user_transfer_histories', [
+        'user_id' => $branchSuper->id,
+        'from_branch_id' => $sydney->id,
+        'to_branch_id' => $melbourne->id,
+        'to_role' => RoleEnum::ADMIN->value,
+    ]);
+});
+
+test('platform staff edit branch change writes transfer history', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_STAFF)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branch-staff.update', $staff), [
+            'branch_id' => $melbourne->id,
+            'name' => $staff->name,
+            'phone' => $staff->phone,
+            'email' => $staff->email,
+            'roles' => [RoleEnum::MANAGER->value],
+            'is_active' => true,
+        ])
+        ->assertRedirect(route('platform.branch-staff.show', $staff));
+
+    expect($staff->fresh()->branch_id)->toBe($melbourne->id);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId($melbourne->id);
+    expect($staff->fresh()->hasRole(RoleEnum::MANAGER->value))->toBeTrue();
+    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+    $this->assertDatabaseHas('user_transfer_histories', [
+        'user_id' => $staff->id,
+        'subject_type' => TransferSubjectType::BranchStaff->value,
+        'transfer_type' => TransferType::BranchChange->value,
+        'from_branch_id' => $sydney->id,
+        'to_branch_id' => $melbourne->id,
+        'to_role' => RoleEnum::MANAGER->value,
+        'reason' => 'Updated via staff edit',
+    ]);
+});
+
+test('platform transfers index defaults to latest created and includes avatar and reason', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_STAFF)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $older = UserTransferHistory::factory()->staff()->create([
+        'user_id' => $staff->id,
+        'from_branch_id' => $sydney->id,
+        'to_branch_id' => $melbourne->id,
+        'from_role' => RoleEnum::STAFF->value,
+        'to_role' => RoleEnum::STAFF->value,
+        'effective_date' => '2026-12-01',
+        'reason' => 'Older history row.',
+        'transferred_by' => $admin->id,
+        'created_at' => now()->subDay(),
+        'updated_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.staff.transfer', $staff), [
+            'to_branch_id' => $melbourne->id,
+            'roles' => [RoleEnum::MANAGER->value],
+            'effective_date' => '2026-01-01',
+            'reason' => 'Newest transfer row.',
+        ])
+        ->assertRedirect();
+
+    $newest = UserTransferHistory::query()
+        ->where('user_id', $staff->id)
+        ->where('reason', 'Newest transfer row.')
+        ->firstOrFail();
+
+    expect($newest->id)->toBeGreaterThan($older->id);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.transfer-history'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/reports/transfer-history')
+            ->where('table.data.0.id', $newest->id)
+            ->where('table.data.0.reason', 'Newest transfer row.')
+            ->where('table.data.0.from_role', RoleEnum::STAFF->value)
+            ->where('table.data.0.to_role', RoleEnum::MANAGER->value)
+            ->has('table.data.0.avatar_url')
+        );
+});
+
+test('legacy transfers url redirects to transfer history report', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get('/platform/transfers')
+        ->assertRedirect('/platform/reports/transfer-history');
 });

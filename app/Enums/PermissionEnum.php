@@ -116,7 +116,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_DRIVERS => 'Drivers',
             self::MANAGE_SHIFTS,
             self::MANAGE_BRANCH_SHIFTS => 'Shifts',
-            self::VIEW_TRANSFERS => 'Transfers',
+            self::VIEW_TRANSFERS => 'Transfer history',
             self::MANAGE_CONVERSATIONS,
             self::MANAGE_BRANCH_CONVERSATIONS => 'Conversations',
         };
@@ -148,7 +148,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_INVENTORIES => 'Manage branch inventories',
             self::MANAGE_DRIVERS => 'Manage drivers',
             self::MANAGE_SHIFTS => 'Manage shifts',
-            self::VIEW_TRANSFERS => 'View transfers',
+            self::VIEW_TRANSFERS => 'View transfer history',
             self::MANAGE_CONVERSATIONS => 'Manage conversations',
             self::VIEW_BRANCH_DASHBOARD => 'View branch dashboard',
             self::MANAGE_BRANCH_PRODUCTS => 'Manage branch products',

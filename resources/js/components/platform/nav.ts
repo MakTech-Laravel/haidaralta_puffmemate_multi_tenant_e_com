@@ -159,7 +159,6 @@ export function buildPlatformNav(
                     'view-branches',
                     'manage-branch-users',
                     'manage-branch-inventories',
-                    'view-transfers',
                     'manage-shifts',
                 ],
                 items: [
@@ -186,12 +185,6 @@ export function buildPlatformNav(
                         href: '/platform/branch-shift-assignments',
                         icon: UserPlus,
                         permissions: ['manage-shifts'],
-                    }),
-                    navLink({
-                        title: 'Transfers',
-                        href: '/platform/transfers',
-                        icon: History,
-                        permissions: ['view-transfers'],
                     }),
                     navLink({
                         title: 'Manage stock',
@@ -321,9 +314,13 @@ export function buildPlatformNav(
                 ],
             }),
             navGroup({
-                title: 'Reports',
+                title: 'Reports and history',
                 icon: ChartColumn,
-                permissions: ['manage-reports', 'manage-branch-inventories'],
+                permissions: [
+                    'manage-reports',
+                    'manage-branch-inventories',
+                    'view-transfers',
+                ],
                 items: [
                     navSoon({
                         title: 'Sales',
@@ -346,6 +343,12 @@ export function buildPlatformNav(
                               }),
                           ]
                         : []),
+                    navLink({
+                        title: 'Transfer history',
+                        href: '/platform/reports/transfer-history',
+                        icon: History,
+                        permissions: ['view-transfers'],
+                    }),
                     navSoon({
                         title: 'Drivers',
                         icon: Truck,

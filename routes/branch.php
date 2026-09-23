@@ -161,12 +161,6 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::put('drivers/{user}', [BranchDriverController::class, 'update'])
             ->middleware('precognitive')
             ->name('branch.drivers.update');
-        Route::post('drivers/{user}/rosters', [BranchDriverController::class, 'storeRoster'])
-            ->name('branch.drivers.rosters.store');
-        Route::put('drivers/{user}/rosters/{roster}', [BranchDriverController::class, 'updateRoster'])
-            ->name('branch.drivers.rosters.update');
-        Route::delete('drivers/{user}/rosters/{roster}', [BranchDriverController::class, 'destroyRoster'])
-            ->name('branch.drivers.rosters.destroy');
     });
 
     Route::middleware(['permission:manage-branch-shifts'])->group(function () {

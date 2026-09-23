@@ -14,14 +14,8 @@ import DriverController from '@/actions/App/Http/Controllers/Platform/DriverCont
 import TransferController from '@/actions/App/Http/Controllers/Platform/TransferController';
 import { DriverBranchAssignSheet } from '@/components/admin/driver-branch-assign-sheet';
 import { TransferEmployeeSheet } from '@/components/admin/transfer-employee-sheet';
-import {
-    ShiftAssignmentList,
-    TransferTimeline,
-} from '@/components/admin/workforce-timeline';
-import type {
-    ShiftAssignmentRow,
-    TransferRow,
-} from '@/components/admin/workforce-types';
+import { TransferTimeline } from '@/components/admin/workforce-timeline';
+import type { TransferRow } from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -34,8 +28,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-
-type Option = { value: string; label: string };
 
 type Driver = {
     id: number;
@@ -61,8 +53,6 @@ type Driver = {
         status: string | null;
         status_label: string | null;
     }[];
-    current_duty: ShiftAssignmentRow | null;
-    shift_assignments: ShiftAssignmentRow[];
     transfers: TransferRow[];
 };
 
@@ -107,8 +97,6 @@ export default function PlatformDriversShow({
 }: {
     driver: Driver;
     branches: { id: number; name: string; slug: string }[];
-    rosterStatuses: Option[];
-    assignmentStatuses: Option[];
 }) {
     const singleActiveBranch = usePage().props.drivers.single_active_branch;
     const activeAssignments = useMemo(
@@ -349,41 +337,6 @@ export default function PlatformDriversShow({
 
                 <Card className="shadow-sm">
                     <CardHeader>
-                        <CardTitle>Current duty</CardTitle>
-                        <CardDescription>
-                            On-duty window from shift assignments, not
-                            attendance
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {driver.current_duty ? (
-                            <ShiftAssignmentList
-                                assignments={[driver.current_duty]}
-                            />
-                        ) : (
-                            <p className="text-muted-foreground text-sm">
-                                Not on duty right now.
-                            </p>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-sm">
-                    <CardHeader>
-                        <CardTitle>Duty windows</CardTitle>
-                        <CardDescription>
-                            Assigned shifts and personal date ranges
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ShiftAssignmentList
-                            assignments={driver.shift_assignments}
-                        />
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-sm">
-                    <CardHeader>
                         <CardTitle>Transfer history</CardTitle>
                         <CardDescription>
                             Branch moves for this driver
@@ -408,6 +361,7 @@ export default function PlatformDriversShow({
                 subjectType="driver"
                 branches={branches}
                 currentBranchId={activeAssignments[0]?.branch_id}
+                currentBranchName={activeAssignments[0]?.branch_name}
             />
         </>
     );

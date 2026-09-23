@@ -1,18 +1,24 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { CalendarClock, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
+import BranchShiftAssignmentController from '@/actions/App/Http/Controllers/Platform/BranchShiftAssignmentController';
+import TransferController from '@/actions/App/Http/Controllers/Platform/TransferController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import { TransferEmployeeSheet } from '@/components/admin/transfer-employee-sheet';
 import {
     DataTable,
     DataTableColumnHeader,
     DataTableRowActions,
     DataTableToolbar,
+    DataTableTruncated,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -29,22 +35,43 @@ type StaffRow = {
     name: string;
     phone: string;
     email: string | null;
+    avatar_url: string | null;
     is_active: boolean;
     branch: { id: number; name: string; slug: string } | null;
     roles: string[];
 };
 
-type BranchOption = { id: number; name: string; slug: string };
+type SelectedBranch = { id: number; name: string; slug: string };
+
+type TransferTarget = {
+    id: number;
+    name: string;
+    branchId: number | null;
+    branchName: string | null;
+    roles: string[];
+};
+
+function initials(name: string): string {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
+}
 
 export default function PlatformBranchStaffIndex({
     table: tablePayload,
 }: {
     table: DataTablePayload<StaffRow> & {
-        filterOptions?: { branches?: BranchOption[] };
+        filterOptions?: { selected_branch?: SelectedBranch | null };
     };
 }) {
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
+    const [transferTarget, setTransferTarget] = useState<TransferTarget | null>(
+        null,
+    );
 
     const query = useDataTableQuery({
         indexUrl: BranchStaffController.index.url(),
@@ -59,35 +86,41 @@ export default function PlatformBranchStaffIndex({
         },
     });
 
-    const branches = tablePayload.filterOptions?.branches ?? [];
+    const selectedBranch = tablePayload.filterOptions?.selected_branch;
+    const branchFilter = String(query.filters.branch_id ?? 'all');
 
     const columns = useMemo<ColumnDef<StaffRow>[]>(
         () => [
             {
-                accessorKey: 'name',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Name"
-                        sortable
-                        sortKey="name"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
+                id: 'avatar',
+                header: 'Staff',
+                meta: { truncate: false },
+                cell: ({ row }) => (
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Avatar className="size-10">
+                            <AvatarImage
+                                src={row.original.avatar_url ?? undefined}
+                                alt={row.original.name}
+                            />
+                            <AvatarFallback>
+                                {initials(row.original.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                            <DataTableTruncated className="font-medium">
+                                {row.original.name}
+                            </DataTableTruncated>
+                            <DataTableTruncated className="text-muted-foreground text-xs">
+                                {row.original.phone}
+                            </DataTableTruncated>
+                        </div>
+                    </div>
                 ),
             },
             {
-                accessorKey: 'phone',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Phone"
-                        sortable
-                        sortKey="phone"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
-                ),
+                accessorKey: 'email',
+                header: 'Email',
+                cell: ({ row }) => row.original.email ?? '—',
             },
             {
                 id: 'branch',
@@ -100,8 +133,12 @@ export default function PlatformBranchStaffIndex({
                 cell: ({ row }) => (
                     <div className="flex flex-wrap gap-1">
                         {row.original.roles.map((role) => (
-                            <Badge key={role} variant="secondary">
-                                {role}
+                            <Badge
+                                key={role}
+                                variant="secondary"
+                                className="capitalize"
+                            >
+                                {role.replaceAll('-', ' ')}
                             </Badge>
                         ))}
                     </div>
@@ -109,7 +146,16 @@ export default function PlatformBranchStaffIndex({
             },
             {
                 accessorKey: 'is_active',
-                header: 'Status',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Status"
+                        sortable
+                        sortKey="is_active"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <Badge
                         variant={
@@ -140,6 +186,38 @@ export default function PlatformBranchStaffIndex({
                                     row.original.id,
                                 ),
                             },
+                            {
+                                label: 'Transfer branch',
+                                onSelect: () =>
+                                    setTransferTarget({
+                                        id: row.original.id,
+                                        name: row.original.name,
+                                        branchId:
+                                            row.original.branch?.id ?? null,
+                                        branchName:
+                                            row.original.branch?.name ?? null,
+                                        roles: row.original.roles,
+                                    }),
+                            },
+                            ...(row.original.branch
+                                ? [
+                                      {
+                                          label: 'Assign to shift',
+                                          icon: CalendarClock,
+                                          href: BranchShiftAssignmentController.create.url(
+                                              {
+                                                  query: {
+                                                      branch_id:
+                                                          row.original.branch
+                                                              .id,
+                                                      people_kind: 'staff',
+                                                      user_id: row.original.id,
+                                                  },
+                                              },
+                                          ),
+                                      },
+                                  ]
+                                : []),
                             {
                                 label: 'Delete',
                                 icon: Trash2,
@@ -188,39 +266,29 @@ export default function PlatformBranchStaffIndex({
                                 <>
                                     <div className="grid gap-2">
                                         <Label>Branch</Label>
-                                        <Select
-                                            value={String(
-                                                query.filters.branch_id ??
-                                                    'all',
-                                            )}
+                                        <InfiniteScrollCombobox
+                                            optionsUrl={BranchStaffController.branchOptions.url()}
+                                            value={
+                                                branchFilter === 'all'
+                                                    ? null
+                                                    : branchFilter
+                                            }
                                             onValueChange={(value) =>
                                                 query.setFilter(
                                                     'branch_id',
-                                                    value === 'all'
-                                                        ? null
-                                                        : value,
+                                                    value,
                                                 )
                                             }
-                                        >
-                                            <SelectTrigger className="w-[12rem]">
-                                                <SelectValue placeholder="Branch" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All branches
-                                                </SelectItem>
-                                                {branches.map((branch) => (
-                                                    <SelectItem
-                                                        key={branch.id}
-                                                        value={String(
-                                                            branch.id,
-                                                        )}
-                                                    >
-                                                        {branch.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                            selectedLabel={
+                                                selectedBranch?.name ?? null
+                                            }
+                                            placeholder="All branches"
+                                            searchPlaceholder="Search branches…"
+                                            emptyText="No branch found."
+                                            noneLabel="All branches"
+                                            descriptionKey={null}
+                                            className="w-52"
+                                        />
                                     </div>
                                     <div className="grid gap-2">
                                         <Label>Status</Label>
@@ -260,6 +328,26 @@ export default function PlatformBranchStaffIndex({
                     }
                 />
             </div>
+
+            {transferTarget ? (
+                <TransferEmployeeSheet
+                    open
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setTransferTarget(null);
+                        }
+                    }}
+                    action={TransferController.storeStaff.form(
+                        transferTarget.id,
+                    )}
+                    subjectType="branch_staff"
+                    branchOptionsUrl={BranchStaffController.branchOptions.url()}
+                    roleOptionsUrl={BranchStaffController.roleOptions.url()}
+                    currentBranchId={transferTarget.branchId}
+                    currentBranchName={transferTarget.branchName}
+                    currentRoles={transferTarget.roles}
+                />
+            ) : null}
 
             <ConfirmDeleteDialog
                 open={deletingId !== null}

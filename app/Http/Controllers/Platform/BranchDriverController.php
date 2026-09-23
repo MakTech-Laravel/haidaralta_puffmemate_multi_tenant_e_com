@@ -40,7 +40,6 @@ class BranchDriverController extends Controller
             'branch' => $branch->only(['id', 'name', 'slug']),
             'vehicleTypes' => DriverPayload::vehicleTypeOptions(),
             'availabilityStatuses' => DriverPayload::availabilityOptions(),
-            'rosterStatuses' => DriverPayload::rosterStatusOptions(),
         ]);
     }
 
@@ -72,7 +71,6 @@ class BranchDriverController extends Controller
         return Inertia::render('platform/branches/drivers/show', [
             'branch' => $branch->only(['id', 'name', 'slug']),
             'driver' => DriverPayload::detail($driver, $branch),
-            'rosterStatuses' => DriverPayload::rosterStatusOptions(),
         ]);
     }
 
@@ -85,7 +83,6 @@ class BranchDriverController extends Controller
             'driver' => DriverPayload::detail($driver, $branch),
             'vehicleTypes' => DriverPayload::vehicleTypeOptions(),
             'availabilityStatuses' => DriverPayload::availabilityOptions(),
-            'rosterStatuses' => DriverPayload::rosterStatusOptions(),
         ]);
     }
 

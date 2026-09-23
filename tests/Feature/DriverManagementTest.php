@@ -47,7 +47,6 @@ test('platform can list and create drivers with branch assignments', function ()
             ->has('branches')
             ->has('vehicleTypes')
             ->has('availabilityStatuses')
-            ->has('rosterStatuses')
             ->where('drivers.single_active_branch', true));
 
     $this->actingAs($admin, 'platform')
@@ -56,7 +55,7 @@ test('platform can list and create drivers with branch assignments', function ()
         ->assertInertia(fn ($page) => $page
             ->component('platform/drivers/edit')
             ->has('driver')
-            ->has('rosterStatuses'));
+            ->missing('rosterStatuses'));
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.drivers.store'), [
@@ -195,7 +194,7 @@ test('branch can create driver auto assigned to current branch', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/drivers/create')
-            ->has('rosterStatuses'));
+            ->missing('rosterStatuses'));
 
     $this->actingAs($staff, 'branch')
         ->post(route('branch.drivers.store', ['branch' => $sydney->slug]), [
@@ -261,7 +260,7 @@ test('platform nested branch drivers index redirects to the drivers list filtere
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/branches/drivers/create')
-            ->has('rosterStatuses'));
+            ->missing('rosterStatuses'));
 });
 
 test('platform can store driver with address and avatar and sync branches', function () {
