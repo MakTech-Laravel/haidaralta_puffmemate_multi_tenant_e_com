@@ -1,7 +1,8 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { CalendarClock, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import ShiftAssignmentController from '@/actions/App/Http/Controllers/Branch/ShiftAssignmentController';
 import StaffController from '@/actions/App/Http/Controllers/Branch/StaffController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import {
@@ -172,6 +173,19 @@ export default function BranchStaffIndex({
                                     branch.slug,
                                     row.original.id,
                                 ]),
+                            },
+                            {
+                                label: 'Assign to shift',
+                                icon: CalendarClock,
+                                href: ShiftAssignmentController.create.url(
+                                    branch.slug,
+                                    {
+                                        query: {
+                                            people_kind: 'staff',
+                                            user_id: row.original.id,
+                                        },
+                                    },
+                                ),
                             },
                             {
                                 label: 'Delete',

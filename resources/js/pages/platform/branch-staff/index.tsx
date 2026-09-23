@@ -1,8 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { CalendarClock, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
+import BranchShiftAssignmentController from '@/actions/App/Http/Controllers/Platform/BranchShiftAssignmentController';
 import TransferController from '@/actions/App/Http/Controllers/Platform/TransferController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import { TransferEmployeeSheet } from '@/components/admin/transfer-employee-sheet';
@@ -198,6 +199,25 @@ export default function PlatformBranchStaffIndex({
                                         roles: row.original.roles,
                                     }),
                             },
+                            ...(row.original.branch
+                                ? [
+                                      {
+                                          label: 'Assign to shift',
+                                          icon: CalendarClock,
+                                          href: BranchShiftAssignmentController.create.url(
+                                              {
+                                                  query: {
+                                                      branch_id:
+                                                          row.original.branch
+                                                              .id,
+                                                      people_kind: 'staff',
+                                                      user_id: row.original.id,
+                                                  },
+                                              },
+                                          ),
+                                      },
+                                  ]
+                                : []),
                             {
                                 label: 'Delete',
                                 icon: Trash2,

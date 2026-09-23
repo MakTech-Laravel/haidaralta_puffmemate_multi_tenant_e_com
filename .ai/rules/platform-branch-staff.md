@@ -11,3 +11,6 @@ Platform staff create, edit (unlocked), and the staff list Branch filter use Inf
 
 ## Platform staff transfer sheet and edit-as-transfer
 Platform staff Transfer (list + show) uses TransferEmployeeSheet with InfiniteScrollCombobox branch-options and role-options (required role, current branch read-only). Never dump branches/rolesByBranch on index/show. Changing branch_id on platform staff edit calls TransferEmployeeService with reason Updated via staff edit. Active branches (status=true) must keep a super-admin; inactive branches may transfer the last SA away.
+
+## Staff list Assign to shift pre-fills branch and type
+Platform staff list row action Assign to shift links to branch-shift-assignments.create with `branch_id` (staff home branch), `people_kind=staff`, and `user_id`. Branch portal staff list links to branch.shift-assignments.create with `people_kind=staff` and `user_id` (branch is the portal store).
