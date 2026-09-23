@@ -15,7 +15,6 @@ export default function BranchShiftsAssign({
     selectedPerson,
     templates,
     calendar,
-    assignmentGroups,
 }: { branch: BranchOption } & ShiftAssignmentWorkspaceProps) {
     const peopleOptionsUrl = selectedPeopleKind
         ? ShiftAssignmentController.peopleOptions.url(branch.slug ?? '', {
@@ -63,7 +62,6 @@ export default function BranchShiftsAssign({
             selectedPerson={selectedPerson}
             templates={templates}
             calendar={calendar}
-            assignmentGroups={assignmentGroups}
         />
     );
 }

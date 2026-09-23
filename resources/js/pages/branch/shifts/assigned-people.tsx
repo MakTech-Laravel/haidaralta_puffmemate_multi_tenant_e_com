@@ -36,7 +36,7 @@ export default function BranchAssignedPeople({
             <ShiftAssignedPeoplePage
                 kicker={branch.name}
                 title="Assigned people"
-                description="Everyone who has a shift assigned — their name, dates, and the shift."
+                description="Everyone with duty days in the selected month — name, phone, type, and assigned dates."
                 tablePayload={table}
                 indexUrl={ShiftAssignmentController.index.url(branch.slug)}
                 assignHref={ShiftAssignmentController.create.url(branch.slug)}
@@ -46,9 +46,7 @@ export default function BranchAssignedPeople({
                             people_kind:
                                 row.user_type === 'driver' ? 'driver' : 'staff',
                             user_id: row.user_id,
-                            ...(row.start_date
-                                ? { month: row.start_date.slice(0, 7) }
-                                : {}),
+                            month: row.month,
                         },
                     })
                 }

@@ -370,6 +370,34 @@ final class WorkforcePayload
      *
      * @return array<string, mixed>
      */
+    /**
+     * Monthly Assigned people row: one person, compressed duty days in that month.
+     *
+     * @param  list<string>  $dates  Y-m-d duty dates already scoped to the month.
+     * @return array<string, mixed>
+     */
+    public static function assignedPersonMonth(User $user, string $month, array $dates, ?int $branchId = null): array
+    {
+        $peopleKindLabel = $user->user_type === UserType::DRIVER ? 'Driver' : 'Staff';
+
+        return [
+            'id' => $user->id,
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'phone' => $user->phone,
+            'user_type' => $user->user_type?->value,
+            'people_kind_label' => $peopleKindLabel,
+            'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+            'branch_id' => $branchId ?? $user->branch_id,
+            'assigned_dates_label' => ShiftDateRuns::compactMonthDayLabel($dates),
+            'assigned_day_count' => count($dates),
+            'month' => $month,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public static function assignedPerson(UserShiftAssignment $assignment): array
     {
         $assignment->loadMissing(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar']);

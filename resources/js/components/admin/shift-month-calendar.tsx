@@ -2,17 +2,20 @@ import {
     addDays,
     addMonths,
     eachDayOfInterval,
+    endOfMonth,
     format,
     parseISO,
     setMonth,
     setYear,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarRange, ChevronLeft, ChevronRight, Eraser } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { ShiftAssignGuideSheet } from '@/components/admin/shift-assign-guide-sheet';
 import { ShiftCalendarDay } from '@/components/admin/shift-calendar-day';
-import type {
-    ShiftAssignmentSelectionAction,
-    ShiftAssignmentSelectionState,
+import {
+    hasPendingShiftChanges,
+    type ShiftAssignmentSelectionAction,
+    type ShiftAssignmentSelectionState,
 } from '@/components/admin/shift-assignment-selection';
 import { ShiftSelectionModeToggle } from '@/components/admin/shift-selection-mode-toggle';
 import type { ShiftAssignmentCalendarPayload } from '@/components/admin/workforce-types';
@@ -54,21 +57,120 @@ export function ShiftMonthCalendar({
             }),
         [calendar.grid_end, calendar.grid_start],
     );
-    const years = useMemo(
-        () =>
-            Array.from({ length: 26 }, (_, index) =>
-                String(monthDate.getFullYear() - 20 + index),
-            ),
-        [monthDate],
-    );
+    const years = useMemo(() => {
+        const endYear = new Date().getFullYear() + 2;
+
+        return Array.from({ length: endYear - 2020 + 1 }, (_, index) =>
+            String(2020 + index),
+        );
+    }, []);
+    const monthEndDate = format(endOfMonth(monthDate), 'yyyy-MM-dd');
+    const monthIsFullyPast = monthEndDate < calendar.today;
+    const remainingMonthDates = useMemo(() => {
+        if (monthIsFullyPast) {
+            return [];
+        }
+
+        return eachDayOfInterval({
+            start: monthDate,
+            end: endOfMonth(monthDate),
+        })
+            .map((day) => format(day, 'yyyy-MM-dd'))
+            .filter((date) => date >= calendar.today);
+    }, [calendar.today, monthDate, monthIsFullyPast]);
 
     const navigateTo = (date: Date): void => {
         onMonthChange(format(date, 'yyyy-MM'));
     };
 
+    const selectRemainingMonth = (): void => {
+        if (monthIsFullyPast || remainingMonthDates.length === 0) {
+            return;
+        }
+
+        setSelectionNotice(null);
+
+        const eligibleAssignDates: string[] = [];
+        const eligibleReplaceDayIds: number[] = [];
+        let skipped = 0;
+        let ambiguous = 0;
+
+        for (const candidate of remainingMonthDates) {
+            const dayShifts = calendar.days[candidate] ?? [];
+
+            if (dayShifts.length === 0) {
+                eligibleAssignDates.push(candidate);
+                continue;
+            }
+
+            const dayEditable = dayShifts.filter((shift) => shift.editable);
+
+            if (dayEditable.length === 1 && dayShifts.length === 1) {
+                eligibleReplaceDayIds.push(dayEditable[0].id);
+                continue;
+            }
+
+            if (dayEditable.length > 1 || dayShifts.length > 1) {
+                ambiguous += 1;
+                continue;
+            }
+
+            skipped += 1;
+        }
+
+        if (
+            eligibleAssignDates.length === 0 &&
+            eligibleReplaceDayIds.length === 0
+        ) {
+            setSelectionNotice(
+                ambiguous > 0
+                    ? 'No dates could be selected. Multi-shift days need the ⋯ menu.'
+                    : 'No eligible dates left in this month.',
+            );
+
+            return;
+        }
+
+        dispatch({
+            type: 'apply-range-selection',
+            dates: eligibleAssignDates,
+            replaceDayIds: eligibleReplaceDayIds,
+        });
+
+        const parts: string[] = [];
+
+        if (eligibleAssignDates.length > 0) {
+            parts.push(
+                `${eligibleAssignDates.length} new date${eligibleAssignDates.length === 1 ? '' : 's'}`,
+            );
+        }
+
+        if (eligibleReplaceDayIds.length > 0) {
+            parts.push(
+                `${eligibleReplaceDayIds.length} assigned date${eligibleReplaceDayIds.length === 1 ? '' : 's'} to change`,
+            );
+        }
+
+        if (ambiguous > 0) {
+            parts.push(
+                `${ambiguous} multi-shift date${ambiguous === 1 ? '' : 's'} skipped`,
+            );
+        }
+
+        if (skipped > 0) {
+            parts.push(
+                `${skipped} read-only date${skipped === 1 ? '' : 's'} skipped`,
+            );
+        }
+
+        setSelectionNotice(
+            `${parts.join('; ')}. Past dates were not selected.`,
+        );
+    };
+
     const selectDate = (
         date: string,
-        event: React.MouseEvent<HTMLButtonElement>,
+        event: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean },
     ): void => {
         setSelectionNotice(null);
 
@@ -78,13 +180,14 @@ export function ShiftMonthCalendar({
             return;
         }
 
-        const manualOverride = event.ctrlKey || event.metaKey;
+        const forceManual = event.ctrlKey || event.metaKey;
+        const forceRange = event.shiftKey && !forceManual;
+        const useRangeMode =
+            forceRange || (!forceManual && selection.selectionMode === 'range');
+        const shifts = calendar.days[date] ?? [];
+        const editableShifts = shifts.filter((shift) => shift.editable);
 
-        if (
-            selection.selectionMode === 'range' &&
-            !manualOverride &&
-            selection.rangeAnchor !== null
-        ) {
+        if (selection.rangeAnchor !== null && !forceManual) {
             const anchor = parseISO(selection.rangeAnchor);
             const target = parseISO(date);
             const start = anchor <= target ? anchor : target;
@@ -92,62 +195,141 @@ export function ShiftMonthCalendar({
             const candidates = eachDayOfInterval({ start, end }).map((day) =>
                 format(day, 'yyyy-MM-dd'),
             );
-            const eligible = candidates.filter(
-                (candidate) =>
-                    candidate >= calendar.today &&
-                    (calendar.days[candidate]?.length ?? 0) === 0,
-            );
-            const skipped = candidates.length - eligible.length;
 
-            dispatch({ type: 'add-assign-dates', dates: eligible });
+            const eligibleAssignDates: string[] = [];
+            const eligibleReplaceDayIds: number[] = [];
+            let skipped = 0;
+            let ambiguous = 0;
+
+            for (const candidate of candidates) {
+                if (candidate < calendar.today) {
+                    skipped += 1;
+                    continue;
+                }
+
+                const dayShifts = calendar.days[candidate] ?? [];
+
+                if (dayShifts.length === 0) {
+                    eligibleAssignDates.push(candidate);
+                    continue;
+                }
+
+                const dayEditable = dayShifts.filter((shift) => shift.editable);
+
+                if (dayEditable.length === 1 && dayShifts.length === 1) {
+                    eligibleReplaceDayIds.push(dayEditable[0].id);
+                    continue;
+                }
+
+                if (dayEditable.length > 1 || dayShifts.length > 1) {
+                    ambiguous += 1;
+                    continue;
+                }
+
+                skipped += 1;
+            }
+
+            if (
+                eligibleAssignDates.length > 0 ||
+                eligibleReplaceDayIds.length > 0
+            ) {
+                dispatch({
+                    type: 'apply-range-selection',
+                    dates: eligibleAssignDates,
+                    replaceDayIds: eligibleReplaceDayIds,
+                });
+            } else {
+                dispatch({ type: 'set-range-anchor', date: null });
+            }
+
+            const parts: string[] = [];
+
+            if (eligibleAssignDates.length > 0) {
+                parts.push(
+                    `${eligibleAssignDates.length} new date${eligibleAssignDates.length === 1 ? '' : 's'}`,
+                );
+            }
+
+            if (eligibleReplaceDayIds.length > 0) {
+                parts.push(
+                    `${eligibleReplaceDayIds.length} assigned date${eligibleReplaceDayIds.length === 1 ? '' : 's'} to change`,
+                );
+            }
+
+            if (ambiguous > 0) {
+                parts.push(
+                    `${ambiguous} multi-shift date${ambiguous === 1 ? '' : 's'} skipped`,
+                );
+            }
+
+            if (skipped > 0) {
+                parts.push(
+                    `${skipped} past or read-only date${skipped === 1 ? '' : 's'} skipped`,
+                );
+            }
+
             setSelectionNotice(
-                skipped > 0
-                    ? `${eligible.length} dates selected; ${skipped} past or assigned dates skipped.`
-                    : `${eligible.length} dates selected.`,
+                parts.length > 0
+                    ? parts.join('; ') + '.'
+                    : 'No eligible dates in that range.',
             );
 
             return;
         }
 
-        const shifts = calendar.days[date] ?? [];
-        const editableShifts = shifts.filter((shift) => shift.editable);
-
         if (shifts.length > 0) {
-            if (editableShifts.length === 1 && shifts.length === 1) {
+            if (editableShifts.length === 0) {
+                setSelectionNotice(
+                    'This shift is read-only in this workspace.',
+                );
+
+                return;
+            }
+
+            if (editableShifts.length > 1 || shifts.length > 1) {
+                setSelectionNotice(
+                    'This date has multiple shifts. Use the menu on the specific shift you want to change.',
+                );
+
+                return;
+            }
+
+            if (!useRangeMode) {
                 dispatch({
                     type: 'toggle-replace-day',
                     dayId: editableShifts[0].id,
                 });
-            } else if (editableShifts.length > 0) {
-                setSelectionNotice(
-                    'This date has multiple shifts. Use the menu on the specific shift you want to change.',
-                );
-            } else {
-                setSelectionNotice(
-                    'This shift is read-only in this workspace.',
-                );
+
+                return;
             }
+
+            dispatch({ type: 'set-range-anchor', date });
+            setSelectionNotice(
+                forceRange
+                    ? 'Shift-click or click the other end to change that range of assigned dates.'
+                    : 'Choose the other end to change that range of assigned dates.',
+            );
 
             return;
         }
 
-        if (selection.selectionMode === 'manual' || manualOverride) {
+        if (!useRangeMode) {
             dispatch({ type: 'toggle-assign-date', date });
 
             return;
         }
 
-        if (selection.rangeAnchor === null) {
-            dispatch({ type: 'set-range-anchor', date });
-            setSelectionNotice('Choose the other end of the date range.');
-
-            return;
-        }
+        dispatch({ type: 'set-range-anchor', date });
+        setSelectionNotice(
+            forceRange
+                ? 'Shift-click or click the other end of the date range.'
+                : 'Choose the other end of the date range.',
+        );
     };
 
     const handleKeyboardNavigation = (
         date: Date,
-        event: React.KeyboardEvent<HTMLButtonElement>,
+        event: React.KeyboardEvent<HTMLElement>,
     ): void => {
         const offsets: Record<string, number> = {
             ArrowLeft: -1,
@@ -163,27 +345,70 @@ export function ShiftMonthCalendar({
 
         event.preventDefault();
         const target = format(addDays(date, offset), 'yyyy-MM-dd');
-        const button = document.querySelector<HTMLButtonElement>(
+        const cell = document.querySelector<HTMLElement>(
             `[data-shift-calendar-date="${target}"]`,
         );
 
-        button?.focus();
+        cell?.focus();
     };
 
     return (
         <section className="border-border/80 bg-card rounded-2xl border p-3 shadow-sm sm:p-6">
             <div className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div>
-                    <h2 className="text-lg font-semibold">Schedule calendar</h2>
+                <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                        <h2 className="text-lg font-semibold">
+                            Schedule calendar
+                        </h2>
+                        <ShiftAssignGuideSheet
+                            allowMultiplePerDay={allowMultiplePerDay}
+                        />
+                    </div>
                     <p className="text-muted-foreground text-sm">
                         Select dates, then save once to apply every staged
                         change.
                     </p>
                 </div>
-                <ShiftSelectionModeToggle
-                    mode={selection.selectionMode}
-                    onChange={(mode) => dispatch({ type: 'set-mode', mode })}
-                />
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={monthIsFullyPast}
+                        title={
+                            monthIsFullyPast
+                                ? 'This month is entirely in the past'
+                                : 'Select every remaining day in this month'
+                        }
+                        onClick={selectRemainingMonth}
+                    >
+                        <CalendarRange />
+                        Select remaining days
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                            !hasPendingShiftChanges(selection) &&
+                            selection.rangeAnchor === null
+                        }
+                        title="Clear staged date selections"
+                        onClick={() => {
+                            dispatch({ type: 'clear-staged' });
+                            setSelectionNotice(null);
+                        }}
+                    >
+                        <Eraser />
+                        Clear selection
+                    </Button>
+                    <ShiftSelectionModeToggle
+                        mode={selection.selectionMode}
+                        onChange={(mode) =>
+                            dispatch({ type: 'set-mode', mode })
+                        }
+                    />
+                </div>
             </div>
 
             <div className="mb-4 flex items-center justify-between gap-2">
@@ -294,8 +519,8 @@ export function ShiftMonthCalendar({
             >
                 {selectionNotice ??
                     (selection.selectionMode === 'range'
-                        ? 'Choose two unassigned dates. Ctrl/Cmd-click toggles one date.'
-                        : 'Click dates one by one. Assigned shifts can be changed from their action menu.')}
+                        ? 'Click two days for a range (empty = new, assigned = change). Ctrl/Cmd-click one date. Shift-click also starts a range.'
+                        : 'Click one-by-one. Shift-click a range on empty or assigned days; Ctrl/Cmd-click keeps single select.')}
             </p>
         </section>
     );

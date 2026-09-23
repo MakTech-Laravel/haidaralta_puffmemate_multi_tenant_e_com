@@ -1,7 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { CalendarCheck, UserRound } from 'lucide-react';
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { AssignedShiftGroupList } from '@/components/admin/assigned-shift-group-list';
+import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import { ShiftAssignmentGate } from '@/components/admin/shift-assignment-gate';
 import {
     emptyShiftAssignmentSelection,
@@ -39,7 +39,6 @@ export function ShiftAssignWorkspace({
     selectedPerson,
     templates,
     calendar,
-    assignmentGroups,
 }: {
     kicker: string;
     branch: BranchOption | null;
@@ -51,7 +50,10 @@ export function ShiftAssignWorkspace({
     shiftsUrl: string;
     assignedPeopleUrl: string;
     includeBranchInPayload: boolean;
-} & Omit<ShiftAssignmentWorkspaceProps, 'selectedBranch'>) {
+} & Omit<
+    ShiftAssignmentWorkspaceProps,
+    'selectedBranch' | 'assignmentGroups'
+>) {
     const { shifts } = usePage().props;
     const [selection, dispatch] = useReducer(
         shiftAssignmentSelectionReducer,
@@ -59,18 +61,22 @@ export function ShiftAssignWorkspace({
         emptyShiftAssignmentSelection,
     );
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [discardOpen, setDiscardOpen] = useState(false);
     const [targetShiftTemplateId, setTargetShiftTemplateId] = useState<
         number | null
     >(null);
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const allowNextNavigationRef = useRef(false);
+    const pendingActionRef = useRef<(() => void) | null>(null);
     const pending = hasPendingShiftChanges(selection);
     const currentMonth = calendar?.month;
 
     useEffect(() => {
         dispatch({ type: 'reset' });
         setDialogOpen(false);
+        setDiscardOpen(false);
+        pendingActionRef.current = null;
         setTargetShiftTemplateId(null);
         setErrors({});
     }, [branch?.id, selectedPeopleKind, selectedPerson?.id, currentMonth]);
@@ -80,16 +86,28 @@ export function ShiftAssignWorkspace({
             return;
         }
 
-        const removeBeforeListener = router.on('before', () => {
+        const removeBeforeListener = router.on('before', (event) => {
             if (allowNextNavigationRef.current) {
                 allowNextNavigationRef.current = false;
 
                 return true;
             }
 
-            return window.confirm(
-                'Discard your unsaved shift changes and leave this page?',
-            );
+            const visit = event.detail.visit;
+
+            pendingActionRef.current = () => {
+                allowNextNavigationRef.current = true;
+                router.visit(visit.url, {
+                    method: visit.method,
+                    data: visit.data,
+                    replace: visit.replace,
+                    preserveScroll: visit.preserveScroll,
+                    preserveState: visit.preserveState,
+                });
+            };
+            setDiscardOpen(true);
+
+            return false;
         });
         const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
             event.preventDefault();
@@ -103,14 +121,23 @@ export function ShiftAssignWorkspace({
         };
     }, [pending]);
 
-    const canDiscardPending = (): boolean => {
+    const requestDiscard = (action: () => void): void => {
         if (!pending) {
-            return true;
+            action();
+
+            return;
         }
 
-        return window.confirm(
-            'Discard your unsaved shift changes and continue?',
-        );
+        pendingActionRef.current = action;
+        setDiscardOpen(true);
+    };
+
+    const confirmDiscard = (): void => {
+        const action = pendingActionRef.current;
+        pendingActionRef.current = null;
+        dispatch({ type: 'reset' });
+        allowNextNavigationRef.current = true;
+        action?.();
     };
 
     const visitWorkspace = (query: ShiftAssignmentWorkspaceQuery): void => {
@@ -127,44 +154,41 @@ export function ShiftAssignWorkspace({
         ...(selectedPeopleKind ? { people_kind: selectedPeopleKind } : {}),
         ...(selectedPerson ? { user_id: selectedPerson.id } : {}),
         ...(calendar ? { month: calendar.month } : {}),
-        assignment_page: assignmentGroups.meta.current_page,
     });
 
     const handleBranchChange = (branchId: number | null): void => {
-        if (!canDiscardPending()) {
-            return;
-        }
-
-        visitWorkspace(branchId ? { branch_id: branchId } : {});
+        requestDiscard(() =>
+            visitWorkspace(branchId ? { branch_id: branchId } : {}),
+        );
     };
 
     const handlePeopleKindChange = (
         peopleKind: ShiftAssignmentPeopleKind | null,
     ): void => {
-        if (!canDiscardPending() || branch === null) {
+        if (branch === null) {
             return;
         }
 
-        visitWorkspace({
-            branch_id: branch.id,
-            ...(peopleKind ? { people_kind: peopleKind } : {}),
-        });
+        requestDiscard(() =>
+            visitWorkspace({
+                branch_id: branch.id,
+                ...(peopleKind ? { people_kind: peopleKind } : {}),
+            }),
+        );
     };
 
     const handlePersonChange = (userId: number | null): void => {
-        if (
-            !canDiscardPending() ||
-            branch === null ||
-            selectedPeopleKind === null
-        ) {
+        if (branch === null || selectedPeopleKind === null) {
             return;
         }
 
-        visitWorkspace({
-            branch_id: branch.id,
-            people_kind: selectedPeopleKind,
-            ...(userId ? { user_id: userId } : {}),
-        });
+        requestDiscard(() =>
+            visitWorkspace({
+                branch_id: branch.id,
+                people_kind: selectedPeopleKind,
+                ...(userId ? { user_id: userId } : {}),
+            }),
+        );
     };
 
     const openSaveDialog = (): void => {
@@ -193,7 +217,6 @@ export function ShiftAssignWorkspace({
                 (left, right) => left - right,
             ),
             ...(calendar ? { month: calendar.month } : {}),
-            assignment_page: assignmentGroups.meta.current_page,
         };
 
         allowNextNavigationRef.current = true;
@@ -287,15 +310,12 @@ export function ShiftAssignWorkspace({
                             allowMultiplePerDay={shifts.allow_multiple_per_day}
                             dispatch={dispatch}
                             onMonthChange={(month) => {
-                                if (!canDiscardPending()) {
-                                    return;
-                                }
-
-                                visitWorkspace({
-                                    ...baseQuery(),
-                                    month,
-                                    assignment_page: 1,
-                                });
+                                requestDiscard(() =>
+                                    visitWorkspace({
+                                        ...baseQuery(),
+                                        month,
+                                    }),
+                                );
                             }}
                         />
 
@@ -321,20 +341,6 @@ export function ShiftAssignWorkspace({
                                 <CalendarCheck /> Save changes
                             </Button>
                         </div>
-
-                        <AssignedShiftGroupList
-                            groups={assignmentGroups}
-                            onPageChange={(assignmentPage) => {
-                                if (!canDiscardPending()) {
-                                    return;
-                                }
-
-                                visitWorkspace({
-                                    ...baseQuery(),
-                                    assignment_page: assignmentPage,
-                                });
-                            }}
-                        />
                     </>
                 ) : (
                     <section className="border-border bg-muted/20 flex min-h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-8 text-center">
@@ -345,7 +351,7 @@ export function ShiftAssignWorkspace({
                             </h2>
                             <p className="text-muted-foreground mt-1 max-w-md text-sm">
                                 Select the branch, user type, and user above to
-                                load their calendar and assigned shifts.
+                                load their calendar.
                             </p>
                         </div>
                     </section>
@@ -368,6 +374,21 @@ export function ShiftAssignWorkspace({
                 }}
                 onTargetChange={setTargetShiftTemplateId}
                 onConfirm={submitChanges}
+            />
+
+            <ConfirmDeleteDialog
+                open={discardOpen}
+                onOpenChange={(open) => {
+                    setDiscardOpen(open);
+
+                    if (!open) {
+                        pendingActionRef.current = null;
+                    }
+                }}
+                title="Discard unsaved changes?"
+                description="Your staged shift changes will be lost if you continue."
+                confirmLabel="Discard changes"
+                onConfirm={confirmDiscard}
             />
         </>
     );

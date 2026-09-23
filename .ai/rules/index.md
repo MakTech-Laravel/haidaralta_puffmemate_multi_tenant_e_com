@@ -9,7 +9,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/ActivityLog/** | .ai/rules/activity-log.md |
 | resources/js/components/admin/shift-*.tsx,app/Support/WorkforcePayload.php | .ai/rules/admin-support.md |
 | resources/js/components/admin/branch-form.tsx, resources/js/components/admin/driver-form.tsx, resources/js/components/admin/duty-days-picker.tsx, resources/js/components/admin/driver-roster-fields.tsx, resources/js/components/admin/branch-location-map-dialog.tsx, resources/js/components/admin/driver-branch-assign-sheet.tsx, resources/js/components/admin/shift-*.tsx | .ai/rules/admin.md |
-| app/Services/Application/**, app/Models/ApplicationSetting.php, app/Models/SmtpSetting.php, app/Models/PaymentGatewaySetting.php, app/Http/Controllers/Platform/*SettingsController.php, app/Http/Requests/Platform/*Settings*.php, app/Support/DateTimeFormat.php, resources/js/pages/platform/settings/**, resources/js/lib/datetime.ts, database/migrations/*_create_application_settings_table.php, database/migrations/*_create_smtp_settings_table.php, database/migrations/*_create_payment_gateway_settings_table.php, app/Http/Controllers/Platform/*Shift*.php, database/migrations/**, app/Support/DriverAvailability.php | .ai/rules/application-settings.md |
 | resources/js/pages/auth/**,app/Actions/Fortify/CreateNewUser.php,app/Http/Requests/Auth/StoreRegisteredUserRequest.php,resources/js/layouts/auth/** | .ai/rules/auth.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php | .ai/rules/backup.md |
 | app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php, app/Models/Driver*.php, app/Models/User.php | .ai/rules/branch.md |
@@ -73,6 +72,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/orders-js-components-driver.md |
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx | .ai/rules/orders.md |
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |
+| resources/js/components/admin/shift-*.{ts,tsx},resources/js/pages/{platform,branch}/shifts/assign.tsx | .ai/rules/pagesplatformbranch-shifts.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | app/Http/Controllers/{Platform,Branch}/**, app/Http/Controllers/{Platform,Branch}/*Driver*.php | .ai/rules/platform-branch.md |
 | resources/js/lib/stock-query.ts, resources/js/pages/**/products/index.tsx, resources/js/pages/platform/catalog/products/branches.tsx | .ai/rules/platform-catalog-products.md |
@@ -103,6 +103,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/Platform/*Shift*.php,resources/js/pages/platform/shifts/assign.tsx | .ai/rules/shifts.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/stock.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts | .ai/rules/storefront.md |
+| app/DataTables/ShiftAssignmentDataTable.php,app/Support/WorkforcePayload.php,resources/js/components/admin/shift-assigned-people-page.tsx | .ai/rules/support-js-components-admin.md |
 | app/Support/Storefront/DemoCatalog.php | .ai/rules/support-storefront.md |
 | app/Models/UserShiftAssignment.php,app/Support/DutyWindow.php,app/Support/DriverAvailability.php | .ai/rules/support-support.md |
 | app/Support/OpsDashboardAccess.php, config/cache.php | .ai/rules/support.md |

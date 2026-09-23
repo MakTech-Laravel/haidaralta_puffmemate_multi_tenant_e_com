@@ -45,16 +45,23 @@ export function ShiftDayActions({
     return (
         <div
             className={cn(
-                'bg-primary text-primary-foreground flex min-w-0 items-center gap-1 rounded-md pl-1.5 text-[10px] leading-tight sm:text-xs',
-                replacing && 'ring-ring ring-2 ring-offset-1',
-                removing && 'bg-muted text-muted-foreground line-through',
+                'flex min-w-0 items-center gap-1 rounded-md pl-1.5 text-[10px] leading-tight sm:text-xs',
+                !replacing && !removing && 'bg-primary text-primary-foreground',
+                replacing &&
+                    'border-2 border-dashed border-sky-700 bg-sky-100 text-sky-950',
+                removing &&
+                    'border-destructive/70 bg-destructive/10 text-destructive border-2 border-dashed line-through',
             )}
         >
             <span className="min-w-0 flex-1 py-1">
-                <span className="block truncate font-medium">
+                <span className="block truncate font-semibold">
                     {removing ? 'Removing' : replacing ? 'Changing' : label}
                 </span>
-                {time && !removing ? (
+                {removing || replacing ? (
+                    <span className="block truncate font-medium opacity-80">
+                        Unsaved
+                    </span>
+                ) : time ? (
                     <span className="block truncate opacity-80">{time}</span>
                 ) : null}
             </span>
@@ -63,9 +70,12 @@ export function ShiftDayActions({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="hover:bg-background/20 size-7 shrink-0"
+                    className="hover:bg-destructive/15 size-7 shrink-0"
                     aria-label={`Undo removal of ${label}`}
-                    onClick={onRemove}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        onRemove();
+                    }}
                 >
                     <RotateCcw className="size-3.5" />
                 </Button>
@@ -76,8 +86,14 @@ export function ShiftDayActions({
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="hover:bg-background/20 size-7 shrink-0"
+                            className={cn(
+                                'size-7 shrink-0',
+                                replacing
+                                    ? 'hover:bg-sky-200/80'
+                                    : 'hover:bg-background/20',
+                            )}
                             aria-label={`Actions for ${label}`}
+                            onClick={(event) => event.stopPropagation()}
                         >
                             {replacing ? (
                                 <Check className="size-3.5" />
@@ -86,7 +102,10 @@ export function ShiftDayActions({
                             )}
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent
+                        align="end"
+                        onClick={(event) => event.stopPropagation()}
+                    >
                         <DropdownMenuItem onSelect={onReplace}>
                             <Pencil />
                             {replacing ? 'Undo change' : 'Change shift'}

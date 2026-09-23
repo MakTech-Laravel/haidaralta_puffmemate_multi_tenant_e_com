@@ -14,7 +14,13 @@ export type ShiftAssignmentSelectionAction =
     | { type: 'toggle-assign-date'; date: string }
     | { type: 'add-assign-dates'; dates: string[] }
     | { type: 'toggle-replace-day'; dayId: number }
+    | {
+          type: 'apply-range-selection';
+          dates: string[];
+          replaceDayIds: number[];
+      }
     | { type: 'toggle-remove-day'; dayId: number }
+    | { type: 'clear-staged' }
     | { type: 'reset' };
 
 export function emptyShiftAssignmentSelection(): ShiftAssignmentSelectionState {
@@ -33,6 +39,16 @@ export function shiftAssignmentSelectionReducer(
 ): ShiftAssignmentSelectionState {
     if (action.type === 'reset') {
         return emptyShiftAssignmentSelection();
+    }
+
+    if (action.type === 'clear-staged') {
+        return {
+            ...state,
+            rangeAnchor: null,
+            assignDates: new Set<string>(),
+            replaceDayIds: new Set<number>(),
+            removeDayIds: new Set<number>(),
+        };
     }
 
     if (action.type === 'set-mode') {
@@ -82,6 +98,29 @@ export function shiftAssignmentSelectionReducer(
         }
 
         return { ...state, replaceDayIds, removeDayIds, rangeAnchor: null };
+    }
+
+    if (action.type === 'apply-range-selection') {
+        const assignDates = new Set(state.assignDates);
+        const replaceDayIds = new Set(state.replaceDayIds);
+        const removeDayIds = new Set(state.removeDayIds);
+
+        for (const date of action.dates) {
+            assignDates.add(date);
+        }
+
+        for (const dayId of action.replaceDayIds) {
+            removeDayIds.delete(dayId);
+            replaceDayIds.add(dayId);
+        }
+
+        return {
+            ...state,
+            assignDates,
+            replaceDayIds,
+            removeDayIds,
+            rangeAnchor: null,
+        };
     }
 
     const removeDayIds = new Set(state.removeDayIds);

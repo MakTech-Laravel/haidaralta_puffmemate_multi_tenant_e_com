@@ -34,3 +34,17 @@ it('rejects dates that are not strict calendar dates', function (string $date) {
     'impossible date' => '2026-02-30',
     'date time' => '2026-09-22 08:00:00',
 ]);
+
+it('compresses month dates into day-of-month run labels', function () {
+    expect(ShiftDateRuns::compactMonthDayLabel([
+        '2026-09-01',
+        '2026-09-02',
+        '2026-09-03',
+        '2026-09-05',
+        '2026-09-10',
+        '2026-09-11',
+        '2026-09-13',
+    ]))->toBe('1-3,5,10-11,13')
+        ->and(ShiftDateRuns::compactMonthDayLabel([]))->toBe('')
+        ->and(ShiftDateRuns::compactMonthDayLabel(['2026-09-22']))->toBe('22');
+});

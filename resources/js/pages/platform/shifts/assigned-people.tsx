@@ -74,7 +74,7 @@ export default function PlatformAssignedPeople({
                         : 'Administrator'
                 }
                 title="Assigned people"
-                description="Everyone who has a shift assigned — their name, dates, and the shift."
+                description="Everyone with duty days in the selected month — name, phone, type, and assigned dates."
                 tablePayload={table}
                 indexUrl={indexUrl}
                 extraQuery={
@@ -86,13 +86,13 @@ export default function PlatformAssignedPeople({
                 editHref={(row) =>
                     routes.assignments.create.url({
                         query: {
-                            branch_id: row.branch_id,
+                            ...(row.branch_id
+                                ? { branch_id: row.branch_id }
+                                : {}),
                             people_kind:
                                 row.user_type === 'driver' ? 'driver' : 'staff',
                             user_id: row.user_id,
-                            ...(row.start_date
-                                ? { month: row.start_date.slice(0, 7) }
-                                : {}),
+                            month: row.month,
                         },
                     })
                 }
