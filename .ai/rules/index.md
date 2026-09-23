@@ -108,6 +108,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/OtpService.php | .ai/rules/services.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |
 | app/Http/Controllers/Platform/*Shift*.php,resources/js/pages/platform/shifts/assign.tsx | .ai/rules/shifts.md |
+| resources/js/components/stock/**,app/Support/StockPageContext.php,app/Support/ProductManageRedirect.php | .ai/rules/stock-support-support.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/stock.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts | .ai/rules/storefront.md |
 | app/DataTables/ShiftAssignmentDataTable.php,app/Support/WorkforcePayload.php,resources/js/components/admin/shift-assigned-people-page.tsx | .ai/rules/support-js-components-admin.md |

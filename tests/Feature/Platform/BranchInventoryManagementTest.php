@@ -537,7 +537,7 @@ test('platform can open product branch inventory overview', function () {
             ->has('table.links')
             ->where('table.data.0.manage_url', fn ($url) => is_string($url)
                 && str_contains($url, '/platform/stock/manage')
-                && str_contains($url, 'locked=both')
+                && ! str_contains($url, 'locked=')
                 && str_contains($url, 'product='.$product->id)));
 });
 

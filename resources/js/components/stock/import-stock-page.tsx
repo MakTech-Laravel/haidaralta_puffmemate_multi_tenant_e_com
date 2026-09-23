@@ -19,8 +19,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    isBranchLocked,
-    isProductLocked,
     type StockOption,
     type StockPageContext,
 } from '@/lib/stock-query';
@@ -59,14 +57,6 @@ function toggleOption(
     return items.filter((item) => item.value !== option.value);
 }
 
-function LockedValue({ children }: { children: string }) {
-    return (
-        <div className="bg-muted/60 flex h-9 items-center rounded-md border px-3 text-sm font-medium">
-            <span className="truncate">{children}</span>
-        </div>
-    );
-}
-
 export function ImportStockPage({
     context,
     createProductUrl,
@@ -82,8 +72,6 @@ export function ImportStockPage({
     branchOptionsUrl?: string;
     lockBranch?: boolean;
 }) {
-    const branchLocked = lockBranch || isBranchLocked(context.locked);
-    const productLocked = isProductLocked(context.locked);
     const [branches, setBranches] = useState<MultiComboboxOption[]>(
         context.branch ? [toOption(context.branch)] : [],
     );
@@ -193,11 +181,7 @@ export function ImportStockPage({
                                         <Label htmlFor="import-branch">
                                             Branches
                                         </Label>
-                                        {branchLocked && context.branch ? (
-                                            <LockedValue>
-                                                {context.branch.name}
-                                            </LockedValue>
-                                        ) : branchOptionsUrl ? (
+                                        {branchOptionsUrl ? (
                                             <InfiniteScrollMultiCombobox
                                                 id="import-branch"
                                                 optionsUrl={branchOptionsUrl}
@@ -229,26 +213,18 @@ export function ImportStockPage({
                                             Add product
                                         </Link>
                                     </div>
-                                    {productLocked && context.product ? (
-                                        <LockedValue>
-                                            {context.product.sku
-                                                ? `${context.product.name} · ${context.product.sku}`
-                                                : context.product.name}
-                                        </LockedValue>
-                                    ) : (
-                                        <InfiniteScrollMultiCombobox
-                                            id="import-product"
-                                            optionsUrl={productOptionsUrl}
-                                            values={form.data.product_ids.map(
-                                                String,
-                                            )}
-                                            selectedItems={products}
-                                            onToggle={toggleProducts}
-                                            placeholder="Select products"
-                                            searchPlaceholder="Search products…"
-                                            emptyText="No products found."
-                                        />
-                                    )}
+                                    <InfiniteScrollMultiCombobox
+                                        id="import-product"
+                                        optionsUrl={productOptionsUrl}
+                                        values={form.data.product_ids.map(
+                                            String,
+                                        )}
+                                        selectedItems={products}
+                                        onToggle={toggleProducts}
+                                        placeholder="Select products"
+                                        searchPlaceholder="Search products…"
+                                        emptyText="No products found."
+                                    />
                                     <InputError
                                         message={form.errors.product_ids}
                                     />

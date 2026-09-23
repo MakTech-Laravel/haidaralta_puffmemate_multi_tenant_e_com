@@ -230,7 +230,6 @@ export default function PlatformBranchProductsIndex({
                                             {
                                                 productId: row.original.id,
                                                 branchId: branch.id,
-                                                locked: 'both',
                                             },
                                         ),
                                         transactions:

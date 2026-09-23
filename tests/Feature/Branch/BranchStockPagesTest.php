@@ -30,7 +30,7 @@ test('manage stock page with a product renders inventory payload without transac
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/stock/manage')
-            ->where('context.locked', 'branch')
+            ->where('context.locked', null)
             ->where('product.id', $this->product->id)
             ->has('transactionsUrl')
             ->where('priceHistoryUrl', route('branch.reports.price-history', [
@@ -41,13 +41,13 @@ test('manage stock page with a product renders inventory payload without transac
             ->missing('transactions'));
 });
 
-test('manage stock page with a locked pair keeps the product locked', function () {
+test('manage stock page with a pair is preselected and product stays unlocked', function () {
     $this->actingAs($this->staff, 'branch')
         ->get(ProductManageRedirect::branchUrl($this->branch, $this->product))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/stock/manage')
-            ->where('context.locked', 'both')
+            ->where('context.locked', null)
             ->where('context.product.id', $this->product->id)
             ->where('product.id', $this->product->id)
             ->missing('transactions'));
@@ -59,7 +59,7 @@ test('manage stock page with no product shows pickers only', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/stock/manage')
-            ->where('context.locked', 'branch')
+            ->where('context.locked', null)
             ->where('context.branch.id', $this->branch->id)
             ->where('product', null)
             ->missing('transactions'));
@@ -90,12 +90,11 @@ test('product show renders catalog details without a branch network table', func
             ->missing('transactions'));
 });
 
-test('manage stock url 404s when a locked product is missing', function () {
+test('manage stock url 404s when a product id does not resolve', function () {
     $this->actingAs($this->staff, 'branch')
         ->get(route('branch.stock.manage', [
             'branch' => $this->branch,
             'product' => 'no-such-product',
-            'locked' => 'both',
         ]))
         ->assertNotFound();
 });
@@ -115,7 +114,7 @@ test('branch import stock store is not found while bulk import is hidden', funct
         ->assertNotFound();
 });
 
-test('branch import stock page locks the branch even when unlocked in the query', function () {
+test('branch import stock page scopes to this branch without locking pickers', function () {
     config(['catalog.show_bulk_import' => true]);
 
     $this->actingAs($this->staff, 'branch')
@@ -123,7 +122,7 @@ test('branch import stock page locks the branch even when unlocked in the query'
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/stock/import')
-            ->where('context.locked', 'branch')
+            ->where('context.locked', null)
             ->where('context.branch.id', $this->branch->id));
 });
 

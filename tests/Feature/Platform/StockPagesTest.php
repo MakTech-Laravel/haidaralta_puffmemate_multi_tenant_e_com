@@ -59,13 +59,13 @@ test('manage stock page with a pair renders inventory payload without transactio
             ->missing('transactions'));
 });
 
-test('manage stock page with a locked pair keeps both pickers locked', function () {
+test('manage stock page with a pair is preselected and unlocked', function () {
     $this->actingAs($this->admin, 'platform')
         ->get(ProductManageRedirect::platformUrl($this->branch, $this->product))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/stock/manage')
-            ->where('context.locked', 'both')
+            ->where('context.locked', null)
             ->where('context.branch.id', $this->branch->id)
             ->where('context.product.id', $this->product->id)
             ->where('product.id', $this->product->id)
@@ -97,18 +97,17 @@ test('update price url with a pair redirects to manage stock', function () {
         ]));
 });
 
-test('old branch product show url redirects to locked manage stock', function () {
+test('old branch product show url redirects to manage stock with the pair', function () {
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.branches.products.show', [$this->branch, $this->product]))
         ->assertRedirect(ProductManageRedirect::platformUrl($this->branch, $this->product));
 });
 
-test('manage stock url 404s when a locked product is missing', function () {
+test('manage stock url 404s when a product id does not resolve', function () {
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.stock.manage', [
             'branch' => $this->branch->id,
             'product' => 'no-such-product',
-            'locked' => 'both',
         ]))
         ->assertNotFound();
 });

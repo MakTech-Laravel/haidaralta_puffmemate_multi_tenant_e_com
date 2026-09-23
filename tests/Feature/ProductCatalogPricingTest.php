@@ -167,7 +167,6 @@ test('price upsert succeeds when branch pricing is enabled', function () {
         ->from(route('platform.stock.manage', [
             'branch' => $branch->id,
             'product' => $product->id,
-            'locked' => 'both',
         ]))
         ->put(route('platform.branches.products.prices', [$branch, $product]), [
             'selling_price' => 12.5,

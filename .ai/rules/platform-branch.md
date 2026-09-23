@@ -30,13 +30,13 @@ Branch create/edit coords: Address then Map location with Set on map (BranchLoca
 
 Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids; max:1 only when `drivers.single_active_branch` is true). Nested platform.branches.drivers may assign existing drivers. Branch portal only creates drivers (auto-assigned to this branch) — no assign-existing UI. Rosters require an active assignment for that branch. Overlap is per driver: date ranges overlap AND weekdays intersect AND times overlap. Roster forms use start/end dates + Mon–Sun day chips. No parcel/GPS/chat yet.
 
-## Stock pages share a product/branch/locked query contract
+## Stock pages share a product/branch query contract
 
-Manage stock and Import stock exist on both portals and share the query contract `product`, `branch`, `locked` (`product|branch|both`), resolved by `App\Support\StockPageContext`. The Stock transactions report (`Reports\StockTransactionController`, pages `*/reports/stock-transactions`) and Price history report (`Reports\PriceHistoryController`, pages `*/reports/price-history`) use the same query filters. Locked selections 404 when the id or slug does not resolve.
-The branch portal always forces `locked` to include `branch` (`StockPageContext::fromRequest($request, $branch)`), and import writes assert `branch_ids` match the current branch.
+Manage stock and Import stock exist on both portals and share the query contract `product`, `branch`, resolved by `App\Support\StockPageContext`. No `locked` query — deep links prefill only; pickers stay editable. Invalid ids/slugs still 404 via normal resolve.
+The branch portal hides Branch via `lockBranch` (`StockPageContext::fromRequest($request, $branch)`), and import writes assert `branch_ids` match the current branch.
 When a product is missing from a picker, the Add product link carries `return_to` = current URL; `CatalogReturnTo::afterProductCreate` redirects back with `?product={id}` appended.
 `GET stock/manage` renders the pair-picker workspace. When both IDs resolve, load `BranchProductShowPayload::product` plus adjustment/discount types — do not load `::transactions` or `price_history`. Stock/price writes stay on nested `platform.branches.products.inventory|prices` and `branch.products.inventory|prices`. After save, `back()` returns to `stock/manage?…`.
-Old `GET platform.branches.products.show` 302s to `stock/manage?branch=&product=&locked=both`. `GET branch.products.show` renders catalog details (`branch/catalog/products/show`) — listing only, no Branch network. `stock/price` and `/discounts` still redirect through `App\Support\ProductManageRedirect` (pair → `stock.manage` with query; platform product-only → Manage branches; otherwise products index). Do not restore `POST stock/manage`.
+Old `GET platform.branches.products.show` 302s to `stock/manage?branch=&product=`. `GET branch.products.show` renders catalog details (`branch/catalog/products/show`) — listing only, no Branch network. `stock/price` and `/discounts` still redirect through `App\Support\ProductManageRedirect` (pair → `stock.manage` with query; platform product-only → Manage branches; otherwise products index). Do not restore `POST stock/manage`.
 
 ## Discounts are not a Stock child
 

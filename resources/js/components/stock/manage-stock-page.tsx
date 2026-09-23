@@ -10,11 +10,7 @@ import Heading from '@/components/heading';
 import { StockPairFields } from '@/components/stock/stock-pair-fields';
 import { Button } from '@/components/ui/button';
 import { type ColorPickerValue } from '@/lib/color-picker';
-import {
-    isBranchLocked,
-    isProductLocked,
-    type StockPageContext,
-} from '@/lib/stock-query';
+import { type StockPageContext } from '@/lib/stock-query';
 
 export type StockManageProduct = {
     id: number;
@@ -94,8 +90,6 @@ export function ManageStockPage({
         transactionsUrl &&
         priceHistoryUrl,
     );
-    const pairLocked =
-        isBranchLocked(context.locked) && isProductLocked(context.locked);
 
     return (
         <>
@@ -153,11 +147,9 @@ export function ManageStockPage({
                         </h2>
                         <p className="text-muted-foreground text-sm">
                             {hasPair
-                                ? pairLocked
-                                    ? 'Stock, selling price, and discounts for this listing.'
-                                    : lockBranch
-                                      ? 'Change the product to load a different listing.'
-                                      : 'Change either picker to load a different listing.'
+                                ? lockBranch
+                                    ? 'Change the product to load a different listing.'
+                                    : 'Change either picker to load a different listing.'
                                 : lockBranch
                                   ? 'Select a product. Inventory & pricing appear after it is chosen.'
                                   : 'Select one of each. Inventory & pricing appear after both are chosen.'}

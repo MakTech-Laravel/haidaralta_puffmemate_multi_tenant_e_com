@@ -116,7 +116,6 @@ class ProductController extends Controller
             [
                 'branch' => $branch,
                 'product' => $product->id,
-                'locked' => 'both',
             ],
         );
     }

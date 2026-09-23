@@ -531,7 +531,6 @@ export default function PlatformProductsShow({
                                         StockController.manage.url(),
                                         {
                                             productId: product.id,
-                                            locked: 'product',
                                         },
                                     )}
                                 >

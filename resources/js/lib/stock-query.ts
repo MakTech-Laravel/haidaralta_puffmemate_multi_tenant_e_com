@@ -1,5 +1,3 @@
-export type StockLock = 'product' | 'branch' | 'both';
-
 export type StockOption = {
     id: number;
     name: string;
@@ -20,7 +18,7 @@ export type StockPrice = {
 };
 
 export type StockPageContext = {
-    locked: StockLock | null;
+    locked: null;
     branch: StockOption | null;
     product: (StockOption & { sku: string | null }) | null;
     inventory: { quantity: number } | null;
@@ -30,7 +28,7 @@ export type StockPageContext = {
 };
 
 export function stockSelectionQuery(
-    context: Pick<StockPageContext, 'locked' | 'branch' | 'product'>,
+    context: Pick<StockPageContext, 'branch' | 'product'>,
     overrides: { branchId?: number | null; productId?: number | null } = {},
 ): Record<string, string | number> {
     const branchId =
@@ -51,10 +49,6 @@ export function stockSelectionQuery(
         query.product = productId;
     }
 
-    if (context.locked) {
-        query.locked = context.locked;
-    }
-
     return query;
 }
 
@@ -69,7 +63,6 @@ export function stockPageUrl(
     params: {
         productId?: number | null;
         branchId?: number | null;
-        locked?: StockLock | null;
     },
 ): string {
     const query = new URLSearchParams();
@@ -82,10 +75,6 @@ export function stockPageUrl(
         query.set('branch', String(params.branchId));
     }
 
-    if (params.locked) {
-        query.set('locked', params.locked);
-    }
-
     const search = query.toString();
 
     return search === '' ? base : `${base}?${search}`;
@@ -93,8 +82,8 @@ export function stockPageUrl(
 
 /**
  * Stock group row actions. Daily stock, selling price, and discounts stay on
- * Manage stock. Ledger and price history keep the same product/branch query
- * (`locked` omitted). Do not add Add stock, Update price, or Add discount.
+ * Manage stock. Ledger and price history keep the same product/branch query.
+ * Do not add Add stock, Update price, or Add discount.
  */
 export function stockActionItems(
     urls: StockActionUrls,
@@ -127,14 +116,6 @@ export function stockActionItems(
     }
 
     return items;
-}
-
-export function isBranchLocked(locked: StockLock | null): boolean {
-    return locked === 'branch' || locked === 'both';
-}
-
-export function isProductLocked(locked: StockLock | null): boolean {
-    return locked === 'product' || locked === 'both';
 }
 
 export type StockOptionPage = {

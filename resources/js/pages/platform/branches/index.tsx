@@ -223,7 +223,6 @@ export default function PlatformBranchesIndex({
                                           StockController.manage.url(),
                                           {
                                               branchId: branch.id,
-                                              locked: 'branch',
                                           },
                                       ),
                                       transactions:

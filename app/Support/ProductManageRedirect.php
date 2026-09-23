@@ -15,7 +15,7 @@ final class ProductManageRedirect
         $product = StockPageContext::optionalProduct($request);
 
         if ($product !== null && $branch !== null) {
-            return redirect()->to(self::platformUrl($branch, $product, self::lockedFrom($request)), $status);
+            return redirect()->to(self::platformUrl($branch, $product), $status);
         }
 
         if ($product !== null) {
@@ -30,47 +30,33 @@ final class ProductManageRedirect
         $product = StockPageContext::optionalProduct($request);
 
         if ($product !== null) {
-            return redirect()->to(self::branchUrl($branch, $product, self::lockedFrom($request)), $status);
+            return redirect()->to(self::branchUrl($branch, $product), $status);
         }
 
         return redirect()->route('branch.products.index', $branch, $status);
     }
 
-    public static function platformUrl(Branch $branch, Product $product, ?string $locked = 'both'): string
+    public static function platformUrl(Branch $branch, Product $product): string
     {
-        return route('platform.stock.manage', self::pairQuery($branch, $product, $locked));
+        return route('platform.stock.manage', self::pairQuery($branch, $product));
     }
 
-    public static function branchUrl(Branch $branch, Product $product, ?string $locked = 'both'): string
+    public static function branchUrl(Branch $branch, Product $product): string
     {
         return route('branch.stock.manage', [
             'branch' => $branch,
             'product' => $product->id,
-            ...($locked ? ['locked' => $locked] : []),
         ]);
     }
 
     /**
-     * @return array{branch: int, product: int, locked?: string}
+     * @return array{branch: int, product: int}
      */
-    public static function pairQuery(Branch $branch, Product $product, ?string $locked = 'both'): array
+    public static function pairQuery(Branch $branch, Product $product): array
     {
-        $query = [
+        return [
             'branch' => $branch->id,
             'product' => $product->id,
         ];
-
-        if (is_string($locked) && $locked !== '') {
-            $query['locked'] = $locked;
-        }
-
-        return $query;
-    }
-
-    private static function lockedFrom(Request $request): ?string
-    {
-        $locked = $request->query('locked');
-
-        return in_array($locked, ['product', 'branch', 'both'], true) ? $locked : null;
     }
 }

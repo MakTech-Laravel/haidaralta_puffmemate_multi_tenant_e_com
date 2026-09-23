@@ -13,7 +13,7 @@ final class StockPageContext
 {
     /**
      * @return array{
-     *     locked: string|null,
+     *     locked: null,
      *     branch: array{id: int, name: string, slug: string}|null,
      *     product: array{id: int, name: string, slug: string, sku: ?string}|null,
      *     inventory: array{quantity: int}|null,
@@ -24,26 +24,8 @@ final class StockPageContext
      */
     public static function fromRequest(Request $request, ?Branch $forcedBranch = null): array
     {
-        $lockedRaw = $request->string('locked')->toString();
-        $locked = in_array($lockedRaw, ['product', 'branch', 'both'], true) ? $lockedRaw : null;
-
-        if ($forcedBranch !== null) {
-            $locked = match ($locked) {
-                'product', 'both' => 'both',
-                default => 'branch',
-            };
-        }
-
         $branch = $forcedBranch ?? self::optionalBranch($request);
         $product = self::optionalProduct($request);
-
-        if (in_array($locked, ['product', 'both'], true)) {
-            abort_unless($product !== null, 404);
-        }
-
-        if (in_array($locked, ['branch', 'both'], true)) {
-            abort_unless($branch !== null, 404);
-        }
 
         $inventory = null;
         $price = null;
@@ -73,7 +55,7 @@ final class StockPageContext
         }
 
         return [
-            'locked' => $locked,
+            'locked' => null,
             'branch' => $branch === null ? null : [
                 'id' => $branch->id,
                 'name' => $branch->name,

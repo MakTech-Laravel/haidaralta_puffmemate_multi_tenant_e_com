@@ -142,7 +142,6 @@ export default function BranchProductShow({
                                     {
                                         productId: product.id,
                                         branchId: branch.id,
-                                        locked: 'both',
                                     },
                                 )}
                             >

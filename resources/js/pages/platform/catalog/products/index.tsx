@@ -262,7 +262,6 @@ export default function PlatformProductsIndex({
                                       StockController.manage.url(),
                                       {
                                           productId: product.id,
-                                          locked: 'product',
                                       },
                                   ),
                                   transactions:
