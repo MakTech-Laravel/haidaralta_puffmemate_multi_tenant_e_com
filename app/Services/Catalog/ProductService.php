@@ -114,6 +114,18 @@ class ProductService
                 $data['tags'] = array_values(array_unique(array_map('strval', $data['tags'])));
             }
 
+            if (! (bool) config('catalog.show_branch_pricing')) {
+                if (array_key_exists('selling_price', $data)) {
+                    $data['selling_price'] = $this->nullableCatalogMoney($data['selling_price']);
+                }
+
+                if (array_key_exists('regular_price', $data)) {
+                    $data['regular_price'] = $this->nullableCatalogMoney($data['regular_price']);
+                }
+            } else {
+                unset($data['selling_price'], $data['regular_price']);
+            }
+
             if ($removeGalleryIds !== []) {
                 $this->deleteGalleryImages($product, $removeGalleryIds);
             }
@@ -187,6 +199,8 @@ class ProductService
             'specifications' => ProductSpecifications::normalize($data['specifications'] ?? []),
             'image' => $primaryPath,
             'color_code' => CatalogBackgroundColor::normalize($data['color_code'] ?? null),
+            'selling_price' => $this->nullableCatalogMoney($data['selling_price'] ?? null),
+            'regular_price' => $this->nullableCatalogMoney($data['regular_price'] ?? null),
             'status' => $data['status'] ?? true,
             'created_by' => $actor?->id,
         ]);
@@ -232,5 +246,18 @@ class ProductService
             Storage::disk('public')->delete($image->path);
             $image->delete();
         }
+    }
+
+    private function nullableCatalogMoney(mixed $value): ?string
+    {
+        if (! (bool) config('catalog.show_branch_pricing')) {
+            if ($value === null || $value === '') {
+                return null;
+            }
+
+            return number_format((float) $value, 2, '.', '');
+        }
+
+        return null;
     }
 }

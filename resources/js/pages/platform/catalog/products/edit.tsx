@@ -35,6 +35,8 @@ type Product = {
     image_url: string | null;
     gallery: GalleryImage[];
     color_code?: import('@/lib/color-picker').ColorPickerValue | null;
+    selling_price?: string | null;
+    regular_price?: string | null;
     status: boolean;
 };
 
@@ -84,6 +86,8 @@ export default function PlatformProductsEdit({
                         image_url: product.image_url,
                         gallery: product.gallery,
                         color_code: product.color_code,
+                        selling_price: product.selling_price ?? '',
+                        regular_price: product.regular_price ?? '',
                         status: product.status,
                     }}
                     cancelHref={ProductController.show.url(product.slug)}

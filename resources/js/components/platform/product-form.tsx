@@ -90,6 +90,8 @@ interface ProductFormDefaults {
     image_url?: string | null;
     gallery?: ProductGalleryImage[];
     color_code?: ColorPickerValue | null;
+    selling_price?: string | null;
+    regular_price?: string | null;
     status?: boolean;
 }
 
@@ -163,6 +165,10 @@ export function ProductForm({
     submitLabel,
 }: ProductFormProps) {
     const { catalog } = usePage().props;
+    const showBranchPricing = catalog.show_branch_pricing;
+    const showCatalogPrices = !showBranchPricing;
+    const showBranchOps = branchOpsFields && showBranchPricing;
+    const showBranchQuantityOnly = branchOpsFields && !showBranchPricing;
     const [slugTouched, setSlugTouched] = useState(isEdit);
     const [skuTouched, setSkuTouched] = useState(isEdit);
     const [suggestionQuery, setSuggestionQuery] = useState('');
@@ -229,7 +235,13 @@ export function ProductForm({
         color_code: catalogFormColorPickerValue(defaults?.color_code, isEdit),
         status: defaults?.status ?? true,
         ...(returnTo ? { return_to: returnTo } : {}),
-        ...(branchOpsFields
+        ...(showCatalogPrices
+            ? {
+                  regular_price: defaults?.regular_price ?? '',
+                  selling_price: defaults?.selling_price ?? '',
+              }
+            : {}),
+        ...(showBranchOps
             ? {
                   buying_price: '',
                   regular_price: '',
@@ -237,6 +249,7 @@ export function ProductForm({
                   quantity: 0,
               }
             : {}),
+        ...(showBranchQuantityOnly ? { quantity: 0 } : {}),
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
@@ -405,7 +418,19 @@ export function ProductForm({
                 ...(showGallery && remove_gallery_ids.length > 0
                     ? { remove_gallery_ids }
                     : {}),
-                ...(branchOpsFields
+                ...(showCatalogPrices
+                    ? {
+                          ...(selling_price !== undefined &&
+                          selling_price !== ''
+                              ? { selling_price }
+                              : { selling_price: null }),
+                          ...(regular_price !== undefined &&
+                          regular_price !== ''
+                              ? { regular_price }
+                              : { regular_price: null }),
+                      }
+                    : {}),
+                ...(showBranchOps
                     ? {
                           ...(selling_price !== undefined &&
                           selling_price !== ''
@@ -420,6 +445,9 @@ export function ProductForm({
                               : {}),
                           quantity: quantity ?? 0,
                       }
+                    : {}),
+                ...(showBranchQuantityOnly
+                    ? { quantity: quantity ?? 0 }
                     : {}),
             };
         });
@@ -758,7 +786,68 @@ export function ProductForm({
                             <InputError message={errors.description} />
                         </div>
 
-                        {branchOpsFields ? (
+                        {showCatalogPrices ? (
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="regular_price">
+                                        Regular price
+                                    </Label>
+                                    <Input
+                                        id="regular_price"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={
+                                            (
+                                                data as typeof data & {
+                                                    regular_price?: string;
+                                                }
+                                            ).regular_price ?? ''
+                                        }
+                                        onChange={(event) =>
+                                            setData(
+                                                'regular_price' as never,
+                                                event.target.value as never,
+                                            )
+                                        }
+                                        placeholder="Optional compare-at"
+                                    />
+                                    <InputError
+                                        message={errors.regular_price}
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="selling_price">
+                                        Selling price
+                                    </Label>
+                                    <Input
+                                        id="selling_price"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={
+                                            (
+                                                data as typeof data & {
+                                                    selling_price?: string;
+                                                }
+                                            ).selling_price ?? ''
+                                        }
+                                        onChange={(event) =>
+                                            setData(
+                                                'selling_price' as never,
+                                                event.target.value as never,
+                                            )
+                                        }
+                                        placeholder="Optional"
+                                    />
+                                    <InputError
+                                        message={errors.selling_price}
+                                    />
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {showBranchOps ? (
                             <div className="grid gap-5 sm:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="buying_price">
@@ -842,6 +931,36 @@ export function ProductForm({
                                         message={errors.selling_price}
                                     />
                                 </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="quantity">
+                                        Initial quantity
+                                    </Label>
+                                    <Input
+                                        id="quantity"
+                                        type="number"
+                                        value={
+                                            (
+                                                data as typeof data & {
+                                                    quantity?: number;
+                                                }
+                                            ).quantity ?? 0
+                                        }
+                                        onChange={(event) =>
+                                            setData(
+                                                'quantity' as never,
+                                                Number(
+                                                    event.target.value,
+                                                ) as never,
+                                            )
+                                        }
+                                    />
+                                    <InputError message={errors.quantity} />
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {showBranchQuantityOnly ? (
+                            <div className="grid gap-5 sm:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="quantity">
                                         Initial quantity

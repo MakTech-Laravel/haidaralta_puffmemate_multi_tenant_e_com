@@ -19,6 +19,8 @@ class PriceHistoryController extends Controller
 {
     public function index(Request $request): Response
     {
+        abort_unless((bool) config('catalog.show_branch_pricing'), 404);
+
         $branch = $this->currentBranch();
         $this->mergeSelectionFilters($request);
 
@@ -30,6 +32,8 @@ class PriceHistoryController extends Controller
 
     public function export(ExportSpreadsheetRequest $request): BinaryFileResponse
     {
+        abort_unless((bool) config('catalog.show_branch_pricing'), 404);
+
         $branch = $this->currentBranch();
         $this->mergeSelectionFilters($request);
 

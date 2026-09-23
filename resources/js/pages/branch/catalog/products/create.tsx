@@ -1,4 +1,4 @@
-import { Head, setLayoutProps, useForm } from '@inertiajs/react';
+import { Head, setLayoutProps, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import ProductController from '@/actions/App/Http/Controllers/Branch/ProductController';
 import Heading from '@/components/heading';
@@ -28,6 +28,8 @@ export default function BranchProductsCreate({
     categoryOptions: CategoryOption[];
     returnTo?: string | null;
 }) {
+    const { catalog } = usePage().props;
+    const showBranchPricing = catalog.show_branch_pricing;
     const [query, setQuery] = useState('');
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const reuseForm = useForm({
@@ -93,8 +95,10 @@ export default function BranchProductsCreate({
                     <AlertTitle>Prefer reuse</AlertTitle>
                     <AlertDescription>
                         Search the global catalog first. Creating a new product
-                        adds it to the catalog and sets stock and price for{' '}
-                        {branch.name}.
+                        adds it to the catalog
+                        {showBranchPricing
+                            ? ` and sets stock and price for ${branch.name}.`
+                            : ` and can set initial stock for ${branch.name}.`}
                     </AlertDescription>
                 </Alert>
 
@@ -110,28 +114,30 @@ export default function BranchProductsCreate({
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="grid gap-2">
-                            <Label htmlFor="reuse_selling_price">
-                                Selling price
-                            </Label>
-                            <Input
-                                id="reuse_selling_price"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={reuseForm.data.selling_price}
-                                onChange={(event) =>
-                                    reuseForm.setData(
-                                        'selling_price',
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder="Optional"
-                            />
-                            <InputError
-                                message={reuseForm.errors.selling_price}
-                            />
-                        </div>
+                        {showBranchPricing ? (
+                            <div className="grid gap-2">
+                                <Label htmlFor="reuse_selling_price">
+                                    Selling price
+                                </Label>
+                                <Input
+                                    id="reuse_selling_price"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={reuseForm.data.selling_price}
+                                    onChange={(event) =>
+                                        reuseForm.setData(
+                                            'selling_price',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="Optional"
+                                />
+                                <InputError
+                                    message={reuseForm.errors.selling_price}
+                                />
+                            </div>
+                        ) : null}
                         <div className="grid gap-2">
                             <Label htmlFor="reuse_quantity">
                                 Initial quantity

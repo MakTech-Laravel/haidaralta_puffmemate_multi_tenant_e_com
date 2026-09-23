@@ -10,7 +10,7 @@ paths:
 
 ## Catalog kill-switches live in config/catalog.php
 
-Catalog feature flags are plain config keys shared on the Inertia `catalog` prop by HandleInertiaRequests — no Support class. `show_product_variants` (env SHOW_PRODUCT_VARIANTS, default false) hides variant UI and makes ProductVariantController plus variant-scoped inventory/price writes abort 404 while keeping the table and routes. `show_bulk_import` (env SHOW_BULK_IMPORT, default false) hides Bulk Import from sidebars and makes stock/import abort 404. `sku_prefix` (env CATALOG_SKU_PREFIX, default PMM) drives the auto SKU `PREFIX-SLUG` uppercased from the live slug, client-side until the field is touched and server-side in ProductService when omitted.
+Catalog feature flags are plain config keys shared on the Inertia `catalog` prop by HandleInertiaRequests — no Support class. `show_product_variants` (env SHOW_PRODUCT_VARIANTS, default false) hides variant UI and makes ProductVariantController plus variant-scoped inventory/price writes abort 404 while keeping the table and routes. `show_bulk_import` (env SHOW_BULK_IMPORT, default false) hides Bulk Import from sidebars and makes stock/import abort 404. `show_branch_pricing` (env SHOW_BRANCH_PRICING, default false) hides branch price/discount UI and price-history surfaces and aborts price upsert + price-history routes; catalog `products.selling_price` / `regular_price` drive display instead. `sku_prefix` (env CATALOG_SKU_PREFIX, default PMM) drives the auto SKU `PREFIX-SLUG` uppercased from the live slug, client-side until the field is touched and server-side in ProductService when omitted.
 
 ## Spatie Backup is the backup source of truth
 
@@ -43,3 +43,6 @@ Spatie zips include storage/app; never pick the first .sql. Use BackupZipSqlLoca
 ## Web bulk import is gated by show_bulk_import
 
 `show_bulk_import` (env SHOW_BULK_IMPORT, default false) hides Bulk Import from platform/branch sidebars (buildPlatformNav / buildBranchNav) and makes stock/import GET+POST abort 404 while keeping pages, controllers, and routes. Shared on Inertia catalog.show_bulk_import. Flip to true to restore web bulk import.
+
+## Branch pricing UI is gated by show_branch_pricing
+catalog.show_branch_pricing (env SHOW_BRANCH_PRICING, default false) hides Manage stock Price/discount UI, Price history nav/actions/reports, and aborts PUT …/prices plus price-history routes with 404 while keeping BranchPricingService and branch_product_prices. When false, products.selling_price and regular_price are the common catalog prices (edit create_products pre-handover); BranchProductPriceDisplay resolves from those columns. When true, restore branch price UI and ignore product price fields on write.

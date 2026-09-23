@@ -94,6 +94,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Branch product pricing UI
+    |--------------------------------------------------------------------------
+    |
+    | When false, branch-level price/discount UI and price-history surfaces
+    | stay in the codebase but are not rendered; price upsert and price-history
+    | routes abort 404. Catalog selling/regular prices on products drive
+    | display instead. Flip to true to restore per-branch pricing.
+    |
+    */
+
+    'show_branch_pricing' => env('SHOW_BRANCH_PRICING', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Product SKU prefix
     |--------------------------------------------------------------------------
     |

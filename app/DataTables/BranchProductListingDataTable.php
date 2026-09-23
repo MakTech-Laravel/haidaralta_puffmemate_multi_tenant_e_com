@@ -117,6 +117,12 @@ class BranchProductListingDataTable extends AbstractDataTable
                     return;
                 }
 
+                if (! BranchProductPriceDisplay::usesBranchPricing()) {
+                    $query->whereNull('selling_price');
+
+                    return;
+                }
+
                 $query->whereDoesntHave(
                     'branchPrices',
                     fn (Builder $prices): Builder => $prices
@@ -229,7 +235,7 @@ class BranchProductListingDataTable extends AbstractDataTable
         $inventory = $this->inventories->get($model->id);
         /** @var BranchProductPrice|null $price */
         $price = $this->prices->get($model->id);
-        $priceDisplay = BranchProductPriceDisplay::listDisplay($price);
+        $priceDisplay = BranchProductPriceDisplay::listDisplayForProductContext($price, $model);
 
         $row = [
             'id' => $model->id,

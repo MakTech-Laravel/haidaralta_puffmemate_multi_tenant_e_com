@@ -45,6 +45,15 @@ final class ProductBranchInventoryPayload
     {
         $branchCount = Branch::query()->count();
 
+        if (! BranchProductPriceDisplay::usesBranchPricing()) {
+            $missing = $product->selling_price === null ? $branchCount : 0;
+
+            return [
+                'branches' => $branchCount,
+                'missing_price' => $missing,
+            ];
+        }
+
         $pricedBranches = BranchProductPrice::query()
             ->where('product_id', $product->id)
             ->whereNull('variant_id')

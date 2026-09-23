@@ -30,6 +30,8 @@ use Laravel\Scout\Searchable;
  * @property array<mixed>|null $tags
  * @property array<string, mixed>|null $specifications
  * @property array<string, mixed>|null $color_code
+ * @property string|null $selling_price
+ * @property string|null $regular_price
  * @property bool $status
  * @property int|null $created_by
  * @property-read Collection<int, Category> $categories
@@ -72,6 +74,8 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
         'tags',
         'specifications',
         'color_code',
+        'selling_price',
+        'regular_price',
         'status',
         'created_by',
     ];
@@ -189,6 +193,8 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
             'tags' => 'array',
             'specifications' => 'array',
             'color_code' => 'array',
+            'selling_price' => 'decimal:2',
+            'regular_price' => 'decimal:2',
         ];
     }
 

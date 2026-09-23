@@ -17,6 +17,15 @@ final class BranchProductListingPayload
     {
         $productCount = Product::query()->count();
 
+        if (! BranchProductPriceDisplay::usesBranchPricing()) {
+            $priced = Product::query()->whereNotNull('selling_price')->count();
+
+            return [
+                'products' => $productCount,
+                'missing_price' => max(0, $productCount - $priced),
+            ];
+        }
+
         $priced = BranchProductPrice::query()
             ->where('branch_id', $branch->id)
             ->whereNull('variant_id')

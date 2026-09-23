@@ -38,6 +38,7 @@ export function buildBranchNav(
     slug: string,
     canViewCategories = false,
     showBulkImport = false,
+    showBranchPricing = false,
 ): NavSection[] {
     const productItems = [
         ...(canViewCategories
@@ -231,12 +232,16 @@ export function buildBranchNav(
                         icon: ScrollText,
                         permissions: ['manage-branch-products'],
                     }),
-                    navLink({
-                        title: 'Price history',
-                        href: `/branch/${slug}/reports/price-history`,
-                        icon: History,
-                        permissions: ['manage-branch-products'],
-                    }),
+                    ...(showBranchPricing
+                        ? [
+                              navLink({
+                                  title: 'Price history',
+                                  href: `/branch/${slug}/reports/price-history`,
+                                  icon: History,
+                                  permissions: ['manage-branch-products'],
+                              }),
+                          ]
+                        : []),
                 ],
             }),
             navGroup({

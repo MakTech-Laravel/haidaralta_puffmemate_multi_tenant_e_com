@@ -88,7 +88,13 @@ class ProductController extends Controller
     public function store(StoreBranchProductRequest $request): RedirectResponse
     {
         $branch = $this->currentBranch();
-        $data = $request->safe()->except(['image', 'gallery', 'selling_price', 'buying_price', 'regular_price', 'discount_price', 'quantity']);
+        $except = ['image', 'gallery', 'buying_price', 'discount_price', 'quantity'];
+
+        if ((bool) config('catalog.show_branch_pricing')) {
+            $except = [...$except, 'selling_price', 'regular_price'];
+        }
+
+        $data = $request->safe()->except($except);
         $data['status'] = $request->boolean('status', true);
 
         $product = $this->products->createFromBranch(
@@ -158,6 +164,8 @@ class ProductController extends Controller
                 'image' => $product->image,
                 'image_url' => $product->imageUrl(),
                 'color_code' => $product->color_code,
+                'selling_price' => $product->selling_price,
+                'regular_price' => $product->regular_price,
                 'status' => (bool) $product->status,
                 'gallery' => $product->images
                     ->map(fn (ProductImage $image): array => [
@@ -269,6 +277,10 @@ class ProductController extends Controller
                     unitCost: $qty > 0 ? ($data['buying_price'] ?? null) : null,
                 );
             }
+        }
+
+        if (! (bool) config('catalog.show_branch_pricing')) {
+            return;
         }
 
         if (! empty($data['selling_price'])) {

@@ -1,4 +1,4 @@
-import { Head, setLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { CircleDollarSign, Eye, Package } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
@@ -100,6 +100,7 @@ export default function PlatformBranchProductsIndex({
     summary: Summary;
     table: DataTablePayload<ProductRow>;
 }) {
+    const { catalog } = usePage().props;
     const categories = (tablePayload.filterOptions?.categories ??
         []) as CategoryOption[];
 
@@ -240,6 +241,10 @@ export default function PlatformBranchProductsIndex({
                                     {
                                         productId: row.original.id,
                                         branchId: branch.id,
+                                    },
+                                    {
+                                        includePriceHistory:
+                                            catalog.show_branch_pricing,
                                     },
                                 ),
                             },

@@ -24,6 +24,7 @@ beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(BranchSeeder::class);
     $this->seed(UserSeeder::class);
+    config(['catalog.show_branch_pricing' => true]);
 });
 
 test('a platform-created product appears on every branch product list', function () {

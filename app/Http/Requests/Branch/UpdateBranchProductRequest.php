@@ -62,6 +62,8 @@ class UpdateBranchProductRequest extends FormRequest
                 Rule::exists('product_images', 'id')->where('product_id', $product->id),
             ],
             'status' => ['sometimes', 'boolean'],
+            'selling_price' => ['nullable', 'numeric', 'min:0'],
+            'regular_price' => ['nullable', 'numeric', 'min:0'],
             ...$this->colorCodeRules(),
             ...$this->productCatalogMetaRules(),
         ];

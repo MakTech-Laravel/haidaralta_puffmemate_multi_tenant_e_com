@@ -166,22 +166,24 @@ export default function BranchProductShow({
                                 Stock transactions
                             </Link>
                         </Button>
-                        <Button variant="outline" asChild>
-                            <Link
-                                href={stockPageUrl(
-                                    PriceHistoryController.index.url(
-                                        branch.slug,
-                                    ),
-                                    {
-                                        productId: product.id,
-                                        branchId: branch.id,
-                                    },
-                                )}
-                            >
-                                <History className="size-4" />
-                                Price history
-                            </Link>
-                        </Button>
+                        {catalog.show_branch_pricing ? (
+                            <Button variant="outline" asChild>
+                                <Link
+                                    href={stockPageUrl(
+                                        PriceHistoryController.index.url(
+                                            branch.slug,
+                                        ),
+                                        {
+                                            productId: product.id,
+                                            branchId: branch.id,
+                                        },
+                                    )}
+                                >
+                                    <History className="size-4" />
+                                    Price history
+                                </Link>
+                            </Button>
+                        ) : null}
                         <Button asChild>
                             <Link
                                 href={ProductController.edit.url({

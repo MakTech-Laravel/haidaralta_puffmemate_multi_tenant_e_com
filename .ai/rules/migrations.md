@@ -27,7 +27,7 @@ Pre-handover: categories.slogan, show_in_nav, nav_sort (and products.brand, tags
 
 ## Inventory transaction reason belongs on create
 
-inventory_transactions.reason, reason_note, and unit_cost belong on the original create_inventory_transactions migration. buying_price and regular_price belong on create_branch_product_prices. Do not add a Schema::table modification for greenfield columns on these tables. Price history is a new create_* table (`branch_product_price_histories`).
+inventory_transactions.reason, reason_note, and unit_cost belong on the original create_inventory_transactions migration. buying_price and regular_price belong on create_branch_product_prices. Catalog-wide selling_price and regular_price belong on create_products (nullable decimals). Do not add a Schema::table modification for greenfield columns on these tables. Price history is a new create_* table (`branch_product_price_histories`).
 
 ## Assignment dates belong on create_driver_branch_assignments
 

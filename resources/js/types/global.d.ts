@@ -52,6 +52,7 @@ declare module '@inertiajs/core' {
                 show_parent_category: boolean;
                 show_product_variants: boolean;
                 show_bulk_import: boolean;
+                show_branch_pricing: boolean;
                 sku_prefix: string;
             };
             drivers: {

@@ -347,7 +347,7 @@ export default function PlatformProductsShow({
                             {
                                 label: 'Stock',
                                 items: canManageBranches
-                                    ? stockActionItems(
+                                      ? stockActionItems(
                                           {
                                               manage: row.original.manage_url,
                                               transactions:
@@ -358,6 +358,10 @@ export default function PlatformProductsShow({
                                           {
                                               productId: product.id,
                                               branchId: row.original.id,
+                                          },
+                                          {
+                                              includePriceHistory:
+                                                  catalog.show_branch_pricing,
                                           },
                                       )
                                     : [],
@@ -371,6 +375,7 @@ export default function PlatformProductsShow({
             branchQuery.sort,
             branchQuery.toggleSort,
             canManageBranches,
+            catalog.show_branch_pricing,
             product.id,
         ],
     );
@@ -560,7 +565,7 @@ export default function PlatformProductsShow({
                                 </Link>
                             </Button>
                         ) : null}
-                        {canManageBranches ? (
+                        {canManageBranches && catalog.show_branch_pricing ? (
                             <Button variant="outline" asChild>
                                 <Link
                                     href={stockPageUrl(

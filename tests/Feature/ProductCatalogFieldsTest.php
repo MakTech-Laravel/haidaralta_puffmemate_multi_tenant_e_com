@@ -18,6 +18,7 @@ beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(BranchSeeder::class);
     $this->seed(UserSeeder::class);
+    config(['catalog.show_branch_pricing' => true]);
 });
 
 test('platform can store brand tags and specifications on a product', function () {

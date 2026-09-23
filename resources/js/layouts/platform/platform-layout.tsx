@@ -17,7 +17,10 @@ export default function PlatformLayout({
             portal="platform"
             breadcrumbs={breadcrumbs}
             logoHref="/platform/dashboard"
-            sections={buildPlatformNav(catalog.show_bulk_import)}
+            sections={buildPlatformNav(
+                catalog.show_bulk_import,
+                catalog.show_branch_pricing,
+            )}
             sidebarVariant="inset"
             sidebarWidth="16.5rem"
             brandEyebrow="Platform"

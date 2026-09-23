@@ -30,6 +30,8 @@ class ProductFactory extends Factory
             'specifications' => [],
             'image' => null,
             'color_code' => null,
+            'selling_price' => null,
+            'regular_price' => null,
             'status' => true,
             'created_by' => null,
         ];

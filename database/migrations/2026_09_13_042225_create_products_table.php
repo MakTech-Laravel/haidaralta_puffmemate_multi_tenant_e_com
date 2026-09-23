@@ -19,6 +19,8 @@ return new class extends Migration
             $table->json('tags')->nullable();
             $table->json('specifications')->nullable();
             $table->json('color_code')->nullable();
+            $table->decimal('selling_price', 12, 2)->nullable();
+            $table->decimal('regular_price', 12, 2)->nullable();
             $table->boolean('status')->default(true);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

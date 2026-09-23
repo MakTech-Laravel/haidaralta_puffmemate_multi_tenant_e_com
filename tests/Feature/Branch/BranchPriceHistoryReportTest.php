@@ -13,6 +13,7 @@ beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(BranchSeeder::class);
     $this->seed(UserSeeder::class);
+    config(['catalog.show_branch_pricing' => true]);
 
     $this->staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $this->branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();

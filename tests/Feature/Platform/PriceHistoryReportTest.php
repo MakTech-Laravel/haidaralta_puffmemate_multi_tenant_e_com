@@ -17,6 +17,7 @@ beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(BranchSeeder::class);
     $this->seed(UserSeeder::class);
+    config(['catalog.show_branch_pricing' => true]);
 
     $this->admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $this->branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();

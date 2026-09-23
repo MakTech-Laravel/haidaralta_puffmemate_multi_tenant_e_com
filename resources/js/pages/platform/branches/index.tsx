@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, Package, Pencil, Trash2, Truck, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -56,6 +56,7 @@ export default function PlatformBranchesIndex({
     table: DataTablePayload<BranchRow>;
 }) {
     const { can } = usePermission();
+    const { catalog } = usePage().props;
     const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
 
@@ -231,6 +232,10 @@ export default function PlatformBranchesIndex({
                                           PriceHistoryController.index.url(),
                                   },
                                   { branchId: branch.id },
+                                  {
+                                      includePriceHistory:
+                                          catalog.show_branch_pricing,
+                                  },
                               ),
                           ]
                         : [];

@@ -200,6 +200,8 @@ class ProductController extends Controller
             'image' => $product->image,
             'image_url' => $product->imageUrl(),
             'color_code' => $product->color_code,
+            'selling_price' => $product->selling_price,
+            'regular_price' => $product->regular_price,
             'status' => (bool) $product->status,
             'created_at' => $product->created_at?->toIso8601String(),
             'updated_at' => $product->updated_at?->toIso8601String(),

@@ -50,7 +50,10 @@ import {
 } from '@/components/navigation/nav-builders';
 import type { NavSection } from '@/components/navigation/types';
 
-export function buildPlatformNav(showBulkImport = false): NavSection[] {
+export function buildPlatformNav(
+    showBulkImport = false,
+    showBranchPricing = false,
+): NavSection[] {
     return [
         navSection(undefined, [
             navLink({
@@ -322,12 +325,16 @@ export function buildPlatformNav(showBulkImport = false): NavSection[] {
                         icon: ScrollText,
                         permissions: ['manage-branch-inventories'],
                     }),
-                    navLink({
-                        title: 'Price history',
-                        href: '/platform/reports/price-history',
-                        icon: History,
-                        permissions: ['manage-branch-inventories'],
-                    }),
+                    ...(showBranchPricing
+                        ? [
+                              navLink({
+                                  title: 'Price history',
+                                  href: '/platform/reports/price-history',
+                                  icon: History,
+                                  permissions: ['manage-branch-inventories'],
+                              }),
+                          ]
+                        : []),
                     navSoon({
                         title: 'Drivers',
                         icon: Truck,

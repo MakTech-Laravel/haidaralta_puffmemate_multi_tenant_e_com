@@ -41,6 +41,8 @@ class StoreProductRequest extends FormRequest
             'gallery' => ['nullable', 'array', 'max:12'],
             'gallery.*' => $this->catalogImageFileRules(required: true),
             'status' => ['sometimes', 'boolean'],
+            'selling_price' => ['nullable', 'numeric', 'min:0'],
+            'regular_price' => ['nullable', 'numeric', 'min:0'],
             ...$this->colorCodeRules(),
             ...$this->productCatalogMetaRules(),
         ];

@@ -1,4 +1,4 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Building2, CircleDollarSign } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
@@ -108,6 +108,7 @@ export default function PlatformProductBranches({
     summary: Summary;
     table: DataTablePayload<BranchRow>;
 }) {
+    const { catalog } = usePage().props;
     const colorCode = normalizeCatalogColorPickerValue(product.color_code);
     const transparent = isTransparentColorPickerValue(colorCode);
 
@@ -206,6 +207,10 @@ export default function PlatformProductBranches({
                                     {
                                         productId: product.id,
                                         branchId: row.original.id,
+                                    },
+                                    {
+                                        includePriceHistory:
+                                            catalog.show_branch_pricing,
                                     },
                                 ),
                             },

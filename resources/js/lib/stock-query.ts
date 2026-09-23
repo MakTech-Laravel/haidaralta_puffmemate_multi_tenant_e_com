@@ -102,7 +102,9 @@ export function stockActionItems(
         productId?: number | null;
         branchId?: number | null;
     },
+    options: { includePriceHistory?: boolean } = {},
 ): Array<{ label: string; href: string }> {
+    const includePriceHistory = options.includePriceHistory ?? true;
     const items: Array<{ label: string; href: string }> = [];
 
     if (urls.manage) {
@@ -112,16 +114,17 @@ export function stockActionItems(
         });
     }
 
-    items.push(
-        {
-            label: 'Stock transactions',
-            href: stockPageUrl(urls.transactions, params),
-        },
-        {
+    items.push({
+        label: 'Stock transactions',
+        href: stockPageUrl(urls.transactions, params),
+    });
+
+    if (includePriceHistory) {
+        items.push({
             label: 'Price history',
             href: stockPageUrl(urls.priceHistory, params),
-        },
-    );
+        });
+    }
 
     return items;
 }

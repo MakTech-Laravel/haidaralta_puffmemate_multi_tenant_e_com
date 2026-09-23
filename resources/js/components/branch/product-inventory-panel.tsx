@@ -270,6 +270,7 @@ export function ProductInventoryPanel({
 }: ProductInventoryPanelProps) {
     const { catalog } = usePage().props;
     const showVariants = catalog.show_product_variants;
+    const showBranchPricing = catalog.show_branch_pricing;
     const [scope, setScope] = useState(BASE_SCOPE);
 
     const activeVariants = useMemo(
@@ -473,11 +474,14 @@ export function ProductInventoryPanel({
                     <div className="min-w-0 space-y-1">
                         <CardTitle className="flex items-center gap-2">
                             <Package className="text-muted-foreground size-4" />
-                            Inventory & pricing
+                            {showBranchPricing
+                                ? 'Inventory & pricing'
+                                : 'Inventory'}
                         </CardTitle>
                         <CardDescription>
-                            Stock, buying cost, and selling price for{' '}
-                            {scopeLabel}
+                            {showBranchPricing
+                                ? `Stock, buying cost, and selling price for ${scopeLabel}`
+                                : `Stock for ${scopeLabel}`}
                         </CardDescription>
                     </div>
                     <div className="flex flex-wrap items-start gap-3">
@@ -486,11 +490,13 @@ export function ProductInventoryPanel({
                                 View transactions
                             </Link>
                         </Button>
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={priceHistoryUrl}>
-                                View price history
-                            </Link>
-                        </Button>
+                        {showBranchPricing ? (
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href={priceHistoryUrl}>
+                                    View price history
+                                </Link>
+                            </Button>
+                        ) : null}
                         {showVariants ? (
                             <div className="grid w-full min-w-0 gap-1.5 sm:max-w-[16rem]">
                                 <Label htmlFor="inventory-scope">Scope</Label>
@@ -526,37 +532,51 @@ export function ProductInventoryPanel({
                     </div>
                 </CardHeader>
 
-                <div className="grid divide-y border-b sm:grid-cols-2 sm:divide-x sm:divide-y-0 md:grid-cols-4">
+                <div
+                    className={
+                        showBranchPricing
+                            ? 'grid divide-y border-b sm:grid-cols-2 sm:divide-x sm:divide-y-0 md:grid-cols-4'
+                            : 'grid divide-y border-b sm:grid-cols-1'
+                    }
+                >
                     <SnapshotStat
                         label="Stock"
                         value={String(scopedInventory?.quantity ?? 0)}
                         hint="On-hand units"
                     />
-                    <SnapshotStat
-                        label="Buying"
-                        value={buyingDisplay}
-                        hint={
-                            scopedPrice?.buying_price == null
-                                ? 'Last purchase cost'
-                                : 'Last cost · AUD'
-                        }
-                    />
-                    <SnapshotStat
-                        label="Selling"
-                        value={sellingDisplay}
-                        hint={scopedPrice == null ? 'No price on file' : 'AUD'}
-                    />
-                    <SnapshotStat
-                        label="Effective"
-                        value={effectiveDisplay}
-                        hint={
-                            hasLiveDiscount
-                                ? 'After discount'
-                                : scopedPrice == null
-                                  ? 'Set a selling price'
-                                  : 'Same as selling'
-                        }
-                    />
+                    {showBranchPricing ? (
+                        <>
+                            <SnapshotStat
+                                label="Buying"
+                                value={buyingDisplay}
+                                hint={
+                                    scopedPrice?.buying_price == null
+                                        ? 'Last purchase cost'
+                                        : 'Last cost · AUD'
+                                }
+                            />
+                            <SnapshotStat
+                                label="Selling"
+                                value={sellingDisplay}
+                                hint={
+                                    scopedPrice == null
+                                        ? 'No price on file'
+                                        : 'AUD'
+                                }
+                            />
+                            <SnapshotStat
+                                label="Effective"
+                                value={effectiveDisplay}
+                                hint={
+                                    hasLiveDiscount
+                                        ? 'After discount'
+                                        : scopedPrice == null
+                                          ? 'Set a selling price'
+                                          : 'Same as selling'
+                                }
+                            />
+                        </>
+                    ) : null}
                 </div>
 
                 {showVariants && activeVariants.length > 0 ? (
@@ -570,7 +590,9 @@ export function ProductInventoryPanel({
                                 <TableRow>
                                     <TableHead>Variant</TableHead>
                                     <TableHead>Stock</TableHead>
-                                    <TableHead>Price</TableHead>
+                                    {showBranchPricing ? (
+                                        <TableHead>Price</TableHead>
+                                    ) : null}
                                     <TableHead className="text-right">
                                         Actions
                                     </TableHead>
@@ -596,9 +618,12 @@ export function ProductInventoryPanel({
                                             <TableCell className="tabular-nums">
                                                 {rowInventory?.quantity ?? 0}
                                             </TableCell>
-                                            <TableCell className="tabular-nums">
-                                                {rowPrice?.selling_price ?? '—'}
-                                            </TableCell>
+                                            {showBranchPricing ? (
+                                                <TableCell className="tabular-nums">
+                                                    {rowPrice?.selling_price ??
+                                                        '—'}
+                                                </TableCell>
+                                            ) : null}
                                             <TableCell className="text-right">
                                                 <Button
                                                     type="button"
@@ -622,7 +647,13 @@ export function ProductInventoryPanel({
                 ) : null}
 
                 <div>
-                    <div className="grid divide-y border-b lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+                    <div
+                        className={
+                            showBranchPricing
+                                ? 'grid divide-y border-b lg:grid-cols-2 lg:divide-x lg:divide-y-0'
+                                : 'grid border-b'
+                        }
+                    >
                         <form
                             className="grid h-full content-start gap-4 p-5"
                             onSubmit={(event) => {
@@ -903,6 +934,7 @@ export function ProductInventoryPanel({
                             ) : null}
                         </form>
 
+                        {showBranchPricing ? (
                         <form
                             className="grid h-full min-w-0 content-start gap-4 p-5"
                             onSubmit={submitPrice}
@@ -1013,8 +1045,10 @@ export function ProductInventoryPanel({
                                 </div>
                             </div>
                         </form>
+                        ) : null}
                     </div>
 
+                    {showBranchPricing ? (
                     <form className="p-5" onSubmit={submitPrice}>
                         <div className="bg-muted/40 grid min-w-0 gap-4 rounded-lg border p-4">
                             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1202,6 +1236,7 @@ export function ProductInventoryPanel({
                             ) : null}
                         </div>
                     </form>
+                    ) : null}
                 </div>
             </Card>
         </div>

@@ -58,7 +58,7 @@ Category listing preview: do not shrink FileUpload into a nested max-w card. Kee
 
 ## Branch ProductForm ops fields keep gallery
 
-Branch create/edit use ProductForm with gallery enabled (same as platform). branchOpsFields adds buying_price, regular_price, selling_price, and quantity on create only. createFromBranch / update persist gallery via ProductService.
+Branch create/edit use ProductForm with gallery enabled (same as platform). When `catalog.show_branch_pricing` is false (default), product create/edit show catalog selling_price + regular_price on the products row; branch create still offers quantity-only stock seeding. When the flag is true, branchOpsFields adds buying_price, regular_price, selling_price, and quantity on create only (writes branch_product_prices). createFromBranch / update persist gallery via ProductService.
 
 ## Catalog forms suggestions + slug Precognition
 

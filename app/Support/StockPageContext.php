@@ -64,7 +64,7 @@ final class StockPageContext
                 ->where('status', true)
                 ->first();
 
-            $display = BranchProductPriceDisplay::listDisplay($priceRow);
+            $display = BranchProductPriceDisplay::listDisplayForProductContext($priceRow, $product);
             $price = [
                 ...$display,
                 'start_date' => $priceRow?->start_date?->toDateString(),

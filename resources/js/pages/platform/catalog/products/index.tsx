@@ -271,6 +271,10 @@ export default function PlatformProductsIndex({
                                       PriceHistoryController.index.url(),
                               },
                               { productId: product.id },
+                              {
+                                  includePriceHistory:
+                                      catalog.show_branch_pricing,
+                              },
                           )
                         : [];
 

@@ -1,4 +1,4 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Eye } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
@@ -86,6 +86,7 @@ export default function BranchProductsIndex({
         filterOptions?: { categories?: CategoryOption[] };
     };
 }) {
+    const { catalog } = usePage().props;
     setLayoutProps({
         breadcrumbs: [
             {
@@ -235,6 +236,10 @@ export default function BranchProductsIndex({
                                     {
                                         productId: row.original.id,
                                         branchId: branch.id,
+                                    },
+                                    {
+                                        includePriceHistory:
+                                            catalog.show_branch_pricing,
                                     },
                                 ),
                             },
