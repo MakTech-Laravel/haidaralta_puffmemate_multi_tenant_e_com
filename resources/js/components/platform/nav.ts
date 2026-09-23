@@ -28,6 +28,7 @@ import {
     Package,
     Package2,
     PackagePlus,
+    CircleDollarSign,
     Radio,
     ScrollText,
     Settings2,
@@ -220,6 +221,16 @@ export function buildPlatformNav(
                         icon: Package,
                         permissions: ['manage-catalog'],
                     }),
+                    ...(!showBranchPricing
+                        ? [
+                              navLink({
+                                  title: 'Manage pricing',
+                                  href: '/platform/catalog/pricing/manage',
+                                  icon: CircleDollarSign,
+                                  permissions: ['manage-catalog'],
+                              }),
+                          ]
+                        : []),
                     ...(showBulkImport
                         ? [
                               navLink({

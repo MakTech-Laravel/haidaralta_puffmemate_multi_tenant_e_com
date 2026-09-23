@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Branch\ActivityLogController as BranchActivityLogController;
+use App\Http\Controllers\Branch\CatalogPricingController as BranchCatalogPricingController;
 use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\ConversationController as BranchConversationController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
@@ -66,6 +67,10 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.products.inventory');
         Route::put('products/{product}/prices', [BranchProductController::class, 'upsertPrice'])
             ->name('branch.products.prices');
+        Route::get('catalog/pricing/manage', [BranchCatalogPricingController::class, 'manage'])
+            ->name('branch.catalog.pricing.manage');
+        Route::put('products/{product}/catalog-prices', [BranchCatalogPricingController::class, 'upsert'])
+            ->name('branch.products.catalog-prices');
         Route::get('discounts', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
             ->name('branch.discounts');
         Route::put('discounts', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))

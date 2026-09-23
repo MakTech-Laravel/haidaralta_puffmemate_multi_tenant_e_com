@@ -21,6 +21,10 @@ return new class extends Migration
             $table->json('color_code')->nullable();
             $table->decimal('selling_price', 12, 2)->nullable();
             $table->decimal('regular_price', 12, 2)->nullable();
+            $table->string('discount_type', 20)->default('none');
+            $table->decimal('discount_price', 12, 2)->nullable();
+            $table->date('discount_start_date')->nullable();
+            $table->date('discount_end_date')->nullable();
             $table->boolean('status')->default(true);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

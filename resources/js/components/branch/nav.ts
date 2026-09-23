@@ -3,6 +3,7 @@ import {
     Boxes,
     CalendarClock,
     ChartColumn,
+    CircleDollarSign,
     Clock,
     History,
     Inbox,
@@ -57,6 +58,16 @@ export function buildBranchNav(
             icon: Package,
             permissions: ['manage-branch-products'],
         }),
+        ...(!showBranchPricing
+            ? [
+                  navLink({
+                      title: 'Manage pricing',
+                      href: `/branch/${slug}/catalog/pricing/manage`,
+                      icon: CircleDollarSign,
+                      permissions: ['manage-branch-products'],
+                  }),
+              ]
+            : []),
         navLink({
             title: 'Manage stock',
             href: `/branch/${slug}/stock/manage`,

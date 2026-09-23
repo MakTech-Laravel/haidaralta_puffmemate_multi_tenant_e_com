@@ -9,6 +9,7 @@ use App\Http\Controllers\Platform\BranchScopedStaffController as PlatformBranchS
 use App\Http\Controllers\Platform\BranchShiftAssignmentController as PlatformBranchShiftAssignmentController;
 use App\Http\Controllers\Platform\BranchShiftTemplateController as PlatformBranchShiftTemplateController;
 use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffController;
+use App\Http\Controllers\Platform\CatalogPricingController as PlatformCatalogPricingController;
 use App\Http\Controllers\Platform\CategoryController as PlatformCategoryController;
 use App\Http\Controllers\Platform\CmsPageController as PlatformCmsPageController;
 use App\Http\Controllers\Platform\ContactSettingsController as PlatformContactSettingsController;
@@ -269,6 +270,11 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('products/{product}/restore', [PlatformProductController::class, 'restore'])
             ->name('platform.products.restore')
             ->withTrashed();
+
+        Route::get('catalog/pricing/manage', [PlatformCatalogPricingController::class, 'manage'])
+            ->name('platform.catalog.pricing.manage');
+        Route::put('products/{product}/catalog-prices', [PlatformCatalogPricingController::class, 'upsert'])
+            ->name('platform.products.prices');
 
         Route::post('products/{product}/variants', [PlatformProductVariantController::class, 'store'])
             ->middleware('precognitive')

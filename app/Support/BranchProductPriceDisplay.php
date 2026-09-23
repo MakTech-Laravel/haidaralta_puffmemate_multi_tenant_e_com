@@ -101,17 +101,22 @@ class BranchProductPriceDisplay
         }
 
         $selling = (float) $list['selling_price'];
-        $compareAt = $list['has_compare_at'] && $list['regular_price'] !== null
-            ? (float) $list['regular_price']
-            : null;
+        $effective = (float) $list['effective_price'];
+        $compareAt = null;
+
+        if ($list['has_discount']) {
+            $compareAt = $selling;
+        } elseif ($list['has_compare_at'] && $list['regular_price'] !== null) {
+            $compareAt = (float) $list['regular_price'];
+        }
 
         return [
-            'amount' => $selling,
+            'amount' => $effective,
             'selling' => $selling,
-            'effective' => $selling,
+            'effective' => $effective,
             'compare_at' => $compareAt,
-            'has_discount' => false,
-            'label' => '$'.number_format($selling, 2),
+            'has_discount' => $list['has_discount'],
+            'label' => '$'.number_format($effective, 2),
             'is_from' => false,
             'count' => 1,
         ];
@@ -187,17 +192,21 @@ class BranchProductPriceDisplay
         }
 
         $selling = (float) $product->selling_price;
+        $effective = self::catalogEffectiveAmount($product);
         $regular = $product->regular_price === null ? null : (float) $product->regular_price;
-        $hasCompareAt = $regular !== null && $regular > $selling;
+        $hasDiscount = self::catalogDiscountIsLive($product) && $effective < $selling;
+        $hasCompareAt = ! $hasDiscount && $regular !== null && $regular > $selling;
 
         return [
             'selling_price' => number_format($selling, 2, '.', ''),
-            'effective_price' => number_format($selling, 2, '.', ''),
+            'effective_price' => number_format($effective, 2, '.', ''),
             'regular_price' => $regular === null ? null : number_format($regular, 2, '.', ''),
-            'has_discount' => false,
+            'has_discount' => $hasDiscount,
             'has_compare_at' => $hasCompareAt,
-            'discount_type' => DiscountType::None->value,
-            'discount_price' => null,
+            'discount_type' => $product->discount_type->value,
+            'discount_price' => $product->discount_price === null
+                ? null
+                : (string) $product->discount_price,
         ];
     }
 
@@ -292,6 +301,46 @@ class BranchProductPriceDisplay
             DiscountType::Percent => max(
                 0,
                 round($selling * (1 - ((float) $price->discount_price / 100)), 2),
+            ),
+            default => $selling,
+        };
+    }
+
+    public static function catalogDiscountIsLive(Product $product): bool
+    {
+        if ($product->discount_type === DiscountType::None) {
+            return false;
+        }
+
+        $today = now()->toDateString();
+
+        if ($product->discount_start_date !== null && $today < $product->discount_start_date->toDateString()) {
+            return false;
+        }
+
+        if ($product->discount_end_date !== null && $today > $product->discount_end_date->toDateString()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static function catalogEffectiveAmount(Product $product): float
+    {
+        $selling = (float) $product->selling_price;
+
+        if (! self::catalogDiscountIsLive($product)) {
+            return $selling;
+        }
+
+        return match ($product->discount_type) {
+            DiscountType::Fixed => max(
+                0,
+                round($selling - (float) $product->discount_price, 2),
+            ),
+            DiscountType::Percent => max(
+                0,
+                round($selling * (1 - ((float) $product->discount_price / 100)), 2),
             ),
             default => $selling,
         };

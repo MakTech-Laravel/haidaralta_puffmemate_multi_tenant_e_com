@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\DataTableConfigurable;
 use App\Contracts\ScoutSearchable;
+use App\Enums\DiscountType;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
 use App\Support\CatalogBackgroundColor;
@@ -32,6 +33,10 @@ use Laravel\Scout\Searchable;
  * @property array<string, mixed>|null $color_code
  * @property string|null $selling_price
  * @property string|null $regular_price
+ * @property DiscountType $discount_type
+ * @property string|null $discount_price
+ * @property \Illuminate\Support\Carbon|null $discount_start_date
+ * @property \Illuminate\Support\Carbon|null $discount_end_date
  * @property bool $status
  * @property int|null $created_by
  * @property-read Collection<int, Category> $categories
@@ -76,6 +81,10 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
         'color_code',
         'selling_price',
         'regular_price',
+        'discount_type',
+        'discount_price',
+        'discount_start_date',
+        'discount_end_date',
         'status',
         'created_by',
     ];
@@ -195,6 +204,10 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
             'color_code' => 'array',
             'selling_price' => 'decimal:2',
             'regular_price' => 'decimal:2',
+            'discount_type' => DiscountType::class,
+            'discount_price' => 'decimal:2',
+            'discount_start_date' => 'date',
+            'discount_end_date' => 'date',
         ];
     }
 

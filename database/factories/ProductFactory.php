@@ -32,6 +32,10 @@ class ProductFactory extends Factory
             'color_code' => null,
             'selling_price' => null,
             'regular_price' => null,
+            'discount_type' => 'none',
+            'discount_price' => null,
+            'discount_start_date' => null,
+            'discount_end_date' => null,
             'status' => true,
             'created_by' => null,
         ];
