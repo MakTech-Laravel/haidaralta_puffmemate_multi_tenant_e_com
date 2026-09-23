@@ -294,8 +294,8 @@ export function ShiftMonthCalendar({
             >
                 {selectionNotice ??
                     (selection.selectionMode === 'range'
-                        ? 'Click any empty day to start or finish a range. Ctrl/Cmd-click toggles one date.'
-                        : 'Click any day to select it. Use the ⋯ menu on a shift to remove it.')}
+                        ? 'Click any empty day to start or finish a range. Ctrl/Cmd-click toggles one date. Amber = unsaved new dates.'
+                        : 'Click any day to select it. Amber chips are unsaved; solid red chips are already assigned. Use ⋯ to change or remove.')}
             </p>
         </section>
     );
