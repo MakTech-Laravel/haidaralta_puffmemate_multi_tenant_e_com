@@ -4,6 +4,7 @@ use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\User;
+use App\Support\SuperAdmin;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -109,7 +110,7 @@ test('deleting the last branch super admin is blocked', function () {
         ->assertRedirect()
         ->assertInertiaFlash('toast', [
             'type' => 'error',
-            'message' => 'Cannot remove or deactivate the last super-admin for this branch.',
+            'message' => SuperAdmin::LAST_ACTIVE_BRANCH_MESSAGE,
         ]);
 
     expect(User::query()->whereKey($admin->id)->exists())->toBeTrue();
@@ -130,7 +131,7 @@ test('deactivating the last branch super admin is blocked', function () {
         ->assertRedirect()
         ->assertInertiaFlash('toast', [
             'type' => 'error',
-            'message' => 'Cannot remove or deactivate the last super-admin for this branch.',
+            'message' => SuperAdmin::LAST_ACTIVE_BRANCH_MESSAGE,
         ]);
 
     expect($admin->fresh()->is_active)->toBeTrue();

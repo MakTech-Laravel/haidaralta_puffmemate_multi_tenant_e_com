@@ -161,24 +161,29 @@ class TransferEmployeeService
         $fromRoles = $this->roleNames($staff, $fromBranch);
         $fromRole = $fromRoles[0] ?? 'staff';
         $toRoles = array_values(array_unique($roles));
-        $toRole = $toRoles[0] ?? $fromRole;
+
+        if ($toRoles === []) {
+            throw new InvalidArgumentException('Choose a role at the destination branch.');
+        }
+
+        $toRole = $toRoles[0];
         $sameBranch = $fromBranch->id === $to->id;
-        $sameRoles = $this->sameRoleSet($fromRoles, $toRoles === [] ? $fromRoles : $toRoles);
+        $sameRoles = $this->sameRoleSet($fromRoles, $toRoles);
 
         if ($sameBranch && $sameRoles) {
             throw new InvalidArgumentException('Choose a different branch or a different role.');
         }
 
-        if ($sameBranch && SuperAdmin::isLastInTeam($staff, $fromBranch->id) && ! in_array('super-admin', $toRoles, true)) {
-            throw new InvalidArgumentException('Cannot remove the last super-admin for this branch.');
+        if ($sameBranch && SuperAdmin::isLastInActiveBranch($staff, $fromBranch) && ! in_array('super-admin', $toRoles, true)) {
+            throw new InvalidArgumentException(SuperAdmin::LAST_ACTIVE_BRANCH_MESSAGE);
         }
 
-        if (! $sameBranch && SuperAdmin::isLastInTeam($staff, $fromBranch->id)) {
-            throw new InvalidArgumentException('Cannot transfer the last super-admin away from this branch.');
+        if (! $sameBranch && SuperAdmin::isLastInActiveBranch($staff, $fromBranch)) {
+            throw new InvalidArgumentException(SuperAdmin::LAST_ACTIVE_BRANCH_MESSAGE);
         }
 
         $effective = $this->date($effectiveDate);
-        $destinationRoles = $toRoles === [] ? $fromRoles : $toRoles;
+        $destinationRoles = $toRoles;
         $transferType = $sameBranch ? TransferType::RoleChange : TransferType::BranchChange;
 
         return DB::transaction(function () use ($staff, $fromBranch, $to, $fromRole, $toRole, $destinationRoles, $transferType, $effective, $reason, $actor): UserTransferHistory {

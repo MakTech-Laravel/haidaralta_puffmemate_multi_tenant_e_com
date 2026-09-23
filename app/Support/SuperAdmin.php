@@ -4,11 +4,26 @@ namespace App\Support;
 
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
+use App\Models\Branch;
 use App\Models\User;
 use Spatie\Permission\PermissionRegistrar;
 
 class SuperAdmin
 {
+    public const LAST_ACTIVE_BRANCH_MESSAGE = 'Cannot remove the last super-admin of an active branch. Deactivate or delete the branch, or assign another super-admin first.';
+
+    /**
+     * Active branches must keep at least one active super-admin. Inactive branches do not.
+     */
+    public static function isLastInActiveBranch(User $user, Branch $branch): bool
+    {
+        if (! $branch->status) {
+            return false;
+        }
+
+        return self::isLastInTeam($user, $branch->id);
+    }
+
     /**
      * Count active users with the super-admin role in the given Spatie team.
      */

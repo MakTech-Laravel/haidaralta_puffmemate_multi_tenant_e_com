@@ -408,6 +408,7 @@ export default function PlatformDriversShow({
                 subjectType="driver"
                 branches={branches}
                 currentBranchId={activeAssignments[0]?.branch_id}
+                currentBranchName={activeAssignments[0]?.branch_name}
             />
         </>
     );

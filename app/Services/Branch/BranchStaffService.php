@@ -139,12 +139,12 @@ class BranchStaffService
             return false;
         }
 
-        return SuperAdmin::isLastInTeam($user, $branch->id);
+        return SuperAdmin::isLastInActiveBranch($user, $branch);
     }
 
     public function isLastSuperAdminInBranch(User $user, Branch $branch): bool
     {
-        return SuperAdmin::isLastInTeam($user, $branch->id);
+        return SuperAdmin::isLastInActiveBranch($user, $branch);
     }
 
     /**

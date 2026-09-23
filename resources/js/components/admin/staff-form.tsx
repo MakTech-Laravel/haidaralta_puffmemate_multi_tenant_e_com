@@ -324,7 +324,7 @@ export function StaffForm({
     }, [roles]);
 
     useEffect(() => {
-        if (!roleOptionsUrl || !data.branch_id || roles.length > 0) {
+        if (!roleOptionsUrl || !data.branch_id) {
             return;
         }
 
@@ -367,7 +367,7 @@ export function StaffForm({
             });
 
         return () => controller.abort();
-    }, [data.branch_id, roleOptionsUrl, roles.length]);
+    }, [data.branch_id, roleOptionsUrl]);
 
     const validatePhone = (): void => {
         validate('phone');
@@ -420,7 +420,7 @@ export function StaffForm({
 
             return {
                 ...rest,
-                ...(showBranchPicker && !isEdit ? { branch_id } : {}),
+                ...(showBranchPicker ? { branch_id } : {}),
                 ...(password ? { password, password_confirmation } : {}),
                 ...(avatar ? { avatar } : {}),
                 ...(remove_avatar ? { remove_avatar: true } : {}),
@@ -433,7 +433,7 @@ export function StaffForm({
         });
     };
 
-    const branchPickerDisabled = branchLocked || isEdit;
+    const branchPickerDisabled = branchLocked;
 
     return (
         <form onSubmit={submit} className="w-full space-y-6" autoComplete="off">

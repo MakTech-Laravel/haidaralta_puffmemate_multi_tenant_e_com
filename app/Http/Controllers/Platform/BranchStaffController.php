@@ -9,6 +9,8 @@ use App\Http\Requests\Platform\UpdatePlatformBranchStaffRequest;
 use App\Models\Branch;
 use App\Models\User;
 use App\Services\Branch\BranchStaffService;
+use App\Services\Workforce\TransferEmployeeService;
+use App\Support\SuperAdmin;
 use App\Support\Toast;
 use App\Support\WorkforcePayload;
 use Illuminate\Http\JsonResponse;
@@ -16,10 +18,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use InvalidArgumentException;
 
 class BranchStaffController extends Controller
 {
-    public function __construct(private BranchStaffService $branchStaffService) {}
+    public function __construct(
+        private BranchStaffService $branchStaffService,
+        private TransferEmployeeService $transfers,
+    ) {}
 
     /**
      * Display branch staff across all branches.
@@ -104,17 +110,6 @@ class BranchStaffController extends Controller
 
         return Inertia::render('platform/branch-staff/show', [
             'staffMember' => $staffMember,
-            'branches' => Branch::query()
-                ->orderBy('name')
-                ->get(['id', 'name', 'slug'])
-                ->map(fn (Branch $branch): array => [
-                    'id' => $branch->id,
-                    'name' => $branch->name,
-                    'slug' => $branch->slug,
-                ])
-                ->values()
-                ->all(),
-            'rolesByBranch' => $this->branchStaffService->rolesByBranch(),
         ]);
     }
 
@@ -149,19 +144,43 @@ class BranchStaffController extends Controller
         $user = $this->branchStaffService->resolveBranchStaff($user);
         abort_unless($user->branch_id !== null && $user->branch !== null, 404);
 
-        $branch = $user->branch;
+        $fromBranch = $user->branch;
+        $toBranchId = $request->filled('branch_id')
+            ? $request->integer('branch_id')
+            : $fromBranch->id;
+        $toBranch = $toBranchId === $fromBranch->id
+            ? $fromBranch
+            : Branch::query()->findOrFail($toBranchId);
         $roles = $request->validated('roles', []);
         $isActive = $request->boolean('is_active');
+        $branchChanged = $toBranch->id !== $fromBranch->id;
 
-        if ($this->branchStaffService->wouldViolateLastSuperAdmin($user, $branch, $roles, $isActive, destroying: false)) {
-            Toast::error('Cannot remove or deactivate the last super-admin for this branch.');
+        if ($branchChanged) {
+            try {
+                $this->transfers->transferBranchStaff(
+                    $user,
+                    $toBranch,
+                    $roles,
+                    now()->toDateString(),
+                    'Updated via staff edit',
+                    $request->user('platform'),
+                );
+            } catch (InvalidArgumentException $exception) {
+                Toast::error($exception->getMessage());
+
+                return redirect()->back();
+            }
+
+            $user = $user->fresh();
+        } elseif ($this->branchStaffService->wouldViolateLastSuperAdmin($user, $fromBranch, $roles, $isActive, destroying: false)) {
+            Toast::error(SuperAdmin::LAST_ACTIVE_BRANCH_MESSAGE);
 
             return redirect()->back();
         }
 
         $this->branchStaffService->update(
             $user,
-            $branch,
+            $toBranch,
             [
                 'name' => $request->validated('name'),
                 'phone' => $request->validated('phone'),
@@ -174,7 +193,7 @@ class BranchStaffController extends Controller
             $request->file('avatar'),
         );
 
-        Toast::success('Branch staff member updated.');
+        Toast::success($branchChanged ? 'Branch staff member transferred and updated.' : 'Branch staff member updated.');
 
         return redirect()->route('platform.branch-staff.show', $user);
     }
@@ -196,7 +215,7 @@ class BranchStaffController extends Controller
             false,
             destroying: true,
         )) {
-            Toast::error('Cannot remove or deactivate the last super-admin for this branch.');
+            Toast::error(SuperAdmin::LAST_ACTIVE_BRANCH_MESSAGE);
 
             return redirect()->back();
         }

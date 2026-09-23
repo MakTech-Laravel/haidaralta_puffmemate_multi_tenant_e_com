@@ -17,17 +17,10 @@ type StaffMember = StaffMemberProfileData & {
     transfers: TransferRow[];
 };
 
-type BranchOption = { id: number; name: string; slug?: string };
-type RoleOption = { value: string; label: string };
-
 export default function PlatformBranchStaffShow({
     staffMember,
-    branches = [],
-    rolesByBranch = {},
 }: {
     staffMember: StaffMember;
-    branches?: BranchOption[];
-    rolesByBranch?: Record<string, RoleOption[]>;
 }) {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
@@ -74,9 +67,10 @@ export default function PlatformBranchStaffShow({
                 onOpenChange={setTransferOpen}
                 action={TransferController.storeStaff.form(staffMember.id)}
                 subjectType="branch_staff"
-                branches={branches}
+                branchOptionsUrl={BranchStaffController.branchOptions.url()}
+                roleOptionsUrl={BranchStaffController.roleOptions.url()}
                 currentBranchId={staffMember.branch?.id}
-                rolesByBranch={rolesByBranch}
+                currentBranchName={staffMember.branch?.name}
                 currentRoles={staffMember.roles}
             />
 

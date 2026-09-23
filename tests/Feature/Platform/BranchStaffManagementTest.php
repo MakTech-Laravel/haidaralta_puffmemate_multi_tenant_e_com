@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\PlatformTeamResolver;
+use App\Support\SuperAdmin;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -219,7 +220,7 @@ test('platform cannot delete the last branch super admin', function () {
         ->assertRedirect()
         ->assertInertiaFlash('toast', [
             'type' => 'error',
-            'message' => 'Cannot remove or deactivate the last super-admin for this branch.',
+            'message' => SuperAdmin::LAST_ACTIVE_BRANCH_MESSAGE,
         ]);
 
     expect(User::query()->whereKey($branchSuper->id)->exists())->toBeTrue();
@@ -290,7 +291,9 @@ test('platform super admin can create and update branch staff with an avatar', f
         ->assertInertia(fn ($page) => $page
             ->component('platform/branch-staff/show')
             ->where('staffMember.avatar_url', fn ($url) => is_string($url) && $url !== '')
-            ->has('staffMember.permission_groups'));
+            ->has('staffMember.permission_groups')
+            ->missing('branches')
+            ->missing('rolesByBranch'));
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.branch-staff.update', $clerk), [

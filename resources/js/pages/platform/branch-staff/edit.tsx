@@ -43,7 +43,7 @@ export default function PlatformBranchStaffEdit({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${staffMember.name}`}
-                    description="Update branch staff details and roles"
+                    description="Update branch staff details and roles. Changing branch records a transfer."
                 />
 
                 <StaffForm
@@ -51,7 +51,8 @@ export default function PlatformBranchStaffEdit({
                     isEdit
                     roles={roles}
                     selectedBranch={selectedBranch}
-                    branchLocked
+                    branchOptionsUrl={BranchStaffController.branchOptions.url()}
+                    roleOptionsUrl={BranchStaffController.roleOptions.url()}
                     lockedSuperAdmin={lockedSuperAdmin}
                     defaults={{
                         name: staffMember.name,

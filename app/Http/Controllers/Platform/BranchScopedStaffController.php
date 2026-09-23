@@ -8,6 +8,7 @@ use App\Http\Requests\Platform\UpdatePlatformBranchStaffRequest;
 use App\Models\Branch;
 use App\Models\User;
 use App\Services\Branch\BranchStaffService;
+use App\Support\SuperAdmin;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -109,7 +110,7 @@ class BranchScopedStaffController extends Controller
         $isActive = $request->boolean('is_active');
 
         if ($this->branchStaffService->wouldViolateLastSuperAdmin($user, $branch, $roles, $isActive, destroying: false)) {
-            Toast::error('Cannot remove or deactivate the last super-admin for this branch.');
+            Toast::error(SuperAdmin::LAST_ACTIVE_BRANCH_MESSAGE);
 
             return redirect()->back();
         }
@@ -148,7 +149,7 @@ class BranchScopedStaffController extends Controller
             false,
             destroying: true,
         )) {
-            Toast::error('Cannot remove or deactivate the last super-admin for this branch.');
+            Toast::error(SuperAdmin::LAST_ACTIVE_BRANCH_MESSAGE);
 
             return redirect()->back();
         }

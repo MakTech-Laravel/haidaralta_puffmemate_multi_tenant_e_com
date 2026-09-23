@@ -3,7 +3,9 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import BranchStaffController from '@/actions/App/Http/Controllers/Platform/BranchStaffController';
+import TransferController from '@/actions/App/Http/Controllers/Platform/TransferController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
+import { TransferEmployeeSheet } from '@/components/admin/transfer-employee-sheet';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -40,6 +42,14 @@ type StaffRow = {
 
 type SelectedBranch = { id: number; name: string; slug: string };
 
+type TransferTarget = {
+    id: number;
+    name: string;
+    branchId: number | null;
+    branchName: string | null;
+    roles: string[];
+};
+
 function initials(name: string): string {
     return name
         .split(/\s+/)
@@ -58,6 +68,9 @@ export default function PlatformBranchStaffIndex({
 }) {
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [processing, setProcessing] = useState(false);
+    const [transferTarget, setTransferTarget] = useState<TransferTarget | null>(
+        null,
+    );
 
     const query = useDataTableQuery({
         indexUrl: BranchStaffController.index.url(),
@@ -173,6 +186,19 @@ export default function PlatformBranchStaffIndex({
                                 ),
                             },
                             {
+                                label: 'Transfer branch',
+                                onSelect: () =>
+                                    setTransferTarget({
+                                        id: row.original.id,
+                                        name: row.original.name,
+                                        branchId:
+                                            row.original.branch?.id ?? null,
+                                        branchName:
+                                            row.original.branch?.name ?? null,
+                                        roles: row.original.roles,
+                                    }),
+                            },
+                            {
                                 label: 'Delete',
                                 icon: Trash2,
                                 destructive: true,
@@ -282,6 +308,26 @@ export default function PlatformBranchStaffIndex({
                     }
                 />
             </div>
+
+            {transferTarget ? (
+                <TransferEmployeeSheet
+                    open
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setTransferTarget(null);
+                        }
+                    }}
+                    action={TransferController.storeStaff.form(
+                        transferTarget.id,
+                    )}
+                    subjectType="branch_staff"
+                    branchOptionsUrl={BranchStaffController.branchOptions.url()}
+                    roleOptionsUrl={BranchStaffController.roleOptions.url()}
+                    currentBranchId={transferTarget.branchId}
+                    currentBranchName={transferTarget.branchName}
+                    currentRoles={transferTarget.roles}
+                />
+            ) : null}
 
             <ConfirmDeleteDialog
                 open={deletingId !== null}

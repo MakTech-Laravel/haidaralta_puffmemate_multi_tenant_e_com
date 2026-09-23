@@ -34,8 +34,16 @@ class UpdatePlatformBranchStaffRequest extends FormRequest
         /** @var User $user */
         $user = $this->route('user');
         $teamKey = config('permission.column_names.team_foreign_key');
+        $branchId = $this->filled('branch_id')
+            ? $this->integer('branch_id')
+            : $user->branch_id;
 
         return [
+            'branch_id' => [
+                'sometimes',
+                'integer',
+                Rule::exists('branches', 'id'),
+            ],
             'name' => ['required', 'string', 'max:255'],
             'phone' => [
                 'required',
@@ -55,7 +63,7 @@ class UpdatePlatformBranchStaffRequest extends FormRequest
                 'string',
                 Rule::exists('roles', 'name')
                     ->where('guard_name', 'branch')
-                    ->where($teamKey, $user->branch_id),
+                    ->where($teamKey, $branchId),
             ],
             'is_active' => ['required', 'boolean'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
