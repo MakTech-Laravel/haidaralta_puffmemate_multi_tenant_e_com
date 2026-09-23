@@ -78,6 +78,7 @@ type Branch = {
     address: string | null;
     latitude: string | number | null;
     longitude: string | number | null;
+    delivery_radius_km: string | number | null;
     opening_time: string | null;
     closing_time: string | null;
     needs_super_admin: boolean;
@@ -506,6 +507,15 @@ export default function PlatformBranchesShow({
                                     <span className="tabular-nums">
                                         {longitude ?? '—'}
                                     </span>
+                                }
+                            />
+                            <Fact
+                                label="Delivery radius"
+                                value={
+                                    branch.delivery_radius_km != null &&
+                                    branch.delivery_radius_km !== ''
+                                        ? `${Number(branch.delivery_radius_km)} km`
+                                        : 'Anywhere'
                                 }
                             />
                         </dl>

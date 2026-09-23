@@ -26,6 +26,7 @@ use Laravel\Scout\Searchable;
  * @property string|null $address
  * @property string|null $latitude
  * @property string|null $longitude
+ * @property string|null $delivery_radius_km
  * @property Carbon|null $opening_time
  * @property Carbon|null $closing_time
  * @property bool $status
@@ -69,6 +70,7 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
         'address',
         'latitude',
         'longitude',
+        'delivery_radius_km',
         'opening_time',
         'closing_time',
         'status',
@@ -151,6 +153,7 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
         return [
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
+            'delivery_radius_km' => 'decimal:2',
             'opening_time' => 'datetime:H:i',
             'closing_time' => 'datetime:H:i',
             'status' => 'boolean',

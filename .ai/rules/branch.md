@@ -1,12 +1,13 @@
 ---
 paths:
-    - 'app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php'
-    - 'app/Services/Catalog/**'
-    - 'app/Services/Inventory/**'
-    - app/Models/ProductImage.php
-    - 'app/Models/{Category,Product}.php'
-    - 'app/Models/Driver*.php'
-    - app/Models/User.php
+  - 'app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php'
+  - 'app/Services/Catalog/**'
+  - 'app/Services/Inventory/**'
+  - app/Models/ProductImage.php
+  - 'app/Models/{Category,Product}.php'
+  - 'app/Models/Driver*.php'
+  - app/Models/User.php
+  - app/Models/Branch.php
 ---
 
 # Catalog
@@ -46,3 +47,6 @@ Every user type stores the photo on users.avatar (public disk users/avatars, Med
 ## Last-purchase buying, regular compare-at, discount on selling
 
 buying_price is last purchase cost on branch_product_prices (internal, never storefront). regular_price is compare-at when greater than selling. Product discounts apply only to selling_price and honor start/end dates. New entry requires buying_price as inventory_transactions.unit_cost and updates last buying when a price row exists. Append-only branch_product_price_histories on dirty price fields (snapshot before save). Coupons stay checkout-only.
+
+## Optional branch delivery radius km
+branches.delivery_radius_km (nullable decimal km) on create_branches. Null means the branch can deliver anywhere; a value is stored for future fixed-area delivery checks from the branch pin. Edit on platform branch create/edit; show displays km or Anywhere. Do not enforce checkout distance yet.
