@@ -54,13 +54,13 @@ export function ShiftMonthCalendar({
             }),
         [calendar.grid_end, calendar.grid_start],
     );
-    const years = useMemo(
-        () =>
-            Array.from({ length: 26 }, (_, index) =>
-                String(monthDate.getFullYear() - 20 + index),
-            ),
-        [monthDate],
-    );
+    const years = useMemo(() => {
+        const endYear = new Date().getFullYear() + 2;
+
+        return Array.from({ length: endYear - 2020 + 1 }, (_, index) =>
+            String(2020 + index),
+        );
+    }, []);
 
     const navigateTo = (date: Date): void => {
         onMonthChange(format(date, 'yyyy-MM'));
