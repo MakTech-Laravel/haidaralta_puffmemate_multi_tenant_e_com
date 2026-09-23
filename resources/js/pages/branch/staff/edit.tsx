@@ -21,6 +21,8 @@ type StaffMember = {
     email: string | null;
     is_active: boolean;
     roles: string[];
+    avatar: string | null;
+    avatar_url: string | null;
 };
 
 export default function BranchStaffEdit({
@@ -49,7 +51,7 @@ export default function BranchStaffEdit({
         <>
             <Head title={`Edit ${staffMember.name}`} />
 
-            <div className="mx-auto max-w-2xl space-y-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${staffMember.name}`}
                     description={`Update staff for ${branch.name}`}
@@ -69,6 +71,8 @@ export default function BranchStaffEdit({
                         email: staffMember.email,
                         roles: staffMember.roles,
                         is_active: staffMember.is_active,
+                        avatar: staffMember.avatar,
+                        avatar_url: staffMember.avatar_url,
                     }}
                     cancelHref={StaffController.show.url({
                         branch: branch.slug,

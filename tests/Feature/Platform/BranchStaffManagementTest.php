@@ -10,6 +10,8 @@ use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
@@ -201,4 +203,55 @@ test('platform cannot delete the last branch super admin', function () {
         ]);
 
     expect(User::query()->whereKey($branchSuper->id)->exists())->toBeTrue();
+});
+
+test('platform super admin can create and update branch staff with an avatar', function () {
+    Storage::fake('public');
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branch-staff.store'), [
+            'branch_id' => $downtown->id,
+            'name' => 'Avatar Clerk',
+            'phone' => '0412000099',
+            'email' => 'avatar-clerk@test.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'roles' => [RoleEnum::STAFF->value],
+            'is_active' => true,
+            'avatar' => UploadedFile::fake()->image('staff-avatar.jpg'),
+        ])
+        ->assertRedirect();
+
+    $clerk = User::query()->where('email', 'avatar-clerk@test.com')->firstOrFail();
+
+    expect($clerk->avatar)->not->toBeNull();
+    Storage::disk('public')->assertExists($clerk->avatar);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branch-staff.show', $clerk))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branch-staff/show')
+            ->where('staffMember.avatar_url', fn ($url) => is_string($url) && $url !== '')
+            ->has('staffMember.permission_groups'));
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.branch-staff.update', $clerk), [
+            'name' => 'Avatar Clerk Updated',
+            'phone' => '0412000099',
+            'email' => 'avatar-clerk@test.com',
+            'roles' => [RoleEnum::STAFF->value],
+            'is_active' => true,
+            'avatar' => UploadedFile::fake()->image('staff-avatar-2.jpg'),
+        ])
+        ->assertRedirect(route('platform.branch-staff.show', $clerk));
+
+    $clerk->refresh();
+
+    expect($clerk->name)->toBe('Avatar Clerk Updated')
+        ->and($clerk->avatar)->not->toBeNull();
+    Storage::disk('public')->assertExists($clerk->avatar);
 });

@@ -46,14 +46,18 @@ class BranchStaffController extends Controller
      */
     public function store(StorePlatformBranchStaffRequest $request): RedirectResponse
     {
-        $user = $this->branchStaffService->create($request->branch(), [
-            'name' => $request->validated('name'),
-            'phone' => $request->validated('phone'),
-            'email' => $request->validated('email'),
-            'password' => $request->validated('password'),
-            'roles' => $request->validated('roles', []),
-            'is_active' => $request->boolean('is_active', true),
-        ]);
+        $user = $this->branchStaffService->create(
+            $request->branch(),
+            [
+                'name' => $request->validated('name'),
+                'phone' => $request->validated('phone'),
+                'email' => $request->validated('email'),
+                'password' => $request->validated('password'),
+                'roles' => $request->validated('roles', []),
+                'is_active' => $request->boolean('is_active', true),
+            ],
+            $request->file('avatar'),
+        );
 
         Toast::success('Branch staff member created.');
 
@@ -68,38 +72,30 @@ class BranchStaffController extends Controller
         $user = $this->branchStaffService->resolveBranchStaff($user);
         $user->load('branch:id,name,slug');
 
-        $roles = [];
-        $isSuperAdmin = false;
-        $effectivePermissions = [];
+        abort_unless($user->branch_id !== null && $user->branch !== null, 404);
 
-        if ($user->branch_id !== null && $user->branch !== null) {
-            $detail = $this->branchStaffService->mapStaffMemberDetail($user, $user->branch);
-            $roles = $detail['roles'];
-            $isSuperAdmin = $detail['is_super_admin'];
-            $effectivePermissions = $detail['effective_permissions'];
-        }
+        $staffMember = $this->branchStaffService->mapStaffMember($user, $user->branch, includeAccess: true);
+        $staffMember['transfers'] = $user->transferHistories()
+            ->with(['fromBranch:id,name,slug', 'toBranch:id,name,slug', 'transferredBy:id,name'])
+            ->orderByDesc('effective_date')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn ($history) => WorkforcePayload::transfer($history))
+            ->values()
+            ->all();
 
         return Inertia::render('platform/branch-staff/show', [
-            'staffMember' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'phone' => $user->phone,
-                'email' => $user->email,
-                'is_active' => $user->is_active,
-                'branch' => $user->branch?->only(['id', 'name', 'slug']),
-                'roles' => $roles,
-                'is_super_admin' => $isSuperAdmin,
-                'effective_permissions' => $effectivePermissions,
-                'transfers' => $user->transferHistories()
-                    ->with(['fromBranch:id,name,slug', 'toBranch:id,name,slug', 'transferredBy:id,name'])
-                    ->orderByDesc('effective_date')
-                    ->orderByDesc('id')
-                    ->get()
-                    ->map(fn ($history) => WorkforcePayload::transfer($history))
-                    ->values()
-                    ->all(),
-            ],
-            'branches' => $this->branchStaffService->branchOptions(),
+            'staffMember' => $staffMember,
+            'branches' => Branch::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug'])
+                ->map(fn (Branch $branch): array => [
+                    'id' => $branch->id,
+                    'name' => $branch->name,
+                    'slug' => $branch->slug,
+                ])
+                ->values()
+                ->all(),
             'rolesByBranch' => $this->branchStaffService->rolesByBranch(),
         ]);
     }
@@ -127,15 +123,7 @@ class BranchStaffController extends Controller
                 (string) $branch->id => $this->branchStaffService->roleOptionsForBranch($branch),
             ],
             'lockedSuperAdmin' => $this->branchStaffService->isLastSuperAdminInBranch($user, $branch),
-            'staffMember' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'phone' => $user->phone,
-                'email' => $user->email,
-                'is_active' => $user->is_active,
-                'branch_id' => $branch->id,
-                'roles' => $this->branchStaffService->roleNames($user, $branch),
-            ],
+            'staffMember' => $this->branchStaffService->mapStaffMember($user, $branch),
         ]);
     }
 
@@ -157,14 +145,20 @@ class BranchStaffController extends Controller
             return redirect()->back();
         }
 
-        $this->branchStaffService->update($user, $branch, [
-            'name' => $request->validated('name'),
-            'phone' => $request->validated('phone'),
-            'email' => $request->validated('email'),
-            'password' => $request->validated('password'),
-            'roles' => $roles,
-            'is_active' => $isActive,
-        ]);
+        $this->branchStaffService->update(
+            $user,
+            $branch,
+            [
+                'name' => $request->validated('name'),
+                'phone' => $request->validated('phone'),
+                'email' => $request->validated('email'),
+                'password' => $request->validated('password'),
+                'roles' => $roles,
+                'is_active' => $isActive,
+                'remove_avatar' => $request->boolean('remove_avatar'),
+            ],
+            $request->file('avatar'),
+        );
 
         Toast::success('Branch staff member updated.');
 

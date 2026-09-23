@@ -8,8 +8,13 @@ use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\MediaUrl;
+use App\Support\PublicDiskMedia;
 use App\Support\SuperAdmin;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\PermissionRegistrar;
 
 class BranchStaffService
@@ -17,61 +22,73 @@ class BranchStaffService
     /**
      * @param  array{name: string, phone: string, email?: string|null, password: string, roles?: list<string>, is_active?: bool}  $data
      */
-    public function create(Branch $branch, array $data): User
+    public function create(Branch $branch, array $data, ?UploadedFile $avatar = null): User
     {
-        $this->useBranchTeam($branch);
+        return DB::transaction(function () use ($branch, $data, $avatar): User {
+            $this->useBranchTeam($branch);
 
-        $user = User::query()->create([
-            'name' => $data['name'],
-            'phone' => $data['phone'],
-            'email' => $data['email'] ?? null,
-            'password' => $data['password'],
-            'user_type' => UserType::BRANCH,
-            'branch_id' => $branch->id,
-            'is_active' => $data['is_active'] ?? true,
-            'phone_verified_at' => now(),
-        ]);
+            $user = User::query()->create([
+                'name' => $data['name'],
+                'phone' => $data['phone'],
+                'email' => $data['email'] ?? null,
+                'password' => $data['password'],
+                'user_type' => UserType::BRANCH,
+                'branch_id' => $branch->id,
+                'is_active' => $data['is_active'] ?? true,
+                'phone_verified_at' => now(),
+                'avatar' => PublicDiskMedia::store($avatar, PublicDiskMedia::USER_AVATARS),
+            ]);
 
-        $user->syncRoles($data['roles'] ?? []);
+            $user->syncRoles($data['roles'] ?? []);
 
-        $this->clearTeam();
+            $this->clearTeam();
 
-        return $user;
+            return $user;
+        });
     }
 
     /**
-     * @param  array{name: string, phone: string, email?: string|null, password?: string|null, roles: list<string>, is_active: bool}  $data
+     * @param  array{name: string, phone: string, email?: string|null, password?: string|null, roles: list<string>, is_active: bool, remove_avatar?: bool}  $data
      */
-    public function update(User $user, Branch $branch, array $data): User
+    public function update(User $user, Branch $branch, array $data, ?UploadedFile $avatar = null): User
     {
-        $this->useBranchTeam($branch);
+        return DB::transaction(function () use ($user, $branch, $data, $avatar): User {
+            $this->useBranchTeam($branch);
 
-        $payload = [
-            'name' => $data['name'],
-            'phone' => $data['phone'],
-            'email' => $data['email'] ?? null,
-            'is_active' => $data['is_active'],
-            'user_type' => UserType::BRANCH,
-            'branch_id' => $branch->id,
-        ];
+            $payload = [
+                'name' => $data['name'],
+                'phone' => $data['phone'],
+                'email' => $data['email'] ?? null,
+                'is_active' => $data['is_active'],
+                'user_type' => UserType::BRANCH,
+                'branch_id' => $branch->id,
+                'avatar' => PublicDiskMedia::replace(
+                    $user->avatar,
+                    $avatar,
+                    PublicDiskMedia::USER_AVATARS,
+                    (bool) ($data['remove_avatar'] ?? false),
+                ),
+            ];
 
-        if (filled($data['password'] ?? null)) {
-            $payload['password'] = $data['password'];
-        }
+            if (filled($data['password'] ?? null)) {
+                $payload['password'] = $data['password'];
+            }
 
-        $user->update($payload);
-        $user->unsetRelation('roles');
-        $user->syncRoles($data['roles']);
+            $user->update($payload);
+            $user->unsetRelation('roles');
+            $user->syncRoles($data['roles']);
 
-        $this->clearTeam();
+            $this->clearTeam();
 
-        return $user;
+            return $user->refresh();
+        });
     }
 
     public function delete(User $user, Branch $branch): void
     {
         $this->useBranchTeam($branch);
 
+        PublicDiskMedia::delete($user->avatar);
         $user->delete();
 
         $this->clearTeam();
@@ -144,6 +161,53 @@ class BranchStaffService
         return $roles;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function mapStaffMember(User $user, Branch $branch, bool $includeAccess = false): array
+    {
+        $this->useBranchTeam($branch);
+
+        $payload = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'phone' => $user->phone,
+            'email' => $user->email,
+            'avatar' => $user->avatar,
+            'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+            'is_active' => $user->is_active,
+            'branch_id' => $branch->id,
+            'branch' => $branch->only(['id', 'name', 'slug']),
+            'roles' => $user->getRoleNames()->values()->all(),
+            'phone_verified_at' => $user->phone_verified_at?->toIso8601String(),
+            'email_verified_at' => $user->email_verified_at?->toIso8601String(),
+            'two_factor_enabled' => $user->two_factor_confirmed_at !== null,
+            'created_at' => $user->created_at?->toIso8601String(),
+            'updated_at' => $user->updated_at?->toIso8601String(),
+        ];
+
+        if (! $includeAccess) {
+            $this->clearTeam();
+
+            return $payload;
+        }
+
+        $isSuperAdmin = $user->hasRole(RoleEnum::SUPER_ADMIN->value);
+        $effectivePermissions = $isSuperAdmin
+            ? collect(PermissionEnum::forGuard('branch'))->map->value->values()->all()
+            : $user->getAllPermissions()->pluck('name')->values()->all();
+
+        $payload['is_super_admin'] = $isSuperAdmin;
+        $payload['effective_permissions'] = $effectivePermissions;
+        $payload['permission_groups'] = $this->permissionCoverage(
+            collect($effectivePermissions),
+        );
+
+        $this->clearTeam();
+
+        return $payload;
+    }
+
     public function paginateForBranch(
         Branch $branch,
         int $perPage = 15,
@@ -174,6 +238,7 @@ class BranchStaffService
                     'name' => $user->name,
                     'phone' => $user->phone,
                     'email' => $user->email,
+                    'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
                     'is_active' => $user->is_active,
                     'roles' => $user->getRoleNames()->values()->all(),
                 ];
@@ -234,6 +299,7 @@ class BranchStaffService
                     'name' => $user->name,
                     'phone' => $user->phone,
                     'email' => $user->email,
+                    'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
                     'is_active' => $user->is_active,
                     'branch' => $user->branch?->only(['id', 'name', 'slug']),
                     'roles' => $roles,
@@ -316,25 +382,30 @@ class BranchStaffService
     }
 
     /**
-     * @return array{roles: list<string>, is_super_admin: bool, effective_permissions: list<string>}
+     * @param  Collection<int, string>  $grantedNames
+     * @return list<array{group: string, total: int, granted_count: int, permissions: list<array{value: string, label: string, granted: bool}>}>
      */
-    public function mapStaffMemberDetail(User $user, Branch $branch): array
+    private function permissionCoverage(Collection $grantedNames): array
     {
-        $this->useBranchTeam($branch);
+        $groups = [];
 
-        $isSuperAdmin = $user->hasRole(RoleEnum::SUPER_ADMIN->value);
-        $roles = $user->getRoleNames()->values()->all();
-        $effectivePermissions = $isSuperAdmin
-            ? collect(PermissionEnum::forGuard('branch'))->map->value->values()->all()
-            : $user->getAllPermissions()->pluck('name')->values()->all();
+        foreach (PermissionEnum::forGuard('branch') as $permission) {
+            $groups[$permission->group()][] = [
+                'value' => $permission->value,
+                'label' => $permission->label(),
+                'granted' => $grantedNames->contains($permission->value),
+            ];
+        }
 
-        $this->clearTeam();
-
-        return [
-            'roles' => $roles,
-            'is_super_admin' => $isSuperAdmin,
-            'effective_permissions' => $effectivePermissions,
-        ];
+        return collect($groups)
+            ->map(fn (array $permissions, string $group): array => [
+                'group' => $group,
+                'total' => count($permissions),
+                'granted_count' => collect($permissions)->where('granted', true)->count(),
+                'permissions' => $permissions,
+            ])
+            ->values()
+            ->all();
     }
 
     private function useBranchTeam(Branch $branch): void

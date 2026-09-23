@@ -61,6 +61,8 @@ class UpdateBranchStaffRequest extends FormRequest
                     ->where($teamKey, $branch->id),
             ],
             'is_active' => ['required', 'boolean'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_avatar' => ['sometimes', 'boolean'],
         ];
     }
 

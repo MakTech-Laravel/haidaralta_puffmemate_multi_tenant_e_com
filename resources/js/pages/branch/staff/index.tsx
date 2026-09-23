@@ -9,10 +9,12 @@ import {
     DataTableColumnHeader,
     DataTableRowActions,
     DataTableToolbar,
+    DataTableTruncated,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -29,11 +31,21 @@ type StaffRow = {
     name: string;
     phone: string;
     email: string | null;
+    avatar_url: string | null;
     is_active: boolean;
     roles: string[];
 };
 
 type Branch = { id: number; name: string; slug: string };
+
+function initials(name: string): string {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
+}
 
 export default function BranchStaffIndex({
     branch,
@@ -70,30 +82,35 @@ export default function BranchStaffIndex({
     const columns = useMemo<ColumnDef<StaffRow>[]>(
         () => [
             {
-                accessorKey: 'name',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Name"
-                        sortable
-                        sortKey="name"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
+                id: 'avatar',
+                header: 'Staff',
+                meta: { truncate: false },
+                cell: ({ row }) => (
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Avatar className="size-10">
+                            <AvatarImage
+                                src={row.original.avatar_url ?? undefined}
+                                alt={row.original.name}
+                            />
+                            <AvatarFallback>
+                                {initials(row.original.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                            <DataTableTruncated className="font-medium">
+                                {row.original.name}
+                            </DataTableTruncated>
+                            <DataTableTruncated className="text-muted-foreground text-xs">
+                                {row.original.phone}
+                            </DataTableTruncated>
+                        </div>
+                    </div>
                 ),
             },
             {
-                accessorKey: 'phone',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Phone"
-                        sortable
-                        sortKey="phone"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
-                ),
+                accessorKey: 'email',
+                header: 'Email',
+                cell: ({ row }) => row.original.email ?? '—',
             },
             {
                 id: 'roles',
@@ -101,8 +118,12 @@ export default function BranchStaffIndex({
                 cell: ({ row }) => (
                     <div className="flex flex-wrap gap-1">
                         {row.original.roles.map((role) => (
-                            <Badge key={role} variant="secondary">
-                                {role}
+                            <Badge
+                                key={role}
+                                variant="secondary"
+                                className="capitalize"
+                            >
+                                {role.replaceAll('-', ' ')}
                             </Badge>
                         ))}
                     </div>
@@ -110,7 +131,16 @@ export default function BranchStaffIndex({
             },
             {
                 accessorKey: 'is_active',
-                header: 'Status',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Status"
+                        sortable
+                        sortKey="is_active"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <Badge
                         variant={

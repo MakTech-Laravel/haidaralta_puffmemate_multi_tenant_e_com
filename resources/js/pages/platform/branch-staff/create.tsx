@@ -24,7 +24,7 @@ export default function PlatformBranchStaffCreate({
         <>
             <Head title="Add branch staff" />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Add branch staff"
                     description="Create a staff account for any branch"

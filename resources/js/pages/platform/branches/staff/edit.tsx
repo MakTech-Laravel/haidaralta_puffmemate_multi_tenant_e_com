@@ -28,6 +28,8 @@ type StaffMember = {
     is_active: boolean;
     branch_id: number;
     roles: string[];
+    avatar: string | null;
+    avatar_url: string | null;
 };
 
 export default function PlatformBranchScopedStaffEdit({
@@ -47,7 +49,7 @@ export default function PlatformBranchScopedStaffEdit({
         <>
             <Head title={`Edit ${staffMember.name}`} />
 
-            <div className="mx-auto flex max-w-2xl flex-col gap-4 p-2">
+            <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${staffMember.name}`}
                     description={`Update staff for ${branch.name}`}
@@ -70,6 +72,8 @@ export default function PlatformBranchScopedStaffEdit({
                         roles: staffMember.roles,
                         is_active: staffMember.is_active,
                         branch_id: staffMember.branch_id,
+                        avatar: staffMember.avatar,
+                        avatar_url: staffMember.avatar_url,
                     }}
                     cancelHref={BranchScopedStaffController.show.url([
                         branch.slug,

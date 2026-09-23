@@ -52,14 +52,18 @@ class StaffController extends Controller
     {
         $branch = $this->currentBranch();
 
-        $user = $this->branchStaffService->create($branch, [
-            'name' => $request->validated('name'),
-            'phone' => $request->validated('phone'),
-            'email' => $request->validated('email'),
-            'password' => $request->validated('password'),
-            'roles' => $request->validated('roles', []),
-            'is_active' => $request->boolean('is_active', true),
-        ]);
+        $user = $this->branchStaffService->create(
+            $branch,
+            [
+                'name' => $request->validated('name'),
+                'phone' => $request->validated('phone'),
+                'email' => $request->validated('email'),
+                'password' => $request->validated('password'),
+                'roles' => $request->validated('roles', []),
+                'is_active' => $request->boolean('is_active', true),
+            ],
+            $request->file('avatar'),
+        );
 
         Toast::success('Staff member created.');
 
@@ -73,20 +77,10 @@ class StaffController extends Controller
     {
         $branch = $this->currentBranch();
         $user = $this->branchStaffService->resolveForBranch($user, $branch);
-        $detail = $this->branchStaffService->mapStaffMemberDetail($user, $branch);
 
         return Inertia::render('branch/staff/show', [
             'branch' => $branch->only(['id', 'name', 'slug']),
-            'staffMember' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'phone' => $user->phone,
-                'email' => $user->email,
-                'is_active' => $user->is_active,
-                'roles' => $detail['roles'],
-                'is_super_admin' => $detail['is_super_admin'],
-                'effective_permissions' => $detail['effective_permissions'],
-            ],
+            'staffMember' => $this->branchStaffService->mapStaffMember($user, $branch, includeAccess: true),
         ]);
     }
 
@@ -102,14 +96,7 @@ class StaffController extends Controller
             'branch' => $branch->only(['id', 'name', 'slug']),
             'roles' => $this->branchStaffService->roleOptionsForBranch($branch),
             'lockedSuperAdmin' => $this->branchStaffService->isLastSuperAdminInBranch($user, $branch),
-            'staffMember' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'phone' => $user->phone,
-                'email' => $user->email,
-                'is_active' => $user->is_active,
-                'roles' => $this->branchStaffService->roleNames($user, $branch),
-            ],
+            'staffMember' => $this->branchStaffService->mapStaffMember($user, $branch),
         ]);
     }
 
@@ -129,14 +116,20 @@ class StaffController extends Controller
             return redirect()->back();
         }
 
-        $this->branchStaffService->update($user, $branch, [
-            'name' => $request->validated('name'),
-            'phone' => $request->validated('phone'),
-            'email' => $request->validated('email'),
-            'password' => $request->validated('password'),
-            'roles' => $roles,
-            'is_active' => $isActive,
-        ]);
+        $this->branchStaffService->update(
+            $user,
+            $branch,
+            [
+                'name' => $request->validated('name'),
+                'phone' => $request->validated('phone'),
+                'email' => $request->validated('email'),
+                'password' => $request->validated('password'),
+                'roles' => $roles,
+                'is_active' => $isActive,
+                'remove_avatar' => $request->boolean('remove_avatar'),
+            ],
+            $request->file('avatar'),
+        );
 
         Toast::success('Staff member updated.');
 

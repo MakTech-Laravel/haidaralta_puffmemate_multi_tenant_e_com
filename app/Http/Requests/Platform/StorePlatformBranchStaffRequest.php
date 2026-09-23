@@ -52,6 +52,7 @@ class StorePlatformBranchStaffRequest extends FormRequest
                     ->where($teamKey, $branchId),
             ],
             'is_active' => ['sometimes', 'boolean'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 

@@ -53,14 +53,18 @@ class BranchScopedStaffController extends Controller
      */
     public function store(StoreScopedPlatformBranchStaffRequest $request, Branch $branch): RedirectResponse
     {
-        $user = $this->branchStaffService->create($branch, [
-            'name' => $request->validated('name'),
-            'phone' => $request->validated('phone'),
-            'email' => $request->validated('email'),
-            'password' => $request->validated('password'),
-            'roles' => $request->validated('roles', []),
-            'is_active' => $request->boolean('is_active', true),
-        ]);
+        $user = $this->branchStaffService->create(
+            $branch,
+            [
+                'name' => $request->validated('name'),
+                'phone' => $request->validated('phone'),
+                'email' => $request->validated('email'),
+                'password' => $request->validated('password'),
+                'roles' => $request->validated('roles', []),
+                'is_active' => $request->boolean('is_active', true),
+            ],
+            $request->file('avatar'),
+        );
 
         Toast::success('Branch staff member created.');
 
@@ -73,20 +77,10 @@ class BranchScopedStaffController extends Controller
     public function show(Branch $branch, User $user): Response
     {
         $user = $this->branchStaffService->resolveForBranch($user, $branch);
-        $detail = $this->branchStaffService->mapStaffMemberDetail($user, $branch);
 
         return Inertia::render('platform/branches/staff/show', [
             'branch' => $branch->only(['id', 'name', 'slug', 'code']),
-            'staffMember' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'phone' => $user->phone,
-                'email' => $user->email,
-                'is_active' => $user->is_active,
-                'roles' => $detail['roles'],
-                'is_super_admin' => $detail['is_super_admin'],
-                'effective_permissions' => $detail['effective_permissions'],
-            ],
+            'staffMember' => $this->branchStaffService->mapStaffMember($user, $branch, includeAccess: true),
         ]);
     }
 
@@ -109,15 +103,7 @@ class BranchScopedStaffController extends Controller
                 (string) $branch->id => $this->branchStaffService->roleOptionsForBranch($branch),
             ],
             'lockedSuperAdmin' => $this->branchStaffService->isLastSuperAdminInBranch($user, $branch),
-            'staffMember' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'phone' => $user->phone,
-                'email' => $user->email,
-                'is_active' => $user->is_active,
-                'branch_id' => $branch->id,
-                'roles' => $this->branchStaffService->roleNames($user, $branch),
-            ],
+            'staffMember' => $this->branchStaffService->mapStaffMember($user, $branch),
         ]);
     }
 
@@ -136,14 +122,20 @@ class BranchScopedStaffController extends Controller
             return redirect()->back();
         }
 
-        $this->branchStaffService->update($user, $branch, [
-            'name' => $request->validated('name'),
-            'phone' => $request->validated('phone'),
-            'email' => $request->validated('email'),
-            'password' => $request->validated('password'),
-            'roles' => $roles,
-            'is_active' => $isActive,
-        ]);
+        $this->branchStaffService->update(
+            $user,
+            $branch,
+            [
+                'name' => $request->validated('name'),
+                'phone' => $request->validated('phone'),
+                'email' => $request->validated('email'),
+                'password' => $request->validated('password'),
+                'roles' => $roles,
+                'is_active' => $isActive,
+                'remove_avatar' => $request->boolean('remove_avatar'),
+            ],
+            $request->file('avatar'),
+        );
 
         Toast::success('Branch staff member updated.');
 
