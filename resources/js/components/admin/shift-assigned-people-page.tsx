@@ -1,12 +1,13 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
+import { format, parseISO, setMonth, setYear } from 'date-fns';
 import { Pencil } from 'lucide-react';
 import { type ReactNode, useMemo } from 'react';
 import { ShiftBranchEmptyState } from '@/components/admin/shift-branch-empty-state';
 import { ShiftPageHeader } from '@/components/admin/shift-page-header';
 import type { AssignedShiftPersonRow } from '@/components/admin/workforce-types';
-import { AppDate } from '@/components/app-datetime';
 import {
+    buildDataTableQuery,
     DataTable,
     DataTableColumnHeader,
     DataTableRowActions,
@@ -25,18 +26,33 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { formatClock, initials } from '@/lib/shift-format';
+import { initials } from '@/lib/shift-format';
 import type { QueryParams } from '@/wayfinder';
 
 type TemplateOption = { id: number; name: string };
 type PeopleKindOption = { value: string; label: string };
 
-export type AssignedPeopleTablePayload = DataTablePayload<AssignedShiftPersonRow> & {
-    filterOptions?: {
-        templates?: TemplateOption[];
-        people_kinds?: PeopleKindOption[];
+export type AssignedPeopleTablePayload =
+    DataTablePayload<AssignedShiftPersonRow> & {
+        month: string;
+        filterOptions?: {
+            templates?: TemplateOption[];
+            people_kinds?: PeopleKindOption[];
+        };
     };
-};
+
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => ({
+    value: String(index),
+    label: format(new Date(2020, index, 1), 'MMMM'),
+}));
+
+function yearOptions(): string[] {
+    const endYear = new Date().getFullYear() + 2;
+
+    return Array.from({ length: endYear - 2020 + 1 }, (_, index) =>
+        String(2020 + index),
+    );
+}
 
 export function ShiftAssignedPeoplePage({
     kicker,
@@ -61,9 +77,16 @@ export function ShiftAssignedPeoplePage({
     waitingForBranch?: boolean;
     branchPicker?: ReactNode;
 }) {
+    const month = tablePayload.month;
+    const monthDate = parseISO(`${month}-01`);
+    const years = useMemo(() => yearOptions(), []);
+
     const query = useDataTableQuery({
         indexUrl,
-        extraQuery,
+        extraQuery: () => ({
+            ...extraQuery,
+            month,
+        }),
         initial: {
             filter: {
                 search: tablePayload.filters.search ?? '',
@@ -79,6 +102,27 @@ export function ShiftAssignedPeoplePage({
     const templates = tablePayload.filterOptions?.templates ?? [];
     const peopleKinds = tablePayload.filterOptions?.people_kinds ?? [];
 
+    const visitMonth = (nextMonth: string): void => {
+        router.get(
+            indexUrl,
+            {
+                ...extraQuery,
+                month: nextMonth,
+                ...buildDataTableQuery({
+                    filter: query.filters,
+                    sort: query.sort,
+                    per_page: query.perPage,
+                    page: 1,
+                }),
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    };
+
     const columns = useMemo<ColumnDef<AssignedShiftPersonRow>[]>(
         () => [
             {
@@ -87,7 +131,10 @@ export function ShiftAssignedPeoplePage({
                     <DataTableColumnHeader
                         column={column}
                         title="Person"
-                        sortable={false}
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
                     />
                 ),
                 cell: ({ row }) => (
@@ -105,55 +152,42 @@ export function ShiftAssignedPeoplePage({
                             <DataTableTruncated className="font-medium">
                                 {row.original.user_name ?? '—'}
                             </DataTableTruncated>
-                            {row.original.branch_name ? (
-                                <DataTableTruncated className="text-muted-foreground text-xs">
-                                    {row.original.branch_name}
-                                </DataTableTruncated>
-                            ) : null}
+                            <DataTableTruncated className="text-muted-foreground text-xs tabular-nums">
+                                {row.original.phone || '—'}
+                            </DataTableTruncated>
                         </div>
                     </div>
                 ),
                 meta: { truncate: false },
             },
             {
-                id: 'dates',
+                id: 'type',
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Dates"
-                        sortable
-                        sortKey="start_date"
-                        currentSort={query.sort}
-                        onSort={query.toggleSort}
-                    />
-                ),
-                cell: ({ row }) => (
-                    <AssignedDates
-                        start={row.original.start_date}
-                        end={row.original.end_date}
-                    />
-                ),
-                meta: { truncate: false },
-            },
-            {
-                accessorKey: 'shift_template_name',
-                header: ({ column }) => (
-                    <DataTableColumnHeader
-                        column={column}
-                        title="Shift"
+                        title="Type"
                         sortable={false}
                     />
                 ),
                 cell: ({ row }) => (
-                    <div className="min-w-0">
-                        <DataTableTruncated>
-                            {row.original.shift_template_name ?? '—'}
-                        </DataTableTruncated>
-                        <DataTableTruncated className="text-muted-foreground text-xs">
-                            {formatClock(row.original.start_time)}–
-                            {formatClock(row.original.end_time)}
-                        </DataTableTruncated>
-                    </div>
+                    <span className="text-sm">
+                        {row.original.people_kind_label ?? '—'}
+                    </span>
+                ),
+            },
+            {
+                id: 'assigned_dates',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Assigned dates"
+                        sortable={false}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <span className="font-mono text-sm whitespace-nowrap tabular-nums">
+                        {row.original.assigned_dates_label || '—'}
+                    </span>
                 ),
                 meta: { truncate: false },
             },
@@ -164,7 +198,7 @@ export function ShiftAssignedPeoplePage({
                     <DataTableRowActions
                         items={[
                             {
-                                label: 'Edit',
+                                label: 'Edit schedule',
                                 icon: Pencil,
                                 href: editHref(row.original),
                             },
@@ -202,15 +236,92 @@ export function ShiftAssignedPeoplePage({
                         payload={tablePayload}
                         perPage={query.perPage}
                         onPerPageChange={query.changePerPage}
-                        emptyMessage="Nobody is assigned to a shift yet."
+                        emptyMessage="Nobody has duty days in this month."
                         toolbar={
                             <DataTableToolbar
                                 search={query.search}
                                 onSearchChange={query.setSearch}
-                                searchPlaceholder="Search person or shift…"
+                                searchPlaceholder="Search name or phone…"
                                 onClear={query.clearFilters}
                                 filters={
                                     <>
+                                        <div className="grid gap-2">
+                                            <Label>Month</Label>
+                                            <div className="flex items-center gap-2">
+                                                <Select
+                                                    value={String(
+                                                        monthDate.getMonth(),
+                                                    )}
+                                                    onValueChange={(value) =>
+                                                        visitMonth(
+                                                            format(
+                                                                setMonth(
+                                                                    monthDate,
+                                                                    Number(
+                                                                        value,
+                                                                    ),
+                                                                ),
+                                                                'yyyy-MM',
+                                                            ),
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-36">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {MONTH_OPTIONS.map(
+                                                            (option) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        option.value
+                                                                    }
+                                                                    value={
+                                                                        option.value
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        option.label
+                                                                    }
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Select
+                                                    value={String(
+                                                        monthDate.getFullYear(),
+                                                    )}
+                                                    onValueChange={(value) =>
+                                                        visitMonth(
+                                                            format(
+                                                                setYear(
+                                                                    monthDate,
+                                                                    Number(
+                                                                        value,
+                                                                    ),
+                                                                ),
+                                                                'yyyy-MM',
+                                                            ),
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-24">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {years.map((year) => (
+                                                            <SelectItem
+                                                                key={year}
+                                                                value={year}
+                                                            >
+                                                                {year}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
                                         {templates.length > 0 ? (
                                             <div className="grid gap-2">
                                                 <Label>Shift</Label>
@@ -306,29 +417,5 @@ export function ShiftAssignedPeoplePage({
                 </>
             )}
         </div>
-    );
-}
-
-function AssignedDates({
-    start,
-    end,
-}: {
-    start: string | null;
-    end: string | null;
-}) {
-    if (!start || !end) {
-        return <span>—</span>;
-    }
-
-    if (start === end) {
-        return <AppDate value={start} />;
-    }
-
-    return (
-        <span className="whitespace-nowrap">
-            <AppDate value={start} />
-            <span className="text-muted-foreground"> – </span>
-            <AppDate value={end} />
-        </span>
     );
 }

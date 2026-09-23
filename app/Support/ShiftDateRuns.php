@@ -87,6 +87,31 @@ final class ShiftDateRuns
     }
 
     /**
+     * Compress Y-m-d dates into a day-of-month label such as "1-10,13,15-20".
+     *
+     * @param  list<string>  $dates
+     */
+    public static function compactMonthDayLabel(array $dates): string
+    {
+        if ($dates === []) {
+            return '';
+        }
+
+        $parts = [];
+
+        foreach (self::partition($dates) as $run) {
+            $startDay = (int) (new DateTimeImmutable($run['start_date']))->format('j');
+            $endDay = (int) (new DateTimeImmutable($run['end_date']))->format('j');
+
+            $parts[] = $startDay === $endDay
+                ? (string) $startDay
+                : $startDay.'-'.$endDay;
+        }
+
+        return implode(',', $parts);
+    }
+
+    /**
      * @param  non-empty-list<string>  $dates
      * @return array{start_date: string, end_date: string, dates: list<string>}
      */

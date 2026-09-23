@@ -141,16 +141,14 @@ export type AssignedShiftPersonRow = {
     id: number;
     user_id: number;
     user_name?: string | null;
+    phone?: string | null;
     user_type?: string | null;
+    people_kind_label?: string | null;
     avatar_url?: string | null;
-    branch_id: number;
-    branch_name?: string | null;
-    shift_template_id: number;
-    shift_template_name?: string | null;
-    start_date: string | null;
-    end_date: string | null;
-    start_time: string | null;
-    end_time: string | null;
+    branch_id: number | null;
+    assigned_dates_label: string;
+    assigned_day_count: number;
+    month: string;
 };
 
 export type ShiftDayKind = 'scheduled' | 'override' | 'weekly_off' | 'leave';

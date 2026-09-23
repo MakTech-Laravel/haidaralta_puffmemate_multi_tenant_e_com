@@ -1147,7 +1147,7 @@ test('old assign urls redirect to sibling paths so the shifts item is not also a
         ->and(route('branch.shift-assignments.index', $sydney, absolute: false))->toBe("/branch/{$sydney->slug}/shifts/assigned-people");
 });
 
-test('assigned people lists name dates and shift without staff or driver labels', function () {
+test('assigned people lists one person per month with phone type and day labels', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_STAFF)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
@@ -1158,7 +1158,7 @@ test('assigned people lists name dates and shift without staff or driver labels'
     $platformMorning = ShiftTemplate::factory()->create(['name' => 'Network support']);
     $melbourneFloor = ShiftTemplate::factory()->forBranch($melbourne)->create(['name' => 'Collins floor']);
 
-    $staffAssignment = UserShiftAssignment::factory()->create([
+    UserShiftAssignment::factory()->create([
         'user_id' => $staff->id,
         'branch_id' => $sydney->id,
         'shift_template_id' => $floor->id,
@@ -1199,6 +1199,8 @@ test('assigned people lists name dates and shift without staff or driver labels'
         'days_of_week' => DriverRoster::DAYS_ALL,
     ]);
 
+    $monthQuery = ['month' => '2026-09'];
+
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-shift-templates.index', [
             'branch_id' => $sydney->id,
@@ -1209,16 +1211,18 @@ test('assigned people lists name dates and shift without staff or driver labels'
             ->missing('scheduled'));
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.branch-shift-assignments.index'))
+        ->get(route('platform.branch-shift-assignments.index', $monthQuery))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/shifts/assigned-people')
             ->where('selectedBranchId', null)
-            ->has('table.data', 0));
+            ->has('table.data', 0)
+            ->where('table.month', '2026-09'));
 
     $response = $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-shift-assignments.index', [
             'branch_id' => $sydney->id,
+            ...$monthQuery,
         ]));
 
     $response->assertOk()
@@ -1226,44 +1230,52 @@ test('assigned people lists name dates and shift without staff or driver labels'
             ->component('platform/shifts/assigned-people')
             ->where('workspace', 'branch')
             ->where('selectedBranchId', $sydney->id)
+            ->where('table.month', '2026-09')
             ->has('table.data', 2)
             ->missing('table.data.0.role_label')
-            ->where('table.data.0.user_type', fn ($value): bool => in_array($value, ['branch', 'driver'], true))
-            ->missing('table.data.0.user_type_label'));
+            ->missing('table.data.0.shift_template_name')
+            ->where('table.data.0.people_kind_label', fn ($value): bool => in_array($value, ['Staff', 'Driver'], true))
+            ->where('table.data.0.phone', fn ($value): bool => is_string($value) && $value !== '')
+            ->where('table.data.0.assigned_dates_label', fn ($value): bool => is_string($value) && $value !== ''));
 
     $rows = collect($response->inertiaProps('table.data'));
 
     expect($rows->pluck('user_id')->all())
         ->toContain($staff->id, $driver->id)
-        ->and($rows->every(fn (array $row): bool => $row['shift_template_id'] !== $platformMorning->id))->toBeTrue();
+        ->and($rows->firstWhere('user_id', $staff->id)['assigned_dates_label'])->toBe('10')
+        ->and($rows->firstWhere('user_id', $driver->id)['assigned_dates_label'])->toBe('1-15')
+        ->and($rows->firstWhere('user_id', $staff->id)['people_kind_label'])->toBe('Staff')
+        ->and($rows->firstWhere('user_id', $driver->id)['people_kind_label'])->toBe('Driver');
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-shift-assignments.index', [
             'branch_id' => $sydney->id,
+            ...$monthQuery,
             'filter' => ['search' => 'Priya'],
         ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->has('table.data', 1)
-            ->where('table.data.0.id', $staffAssignment->id)
+            ->where('table.data.0.user_id', $staff->id)
             ->where('table.data.0.user_name', 'Priya Nair')
-            ->where('table.data.0.start_date', '2026-09-10')
-            ->where('table.data.0.end_date', '2026-09-10'));
+            ->where('table.data.0.assigned_dates_label', '10'));
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-shift-assignments.index', [
             'branch_id' => $sydney->id,
+            ...$monthQuery,
             'filter' => ['shift_template_id' => $dispatch->id],
         ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->has('table.data', 1)
-            ->where('table.data.0.shift_template_name', 'Dispatch')
-            ->where('table.data.0.user_id', $driver->id));
+            ->where('table.data.0.user_id', $driver->id)
+            ->where('table.data.0.assigned_dates_label', '1-15'));
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-shift-assignments.index', [
             'branch_id' => $sydney->id,
+            ...$monthQuery,
             'filter' => ['people_kind' => 'driver'],
         ]))
         ->assertOk()
@@ -1272,25 +1284,30 @@ test('assigned people lists name dates and shift without staff or driver labels'
             ->where('table.data.0.user_id', $driver->id));
 
     $this->actingAs($admin, 'platform')
-        ->get(route('platform.shift-assignments.index'))
+        ->get(route('platform.shift-assignments.index', $monthQuery))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('platform/shifts/assigned-people')
             ->where('workspace', 'platform')
             ->has('table.data', 1)
-            ->where('table.data.0.shift_template_name', 'Network support')
+            ->where('table.data.0.user_id', $driver->id)
+            ->where('table.data.0.people_kind_label', 'Driver')
             ->missing('table.data.0.role_label'));
 
     $branchAdmin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($branchAdmin, 'branch')
-        ->get(route('branch.shift-assignments.index', $sydney))
+        ->get(route('branch.shift-assignments.index', [
+            'branch' => $sydney,
+            'month' => '2026-09',
+        ]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/shifts/assigned-people')
-            ->has('table.data', 3)
+            ->has('table.data', 2)
+            ->where('table.data', fn ($rows) => collect($rows)->pluck('user_id')->unique()->count() === 2)
             ->where('table.data', fn ($rows) => collect($rows)->contains(
-                fn ($row) => $row['shift_template_name'] === 'Network support',
+                fn ($row) => $row['user_id'] === $driver->id && $row['assigned_dates_label'] === '1-30',
             ))
             ->where('table.data', fn ($rows) => collect($rows)->every(
                 fn ($row) => $row['branch_id'] === $sydney->id && ! array_key_exists('role_label', $row),

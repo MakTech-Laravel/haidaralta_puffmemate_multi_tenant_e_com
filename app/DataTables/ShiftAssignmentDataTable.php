@@ -3,25 +3,31 @@
 namespace App\DataTables;
 
 use App\Enums\ShiftAssignmentStatus;
+use App\Enums\ShiftDayKind;
 use App\Enums\ShiftOwnerType;
 use App\Enums\UserType;
 use App\Models\ShiftTemplate;
-use App\Models\UserShiftAssignment;
+use App\Models\User;
+use App\Models\UserShiftDay;
+use App\Support\DateTimeFormat;
 use App\Support\WorkforcePayload;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 
 /**
- * @extends AbstractDataTable<UserShiftAssignment>
+ * @extends AbstractDataTable<User>
  */
 class ShiftAssignmentDataTable extends AbstractDataTable
 {
+    private ?string $resolvedMonth = null;
+
     public function __construct(
         Request $request,
-        protected ShiftOwnerType $owner,
+        protected ShiftOwnerType $owner = ShiftOwnerType::Platform,
         protected ?int $branchId = null,
         protected bool $allTemplatesAtBranch = false,
     ) {
@@ -59,41 +65,46 @@ class ShiftAssignmentDataTable extends AbstractDataTable
     }
 
     /**
-     * @return class-string<UserShiftAssignment>
+     * @return array<string, mixed>
      */
-    protected function modelClass(): string
+    public function toArray(): array
     {
-        return UserShiftAssignment::class;
+        $payload = parent::toArray();
+        $payload['month'] = $this->month();
+
+        return $payload;
     }
 
     /**
-     * @return Builder<UserShiftAssignment>
+     * @return class-string<User>
+     */
+    protected function modelClass(): string
+    {
+        return User::class;
+    }
+
+    /**
+     * @return Builder<User>
      */
     protected function baseQuery(): Builder
     {
         if ($this->owner === ShiftOwnerType::Branch && $this->branchId === null) {
-            return UserShiftAssignment::query()->whereRaw('1 = 0');
+            return User::query()->whereRaw('1 = 0');
         }
 
-        return UserShiftAssignment::query()
-            ->with(['shiftTemplate:id,name,start_time,end_time,owner_type,branch_id', 'branch:id,name,slug', 'user:id,name,avatar,user_type'])
-            ->where('status', ShiftAssignmentStatus::Scheduled)
-            ->when($this->branchId !== null, fn (Builder $query) => $query->where('branch_id', $this->branchId))
-            ->when(
-                ! $this->allTemplatesAtBranch,
-                fn (Builder $query) => $query->whereHas(
-                    'shiftTemplate',
-                    function (Builder $templates): void {
-                        if ($this->owner === ShiftOwnerType::Platform) {
-                            $templates->platformOwned();
+        $templateId = $this->shiftTemplateFilterId();
 
-                            return;
-                        }
-
-                        $templates->branchOwned();
-                    },
-                ),
-            );
+        return User::query()
+            ->select(['users.id', 'users.name', 'users.phone', 'users.avatar', 'users.user_type', 'users.branch_id'])
+            ->whereHas('shiftDays', function (Builder $days) use ($templateId): void {
+                $this->constrainDutyDays($days, $templateId);
+            })
+            ->with([
+                'shiftDays' => function ($days) use ($templateId): void {
+                    $this->constrainDutyDays($days->getQuery(), $templateId);
+                    $days->orderBy('duty_on');
+                },
+            ]);
     }
 
     /**
@@ -102,25 +113,21 @@ class ShiftAssignmentDataTable extends AbstractDataTable
     protected function allowedFilters(): array
     {
         return [
-            AllowedFilter::exact('shift_template_id'),
+            AllowedFilter::callback('shift_template_id', function (): void {
+                // Applied in baseQuery via shiftTemplateFilterId().
+            }),
             AllowedFilter::callback('people_kind', function (Builder $query, mixed $value): void {
                 if ($value === null || $value === '' || $value === 'all') {
                     return;
                 }
 
                 if ($value === UserType::DRIVER->value) {
-                    $query->whereHas(
-                        'user',
-                        fn (Builder $users) => $users->where('user_type', UserType::DRIVER),
-                    );
+                    $query->where('user_type', UserType::DRIVER);
 
                     return;
                 }
 
-                $query->whereHas(
-                    'user',
-                    fn (Builder $users) => $users->where('user_type', '!=', UserType::DRIVER),
-                );
+                $query->where('user_type', '!=', UserType::DRIVER);
             }),
             $this->searchFilter(),
         ];
@@ -139,8 +146,8 @@ class ShiftAssignmentDataTable extends AbstractDataTable
 
             $query->where(function (Builder $builder) use ($like): void {
                 $builder
-                    ->whereHas('user', fn (Builder $users) => $users->where('name', 'like', $like))
-                    ->orWhereHas('shiftTemplate', fn (Builder $templates) => $templates->where('name', 'like', $like));
+                    ->where('name', 'like', $like)
+                    ->orWhere('phone', 'like', $like);
             });
         });
     }
@@ -150,12 +157,15 @@ class ShiftAssignmentDataTable extends AbstractDataTable
      */
     protected function allowedSorts(): array
     {
-        return ['start_date', 'end_date', 'id'];
+        return [
+            AllowedSort::field('name'),
+            AllowedSort::field('id'),
+        ];
     }
 
     protected function defaultSort(): string
     {
-        return '-start_date';
+        return 'name';
     }
 
     /**
@@ -174,13 +184,112 @@ class ShiftAssignmentDataTable extends AbstractDataTable
     }
 
     /**
-     * @param  UserShiftAssignment  $model
+     * @param  User  $model
      * @return array<string, mixed>
      */
     protected function mapRow(Model $model): array
     {
-        /** @var UserShiftAssignment $model */
-        return WorkforcePayload::assignedPerson($model);
+        /** @var User $model */
+        $dates = [];
+
+        foreach ($model->shiftDays as $day) {
+            $dates[] = $day->duty_on->format('Y-m-d');
+        }
+
+        $dates = array_values(array_unique($dates));
+        sort($dates);
+
+        $firstDay = $model->shiftDays->first();
+        $branchId = $this->branchId
+            ?? ($firstDay instanceof UserShiftDay ? $firstDay->branch_id : null)
+            ?? $model->branch_id;
+
+        return WorkforcePayload::assignedPersonMonth(
+            $model,
+            $this->month(),
+            $dates,
+            $branchId !== null ? (int) $branchId : null,
+        );
+    }
+
+    public function month(): string
+    {
+        if ($this->resolvedMonth !== null) {
+            return $this->resolvedMonth;
+        }
+
+        $candidate = trim((string) $this->request->input('month', ''));
+        $parsed = $candidate !== ''
+            ? Carbon::createFromFormat('!Y-m', $candidate)
+            : null;
+
+        if ($parsed === null || $parsed->format('Y-m') !== $candidate) {
+            $this->resolvedMonth = DateTimeFormat::now()->format('Y-m');
+
+            return $this->resolvedMonth;
+        }
+
+        $this->resolvedMonth = $parsed->format('Y-m');
+
+        return $this->resolvedMonth;
+    }
+
+    /**
+     * @param  Builder<UserShiftDay>|Builder<Model>  $days
+     */
+    private function constrainDutyDays(Builder $days, ?int $templateId): void
+    {
+        $month = $this->month();
+        $start = Carbon::createFromFormat('!Y-m', $month)->startOfMonth()->toDateString();
+        $end = Carbon::createFromFormat('!Y-m', $month)->endOfMonth()->toDateString();
+
+        $days
+            ->whereIn('kind', [
+                ShiftDayKind::Scheduled,
+                ShiftDayKind::Override,
+            ])
+            ->whereNotNull('shift_template_id')
+            ->whereDate('duty_on', '>=', $start)
+            ->whereDate('duty_on', '<=', $end)
+            ->when(
+                $this->branchId !== null,
+                fn (Builder $query) => $query->where('branch_id', $this->branchId),
+            )
+            ->when(
+                $templateId !== null,
+                fn (Builder $query) => $query->where('shift_template_id', $templateId),
+            )
+            ->whereHas(
+                'assignment',
+                fn (Builder $assignments) => $assignments->where('status', ShiftAssignmentStatus::Scheduled),
+            )
+            ->when(
+                ! $this->allTemplatesAtBranch,
+                function (Builder $query): void {
+                    $templateIds = ShiftTemplate::query()
+                        ->when(
+                            $this->owner === ShiftOwnerType::Platform,
+                            fn (Builder $templates) => $templates->platformOwned(),
+                            fn (Builder $templates) => $templates->branchOwned(),
+                        )
+                        ->select('id');
+
+                    $query->whereIn('shift_template_id', $templateIds);
+                },
+            );
+    }
+
+    private function shiftTemplateFilterId(): ?int
+    {
+        $raw = data_get($this->request->input('filter'), 'shift_template_id');
+
+        if ($raw === null || $raw === '' || $raw === 'all') {
+            return null;
+        }
+
+        $id = (int) $raw;
+
+        return $id > 0 ? $id : null;
     }
 
     /**
@@ -192,7 +301,7 @@ class ShiftAssignmentDataTable extends AbstractDataTable
             return [];
         }
 
-        return ShiftTemplate::query()
+        return array_values(ShiftTemplate::query()
             ->when(
                 $this->allTemplatesAtBranch && $this->branchId !== null,
                 fn (Builder $query) => $query->availableToBranch($this->branchId),
@@ -212,6 +321,6 @@ class ShiftAssignmentDataTable extends AbstractDataTable
                 'id' => $template->id,
                 'name' => $template->name,
             ])
-            ->all();
+            ->all());
     }
 }
