@@ -154,8 +154,6 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('drivers', [BranchDriverController::class, 'store'])
             ->middleware('precognitive')
             ->name('branch.drivers.store');
-        Route::post('drivers/assign', [BranchDriverController::class, 'assign'])
-            ->name('branch.drivers.assign');
         Route::get('drivers/{user}', [BranchDriverController::class, 'show'])->name('branch.drivers.show');
         Route::get('drivers/{user}/edit', [BranchDriverController::class, 'edit'])->name('branch.drivers.edit');
         Route::put('drivers/{user}', [BranchDriverController::class, 'update'])

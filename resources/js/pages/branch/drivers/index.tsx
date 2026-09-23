@@ -1,7 +1,7 @@
-import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { CalendarClock, Eye, Pencil } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import BranchDriverController from '@/actions/App/Http/Controllers/Branch/DriverController';
 import ShiftAssignmentController from '@/actions/App/Http/Controllers/Branch/ShiftAssignmentController';
 import {
@@ -15,14 +15,6 @@ import {
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 
 type DriverRow = {
     id: number;
@@ -36,21 +28,14 @@ type DriverRow = {
 };
 
 type Branch = { id: number; name: string; slug: string };
-type AssignableDriver = { id: number; name: string; phone: string };
 
 export default function BranchDriversIndex({
     branch,
     table: tablePayload,
-    assignableDrivers,
 }: {
     branch: Branch;
     table: DataTablePayload<DriverRow>;
-    assignableDrivers: AssignableDriver[];
 }) {
-    const [assignDriverId, setAssignDriverId] = useState(
-        String(assignableDrivers[0]?.id ?? ''),
-    );
-
     setLayoutProps({
         breadcrumbs: [
             {
@@ -185,50 +170,6 @@ export default function BranchDriversIndex({
                         </Link>
                     </Button>
                 </div>
-
-                {assignableDrivers.length > 0 ? (
-                    <Form
-                        action={BranchDriverController.assign.url(branch.slug)}
-                        method="post"
-                        className="flex flex-wrap items-end gap-3"
-                        options={{ preserveScroll: true }}
-                    >
-                        {({ processing }) => (
-                            <>
-                                <div className="grid gap-2">
-                                    <Label>Assign existing driver</Label>
-                                    <input
-                                        type="hidden"
-                                        name="driver_id"
-                                        value={assignDriverId}
-                                    />
-                                    <Select
-                                        value={assignDriverId}
-                                        onValueChange={setAssignDriverId}
-                                    >
-                                        <SelectTrigger className="w-[18rem]">
-                                            <SelectValue placeholder="Driver" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {assignableDrivers.map((driver) => (
-                                                <SelectItem
-                                                    key={driver.id}
-                                                    value={String(driver.id)}
-                                                >
-                                                    {driver.name} ·{' '}
-                                                    {driver.phone}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <Button type="submit" disabled={processing}>
-                                    Assign
-                                </Button>
-                            </>
-                        )}
-                    </Form>
-                ) : null}
 
                 <DataTable
                     columns={columns}

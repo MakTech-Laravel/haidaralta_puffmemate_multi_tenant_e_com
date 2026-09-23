@@ -48,6 +48,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/driver/dashboard.tsx,resources/js/components/driver/driver-dashboard-hub.tsx | .ai/rules/driver-js-components-driver.md |
 | resources/js/pages/driver/route/**,resources/js/components/driver/driver-route-map-panel.tsx | .ai/rules/driver-route-js-components-driver.md |
 | app/Services/Driver/**, app/Models/Driver*.php, app/Http/Controllers/{Platform,Branch}/*Driver*.php, resources/js/pages/{platform,branch}/drivers/**, resources/js/pages/platform/branches/drivers/**, app/Http/Controllers/{Platform,Branch}/** | .ai/rules/driver.md |
+| app/Http/Controllers/Branch/*Driver*.php,resources/js/pages/branch/drivers/** | .ai/rules/drivers.md |
 | app/Http/Controllers/Driver/EarningsController.php,resources/js/pages/driver/earnings/**,app/Support/Storefront/DemoCatalog.php | .ai/rules/earnings-support-storefront.md |
 | app/Enums/ShiftAudience.php | .ai/rules/enums.md |
 | app/Events/** | .ai/rules/events.md |

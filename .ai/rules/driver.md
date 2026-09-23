@@ -16,7 +16,7 @@ driver_id columns always reference users.id (user_type=driver, branch_id null). 
 
 ## Driver CRUD surfaces
 
-Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids; max:1 only when `drivers.single_active_branch` is true). Nested platform.branches.drivers and branch.drivers auto-assign the current branch on create and can assign existing drivers. Duty shifts are not nested on create/edit — use Branch management Assign to shift. No parcel/GPS/chat yet.
+Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids; max:1 only when `drivers.single_active_branch` is true). Nested platform.branches.drivers may assign existing drivers. Branch portal only creates drivers (auto-assigned to this branch) — no assign-existing UI or `branch.drivers.assign`. Duty shifts are not nested on create/edit — use Branch management Assign to shift. No parcel/GPS/chat yet.
 
 ## Driver UX: Sheet assigner, media, effective availability
 
