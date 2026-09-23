@@ -84,6 +84,14 @@ function slugify(value: string): string {
         .replace(/^-+|-+$/g, '');
 }
 
+function RequiredMark() {
+    return (
+        <span className="text-primary" aria-hidden>
+            *
+        </span>
+    );
+}
+
 export function CategoryForm({
     action,
     parentOptions,
@@ -285,7 +293,9 @@ export function CategoryForm({
 
                     <div className="flex flex-col gap-5">
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="name">Name</Label>
+                            <Label htmlFor="name">
+                                Name <RequiredMark />
+                            </Label>
                             <Input
                                 id="name"
                                 value={data.name}
@@ -301,7 +311,9 @@ export function CategoryForm({
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="slug">Slug</Label>
+                            <Label htmlFor="slug">
+                                Slug <RequiredMark />
+                            </Label>
                             <Input
                                 id="slug"
                                 value={data.slug}
