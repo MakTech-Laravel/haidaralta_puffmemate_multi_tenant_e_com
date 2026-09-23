@@ -7,6 +7,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/actions/** | .ai/rules/actions.md |
 | resources/js/pages/driver/activity/**,resources/js/components/driver/driver-activity.ts | .ai/rules/activity-js-components-driver.md |
 | app/Services/ActivityLog/** | .ai/rules/activity-log.md |
+| resources/js/components/admin/staff-form.tsx,app/Http/Requests/{Platform,Branch}/*BranchStaff*Request.php | .ai/rules/admin-http-requests-platform-branch.md |
 | resources/js/components/admin/shift-*.tsx,app/Support/WorkforcePayload.php | .ai/rules/admin-support.md |
 | resources/js/components/admin/branch-form.tsx, resources/js/components/admin/driver-form.tsx, resources/js/components/admin/duty-days-picker.tsx, resources/js/components/admin/driver-roster-fields.tsx, resources/js/components/admin/branch-location-map-dialog.tsx, resources/js/components/admin/driver-branch-assign-sheet.tsx, resources/js/components/admin/shift-*.tsx, resources/js/components/admin/{admin,staff}-form.tsx | .ai/rules/admin.md |
 | resources/js/pages/auth/**,app/Actions/Fortify/CreateNewUser.php,app/Http/Requests/Auth/StoreRegisteredUserRequest.php,resources/js/layouts/auth/** | .ai/rules/auth.md |

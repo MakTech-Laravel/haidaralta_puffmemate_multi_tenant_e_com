@@ -71,18 +71,19 @@ function sectionClassName(): string {
     );
 }
 
-function RoleCheckboxList({
+function RoleRadioList({
     roles,
     selected,
-    onToggle,
+    onSelect,
     lockedSuperAdmin,
 }: {
     roles: RoleOption[];
-    selected: string[];
-    onToggle: (value: string) => void;
+    selected: string | null;
+    onSelect: (value: string) => void;
     lockedSuperAdmin: boolean;
 }) {
     const [query, setQuery] = useState('');
+    const locked = lockedSuperAdmin && selected === SUPER_ADMIN_ROLE;
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -101,7 +102,7 @@ function RoleCheckboxList({
     return (
         <div className="flex flex-col gap-3">
             <Label>
-                Roles <RequiredMark />
+                Role <RequiredMark />
             </Label>
             <div className="relative">
                 <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
@@ -114,8 +115,8 @@ function RoleCheckboxList({
                 />
             </div>
             <div
-                role="group"
-                aria-label="Roles"
+                role="radiogroup"
+                aria-label="Role"
                 className="max-h-64 overflow-y-auto rounded-xl border"
             >
                 {filtered.length === 0 ? (
@@ -124,21 +125,20 @@ function RoleCheckboxList({
                     </p>
                 ) : (
                     filtered.map((role) => {
-                        const isSelected = selected.includes(role.value);
-                        const locked =
-                            lockedSuperAdmin &&
-                            role.value === SUPER_ADMIN_ROLE &&
-                            isSelected;
+                        const isSelected = selected === role.value;
+                        const disabled =
+                            locked && role.value !== SUPER_ADMIN_ROLE;
 
                         return (
                             <button
                                 key={role.value}
                                 type="button"
-                                aria-pressed={isSelected}
-                                disabled={locked}
+                                role="radio"
+                                aria-checked={isSelected}
+                                disabled={disabled}
                                 onClick={() => {
-                                    if (!locked) {
-                                        onToggle(role.value);
+                                    if (!disabled) {
+                                        onSelect(role.value);
                                     }
                                 }}
                                 className={cn(
@@ -146,28 +146,26 @@ function RoleCheckboxList({
                                     isSelected
                                         ? 'bg-primary/5'
                                         : 'hover:bg-muted/40',
-                                    locked && 'cursor-not-allowed opacity-60',
+                                    disabled && 'cursor-not-allowed opacity-60',
                                 )}
                             >
                                 <span
                                     className={cn(
-                                        'flex size-4 shrink-0 items-center justify-center rounded border',
+                                        'flex size-4 shrink-0 items-center justify-center rounded-full border',
                                         isSelected
-                                            ? 'border-primary bg-primary'
+                                            ? 'border-primary'
                                             : 'border-muted-foreground/40',
                                     )}
                                     aria-hidden
                                 >
                                     {isSelected ? (
-                                        <span className="text-primary-foreground text-[10px] leading-none">
-                                            ✓
-                                        </span>
+                                        <span className="bg-primary size-2 rounded-full" />
                                     ) : null}
                                 </span>
                                 <span className="min-w-0 flex-1 truncate font-medium capitalize">
                                     {role.label}
                                 </span>
-                                {locked ? (
+                                {locked && isSelected ? (
                                     <Lock className="text-muted-foreground size-3.5 shrink-0" />
                                 ) : null}
                             </button>
@@ -310,7 +308,7 @@ export function StaffForm({
         email: defaults?.email ?? '',
         password: '',
         password_confirmation: '',
-        roles: defaults?.roles ?? [],
+        roles: defaults?.roles?.slice(0, 1) ?? [],
         is_active: defaults?.is_active ?? true,
         avatar: null as File | null,
         remove_avatar: false,
@@ -395,19 +393,16 @@ export function StaffForm({
         }));
     };
 
-    const toggleRole = (value: string): void => {
-        const hasRole = data.roles.includes(value);
-
-        if (value === SUPER_ADMIN_ROLE && hasRole && lockedSuperAdmin) {
+    const selectRole = (value: string): void => {
+        if (
+            lockedSuperAdmin &&
+            data.roles.includes(SUPER_ADMIN_ROLE) &&
+            value !== SUPER_ADMIN_ROLE
+        ) {
             return;
         }
 
-        setData(
-            'roles',
-            hasRole
-                ? data.roles.filter((role) => role !== value)
-                : [...data.roles, value],
-        );
+        setData('roles', [value]);
     };
 
     const submit = (event: FormEvent): void => {
@@ -680,8 +675,8 @@ export function StaffForm({
                         Access
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                        Assign one or more roles. Permissions are inherited from
-                        the selected roles.
+                        Assign one role. Permissions are inherited from that
+                        role.
                     </p>
                 </div>
 
@@ -698,10 +693,10 @@ export function StaffForm({
                                 : 'No roles available.'}
                         </p>
                     ) : (
-                        <RoleCheckboxList
+                        <RoleRadioList
                             roles={availableRoles}
-                            selected={data.roles}
-                            onToggle={toggleRole}
+                            selected={data.roles[0] ?? null}
+                            onSelect={selectRole}
                             lockedSuperAdmin={lockedSuperAdmin}
                         />
                     )}

@@ -100,6 +100,26 @@ test('platform admin with manage-branch-users can create branch staff', function
     expect(User::query()->where('email', 'admin-created-clerk@test.com')->exists())->toBeTrue();
 });
 
+test('platform branch staff store rejects more than one role', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.branch-staff.store'), [
+            'branch_id' => $downtown->id,
+            'name' => 'Two Roles Clerk',
+            'phone' => '0412000007',
+            'email' => 'two-roles-clerk@test.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'roles' => [RoleEnum::STAFF->value, RoleEnum::MANAGER->value],
+            'is_active' => true,
+        ])
+        ->assertInvalid(['roles']);
+
+    expect(User::query()->where('email', 'two-roles-clerk@test.com')->exists())->toBeFalse();
+});
+
 test('platform manager without manage-branch-users cannot access branch staff routes', function () {
     $manager = User::query()->where('email', UserSeeder::PLATFORM_MANAGER)->firstOrFail();
 

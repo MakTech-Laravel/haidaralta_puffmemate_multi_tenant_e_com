@@ -250,15 +250,15 @@ export function StaffMemberProfile({
                 </aside>
 
                 <div className="flex min-w-0 flex-col gap-6">
-                    <section className="bg-card overflow-hidden rounded-2xl border">
-                        <div className="px-5 py-4">
-                            <h2 className="text-base font-semibold tracking-tight">
-                                Roles
-                            </h2>
-                            <p className="text-muted-foreground text-sm">
-                                Access is inherited from these roles
-                            </p>
-                        </div>
+                        <section className="bg-card overflow-hidden rounded-2xl border">
+                            <div className="px-5 py-4">
+                                <h2 className="text-base font-semibold tracking-tight">
+                                    Role
+                                </h2>
+                                <p className="text-muted-foreground text-sm">
+                                    Access is inherited from this role
+                                </p>
+                            </div>
                         <Separator />
                         <ul>
                             {staffMember.roles.map((role) => (
@@ -293,7 +293,7 @@ export function StaffMemberProfile({
                                 <p className="text-muted-foreground text-sm">
                                     {staffMember.is_super_admin
                                         ? 'Super-admin bypasses permission checks via Gate within this branch.'
-                                        : 'Effective access from assigned roles'}
+                                        : 'Effective access from this role'}
                                 </p>
                             </div>
                             <p className="text-muted-foreground text-sm tabular-nums">
