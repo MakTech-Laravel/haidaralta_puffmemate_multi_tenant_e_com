@@ -10,6 +10,7 @@ import {
 } from 'date-fns';
 import { CalendarRange, ChevronLeft, ChevronRight, Eraser } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { ShiftAssignGuideSheet } from '@/components/admin/shift-assign-guide-sheet';
 import { ShiftCalendarDay } from '@/components/admin/shift-calendar-day';
 import {
     hasPendingShiftChanges,
@@ -354,8 +355,15 @@ export function ShiftMonthCalendar({
     return (
         <section className="border-border/80 bg-card rounded-2xl border p-3 shadow-sm sm:p-6">
             <div className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div>
-                    <h2 className="text-lg font-semibold">Schedule calendar</h2>
+                <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                        <h2 className="text-lg font-semibold">
+                            Schedule calendar
+                        </h2>
+                        <ShiftAssignGuideSheet
+                            allowMultiplePerDay={allowMultiplePerDay}
+                        />
+                    </div>
                     <p className="text-muted-foreground text-sm">
                         Select dates, then save once to apply every staged
                         change.
