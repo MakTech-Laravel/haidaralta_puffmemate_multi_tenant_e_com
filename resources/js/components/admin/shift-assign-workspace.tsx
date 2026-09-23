@@ -1,7 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { CalendarCheck, UserRound } from 'lucide-react';
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { AssignedShiftGroupList } from '@/components/admin/assigned-shift-group-list';
 import { ShiftAssignmentGate } from '@/components/admin/shift-assignment-gate';
 import {
     emptyShiftAssignmentSelection,
@@ -39,7 +38,6 @@ export function ShiftAssignWorkspace({
     selectedPerson,
     templates,
     calendar,
-    assignmentGroups,
 }: {
     kicker: string;
     branch: BranchOption | null;
@@ -51,7 +49,10 @@ export function ShiftAssignWorkspace({
     shiftsUrl: string;
     assignedPeopleUrl: string;
     includeBranchInPayload: boolean;
-} & Omit<ShiftAssignmentWorkspaceProps, 'selectedBranch'>) {
+} & Omit<
+    ShiftAssignmentWorkspaceProps,
+    'selectedBranch' | 'assignmentGroups'
+>) {
     const { shifts } = usePage().props;
     const [selection, dispatch] = useReducer(
         shiftAssignmentSelectionReducer,
@@ -127,7 +128,6 @@ export function ShiftAssignWorkspace({
         ...(selectedPeopleKind ? { people_kind: selectedPeopleKind } : {}),
         ...(selectedPerson ? { user_id: selectedPerson.id } : {}),
         ...(calendar ? { month: calendar.month } : {}),
-        assignment_page: assignmentGroups.meta.current_page,
     });
 
     const handleBranchChange = (branchId: number | null): void => {
@@ -193,7 +193,6 @@ export function ShiftAssignWorkspace({
                 (left, right) => left - right,
             ),
             ...(calendar ? { month: calendar.month } : {}),
-            assignment_page: assignmentGroups.meta.current_page,
         };
 
         allowNextNavigationRef.current = true;
@@ -294,7 +293,6 @@ export function ShiftAssignWorkspace({
                                 visitWorkspace({
                                     ...baseQuery(),
                                     month,
-                                    assignment_page: 1,
                                 });
                             }}
                         />
@@ -321,20 +319,6 @@ export function ShiftAssignWorkspace({
                                 <CalendarCheck /> Save changes
                             </Button>
                         </div>
-
-                        <AssignedShiftGroupList
-                            groups={assignmentGroups}
-                            onPageChange={(assignmentPage) => {
-                                if (!canDiscardPending()) {
-                                    return;
-                                }
-
-                                visitWorkspace({
-                                    ...baseQuery(),
-                                    assignment_page: assignmentPage,
-                                });
-                            }}
-                        />
                     </>
                 ) : (
                     <section className="border-border bg-muted/20 flex min-h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-8 text-center">
@@ -345,7 +329,7 @@ export function ShiftAssignWorkspace({
                             </h2>
                             <p className="text-muted-foreground mt-1 max-w-md text-sm">
                                 Select the branch, user type, and user above to
-                                load their calendar and assigned shifts.
+                                load their calendar.
                             </p>
                         </div>
                     </section>

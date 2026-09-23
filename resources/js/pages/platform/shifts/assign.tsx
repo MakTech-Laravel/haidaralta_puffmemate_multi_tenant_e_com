@@ -18,7 +18,6 @@ export default function PlatformShiftsAssign({
     selectedPerson,
     templates,
     calendar,
-    assignmentGroups,
 }: { workspace?: ShiftWorkspace } & ShiftAssignmentWorkspaceProps) {
     const routes = platformShiftWorkspace(workspace);
     const branchQuery = shiftBranchQuery(selectedBranch?.id);
@@ -67,7 +66,6 @@ export default function PlatformShiftsAssign({
             selectedPerson={selectedPerson}
             templates={templates}
             calendar={calendar}
-            assignmentGroups={assignmentGroups}
         />
     );
 }

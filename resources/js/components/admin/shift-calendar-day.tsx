@@ -27,11 +27,11 @@ export function ShiftCalendarDay({
     shifts: ShiftAssignmentCalendarDay[];
     selection: ShiftAssignmentSelectionState;
     allowMultiplePerDay: boolean;
-    onSelect: (event: React.MouseEvent<HTMLButtonElement>) => void;
+    onSelect: (event: { ctrlKey: boolean; metaKey: boolean }) => void;
     onAddAnother: () => void;
     onReplace: (dayId: number) => void;
     onRemove: (dayId: number) => void;
-    onKeyboardNavigate: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
+    onKeyboardNavigate: (event: React.KeyboardEvent<HTMLElement>) => void;
 }) {
     const isPast = date < today;
     const isToday = date === today;
@@ -39,11 +39,41 @@ export function ShiftCalendarDay({
     const hasAssignedShift = shifts.length > 0;
     const visibleShifts = shifts.slice(0, 2);
     const hiddenShiftCount = Math.max(0, shifts.length - visibleShifts.length);
+    const selectable = !isPast;
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+        onKeyboardNavigate(event);
+
+        if (!selectable) {
+            return;
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onSelect(event);
+        }
+    };
 
     return (
         <div
+            role="button"
+            tabIndex={selectable ? 0 : -1}
+            data-shift-calendar-date={date}
+            aria-disabled={!selectable}
+            aria-label={`${formatAppDate(date)}${isToday ? ', today' : ''}`}
+            aria-pressed={isPendingAssignment}
+            onClick={(event) => {
+                if (!selectable) {
+                    return;
+                }
+
+                onSelect(event);
+            }}
+            onKeyDown={handleKeyDown}
             className={cn(
-                'border-border/70 bg-background relative min-h-24 rounded-lg border p-1.5 transition-colors sm:min-h-32 sm:p-2',
+                'border-border/70 bg-background relative flex min-h-24 flex-col rounded-lg border p-1.5 text-left transition-colors sm:min-h-32 sm:p-2',
+                selectable && 'hover:border-primary/40 cursor-pointer',
+                !selectable && 'cursor-not-allowed',
                 !inCurrentMonth && 'bg-muted/30 text-muted-foreground',
                 isPast &&
                     !hasAssignedShift &&
@@ -55,22 +85,14 @@ export function ShiftCalendarDay({
                 selection.rangeAnchor === date &&
                     'border-primary ring-primary ring-2',
                 isToday && 'ring-ring ring-2 ring-offset-1',
+                'focus-visible:ring-ring outline-none focus-visible:ring-2',
             )}
         >
-            <button
-                type="button"
-                data-shift-calendar-date={date}
-                disabled={isPast}
-                aria-label={`${formatAppDate(date)}${isToday ? ', today' : ''}`}
-                aria-pressed={isPendingAssignment}
-                onClick={onSelect}
-                onKeyDown={onKeyboardNavigate}
-                className="focus-visible:ring-ring mb-1 flex size-7 items-center justify-center rounded-md text-sm font-semibold outline-none focus-visible:ring-2 disabled:cursor-not-allowed sm:size-8"
-            >
+            <span className="mb-1 flex size-7 items-center justify-center rounded-md text-sm font-semibold sm:size-8">
                 {dayNumber}
-            </button>
+            </span>
 
-            <div className="space-y-1">
+            <div className="min-h-0 flex-1 space-y-1">
                 {isPendingAssignment ? (
                     <div className="border-primary text-primary rounded-md border border-dashed px-1.5 py-1 text-[10px] font-medium sm:text-xs">
                         New shift
@@ -103,7 +125,10 @@ export function ShiftCalendarDay({
                         variant="ghost"
                         size="sm"
                         className="text-primary h-6 w-full justify-start px-1 text-[10px] sm:text-xs"
-                        onClick={onAddAnother}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            onAddAnother();
+                        }}
                     >
                         <Plus className="size-3" />
                         Add another

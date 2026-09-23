@@ -68,7 +68,7 @@ export function ShiftMonthCalendar({
 
     const selectDate = (
         date: string,
-        event: React.MouseEvent<HTMLButtonElement>,
+        event: { ctrlKey: boolean; metaKey: boolean },
     ): void => {
         setSelectionNotice(null);
 
@@ -147,7 +147,7 @@ export function ShiftMonthCalendar({
 
     const handleKeyboardNavigation = (
         date: Date,
-        event: React.KeyboardEvent<HTMLButtonElement>,
+        event: React.KeyboardEvent<HTMLElement>,
     ): void => {
         const offsets: Record<string, number> = {
             ArrowLeft: -1,
@@ -163,11 +163,11 @@ export function ShiftMonthCalendar({
 
         event.preventDefault();
         const target = format(addDays(date, offset), 'yyyy-MM-dd');
-        const button = document.querySelector<HTMLButtonElement>(
+        const cell = document.querySelector<HTMLElement>(
             `[data-shift-calendar-date="${target}"]`,
         );
 
-        button?.focus();
+        cell?.focus();
     };
 
     return (
@@ -294,8 +294,8 @@ export function ShiftMonthCalendar({
             >
                 {selectionNotice ??
                     (selection.selectionMode === 'range'
-                        ? 'Choose two unassigned dates. Ctrl/Cmd-click toggles one date.'
-                        : 'Click dates one by one. Assigned shifts can be changed from their action menu.')}
+                        ? 'Click any empty day to start or finish a range. Ctrl/Cmd-click toggles one date.'
+                        : 'Click any day to select it. Use the ⋯ menu on a shift to remove it.')}
             </p>
         </section>
     );

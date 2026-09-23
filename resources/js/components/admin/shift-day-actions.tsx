@@ -65,7 +65,10 @@ export function ShiftDayActions({
                     size="icon"
                     className="hover:bg-background/20 size-7 shrink-0"
                     aria-label={`Undo removal of ${label}`}
-                    onClick={onRemove}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        onRemove();
+                    }}
                 >
                     <RotateCcw className="size-3.5" />
                 </Button>
@@ -78,6 +81,7 @@ export function ShiftDayActions({
                             size="icon"
                             className="hover:bg-background/20 size-7 shrink-0"
                             aria-label={`Actions for ${label}`}
+                            onClick={(event) => event.stopPropagation()}
                         >
                             {replacing ? (
                                 <Check className="size-3.5" />
@@ -86,7 +90,10 @@ export function ShiftDayActions({
                             )}
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent
+                        align="end"
+                        onClick={(event) => event.stopPropagation()}
+                    >
                         <DropdownMenuItem onSelect={onReplace}>
                             <Pencil />
                             {replacing ? 'Undo change' : 'Change shift'}
