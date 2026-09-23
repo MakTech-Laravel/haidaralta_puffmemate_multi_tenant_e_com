@@ -186,8 +186,11 @@ export function TransferEmployeeSheet(props: TransferEmployeeSheetProps) {
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="flex flex-col gap-6 sm:max-w-md">
-                <SheetHeader>
+            <SheetContent
+                side="right"
+                className="flex w-full flex-col gap-0 p-0 sm:max-w-lg"
+            >
+                <SheetHeader className="space-y-1.5 border-b p-6 text-left">
                     <SheetTitle>
                         {isStaff ? 'Transfer staff' : 'Transfer driver'}
                     </SheetTitle>
@@ -198,15 +201,17 @@ export function TransferEmployeeSheet(props: TransferEmployeeSheetProps) {
                     </SheetDescription>
                 </SheetHeader>
 
-                <div className="grid gap-4">
-                    <div className="flex flex-col gap-1.5">
-                        <Label>Current branch</Label>
+                <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
+                    <div className="bg-muted/50 flex flex-col gap-1.5 rounded-lg border px-4 py-3">
+                        <Label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                            Current branch
+                        </Label>
                         <p className="text-sm font-medium">
                             {currentBranchName ?? '—'}
                         </p>
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-2">
                         <Label>
                             Destination branch{' '}
                             <span className="text-primary">*</span>
@@ -257,7 +262,7 @@ export function TransferEmployeeSheet(props: TransferEmployeeSheetProps) {
                     </div>
 
                     {isStaff ? (
-                        <div className="flex flex-col gap-1.5">
+                        <div className="flex flex-col gap-2">
                             <Label>
                                 Role at destination{' '}
                                 <span className="text-primary">*</span>
@@ -300,7 +305,7 @@ export function TransferEmployeeSheet(props: TransferEmployeeSheetProps) {
                         </div>
                     ) : null}
 
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-2">
                         <Label>
                             Effective date{' '}
                             <span className="text-primary">*</span>
@@ -315,7 +320,7 @@ export function TransferEmployeeSheet(props: TransferEmployeeSheetProps) {
                         <InputError message={form.errors.effective_date} />
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-2">
                         <Label htmlFor="transfer-reason">
                             Reason <span className="text-primary">*</span>
                         </Label>
@@ -326,12 +331,13 @@ export function TransferEmployeeSheet(props: TransferEmployeeSheetProps) {
                                 form.setData('reason', event.target.value)
                             }
                             placeholder="Why is this person moving?"
+                            className="min-h-24"
                         />
                         <InputError message={form.errors.reason} />
                     </div>
                 </div>
 
-                <SheetFooter>
+                <SheetFooter className="border-t p-6 sm:flex-row sm:justify-end sm:gap-3">
                     <Button
                         type="button"
                         variant="secondary"
