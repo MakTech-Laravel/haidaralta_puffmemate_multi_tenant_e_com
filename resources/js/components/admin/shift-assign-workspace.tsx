@@ -1,6 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { CalendarCheck, UserRound } from 'lucide-react';
 import { useEffect, useReducer, useRef, useState } from 'react';
+import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import { ShiftAssignmentGate } from '@/components/admin/shift-assignment-gate';
 import {
     emptyShiftAssignmentSelection,
@@ -60,18 +61,22 @@ export function ShiftAssignWorkspace({
         emptyShiftAssignmentSelection,
     );
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [discardOpen, setDiscardOpen] = useState(false);
     const [targetShiftTemplateId, setTargetShiftTemplateId] = useState<
         number | null
     >(null);
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const allowNextNavigationRef = useRef(false);
+    const pendingActionRef = useRef<(() => void) | null>(null);
     const pending = hasPendingShiftChanges(selection);
     const currentMonth = calendar?.month;
 
     useEffect(() => {
         dispatch({ type: 'reset' });
         setDialogOpen(false);
+        setDiscardOpen(false);
+        pendingActionRef.current = null;
         setTargetShiftTemplateId(null);
         setErrors({});
     }, [branch?.id, selectedPeopleKind, selectedPerson?.id, currentMonth]);
@@ -81,16 +86,28 @@ export function ShiftAssignWorkspace({
             return;
         }
 
-        const removeBeforeListener = router.on('before', () => {
+        const removeBeforeListener = router.on('before', (event) => {
             if (allowNextNavigationRef.current) {
                 allowNextNavigationRef.current = false;
 
                 return true;
             }
 
-            return window.confirm(
-                'Discard your unsaved shift changes and leave this page?',
-            );
+            const visit = event.detail.visit;
+
+            pendingActionRef.current = () => {
+                allowNextNavigationRef.current = true;
+                router.visit(visit.url, {
+                    method: visit.method,
+                    data: visit.data,
+                    replace: visit.replace,
+                    preserveScroll: visit.preserveScroll,
+                    preserveState: visit.preserveState,
+                });
+            };
+            setDiscardOpen(true);
+
+            return false;
         });
         const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
             event.preventDefault();
@@ -104,14 +121,23 @@ export function ShiftAssignWorkspace({
         };
     }, [pending]);
 
-    const canDiscardPending = (): boolean => {
+    const requestDiscard = (action: () => void): void => {
         if (!pending) {
-            return true;
+            action();
+
+            return;
         }
 
-        return window.confirm(
-            'Discard your unsaved shift changes and continue?',
-        );
+        pendingActionRef.current = action;
+        setDiscardOpen(true);
+    };
+
+    const confirmDiscard = (): void => {
+        const action = pendingActionRef.current;
+        pendingActionRef.current = null;
+        dispatch({ type: 'reset' });
+        allowNextNavigationRef.current = true;
+        action?.();
     };
 
     const visitWorkspace = (query: ShiftAssignmentWorkspaceQuery): void => {
@@ -131,40 +157,38 @@ export function ShiftAssignWorkspace({
     });
 
     const handleBranchChange = (branchId: number | null): void => {
-        if (!canDiscardPending()) {
-            return;
-        }
-
-        visitWorkspace(branchId ? { branch_id: branchId } : {});
+        requestDiscard(() =>
+            visitWorkspace(branchId ? { branch_id: branchId } : {}),
+        );
     };
 
     const handlePeopleKindChange = (
         peopleKind: ShiftAssignmentPeopleKind | null,
     ): void => {
-        if (!canDiscardPending() || branch === null) {
+        if (branch === null) {
             return;
         }
 
-        visitWorkspace({
-            branch_id: branch.id,
-            ...(peopleKind ? { people_kind: peopleKind } : {}),
-        });
+        requestDiscard(() =>
+            visitWorkspace({
+                branch_id: branch.id,
+                ...(peopleKind ? { people_kind: peopleKind } : {}),
+            }),
+        );
     };
 
     const handlePersonChange = (userId: number | null): void => {
-        if (
-            !canDiscardPending() ||
-            branch === null ||
-            selectedPeopleKind === null
-        ) {
+        if (branch === null || selectedPeopleKind === null) {
             return;
         }
 
-        visitWorkspace({
-            branch_id: branch.id,
-            people_kind: selectedPeopleKind,
-            ...(userId ? { user_id: userId } : {}),
-        });
+        requestDiscard(() =>
+            visitWorkspace({
+                branch_id: branch.id,
+                people_kind: selectedPeopleKind,
+                ...(userId ? { user_id: userId } : {}),
+            }),
+        );
     };
 
     const openSaveDialog = (): void => {
@@ -286,14 +310,12 @@ export function ShiftAssignWorkspace({
                             allowMultiplePerDay={shifts.allow_multiple_per_day}
                             dispatch={dispatch}
                             onMonthChange={(month) => {
-                                if (!canDiscardPending()) {
-                                    return;
-                                }
-
-                                visitWorkspace({
-                                    ...baseQuery(),
-                                    month,
-                                });
+                                requestDiscard(() =>
+                                    visitWorkspace({
+                                        ...baseQuery(),
+                                        month,
+                                    }),
+                                );
                             }}
                         />
 
@@ -352,6 +374,21 @@ export function ShiftAssignWorkspace({
                 }}
                 onTargetChange={setTargetShiftTemplateId}
                 onConfirm={submitChanges}
+            />
+
+            <ConfirmDeleteDialog
+                open={discardOpen}
+                onOpenChange={(open) => {
+                    setDiscardOpen(open);
+
+                    if (!open) {
+                        pendingActionRef.current = null;
+                    }
+                }}
+                title="Discard unsaved changes?"
+                description="Your staged shift changes will be lost if you continue."
+                confirmLabel="Discard changes"
+                onConfirm={confirmDiscard}
             />
         </>
     );
