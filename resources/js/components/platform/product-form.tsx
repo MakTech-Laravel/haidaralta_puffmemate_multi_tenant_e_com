@@ -148,6 +148,14 @@ function skuFromSlug(slug: string, prefix: string): string {
     return `${tag}-${body}`;
 }
 
+function RequiredMark() {
+    return (
+        <span className="text-primary" aria-hidden>
+            *
+        </span>
+    );
+}
+
 export function ProductForm({
     action,
     categoryOptions,
@@ -489,7 +497,9 @@ export function ProductForm({
 
                     <div className="space-y-5">
                         <div className="flex w-full min-w-0 flex-col gap-2">
-                            <Label htmlFor="category_ids">Categories</Label>
+                            <Label htmlFor="category_ids">
+                                Categories <RequiredMark />
+                            </Label>
                             <Popover
                                 open={categoryOpen}
                                 onOpenChange={setCategoryOpen}
@@ -501,6 +511,7 @@ export function ProductForm({
                                         variant="outline"
                                         role="combobox"
                                         aria-expanded={categoryOpen}
+                                        aria-required
                                         aria-invalid={Boolean(
                                             errors.category_ids ??
                                             errors['category_ids.0'],
@@ -588,7 +599,9 @@ export function ProductForm({
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="name">Name</Label>
+                            <Label htmlFor="name">
+                                Name <RequiredMark />
+                            </Label>
                             <Input
                                 id="name"
                                 value={data.name}
@@ -611,7 +624,9 @@ export function ProductForm({
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-center justify-between gap-2">
-                                    <Label htmlFor="slug">Slug</Label>
+                                    <Label htmlFor="slug">
+                                        Slug <RequiredMark />
+                                    </Label>
                                     <Button
                                         type="button"
                                         variant="ghost"
