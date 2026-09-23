@@ -33,29 +33,6 @@ export type StorefrontFeature = {
     description: string;
 };
 
-export const storefrontHeroSlides: StorefrontHeroSlide[] = [
-    {
-        id: '1',
-        eyebrow: 'PUFFMEMATE AUSTRALIA',
-        title: 'Your Life. Your Choice.',
-        description:
-            'A cleaner, premium shopping experience for cigarettes, vapes, tobacco, nicotine products and accessories.',
-        image: '/images/storefront/hero-1.jpg',
-        primaryCta: { label: 'Shop', href: '/shop' },
-        secondaryCta: { label: 'Explore Deals', href: '#home-deals' },
-    },
-    {
-        id: '2',
-        eyebrow: 'PUFFMEMATE AUSTRALIA',
-        title: 'Premium picks. Local stock.',
-        description:
-            'Browse featured packs and new arrivals from nearby branches — ready when you are.',
-        image: '/images/storefront/hero2.jpg',
-        primaryCta: { label: 'Shop', href: '/shop' },
-        secondaryCta: { label: 'Explore Deals', href: '#home-deals' },
-    },
-];
-
 export const storefrontCategoryItems: StorefrontCategoryItem[] = [
     {
         id: 'cigarettes',
