@@ -51,3 +51,6 @@ Adjustment reason select sits beside counted quantity. Other shows a required de
 ## Inventory panel keeps Stock and Price side by side
 
 Inventory & pricing is one shadow-sm card: 4-stat strip, then Stock left / Price right. That row is one shared `border-b` with `lg:divide-x` (and `divide-y` when stacked). Do not put a separate `border-b` on each column and do not use `items-start` on that row — those make the bottom lines sit at different heights. Forms use `content-start` so Save stays at the top; do not stretch equal-height footers. Buying/Regular/Selling sit side by side in the Price column. Discount is a full-width bordered block below that row, with a 3-button type row (None/Amount off/Percent). Value + dates use a 3-col row with DatePickers min-w-0. Do not put discount_type in the price-field grid, and do not nest discount inside the Price column.
+
+## Branch nav group is Staff management
+Branch portal sidebar group is Staff management (not Administrator). Contains Staff, Roles, Permissions, Shifts, Assign to shift. Platform keeps Administrator.

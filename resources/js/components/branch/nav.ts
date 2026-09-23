@@ -96,7 +96,7 @@ export function buildBranchNav(
                 permissions: ['view-branch-dashboard'],
             }),
             navGroup({
-                title: 'Administrator',
+                title: 'Staff management',
                 icon: Shield,
                 permissions: [
                     'manage-branch-staff',
