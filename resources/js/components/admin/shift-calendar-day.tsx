@@ -84,26 +84,42 @@ export function ShiftCalendarDay({
                 selectable && 'hover:border-primary/40 cursor-pointer',
                 !selectable && 'cursor-not-allowed',
                 !inCurrentMonth &&
-                    !isPendingAssignment &&
-                    'bg-muted/30 text-muted-foreground',
+                    'border-muted-foreground/35 bg-muted/45 text-muted-foreground border-dashed',
                 isPast &&
                     !hasAssignedShift &&
                     'bg-muted/60 text-muted-foreground',
-                isPast && hasAssignedShift && 'opacity-60',
+                isPast && hasAssignedShift && 'opacity-55',
                 hasAssignedShift &&
+                    inCurrentMonth &&
                     !isPast &&
                     !isPendingAssignment &&
                     !hasPendingDayChange &&
                     'border-primary/30 bg-primary/5',
+                hasAssignedShift &&
+                    !inCurrentMonth &&
+                    !isPast &&
+                    !isPendingAssignment &&
+                    !hasPendingDayChange &&
+                    'bg-muted/55',
                 isPendingAssignment &&
+                    inCurrentMonth &&
                     'border-amber-500 bg-amber-50 ring-2 ring-amber-400/60',
+                isPendingAssignment &&
+                    !inCurrentMonth &&
+                    'border-amber-400/80 bg-amber-50/60 ring-2 ring-amber-300/50',
                 hasPendingDayChange &&
                     !isPendingAssignment &&
+                    inCurrentMonth &&
                     'border-sky-500 bg-sky-50 ring-2 ring-sky-400/50',
+                hasPendingDayChange &&
+                    !isPendingAssignment &&
+                    !inCurrentMonth &&
+                    'border-sky-400/80 bg-sky-50/60 ring-2 ring-sky-300/50',
                 selection.rangeAnchor === date &&
                     !isPendingAssignment &&
                     'border-amber-500 ring-2 ring-amber-500',
                 isToday &&
+                    inCurrentMonth &&
                     !isPendingAssignment &&
                     !hasPendingDayChange &&
                     'ring-ring ring-2 ring-offset-1',
@@ -113,6 +129,10 @@ export function ShiftCalendarDay({
             <span
                 className={cn(
                     'mb-1 flex size-7 items-center justify-center rounded-md text-sm font-semibold sm:size-8',
+                    !inCurrentMonth &&
+                        !isPendingAssignment &&
+                        !hasPendingDayChange &&
+                        'text-muted-foreground/80 font-medium',
                     isPendingAssignment && 'bg-amber-500 text-white',
                     hasPendingDayChange &&
                         !isPendingAssignment &&
@@ -122,7 +142,12 @@ export function ShiftCalendarDay({
                 {dayNumber}
             </span>
 
-            <div className="min-h-0 flex-1 space-y-1">
+            <div
+                className={cn(
+                    'min-h-0 flex-1 space-y-1',
+                    !inCurrentMonth && 'opacity-70',
+                )}
+            >
                 {isPendingAssignment ? (
                     <div className="rounded-md border-2 border-dashed border-amber-600 bg-amber-100 px-1.5 py-1 text-[10px] font-semibold text-amber-950 sm:text-xs">
                         <span className="block">New shift</span>
