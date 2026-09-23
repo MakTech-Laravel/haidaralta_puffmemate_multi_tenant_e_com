@@ -8,11 +8,8 @@ use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\AssignDriverRequest;
 use App\Http\Requests\Branch\StoreDriverRequest;
-use App\Http\Requests\Branch\StoreDriverRosterRequest;
 use App\Http\Requests\Branch\UpdateDriverRequest;
-use App\Http\Requests\Branch\UpdateDriverRosterRequest;
 use App\Models\Branch;
-use App\Models\DriverRoster;
 use App\Models\User;
 use App\Services\Driver\DriverService;
 use App\Services\Workforce\TransferEmployeeService;
@@ -46,7 +43,6 @@ class DriverController extends Controller
             'branch' => $branch->only(['id', 'name', 'slug']),
             'vehicleTypes' => DriverPayload::vehicleTypeOptions(),
             'availabilityStatuses' => DriverPayload::availabilityOptions(),
-            'rosterStatuses' => DriverPayload::rosterStatusOptions(),
         ]);
     }
 
@@ -78,7 +74,6 @@ class DriverController extends Controller
         return Inertia::render('branch/drivers/show', [
             'branch' => $branch->only(['id', 'name', 'slug']),
             'driver' => DriverPayload::detail($driver, $branch),
-            'rosterStatuses' => DriverPayload::rosterStatusOptions(),
         ]);
     }
 
@@ -91,7 +86,6 @@ class DriverController extends Controller
             'driver' => DriverPayload::detail($driver, $branch),
             'vehicleTypes' => DriverPayload::vehicleTypeOptions(),
             'availabilityStatuses' => DriverPayload::availabilityOptions(),
-            'rosterStatuses' => DriverPayload::rosterStatusOptions(),
         ]);
     }
 
@@ -155,57 +149,6 @@ class DriverController extends Controller
         }
 
         Toast::success('Driver assigned to branch.');
-
-        return redirect()->back();
-    }
-
-    public function storeRoster(StoreDriverRosterRequest $request, Branch $branch, User $user): RedirectResponse
-    {
-        $driver = $this->resolveAssignedDriver($branch, $user);
-
-        try {
-            $this->drivers->createRoster($driver, $branch, $request->validated());
-        } catch (InvalidArgumentException $exception) {
-            Toast::error($exception->getMessage());
-
-            return redirect()->back();
-        }
-
-        Toast::success('Roster shift added.');
-
-        return redirect()->back();
-    }
-
-    public function updateRoster(
-        UpdateDriverRosterRequest $request,
-        Branch $branch,
-        User $user,
-        DriverRoster $roster,
-    ): RedirectResponse {
-        $driver = $this->resolveAssignedDriver($branch, $user);
-        abort_unless($roster->driver_id === $driver->id && $roster->branch_id === $branch->id, 404);
-
-        try {
-            $this->drivers->updateRoster($roster, $request->validated());
-        } catch (InvalidArgumentException $exception) {
-            Toast::error($exception->getMessage());
-
-            return redirect()->back();
-        }
-
-        Toast::success('Roster shift updated.');
-
-        return redirect()->back();
-    }
-
-    public function destroyRoster(Branch $branch, User $user, DriverRoster $roster): RedirectResponse
-    {
-        $driver = $this->resolveAssignedDriver($branch, $user);
-        abort_unless($roster->driver_id === $driver->id && $roster->branch_id === $branch->id, 404);
-
-        $this->drivers->deleteRoster($roster);
-
-        Toast::success('Roster shift removed.');
 
         return redirect()->back();
     }

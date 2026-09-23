@@ -34,13 +34,11 @@ export default function PlatformDriversEdit({
     branches,
     vehicleTypes,
     availabilityStatuses,
-    rosterStatuses,
 }: {
     driver: Driver;
     branches: BranchOption[];
     vehicleTypes: Option[];
     availabilityStatuses: Option[];
-    rosterStatuses: Option[];
 }) {
     const singleActiveBranch = usePage().props.drivers.single_active_branch;
 
@@ -62,7 +60,6 @@ export default function PlatformDriversEdit({
                     action={DriverController.update.form(driver.id)}
                     vehicleTypes={vehicleTypes}
                     availabilityStatuses={availabilityStatuses}
-                    rosterStatuses={rosterStatuses}
                     branches={branches}
                     requireBranches
                     isEdit

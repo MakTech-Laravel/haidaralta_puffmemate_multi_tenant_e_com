@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Platform;
 
 use App\Concerns\NormalizesPhoneInput;
-use App\Concerns\ValidatesDriverRosterPeriod;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\DriverVehicleType;
 use App\Models\User;
@@ -16,7 +15,6 @@ use Illuminate\Validation\Rules\Password;
 class UpdateDriverRequest extends FormRequest
 {
     use NormalizesPhoneInput;
-    use ValidatesDriverRosterPeriod;
 
     public function authorize(): bool
     {
@@ -70,7 +68,6 @@ class UpdateDriverRequest extends FormRequest
                 Rule::when((bool) config('drivers.single_active_branch'), ['max:1']),
             ],
             'branch_ids.*' => ['integer', 'distinct', Rule::exists('branches', 'id')],
-            ...$this->nestedRosterRules(),
         ];
     }
 

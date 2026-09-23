@@ -2,8 +2,6 @@
 paths:
   - resources/js/components/admin/branch-form.tsx
   - resources/js/components/admin/driver-form.tsx
-  - resources/js/components/admin/duty-days-picker.tsx
-  - resources/js/components/admin/driver-roster-fields.tsx
   - resources/js/components/admin/branch-location-map-dialog.tsx
   - resources/js/components/admin/driver-branch-assign-sheet.tsx
   - 'resources/js/components/admin/shift-*.tsx'
@@ -19,11 +17,11 @@ Branch create/edit: Address then Map location block with Set on map (BranchLocat
 
 ## DriverForm layout matches BranchForm
 
-DriverForm follows BranchForm: 2-col field rows (not 3-col), placeholders on every Input/Textarea/Select, SelectTrigger className w-full (component default is w-fit). Add shift is never disabled; with no assigned branches it opens DriverBranchAssignSheet then appends a roster row.
+DriverForm follows BranchForm: 2-col field rows (not 3-col), placeholders on every Input/Textarea/Select, SelectTrigger className w-full (component default is w-fit).
 
-## DriverForm duty periods
+## DriverForm has no nested duty shifts
 
-Duty shifts show whenever rosterStatuses is passed (nested create/edit lock the current branch). Each row is a date period (start/end dates, same hours, Mon–Sun chips + All days/Weekdays). Start DatePicker max is end_date; end DatePicker min is start_date (same-day allowed). Edit appends filled rows; existing periods stay on the detail page.
+DriverForm no longer renders Duty shifts or DriverRosterFields. Do not pass rosterStatuses. Assign shifts from the drivers list or Branch management Assign to shift workspace.
 
 ## DriverForm avatar caption and status cards
 

@@ -28,13 +28,11 @@ export default function BranchDriversEdit({
     driver,
     vehicleTypes,
     availabilityStatuses,
-    rosterStatuses,
 }: {
     branch: Branch;
     driver: Driver;
     vehicleTypes: Option[];
     availabilityStatuses: Option[];
-    rosterStatuses: Option[];
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -74,9 +72,7 @@ export default function BranchDriversEdit({
                     })}
                     vehicleTypes={vehicleTypes}
                     availabilityStatuses={availabilityStatuses}
-                    rosterStatuses={rosterStatuses}
                     branches={[branch]}
-                    lockBranch
                     isEdit
                     defaults={{
                         name: driver.name,

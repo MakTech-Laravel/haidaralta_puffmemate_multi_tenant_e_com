@@ -2,9 +2,6 @@ import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { IdCard, Mail, MapPin, Phone } from 'lucide-react';
 import type { ReactNode } from 'react';
 import DriverController from '@/actions/App/Http/Controllers/Branch/DriverController';
-import ShiftAssignmentController from '@/actions/App/Http/Controllers/Branch/ShiftAssignmentController';
-import { ShiftAssignmentList } from '@/components/admin/workforce-timeline';
-import type { ShiftAssignmentRow } from '@/components/admin/workforce-types';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +14,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 
-type Option = { value: string; label: string };
 type Branch = { id: number; name: string; slug: string };
 
 type Driver = {
@@ -39,8 +35,6 @@ type Driver = {
         status_label: string | null;
         branch_name: string | null;
     }[];
-    current_duty: ShiftAssignmentRow | null;
-    shift_assignments: ShiftAssignmentRow[];
 };
 
 function initials(name: string): string {
@@ -84,7 +78,6 @@ export default function BranchDriversShow({
 }: {
     branch: Branch;
     driver: Driver;
-    rosterStatuses: Option[];
 }) {
 
     setLayoutProps({
@@ -233,41 +226,6 @@ export default function BranchDriversShow({
                         </CardContent>
                     </Card>
                 </div>
-
-                <Card className="shadow-sm">
-                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
-                        <div className="space-y-1.5">
-                            <CardTitle>Duty windows at {branch.name}</CardTitle>
-                            <CardDescription>
-                                Assigned shifts and personal date ranges
-                            </CardDescription>
-                        </div>
-                        <Button size="sm" variant="outline" asChild>
-                            <Link
-                                href={ShiftAssignmentController.create.url(
-                                    branch.slug,
-                                )}
-                            >
-                                Assign shift
-                            </Link>
-                        </Button>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {driver.current_duty ? (
-                            <p className="text-sm">
-                                On duty now:{' '}
-                                {driver.current_duty.shift_template_name}
-                            </p>
-                        ) : (
-                            <p className="text-muted-foreground text-sm">
-                                Not on duty right now.
-                            </p>
-                        )}
-                        <ShiftAssignmentList
-                            assignments={driver.shift_assignments}
-                        />
-                    </CardContent>
-                </Card>
             </div>
         </>
     );

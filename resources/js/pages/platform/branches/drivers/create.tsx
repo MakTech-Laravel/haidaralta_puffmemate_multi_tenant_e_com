@@ -11,12 +11,10 @@ export default function PlatformBranchDriversCreate({
     branch,
     vehicleTypes,
     availabilityStatuses,
-    rosterStatuses,
 }: {
     branch: Branch;
     vehicleTypes: Option[];
     availabilityStatuses: Option[];
-    rosterStatuses: Option[];
 }) {
     setLayoutProps({
         breadcrumbs: [
@@ -51,9 +49,7 @@ export default function PlatformBranchDriversCreate({
                     action={BranchDriverController.store.form(branch.slug)}
                     vehicleTypes={vehicleTypes}
                     availabilityStatuses={availabilityStatuses}
-                    rosterStatuses={rosterStatuses}
                     branches={[branch]}
-                    lockBranch
                     cancelHref={filteredBranchDriversUrl(branch.id)}
                 />
             </div>

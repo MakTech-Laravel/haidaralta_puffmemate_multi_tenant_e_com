@@ -1,13 +1,8 @@
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { Building2, Plus, Trash2 } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DriverBranchAssignSheet } from '@/components/admin/driver-branch-assign-sheet';
-import {
-    DriverRosterFields,
-    emptyRosterFields,
-    type DriverRosterFieldsValue,
-} from '@/components/admin/driver-roster-fields';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -39,10 +34,6 @@ type BranchOption = {
     code?: string | null;
 };
 
-type RosterDraft = DriverRosterFieldsValue & {
-    key: string;
-};
-
 interface DriverFormDefaults {
     name?: string;
     phone?: string;
@@ -64,10 +55,8 @@ interface DriverFormProps {
     action: FormAction;
     vehicleTypes: Option[];
     availabilityStatuses: Option[];
-    rosterStatuses?: Option[];
     branches?: BranchOption[];
     requireBranches?: boolean;
-    lockBranch?: boolean;
     defaults?: DriverFormDefaults;
     isEdit?: boolean;
     cancelHref: string;
@@ -143,10 +132,8 @@ export function DriverForm({
     action,
     vehicleTypes,
     availabilityStatuses,
-    rosterStatuses = [],
     branches = [],
     requireBranches = false,
-    lockBranch = false,
     defaults,
     isEdit = false,
     cancelHref,
@@ -183,9 +170,7 @@ export function DriverForm({
                   ]
                 : [],
     );
-    const [rosters, setRosters] = useState<RosterDraft[]>([]);
     const [extraBranches, setExtraBranches] = useState<BranchOption[]>([]);
-    const pendingShiftRef = useRef(false);
 
     const formMethod = (action.method ?? 'post').toLowerCase() as
         | 'get'
@@ -193,11 +178,6 @@ export function DriverForm({
         | 'put'
         | 'patch'
         | 'delete';
-
-    const defaultRosterStatus =
-        rosterStatuses.find((item) => item.value === 'scheduled')?.value ??
-        rosterStatuses[0]?.value ??
-        'scheduled';
 
     const {
         data,
@@ -232,15 +212,6 @@ export function DriverForm({
         vehicle_image: null as File | null,
         remove_avatar: false,
         remove_vehicle_image: false,
-        rosters: [] as Array<{
-            branch_id: number;
-            start_date: string;
-            end_date: string;
-            start_time: string;
-            end_time: string;
-            days_of_week: number[];
-            status: string;
-        }>,
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
@@ -262,29 +233,6 @@ export function DriverForm({
         .map((id) => branchLookup.get(Number(id)))
         .filter((branch): branch is BranchOption => branch !== undefined);
 
-    const lockedBranch = lockBranch ? branches[0] : undefined;
-
-    const addShift = (
-        branchesForShift: BranchOption[] = assignedBranches,
-    ): void => {
-        const firstBranch = lockedBranch ?? branchesForShift[0];
-
-        if (firstBranch === undefined) {
-            return;
-        }
-
-        setRosters((current) => [
-            ...current,
-            {
-                key: crypto.randomUUID(),
-                ...emptyRosterFields({
-                    branchId: String(firstBranch.id),
-                    status: defaultRosterStatus,
-                }),
-            },
-        ]);
-    };
-
     const submit = (event: FormEvent): void => {
         event.preventDefault();
 
@@ -296,29 +244,8 @@ export function DriverForm({
                 remove_vehicle_image,
                 password,
                 password_confirmation,
-                rosters: _ignored,
                 ...rest
             } = form;
-
-            const rosterPayload = rosters
-                .filter(
-                    (row) =>
-                        row.branch_id &&
-                        row.start_date &&
-                        row.end_date &&
-                        row.start_time &&
-                        row.end_time &&
-                        row.days_of_week.length > 0,
-                )
-                .map((row) => ({
-                    branch_id: Number(row.branch_id),
-                    start_date: row.start_date,
-                    end_date: row.end_date,
-                    start_time: row.start_time,
-                    end_time: row.end_time,
-                    days_of_week: row.days_of_week,
-                    status: row.status || defaultRosterStatus,
-                }));
 
             return {
                 ...rest,
@@ -327,7 +254,6 @@ export function DriverForm({
                 ...(vehicle_image ? { vehicle_image } : {}),
                 ...(remove_avatar ? { remove_avatar: true } : {}),
                 ...(remove_vehicle_image ? { remove_vehicle_image: true } : {}),
-                ...(rosterPayload.length > 0 ? { rosters: rosterPayload } : {}),
             };
         });
 
@@ -751,99 +677,6 @@ export function DriverForm({
                     </section>
                 ) : null}
 
-                {rosterStatuses.length > 0 ? (
-                    <section className={sectionClassName()}>
-                        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-                            <div className="space-y-1">
-                                <h2 className="text-base font-semibold tracking-tight">
-                                    Duty shifts
-                                </h2>
-                                <p className="text-muted-foreground text-sm">
-                                    {isEdit
-                                        ? 'Optional new date periods. Existing shifts stay on the driver profile.'
-                                        : 'Optional date periods with the same hours on selected days.'}
-                                </p>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                    if (
-                                        !lockBranch &&
-                                        assignedBranches.length === 0
-                                    ) {
-                                        pendingShiftRef.current = true;
-                                        setBranchSheetOpen(true);
-
-                                        return;
-                                    }
-
-                                    addShift();
-                                }}
-                            >
-                                <Plus className="size-4" />
-                                Add shift
-                            </Button>
-                        </div>
-
-                        {rosters.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
-                                No duty shifts added.
-                            </p>
-                        ) : (
-                            <div className="space-y-3">
-                                {rosters.map((row, index) => (
-                                    <div
-                                        key={row.key}
-                                        className="rounded-xl border p-3"
-                                    >
-                                        <DriverRosterFields
-                                            value={row}
-                                            branches={assignedBranches}
-                                            showBranch={!lockBranch}
-                                            rosterStatuses={rosterStatuses}
-                                            errors={errors}
-                                            errorPrefix={`rosters.${index}`}
-                                            onChange={(patch) =>
-                                                setRosters((current) =>
-                                                    current.map((item) =>
-                                                        item.key === row.key
-                                                            ? {
-                                                                  ...item,
-                                                                  ...patch,
-                                                              }
-                                                            : item,
-                                                    ),
-                                                )
-                                            }
-                                            statusTrailing={
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive"
-                                                    aria-label={`Remove shift ${index + 1}`}
-                                                    onClick={() =>
-                                                        setRosters((current) =>
-                                                            current.filter(
-                                                                (item) =>
-                                                                    item.key !==
-                                                                    row.key,
-                                                            ),
-                                                        )
-                                                    }
-                                                >
-                                                    <Trash2 className="size-4" />
-                                                </Button>
-                                            }
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-                ) : null}
-
                 <div className="flex justify-end gap-2">
                     <Button variant="outline" asChild>
                         <Link href={cancelHref}>Cancel</Link>
@@ -859,24 +692,11 @@ export function DriverForm({
             {requireBranches ? (
                 <DriverBranchAssignSheet
                     open={branchSheetOpen}
-                    onOpenChange={(open) => {
-                        setBranchSheetOpen(open);
-
-                        if (!open) {
-                            pendingShiftRef.current = false;
-                        }
-                    }}
+                    onOpenChange={setBranchSheetOpen}
                     selectedIds={data.branch_ids}
                     onConfirm={(branchIds, selectedBranches) => {
-                        const shouldAddShift = pendingShiftRef.current;
-
-                        pendingShiftRef.current = false;
                         setExtraBranches(selectedBranches);
                         setData('branch_ids', branchIds);
-
-                        if (shouldAddShift && selectedBranches.length > 0) {
-                            addShift(selectedBranches);
-                        }
                     }}
                 />
             ) : null}

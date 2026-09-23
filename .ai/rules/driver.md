@@ -16,15 +16,11 @@ driver_id columns always reference users.id (user_type=driver, branch_id null). 
 
 ## Driver CRUD surfaces
 
-Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids; max:1 only when `drivers.single_active_branch` is true). Nested platform.branches.drivers and branch.drivers auto-assign the current branch on create and can assign existing drivers. Rosters require an active assignment for that branch. Overlap is per driver: date ranges overlap AND weekdays intersect AND times overlap (weekday-only vs weekend-only on the same dates is allowed). Roster forms use start/end dates + Mon–Sun day chips (ISO 1–7), DatePicker + TimePicker (HH:mm), not native date/time inputs. No parcel/GPS/chat yet.
+Platform /platform/drivers is the full driver admin (create requires ≥1 branch_ids; max:1 only when `drivers.single_active_branch` is true). Nested platform.branches.drivers and branch.drivers auto-assign the current branch on create and can assign existing drivers. Duty shifts are not nested on create/edit — use Branch management Assign to shift. No parcel/GPS/chat yet.
 
 ## Driver UX: Sheet assigner, media, effective availability
 
-Platform driver assign UI is DriverBranchAssignSheet (right Sheet + server search/pagination via platform.drivers.branch-options). Selection is exclusive when `drivers.single_active_branch` is true, multi-checkbox when false. Copy/actions follow the same flag. driver_profiles stores address/vehicle_image_path (MediaUrl). User avatars live on users.avatar for every user type. List/detail show effective_availability: on_break/busy overrides win, else scheduled period covering today's date + weekday + clock → available, else offline.
-
-## Roster overlap is period plus weekday plus time
-
-One driver_rosters row is a date period (start_date–end_date inclusive) with the same start_time/end_time on days_of_week (ISO 1–7, default all days). Overlap is per driver: date ranges overlap AND weekdays intersect AND times overlap. Weekday-only vs weekend-only on the same dates is allowed. Overnight shifts are invalid. Effective availability: on_break/busy win, else a scheduled period covering today’s date + weekday + clock → available, else offline.
+Platform driver assign UI is DriverBranchAssignSheet (right Sheet + server search/pagination via platform.drivers.branch-options). Selection is exclusive when `drivers.single_active_branch` is true, multi-checkbox when false. Copy/actions follow the same flag. driver_profiles stores address/vehicle_image_path (MediaUrl). User avatars live on users.avatar for every user type. List/detail show effective_availability: on_break/busy overrides win, else scheduled shift day covering now → available, else offline.
 
 ## Nested platform staff/driver indexes redirect to filtered lists
 
@@ -36,3 +32,6 @@ Assignment mode is `config('drivers.single_active_branch')` (env `DRIVER_SINGLE_
 
 ## Platform shift workspaces use separate controllers
 Administrator Shift* controllers handle owner_type=platform and branch_id null only. Branch management uses BranchShift* controllers for owner_type=branch with required branch_id. Do not point two route URIs at the same controller method (Wayfinder becomes a URI dictionary). Cross-owner edit/assign is 404. Branch portal Shift* controllers stay branch-scoped and may still assign onto visible platform templates.
+
+## Drivers assign shifts via Branch management
+Driver create/edit has no Duty shifts UI or nested roster payloads. Admin driver show pages omit Current duty / Duty windows. Shifts are managed under Branch management. Drivers list Assign to shift links to branch-shift-assignments.create (platform) or branch.shift-assignments.create (portal) with people_kind=driver, user_id, and branch_id (platform: first listed branch).

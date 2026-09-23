@@ -109,12 +109,6 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.drivers.branches.sync');
         Route::post('drivers/{user}/transfer', [PlatformTransferController::class, 'storeDriver'])
             ->name('platform.drivers.transfer');
-        Route::post('drivers/{user}/rosters', [PlatformDriverController::class, 'storeRoster'])
-            ->name('platform.drivers.rosters.store');
-        Route::put('drivers/{user}/rosters/{roster}', [PlatformDriverController::class, 'updateRoster'])
-            ->name('platform.drivers.rosters.update');
-        Route::delete('drivers/{user}/rosters/{roster}', [PlatformDriverController::class, 'destroyRoster'])
-            ->name('platform.drivers.rosters.destroy');
 
         Route::get('branches/{branch}/drivers', [PlatformBranchDriverController::class, 'index'])
             ->name('platform.branches.drivers.index');
