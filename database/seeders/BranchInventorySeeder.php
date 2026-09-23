@@ -128,6 +128,51 @@ class BranchInventorySeeder extends Seeder
             'POUCH-NORDIC-10' => 14,
             'POUCH-NORDIC-16' => 10,
         ]);
+
+        $regionalSlugs = [
+            BranchSeeder::PERTH_HAY,
+            BranchSeeder::ADELAIDE_RUNDLE,
+            BranchSeeder::GOLD_COAST_SURFERS,
+            BranchSeeder::CANBERRA_CIVIC,
+            BranchSeeder::NEWCASTLE_HUNTER,
+            BranchSeeder::PARRAMATTA_CHURCH,
+        ];
+
+        foreach ($regionalSlugs as $slug) {
+            $branch = Branch::query()->where('slug', $slug)->firstOrFail();
+            $this->seedBranch($branch, $inventory, $pricing, $this->regionalAssortment());
+        }
+    }
+
+    /**
+     * Mid-size store mix shared by regional branches (hand-tuned, no Faker).
+     *
+     * @return array<string, array{qty: int, min: int, price: string, discount_type: string, discount: string|null}>
+     */
+    private function regionalAssortment(): array
+    {
+        return [
+            'marlboro-gold-soft-pack-20s' => ['qty' => 55, 'min' => 16, 'price' => '48.50', 'discount_type' => 'none', 'discount' => null],
+            'winfield-blue-soft-pack-20s' => ['qty' => 70, 'min' => 18, 'price' => '46.80', 'discount_type' => 'none', 'discount' => null],
+            'winfield-red-soft-pack-20s' => ['qty' => 40, 'min' => 12, 'price' => '46.80', 'discount_type' => 'none', 'discount' => null],
+            'benson-hedges-smooth-soft-pack-20s' => ['qty' => 28, 'min' => 10, 'price' => '49.90', 'discount_type' => 'none', 'discount' => null],
+            'rothmans-blue-soft-pack-20s' => ['qty' => 32, 'min' => 10, 'price' => '45.50', 'discount_type' => 'fixed', 'discount' => '2.00'],
+            'vuse-go-5000-disposable' => ['qty' => 36, 'min' => 10, 'price' => '39.95', 'discount_type' => 'none', 'discount' => null],
+            'iget-bar-plus-disposable' => ['qty' => 30, 'min' => 8, 'price' => '32.95', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-pulse-5000' => ['qty' => 28, 'min' => 8, 'price' => '34.99', 'discount_type' => 'fixed', 'discount' => '3.00'],
+            'puffmemate-cloud-bar-6000' => ['qty' => 24, 'min' => 8, 'price' => '36.99', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-mini-bar-1200' => ['qty' => 40, 'min' => 12, 'price' => '14.99', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-core-kit' => ['qty' => 12, 'min' => 4, 'price' => '39.99', 'discount_type' => 'none', 'discount' => null],
+            'citrus-surge-salt-30ml' => ['qty' => 20, 'min' => 6, 'price' => '19.99', 'discount_type' => 'none', 'discount' => null],
+            'berry-blast-salt-30ml' => ['qty' => 18, 'min' => 6, 'price' => '19.99', 'discount_type' => 'none', 'discount' => null],
+            'mango-madness-freebase-60ml' => ['qty' => 16, 'min' => 5, 'price' => '24.99', 'discount_type' => 'none', 'discount' => null],
+            'nordic-mint-pouches' => ['qty' => 30, 'min' => 8, 'price' => '18.50', 'discount_type' => 'none', 'discount' => null],
+            'velo-cool-mint-pouches' => ['qty' => 26, 'min' => 8, 'price' => '19.50', 'discount_type' => 'percent', 'discount' => '5'],
+            'clipper-classic-lighter' => ['qty' => 60, 'min' => 15, 'price' => '3.50', 'discount_type' => 'none', 'discount' => null],
+            'bic-maxi-lighter' => ['qty' => 48, 'min' => 12, 'price' => '2.80', 'discount_type' => 'none', 'discount' => null],
+            'usb-c-charge-cable-1m' => ['qty' => 22, 'min' => 6, 'price' => '9.99', 'discount_type' => 'none', 'discount' => null],
+            'raw-classic-rolling-papers-ks' => ['qty' => 40, 'min' => 10, 'price' => '2.80', 'discount_type' => 'none', 'discount' => null],
+        ];
     }
 
     /**
