@@ -337,3 +337,51 @@ test('platform staff edit branch change writes transfer history', function () {
         'reason' => 'Updated via staff edit',
     ]);
 });
+
+test('platform transfers index defaults to latest created and includes avatar and reason', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_STAFF)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+
+    $older = UserTransferHistory::factory()->staff()->create([
+        'user_id' => $staff->id,
+        'from_branch_id' => $sydney->id,
+        'to_branch_id' => $melbourne->id,
+        'from_role' => RoleEnum::STAFF->value,
+        'to_role' => RoleEnum::STAFF->value,
+        'effective_date' => '2026-12-01',
+        'reason' => 'Older history row.',
+        'transferred_by' => $admin->id,
+        'created_at' => now()->subDay(),
+        'updated_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.staff.transfer', $staff), [
+            'to_branch_id' => $melbourne->id,
+            'roles' => [RoleEnum::MANAGER->value],
+            'effective_date' => '2026-01-01',
+            'reason' => 'Newest transfer row.',
+        ])
+        ->assertRedirect();
+
+    $newest = UserTransferHistory::query()
+        ->where('user_id', $staff->id)
+        ->where('reason', 'Newest transfer row.')
+        ->firstOrFail();
+
+    expect($newest->id)->toBeGreaterThan($older->id);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.transfers.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/transfers/index')
+            ->where('table.data.0.id', $newest->id)
+            ->where('table.data.0.reason', 'Newest transfer row.')
+            ->where('table.data.0.from_role', RoleEnum::STAFF->value)
+            ->where('table.data.0.to_role', RoleEnum::MANAGER->value)
+            ->has('table.data.0.avatar_url')
+        );
+});

@@ -200,6 +200,7 @@ export type TransferRow = {
     id: number;
     user_id: number;
     user_name?: string | null;
+    avatar_url?: string | null;
     subject_type: string;
     subject_type_label: string;
     transfer_type: string;
@@ -213,6 +214,7 @@ export type TransferRow = {
     effective_date: string | null;
     reason: string | null;
     transferred_by_name?: string | null;
+    created_at?: string | null;
 };
 
 export function formatDutyLine(row: {

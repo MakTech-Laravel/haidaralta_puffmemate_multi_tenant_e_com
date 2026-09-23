@@ -23,6 +23,9 @@ import {
 } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
+
+export const TRANSFER_REASON_MAX = 500;
 
 type FormAction = {
     action: string;
@@ -321,16 +324,37 @@ export function TransferEmployeeSheet(props: TransferEmployeeSheetProps) {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <Label htmlFor="transfer-reason">
-                            Reason <span className="text-primary">*</span>
-                        </Label>
+                        <div className="flex items-center justify-between gap-3">
+                            <Label htmlFor="transfer-reason">
+                                Reason <span className="text-primary">*</span>
+                            </Label>
+                            <p
+                                id="transfer-reason-count"
+                                className={cn(
+                                    'text-xs tabular-nums',
+                                    form.data.reason.length >= TRANSFER_REASON_MAX
+                                        ? 'text-destructive'
+                                        : 'text-muted-foreground',
+                                )}
+                            >
+                                {form.data.reason.length}/{TRANSFER_REASON_MAX}
+                            </p>
+                        </div>
                         <Textarea
                             id="transfer-reason"
                             value={form.data.reason}
                             onChange={(event) =>
-                                form.setData('reason', event.target.value)
+                                form.setData(
+                                    'reason',
+                                    event.target.value.slice(
+                                        0,
+                                        TRANSFER_REASON_MAX,
+                                    ),
+                                )
                             }
+                            maxLength={TRANSFER_REASON_MAX}
                             placeholder="Why is this person moving?"
+                            aria-describedby="transfer-reason-count"
                             className="min-h-24"
                         />
                         <InputError message={form.errors.reason} />
