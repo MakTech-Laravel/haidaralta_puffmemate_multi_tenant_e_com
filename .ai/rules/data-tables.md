@@ -9,6 +9,7 @@ paths:
   - app/DataTables/ProductBranchInventoryDataTable.php
   - app/DataTables/BranchStaffDataTable.php
   - app/DataTables/BranchRoleDataTable.php
+  - app/DataTables/AbstractDataTable.php
 ---
 
 # Data Tables
@@ -81,3 +82,6 @@ Scoped BranchStaffDataTable (forBranch) exposes filter[role] and filterOptions f
 
 ## Branch roles DataTable uses makeForBranch
 BranchRoleDataTable uses makeForBranch(Request, Branch), not make — child signatures cannot override AbstractDataTable::make(Request). RoleController index calls makeForBranch.
+
+## Scout empty results fall back to SQL
+DataTable Scout search runs only when scout.driver is meilisearch. If Meilisearch throws or returns no keys (empty index, phone substrings), applySqlSearchConstraint runs LIKE on modelSearchableColumns instead of whereRaw 1=0. Tests use collection → SQL only.

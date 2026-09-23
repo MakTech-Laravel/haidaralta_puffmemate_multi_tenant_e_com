@@ -85,6 +85,62 @@ test('platform can list and create drivers with branch assignments', function ()
     ]);
 });
 
+test('platform drivers index can search by phone substring', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $driver = User::query()->where('phone', '+61420101006')->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.drivers.index', [
+            'filter' => ['search' => '20101006'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/drivers/index')
+            ->where('table.filters.search', '20101006')
+            ->has('table.data', 1)
+            ->where('table.data.0.id', $driver->id)
+            ->where('table.data.0.phone', '+61420101006'));
+});
+
+test('platform drivers index falls back to sql when meilisearch returns no hits', function () {
+    config(['scout.driver' => 'meilisearch']);
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $driver = User::factory()->create([
+        'name' => 'Fallback Courier',
+        'phone' => '+61420999887',
+        'email' => 'fallback.courier@puffmemate.dev',
+        'user_type' => UserType::DRIVER,
+        'branch_id' => null,
+        'is_active' => true,
+    ]);
+
+    DriverProfile::query()->create([
+        'user_id' => $driver->id,
+        'vehicle_type' => DriverVehicleType::Car->value,
+        'availability_status' => DriverAvailabilityStatus::Offline->value,
+    ]);
+
+    DriverBranchAssignment::query()->create([
+        'driver_id' => $driver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Active->value,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.drivers.index', [
+            'filter' => ['search' => '999887'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/drivers/index')
+            ->where('table.filters.search', '999887')
+            ->has('table.data', 1)
+            ->where('table.data.0.phone', '+61420999887'));
+});
+
 test('seeded driver has profile and one active branch assignment keyed by user id', function () {
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();

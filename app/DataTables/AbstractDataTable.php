@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -179,23 +178,7 @@ abstract class AbstractDataTable
                 return;
             }
 
-            $columns = $this->modelSearchableColumns();
-
-            if ($columns === []) {
-                return;
-            }
-
-            $query->where(function (Builder $builder) use ($columns, $term): void {
-                foreach ($columns as $index => $column) {
-                    if ($index === 0) {
-                        $builder->where($column, 'like', '%'.$term.'%');
-
-                        continue;
-                    }
-
-                    $builder->orWhere($column, 'like', '%'.$term.'%');
-                }
-            });
+            $this->applySqlSearchConstraint($query, $term);
         });
     }
 
@@ -222,21 +205,54 @@ abstract class AbstractDataTable
 
         $ids = [];
 
-        foreach ($modelClass::search($term)->take(500)->keys() as $key) {
-            $id = (int) $key;
+        try {
+            foreach ($modelClass::search($term)->take(500)->keys() as $key) {
+                $id = (int) $key;
 
-            if ($id !== 0) {
-                $ids[] = $id;
+                if ($id !== 0) {
+                    $ids[] = $id;
+                }
             }
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->applySqlSearchConstraint($query, $term);
+
+            return;
         }
 
+        // Empty Meilisearch (or phone/email substrings the engine misses) must
+        // not wipe the list — fall back to the same SQL LIKE contract.
         if ($ids === []) {
-            $query->whereRaw('1 = 0');
+            $this->applySqlSearchConstraint($query, $term);
 
             return;
         }
 
         $query->whereIn($query->getModel()->getQualifiedKeyName(), $ids);
+    }
+
+    /**
+     * @param  Builder<TModel>  $query
+     */
+    protected function applySqlSearchConstraint(Builder $query, string $term): void
+    {
+        $columns = $this->modelSearchableColumns();
+
+        if ($columns === []) {
+            return;
+        }
+
+        $query->where(function (Builder $builder) use ($columns, $term): void {
+            foreach ($columns as $index => $column) {
+                if ($index === 0) {
+                    $builder->where($column, 'like', '%'.$term.'%');
+
+                    continue;
+                }
+
+                $builder->orWhere($column, 'like', '%'.$term.'%');
+            }
+        });
     }
 
     /**
@@ -371,6 +387,10 @@ abstract class AbstractDataTable
 
     protected function modelUsesScout(): bool
     {
+        if (config('scout.driver') !== 'meilisearch') {
+            return false;
+        }
+
         return is_a($this->modelClass(), ScoutSearchable::class, true);
     }
 
