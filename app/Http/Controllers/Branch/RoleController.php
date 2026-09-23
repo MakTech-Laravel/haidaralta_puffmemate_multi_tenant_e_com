@@ -31,7 +31,7 @@ class RoleController extends Controller
 
         return Inertia::render('branch/roles/index', [
             'branch' => $branch->only(['id', 'name', 'slug']),
-            'table' => BranchRoleDataTable::make($request, $branch),
+            'table' => BranchRoleDataTable::makeForBranch($request, $branch),
         ]);
     }
 

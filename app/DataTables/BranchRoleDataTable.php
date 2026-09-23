@@ -32,7 +32,7 @@ class BranchRoleDataTable extends AbstractDataTable
     /**
      * @return array<string, mixed>
      */
-    public static function make(Request $request, Branch $branch): array
+    public static function makeForBranch(Request $request, Branch $branch): array
     {
         return (new static($request, $branch))->toArray();
     }

@@ -1,13 +1,14 @@
 ---
 paths:
-    - 'app/DataTables/**'
-    - 'resources/js/components/data-table/**'
-    - 'resources/js/pages/**/index.tsx'
-    - app/DataTables/DatabaseBackupZipDataTable.php
-    - app/DataTables/BranchProductListingDataTable.php
-    - app/DataTables/BranchCategoryDataTable.php
-    - app/DataTables/ProductBranchInventoryDataTable.php
-    - app/DataTables/BranchStaffDataTable.php
+  - 'app/DataTables/**'
+  - 'resources/js/components/data-table/**'
+  - 'resources/js/pages/**/index.tsx'
+  - app/DataTables/DatabaseBackupZipDataTable.php
+  - app/DataTables/BranchProductListingDataTable.php
+  - app/DataTables/BranchCategoryDataTable.php
+  - app/DataTables/ProductBranchInventoryDataTable.php
+  - app/DataTables/BranchStaffDataTable.php
+  - app/DataTables/BranchRoleDataTable.php
 ---
 
 # Data Tables
@@ -77,3 +78,6 @@ DataTable exportQuery() applies the same Spatie filter[]/sort contract as the li
 ## Scoped branch staff DataTable has role and status filters
 
 Scoped BranchStaffDataTable (forBranch) exposes filter[role] and filterOptions for is_active plus RoleEnum labels, and eager-loads roles. Set the Spatie team to the branch before role(). Do not dump branch pickers when scoped. Global acrossBranches keeps filter[branch_id] and filterOptions.selected_branch only (currently filtered row)—never filterOptions.branches.
+
+## Branch roles DataTable uses makeForBranch
+BranchRoleDataTable uses makeForBranch(Request, Branch), not make — child signatures cannot override AbstractDataTable::make(Request). RoleController index calls makeForBranch.

@@ -112,6 +112,19 @@ test('branch staff without manage branch roles cannot access role routes', funct
         ->assertForbidden();
 });
 
+test('branch roles index loads the scoped data table for branch super admin', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.roles.index', $downtown))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/roles/index')
+            ->where('branch.slug', BranchSeeder::SYDNEY_CBD)
+            ->has('table.data'));
+});
+
 test('branch permissions catalog is readable by branch super admin', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $downtown = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
