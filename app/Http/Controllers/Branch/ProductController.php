@@ -90,7 +90,7 @@ class ProductController extends Controller
         $branch = $this->currentBranch();
         $except = ['image', 'gallery', 'buying_price', 'discount_price', 'quantity'];
 
-        if ((bool) config('catalog.show_branch_pricing')) {
+        if ((bool) config('catalog.show_branch_pricing') || ! (bool) config('catalog.branch_can_manage_catalog_pricing')) {
             $except = [...$except, 'selling_price', 'regular_price'];
         }
 
@@ -193,7 +193,13 @@ class ProductController extends Controller
     public function update(UpdateBranchProductRequest $request, string $branchSlug, Product $product): RedirectResponse
     {
         $branch = $this->currentBranch();
-        $data = $request->safe()->except(['image', 'gallery', 'remove_gallery_ids']);
+        $except = ['image', 'gallery', 'remove_gallery_ids'];
+
+        if ((bool) config('catalog.show_branch_pricing') || ! (bool) config('catalog.branch_can_manage_catalog_pricing')) {
+            $except = [...$except, 'selling_price', 'regular_price'];
+        }
+
+        $data = $request->safe()->except($except);
         $data['status'] = $request->boolean('status', true);
         $data['remove_image'] = $request->boolean('remove_image');
         $data['remove_gallery_ids'] = collect($request->input('remove_gallery_ids', []))

@@ -108,6 +108,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Branch catalog price / discount edits
+    |--------------------------------------------------------------------------
+    |
+    | Only applies when show_branch_pricing is false (common product prices).
+    | When true, branch portals keep Manage pricing and may write catalog
+    | selling/regular/discount. When false, Manage pricing is hidden from
+    | branch nav and those routes abort 404; only platform may change common
+    | prices. Flip to false for platform-only catalog pricing.
+    |
+    */
+
+    'branch_can_manage_catalog_pricing' => env('BRANCH_CAN_MANAGE_CATALOG_PRICING', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Product SKU prefix
     |--------------------------------------------------------------------------
     |

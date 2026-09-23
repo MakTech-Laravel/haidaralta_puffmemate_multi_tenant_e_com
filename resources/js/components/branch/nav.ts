@@ -40,6 +40,7 @@ export function buildBranchNav(
     canViewCategories = false,
     showBulkImport = false,
     showBranchPricing = false,
+    branchCanManageCatalogPricing = true,
 ): NavSection[] {
     const productItems = [
         ...(canViewCategories
@@ -58,7 +59,7 @@ export function buildBranchNav(
             icon: Package,
             permissions: ['manage-branch-products'],
         }),
-        ...(!showBranchPricing
+        ...(!showBranchPricing && branchCanManageCatalogPricing
             ? [
                   navLink({
                       title: 'Manage pricing',

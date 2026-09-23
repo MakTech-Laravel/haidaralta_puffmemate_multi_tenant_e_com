@@ -172,9 +172,11 @@ export function ProductForm({
     cancelHref,
     submitLabel,
 }: ProductFormProps) {
-    const { catalog } = usePage().props;
+    const { catalog, portal } = usePage().props;
     const showBranchPricing = catalog.show_branch_pricing;
-    const showCatalogPrices = !showBranchPricing;
+    const showCatalogPrices =
+        !showBranchPricing &&
+        (portal !== 'branch' || catalog.branch_can_manage_catalog_pricing);
     const showBranchOps = branchOpsFields && showBranchPricing;
     const showBranchQuantityOnly = branchOpsFields && !showBranchPricing;
     const [slugTouched, setSlugTouched] = useState(isEdit);

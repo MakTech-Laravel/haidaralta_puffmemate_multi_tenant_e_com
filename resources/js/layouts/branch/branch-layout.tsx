@@ -25,6 +25,7 @@ export default function BranchLayout({
                           catalog.branch_can_view_categories,
                           catalog.show_bulk_import,
                           catalog.show_branch_pricing,
+                          catalog.branch_can_manage_catalog_pricing,
                       )
                     : []
             }

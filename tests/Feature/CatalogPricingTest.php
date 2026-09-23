@@ -55,7 +55,10 @@ test('platform manage pricing page and upsert succeed when branch pricing is hid
 });
 
 test('branch manage pricing page and upsert succeed when branch pricing is hidden', function () {
-    config(['catalog.show_branch_pricing' => false]);
+    config([
+        'catalog.show_branch_pricing' => false,
+        'catalog.branch_can_manage_catalog_pricing' => true,
+    ]);
 
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -91,6 +94,42 @@ test('branch manage pricing page and upsert succeed when branch pricing is hidde
     expect((float) $product->selling_price)->toBe(28.0)
         ->and($product->discount_type)->toBe(DiscountType::Percent)
         ->and((float) $product->discount_price)->toBe(10.0);
+});
+
+test('branch manage pricing routes abort when branch cannot manage catalog pricing', function () {
+    config([
+        'catalog.show_branch_pricing' => false,
+        'catalog.branch_can_manage_catalog_pricing' => false,
+    ]);
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $product = Product::factory()->create(['selling_price' => 10]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.catalog.pricing.manage', ['product' => $product->id]))
+        ->assertOk();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.products.prices', $product), [
+            'selling_price' => 11,
+            'discount_type' => DiscountType::None->value,
+        ])
+        ->assertRedirect();
+
+    expect((float) $product->fresh()->selling_price)->toBe(11.0);
+
+    $this->actingAs($staff, 'branch')
+        ->get(route('branch.catalog.pricing.manage', $branch))
+        ->assertNotFound();
+
+    $this->actingAs($staff, 'branch')
+        ->put(route('branch.products.catalog-prices', [$branch, $product]), [
+            'selling_price' => 9,
+            'discount_type' => DiscountType::None->value,
+        ])
+        ->assertNotFound();
 });
 
 test('manage pricing routes abort when branch pricing is enabled', function () {

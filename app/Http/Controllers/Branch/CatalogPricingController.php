@@ -25,6 +25,7 @@ class CatalogPricingController extends Controller
     public function manage(Request $request): Response
     {
         abort_unless(! (bool) config('catalog.show_branch_pricing'), 404);
+        abort_unless((bool) config('catalog.branch_can_manage_catalog_pricing'), 404);
 
         $product = StockPageContext::optionalProduct($request);
 
@@ -46,6 +47,8 @@ class CatalogPricingController extends Controller
         string $branchSlug,
         Product $product,
     ): RedirectResponse {
+        abort_unless((bool) config('catalog.branch_can_manage_catalog_pricing'), 404);
+
         $branch = $this->currentBranch();
         $this->pricing->upsert($product, $request->validated());
 

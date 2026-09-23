@@ -65,6 +65,7 @@ class HandleInertiaRequests extends Middleware
                 'show_product_variants' => (bool) config('catalog.show_product_variants'),
                 'show_bulk_import' => (bool) config('catalog.show_bulk_import'),
                 'show_branch_pricing' => (bool) config('catalog.show_branch_pricing'),
+                'branch_can_manage_catalog_pricing' => (bool) config('catalog.branch_can_manage_catalog_pricing'),
                 'sku_prefix' => (string) config('catalog.sku_prefix', 'PMM'),
             ],
             'drivers' => [
