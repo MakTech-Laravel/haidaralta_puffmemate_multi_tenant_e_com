@@ -301,6 +301,7 @@ export function StaffForm({
         transform,
         validate,
         setValidationTimeout,
+        clearErrors,
         cancel,
     } = useForm(formMethod, action.action, {
         branch_id: initialBranchId,
@@ -369,6 +370,20 @@ export function StaffForm({
 
         return () => controller.abort();
     }, [data.branch_id, roleOptionsUrl, roles.length]);
+
+    const validatePhone = (): void => {
+        validate('phone');
+    };
+
+    const validateEmail = (value: string): void => {
+        if (value.trim() === '') {
+            clearErrors('email');
+
+            return;
+        }
+
+        validate('email');
+    };
 
     const changeBranch = (nextBranchId: string | null, label?: string): void => {
         setBranchLabel(label ?? null);
@@ -577,7 +592,8 @@ export function StaffForm({
                                     onChange={(event) =>
                                         setData('phone', event.target.value)
                                     }
-                                    onBlur={() => validate('phone')}
+                                    onBlur={validatePhone}
+                                    aria-invalid={Boolean(errors.phone)}
                                     required
                                 />
                                 <InputError message={errors.phone} />
@@ -598,11 +614,10 @@ export function StaffForm({
                                     onChange={(event) =>
                                         setData('email', event.target.value)
                                     }
-                                    onBlur={() => {
-                                        if (data.email) {
-                                            validate('email');
-                                        }
-                                    }}
+                                    onBlur={(event) =>
+                                        validateEmail(event.target.value)
+                                    }
+                                    aria-invalid={Boolean(errors.email)}
                                 />
                                 <InputError message={errors.email} />
                             </div>

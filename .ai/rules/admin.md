@@ -7,6 +7,7 @@ paths:
   - resources/js/components/admin/branch-location-map-dialog.tsx
   - resources/js/components/admin/driver-branch-assign-sheet.tsx
   - 'resources/js/components/admin/shift-*.tsx'
+  - 'resources/js/components/admin/{admin,staff}-form.tsx'
 ---
 
 # Admin
@@ -60,3 +61,6 @@ The shifts board has no Scheduled people stat or roster. Use the Assigned people
 
 ## Board type filter beside branch
 Type filter sits beside the Branch picker (default All). Staff = audience all|staff and branch people; Drivers = all|driver and drivers. It scopes coverage, stats, on duty, and the shifts list. Uncovered today is gone from this page.
+
+## Admin and staff phone email Precognition
+AdminForm and StaffForm live-validate phone and email uniqueness via Inertia useForm Precognition on blur (validationTimeout 500). Empty email clears errors instead of validating. Store/update routes keep precognitive middleware.
