@@ -27,8 +27,11 @@ Pre-handover: categories.slogan, show_in_nav, nav_sort (and products.brand, tags
 
 ## Inventory transaction reason belongs on create
 
-inventory_transactions.reason, reason_note, and unit_cost belong on the original create_inventory_transactions migration. buying_price and regular_price belong on create_branch_product_prices. Catalog-wide selling_price and regular_price belong on create_products (nullable decimals). Do not add a Schema::table modification for greenfield columns on these tables. Price history is a new create_* table (`branch_product_price_histories`).
+inventory_transactions.reason, reason_note, and unit_cost belong on the original create_inventory_transactions migration. buying_price and regular_price belong on create_branch_product_prices. Catalog-wide selling_price, regular_price, discount_type (default none), discount_price, discount_start_date, and discount_end_date belong on create_products. Do not add a Schema::table modification for greenfield columns on these tables. Price history is a new create_* table (`branch_product_price_histories`).
 
 ## Assignment dates belong on create_driver_branch_assignments
 
 Development / pre-handover: `started_at` and `ended_at` belong on `create_driver_branch_assignments`. Do not ship a Schema::table modification for these greenfield columns. Unique remains `(driver_id, branch_id)` — never unique-on-active. Each new workforce table is its own create migration (`user_shift_days` is a new create file; do not add a period table). Data backfill lives in artisan `workforce:backfill-transfers-and-shifts`, not in migrations. Shift template names use partial unique indexes (`WHERE branch_id IS NULL` / `IS NOT NULL`) so sqlite tests and pgsql both work. `user_shift_days` also uses a partial unique index on `(user_id, branch_id, duty_on, shift_template_id) WHERE shift_template_id IS NOT NULL`.
+
+## Catalog discount columns on create_products
+Pre-handover: products.discount_type (default none), discount_price, discount_start_date, and discount_end_date belong on create_products alongside selling_price/regular_price. Do not add a Schema::table modification for these greenfield columns.

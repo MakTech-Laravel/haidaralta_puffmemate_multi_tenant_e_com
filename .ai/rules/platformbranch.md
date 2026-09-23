@@ -11,7 +11,7 @@ One unlabeled NavSection: Dashboard and other singles as navLink; multi-item clu
 
 ## Product and Branch management sidebar groups
 
-Platform **Branch management** is Branches, Staff, Shifts, Assign to shift, Transfers, and Manage stock (`GET stock/manage`). Platform **Product management** is Categories, Products, and Bulk Import only when `catalog.show_bulk_import` is true (`buildPlatformNav(showBulkImport)`). Daily stock/price/discounts are Branch management → Manage stock. Stock transactions and Price history live under Reports. Do not add a top-level Discounts or Stock management group. Platform sidebar order: Dashboard → Administrator → Customer management → Driver management → Branch management → Product management → Order management → Conversations → Marketing → Reports → Application settings. Branch sidebar order: Dashboard → Administrator → Customer management → Driver management → Product management → Order management → Conversations → Reports → Settings. Under a management group, list labels stay short and plural (Staff not Branch staff; Drivers not All drivers). When branch_can_view_categories is false, omit Categories from branch Product management — keep Products and Manage stock (Bulk Import only when show_bulk_import).
+Platform **Branch management** is Branches, Staff, Shifts, Assign to shift, Transfers, and Manage stock (`GET stock/manage`). Platform **Product management** is Categories, Products, Manage pricing when `!show_branch_pricing`, and Bulk Import only when `catalog.show_bulk_import` is true (`buildPlatformNav(showBulkImport, showBranchPricing)`). When branch pricing is on, daily stock/price/discounts are Branch management → Manage stock; when off, catalog price/discount is Product management → Manage pricing. Stock transactions and Price history live under Reports. Do not add a top-level Discounts or Stock management group. Platform sidebar order: Dashboard → Administrator → Customer management → Driver management → Branch management → Product management → Order management → Conversations → Marketing → Reports → Application settings. Branch sidebar order: Dashboard → Administrator → Customer management → Driver management → Product management → Order management → Conversations → Reports → Settings. Under a management group, list labels stay short and plural (Staff not Branch staff; Drivers not All drivers). When branch_can_view_categories is false, omit Categories from branch Product management — keep Products, Manage pricing (when branch pricing is off), and Manage stock (Bulk Import only when show_bulk_import).
 
 ## Notifications live under portal Settings
 
@@ -19,7 +19,7 @@ Notifications is a live navLink under platform Application settings and branch S
 
 ## Sidebar management group order
 
-Platform sidebar order: Dashboard, Administrator, Customer management, Driver management, Branch management, Product management, Order management, then Conversations, Marketing, Reports, Application settings. Branch: Dashboard, Administrator, Customer management, Driver management, Product management, Order management, then Conversations, Reports, Settings. Platform Branch management holds Branches, Staff, Shifts, Assign to shift, Transfers, Manage stock. Platform Product management holds Categories, Products, and Bulk Import when show_bulk_import.
+Platform sidebar order: Dashboard, Administrator, Customer management, Driver management, Branch management, Product management, Order management, then Conversations, Marketing, Reports, Application settings. Branch: Dashboard, Administrator, Customer management, Driver management, Product management, Order management, then Conversations, Reports, Settings. Platform Branch management holds Branches, Staff, Shifts, Assign to shift, Transfers, Manage stock. Platform Product management holds Categories, Products, Manage pricing when !show_branch_pricing, and Bulk Import when show_bulk_import.
 
 ## Reports sidebar includes Price history
 
@@ -33,3 +33,6 @@ Administrator Shifts is /platform/shifts and Assign is /platform/shift-assignmen
 
 ## No /shifts/periods URLs
 Shift URLs are /platform/shifts and /platform/shift-assignments (edit /shift-assignments/{id}/edit) and the branch-shifts siblings. There are no /shifts/periods routes. Keep assign off the /shifts prefix.
+
+## Manage pricing nav when branch pricing off
+Under Product management, after Products, add Manage pricing when !showBranchPricing (platform /platform/catalog/pricing/manage; branch /branch/{slug}/catalog/pricing/manage). Hide it when show_branch_pricing is true.

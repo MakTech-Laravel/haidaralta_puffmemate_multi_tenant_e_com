@@ -3,6 +3,8 @@ paths:
   - resources/js/components/branch/product-inventory-panel.tsx
   - 'resources/js/pages/{platform,branch}/**/products/show.tsx'
   - 'resources/js/pages/{platform,branch}/stock/manage.tsx'
+  - 'resources/js/pages/{platform,branch}/catalog/pricing/manage.tsx'
+  - 'resources/js/components/catalog/manage-catalog-pricing-page.tsx'
   - app/Support/ProductManageRedirect.php
   - 'routes/{platform,branch}.php'
   - app/Support/BranchProductPriceDisplay.php
@@ -12,9 +14,9 @@ paths:
 
 # Discounts
 
-## Discounts live on Stock Manage
+## Discounts live on Stock Manage or Manage pricing
 
-There is no bulk Discounts workspace. Buying, regular, selling, and discount type/value/dates are edited on Stock Manage’s Inventory & pricing card (`ProductInventoryPanel`) for one branch + one SKU (including variants). Discount lives in a full-width bordered block below the Stock and Price sections, with a 3-button type row (None / Amount off / Percent). Discounts apply only to selling_price. `fixed` is amount off (`effective = selling − discount_value`), not a sale price. Honor start/end dates in effective price (null dates = always on; outside the window = selling). Hydrate saved fixed/percent offers so Save is not destructive. Empty SKUs and prices with `discount_type` none/missing select None and hide value + dates.
+There is no bulk Discounts workspace. When `catalog.show_branch_pricing` is true, buying, regular, selling, and discount type/value/dates are edited on Stock Manage’s Inventory & pricing card (`ProductInventoryPanel`) for one branch + one SKU (including variants). When the flag is false, Product management → Manage pricing edits catalog regular/selling + discount on `products` (no buying/stock/variants/history). Discount UI is a full-width bordered block with a 3-button type row (None / Amount off / Percent). Discounts apply only to selling_price. `fixed` is amount off (`effective = selling − discount_value`), not a sale price. Honor start/end dates in effective price (null dates = always on; outside the window = selling). Hydrate saved fixed/percent offers so Save is not destructive. Empty SKUs and prices with `discount_type` none/missing select None and hide value + dates.
 
 ## Price history is append-only
 
@@ -38,3 +40,6 @@ Do not keep a stock/transactions redirect. The ledger URL is reports/stock-trans
 
 ## Platform shift URLs split by owner
 Platform-owned: /platform/shifts and /platform/shift-assignments (edit at /platform/shift-assignments/{id}/edit). Branch-owned: /platform/branch-shifts and /platform/branch-shift-assignments (edit at /platform/branch-shift-assignments/{id}/edit). Keep assign create off the /shifts prefix so the Shifts nav item is not also active. Assigned people lives at `/shifts/assigned-people` so Shifts stays active. There are no `/shifts/periods` URLs. Wayfinder needs separate controller classes for each URI set.
+
+## Catalog discounts use product discount columns
+When show_branch_pricing is false, listDisplayFromProduct / forCatalogProduct apply products.discount_* with the same live-window and fixed/percent math as branch prices. Lists strikethrough selling when discounted; otherwise compare-at regular when regular > selling. When the flag is true, discounts still come only from branch_product_prices.

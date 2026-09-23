@@ -41,8 +41,11 @@ class CatalogPricingController extends Controller
         ]);
     }
 
-    public function upsert(UpsertCatalogProductPriceRequest $request, Product $product): RedirectResponse
-    {
+    public function upsert(
+        UpsertCatalogProductPriceRequest $request,
+        string $branchSlug,
+        Product $product,
+    ): RedirectResponse {
         $branch = $this->currentBranch();
         $this->pricing->upsert($product, $request->validated());
 
