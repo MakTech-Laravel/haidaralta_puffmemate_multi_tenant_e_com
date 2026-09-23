@@ -16,7 +16,7 @@ CatalogSeeder may feature at most `config('catalog.featured_categories_max')` (5
 
 ## Catalog product storefront fields
 
-Seed brand, tags (`new_arrival`, `best_selling`, `popular`, `on_offer`), and specifications label/value rows for key SKUs. Keep product_variants for pack/carton and flavor SKUs until the owner explicitly approves removal.
+Seed brand, tags (`new_arrival`, `best_selling`, `popular`, `on_offer`), and specifications label/value rows for key SKUs. Keep product_variants for pack/carton and flavor SKUs until the owner explicitly approves removal. CatalogSeeder also sets products.selling_price / regular_price (Sydney flagship ticket + ~15% compare-at) so common catalog pricing works when `show_branch_pricing` is false.
 
 ## Catalog seeder images use public web paths
 

@@ -603,6 +603,8 @@ class CatalogSeeder extends Seeder
      *     image_url?: string|null,
      *     gallery_urls?: list<string>,
      *     color_code?: array<string, mixed>|null,
+     *     selling_price?: string|null,
+     *     regular_price?: string|null,
      *     variants: list<array{name: string, sku: string, attributes: array<string, string>}>
      * }  $data
      */
@@ -615,6 +617,8 @@ class CatalogSeeder extends Seeder
             basename: $data['slug'],
         );
 
+        $prices = $this->catalogPricesFor($data['slug'], $data);
+
         $product = Product::query()->firstOrCreate(
             ['slug' => $data['slug']],
             [
@@ -626,10 +630,17 @@ class CatalogSeeder extends Seeder
                 'specifications' => $data['specifications'] ?? [],
                 'image' => $imagePath,
                 'color_code' => $data['color_code'] ?? null,
+                'selling_price' => $prices['selling_price'],
+                'regular_price' => $prices['regular_price'],
                 'status' => true,
                 'created_by' => $creator?->id,
             ],
         );
+
+        $product->forceFill([
+            'selling_price' => $prices['selling_price'],
+            'regular_price' => $prices['regular_price'],
+        ])->save();
 
         $product->categories()->syncWithoutDetaching(
             collect($categories)->map(fn (Category $category): int => $category->id)->all(),
@@ -670,6 +681,70 @@ class CatalogSeeder extends Seeder
         }
 
         return $product;
+    }
+
+    /**
+     * Catalog common prices (Sydney flagship ticket). Compare-at is ~15% above selling.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{selling_price: string|null, regular_price: string|null}
+     */
+    private function catalogPricesFor(string $slug, array $data): array
+    {
+        if (array_key_exists('selling_price', $data) || array_key_exists('regular_price', $data)) {
+            $selling = $data['selling_price'] ?? null;
+            $regular = $data['regular_price'] ?? null;
+
+            if ($selling !== null && $regular === null) {
+                $regular = number_format(round((float) $selling * 1.15, 2), 2, '.', '');
+            }
+
+            return [
+                'selling_price' => $selling === null ? null : number_format((float) $selling, 2, '.', ''),
+                'regular_price' => $regular === null ? null : number_format((float) $regular, 2, '.', ''),
+            ];
+        }
+
+        $selling = match ($slug) {
+            'marlboro-gold-soft-pack-20s' => '48.95',
+            'winfield-blue-soft-pack-20s' => '46.50',
+            'horizon-red-soft-pack-25s' => '52.90',
+            'peter-jackson-menthol-20s' => '47.20',
+            'iqos-iluma-starter-kit' => '89.00',
+            'terea-tobacco-sticks-20' => '28.00',
+            'vuse-go-5000-disposable' => '39.95',
+            'puffmemate-pulse-5000' => '34.99',
+            'puffmemate-mini-bar-1200' => '14.99',
+            'puffmemate-core-kit' => '39.99',
+            'puffmemate-air-pro' => '44.99',
+            'harbor-fruit-blend-60ml' => '24.99',
+            'citrus-surge-salt-30ml' => '19.99',
+            'vanilla-custard-reserve-60ml' => '24.99',
+            'classic-leaf-tobacco-60ml' => '22.99',
+            'nordic-mint-pouches' => '18.50',
+            'citrus-chill-pouches' => '18.50',
+            'core-closed-pods-2-pack' => '12.99',
+            'air-pro-mesh-coils-5-pack' => '16.99',
+            'clipper-classic-lighter' => '3.50',
+            'raw-classic-rolling-papers-ks' => '2.80',
+            'usb-c-charge-cable-1m' => '9.99',
+            'silicone-device-sleeve' => '7.99',
+            'travel-hard-case' => '19.99',
+            'lanyard-clip' => '4.99',
+            default => null,
+        };
+
+        if ($selling === null) {
+            return [
+                'selling_price' => null,
+                'regular_price' => null,
+            ];
+        }
+
+        return [
+            'selling_price' => $selling,
+            'regular_price' => number_format(round((float) $selling * 1.15, 2), 2, '.', ''),
+        ];
     }
 
     private function resolveImagePath(
