@@ -46,3 +46,6 @@ ProductGallery layout=tile may include a horizontal thumb strip when gallery ima
 ## Permission picker is a compact two-pane
 
 Role permission assignment is a fixed-height two-pane picker (group nav + dense checkbox rows), not stacked accordion cards or two-column permission grids. Keep posting selected values as hidden permissions[] inputs. Search filters groups and rows.
+
+## FileUpload progress stays on card
+FileUpload must not render AggregateProgressRow beside a visible single-file preview (filePreviews.length > 0) — progress stays on the FileCard overlay. Keep overlay while progress is defined including 100% so 'processing' does not spill outside compact logo rails.

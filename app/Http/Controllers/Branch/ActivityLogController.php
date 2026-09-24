@@ -20,11 +20,7 @@ class ActivityLogController extends Controller
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/activity-logs/index', [
-            'branch' => [
-                'id' => $branch->id,
-                'name' => $branch->name,
-                'slug' => $branch->slug,
-            ],
+            'branch' => $branch->toPortalContext(),
             'table' => ActivityLogDataTable::forBranch($request, $branch),
         ]);
     }
@@ -39,11 +35,7 @@ class ActivityLogController extends Controller
         }
 
         return Inertia::render('branch/activity-logs/show', [
-            'branch' => [
-                'id' => $current->id,
-                'name' => $current->name,
-                'slug' => $current->slug,
-            ],
+            'branch' => $current->toPortalContext(),
             'activity' => $this->activityLogs->toDetail($model),
         ]);
     }

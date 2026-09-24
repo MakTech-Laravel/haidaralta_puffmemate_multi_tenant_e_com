@@ -618,7 +618,7 @@ function FileCard({
 }: FileCardProps) {
     const ext = resolveExtLabel(mime);
 
-    const isUploading = loading || (progress !== undefined && progress < 100);
+        const isUploading = loading || progress !== undefined;
     const isDone = progress !== undefined && progress >= 100;
 
     const [showCheck, setShowCheck] = useState(false);
@@ -1491,7 +1491,13 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(
                 </div>
             ) : null;
 
-        const showAggregateRow = isUploading && !hasPerFile && totalFiles > 0;
+        // Card overlay already shows aggregate/per-file progress for visible previews.
+        // A sibling AggregateRow overflows compact fixed-height logo rails.
+        const showAggregateRow =
+            isUploading &&
+            !hasPerFile &&
+            totalFiles > 0 &&
+            filePreviews.length === 0;
         const AggregateRow = showAggregateRow && (
             <AggregateProgressRow
                 value={hasAggregate ? uploadProgress! : 0}

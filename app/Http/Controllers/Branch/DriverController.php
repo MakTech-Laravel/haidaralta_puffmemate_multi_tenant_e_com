@@ -26,7 +26,7 @@ class DriverController extends Controller
     public function index(Request $request, Branch $branch): Response
     {
         return Inertia::render('branch/drivers/index', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'table' => BranchDriverDataTable::makeForBranch($request, $branch),
         ]);
     }
@@ -34,7 +34,7 @@ class DriverController extends Controller
     public function create(Branch $branch): Response
     {
         return Inertia::render('branch/drivers/create', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'vehicleTypes' => DriverPayload::vehicleTypeOptions(),
             'availabilityStatuses' => DriverPayload::availabilityOptions(),
         ]);
@@ -66,7 +66,7 @@ class DriverController extends Controller
         $driver = $this->resolveAssignedDriver($branch, $user);
 
         return Inertia::render('branch/drivers/show', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'driver' => DriverPayload::detail($driver, $branch),
         ]);
     }
@@ -76,7 +76,7 @@ class DriverController extends Controller
         $driver = $this->resolveAssignedDriver($branch, $user);
 
         return Inertia::render('branch/drivers/edit', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'driver' => DriverPayload::detail($driver, $branch),
             'vehicleTypes' => DriverPayload::vehicleTypeOptions(),
             'availabilityStatuses' => DriverPayload::availabilityOptions(),

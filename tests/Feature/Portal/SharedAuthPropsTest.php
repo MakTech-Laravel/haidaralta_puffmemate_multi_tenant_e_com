@@ -38,6 +38,7 @@ test('branch dashboard shares branch scoped auth props', function () {
             ->where('portal', 'branch')
             ->where('branch.id', $user->branch_id)
             ->where('branch.slug', BranchSeeder::SYDNEY_CBD)
+            ->where('branch.logo_url', fn ($url) => is_string($url) && $url !== '')
             ->where('auth.user.is_super_admin', true)
         );
 });

@@ -30,7 +30,7 @@ class RoleController extends Controller
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/roles/index', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'table' => BranchRoleDataTable::makeForBranch($request, $branch),
         ]);
     }
@@ -58,7 +58,7 @@ class RoleController extends Controller
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/roles/create', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'permissionGroups' => $this->branchPermissionGroups(),
             'existingNames' => $this->existingRoleNames($branch),
         ]);
@@ -99,7 +99,7 @@ class RoleController extends Controller
         )->flip();
 
         return Inertia::render('branch/roles/show', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'role' => [
                 'id' => $role->id,
                 'name' => $role->name,
@@ -125,7 +125,7 @@ class RoleController extends Controller
         $role->load('permissions');
 
         return Inertia::render('branch/roles/edit', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'role' => [
                 'id' => $role->id,
                 'name' => $role->name,

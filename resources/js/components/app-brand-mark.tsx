@@ -13,6 +13,8 @@ type AppBrandMarkProps = {
     iconClassName?: string;
     /** Classes for the uploaded logo image. */
     imageClassName?: string;
+    /** When set, prefer this URL over the application brand logo. */
+    logoUrl?: string | null;
     alt?: string;
 } & Pick<ImgHTMLAttributes<HTMLImageElement>, 'loading'>;
 
@@ -26,22 +28,25 @@ export function AppBrandMark({
     defaultBackgroundClassName = 'bg-sidebar-primary text-sidebar-primary-foreground',
     iconClassName = 'size-5 fill-current text-white dark:text-black',
     imageClassName = 'size-full object-contain',
+    logoUrl,
     alt = '',
     loading,
 }: AppBrandMarkProps) {
     const brand = useAppBrand();
+    const resolvedLogoUrl = logoUrl || brand.logoUrl;
+    const showImage = Boolean(logoUrl) || (!logoUrl && brand.hasCustomLogo);
 
-    if (brand.hasCustomLogo) {
+    if (showImage && resolvedLogoUrl) {
         return (
             <div
                 className={cn(
-                    'flex aspect-square items-center justify-center overflow-hidden',
+                    'flex aspect-square items-center justify-center overflow-hidden rounded-md',
                     sizeClassName,
                     className,
                 )}
             >
                 <img
-                    src={brand.logoUrl}
+                    src={resolvedLogoUrl}
                     alt={alt}
                     loading={loading}
                     className={cn(imageClassName)}

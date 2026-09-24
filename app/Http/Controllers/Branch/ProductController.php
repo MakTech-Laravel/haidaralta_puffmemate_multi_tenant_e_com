@@ -48,7 +48,7 @@ class ProductController extends Controller
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/catalog/products/index', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'table' => BranchProductListingDataTable::makeForBranch($request, $branch, includeImage: true),
         ]);
     }
@@ -58,7 +58,7 @@ class ProductController extends Controller
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/catalog/products/create', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'returnTo' => CatalogReturnTo::fromRequest($request),
             'categoryOptions' => Category::query()
                 ->orderBy('name')
@@ -138,7 +138,7 @@ class ProductController extends Controller
         $product->load(['categories:id,name,slug', 'images', 'creator:id,name']);
 
         return Inertia::render('branch/catalog/products/show', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'product' => $this->mapCatalogProduct($product),
         ]);
     }
@@ -149,7 +149,7 @@ class ProductController extends Controller
         $product->load(['categories:id,name,slug', 'images']);
 
         return Inertia::render('branch/catalog/products/edit', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'product' => [
                 'id' => $product->id,
                 'category_ids' => $product->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),

@@ -259,7 +259,7 @@ export function BranchForm({
                             <Label>Logo</Label>
                             <div
                                 className={cn(
-                                    'flex flex-col',
+                                    'flex flex-col overflow-hidden',
                                     hideIdentityFields
                                         ? 'h-32 sm:h-36'
                                         : 'min-h-44 flex-1',

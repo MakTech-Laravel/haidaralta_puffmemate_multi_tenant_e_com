@@ -31,7 +31,7 @@ class ShiftAssignmentController extends Controller
     public function index(Request $request, Branch $branch): Response
     {
         return Inertia::render('branch/shifts/assigned-people', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'table' => ShiftAssignmentDataTable::forBranchPortal($request, $branch->id),
         ]);
     }
@@ -41,7 +41,7 @@ class ShiftAssignmentController extends Controller
         $validated = $request->validated();
 
         return Inertia::render('branch/shifts/assign', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             ...WorkforcePayload::shiftAssignmentWorkspace(
                 $branch,
                 isset($validated['people_kind']) ? (string) $validated['people_kind'] : null,

@@ -19,7 +19,7 @@ class PermissionController extends Controller
         app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
 
         return Inertia::render('branch/permissions/index', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'permissionGroups' => $this->permissionGroups($branch),
         ]);
     }

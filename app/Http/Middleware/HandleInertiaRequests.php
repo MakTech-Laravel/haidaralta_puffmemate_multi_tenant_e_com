@@ -132,11 +132,6 @@ class HandleInertiaRequests extends Middleware
         /** @var Branch $branch */
         $branch = app('currentBranch');
 
-        return [
-            'id' => $branch->id,
-            'name' => $branch->name,
-            'slug' => $branch->slug,
-            'logo_url' => MediaUrl::resolve($branch->logo, fallback: null),
-        ];
+        return $branch->toPortalContext();
     }
 }

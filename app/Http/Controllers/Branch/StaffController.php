@@ -28,7 +28,7 @@ class StaffController extends Controller
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/staff/index', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'table' => BranchStaffDataTable::forBranch($request, $branch),
         ]);
     }
@@ -41,7 +41,7 @@ class StaffController extends Controller
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/staff/create', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'roles' => $this->branchStaffService->roleOptionsForBranch($branch),
         ]);
     }
@@ -80,7 +80,7 @@ class StaffController extends Controller
         $user = $this->branchStaffService->resolveForBranch($user, $branch);
 
         return Inertia::render('branch/staff/show', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'staffMember' => $this->branchStaffService->mapStaffMember($user, $branch, includeAccess: true),
         ]);
     }
@@ -94,7 +94,7 @@ class StaffController extends Controller
         $user = $this->branchStaffService->resolveForBranch($user, $branch);
 
         return Inertia::render('branch/staff/edit', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'roles' => $this->branchStaffService->roleOptionsForBranch($branch),
             'lockedSuperAdmin' => $this->branchStaffService->isLastSuperAdminInBranch($user, $branch),
             'staffMember' => $this->branchStaffService->mapStaffMember($user, $branch),

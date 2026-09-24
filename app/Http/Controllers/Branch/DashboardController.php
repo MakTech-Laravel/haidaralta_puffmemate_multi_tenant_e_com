@@ -18,7 +18,7 @@ class DashboardController extends Controller
         $branch = app('currentBranch');
 
         return Inertia::render('branch/dashboard', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
         ]);
     }
 }

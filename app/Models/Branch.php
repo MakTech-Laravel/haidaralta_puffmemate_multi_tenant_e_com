@@ -6,6 +6,7 @@ use App\Contracts\DataTableConfigurable;
 use App\Contracts\ScoutSearchable;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
+use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
 use Database\Factories\BranchFactory;
 use Illuminate\Database\Eloquent\Collection;
@@ -143,6 +144,21 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * Shared Inertia branch portal context (sidebar mark + chrome).
+     *
+     * @return array{id: int, name: string, slug: string, logo_url: string|null}
+     */
+    public function toPortalContext(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'logo_url' => MediaUrl::resolve($this->logo, fallback: null),
+        ];
     }
 
     /**

@@ -36,7 +36,7 @@ class CategoryController extends Controller
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/catalog/categories/index', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'table' => BranchCategoryDataTable::make($request),
         ]);
     }
@@ -49,7 +49,7 @@ class CategoryController extends Controller
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/catalog/categories/create', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'parentOptions' => $this->parentOptions(),
             'limits' => $this->categories->limits(),
         ]);
@@ -103,7 +103,7 @@ class CategoryController extends Controller
             ->loadCount(['products', 'children']);
 
         return Inertia::render('branch/catalog/categories/show', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'category' => $this->mapCategory($category, detailed: true),
         ]);
     }
@@ -115,7 +115,7 @@ class CategoryController extends Controller
         $branch = $this->currentBranch();
 
         return Inertia::render('branch/catalog/categories/edit', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'category' => $this->mapCategory($category),
             'parentOptions' => $this->parentOptions($category->id),
             'limits' => $this->categories->limits($category->id),

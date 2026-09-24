@@ -40,7 +40,7 @@ class ShiftTemplateController extends Controller
         $onDuty = WorkforcePayload::onDutyAtBranch($branch->id);
 
         return Inertia::render('branch/shifts/index', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'templates' => $templates,
             'onDuty' => $onDuty,
             'stats' => WorkforcePayload::workspaceStats($templates, $onDuty),
@@ -50,7 +50,7 @@ class ShiftTemplateController extends Controller
     public function create(Branch $branch): Response
     {
         return Inertia::render('branch/shifts/create', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'defaultOwnerType' => ShiftOwnerType::Branch->value,
         ]);
     }
@@ -75,7 +75,7 @@ class ShiftTemplateController extends Controller
         $this->assertOwnedByBranch($shiftTemplate, $branch);
 
         return Inertia::render('branch/shifts/edit', [
-            'branch' => $branch->only(['id', 'name', 'slug']),
+            'branch' => $branch->toPortalContext(),
             'template' => WorkforcePayload::template($shiftTemplate),
         ]);
     }

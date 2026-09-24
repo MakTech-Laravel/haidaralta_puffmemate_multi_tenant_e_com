@@ -6,10 +6,13 @@ export function PortalBrand({
     eyebrow,
     subtitle,
     tone = 'default',
+    logoUrl,
 }: {
     eyebrow?: string;
     subtitle?: string;
     tone?: 'default' | 'inverse';
+    /** Portal-specific mark (e.g. branch logo); falls back to application brand. */
+    logoUrl?: string | null;
 }) {
     const brand = useAppBrand();
     const inverse = tone === 'inverse';
@@ -17,6 +20,7 @@ export function PortalBrand({
     return (
         <>
             <AppBrandMark
+                logoUrl={logoUrl}
                 defaultBackgroundClassName={
                     inverse
                         ? 'bg-white text-foreground'
