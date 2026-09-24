@@ -8,6 +8,7 @@ paths:
   - 'app/Models/Driver*.php'
   - app/Models/User.php
   - app/Models/Branch.php
+  - app/Models/Category.php
 ---
 
 # Catalog
@@ -50,3 +51,6 @@ buying_price is last purchase cost on branch_product_prices (internal, never sto
 
 ## Optional branch delivery radius km
 branches.delivery_radius_km (nullable decimal km) on create_branches. Null means the branch can deliver anywhere; a value is stored for future fixed-area delivery checks from the branch pin. Edit on platform branch create/edit; show displays km or Anywhere. Do not enforce checkout distance yet.
+
+## Category model clears storefront nav cache
+Category saved/deleted/restored/forceDeleted always call StorefrontCatalog::forgetNavCategories(). Forever nav cache survives migrate:fresh; CatalogSeeder must also forget at end of run.

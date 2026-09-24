@@ -9,6 +9,7 @@ use App\Models\Concerns\HasDataTableConfig;
 use App\Support\CatalogBackgroundColor;
 use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
+use App\Support\Storefront\StorefrontCatalog;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -79,6 +80,18 @@ class Category extends Model implements DataTableConfigurable, ScoutSearchable
         'show_in_nav',
         'nav_sort',
     ];
+
+    protected static function booted(): void
+    {
+        $forgetNav = static function (): void {
+            StorefrontCatalog::forgetNavCategories();
+        };
+
+        static::saved($forgetNav);
+        static::deleted($forgetNav);
+        static::restored($forgetNav);
+        static::forceDeleted($forgetNav);
+    }
 
     /**
      * @return BelongsTo<Category, $this>

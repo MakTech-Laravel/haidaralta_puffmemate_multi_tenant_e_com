@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Support\Storefront\StorefrontCatalog;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -570,6 +571,8 @@ class CatalogSeeder extends Seeder
             ],
         ]);
 
+        // forever nav cache survives migrate:fresh — always rebuild after seeding
+        StorefrontCatalog::forgetNavCategories();
     }
 
     /**

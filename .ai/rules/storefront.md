@@ -24,7 +24,7 @@ Header = Home · Shop · [DB categories with `show_in_nav`, ordered by `nav_sort
 
 ## Nav categories are cached + Inertia once
 
-`StorefrontCatalog::navCategories()` is `Cache::rememberForever`; CategoryService create/update/delete/restore calls `forgetNavCategories()` (bumps version). Share via `Inertia::once(...)->as('storefront-nav-categories-{version}')` so SPA navigations skip re-query; version change forces clients to refetch.
+`StorefrontCatalog::navCategories()` is `Cache::rememberForever` (survives `migrate:fresh`). Category model `saved`/`deleted`/`restored`/`forceDeleted`, CategoryService mutations, and `CatalogSeeder` all call `forgetNavCategories()` (bumps version). Share via `Inertia::once(...)->as('storefront-nav-categories-{version}')` so SPA navigations skip re-query; version change forces clients to refetch. Header category tabs come only from that prop — never hard-coded category labels.
 
 ## Catalog sources by surface
 
