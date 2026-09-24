@@ -280,6 +280,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
 
         Route::get('price-ranges', [PlatformPriceRangeController::class, 'index'])
             ->name('platform.price-ranges.index');
+        Route::put('price-ranges/bounds', [PlatformPriceRangeController::class, 'updateBounds'])
+            ->name('platform.price-ranges.bounds');
         Route::get('price-ranges/create', [PlatformPriceRangeController::class, 'create'])
             ->name('platform.price-ranges.create');
         Route::post('price-ranges', [PlatformPriceRangeController::class, 'store'])

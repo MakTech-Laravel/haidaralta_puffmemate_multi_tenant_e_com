@@ -43,6 +43,7 @@ class StorefrontShopQuery
      *         categories: list<array{slug: string, name: string}>,
      *         tags: list<array{value: string, label: string}>,
      *         priceRanges: list<array{slug: string, label: string, min: float|null, max: float|null}>,
+     *         sliderMin: int,
      *         sliderMax: int
      *     }
      * }
@@ -159,6 +160,7 @@ class StorefrontShopQuery
      *     categories: list<array{slug: string, name: string}>,
      *     tags: list<array{value: string, label: string}>,
      *     priceRanges: list<array{slug: string, label: string, min: float|null, max: float|null}>,
+     *     sliderMin: int,
      *     sliderMax: int
      * }
      */
@@ -186,11 +188,14 @@ class StorefrontShopQuery
             ->values()
             ->all();
 
+        $bounds = $this->priceRanges->sliderBounds();
+
         return [
             'categories' => $categories,
             'tags' => $tags,
             'priceRanges' => $this->priceRanges->activeForStorefront(),
-            'sliderMax' => $this->priceRanges->sliderMax(),
+            'sliderMin' => $bounds['min'],
+            'sliderMax' => $bounds['max'],
         ];
     }
 

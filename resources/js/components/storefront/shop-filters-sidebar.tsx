@@ -34,6 +34,7 @@ export type ShopFiltersSidebarProps = {
     categories: ShopCategoryOption[];
     tags: ShopTagOption[];
     priceRanges: ShopPriceRangeOption[];
+    sliderMin: number;
     sliderMax: number;
     className?: string;
 };
@@ -66,43 +67,57 @@ function toggleValue(
     return selected.filter((item) => item !== value);
 }
 
+function clampPrice(amount: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, amount));
+}
+
 export function ShopFiltersSidebar({
     value,
     onChange,
     categories,
     tags,
     priceRanges,
+    sliderMin,
     sliderMax,
     className,
 }: ShopFiltersSidebarProps) {
-    const sliderCeiling = Math.max(1, sliderMax);
+    const sliderFloor = Math.max(0, sliderMin);
+    const sliderCeiling = Math.max(sliderFloor + 1, sliderMax);
     const [minDraft, setMinDraft] = useState(
-        value.minPrice === null ? '' : String(value.minPrice),
+        String(value.minPrice ?? sliderFloor),
     );
     const [maxDraft, setMaxDraft] = useState(
-        value.maxPrice === null ? '' : String(value.maxPrice),
+        String(value.maxPrice ?? sliderCeiling),
     );
-    const [sliderMin, setSliderMin] = useState(value.minPrice ?? 0);
+    const [sliderMinValue, setSliderMinValue] = useState(
+        value.minPrice ?? sliderFloor,
+    );
     const [sliderMaxValue, setSliderMaxValue] = useState(
         value.maxPrice ?? sliderCeiling,
     );
     const [isSliding, setIsSliding] = useState(false);
-    const sliderMinRef = useRef(sliderMin);
+    const sliderMinRef = useRef(sliderMinValue);
     const sliderMaxRef = useRef(sliderMaxValue);
 
     useEffect(() => {
-        setMinDraft(value.minPrice === null ? '' : String(value.minPrice));
-        setMaxDraft(value.maxPrice === null ? '' : String(value.maxPrice));
+        setMinDraft(String(value.minPrice ?? sliderFloor));
+        setMaxDraft(String(value.maxPrice ?? sliderCeiling));
 
         if (!isSliding) {
-            const nextMin = value.minPrice ?? 0;
+            const nextMin = value.minPrice ?? sliderFloor;
             const nextMax = value.maxPrice ?? sliderCeiling;
-            setSliderMin(nextMin);
+            setSliderMinValue(nextMin);
             setSliderMaxValue(nextMax);
             sliderMinRef.current = nextMin;
             sliderMaxRef.current = nextMax;
         }
-    }, [value.minPrice, value.maxPrice, isSliding, sliderCeiling]);
+    }, [
+        value.minPrice,
+        value.maxPrice,
+        isSliding,
+        sliderFloor,
+        sliderCeiling,
+    ]);
 
     const presetSlug = activePricePresetSlug(
         value.minPrice,
@@ -112,29 +127,48 @@ export function ShopFiltersSidebar({
     const allCategories = value.categories.length === 0;
     const allTags = value.tags.length === 0;
 
+    const syncSlider = (min: number, max: number) => {
+        const nextMin = clampPrice(min, sliderFloor, max);
+        const nextMax = clampPrice(max, nextMin, sliderCeiling);
+        setSliderMinValue(nextMin);
+        setSliderMaxValue(nextMax);
+        sliderMinRef.current = nextMin;
+        sliderMaxRef.current = nextMax;
+        setMinDraft(String(nextMin));
+        setMaxDraft(String(nextMax));
+
+        return { min: nextMin, max: nextMax };
+    };
+
     const commitPrice = (min: number, max: number) => {
+        const synced = syncSlider(min, max);
         onChange({
-            minPrice: min <= 0 ? null : min,
-            maxPrice: max >= sliderCeiling ? null : max,
+            minPrice: synced.min <= sliderFloor ? null : synced.min,
+            maxPrice: synced.max >= sliderCeiling ? null : synced.max,
         });
     };
 
     const commitPriceDrafts = () => {
-        const nextMin = minDraft === '' ? null : Number(minDraft);
-        const nextMax = maxDraft === '' ? null : Number(maxDraft);
+        const parsedMin =
+            minDraft === '' || !Number.isFinite(Number(minDraft))
+                ? sliderFloor
+                : Number(minDraft);
+        const parsedMax =
+            maxDraft === '' || !Number.isFinite(Number(maxDraft))
+                ? sliderCeiling
+                : Number(maxDraft);
 
-        onChange({
-            minPrice:
-                nextMin !== null && Number.isFinite(nextMin) ? nextMin : null,
-            maxPrice:
-                nextMax !== null && Number.isFinite(nextMax) ? nextMax : null,
-        });
+        commitPrice(parsedMin, parsedMax);
     };
 
     const finishSliding = () => {
         setIsSliding(false);
         commitPrice(sliderMinRef.current, sliderMaxRef.current);
     };
+
+    const rangeSpan = sliderCeiling - sliderFloor;
+    const minPercent = ((sliderMinValue - sliderFloor) / rangeSpan) * 100;
+    const maxPercent = ((sliderMaxValue - sliderFloor) / rangeSpan) * 100;
 
     return (
         <aside className={cn('flex flex-col gap-8', className)}>
@@ -148,17 +182,18 @@ export function ShopFiltersSidebar({
                     <div
                         className="bg-primary absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
                         style={{
-                            left: `${(sliderMin / sliderCeiling) * 100}%`,
-                            right: `${100 - (sliderMaxValue / sliderCeiling) * 100}%`,
+                            left: `${minPercent}%`,
+                            right: `${100 - maxPercent}%`,
                         }}
                     />
                     <input
                         type="range"
-                        min={0}
+                        min={sliderFloor}
                         max={sliderCeiling}
                         step={5}
-                        value={sliderMin}
+                        value={sliderMinValue}
                         aria-label="Minimum price"
+                        aria-valuetext={`$${Math.round(sliderMinValue)}`}
                         onPointerDown={() => setIsSliding(true)}
                         onChange={(event) => {
                             const nextMin = Math.min(
@@ -166,7 +201,7 @@ export function ShopFiltersSidebar({
                                 sliderMaxRef.current,
                             );
                             setIsSliding(true);
-                            setSliderMin(nextMin);
+                            setSliderMinValue(nextMin);
                             sliderMinRef.current = nextMin;
                             setMinDraft(String(nextMin));
                         }}
@@ -176,11 +211,12 @@ export function ShopFiltersSidebar({
                     />
                     <input
                         type="range"
-                        min={0}
+                        min={sliderFloor}
                         max={sliderCeiling}
                         step={5}
                         value={sliderMaxValue}
                         aria-label="Maximum price"
+                        aria-valuetext={`$${Math.round(sliderMaxValue)}`}
                         onPointerDown={() => setIsSliding(true)}
                         onChange={(event) => {
                             const nextMax = Math.max(
@@ -209,17 +245,32 @@ export function ShopFiltersSidebar({
                         <Input
                             id="shop-min-price"
                             type="number"
-                            min={0}
+                            min={sliderFloor}
+                            max={sliderCeiling}
+                            step={5}
                             inputMode="numeric"
-                            placeholder="0"
+                            placeholder={String(sliderFloor)}
                             value={minDraft}
-                            onChange={(event) =>
-                                setMinDraft(event.target.value)
-                            }
+                            onChange={(event) => {
+                                const raw = event.target.value;
+                                setMinDraft(raw);
+
+                                if (raw === '' || !Number.isFinite(Number(raw))) {
+                                    return;
+                                }
+
+                                const nextMin = clampPrice(
+                                    Number(raw),
+                                    sliderFloor,
+                                    sliderMaxRef.current,
+                                );
+                                setSliderMinValue(nextMin);
+                                sliderMinRef.current = nextMin;
+                            }}
                             onBlur={commitPriceDrafts}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter') {
-                                    commitPriceDrafts();
+                                    event.currentTarget.blur();
                                 }
                             }}
                             className="h-9"
@@ -235,17 +286,39 @@ export function ShopFiltersSidebar({
                         <Input
                             id="shop-max-price"
                             type="number"
-                            min={0}
+                            min={sliderFloor}
+                            max={sliderCeiling}
+                            step={5}
                             inputMode="numeric"
-                            placeholder="Any"
+                            placeholder={String(sliderCeiling)}
                             value={maxDraft}
-                            onChange={(event) =>
-                                setMaxDraft(event.target.value)
-                            }
+                            onChange={(event) => {
+                                const raw = event.target.value;
+                                setMaxDraft(raw);
+
+                                if (raw === '') {
+                                    setSliderMaxValue(sliderCeiling);
+                                    sliderMaxRef.current = sliderCeiling;
+
+                                    return;
+                                }
+
+                                if (!Number.isFinite(Number(raw))) {
+                                    return;
+                                }
+
+                                const nextMax = clampPrice(
+                                    Number(raw),
+                                    sliderMinRef.current,
+                                    sliderCeiling,
+                                );
+                                setSliderMaxValue(nextMax);
+                                sliderMaxRef.current = nextMax;
+                            }}
                             onBlur={commitPriceDrafts}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter') {
-                                    commitPriceDrafts();
+                                    event.currentTarget.blur();
                                 }
                             }}
                             className="h-9"

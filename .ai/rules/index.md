@@ -28,6 +28,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx}, resources/js/components/driver/** | .ai/rules/components-driver.md |
 | resources/js/app.tsx, resources/js/components/pwa/** | .ai/rules/components-pwa.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/components-stock.md |
+| resources/js/components/storefront/shop-filters-sidebar.tsx | .ai/rules/components-storefront.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
 | config/*.php, config/scout.php | .ai/rules/config.md |
 | app/Models/Branch.php,app/Http/Controllers/Branch/** | .ai/rules/controllers-branch.md |
@@ -112,7 +113,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | routes/settings.php, routes/fortify.php, routes/*.php | .ai/rules/routes.md |
 | resources/js/pages/driver/security/**,resources/js/components/driver/driver-account-sheet.tsx | .ai/rules/security-js-components-driver.md |
 | resources/js/components/admin/shift-*.tsx,database/seeders/WorkforceShiftSeeder.php,app/Support/WorkforcePayload.php | .ai/rules/seeders-support.md |
-| database/seeders/**, database/seeders/WorkforceShiftSeeder.php, database/seeders/CatalogSeeder.php, database/seeders/CategorySeeder.php, database/seeders/ProductSeeder.php | .ai/rules/seeders.md |
+| database/seeders/**, database/seeders/WorkforceShiftSeeder.php, database/seeders/CatalogSeeder.php, database/seeders/CategorySeeder.php, database/seeders/ProductSeeder.php, database/seeders/PriceRangeSeeder.php | .ai/rules/seeders.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
 | app/Http/Controllers/Branch/GeneralSettingsController.php,resources/js/pages/branch/settings/**,resources/js/components/branch/nav.ts | .ai/rules/settings-js-components-branch.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |
@@ -120,6 +121,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/stock/**,app/Support/StockPageContext.php,app/Support/ProductManageRedirect.php | .ai/rules/stock-support-support.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/stock.md |
 | app/Support/Storefront/StorefrontShopQuery.php,resources/js/pages/storefront/shop.tsx,app/Models/PriceRange.php,config/scout.php | .ai/rules/storefront-models.md |
+| app/Services/Catalog/PriceRangeService.php,app/Models/ShopPriceFilterSetting.php,resources/js/pages/platform/catalog/price-ranges/**,resources/js/components/storefront/shop-filters-sidebar.tsx,config/catalog.php,database/seeders/PriceRangeSeeder.php | .ai/rules/storefront-seeders.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts, app/Support/Storefront/**, app/Http/Middleware/HandleInertiaRequests.php, app/Support/Storefront/StorefrontCatalog.php,config/catalog.php | .ai/rules/storefront.md |
 | app/DataTables/ShiftAssignmentDataTable.php,app/Support/WorkforcePayload.php,resources/js/components/admin/shift-assigned-people-page.tsx | .ai/rules/support-js-components-admin.md |
 | app/Support/Storefront/DemoCatalog.php | .ai/rules/support-storefront.md |
