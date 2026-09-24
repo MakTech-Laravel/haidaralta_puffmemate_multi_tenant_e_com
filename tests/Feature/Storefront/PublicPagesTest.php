@@ -307,8 +307,8 @@ test('storefront product details page renders for a valid product', function () 
             ->where('product.name', 'Marlboro Gold Soft Pack 20s')
             ->has('product.specifications')
             ->has('similarProducts')
-            ->has('branches')
-            ->has('branchId')
+            ->missing('branches')
+            ->missing('branchId')
             ->has('backHref'));
 });
 

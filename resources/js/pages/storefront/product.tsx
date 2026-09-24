@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { ProductCard } from '@/components/storefront/product-card';
@@ -13,8 +13,6 @@ import { ProductShipping } from '@/components/storefront/product/product-shippin
 import { ProductSpecifications } from '@/components/storefront/product/product-specifications';
 import { ProductSummary } from '@/components/storefront/product/product-summary';
 import type { StorefrontProduct } from '@/types/storefront';
-import type { StorefrontBranchOption } from '@/components/storefront/storefront-branch-select';
-import { show as productShow } from '@/routes/products';
 
 type ProductDetail = {
     id: string;
@@ -30,7 +28,6 @@ type ProductDetail = {
     rating: number;
     reviewCount: number;
     about: string;
-    branch: string;
     stock: number;
     cardPrice: string;
     image: string;
@@ -49,33 +46,16 @@ type ProductDetail = {
 type ProductPageProps = {
     product: ProductDetail;
     similarProducts: StorefrontProduct[];
-    branches: StorefrontBranchOption[];
-    branchId: string | null;
     backHref: string;
 };
 
 export default function StorefrontProduct({
     product,
     similarProducts,
-    branches,
-    branchId,
     backHref,
 }: ProductPageProps) {
     const [activeTab, setActiveTab] =
         useState<ProductSectionTabId>('specifications');
-
-    const onBranchChange = (nextBranchId: string | null) => {
-        router.cancelAll();
-        router.get(
-            productShow.url(product.id),
-            nextBranchId ? { branch: nextBranchId } : {},
-            {
-                preserveState: true,
-                replace: true,
-                only: ['product', 'branches', 'branchId'],
-            },
-        );
-    };
 
     return (
         <>
@@ -108,10 +88,6 @@ export default function StorefrontProduct({
                         rating={product.rating}
                         reviewCount={product.reviewCount}
                         about={product.about}
-                        branch={product.branch}
-                        branches={branches}
-                        branchId={branchId}
-                        onBranchChange={onBranchChange}
                     />
                 </div>
 

@@ -33,3 +33,7 @@ Homepage featured category cards use `StorefrontCatalog::featuredCategories()`. 
 ## ProductCard contract
 
 Shared `ProductCard` never shows or receives stock quantity (PDP may still show stock). Cards use fixed `aspect-[3/2]` with a real `<img>` (`object-cover`, lazy, async decode, sizes) and `/images/storefront/logo.png` fallback. Offer badge is driven by truthy `compareAtPrice`. Mapper (`mapProductCard`) prefers `Product::packSummary()` for the subtitle and uses catalog prices via `BranchProductPriceDisplay::forCatalogProduct` when no branch is selected.
+
+## Product detail has no branch picker
+
+Storefront PDP (`ProductSummary`) does not show Selected branch / Change branch. Do not pass `branches` or `branchId` Inertia props for product show. Catalog price still comes from `StorefrontCatalog::productDetail` (catalog or session branch when present for backend only).

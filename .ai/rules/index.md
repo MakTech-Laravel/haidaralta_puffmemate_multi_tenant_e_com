@@ -98,6 +98,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/{Platform,Branch}/*ShiftAssignmentController.php,app/Services/Workforce/**,app/Support/WorkforcePayload.php,resources/js/components/admin/shift-*.{ts,tsx},resources/js/pages/{platform,branch}/shifts/assign.tsx | .ai/rules/platformbranch-shifts.md |
 | resources/js/components/{platform,branch}/nav.ts | .ai/rules/platformbranch.md |
 | resources/js/components/portal/** | .ai/rules/portal.md |
+| resources/js/pages/storefront/product.tsx,resources/js/components/storefront/product/product-summary.tsx,app/Http/Controllers/Storefront/ProductController.php | .ai/rules/product-http-controllers-storefront.md |
 | resources/js/pages/platform/catalog/products/show.tsx, resources/js/pages/platform/catalog/products/**, resources/js/pages/branch/catalog/products/show.tsx | .ai/rules/products.md |
 | resources/js/pages/driver/profile/** | .ai/rules/profile.md |
 | config/pwa.php, pwa-assets.config.ts, resources/views/app.blade.php, resources/js/lib/pwa.ts, resources/js/components/pwa/**, docker/nginx.conf, routes/public.php, app/Http/Controllers/WebAppManifestController.php, app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/pwa.md |

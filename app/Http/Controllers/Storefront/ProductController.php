@@ -22,8 +22,6 @@ class ProductController extends Controller
         return Inertia::render('storefront/product', [
             'product' => $detail,
             'similarProducts' => StorefrontCatalog::similarProducts($product, $branch),
-            'branches' => StorefrontCatalog::branches(),
-            'branchId' => $branch?->slug,
             'backHref' => is_string($categorySlug) && $categorySlug !== ''
                 ? route('shop.category', ['category' => $categorySlug], false)
                 : route('shop', absolute: false),

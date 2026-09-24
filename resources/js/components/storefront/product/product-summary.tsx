@@ -1,22 +1,7 @@
 import { Link } from '@inertiajs/react';
-import {
-    Check,
-    Clock,
-    MapPin,
-    Minus,
-    Plus,
-    ShoppingCart,
-    Star,
-} from 'lucide-react';
+import { Check, Clock, Minus, Plus, ShoppingCart, Star } from 'lucide-react';
 import { useState } from 'react';
-import type { StorefrontBranchOption } from '@/components/storefront/storefront-branch-select';
 import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { cart } from '@/routes';
 
@@ -30,10 +15,6 @@ type ProductSummaryProps = {
     rating: number;
     reviewCount: number;
     about: string;
-    branch: string;
-    branches: StorefrontBranchOption[];
-    branchId: string | null;
-    onBranchChange: (branchId: string | null) => void;
     className?: string;
 };
 
@@ -47,10 +28,6 @@ export function ProductSummary({
     rating,
     reviewCount,
     about,
-    branch,
-    branches,
-    branchId,
-    onBranchChange,
     className,
 }: ProductSummaryProps) {
     const [quantity, setQuantity] = useState(1);
@@ -106,9 +83,11 @@ export function ProductSummary({
 
             <div className="flex min-w-0 flex-wrap items-center gap-3">
                 <span className="text-primary text-3xl font-bold">{price}</span>
-                <span className="text-muted-foreground font-inter text-base font-normal line-through">
-                    {compareAtPrice}
-                </span>
+                {compareAtPrice ? (
+                    <span className="text-muted-foreground font-inter text-base font-normal line-through">
+                        {compareAtPrice}
+                    </span>
+                ) : null}
                 <span className="text-tertiary font-inter inline-flex items-center gap-1.5 text-sm font-medium">
                     <span
                         className="bg-tertiary size-1.5 shrink-0 rounded-full"
@@ -116,65 +95,6 @@ export function ProductSummary({
                     />
                     {stock} available
                 </span>
-            </div>
-
-            <div className="border-primary/25 bg-accent/40 mt-5 flex w-full max-w-full min-w-0 items-center justify-between gap-2 border px-3 py-3 sm:gap-3 sm:px-4">
-                <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-                    <span className="bg-accent text-primary flex size-10 shrink-0 items-center justify-center rounded-full">
-                        <MapPin
-                            className="size-5"
-                            strokeWidth={2}
-                            aria-hidden
-                        />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-muted-foreground font-inter text-xs font-bold uppercase">
-                            Selected branch
-                        </p>
-                        <p className="text-foreground font-inter truncate text-base font-bold">
-                            {branch}
-                        </p>
-                    </div>
-                </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <button
-                            type="button"
-                            className="text-primary font-inter shrink-0 text-base font-bold hover:underline"
-                        >
-                            Change
-                        </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        align="end"
-                        className="max-w-[min(18rem,calc(100vw-2rem))] min-w-0"
-                    >
-                        {branches.map((option) => {
-                            const isSelected = option.id === branchId;
-
-                            return (
-                                <DropdownMenuItem
-                                    key={option.id}
-                                    className={cn(
-                                        'font-inter',
-                                        isSelected && 'font-semibold',
-                                    )}
-                                    onSelect={() => onBranchChange(option.id)}
-                                >
-                                    <span className="min-w-0 flex-1 truncate">
-                                        {option.name}
-                                    </span>
-                                    {isSelected ? (
-                                        <Check
-                                            className="text-primary size-4 shrink-0"
-                                            aria-hidden
-                                        />
-                                    ) : null}
-                                </DropdownMenuItem>
-                            );
-                        })}
-                    </DropdownMenuContent>
-                </DropdownMenu>
             </div>
 
             <div className="min-w-0">
@@ -238,10 +158,10 @@ export function ProductSummary({
                     <Check className="text-primary mt-0.5 size-4 shrink-0" />
                     <div className="min-w-0">
                         <p className="text-foreground font-inter text-base leading-snug font-bold break-words">
-                            Branch-accurate pricing
+                            Catalog pricing
                         </p>
                         <p className="text-muted-foreground font-inter mt-0.5 text-xs font-normal">
-                            Stock and price checked before checkout
+                            Stock confirmed at checkout
                         </p>
                     </div>
                 </div>
