@@ -7,11 +7,11 @@ import { HomeHeroSlider } from '@/components/storefront/home/hero-slider';
 import { ProductCarousel } from '@/components/storefront/home/product-carousel';
 import {
     storefrontFeatures,
-    type StorefrontCategoryItem,
     type StorefrontHeroSlide,
     type StorefrontProduct,
 } from '@/lib/storefront-demo';
 import { shop } from '@/routes';
+import type { StorefrontCategoryItem } from '@/types/storefront';
 
 type HomePageProps = {
     heroSlides: StorefrontHeroSlide[];
@@ -64,13 +64,17 @@ export default function StorefrontHome({
                         <CategoryCard key={category.id} category={category} />
                     ))}
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                    {wideCategories.map((category) => (
-                        <CategoryCard key={category.id} category={category} />
-                    ))}
-                </div>
+                {wideCategories.length > 0 ? (
+                    <div className="mt-4 grid grid-cols-2 gap-4">
+                        {wideCategories.map((category) => (
+                            <CategoryCard
+                                key={category.id}
+                                category={category}
+                            />
+                        ))}
+                    </div>
+                ) : null}
             </section>
-
             <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>

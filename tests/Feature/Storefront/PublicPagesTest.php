@@ -68,6 +68,70 @@ test('storefront home shares featured categories and tagged products', function 
             ->has('storefront.navCategories'));
 });
 
+test('storefront home featured categories come from the catalog database', function () {
+    Category::query()->update(['featured' => false]);
+
+    Category::factory()->create([
+        'name' => 'Featured Alpha',
+        'slug' => 'featured-alpha',
+        'status' => true,
+        'featured' => true,
+        'slogan' => 'Alpha slogan',
+        'image' => '/images/storefront/category-cigarettes.png',
+    ]);
+    Category::factory()->create([
+        'name' => 'Featured Beta',
+        'slug' => 'featured-beta',
+        'status' => true,
+        'featured' => true,
+        'slogan' => 'Beta slogan',
+        'image' => '/images/storefront/category-vapes.png',
+    ]);
+    Category::factory()->create([
+        'name' => 'Not Featured',
+        'slug' => 'not-featured',
+        'status' => true,
+        'featured' => false,
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/home')
+            ->has('featuredCategories', 2)
+            ->where('featuredCategories.0.id', 'featured-alpha')
+            ->where('featuredCategories.0.name', 'Featured Alpha')
+            ->where('featuredCategories.0.description', 'Alpha slogan')
+            ->where('featuredCategories.0.href', '/shop/featured-alpha')
+            ->where('featuredCategories.0.wide', false)
+            ->where('featuredCategories.1.id', 'featured-beta')
+            ->where('featuredCategories.1.wide', false));
+});
+
+test('storefront home marks the last two featured categories as wide when more than three', function () {
+    Category::query()->update(['featured' => false]);
+
+    foreach (['one', 'two', 'three', 'four', 'five'] as $index => $slug) {
+        Category::factory()->create([
+            'name' => 'Featured '.ucfirst($slug),
+            'slug' => 'featured-'.$slug,
+            'status' => true,
+            'featured' => true,
+            'slogan' => 'Slogan '.$slug,
+        ]);
+    }
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('featuredCategories', 5)
+            ->where('featuredCategories.0.wide', false)
+            ->where('featuredCategories.1.wide', false)
+            ->where('featuredCategories.2.wide', false)
+            ->where('featuredCategories.3.wide', true)
+            ->where('featuredCategories.4.wide', true));
+});
+
 test('storefront shop page serves DemoCatalog products', function () {
     $this->get(route('shop'))
         ->assertOk()

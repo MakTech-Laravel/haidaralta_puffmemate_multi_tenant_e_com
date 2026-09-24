@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Services\Cms\HomeBannerService;
 use App\Support\Storefront\DemoCatalog;
+use App\Support\Storefront\StorefrontCatalog;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,7 +19,7 @@ class HomeController extends Controller
     {
         return Inertia::render('storefront/home', [
             'heroSlides' => $this->banners->publishedForStorefront(),
-            'featuredCategories' => DemoCatalog::featuredCategories(),
+            'featuredCategories' => StorefrontCatalog::featuredCategories(),
             'bestSellingProducts' => DemoCatalog::bestSellingProducts(),
             'newArrivalProducts' => DemoCatalog::newArrivalProducts(),
         ]);

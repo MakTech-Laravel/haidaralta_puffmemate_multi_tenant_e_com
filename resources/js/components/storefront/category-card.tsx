@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import type { StorefrontCategoryItem } from '@/lib/storefront-demo';
+import type { StorefrontCategoryItem } from '@/types/storefront';
 import { cn } from '@/lib/utils';
 
 type CategoryCardProps = {
@@ -13,7 +13,7 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
             href={category.href}
             prefetch
             className={cn(
-                'group ring-ring relative block aspect-4/3 h-auto max-h-[490px] w-full overflow-hidden rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                'group ring-ring relative block aspect-4/3 w-full overflow-hidden rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                 className,
             )}
         >

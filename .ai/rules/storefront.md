@@ -28,4 +28,4 @@ Header = Home · Shop · [DB categories with `show_in_nav`, ordered by `nav_sort
 
 ## Catalog sources by surface
 
-Home, shop, category, and product detail use `DemoCatalog` so card ids (`"1"`, `"2"`, …) resolve and prices show as plain `$…` (no “Start from”, no branch required). Header tabs use `buildStorefrontNavItems(storefront.navCategories)` — not static demo chrome. Branch session (`storefront.branch_slug` from `?branch=`) stays on StorefrontCatalog. Cart/checkout may still use DemoCatalog until checkout is built.
+Homepage featured category cards use `StorefrontCatalog::featuredCategories()` (DB `featured` + slogan/image) — not DemoCatalog. Shop / product detail / carousels may still use DemoCatalog until those surfaces are migrated. Header tabs use `buildStorefrontNavItems(storefront.navCategories)`. Branch session (`storefront.branch_slug` from `?branch=`) stays on StorefrontCatalog.

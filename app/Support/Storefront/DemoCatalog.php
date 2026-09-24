@@ -63,52 +63,6 @@ class DemoCatalog
     }
 
     /**
-     * @return list<array{id: string, name: string, description: string, image: string, href: string, wide?: bool}>
-     */
-    public static function featuredCategories(): array
-    {
-        return [
-            [
-                'id' => 'cigarettes',
-                'name' => 'Cigarettes',
-                'description' => 'Premium International Brands',
-                'image' => '/images/storefront/category-cigarettes.png',
-                'href' => route('shop.category', ['category' => 'cigarettes'], false),
-            ],
-            [
-                'id' => 'vapes',
-                'name' => 'Vapes',
-                'description' => 'Disposable & Rechargeable',
-                'image' => '/images/storefront/category-vapes.png',
-                'href' => route('shop.category', ['category' => 'vapes'], false),
-            ],
-            [
-                'id' => 'tobacco',
-                'name' => 'Tobacco',
-                'description' => 'Rolling & Specialty Blends',
-                'image' => '/images/storefront/category-tobacco.png',
-                'href' => route('shop.category', ['category' => 'tobacco'], false),
-            ],
-            [
-                'id' => 'nicotine-pouches',
-                'name' => 'Nicotine Pouches',
-                'description' => 'Smoke free alternatives',
-                'image' => '/images/storefront/category-pouches.png',
-                'href' => route('shop.category', ['category' => 'nicotine-pouches'], false),
-                'wide' => true,
-            ],
-            [
-                'id' => 'accessories',
-                'name' => 'Accessories',
-                'description' => 'Everything you need to complete your setup',
-                'image' => '/images/storefront/category-accessories.png',
-                'href' => route('shop.category', ['category' => 'accessories'], false),
-                'wide' => true,
-            ],
-        ];
-    }
-
-    /**
      * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice?: string, stock: int, category: string, image: string}>
      */
     public static function products(): array
