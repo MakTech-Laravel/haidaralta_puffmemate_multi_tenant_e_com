@@ -18,9 +18,9 @@ Storefront UI under resources/js/{layouts,components,pages}/storefront and lib/s
 
 Header = Home · Shop · [DB categories with `show_in_nav`, ordered by `nav_sort`] · Packs & Saves · Wholesale. Packs & Saves (`/packs-saves`) and Wholesale (`/wholesale`) are fixed pages — never catalog categories. Logo uses Application Settings (`useAppBrand` → `application.logoUrl`) with `/images/storefront/logo.png` fallback. Profile icon uses shared `auth.dashboardUrl` (PortalAuth path by user type), not hard-coded `/dashboard`.
 
-## Catalog seeder is cig / tobacco / vapes only
+## Catalog seeder featured set
 
-`CatalogSeeder` seeds root categories cigarettes, tobacco, vapes (plus optional vapes children disposables / pod-systems). Do not seed Packs & Saves, Wholesale, pouches, accessories, or e-liquids as categories.
+`CatalogSeeder` seeds root featured categories matching homepage cards: cigarettes, vapes, tobacco, nicotine-pouches, accessories (max `featured_categories_max` = 5). Vapes children disposables / pod-systems get category images and stay out of header nav. Packs & Saves and Wholesale remain fixed pages — never catalog categories.
 
 ## Nav categories are cached + Inertia once
 

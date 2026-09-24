@@ -37,23 +37,39 @@ export const storefrontCategoryItems: StorefrontCategoryItem[] = [
     {
         id: 'cigarettes',
         name: 'Cigarettes',
-        description: 'Top brands & everyday packs',
+        description: 'Premium International Brands',
         image: '/images/storefront/category-cigarettes.png',
         href: '/shop/cigarettes',
     },
     {
         id: 'vapes',
         name: 'Vapes',
-        description: 'Devices, pods & disposables',
+        description: 'Disposable & Rechargeable',
         image: '/images/storefront/category-vapes.png',
         href: '/shop/vapes',
     },
     {
         id: 'tobacco',
         name: 'Tobacco',
-        description: 'Rolling & pipe tobacco',
+        description: 'Rolling & Specialty Blends',
         image: '/images/storefront/category-tobacco.png',
         href: '/shop/tobacco',
+    },
+    {
+        id: 'nicotine-pouches',
+        name: 'Nicotine Pouches',
+        description: 'Smoke free alternatives',
+        image: '/images/storefront/category-pouches.png',
+        href: '/shop/nicotine-pouches',
+        wide: true,
+    },
+    {
+        id: 'accessories',
+        name: 'Accessories',
+        description: 'Everything you need to complete your setup',
+        image: '/images/storefront/category-accessories.png',
+        href: '/shop/accessories',
+        wide: true,
     },
 ];
 

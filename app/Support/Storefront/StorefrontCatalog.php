@@ -79,6 +79,14 @@ class StorefrontCatalog
         $categories = Category::query()
             ->where('status', true)
             ->where('featured', true)
+            ->orderByRaw("CASE slug
+                WHEN 'cigarettes' THEN 1
+                WHEN 'vapes' THEN 2
+                WHEN 'tobacco' THEN 3
+                WHEN 'nicotine-pouches' THEN 4
+                WHEN 'accessories' THEN 5
+                ELSE 99
+            END")
             ->orderBy('name')
             ->limit($limit)
             ->get();

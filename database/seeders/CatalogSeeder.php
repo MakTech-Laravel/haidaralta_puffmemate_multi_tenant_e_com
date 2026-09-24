@@ -17,7 +17,7 @@ use Throwable;
 class CatalogSeeder extends Seeder
 {
     /**
-     * Seed a realistic cigarettes / tobacco / vapes catalog (no Faker).
+     * Seed cigarettes / tobacco / vapes / pouches / accessories catalog (no Faker).
      * Products stay disabled at every branch until BranchInventorySeeder runs.
      *
      * Images live under public/images (storefront or catalog downloads).
@@ -36,7 +36,7 @@ class CatalogSeeder extends Seeder
             'featured' => true,
             'show_in_nav' => true,
             'nav_sort' => 1,
-            'slogan' => 'Premium tobacco, best brands',
+            'slogan' => 'Premium International Brands',
             'image' => 'images/storefront/category-cigarettes.png',
             'color_code' => ['mode' => 'solid', 'color' => '#F5E6D3'],
         ]);
@@ -48,7 +48,7 @@ class CatalogSeeder extends Seeder
             'featured' => true,
             'show_in_nav' => true,
             'nav_sort' => 3,
-            'slogan' => 'Disposable & rechargeable',
+            'slogan' => 'Disposable & Rechargeable',
             'image' => 'images/storefront/category-vapes.png',
             'color_code' => ['mode' => 'solid', 'color' => '#E8F0FE'],
         ]);
@@ -60,7 +60,7 @@ class CatalogSeeder extends Seeder
             'featured' => true,
             'show_in_nav' => true,
             'nav_sort' => 2,
-            'slogan' => 'Rolling & specialty blends',
+            'slogan' => 'Rolling & Specialty Blends',
             'image' => 'images/storefront/category-tobacco.png',
             'color_code' => [
                 'mode' => 'gradient',
@@ -70,11 +70,36 @@ class CatalogSeeder extends Seeder
             ],
         ]);
 
+        $pouches = $this->category([
+            'name' => 'Nicotine Pouches',
+            'slug' => 'nicotine-pouches',
+            'parent_id' => null,
+            'featured' => true,
+            'show_in_nav' => true,
+            'nav_sort' => 4,
+            'slogan' => 'Smoke free alternatives',
+            'image' => 'images/storefront/category-pouches.png',
+            'color_code' => ['mode' => 'solid', 'color' => '#FEF3C7'],
+        ]);
+
+        $accessories = $this->category([
+            'name' => 'Accessories',
+            'slug' => 'accessories',
+            'parent_id' => null,
+            'featured' => true,
+            'show_in_nav' => false,
+            'slogan' => 'Everything you need to complete your setup',
+            'image' => 'images/storefront/category-accessories.png',
+            'color_code' => ['mode' => 'solid', 'color' => '#F1F5F9'],
+        ]);
+
         $this->category([
             'name' => 'Disposables',
             'slug' => 'disposables',
             'parent_id' => $vapes->id,
             'featured' => false,
+            'show_in_nav' => false,
+            'image' => 'images/storefront/category-vapes.png',
         ]);
 
         $this->category([
@@ -82,6 +107,8 @@ class CatalogSeeder extends Seeder
             'slug' => 'pod-systems',
             'parent_id' => $vapes->id,
             'featured' => false,
+            'show_in_nav' => false,
+            'image' => 'images/storefront/category-vapes.png',
         ]);
 
         // ——— Cigarettes ———
@@ -571,6 +598,216 @@ class CatalogSeeder extends Seeder
             ],
         ]);
 
+        // ——— Nicotine pouches ———
+        $this->product([$pouches], $creator, [
+            'name' => 'Nordic Mint Pouches',
+            'slug' => 'nordic-mint-pouches',
+            'sku' => 'POUCH-NORDIC-MINT',
+            'brand' => 'Nordic',
+            'tags' => ['best_selling', 'popular'],
+            'specifications' => [
+                ['label' => 'Format', 'value' => 'Slim tin'],
+                ['label' => 'Count', 'value' => '20 pouches'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Tobacco-free nicotine pouches with a clean mint profile. Slim format tin of 20 pouches. Age-restricted — 18+ only.',
+            'image' => 'images/catalog/products/nordic-mint-pouches.jpg',
+            'color_code' => ['mode' => 'solid', 'color' => '#ECFDF5'],
+            'variants' => [
+                ['name' => '6mg', 'sku' => 'POUCH-NORDIC-6', 'attributes' => ['strength' => '6mg', 'count' => '20']],
+                ['name' => '10mg', 'sku' => 'POUCH-NORDIC-10', 'attributes' => ['strength' => '10mg', 'count' => '20']],
+                ['name' => '16mg', 'sku' => 'POUCH-NORDIC-16', 'attributes' => ['strength' => '16mg', 'count' => '20']],
+            ],
+        ]);
+
+        $this->product([$pouches], $creator, [
+            'name' => 'Citrus Chill Pouches',
+            'slug' => 'citrus-chill-pouches',
+            'sku' => 'POUCH-CITRUS',
+            'brand' => 'Nordic',
+            'tags' => ['new_arrival'],
+            'specifications' => [
+                ['label' => 'Format', 'value' => 'Slim tin'],
+                ['label' => 'Count', 'value' => '20 pouches'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Tobacco-free nicotine pouches with citrus ice flavour. Slim format tin of 20. Age-restricted — 18+ only.',
+            'image' => 'images/catalog/products/citrus-chill-pouches.jpg',
+            'variants' => [
+                ['name' => '8mg', 'sku' => 'POUCH-CITRUS-8', 'attributes' => ['strength' => '8mg', 'count' => '20']],
+                ['name' => '12mg', 'sku' => 'POUCH-CITRUS-12', 'attributes' => ['strength' => '12mg', 'count' => '20']],
+            ],
+        ]);
+
+        $this->product([$pouches], $creator, [
+            'name' => 'VELO Cool Mint Pouches',
+            'slug' => 'velo-cool-mint-pouches',
+            'sku' => 'POUCH-VELO-MINT',
+            'brand' => 'VELO',
+            'tags' => ['best_selling', 'popular'],
+            'specifications' => [
+                ['label' => 'Format', 'value' => 'Slim tin'],
+                ['label' => 'Count', 'value' => '20 pouches'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Tobacco-free nicotine pouches with a crisp cool mint profile. Slim tin of 20. Age-restricted — 18+ only.',
+            'image' => 'images/storefront/category-pouches.png',
+            'color_code' => ['mode' => 'solid', 'color' => '#ECFDF5'],
+            'variants' => [
+                ['name' => '6mg', 'sku' => 'POUCH-VELO-MINT-6', 'attributes' => ['strength' => '6mg', 'count' => '20']],
+                ['name' => '10mg', 'sku' => 'POUCH-VELO-MINT-10', 'attributes' => ['strength' => '10mg', 'count' => '20']],
+                ['name' => '14mg', 'sku' => 'POUCH-VELO-MINT-14', 'attributes' => ['strength' => '14mg', 'count' => '20']],
+            ],
+        ]);
+
+        $this->product([$pouches], $creator, [
+            'name' => 'PuffMeMate Spearmint Pouches',
+            'slug' => 'puffmemate-spearmint-pouches',
+            'sku' => 'POUCH-POM-SPEAR',
+            'brand' => 'PuffMeMate',
+            'tags' => ['new_arrival', 'on_offer'],
+            'specifications' => [
+                ['label' => 'Format', 'value' => 'Slim tin'],
+                ['label' => 'Count', 'value' => '20 pouches'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'House-brand tobacco-free nicotine pouches with clean spearmint flavour. Slim tin of 20. Age-restricted — 18+ only.',
+            'image' => 'images/catalog/products/puffmemate-spearmint-pouches.jpg',
+            'color_code' => ['mode' => 'solid', 'color' => '#D1FAE5'],
+            'variants' => [
+                ['name' => '8mg', 'sku' => 'POUCH-POM-SPEAR-8', 'attributes' => ['strength' => '8mg', 'count' => '20']],
+                ['name' => '12mg', 'sku' => 'POUCH-POM-SPEAR-12', 'attributes' => ['strength' => '12mg', 'count' => '20']],
+            ],
+        ]);
+
+        $this->product([$pouches], $creator, [
+            'name' => 'Nordic Coffee Pouches',
+            'slug' => 'nordic-coffee-pouches',
+            'sku' => 'POUCH-NORDIC-COFFEE',
+            'brand' => 'Nordic',
+            'tags' => ['popular'],
+            'specifications' => [
+                ['label' => 'Format', 'value' => 'Slim tin'],
+                ['label' => 'Count', 'value' => '20 pouches'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => 'Tobacco-free nicotine pouches with roasted coffee notes. Slim tin of 20 for adult use. Age-restricted — 18+ only.',
+            'image' => 'images/catalog/products/nordic-coffee-pouches.jpg',
+            'color_code' => ['mode' => 'solid', 'color' => '#FEF3C7'],
+            'variants' => [
+                ['name' => '8mg', 'sku' => 'POUCH-NORDIC-COFFEE-8', 'attributes' => ['strength' => '8mg', 'count' => '20']],
+                ['name' => '12mg', 'sku' => 'POUCH-NORDIC-COFFEE-12', 'attributes' => ['strength' => '12mg', 'count' => '20']],
+            ],
+        ]);
+
+        // ——— Accessories ———
+        $this->product([$accessories, $cigarettes], $creator, [
+            'name' => 'Clipper Classic Lighter',
+            'slug' => 'clipper-classic-lighter',
+            'sku' => 'ACC-CLIPPER',
+            'brand' => 'Clipper',
+            'tags' => ['popular'],
+            'description' => 'Refillable flint lighter with fixed flame. Reliable counter-side staple for cigarette and cigarillo customers.',
+            'image' => 'images/catalog/products/clipper-classic-lighter.jpg',
+            'variants' => [
+                ['name' => 'Black', 'sku' => 'ACC-CLIPPER-BLK', 'attributes' => ['color' => 'Black']],
+                ['name' => 'Red', 'sku' => 'ACC-CLIPPER-RED', 'attributes' => ['color' => 'Red']],
+                ['name' => 'Blue', 'sku' => 'ACC-CLIPPER-BLU', 'attributes' => ['color' => 'Blue']],
+            ],
+        ]);
+
+        $this->product([$accessories, $cigarettes], $creator, [
+            'name' => 'RAW Classic Rolling Papers King Size',
+            'slug' => 'raw-classic-rolling-papers-ks',
+            'sku' => 'ACC-RAW-KS',
+            'brand' => 'RAW',
+            'tags' => ['best_selling'],
+            'description' => 'Unbleached king-size rolling papers. Pack of 32 leaves. Adult-use product.',
+            'image' => 'images/catalog/products/raw-classic-rolling-papers-ks.jpg',
+            'variants' => [],
+        ]);
+
+        $this->product([$accessories], $creator, [
+            'name' => 'USB-C Charge Cable 1m',
+            'slug' => 'usb-c-charge-cable-1m',
+            'sku' => 'ACC-USBC-1M',
+            'brand' => 'PuffMeMate',
+            'description' => '1 metre USB-C charging cable compatible with PuffMeMate rechargeable disposables, Core Kit, Air Pro, and IQOS pocket chargers.',
+            'image' => 'images/catalog/products/usb-c-charge-cable-1m.jpg',
+            'variants' => [],
+        ]);
+
+        $this->product([$accessories], $creator, [
+            'name' => 'Silicone Device Sleeve',
+            'slug' => 'silicone-device-sleeve',
+            'sku' => 'ACC-SLEEVE',
+            'brand' => 'PuffMeMate',
+            'description' => 'Soft silicone sleeve that improves grip and reduces scuffs on Core Kit and Air Pro devices.',
+            'image' => 'images/catalog/products/silicone-device-sleeve.jpg',
+            'variants' => [
+                ['name' => 'Black', 'sku' => 'ACC-SLEEVE-BLK', 'attributes' => ['color' => 'Black']],
+                ['name' => 'Clear', 'sku' => 'ACC-SLEEVE-CLR', 'attributes' => ['color' => 'Clear']],
+            ],
+        ]);
+
+        $this->product([$accessories], $creator, [
+            'name' => 'Travel Hard Case',
+            'slug' => 'travel-hard-case',
+            'sku' => 'ACC-HARD-CASE',
+            'brand' => 'PuffMeMate',
+            'tags' => ['new_arrival'],
+            'description' => 'Compact hard case with foam insert for a disposable or pod kit plus spare pods — reduces pocket lint and accidental fire button presses.',
+            'image' => 'images/catalog/products/travel-hard-case.jpg',
+            'variants' => [
+                ['name' => 'Charcoal', 'sku' => 'ACC-HARD-CASE-CHR', 'attributes' => ['color' => 'Charcoal']],
+                ['name' => 'Navy', 'sku' => 'ACC-HARD-CASE-NVY', 'attributes' => ['color' => 'Navy']],
+            ],
+        ]);
+
+        $this->product([$accessories], $creator, [
+            'name' => 'Lanyard Clip',
+            'slug' => 'lanyard-clip',
+            'sku' => 'ACC-LANYARD',
+            'brand' => 'PuffMeMate',
+            'description' => 'Detachable lanyard clip for Mini Bar and Pulse disposables — keeps the device handy without pocket wear.',
+            'image' => 'images/catalog/products/lanyard-clip.jpg',
+            'variants' => [],
+        ]);
+
+        $this->product([$accessories, $cigarettes], $creator, [
+            'name' => 'Bic Maxi Lighter',
+            'slug' => 'bic-maxi-lighter',
+            'sku' => 'ACC-BIC-MAXI',
+            'brand' => 'Bic',
+            'tags' => ['popular'],
+            'description' => 'Disposable Maxi lighter with fixed flame. Counter staple for cigarette customers. Adult-use product.',
+            'image' => 'images/catalog/products/clipper-classic-lighter.jpg',
+            'variants' => [
+                ['name' => 'Assorted', 'sku' => 'ACC-BIC-MAXI-AST', 'attributes' => ['color' => 'Assorted']],
+            ],
+        ]);
+
+        $this->product([$accessories, $heated], $creator, [
+            'name' => 'OCB Slim Filter Tips',
+            'slug' => 'ocb-slim-filter-tips',
+            'sku' => 'ACC-OCB-SLIM',
+            'brand' => 'OCB',
+            'tags' => ['on_offer'],
+            'description' => 'Slim cellulose filter tips for hand-rolled cigarettes. Pack of 120 tips. Adult-use product.',
+            'image' => 'images/catalog/products/ocb-slim-filter-tips.jpg',
+            'variants' => [],
+        ]);
+
+        $this->product([$accessories], $creator, [
+            'name' => 'Device Screen Wipe Pack',
+            'slug' => 'device-screen-wipe-pack',
+            'sku' => 'ACC-SCREEN-WIPE',
+            'brand' => 'PuffMeMate',
+            'description' => 'Alcohol-free screen and contact wipes for pod devices and IQOS holders. Pack of 20 individually wrapped sheets.',
+            'image' => 'images/catalog/products/device-screen-wipe-pack.jpg',
+            'variants' => [],
+        ]);
+
         // forever nav cache survives migrate:fresh — always rebuild after seeding
         StorefrontCatalog::forgetNavCategories();
     }
@@ -598,19 +835,24 @@ class CatalogSeeder extends Seeder
             basename: $data['slug'],
         );
 
-        return Category::query()->firstOrCreate(
+        $attributes = [
+            'name' => $data['name'],
+            'parent_id' => $data['parent_id'],
+            'slogan' => $data['slogan'] ?? null,
+            'color_code' => $data['color_code'] ?? null,
+            'status' => true,
+            'featured' => $data['featured'] ?? false,
+            'show_in_nav' => $data['show_in_nav'] ?? false,
+            'nav_sort' => $data['nav_sort'] ?? null,
+        ];
+
+        if ($imagePath !== null) {
+            $attributes['image'] = $imagePath;
+        }
+
+        return Category::query()->updateOrCreate(
             ['slug' => $data['slug']],
-            [
-                'name' => $data['name'],
-                'parent_id' => $data['parent_id'],
-                'slogan' => $data['slogan'] ?? null,
-                'image' => $imagePath,
-                'color_code' => $data['color_code'] ?? null,
-                'status' => true,
-                'featured' => $data['featured'] ?? false,
-                'show_in_nav' => $data['show_in_nav'] ?? false,
-                'nav_sort' => $data['nav_sort'] ?? null,
-            ],
+            $attributes,
         );
     }
 

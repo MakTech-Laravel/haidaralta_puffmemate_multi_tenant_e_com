@@ -13,7 +13,7 @@ use Illuminate\Database\Seeder;
 class BranchInventorySeeder extends Seeder
 {
     /**
-     * Seed cigarettes / tobacco / vapes stock per branch (no Faker).
+     * Seed cigarettes / tobacco / vapes / pouches / accessories stock per branch (no Faker).
      * Depends on BranchSeeder + CatalogSeeder.
      */
     public function run(): void
@@ -51,6 +51,20 @@ class BranchInventorySeeder extends Seeder
             'vuse-epod-2-device-kit' => ['qty' => 16, 'min' => 4, 'price' => '29.99', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-max-mesh-8000' => ['qty' => 28, 'min' => 8, 'price' => '41.99', 'discount_type' => 'fixed', 'discount' => '4.00'],
             'puffmemate-nano-pod-kit' => ['qty' => 20, 'min' => 5, 'price' => '34.99', 'discount_type' => 'none', 'discount' => null],
+            'nordic-mint-pouches' => ['qty' => 60, 'min' => 15, 'price' => '18.50', 'discount_type' => 'none', 'discount' => null],
+            'citrus-chill-pouches' => ['qty' => 40, 'min' => 10, 'price' => '18.50', 'discount_type' => 'fixed', 'discount' => '2.00'],
+            'velo-cool-mint-pouches' => ['qty' => 55, 'min' => 12, 'price' => '19.50', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-spearmint-pouches' => ['qty' => 48, 'min' => 12, 'price' => '16.99', 'discount_type' => 'fixed', 'discount' => '1.00'],
+            'nordic-coffee-pouches' => ['qty' => 30, 'min' => 8, 'price' => '18.50', 'discount_type' => 'none', 'discount' => null],
+            'clipper-classic-lighter' => ['qty' => 100, 'min' => 20, 'price' => '3.50', 'discount_type' => 'none', 'discount' => null],
+            'raw-classic-rolling-papers-ks' => ['qty' => 80, 'min' => 16, 'price' => '2.80', 'discount_type' => 'none', 'discount' => null],
+            'usb-c-charge-cable-1m' => ['qty' => 40, 'min' => 10, 'price' => '9.99', 'discount_type' => 'none', 'discount' => null],
+            'silicone-device-sleeve' => ['qty' => 35, 'min' => 8, 'price' => '7.99', 'discount_type' => 'none', 'discount' => null],
+            'travel-hard-case' => ['qty' => 22, 'min' => 5, 'price' => '19.99', 'discount_type' => 'none', 'discount' => null],
+            'lanyard-clip' => ['qty' => 50, 'min' => 12, 'price' => '4.99', 'discount_type' => 'none', 'discount' => null],
+            'bic-maxi-lighter' => ['qty' => 120, 'min' => 24, 'price' => '2.50', 'discount_type' => 'none', 'discount' => null],
+            'ocb-slim-filter-tips' => ['qty' => 70, 'min' => 15, 'price' => '3.20', 'discount_type' => 'fixed', 'discount' => '0.50'],
+            'device-screen-wipe-pack' => ['qty' => 45, 'min' => 10, 'price' => '5.99', 'discount_type' => 'none', 'discount' => null],
         ]);
 
         // Melbourne Collins: strong cigarette + heated tobacco focus, leaner vape range.
@@ -71,6 +85,10 @@ class BranchInventorySeeder extends Seeder
             'puffmemate-core-kit' => ['qty' => 12, 'min' => 5, 'price' => '41.99', 'discount_type' => 'fixed', 'discount' => '4.00'],
             'iget-bar-plus-disposable' => ['qty' => 18, 'min' => 6, 'price' => '33.50', 'discount_type' => 'none', 'discount' => null],
             'vuse-epod-2-device-kit' => ['qty' => 10, 'min' => 3, 'price' => '30.50', 'discount_type' => 'none', 'discount' => null],
+            'nordic-mint-pouches' => ['qty' => 36, 'min' => 10, 'price' => '18.90', 'discount_type' => 'none', 'discount' => null],
+            'velo-cool-mint-pouches' => ['qty' => 28, 'min' => 8, 'price' => '19.90', 'discount_type' => 'none', 'discount' => null],
+            'clipper-classic-lighter' => ['qty' => 60, 'min' => 15, 'price' => '3.60', 'discount_type' => 'none', 'discount' => null],
+            'raw-classic-rolling-papers-ks' => ['qty' => 50, 'min' => 12, 'price' => '2.90', 'discount_type' => 'none', 'discount' => null],
         ]);
 
         // Brisbane Queen St: compact store — vapes heavy, limited cigarette SKUs.
@@ -88,6 +106,9 @@ class BranchInventorySeeder extends Seeder
             'puffmemate-soft-touch-3500' => ['qty' => 22, 'min' => 6, 'price' => '29.50', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-max-mesh-8000' => ['qty' => 18, 'min' => 6, 'price' => '41.50', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-nano-pod-kit' => ['qty' => 12, 'min' => 4, 'price' => '34.50', 'discount_type' => 'none', 'discount' => null],
+            'nordic-mint-pouches' => ['qty' => 24, 'min' => 8, 'price' => '18.50', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-spearmint-pouches' => ['qty' => 20, 'min' => 6, 'price' => '16.50', 'discount_type' => 'none', 'discount' => null],
+            'clipper-classic-lighter' => ['qty' => 40, 'min' => 10, 'price' => '3.50', 'discount_type' => 'none', 'discount' => null],
         ]);
 
         $this->seedVariantStock($sydney, $inventory, 'puffmemate-pulse-5000', [

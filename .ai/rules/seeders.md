@@ -2,6 +2,7 @@
 paths:
   - 'database/seeders/**'
   - database/seeders/WorkforceShiftSeeder.php
+  - database/seeders/CatalogSeeder.php
 ---
 
 # Seeders
@@ -39,3 +40,6 @@ WorkforceShiftSeeder uses personal date ranges only. Do not seed global roster p
 
 ## Seeders are massive handwritten AU retail data
 All seeders use handwritten real-world AU retail copy — never Faker or fake(). Branches: 9 stores (3 flagships + Perth, Adelaide, Surfers, Canberra, Newcastle, Parramatta). Users expand beyond constants. Catalog ~48 products. TransferHistorySeeder archives only. ConversationVolume is high-volume phrase banks.
+
+## CatalogSeeder featured category set
+Featured homepage set is cigarettes, vapes, tobacco, nicotine-pouches, accessories (slogans match marketing cards). Disposables/pod-systems are vapes children with images, not in nav. Packs & Saves / Wholesale stay fixed pages. category() uses updateOrCreate so re-seed refreshes images/flags.

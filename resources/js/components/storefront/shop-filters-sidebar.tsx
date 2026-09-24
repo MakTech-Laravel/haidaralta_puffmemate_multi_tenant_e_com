@@ -41,6 +41,8 @@ export const SHOP_CATEGORY_OPTIONS = [
     { slug: 'cigarettes', label: 'Cigarettes' },
     { slug: 'vapes', label: 'Vapes' },
     { slug: 'tobacco', label: 'Tobacco' },
+    { slug: 'nicotine-pouches', label: 'Nicotine Pouches' },
+    { slug: 'accessories', label: 'Accessories' },
 ] as const;
 
 export const SHOP_TYPE_OPTIONS = [

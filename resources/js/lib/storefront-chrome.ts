@@ -61,6 +61,8 @@ export const storefrontFooterShop: StorefrontChromeItem[] = [
     { label: 'Cigarettes', categorySlug: 'cigarettes' },
     { label: 'Vapes', categorySlug: 'vapes' },
     { label: 'Tobacco', categorySlug: 'tobacco' },
+    { label: 'Nicotine Pouches', categorySlug: 'nicotine-pouches' },
+    { label: 'Accessories', categorySlug: 'accessories' },
     { label: 'Packs & Saves', route: 'packs-saves' },
 ];
 
