@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
-import type { StorefrontProduct } from '@/lib/storefront-demo';
+import type { StorefrontProduct } from '@/types/storefront';
 import { cn } from '@/lib/utils';
 import { show as productShow } from '@/routes/products';
+
+const FALLBACK_IMAGE = '/images/storefront/logo.png';
 
 type ProductCardProps = {
     product: StorefrontProduct;
@@ -10,6 +12,7 @@ type ProductCardProps = {
 
 export function ProductCard({ product, className }: ProductCardProps) {
     const hasOffer = Boolean(product.compareAtPrice);
+    const imageSrc = product.image || FALLBACK_IMAGE;
 
     return (
         <Link
@@ -20,20 +23,22 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 className,
             )}
         >
-            <div className="bg-muted relative aspect-[3/2]">
+            <div className="bg-muted relative aspect-[3/2] overflow-hidden">
                 {hasOffer ? (
                     <span className="absolute top-2 right-2 z-10 rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm sm:top-3 sm:right-3 sm:px-2.5 sm:py-1">
                         Offer Product
                     </span>
                 ) : null}
-                <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{
-                        backgroundImage: `url(${product.image})`,
-                        backgroundColor: 'var(--muted)',
+                <img
+                    src={imageSrc}
+                    alt={product.name}
+                    loading="lazy"
+                    decoding="async"
+                    sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                    className="absolute inset-0 size-full object-cover"
+                    onError={(event) => {
+                        event.currentTarget.src = FALLBACK_IMAGE;
                     }}
-                    role="img"
-                    aria-label={product.name}
                 />
             </div>
             <div className="flex flex-1 flex-col gap-1 p-4">
@@ -53,9 +58,6 @@ export function ProductCard({ product, className }: ProductCardProps) {
                         </p>
                     ) : null}
                 </div>
-                <p className="text-tertiary text-sm font-normal">
-                    Available stock: {product.stock} pcs
-                </p>
             </div>
         </Link>
     );

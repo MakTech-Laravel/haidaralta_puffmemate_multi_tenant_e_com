@@ -12,7 +12,7 @@ import {
 import { ProductShipping } from '@/components/storefront/product/product-shipping';
 import { ProductSpecifications } from '@/components/storefront/product/product-specifications';
 import { ProductSummary } from '@/components/storefront/product/product-summary';
-import type { StorefrontProduct } from '@/lib/storefront-demo';
+import type { StorefrontProduct } from '@/types/storefront';
 import type { StorefrontBranchOption } from '@/components/storefront/storefront-branch-select';
 import { show as productShow } from '@/routes/products';
 

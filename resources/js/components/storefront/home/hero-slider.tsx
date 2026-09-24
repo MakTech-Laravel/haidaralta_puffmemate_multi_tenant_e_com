@@ -9,7 +9,7 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from '@/components/ui/carousel';
-import type { StorefrontHeroSlide } from '@/lib/storefront-demo';
+import type { StorefrontHeroSlide } from '@/types/storefront';
 import { cn } from '@/lib/utils';
 
 type HomeHeroSliderProps = {

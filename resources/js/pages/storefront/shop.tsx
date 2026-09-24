@@ -20,8 +20,8 @@ import {
 } from '@/components/ui/sheet';
 import {
     storefrontFeatures,
-    type StorefrontProduct,
-} from '@/lib/storefront-demo';
+} from '@/lib/storefront-features';
+import type { StorefrontProduct } from '@/types/storefront';
 import { shop } from '@/routes';
 
 /** Matches Tailwind `lg` (sidebar column vs Sheet). */

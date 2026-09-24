@@ -5,8 +5,8 @@ import { ProductCard } from '@/components/storefront/product-card';
 import { StorefrontBranchSelect } from '@/components/storefront/storefront-branch-select';
 import { StorefrontSearchBar } from '@/components/storefront/storefront-search-bar';
 import { StorefrontSortSelect } from '@/components/storefront/storefront-sort-select';
-import { storefrontFeatures } from '@/lib/storefront-demo';
-import type { StorefrontProduct } from '@/lib/storefront-demo';
+import { storefrontFeatures } from '@/lib/storefront-features';
+import type { StorefrontProduct } from '@/types/storefront';
 import { category as shopCategory } from '@/routes/shop';
 
 type CategoryPageProps = {

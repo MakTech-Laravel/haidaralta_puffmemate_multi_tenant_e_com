@@ -1,10 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { FeaturesBar } from '@/components/storefront/features-bar';
 import { ProductCard } from '@/components/storefront/product-card';
-import {
-    storefrontFeatures,
-    type StorefrontProduct,
-} from '@/lib/storefront-demo';
+import { storefrontFeatures } from '@/lib/storefront-features';
+import type { StorefrontProduct } from '@/types/storefront';
 
 type BranchOption = {
     id: string;

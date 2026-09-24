@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\ProductTag;
 use App\Models\Category;
 use App\Models\CmsPage;
+use App\Models\Product;
 use App\Models\User;
 use App\Services\Cms\CmsPageService;
 use App\Support\Storefront\StorefrontCatalog;
@@ -106,6 +108,121 @@ test('storefront home featured categories come from the catalog database', funct
             ->where('featuredCategories.0.wide', false)
             ->where('featuredCategories.1.id', 'featured-beta')
             ->where('featuredCategories.1.wide', false));
+});
+
+test('storefront home best selling and new arrival products come from catalog tags', function () {
+    Product::query()->get()->each(fn (Product $product) => $product->update(['tags' => []]));
+
+    Product::factory()->create([
+        'name' => 'Tagged Best Seller',
+        'slug' => 'tagged-best-seller',
+        'status' => true,
+        'tags' => [ProductTag::BestSelling->value],
+        'selling_price' => 14.00,
+        'pack_label' => 'Gold Pack',
+        'pieces_per_pack' => 20,
+        'pack_unit' => 'Cigarettes',
+    ]);
+    Product::factory()->create([
+        'name' => 'Tagged New Arrival',
+        'slug' => 'tagged-new-arrival',
+        'status' => true,
+        'tags' => [ProductTag::NewArrival->value],
+        'selling_price' => 9.90,
+        'pack_label' => 'Cool Mint',
+        'pieces_per_pack' => 15,
+        'pack_unit' => 'pcs',
+    ]);
+    Product::factory()->create([
+        'name' => 'Untagged Product',
+        'slug' => 'untagged-product',
+        'status' => true,
+        'tags' => [],
+        'selling_price' => 5.00,
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/home')
+            ->has('bestSellingProducts', 1)
+            ->where('bestSellingProducts.0.id', 'tagged-best-seller')
+            ->where('bestSellingProducts.0.name', 'Tagged Best Seller')
+            ->where('bestSellingProducts.0.description', 'Gold Pack • 20 Cigarettes')
+            ->where('bestSellingProducts.0.price', '$14.00')
+            ->where('bestSellingProducts.0', fn ($card): bool => ! array_key_exists('stock', collect($card)->all()))
+            ->has('newArrivalProducts', 1)
+            ->where('newArrivalProducts.0.id', 'tagged-new-arrival')
+            ->where('newArrivalProducts.0.description', 'Cool Mint • 15 pcs')
+            ->where('newArrivalProducts.0.price', '$9.90')
+            ->where('newArrivalProducts.0', fn ($card): bool => ! array_key_exists('stock', collect($card)->all())));
+});
+
+test('storefront home product rails respect home_products_max per tag', function () {
+    config(['catalog.home_products_max' => 3]);
+
+    Product::query()->get()->each(fn (Product $product) => $product->update(['tags' => []]));
+
+    foreach (range(1, 5) as $index) {
+        Product::factory()->create([
+            'name' => "Best Seller {$index}",
+            'slug' => "best-seller-{$index}",
+            'status' => true,
+            'tags' => [ProductTag::BestSelling->value],
+            'selling_price' => 10 + $index,
+        ]);
+        Product::factory()->create([
+            'name' => "New Arrival {$index}",
+            'slug' => "new-arrival-{$index}",
+            'status' => true,
+            'tags' => [ProductTag::NewArrival->value],
+            'selling_price' => 20 + $index,
+        ]);
+    }
+
+    Product::factory()->create([
+        'name' => 'Inactive Best Seller',
+        'slug' => 'inactive-best-seller',
+        'status' => false,
+        'tags' => [ProductTag::BestSelling->value],
+        'selling_price' => 99,
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/home')
+            ->has('bestSellingProducts', 3)
+            ->has('newArrivalProducts', 3)
+            ->where('bestSellingProducts', fn ($products): bool => collect($products)->every(
+                fn ($product): bool => str_starts_with((string) $product['id'], 'best-seller-'),
+            ))
+            ->where('newArrivalProducts', fn ($products): bool => collect($products)->every(
+                fn ($product): bool => str_starts_with((string) $product['id'], 'new-arrival-'),
+            )));
+});
+
+test('storefront product cards omit stock and use catalog price without a branch', function () {
+    $product = Product::factory()->create([
+        'name' => 'Card Mapper Pack',
+        'slug' => 'card-mapper-pack',
+        'status' => true,
+        'selling_price' => 12.50,
+        'regular_price' => 15.00,
+        'pack_label' => 'Menthol Pack',
+        'pieces_per_pack' => 20,
+        'pack_unit' => 'Cigarettes',
+        'brand' => 'Should Not Appear',
+        'description' => 'Fallback description should not win over pack summary.',
+    ]);
+
+    $card = StorefrontCatalog::mapProductCard($product);
+
+    expect($card)->not->toHaveKey('stock')
+        ->and($card['id'])->toBe('card-mapper-pack')
+        ->and($card['description'])->toBe('Menthol Pack • 20 Cigarettes')
+        ->and($card['price'])->toBe('$12.50')
+        ->and($card['compareAtPrice'])->toBe('$15.00');
 });
 
 test('storefront home marks the last two featured categories as wide when more than three', function () {

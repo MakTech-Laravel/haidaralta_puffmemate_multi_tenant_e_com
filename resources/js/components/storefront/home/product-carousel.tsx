@@ -8,7 +8,7 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from '@/components/ui/carousel';
-import type { StorefrontProduct } from '@/lib/storefront-demo';
+import type { StorefrontProduct } from '@/types/storefront';
 import { cn } from '@/lib/utils';
 
 type ProductCarouselProps = {

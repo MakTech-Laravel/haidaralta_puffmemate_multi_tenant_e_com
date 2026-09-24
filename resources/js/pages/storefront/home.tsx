@@ -5,11 +5,11 @@ import { FeaturesBar } from '@/components/storefront/features-bar';
 import { HomeDealsBanner } from '@/components/storefront/home/deals-banner';
 import { HomeHeroSlider } from '@/components/storefront/home/hero-slider';
 import { ProductCarousel } from '@/components/storefront/home/product-carousel';
-import {
-    storefrontFeatures,
-    type StorefrontHeroSlide,
-    type StorefrontProduct,
-} from '@/lib/storefront-demo';
+import { storefrontFeatures } from '@/lib/storefront-features';
+import type {
+    StorefrontHeroSlide,
+    StorefrontProduct,
+} from '@/types/storefront';
 import { shop } from '@/routes';
 import type { StorefrontCategoryItem } from '@/types/storefront';
 

@@ -28,4 +28,8 @@ Header = Home · Shop · [DB categories with `show_in_nav`, ordered by `nav_sort
 
 ## Catalog sources by surface
 
-Homepage featured category cards use `StorefrontCatalog::featuredCategories()` (DB `featured` + slogan/image) — not DemoCatalog. Shop / product detail / carousels may still use DemoCatalog until those surfaces are migrated. Header tabs use `buildStorefrontNavItems(storefront.navCategories)`. Branch session (`storefront.branch_slug` from `?branch=`) stays on StorefrontCatalog.
+Homepage featured category cards use `StorefrontCatalog::featuredCategories()` (DB `featured` + slogan/image). Homepage New Arrivals / Best Selling product rails use `StorefrontCatalog::productsWithTag(ProductTag::…)` with `selectedBranch()` and `config('catalog.home_products_max')` (default 8) — not DemoCatalog. Each rail filters active products by that tag only. Shop / product detail / packs-saves may still use DemoCatalog until those surfaces are migrated. Header tabs use `buildStorefrontNavItems(storefront.navCategories)`. Branch session (`storefront.branch_slug` from `?branch=`) stays on StorefrontCatalog.
+
+## ProductCard contract
+
+Shared `ProductCard` never shows or receives stock quantity (PDP may still show stock). Cards use fixed `aspect-[3/2]` with a real `<img>` (`object-cover`, lazy, async decode, sizes) and `/images/storefront/logo.png` fallback. Offer badge is driven by truthy `compareAtPrice`. Mapper (`mapProductCard`) prefers `Product::packSummary()` for the subtitle and uses catalog prices via `BranchProductPriceDisplay::forCatalogProduct` when no branch is selected.

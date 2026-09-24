@@ -16,6 +16,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Homepage product rails
+    |--------------------------------------------------------------------------
+    |
+    | Maximum products per tagged homepage carousel (New Arrivals, Best
+    | Selling, etc.). Each rail filters active products by that tag only.
+    |
+    */
+
+    'home_products_max' => env('HOME_PRODUCTS_MAX', 8),
+
+    /*
+    |--------------------------------------------------------------------------
     | Header navigation categories
     |--------------------------------------------------------------------------
     |

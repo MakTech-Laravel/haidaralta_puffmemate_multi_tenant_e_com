@@ -1,4 +1,4 @@
-import type { StorefrontFeature } from '@/lib/storefront-demo';
+import type { StorefrontFeature } from '@/types/storefront';
 import { cn } from '@/lib/utils';
 
 type FeaturesBarProps = {

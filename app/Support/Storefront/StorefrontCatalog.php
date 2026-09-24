@@ -176,7 +176,7 @@ class StorefrontCatalog
     }
 
     /**
-     * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}>
      */
     public static function productsForCategory(string $slug, ?Branch $branch = null, ?string $search = null, ?string $sort = null): array
     {
@@ -215,15 +215,36 @@ class StorefrontCatalog
     }
 
     /**
-     * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}>
      */
-    public static function products(?Branch $branch = null, int $limit = 24): array
-    {
+    public static function products(
+        ?Branch $branch = null,
+        ?string $search = null,
+        ?string $sort = null,
+        ?int $limit = null,
+    ): array {
         $query = Product::query()
             ->where('status', true)
-            ->with(['categories:id,name,slug', 'images'])
-            ->orderBy('name')
-            ->limit($limit);
+            ->with(['categories:id,name,slug', 'images']);
+
+        match ($sort) {
+            'name_desc' => $query->orderByDesc('name'),
+            'newest' => $query->orderByDesc('created_at'),
+            default => $query->orderBy('name'),
+        };
+
+        if (is_string($search) && $search !== '') {
+            $query->where(function ($builder) use ($search): void {
+                $builder->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('brand', 'like', '%'.$search.'%')
+                    ->orWhere('sku', 'like', '%'.$search.'%')
+                    ->orWhere('description', 'like', '%'.$search.'%');
+            });
+        }
+
+        if ($limit !== null) {
+            $query->limit(max(1, $limit));
+        }
 
         return $query->get()
             ->map(fn (Product $product): array => self::mapProductCard($product, $branch))
@@ -232,16 +253,31 @@ class StorefrontCatalog
     }
 
     /**
-     * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
+     * Products with a compare-at / offer price for Packs & Saves.
+     *
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}>
      */
-    public static function productsWithTag(ProductTag $tag, ?Branch $branch = null, int $limit = 8): array
+    public static function productsOnOffer(?Branch $branch = null, ?int $limit = null): array
     {
+        return collect(self::products($branch, null, null, $limit))
+            ->filter(fn (array $product): bool => filled($product['compareAtPrice'] ?? null))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}>
+     */
+    public static function productsWithTag(ProductTag $tag, ?Branch $branch = null, ?int $limit = null): array
+    {
+        $limit ??= (int) config('catalog.home_products_max');
+
         $query = Product::query()
             ->where('status', true)
             ->whereJsonContains('tags', $tag->value)
             ->with(['categories:id,name,slug', 'images'])
             ->orderBy('name')
-            ->limit($limit);
+            ->limit(max(1, $limit));
 
         return $query->get()
             ->map(fn (Product $product): array => self::mapProductCard($product, $branch))
@@ -346,7 +382,7 @@ class StorefrontCatalog
     }
 
     /**
-     * @return list<array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}>
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}>
      */
     public static function similarProducts(Product $product, ?Branch $branch = null, int $limit = 4): array
     {
@@ -370,7 +406,7 @@ class StorefrontCatalog
     }
 
     /**
-     * @return array{id: string, name: string, description: string, price: string, stock: int, category: string, image: string}
+     * @return array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}
      */
     public static function mapProductCard(Product $product, ?Branch $branch = null): array
     {
@@ -381,7 +417,7 @@ class StorefrontCatalog
         $categoryName = $product->categories->first()?->name ?? 'Catalog';
         $price = $branch !== null
             ? BranchProductPriceDisplay::forBranchProduct($branch, $product)
-            : ['label' => null, 'compare_at' => null];
+            : BranchProductPriceDisplay::forCatalogProduct($product);
 
         $compareAt = $price['compare_at'] ?? null;
 
@@ -391,7 +427,6 @@ class StorefrontCatalog
             'description' => self::cardDescription($product),
             'price' => $price['label'] ?? 'Select a branch',
             'compareAtPrice' => $compareAt === null ? '' : '$'.number_format((float) $compareAt, 2),
-            'stock' => $branch !== null ? self::stockFor($branch, $product) : 0,
             'category' => $categoryName,
             'image' => MediaUrl::resolve($product->image) ?? '/images/storefront/logo.png',
         ];
@@ -399,6 +434,12 @@ class StorefrontCatalog
 
     private static function cardDescription(Product $product): string
     {
+        $packSummary = $product->packSummary();
+
+        if (is_string($packSummary) && $packSummary !== '') {
+            return $packSummary;
+        }
+
         $specs = ProductSpecifications::normalize($product->specifications);
         $bits = Collection::make($specs)
             ->take(2)
