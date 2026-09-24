@@ -262,12 +262,14 @@ export function buildBranchNav(
                 permissions: [
                     'view-branch-activity-logs',
                     'view-branch-dashboard',
+                    'manage-branch-settings',
                 ],
                 items: [
-                    navSoon({
+                    navLink({
                         title: 'General',
+                        href: `/branch/${slug}/settings/general`,
                         icon: Settings2,
-                        permissions: ['view-branch-activity-logs'],
+                        permissions: ['manage-branch-settings'],
                     }),
                     navSoon({
                         title: 'Hours',

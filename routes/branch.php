@@ -6,6 +6,7 @@ use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\ConversationController as BranchConversationController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
+use App\Http\Controllers\Branch\GeneralSettingsController as BranchGeneralSettingsController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
@@ -130,6 +131,14 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::get('activity-logs/{activity}', [BranchActivityLogController::class, 'show'])
             ->whereNumber('activity')
             ->name('branch.activity-logs.show');
+    });
+
+    Route::middleware(['permission:manage-branch-settings'])->group(function () {
+        Route::get('settings/general', [BranchGeneralSettingsController::class, 'edit'])
+            ->name('branch.settings.general.edit');
+        Route::put('settings/general', [BranchGeneralSettingsController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('branch.settings.general.update');
     });
 
     Route::middleware(['permission:manage-branch-roles'])->group(function () {

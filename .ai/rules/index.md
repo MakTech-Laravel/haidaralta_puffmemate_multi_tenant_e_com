@@ -106,6 +106,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/shift-*.tsx,database/seeders/WorkforceShiftSeeder.php,app/Support/WorkforcePayload.php | .ai/rules/seeders-support.md |
 | database/seeders/**, database/seeders/WorkforceShiftSeeder.php | .ai/rules/seeders.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
+| app/Http/Controllers/Branch/GeneralSettingsController.php,resources/js/pages/branch/settings/**,resources/js/components/branch/nav.ts | .ai/rules/settings-js-components-branch.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |
 | app/Http/Controllers/Platform/*Shift*.php,resources/js/pages/platform/shifts/assign.tsx | .ai/rules/shifts.md |
 | resources/js/components/stock/**,app/Support/StockPageContext.php,app/Support/ProductManageRedirect.php | .ai/rules/stock-support-support.md |

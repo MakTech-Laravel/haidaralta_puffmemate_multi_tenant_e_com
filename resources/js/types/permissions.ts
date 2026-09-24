@@ -29,4 +29,5 @@ export type PermissionKey =
     | 'manage-branch-shifts'
     | 'view-transfers'
     | 'manage-conversations'
-    | 'manage-branch-conversations';
+    | 'manage-branch-conversations'
+    | 'manage-branch-settings';

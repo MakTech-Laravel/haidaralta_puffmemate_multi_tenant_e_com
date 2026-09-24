@@ -48,6 +48,8 @@ interface BranchFormProps {
     submitLabel?: string;
     /** When true (create only), require first branch super-admin in the same submit. */
     includeSuperAdmin?: boolean;
+    /** Hide slug, code, and Active — branch portal settings keep identity platform-owned. */
+    hideIdentityFields?: boolean;
 }
 
 const LOGO_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
@@ -90,8 +92,9 @@ export function BranchForm({
     cancelHref,
     submitLabel,
     includeSuperAdmin = false,
+    hideIdentityFields = false,
 }: BranchFormProps) {
-    const [slugTouched, setSlugTouched] = useState(isEdit);
+    const [slugTouched, setSlugTouched] = useState(isEdit || hideIdentityFields);
     const [mapPickerOpen, setMapPickerOpen] = useState(false);
     const [existingLogo, setExistingLogo] = useState<ExistingFile[]>(() =>
         defaults?.logo && defaults?.logo_url
@@ -192,10 +195,19 @@ export function BranchForm({
         event.preventDefault();
 
         transform((form) => {
-            const { logo, remove_logo, delivery_radius_km, ...rest } = form;
+            const {
+                logo,
+                remove_logo,
+                delivery_radius_km,
+                slug,
+                code,
+                status,
+                ...rest
+            } = form;
 
             return {
                 ...rest,
+                ...(hideIdentityFields ? {} : { slug, code, status }),
                 delivery_radius_km:
                     delivery_radius_km === '' ? null : delivery_radius_km,
                 ...(logo ? { logo } : {}),
@@ -307,38 +319,48 @@ export function BranchForm({
                                 <InputError message={errors.name} />
                             </div>
 
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="slug">URL name</Label>
-                                    <Input
-                                        id="slug"
-                                        value={data.slug}
-                                        onChange={(event) => {
-                                            setSlugTouched(true);
-                                            setData('slug', event.target.value);
-                                        }}
-                                        onBlur={() => validate('slug')}
-                                        required
-                                        placeholder="sydney-cbd"
-                                    />
-                                    <InputError message={errors.slug} />
-                                </div>
+                            {!hideIdentityFields ? (
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label htmlFor="slug">URL name</Label>
+                                        <Input
+                                            id="slug"
+                                            value={data.slug}
+                                            onChange={(event) => {
+                                                setSlugTouched(true);
+                                                setData(
+                                                    'slug',
+                                                    event.target.value,
+                                                );
+                                            }}
+                                            onBlur={() => validate('slug')}
+                                            required
+                                            placeholder="sydney-cbd"
+                                        />
+                                        <InputError message={errors.slug} />
+                                    </div>
 
-                                <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="code">Short code</Label>
-                                    <Input
-                                        id="code"
-                                        value={data.code}
-                                        onChange={(event) =>
-                                            setData('code', event.target.value)
-                                        }
-                                        onBlur={() => validate('code')}
-                                        required
-                                        placeholder="SYD"
-                                    />
-                                    <InputError message={errors.code} />
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label htmlFor="code">
+                                            Short code
+                                        </Label>
+                                        <Input
+                                            id="code"
+                                            value={data.code}
+                                            onChange={(event) =>
+                                                setData(
+                                                    'code',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            onBlur={() => validate('code')}
+                                            required
+                                            placeholder="SYD"
+                                        />
+                                        <InputError message={errors.code} />
+                                    </div>
                                 </div>
-                            </div>
+                            ) : null}
 
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <div className="flex flex-col gap-1.5">
@@ -552,19 +574,21 @@ export function BranchForm({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 pt-1">
-                        <Checkbox
-                            id="status"
-                            checked={data.status}
-                            onCheckedChange={(value) =>
-                                setData('status', value === true)
-                            }
-                        />
-                        <Label htmlFor="status" className="font-normal">
-                            Branch is active
-                        </Label>
-                        <InputError message={errors.status} />
-                    </div>
+                    {!hideIdentityFields ? (
+                        <div className="flex items-center gap-2 pt-1">
+                            <Checkbox
+                                id="status"
+                                checked={data.status}
+                                onCheckedChange={(value) =>
+                                    setData('status', value === true)
+                                }
+                            />
+                            <Label htmlFor="status" className="font-normal">
+                                Branch is active
+                            </Label>
+                            <InputError message={errors.status} />
+                        </div>
+                    ) : null}
                 </div>
             </section>
 

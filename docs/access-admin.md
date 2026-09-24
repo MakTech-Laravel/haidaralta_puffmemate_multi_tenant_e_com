@@ -20,6 +20,7 @@ Roles and permissions are always team-scoped. Platform admin users have `users.b
 | `manage-branch-users` | platform | Branch staff CRUD across all branches (platform portal)  |
 | `manage-branch-roles` | branch   | Branch roles CRUD, branch permission catalog, CSV export |
 | `manage-branch-staff` | branch   | Branch staff CRUD (within own branch portal)             |
+| `manage-branch-settings` | branch | Branch Settings → General (profile details; not slug/code/status) |
 
 Branch managers are seeded **without** `manage-branch-staff` and `manage-branch-roles`.
 Platform managers are seeded **without** `manage-branch-users`, `manage-roles`, and `manage-database-backups`.
@@ -38,6 +39,7 @@ Platform managers are seeded **without** `manage-branch-users`, `manage-roles`, 
 - `branch/{branch}/roles` (+ export)
 - `branch/{branch}/permissions` (+ export)
 - `branch/{branch}/staff`
+- `branch/{branch}/settings/general` (edit/update; permission `manage-branch-settings`)
 
 ## UX conventions
 

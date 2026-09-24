@@ -36,6 +36,7 @@ enum PermissionEnum: string
     case MANAGE_BRANCH_DRIVERS = 'manage-branch-drivers';
     case MANAGE_BRANCH_SHIFTS = 'manage-branch-shifts';
     case MANAGE_BRANCH_CONVERSATIONS = 'manage-branch-conversations';
+    case MANAGE_BRANCH_SETTINGS = 'manage-branch-settings';
 
     /**
      * The auth guard this permission belongs to.
@@ -74,7 +75,8 @@ enum PermissionEnum: string
             self::VIEW_BRANCH_ACTIVITY_LOGS,
             self::MANAGE_BRANCH_DRIVERS,
             self::MANAGE_BRANCH_SHIFTS,
-            self::MANAGE_BRANCH_CONVERSATIONS => 'branch',
+            self::MANAGE_BRANCH_CONVERSATIONS,
+            self::MANAGE_BRANCH_SETTINGS => 'branch',
         };
     }
 
@@ -108,7 +110,8 @@ enum PermissionEnum: string
             self::VIEW_ACTIVITY_LOGS,
             self::VIEW_BRANCH_ACTIVITY_LOGS => 'Activity',
             self::MANAGE_DATABASE_BACKUPS => 'Database',
-            self::MANAGE_APPLICATION_SETTINGS => 'Application',
+            self::MANAGE_APPLICATION_SETTINGS,
+            self::MANAGE_BRANCH_SETTINGS => 'Application',
             self::MANAGE_PAGES => 'Pages',
             self::VIEW_HORIZON,
             self::VIEW_PULSE => 'Observability',
@@ -159,6 +162,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_DRIVERS => 'Manage branch drivers',
             self::MANAGE_BRANCH_SHIFTS => 'Manage branch shifts',
             self::MANAGE_BRANCH_CONVERSATIONS => 'Manage branch conversations',
+            self::MANAGE_BRANCH_SETTINGS => 'Manage branch settings',
         };
     }
 
