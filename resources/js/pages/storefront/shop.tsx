@@ -1,13 +1,15 @@
 import { Head, router } from '@inertiajs/react';
 import { Menu } from 'lucide-react';
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { FeaturesBar } from '@/components/storefront/features-bar';
 import { ProductCard } from '@/components/storefront/product-card';
 import {
     ShopFiltersSidebar,
+    type ShopCategoryOption,
+    type ShopPriceRangeOption,
     type ShopSidebarFilters,
+    type ShopTagOption,
 } from '@/components/storefront/shop-filters-sidebar';
-import { StorefrontBranchSelect } from '@/components/storefront/storefront-branch-select';
 import { StorefrontSearchBar } from '@/components/storefront/storefront-search-bar';
 import { StorefrontSortSelect } from '@/components/storefront/storefront-sort-select';
 import { Button } from '@/components/ui/button';
@@ -50,73 +52,119 @@ function useIsBelowLg(): boolean {
     );
 }
 
-const emptySidebarFilters: ShopSidebarFilters = {
-    minPrice: null,
-    maxPrice: null,
-    categories: [],
-    types: [],
+type ShopFilters = {
+    search: string;
+    sort: string | null;
+    minPrice: number | null;
+    maxPrice: number | null;
+    categories: string[];
+    tags: string[];
+};
+
+type ShopFilterOptions = {
+    categories: ShopCategoryOption[];
+    tags: ShopTagOption[];
+    priceRanges: ShopPriceRangeOption[];
+    sliderMax: number;
 };
 
 type ShopPageProps = {
     products: StorefrontProduct[];
-    branches: Array<{ id: string; name: string }>;
-    filters: {
-        search: string;
-        branchId: string | null;
-        sort: string | null;
-    };
+    filters: ShopFilters;
+    filterOptions: ShopFilterOptions;
 };
 
-type VisitOptions = {
+type VisitOptions = Partial<ShopFilters> & {
     search?: string;
-    branchId?: string | null;
-    sort?: string | null;
 };
+
+function toSidebarFilters(filters: ShopFilters): ShopSidebarFilters {
+    return {
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+        categories: filters.categories,
+        tags: filters.tags,
+    };
+}
 
 export default function StorefrontShop({
     products,
-    branches,
     filters,
+    filterOptions,
 }: ShopPageProps) {
     const isBelowLg = useIsBelowLg();
     const [filtersOpen, setFiltersOpen] = useState(false);
     const [search, setSearch] = useState(filters.search);
-    const [sidebarFilters, setSidebarFilters] =
-        useState<ShopSidebarFilters>(emptySidebarFilters);
 
-    const updateSidebarFilters = (partial: Partial<ShopSidebarFilters>) => {
-        setSidebarFilters((current) => ({
-            ...current,
-            ...partial,
-        }));
-    };
+    useEffect(() => {
+        setSearch(filters.search);
+    }, [filters.search]);
 
     const visit = (next: VisitOptions = {}) => {
         const nextSearch = next.search ?? search;
-        const nextBranch =
-            next.branchId !== undefined ? next.branchId : filters.branchId;
-        const nextSort = next.sort !== undefined ? next.sort : filters.sort;
+        const nextSort =
+            next.sort !== undefined ? next.sort : filters.sort;
+        const nextMinPrice =
+            next.minPrice !== undefined ? next.minPrice : filters.minPrice;
+        const nextMaxPrice =
+            next.maxPrice !== undefined ? next.maxPrice : filters.maxPrice;
+        const nextCategories =
+            next.categories !== undefined
+                ? next.categories
+                : filters.categories;
+        const nextTags = next.tags !== undefined ? next.tags : filters.tags;
 
         router.cancelAll();
         router.get(
             shop.url(),
             {
                 ...(nextSearch ? { search: nextSearch } : {}),
-                ...(nextBranch ? { branch: nextBranch } : {}),
                 ...(nextSort ? { sort: nextSort } : {}),
+                ...(nextMinPrice !== null && nextMinPrice !== undefined
+                    ? { min_price: nextMinPrice }
+                    : {}),
+                ...(nextMaxPrice !== null && nextMaxPrice !== undefined
+                    ? { max_price: nextMaxPrice }
+                    : {}),
+                ...(nextCategories.length > 0
+                    ? { categories: nextCategories }
+                    : {}),
+                ...(nextTags.length > 0 ? { tags: nextTags } : {}),
             },
             {
                 preserveState: true,
                 replace: true,
-                only: ['products', 'filters', 'branches'],
+                only: ['products', 'filters', 'filterOptions'],
             },
         );
     };
 
+    const updateSidebarFilters = (partial: Partial<ShopSidebarFilters>) => {
+        visit({
+            minPrice:
+                partial.minPrice !== undefined
+                    ? partial.minPrice
+                    : filters.minPrice,
+            maxPrice:
+                partial.maxPrice !== undefined
+                    ? partial.maxPrice
+                    : filters.maxPrice,
+            categories:
+                partial.categories !== undefined
+                    ? partial.categories
+                    : filters.categories,
+            tags: partial.tags !== undefined ? partial.tags : filters.tags,
+        });
+    };
+
     const filtersSidebar = (
         <ShopFiltersSidebar
-            value={sidebarFilters}
+            value={toSidebarFilters(filters)}
             onChange={updateSidebarFilters}
+            categories={filterOptions.categories}
+            tags={filterOptions.tags}
+            priceRanges={filterOptions.priceRanges}
+            sliderMax={filterOptions.sliderMax}
             className={
                 isBelowLg ? undefined : 'lg:sticky lg:top-28 lg:self-start'
             }
@@ -134,12 +182,11 @@ export default function StorefrontShop({
                             Shop the collection
                         </h1>
                         <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
-                            Choose a product first, then compare which branches
-                            have it in stock
+                            Search, filter, and sort the full catalog
                         </p>
                     </div>
                 </div>
-                <div className="mb-8 flex w-full flex-col gap-3 lg:flex-row lg:items-stretch">
+                <div className="mb-8 flex w-full flex-col gap-3 lg:flex-row lg:items-center">
                     {isBelowLg ? (
                         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
                             <SheetTrigger asChild>
@@ -171,29 +218,37 @@ export default function StorefrontShop({
                         value={search}
                         onChange={setSearch}
                         onSubmit={() => visit({ search })}
-                        className="lg:min-w-0 lg:flex-[1.4]"
-                    />
-                    <StorefrontBranchSelect
-                        branches={branches}
-                        value={filters.branchId}
-                        onChange={(branchId) => visit({ branchId })}
                         className="lg:min-w-0 lg:flex-1"
                     />
                     <StorefrontSortSelect
                         value={filters.sort}
                         onChange={(sort) => visit({ sort })}
-                        className="lg:min-w-0 lg:flex-1"
+                        className="lg:w-44 lg:max-w-xs lg:shrink-0"
                     />
                 </div>
 
                 <div className="grid items-start gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
                     {!isBelowLg ? filtersSidebar : null}
 
-                    <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {products.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
+                    {products.length === 0 ? (
+                        <div className="border-border bg-card rounded-xl border p-10 text-center">
+                            <p className="text-foreground text-base font-semibold">
+                                No products match
+                            </p>
+                            <p className="text-muted-foreground mt-2 text-sm">
+                                Try a different search or clear some filters.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {products.map((product) => (
+                                <ProductCard
+                                    key={product.id}
+                                    product={product}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 

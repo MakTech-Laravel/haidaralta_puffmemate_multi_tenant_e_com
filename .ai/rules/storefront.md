@@ -29,7 +29,7 @@ Header = Home · Shop · [DB categories with `show_in_nav`, ordered by `nav_sort
 
 ## Catalog sources by surface
 
-Homepage featured category cards use `StorefrontCatalog::featuredCategories()`. Homepage New Arrivals / Best Selling use `StorefrontCatalog::productsWithTag` + `config('catalog.home_products_max')`. Shop, category, product detail, and Packs & Saves use `StorefrontCatalog` (DB) — never `DemoCatalog`. Durable TS types live in `resources/js/types/storefront.ts`; features bar copy in `resources/js/lib/storefront-features.ts`. Do not import product data from `storefront-demo.ts` (deprecated re-exports only). Cart / checkout / customer / driver may still use DemoCatalog until those surfaces are migrated. Header tabs use `buildStorefrontNavItems(storefront.navCategories)`. Branch session (`storefront.branch_slug` from `?branch=`) stays on StorefrontCatalog.
+Homepage featured category cards use `StorefrontCatalog::featuredCategories()`. Homepage New Arrivals / Best Selling use `StorefrontCatalog::productsWithTag` + `config('catalog.home_products_max')`. Shop uses `StorefrontShopQuery` (Meilisearch search when available, Eloquent fallback) with query-string filters: `search`, `sort`, `min_price`, `max_price`, `categories[]`, `tags[]`. Facets come from active root categories, all `ProductTag` cases, and active `PriceRange` rows — never hardcoded shop sidebar lists. Shop has **no** branch select. Product detail and Packs & Saves use `StorefrontCatalog`. Durable TS types live in `resources/js/types/storefront.ts`; features bar copy in `resources/js/lib/storefront-features.ts`. Cart / checkout / customer / driver may still use DemoCatalog until those surfaces are migrated. Header tabs use `buildStorefrontNavItems(storefront.navCategories)`. Branch session (`storefront.branch_slug` from `?branch=`) stays on StorefrontCatalog for category/PDP backends only.
 
 ## ProductCard contract
 
@@ -42,6 +42,14 @@ Storefront PDP (`ProductSummary`) does not show Selected branch / Change branch.
 ## Similar products are ranked recommendations
 
 PDP Similar Products uses `StorefrontCatalog::similarProducts` capped by `config('catalog.similar_products_max')` (default 4). Rank: same category (+100), same brand (+40), tags best_selling (+30) / popular (+20) / on_offer (+15) / new_arrival (+10), catalog compare-at (+5). Backfill from site-wide best_selling/popular when the category pool is thin. Do not sort Similar Products alphabetically only.
+
+## Shop price ranges are platform-managed
+
+`PriceRange` rows (label, slug, min_amount, max_amount, sort_order, status) drive shop sidebar presets. Platform CRUD at `/platform/price-ranges` under `manage-catalog`. Seed via `PriceRangeSeeder`. Slider max is `max(active max_amount, config('catalog.shop_price_slider_max'))`.
+
+## Product Scout indexes catalog prices
+
+`Product::toSearchableArray` includes `selling_price` and `effective_price` (catalog effective). Meilisearch filterable/sortable lists in `config/scout.php` must stay in sync. After changing index settings, reimport products.
 
 ## Similar products ranked recommendations
 PDP Similar Products ranks by category (+100), brand (+40), tags best_selling/popular/on_offer/new_arrival, then compare-at. Cap via catalog.similar_products_max (default 4). Backfill from site-wide best_selling/popular when the category pool is thin.

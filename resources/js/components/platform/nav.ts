@@ -221,6 +221,12 @@ export function buildPlatformNav(
                         icon: Package,
                         permissions: ['manage-catalog'],
                     }),
+                    navLink({
+                        title: 'Shop price ranges',
+                        href: '/platform/price-ranges',
+                        icon: CircleDollarSign,
+                        permissions: ['manage-catalog'],
+                    }),
                     ...(!showBranchPricing
                         ? [
                               navLink({

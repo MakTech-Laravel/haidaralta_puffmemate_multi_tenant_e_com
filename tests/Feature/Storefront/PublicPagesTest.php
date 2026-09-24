@@ -259,9 +259,10 @@ test('storefront shop page serves catalog products from the database', function 
                 fn ($product): bool => $product['id'] === 'marlboro-gold-soft-pack-20s',
             ))
             ->where('products.0', fn ($card): bool => ! array_key_exists('stock', collect($card)->all()))
-            ->has('branches')
+            ->has('filterOptions.categories')
+            ->has('filterOptions.tags')
+            ->missing('branches')
             ->where('filters.search', '')
-            ->where('filters.branchId', null)
             ->where('filters.sort', null));
 });
 
@@ -391,12 +392,12 @@ test('storefront similar products prefer category brand and best-selling tags', 
 });
 
 test('storefront remembers selected branch in session from query string', function () {
-    $this->get(route('shop', ['branch' => BranchSeeder::SYDNEY_CBD]))
+    $this->get(route('shop.category', ['category' => 'cigarettes', 'branch' => BranchSeeder::SYDNEY_CBD]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('filters.branchId', BranchSeeder::SYDNEY_CBD));
 
-    $this->get(route('shop'))
+    $this->get(route('shop.category', ['category' => 'cigarettes']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('filters.branchId', BranchSeeder::SYDNEY_CBD));

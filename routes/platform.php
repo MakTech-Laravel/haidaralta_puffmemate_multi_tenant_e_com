@@ -24,6 +24,7 @@ use App\Http\Controllers\Platform\NotificationController as PlatformNotification
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
 use App\Http\Controllers\Platform\PaymentGatewaySettingsController as PlatformPaymentGatewaySettingsController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
+use App\Http\Controllers\Platform\PriceRangeController as PlatformPriceRangeController;
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
@@ -276,6 +277,23 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.catalog.pricing.manage');
         Route::put('products/{product}/catalog-prices', [PlatformCatalogPricingController::class, 'upsert'])
             ->name('platform.products.prices');
+
+        Route::get('price-ranges', [PlatformPriceRangeController::class, 'index'])
+            ->name('platform.price-ranges.index');
+        Route::get('price-ranges/create', [PlatformPriceRangeController::class, 'create'])
+            ->name('platform.price-ranges.create');
+        Route::post('price-ranges', [PlatformPriceRangeController::class, 'store'])
+            ->name('platform.price-ranges.store');
+        Route::get('price-ranges/{price_range}/edit', [PlatformPriceRangeController::class, 'edit'])
+            ->name('platform.price-ranges.edit');
+        Route::put('price-ranges/{price_range}', [PlatformPriceRangeController::class, 'update'])
+            ->name('platform.price-ranges.update');
+        Route::delete('price-ranges/{price_range}', [PlatformPriceRangeController::class, 'destroy'])
+            ->name('platform.price-ranges.destroy');
+        Route::post('price-ranges/{price_range}/move', [PlatformPriceRangeController::class, 'move'])
+            ->name('platform.price-ranges.move');
+        Route::patch('price-ranges/{price_range}/status', [PlatformPriceRangeController::class, 'toggleStatus'])
+            ->name('platform.price-ranges.status');
 
         Route::post('products/{product}/variants', [PlatformProductVariantController::class, 'store'])
             ->middleware('precognitive')

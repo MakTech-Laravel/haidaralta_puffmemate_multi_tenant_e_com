@@ -7,6 +7,7 @@ use App\Contracts\ScoutSearchable;
 use App\Enums\DiscountType;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
+use App\Support\BranchProductPriceDisplay;
 use App\Support\CatalogBackgroundColor;
 use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
@@ -200,6 +201,11 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
             $this->load('categories:id');
         }
 
+        $sellingPrice = $this->selling_price === null ? null : (float) $this->selling_price;
+        $effectivePrice = $sellingPrice === null
+            ? null
+            : BranchProductPriceDisplay::catalogEffectiveAmount($this);
+
         return [
             'id' => (int) $this->id,
             'category_ids' => $this->categories->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
@@ -209,6 +215,8 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
             'brand' => $this->brand,
             'tags' => $this->tags ?? [],
             'status' => (bool) $this->status,
+            'selling_price' => $sellingPrice,
+            'effective_price' => $effectivePrice,
             'created_at' => SearchableTimestamp::from($this->created_at),
         ];
     }

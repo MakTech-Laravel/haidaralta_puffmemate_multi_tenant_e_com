@@ -16,6 +16,8 @@ export const storefrontSortOptions: StorefrontSortOption[] = [
     { value: 'name_asc', label: 'Name A–Z' },
     { value: 'name_desc', label: 'Name Z–A' },
     { value: 'newest', label: 'Newest' },
+    { value: 'price_asc', label: 'Price: low to high' },
+    { value: 'price_desc', label: 'Price: high to low' },
 ];
 
 type StorefrontSortSelectProps = {
@@ -30,7 +32,7 @@ export function StorefrontSortSelect({
     value,
     onChange,
     className,
-    placeholder = 'Shorts Order',
+    placeholder = 'Sort order',
     options = storefrontSortOptions,
 }: StorefrontSortSelectProps) {
     return (
@@ -40,7 +42,7 @@ export function StorefrontSortSelect({
                 onValueChange={(next) => onChange(next || null)}
             >
                 <SelectTrigger
-                    className="border-primary bg-background h-12 min-h-12 w-full rounded-none py-0 shadow-none data-[size=default]:h-12"
+                    className="border-primary bg-background h-10 min-h-10 w-full rounded-none py-0 shadow-none data-[size=default]:h-10"
                     aria-label="Sort order"
                 >
                     <SelectValue placeholder={placeholder} />

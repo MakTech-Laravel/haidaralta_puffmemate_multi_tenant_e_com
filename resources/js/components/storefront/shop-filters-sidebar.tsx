@@ -8,114 +8,114 @@ export type ShopSidebarFilters = {
     minPrice: number | null;
     maxPrice: number | null;
     categories: string[];
-    types: string[];
+    tags: string[];
 };
 
-export type ShopFiltersSidebarProps = {
-    value: ShopSidebarFilters;
-    onChange: (next: Partial<ShopSidebarFilters>) => void;
-    className?: string;
+export type ShopCategoryOption = {
+    slug: string;
+    name: string;
 };
 
-const PRICE_SLIDER_MIN = 0;
-const PRICE_SLIDER_MAX = 10_000;
+export type ShopTagOption = {
+    value: string;
+    label: string;
+};
 
-type PricePreset = {
-    id: string;
+export type ShopPriceRangeOption = {
+    slug: string;
     label: string;
     min: number | null;
     max: number | null;
 };
 
-const PRICE_PRESETS: PricePreset[] = [
-    { id: 'all', label: 'All Price', min: null, max: null },
-    { id: 'under-20', label: 'Under $20', min: null, max: 20 },
-    { id: '25-100', label: '$25 to $100', min: 25, max: 100 },
-    { id: '100-300', label: '$100 to $300', min: 100, max: 300 },
-    { id: '300-500', label: '$300 to $500', min: 300, max: 500 },
-    { id: '500-1000', label: '$500 to $1,000', min: 500, max: 1_000 },
-    { id: '1000-10000', label: '$1,000 to $10,000', min: 1_000, max: 10_000 },
-];
+export type ShopFiltersSidebarProps = {
+    value: ShopSidebarFilters;
+    onChange: (next: Partial<ShopSidebarFilters>) => void;
+    categories: ShopCategoryOption[];
+    tags: ShopTagOption[];
+    priceRanges: ShopPriceRangeOption[];
+    sliderMax: number;
+    className?: string;
+};
 
-export const SHOP_CATEGORY_OPTIONS = [
-    { slug: 'cigarettes', label: 'Cigarettes' },
-    { slug: 'vapes', label: 'Vapes' },
-    { slug: 'tobacco', label: 'Tobacco' },
-    { slug: 'nicotine-pouches', label: 'Nicotine Pouches' },
-    { slug: 'accessories', label: 'Accessories' },
-] as const;
-
-export const SHOP_TYPE_OPTIONS = [
-    { slug: 'best-selling', label: 'Best Selling Products' },
-    { slug: 'new-arrival', label: 'New Arrival' },
-] as const;
-
-function activePricePresetId(
+function activePricePresetSlug(
     minPrice: number | null,
     maxPrice: number | null,
+    priceRanges: ShopPriceRangeOption[],
 ): string {
-    const match = PRICE_PRESETS.find(
+    if (minPrice === null && maxPrice === null) {
+        return 'all';
+    }
+
+    const match = priceRanges.find(
         (preset) => preset.min === minPrice && preset.max === maxPrice,
     );
 
-    return match?.id ?? 'custom';
+    return match?.slug ?? 'custom';
 }
 
-function toggleSlug(
+function toggleValue(
     selected: string[],
-    slug: string,
+    value: string,
     checked: boolean,
 ): string[] {
     if (checked) {
-        return selected.includes(slug) ? selected : [...selected, slug];
+        return selected.includes(value) ? selected : [...selected, value];
     }
 
-    return selected.filter((item) => item !== slug);
+    return selected.filter((item) => item !== value);
 }
 
 export function ShopFiltersSidebar({
     value,
     onChange,
+    categories,
+    tags,
+    priceRanges,
+    sliderMax,
     className,
 }: ShopFiltersSidebarProps) {
+    const sliderCeiling = Math.max(1, sliderMax);
     const [minDraft, setMinDraft] = useState(
         value.minPrice === null ? '' : String(value.minPrice),
     );
     const [maxDraft, setMaxDraft] = useState(
         value.maxPrice === null ? '' : String(value.maxPrice),
     );
-    const [sliderMin, setSliderMin] = useState(
-        value.minPrice ?? PRICE_SLIDER_MIN,
-    );
-    const [sliderMax, setSliderMax] = useState(
-        value.maxPrice ?? PRICE_SLIDER_MAX,
+    const [sliderMin, setSliderMin] = useState(value.minPrice ?? 0);
+    const [sliderMaxValue, setSliderMaxValue] = useState(
+        value.maxPrice ?? sliderCeiling,
     );
     const [isSliding, setIsSliding] = useState(false);
     const sliderMinRef = useRef(sliderMin);
-    const sliderMaxRef = useRef(sliderMax);
+    const sliderMaxRef = useRef(sliderMaxValue);
 
     useEffect(() => {
         setMinDraft(value.minPrice === null ? '' : String(value.minPrice));
         setMaxDraft(value.maxPrice === null ? '' : String(value.maxPrice));
 
         if (!isSliding) {
-            const nextMin = value.minPrice ?? PRICE_SLIDER_MIN;
-            const nextMax = value.maxPrice ?? PRICE_SLIDER_MAX;
+            const nextMin = value.minPrice ?? 0;
+            const nextMax = value.maxPrice ?? sliderCeiling;
             setSliderMin(nextMin);
-            setSliderMax(nextMax);
+            setSliderMaxValue(nextMax);
             sliderMinRef.current = nextMin;
             sliderMaxRef.current = nextMax;
         }
-    }, [value.minPrice, value.maxPrice, isSliding]);
+    }, [value.minPrice, value.maxPrice, isSliding, sliderCeiling]);
 
-    const presetId = activePricePresetId(value.minPrice, value.maxPrice);
+    const presetSlug = activePricePresetSlug(
+        value.minPrice,
+        value.maxPrice,
+        priceRanges,
+    );
     const allCategories = value.categories.length === 0;
-    const allTypes = value.types.length === 0;
+    const allTags = value.tags.length === 0;
 
     const commitPrice = (min: number, max: number) => {
         onChange({
-            minPrice: min <= PRICE_SLIDER_MIN ? null : min,
-            maxPrice: max >= PRICE_SLIDER_MAX ? null : max,
+            minPrice: min <= 0 ? null : min,
+            maxPrice: max >= sliderCeiling ? null : max,
         });
     };
 
@@ -148,14 +148,14 @@ export function ShopFiltersSidebar({
                     <div
                         className="bg-primary absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
                         style={{
-                            left: `${(sliderMin / PRICE_SLIDER_MAX) * 100}%`,
-                            right: `${100 - (sliderMax / PRICE_SLIDER_MAX) * 100}%`,
+                            left: `${(sliderMin / sliderCeiling) * 100}%`,
+                            right: `${100 - (sliderMaxValue / sliderCeiling) * 100}%`,
                         }}
                     />
                     <input
                         type="range"
-                        min={PRICE_SLIDER_MIN}
-                        max={PRICE_SLIDER_MAX}
+                        min={0}
+                        max={sliderCeiling}
                         step={5}
                         value={sliderMin}
                         aria-label="Minimum price"
@@ -176,10 +176,10 @@ export function ShopFiltersSidebar({
                     />
                     <input
                         type="range"
-                        min={PRICE_SLIDER_MIN}
-                        max={PRICE_SLIDER_MAX}
+                        min={0}
+                        max={sliderCeiling}
                         step={5}
-                        value={sliderMax}
+                        value={sliderMaxValue}
                         aria-label="Maximum price"
                         onPointerDown={() => setIsSliding(true)}
                         onChange={(event) => {
@@ -188,7 +188,7 @@ export function ShopFiltersSidebar({
                                 sliderMinRef.current,
                             );
                             setIsSliding(true);
-                            setSliderMax(nextMax);
+                            setSliderMaxValue(nextMax);
                             sliderMaxRef.current = nextMax;
                             setMaxDraft(String(nextMax));
                         }}
@@ -254,11 +254,46 @@ export function ShopFiltersSidebar({
                 </div>
 
                 <ul className="space-y-2.5">
-                    {PRICE_PRESETS.map((preset) => {
-                        const selected = presetId === preset.id;
+                    <li>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                onChange({
+                                    minPrice: null,
+                                    maxPrice: null,
+                                })
+                            }
+                            className="flex w-full items-center gap-2.5 text-left text-sm"
+                        >
+                            <span
+                                className={cn(
+                                    'flex size-4 shrink-0 items-center justify-center rounded-full border',
+                                    presetSlug === 'all'
+                                        ? 'border-primary'
+                                        : 'border-border',
+                                )}
+                                aria-hidden
+                            >
+                                {presetSlug === 'all' ? (
+                                    <span className="bg-primary size-2 rounded-full" />
+                                ) : null}
+                            </span>
+                            <span
+                                className={cn(
+                                    presetSlug === 'all'
+                                        ? 'text-foreground font-medium'
+                                        : 'text-muted-foreground',
+                                )}
+                            >
+                                All Price
+                            </span>
+                        </button>
+                    </li>
+                    {priceRanges.map((preset) => {
+                        const selected = presetSlug === preset.slug;
 
                         return (
-                            <li key={preset.id}>
+                            <li key={preset.slug}>
                                 <button
                                     type="button"
                                     onClick={() =>
@@ -316,7 +351,7 @@ export function ShopFiltersSidebar({
                             All
                         </Label>
                     </li>
-                    {SHOP_CATEGORY_OPTIONS.map((option) => {
+                    {categories.map((option) => {
                         const checked = value.categories.includes(option.slug);
 
                         return (
@@ -329,7 +364,7 @@ export function ShopFiltersSidebar({
                                     checked={checked}
                                     onCheckedChange={(state) =>
                                         onChange({
-                                            categories: toggleSlug(
+                                            categories: toggleValue(
                                                 value.categories,
                                                 option.slug,
                                                 state === true,
@@ -341,7 +376,7 @@ export function ShopFiltersSidebar({
                                     htmlFor={`shop-category-${option.slug}`}
                                     className="text-foreground cursor-pointer text-sm font-normal"
                                 >
-                                    {option.label}
+                                    {option.name}
                                 </Label>
                             </li>
                         );
@@ -357,8 +392,8 @@ export function ShopFiltersSidebar({
                     <li className="flex items-center gap-2.5">
                         <Checkbox
                             id="shop-type-all"
-                            checked={allTypes}
-                            onCheckedChange={() => onChange({ types: [] })}
+                            checked={allTags}
+                            onCheckedChange={() => onChange({ tags: [] })}
                         />
                         <Label
                             htmlFor="shop-type-all"
@@ -367,29 +402,29 @@ export function ShopFiltersSidebar({
                             All
                         </Label>
                     </li>
-                    {SHOP_TYPE_OPTIONS.map((option) => {
-                        const checked = value.types.includes(option.slug);
+                    {tags.map((option) => {
+                        const checked = value.tags.includes(option.value);
 
                         return (
                             <li
-                                key={option.slug}
+                                key={option.value}
                                 className="flex items-center gap-2.5"
                             >
                                 <Checkbox
-                                    id={`shop-type-${option.slug}`}
+                                    id={`shop-type-${option.value}`}
                                     checked={checked}
                                     onCheckedChange={(state) =>
                                         onChange({
-                                            types: toggleSlug(
-                                                value.types,
-                                                option.slug,
+                                            tags: toggleValue(
+                                                value.tags,
+                                                option.value,
                                                 state === true,
                                             ),
                                         })
                                     }
                                 />
                                 <Label
-                                    htmlFor={`shop-type-${option.slug}`}
+                                    htmlFor={`shop-type-${option.value}`}
                                     className="text-foreground cursor-pointer text-sm font-normal"
                                 >
                                     {option.label}

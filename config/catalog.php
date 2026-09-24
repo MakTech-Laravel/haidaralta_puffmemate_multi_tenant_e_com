@@ -28,6 +28,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Shop price slider ceiling
+    |--------------------------------------------------------------------------
+    |
+    | Fallback maximum for the storefront shop dual-range slider when no
+    | active price_ranges.max_amount exceeds this value.
+    |
+    */
+
+    'shop_price_slider_max' => env('SHOP_PRICE_SLIDER_MAX', 10000),
+
+    /*
+    |--------------------------------------------------------------------------
     | Similar products (PDP)
     |--------------------------------------------------------------------------
     |
