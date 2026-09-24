@@ -1,9 +1,10 @@
 ---
 paths:
-    - 'resources/js/{layouts,components,pages}/storefront/**'
-    - 'resources/js/lib/storefront*.ts'
-    - app/Support/Storefront/**
-    - app/Http/Middleware/HandleInertiaRequests.php
+  - 'resources/js/{layouts,components,pages}/storefront/**'
+  - 'resources/js/lib/storefront*.ts'
+  - 'app/Support/Storefront/**'
+  - app/Http/Middleware/HandleInertiaRequests.php
+  - 'app/Support/Storefront/StorefrontCatalog.php,config/catalog.php'
 ---
 
 # Storefront
@@ -37,3 +38,10 @@ Shared `ProductCard` never shows or receives stock quantity (PDP may still show 
 ## Product detail has no branch picker
 
 Storefront PDP (`ProductSummary`) does not show Selected branch / Change branch. Do not pass `branches` or `branchId` Inertia props for product show. Catalog price still comes from `StorefrontCatalog::productDetail` (catalog or session branch when present for backend only).
+
+## Similar products are ranked recommendations
+
+PDP Similar Products uses `StorefrontCatalog::similarProducts` capped by `config('catalog.similar_products_max')` (default 4). Rank: same category (+100), same brand (+40), tags best_selling (+30) / popular (+20) / on_offer (+15) / new_arrival (+10), catalog compare-at (+5). Backfill from site-wide best_selling/popular when the category pool is thin. Do not sort Similar Products alphabetically only.
+
+## Similar products ranked recommendations
+PDP Similar Products ranks by category (+100), brand (+40), tags best_selling/popular/on_offer/new_arrival, then compare-at. Cap via catalog.similar_products_max (default 4). Backfill from site-wide best_selling/popular when the category pool is thin.

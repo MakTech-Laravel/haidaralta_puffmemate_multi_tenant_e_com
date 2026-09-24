@@ -317,6 +317,79 @@ test('storefront product details page returns not found for unknown product', fu
         ->assertNotFound();
 });
 
+test('storefront similar products prefer category brand and best-selling tags', function () {
+    config(['catalog.similar_products_max' => 3]);
+
+    $category = Category::factory()->create([
+        'name' => 'Recommend Cat',
+        'slug' => 'recommend-cat',
+        'status' => true,
+    ]);
+    $otherCategory = Category::factory()->create([
+        'name' => 'Other Cat',
+        'slug' => 'other-cat',
+        'status' => true,
+    ]);
+
+    $source = Product::factory()->create([
+        'name' => 'Source Product',
+        'slug' => 'source-product',
+        'brand' => 'Acme',
+        'status' => true,
+        'selling_price' => 10,
+    ]);
+    $source->categories()->sync([$category->id]);
+
+    $bestSameBrand = Product::factory()->create([
+        'name' => 'Zebra Best Same Brand',
+        'slug' => 'zebra-best-same-brand',
+        'brand' => 'Acme',
+        'status' => true,
+        'tags' => [ProductTag::BestSelling->value],
+        'selling_price' => 12,
+    ]);
+    $bestSameBrand->categories()->sync([$category->id]);
+
+    $popularSameCategory = Product::factory()->create([
+        'name' => 'Alpha Popular Same Category',
+        'slug' => 'alpha-popular-same-category',
+        'brand' => 'OtherBrand',
+        'status' => true,
+        'tags' => [ProductTag::Popular->value],
+        'selling_price' => 11,
+    ]);
+    $popularSameCategory->categories()->sync([$category->id]);
+
+    $plainSameCategory = Product::factory()->create([
+        'name' => 'Beta Plain Same Category',
+        'slug' => 'beta-plain-same-category',
+        'brand' => 'OtherBrand',
+        'status' => true,
+        'tags' => [],
+        'selling_price' => 9,
+    ]);
+    $plainSameCategory->categories()->sync([$category->id]);
+
+    $bestOtherCategory = Product::factory()->create([
+        'name' => 'Gamma Best Other Category',
+        'slug' => 'gamma-best-other-category',
+        'brand' => 'Acme',
+        'status' => true,
+        'tags' => [ProductTag::BestSelling->value],
+        'selling_price' => 8,
+    ]);
+    $bestOtherCategory->categories()->sync([$otherCategory->id]);
+
+    $similar = StorefrontCatalog::similarProducts($source);
+
+    expect($similar)->toHaveCount(3)
+        ->and(collect($similar)->pluck('id')->all())->toBe([
+            'zebra-best-same-brand',
+            'alpha-popular-same-category',
+            'beta-plain-same-category',
+        ]);
+});
+
 test('storefront remembers selected branch in session from query string', function () {
     $this->get(route('shop', ['branch' => BranchSeeder::SYDNEY_CBD]))
         ->assertOk()

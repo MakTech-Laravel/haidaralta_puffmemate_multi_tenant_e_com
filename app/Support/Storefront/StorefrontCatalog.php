@@ -382,10 +382,19 @@ class StorefrontCatalog
     }
 
     /**
+     * Similar / recommended products for PDP.
+     *
+     * Prefer same-category affinity, then same brand, then merchandising tags
+     * (best_selling → popular → on_offer → new_arrival). Backfill from
+     * site-wide best sellers / popular when the category pool is thin.
+     *
      * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}>
      */
-    public static function similarProducts(Product|string $product, ?Branch $branch = null, int $limit = 4): array
+    public static function similarProducts(Product|string $product, ?Branch $branch = null, ?int $limit = null): array
     {
+        $limit ??= (int) config('catalog.similar_products_max');
+        $limit = max(1, $limit);
+
         if (is_string($product)) {
             $resolved = Product::query()
                 ->where('status', true)
@@ -402,23 +411,132 @@ class StorefrontCatalog
             $product->load('categories:id');
         }
 
-        $categoryIds = $product->categories->pluck('id');
+        $categoryIds = $product->categories->pluck('id')->map(fn ($id): int => (int) $id)->values();
+        $brand = is_string($product->brand) ? trim($product->brand) : '';
 
+        $candidates = self::similarCandidatePool($product, $categoryIds);
+
+        if ($candidates->count() < $limit) {
+            $backfill = self::recommendedBackfillPool(
+                excludeIds: $candidates->pluck('id')->push($product->id)->all(),
+                limit: $limit * 4,
+            );
+            $candidates = $candidates->concat($backfill)->unique('id');
+        }
+
+        return $candidates
+            ->map(fn (Product $candidate): array => [
+                'product' => $candidate,
+                'score' => self::recommendationScore($candidate, $categoryIds, $brand !== '' ? $brand : null),
+            ])
+            ->sort(function (array $left, array $right): int {
+                $byScore = $right['score'] <=> $left['score'];
+
+                if ($byScore !== 0) {
+                    return $byScore;
+                }
+
+                return strcmp((string) $left['product']->name, (string) $right['product']->name);
+            })
+            ->take($limit)
+            ->map(fn (array $row): array => self::mapProductCard($row['product'], $branch))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int, int>  $categoryIds
+     * @return Collection<int, Product>
+     */
+    private static function similarCandidatePool(Product $product, Collection $categoryIds): Collection
+    {
         $query = Product::query()
             ->where('status', true)
             ->where('id', '!=', $product->id)
             ->with(['categories:id,name,slug', 'images'])
-            ->orderBy('name')
-            ->limit($limit);
+            ->limit(100);
 
         if ($categoryIds->isNotEmpty()) {
-            $query->whereHas('categories', fn ($builder) => $builder->whereIn('categories.id', $categoryIds));
+            $query->whereHas(
+                'categories',
+                fn ($builder) => $builder->whereIn('categories.id', $categoryIds->all()),
+            );
+        } else {
+            $query->where(function ($builder): void {
+                $builder->whereJsonContains('tags', ProductTag::BestSelling->value)
+                    ->orWhereJsonContains('tags', ProductTag::Popular->value);
+            });
         }
 
-        return $query->get()
-            ->map(fn (Product $item): array => self::mapProductCard($item, $branch))
-            ->values()
-            ->all();
+        return $query->get();
+    }
+
+    /**
+     * @param  list<int|string>  $excludeIds
+     * @return Collection<int, Product>
+     */
+    private static function recommendedBackfillPool(array $excludeIds, int $limit): Collection
+    {
+        return Product::query()
+            ->where('status', true)
+            ->whereNotIn('id', $excludeIds)
+            ->where(function ($builder): void {
+                $builder->whereJsonContains('tags', ProductTag::BestSelling->value)
+                    ->orWhereJsonContains('tags', ProductTag::Popular->value);
+            })
+            ->with(['categories:id,name,slug', 'images'])
+            ->limit(max(1, $limit))
+            ->get();
+    }
+
+    /**
+     * @param  Collection<int, int>  $sourceCategoryIds
+     */
+    private static function recommendationScore(Product $candidate, Collection $sourceCategoryIds, ?string $brand): int
+    {
+        $score = 0;
+
+        if ($sourceCategoryIds->isNotEmpty()) {
+            $overlap = $sourceCategoryIds->intersect(
+                $candidate->categories->pluck('id')->map(fn ($id): int => (int) $id),
+            );
+
+            if ($overlap->isNotEmpty()) {
+                $score += 100;
+            }
+        }
+
+        if (is_string($brand) && $brand !== '' && is_string($candidate->brand) && strcasecmp(trim($candidate->brand), $brand) === 0) {
+            $score += 40;
+        }
+
+        $tags = collect($candidate->tags ?? []);
+
+        if ($tags->contains(ProductTag::BestSelling->value)) {
+            $score += 30;
+        }
+
+        if ($tags->contains(ProductTag::Popular->value)) {
+            $score += 20;
+        }
+
+        if ($tags->contains(ProductTag::OnOffer->value)) {
+            $score += 15;
+        }
+
+        if ($tags->contains(ProductTag::NewArrival->value)) {
+            $score += 10;
+        }
+
+        if (
+            $candidate->selling_price !== null
+            && $candidate->regular_price !== null
+            && (float) $candidate->regular_price > (float) $candidate->selling_price
+        ) {
+            $score += 5;
+        }
+
+        return $score;
     }
 
     /**

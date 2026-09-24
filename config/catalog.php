@@ -28,6 +28,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Similar products (PDP)
+    |--------------------------------------------------------------------------
+    |
+    | Maximum products on the product detail "Similar Products" rail.
+    | Ranked by category affinity, brand match, and merchandising tags
+    | (best_selling, popular, on_offer, new_arrival) — not alphabetical.
+    |
+    */
+
+    'similar_products_max' => env('SIMILAR_PRODUCTS_MAX', 4),
+
+    /*
+    |--------------------------------------------------------------------------
     | Header navigation categories
     |--------------------------------------------------------------------------
     |

@@ -108,8 +108,12 @@ trait SeedsCatalogMedia
         $disk = Storage::disk('public');
 
         foreach (['categories', 'products'] as $directory) {
-            if ($disk->exists($directory)) {
-                $disk->deleteDirectory($directory);
+            try {
+                if ($disk->exists($directory)) {
+                    $disk->deleteDirectory($directory);
+                }
+            } catch (Throwable) {
+                // Windows can race on transient public-disk files during tests.
             }
         }
     }
