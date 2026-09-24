@@ -4,7 +4,7 @@ paths:
   - 'resources/js/pages/{platform,branch}/**/products/show.tsx'
   - 'resources/js/pages/{platform,branch}/stock/manage.tsx'
   - 'resources/js/pages/{platform,branch}/catalog/pricing/manage.tsx'
-  - 'resources/js/components/catalog/manage-catalog-pricing-page.tsx'
+  - resources/js/components/catalog/manage-catalog-pricing-page.tsx
   - app/Support/ProductManageRedirect.php
   - 'routes/{platform,branch}.php'
   - app/Support/BranchProductPriceDisplay.php

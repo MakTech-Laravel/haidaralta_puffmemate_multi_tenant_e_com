@@ -46,6 +46,28 @@ test('security page requires password confirmation when enabled', function () {
     $response->assertRedirect(route('password.confirm'));
 });
 
+test('security password confirmation does not bounce portal users to the dashboard', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    $user = User::factory()->create();
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->get(route('security.edit'))
+        ->assertRedirect(route('password.confirm'));
+
+    $this->actingAs($user, 'customer')
+        ->get(route('password.confirm'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('settings/confirm-password'),
+        );
+});
+
 test('security page renders without two factor when feature is disabled', function () {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 

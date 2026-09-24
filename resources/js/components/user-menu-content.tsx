@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { Download, LogOut, Settings, UserRound } from 'lucide-react';
+import { Download, LogOut, Shield, UserRound } from 'lucide-react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -54,8 +54,8 @@ export function UserMenuContent({ user }: Props) {
                         prefetch
                         onClick={cleanup}
                     >
-                        <Settings className="mr-2" />
-                        Settings
+                        <Shield className="mr-2" />
+                        Security
                     </Link>
                 </DropdownMenuItem>
                 {pwa?.showMenuItem ? (

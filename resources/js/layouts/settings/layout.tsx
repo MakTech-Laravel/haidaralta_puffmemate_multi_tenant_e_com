@@ -1,16 +1,13 @@
 import { Link, usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
-import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
 
-const sidebarNavItems: NavItem[] = [
+const settingsTabItems: NavItem[] = [
     {
         title: 'Profile',
         href: edit(),
@@ -21,69 +18,61 @@ const sidebarNavItems: NavItem[] = [
         href: editSecurity(),
         icon: null,
     },
-    {
-        title: 'Appearance',
-        href: editAppearance(),
-        icon: null,
-    },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
-    const { isCurrentOrParentUrl } = useCurrentUrl();
+    const { isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
     const { portal } = usePage().props;
-    const appearanceHref = toUrl(editAppearance());
     const profileHref = toUrl(edit());
-    const items = sidebarNavItems.filter((item) => {
+    const items = settingsTabItems.filter((item) => {
         if (portal !== 'driver') {
             return true;
         }
 
-        const href = toUrl(item.href);
-
-        return href !== appearanceHref && href !== profileHref;
+        return toUrl(item.href) !== profileHref;
     });
 
+    const isSecuritySection =
+        isCurrentOrParentUrl(editSecurity()) ||
+        isCurrentUrl('/user/confirm-password');
+
     return (
-        <div className="space-y-6 px-4 py-6">
+        <div className="flex w-full flex-col gap-4 p-2 md:p-4">
             <Heading
                 title="Settings"
                 description="Manage your profile and account settings"
             />
 
-            <div className="flex flex-col lg:flex-row lg:space-x-12">
-                <aside className="w-full max-w-xl lg:w-48">
-                    <nav
-                        className="flex flex-col space-y-1 space-x-0"
-                        aria-label="Settings"
-                    >
-                        {items.map((item, index) => (
-                            <Button
-                                key={`${toUrl(item.href)}-${index}`}
-                                size="sm"
-                                variant="ghost"
-                                asChild
-                                className={cn('w-full justify-start', {
-                                    'bg-muted': isCurrentOrParentUrl(item.href),
-                                })}
+            <div className="space-y-6">
+                <nav
+                    className="border-border flex gap-1 border-b"
+                    aria-label="Settings"
+                >
+                    {items.map((item, index) => {
+                        const href = toUrl(item.href);
+                        const active =
+                            href === profileHref
+                                ? isCurrentOrParentUrl(item.href)
+                                : isSecuritySection;
+
+                        return (
+                            <Link
+                                key={`${href}-${index}`}
+                                href={item.href}
+                                prefetch
+                                className={cn(
+                                    'text-muted-foreground hover:text-foreground -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium transition-colors',
+                                    active &&
+                                        'border-foreground text-foreground',
+                                )}
                             >
-                                <Link href={item.href}>
-                                    {item.icon && (
-                                        <item.icon className="h-4 w-4" />
-                                    )}
-                                    {item.title}
-                                </Link>
-                            </Button>
-                        ))}
-                    </nav>
-                </aside>
+                                {item.title}
+                            </Link>
+                        );
+                    })}
+                </nav>
 
-                <Separator className="my-6 lg:hidden" />
-
-                <div className="flex-1 md:max-w-2xl">
-                    <section className="max-w-xl space-y-12">
-                        {children}
-                    </section>
-                </div>
+                <div className="min-w-0 space-y-6">{children}</div>
             </div>
         </div>
     );

@@ -20,6 +20,8 @@ trait ProfileValidationRules
             'name' => $this->nameRules(),
             'phone' => $this->phoneRules($userId),
             'email' => $this->emailRules($userId),
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_avatar' => ['sometimes', 'boolean'],
         ];
     }
 

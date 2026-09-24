@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, setLayoutProps, usePage } from '@inertiajs/react';
 import { useRef } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/heading';
@@ -18,9 +18,40 @@ type Props = {
 } & ManagePasskeysProps &
     ManageTwoFactorProps;
 
+function securityBreadcrumbs(
+    portal: string | null,
+    branchSlug?: string,
+) {
+    if (portal === 'platform') {
+        return [
+            { title: 'Dashboard', href: '/platform/dashboard' },
+            { title: 'Security', href: edit() },
+        ];
+    }
+
+    if (portal === 'branch' && branchSlug) {
+        return [
+            { title: 'Dashboard', href: `/branch/${branchSlug}/dashboard` },
+            { title: 'Security', href: edit() },
+        ];
+    }
+
+    return [{ title: 'Security', href: edit() }];
+}
+
 export default function Security(props: Props) {
+    const { portal, branch } = usePage().props;
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
+
+    setLayoutProps({
+        breadcrumbs: securityBreadcrumbs(
+            portal,
+            branch && typeof branch === 'object' && 'slug' in branch
+                ? String(branch.slug)
+                : undefined,
+        ),
+    });
 
     return (
         <>
@@ -28,7 +59,7 @@ export default function Security(props: Props) {
 
             <h1 className="sr-only">Security settings</h1>
 
-            <div className="space-y-6">
+            <section className="border-border/80 bg-card space-y-6 rounded-2xl border p-5 shadow-sm sm:p-6">
                 <Heading
                     variant="small"
                     title="Update password"
@@ -59,56 +90,62 @@ export default function Security(props: Props) {
                 >
                     {({ errors, processing }) => (
                         <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="current_password">
-                                    Current password
-                                </Label>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                                    <Label htmlFor="current_password">
+                                        Current password
+                                    </Label>
 
-                                <PasswordInput
-                                    id="current_password"
-                                    ref={currentPasswordInput}
-                                    name="current_password"
-                                    className="mt-1 block w-full"
-                                    autoComplete="current-password"
-                                    placeholder="Current password"
-                                />
+                                    <PasswordInput
+                                        id="current_password"
+                                        ref={currentPasswordInput}
+                                        name="current_password"
+                                        className="mt-1 block w-full"
+                                        autoComplete="current-password"
+                                        placeholder="Current password"
+                                    />
 
-                                <InputError message={errors.current_password} />
-                            </div>
+                                    <InputError
+                                        message={errors.current_password}
+                                    />
+                                </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">New password</Label>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="password">
+                                        New password
+                                    </Label>
 
-                                <PasswordInput
-                                    id="password"
-                                    ref={passwordInput}
-                                    name="password"
-                                    className="mt-1 block w-full"
-                                    autoComplete="new-password"
-                                    placeholder="New password"
-                                    passwordrules={props.passwordRules}
-                                />
+                                    <PasswordInput
+                                        id="password"
+                                        ref={passwordInput}
+                                        name="password"
+                                        className="mt-1 block w-full"
+                                        autoComplete="new-password"
+                                        placeholder="New password"
+                                        passwordrules={props.passwordRules}
+                                    />
 
-                                <InputError message={errors.password} />
-                            </div>
+                                    <InputError message={errors.password} />
+                                </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm password
-                                </Label>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label htmlFor="password_confirmation">
+                                        Confirm password
+                                    </Label>
 
-                                <PasswordInput
-                                    id="password_confirmation"
-                                    name="password_confirmation"
-                                    className="mt-1 block w-full"
-                                    autoComplete="new-password"
-                                    placeholder="Confirm password"
-                                    passwordrules={props.passwordRules}
-                                />
+                                    <PasswordInput
+                                        id="password_confirmation"
+                                        name="password_confirmation"
+                                        className="mt-1 block w-full"
+                                        autoComplete="new-password"
+                                        placeholder="Confirm password"
+                                        passwordrules={props.passwordRules}
+                                    />
 
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
+                                    <InputError
+                                        message={errors.password_confirmation}
+                                    />
+                                </div>
                             </div>
 
                             <div className="flex items-center gap-4">
@@ -122,7 +159,7 @@ export default function Security(props: Props) {
                         </>
                     )}
                 </Form>
-            </div>
+            </section>
 
             <ManageTwoFactor
                 canManageTwoFactor={props.canManageTwoFactor}
@@ -137,12 +174,3 @@ export default function Security(props: Props) {
         </>
     );
 }
-
-Security.layout = {
-    breadcrumbs: [
-        {
-            title: 'Security settings',
-            href: edit(),
-        },
-    ],
-};

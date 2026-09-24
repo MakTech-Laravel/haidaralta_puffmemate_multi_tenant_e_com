@@ -1,6 +1,7 @@
 ---
 paths:
     - routes/settings.php
+    - routes/fortify.php
     - 'routes/*.php'
 ---
 
@@ -9,6 +10,10 @@ paths:
 ## Settings require any portal guard
 
 Settings routes must use `ensure.any.portal` (not plain `auth` / default `web`). Portal users authenticate on platform|branch|driver|customer only; plain `auth` redirects platform admins away from /settings/*. Mirror EnsurePortalGuard: detect via PortalAuth::activeGuard(), Auth::shouldUse, reject inactive users.
+
+## Fortify account routes use ensure.any.portal
+
+Password confirm, confirmation status, profile/password update, 2FA manage, and authenticated passkey routes must use `ensure.any.portal` — not `auth:web` (`fortify.guard`). Portal users are never on web; `auth:web` sends them to login, and LoginController then dumps an already-authenticated portal user on their dashboard. Keep guest 2FA/passkey login on `guest:web`.
 
 ## Portal routes live in dedicated files
 

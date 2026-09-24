@@ -1,15 +1,75 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
-test('profile page is displayed', function () {
+test('profile page includes avatar fields', function () {
     $user = User::factory()->create();
 
-    $response = $this
-        ->actingAs($user, 'customer')
-        ->get(route('profile.edit'));
+    $this->actingAs($user, 'customer')
+        ->get(route('profile.edit'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('settings/profile')
+            ->has('profile.avatar')
+            ->has('profile.avatar_url')
+            ->where('profile.name', $user->name)
+            ->where('profile.phone', $user->phone)
+        );
+});
 
-    $response->assertOk();
+test('profile avatar can be uploaded', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create([
+        'phone' => '+61412345678',
+        'phone_verified_at' => now(),
+        'avatar' => null,
+    ]);
+
+    $avatar = UploadedFile::fake()->image('avatar.png', 120, 120);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('profile.edit'))
+        ->patch(route('profile.update'), [
+            'name' => $user->name,
+            'phone' => $user->phone,
+            'email' => $user->email,
+            'avatar' => $avatar,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('profile.edit'));
+
+    $user->refresh();
+
+    expect($user->avatar)->not->toBeNull();
+    Storage::disk('public')->assertExists($user->avatar);
+});
+
+test('profile avatar can be removed', function () {
+    Storage::fake('public');
+
+    $path = UploadedFile::fake()->image('old.png')->store('users/avatars', 'public');
+    $user = User::factory()->create([
+        'phone' => '+61412345678',
+        'phone_verified_at' => now(),
+        'avatar' => $path,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('profile.edit'))
+        ->patch(route('profile.update'), [
+            'name' => $user->name,
+            'phone' => $user->phone,
+            'email' => $user->email,
+            'remove_avatar' => true,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('profile.edit'));
+
+    expect($user->refresh()->avatar)->toBeNull();
+    Storage::disk('public')->assertMissing($path);
 });
 
 test('profile information can be updated', function () {

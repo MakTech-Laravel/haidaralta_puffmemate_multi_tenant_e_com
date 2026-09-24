@@ -96,33 +96,36 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         ->middleware(['ensure.any.portal', 'throttle:'.$verificationLimiter])
         ->name('phone.verification.verify');
 
+    // Account routes: portal guards only (not fortify.guard / web).
+    $portalAuthMiddleware = ['ensure.any.portal'];
+
     // Profile Information...
     if (Features::enabled(Features::updateProfileInformation())) {
         Route::put(RoutePath::for('user-profile-information.update', '/user/profile-information'), [ProfileInformationController::class, 'update'])
-            ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
+            ->middleware($portalAuthMiddleware)
             ->name('user-profile-information.update');
     }
 
     // Passwords...
     if (Features::enabled(Features::updatePasswords())) {
         Route::put(RoutePath::for('user-password.update', '/user/password'), [PasswordController::class, 'update'])
-            ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
+            ->middleware($portalAuthMiddleware)
             ->name('user-password.update');
     }
 
     // Password Confirmation...
     if ($enableViews) {
         Route::get(RoutePath::for('password.confirm', '/user/confirm-password'), [ConfirmablePasswordController::class, 'show'])
-            ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
+            ->middleware($portalAuthMiddleware)
             ->name('password.confirm');
     }
 
     Route::get(RoutePath::for('password.confirmation', '/user/confirmed-password-status'), [ConfirmedPasswordStatusController::class, 'show'])
-        ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
+        ->middleware($portalAuthMiddleware)
         ->name('password.confirmation');
 
     Route::post(RoutePath::for('password.confirm', '/user/confirm-password'), [ConfirmablePasswordController::class, 'store'])
-        ->middleware([config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')])
+        ->middleware($portalAuthMiddleware)
         ->name('password.confirm.store');
 
     // Two Factor Authentication...
@@ -140,8 +143,8 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
             ]))->name('two-factor.login.store');
 
         $twoFactorMiddleware = Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')
-            ? [config('fortify.auth_middleware', 'auth').':'.config('fortify.guard'), 'password.confirm']
-            : [config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')];
+            ? [...$portalAuthMiddleware, 'password.confirm']
+            : $portalAuthMiddleware;
 
         Route::post(RoutePath::for('two-factor.enable', '/user/two-factor-authentication'), [TwoFactorAuthenticationController::class, 'store'])
             ->middleware($twoFactorMiddleware)
@@ -176,7 +179,7 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
     if (Features::enabled(Features::passkeys())) {
         $throttle = $passkeyLimiter ? ['throttle:'.$passkeyLimiter] : [];
 
-        $passkeyAuthMiddleware = [config('fortify.auth_middleware', 'auth').':'.config('fortify.guard')];
+        $passkeyAuthMiddleware = $portalAuthMiddleware;
 
         $passkeyMiddleware = config('fortify-options.passkeys.confirmPassword', true)
             ? [...$passkeyAuthMiddleware, 'password.confirm']

@@ -10,6 +10,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/staff-form.tsx,app/Http/Requests/{Platform,Branch}/*BranchStaff*Request.php | .ai/rules/admin-http-requests-platform-branch.md |
 | resources/js/components/admin/shift-*.tsx,app/Support/WorkforcePayload.php | .ai/rules/admin-support.md |
 | resources/js/components/admin/branch-form.tsx, resources/js/components/admin/driver-form.tsx, resources/js/components/admin/branch-location-map-dialog.tsx, resources/js/components/admin/driver-branch-assign-sheet.tsx, resources/js/components/admin/shift-*.tsx, resources/js/components/admin/{admin,staff}-form.tsx, resources/js/components/admin/shift-board.tsx | .ai/rules/admin.md |
+| app/Http/Middleware/EnsureAnyPortalGuard.php,routes/settings.php | .ai/rules/app-http-middleware.md |
 | resources/js/pages/auth/**,app/Actions/Fortify/CreateNewUser.php,app/Http/Requests/Auth/StoreRegisteredUserRequest.php,resources/js/layouts/auth/** | .ai/rules/auth.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php, config/shifts.php | .ai/rules/backup.md |
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/**/staff/**,resources/js/pages/platform/branch-staff/** | .ai/rules/branch-staff.md |
@@ -33,6 +34,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/Driver/** | .ai/rules/controllers-driver.md |
 | app/Services/Workforce/**,app/Http/Controllers/{Platform,Branch}/** | .ai/rules/controllers-platform-branch.md |
 | app/Http/Controllers/Platform/AdminController.php, app/Http/Controllers/Platform/BranchStaffController.php, app/Http/Controllers/Platform/*Shift*.php | .ai/rules/controllers-platform.md |
+| resources/js/pages/settings/profile.tsx,app/Http/Controllers/Settings/ProfileController.php | .ai/rules/controllers-settings.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
 | app/Services/Conversation/**,resources/js/components/conversation/** | .ai/rules/conversation.md |
 | {app/Support/ConversationInbox.php,app/Http/Controllers/*/ConversationController.php,resources/js/components/conversation/**,resources/js/pages/*/conversations/**} | .ai/rules/conversations.md |
@@ -80,6 +82,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx | .ai/rules/orders.md |
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |
 | resources/js/pages/platform/branch-staff/** | .ai/rules/pages-platform-branch-staff.md |
+| resources/js/layouts/settings/**,resources/js/pages/settings/**,routes/settings.php | .ai/rules/pages-settings.md |
 | resources/js/components/admin/shift-*.{ts,tsx},resources/js/pages/{platform,branch}/shifts/assign.tsx | .ai/rules/pagesplatformbranch-shifts.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/platform/branch-staff/**, resources/js/components/admin/transfer-employee-sheet.tsx,resources/js/pages/platform/branch-staff/** | .ai/rules/platform-branch-staff.md |
@@ -103,7 +106,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/role-*.tsx, resources/js/pages/{platform,branch}/roles/** | .ai/rules/roles.md |
 | app/Http/Controllers/Driver/RouteController.php,resources/js/pages/driver/route/**,resources/js/components/driver/nav.ts | .ai/rules/route-js-components-driver.md |
 | app/Http/Controllers/Driver/RouteController.php,resources/js/pages/driver/route/** | .ai/rules/route.md |
-| routes/settings.php, routes/*.php | .ai/rules/routes.md |
+| routes/settings.php, routes/fortify.php, routes/*.php | .ai/rules/routes.md |
 | resources/js/pages/driver/security/**,resources/js/components/driver/driver-account-sheet.tsx | .ai/rules/security-js-components-driver.md |
 | resources/js/components/admin/shift-*.tsx,database/seeders/WorkforceShiftSeeder.php,app/Support/WorkforcePayload.php | .ai/rules/seeders-support.md |
 | database/seeders/**, database/seeders/WorkforceShiftSeeder.php | .ai/rules/seeders.md |
