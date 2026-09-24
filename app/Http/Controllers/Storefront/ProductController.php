@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
-use App\Support\Storefront\DemoCatalog;
 use App\Support\Storefront\StorefrontCatalog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,26 +16,15 @@ class ProductController extends Controller
     public function show(Request $request, string $product): Response
     {
         $branch = StorefrontCatalog::selectedBranch($request);
-        $branches = DemoCatalog::branches();
-        $branchId = $branch?->slug;
-        $detail = DemoCatalog::productDetail($product);
-        $categorySlug = $detail['categorySlug'];
-
-        if ($branchId !== null) {
-            foreach ($branches as $option) {
-                if ($option['id'] === $branchId) {
-                    $detail['branch'] = $option['name'];
-                    break;
-                }
-            }
-        }
+        $detail = StorefrontCatalog::productDetail($product, $branch);
+        $categorySlug = $detail['categorySlug'] ?? null;
 
         return Inertia::render('storefront/product', [
             'product' => $detail,
-            'similarProducts' => DemoCatalog::similarProducts($product),
-            'branches' => $branches,
-            'branchId' => $branchId,
-            'backHref' => $categorySlug
+            'similarProducts' => StorefrontCatalog::similarProducts($product, $branch),
+            'branches' => StorefrontCatalog::branches(),
+            'branchId' => $branch?->slug,
+            'backHref' => is_string($categorySlug) && $categorySlug !== ''
                 ? route('shop.category', ['category' => $categorySlug], false)
                 : route('shop', absolute: false),
         ]);

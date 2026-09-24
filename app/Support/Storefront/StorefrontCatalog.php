@@ -311,7 +311,7 @@ class StorefrontCatalog
 
         $price = $branch !== null
             ? BranchProductPriceDisplay::forBranchProduct($branch, $product)
-            : ['amount' => null, 'label' => null, 'is_from' => false, 'count' => 0];
+            : BranchProductPriceDisplay::forCatalogProduct($product);
 
         $stock = $branch !== null ? self::stockFor($branch, $product) : 0;
         $tagBadges = collect($product->tags ?? [])
@@ -321,7 +321,7 @@ class StorefrontCatalog
             ->all();
 
         $compareAt = $price['compare_at'] ?? null;
-        $displayPrice = $price['label'] ?? 'Select a branch for pricing';
+        $displayPrice = $price['label'] ?? 'Price unavailable';
 
         return [
             'id' => $product->slug,
@@ -384,8 +384,24 @@ class StorefrontCatalog
     /**
      * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}>
      */
-    public static function similarProducts(Product $product, ?Branch $branch = null, int $limit = 4): array
+    public static function similarProducts(Product|string $product, ?Branch $branch = null, int $limit = 4): array
     {
+        if (is_string($product)) {
+            $resolved = Product::query()
+                ->where('status', true)
+                ->where('slug', $product)
+                ->with(['categories:id'])
+                ->first();
+
+            if ($resolved === null) {
+                throw new NotFoundHttpException;
+            }
+
+            $product = $resolved;
+        } elseif (! $product->relationLoaded('categories')) {
+            $product->load('categories:id');
+        }
+
         $categoryIds = $product->categories->pluck('id');
 
         $query = Product::query()

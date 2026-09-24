@@ -249,15 +249,16 @@ test('storefront home marks the last two featured categories as wide when more t
             ->where('featuredCategories.4.wide', true));
 });
 
-test('storefront shop page serves DemoCatalog products', function () {
+test('storefront shop page serves catalog products from the database', function () {
     $this->get(route('shop'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/shop')
-            ->where('products.0.id', '1')
-            ->where('products.0.name', 'Marlboro Gold')
-            ->where('products.0.price', '$14.00')
-            ->where('products.0.compareAtPrice', '$20.00')
+            ->has('products')
+            ->where('products', fn ($products): bool => collect($products)->contains(
+                fn ($product): bool => $product['id'] === 'marlboro-gold-soft-pack-20s',
+            ))
+            ->where('products.0', fn ($card): bool => ! array_key_exists('stock', collect($card)->all()))
             ->has('branches')
             ->where('filters.search', '')
             ->where('filters.branchId', null)
@@ -270,8 +271,8 @@ test('storefront shop page filters products by search', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/shop')
             ->where('filters.search', 'Marlboro')
-            ->where('products.0.id', '1')
-            ->where('products.0.name', 'Marlboro Gold')
+            ->where('products.0.id', 'marlboro-gold-soft-pack-20s')
+            ->where('products.0.name', 'Marlboro Gold Soft Pack 20s')
             ->has('products', 1));
 });
 
@@ -282,9 +283,10 @@ test('storefront category page renders products for a valid slug', function () {
             ->component('storefront/category')
             ->where('category.slug', 'cigarettes')
             ->where('category.name', 'Cigarettes')
-            ->where('products.0.id', '1')
-            ->where('products.0.name', 'Marlboro Gold')
-            ->where('products.0.price', '$14.00')
+            ->has('products')
+            ->where('products', fn ($products): bool => collect($products)->contains(
+                fn ($product): bool => $product['id'] === 'marlboro-gold-soft-pack-20s',
+            ))
             ->has('branches')
             ->where('filters.search', '')
             ->where('filters.branchId', null)
@@ -297,12 +299,12 @@ test('storefront category page returns not found for unknown slug', function () 
 });
 
 test('storefront product details page renders for a valid product', function () {
-    $this->get(route('products.show', ['product' => '1']))
+    $this->get(route('products.show', ['product' => 'marlboro-gold-soft-pack-20s']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/product')
-            ->where('product.id', '1')
-            ->where('product.name', 'Marlboro Gold')
+            ->where('product.id', 'marlboro-gold-soft-pack-20s')
+            ->where('product.name', 'Marlboro Gold Soft Pack 20s')
             ->has('product.specifications')
             ->has('similarProducts')
             ->has('branches')

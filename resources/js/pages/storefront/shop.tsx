@@ -18,11 +18,9 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import {
-    storefrontFeatures,
-} from '@/lib/storefront-features';
-import type { StorefrontProduct } from '@/types/storefront';
+import { storefrontFeatures } from '@/lib/storefront-features';
 import { shop } from '@/routes';
+import type { StorefrontProduct } from '@/types/storefront';
 
 /** Matches Tailwind `lg` (sidebar column vs Sheet). */
 const LG_BREAKPOINT = 1024;

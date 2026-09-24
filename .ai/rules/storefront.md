@@ -28,7 +28,7 @@ Header = Home · Shop · [DB categories with `show_in_nav`, ordered by `nav_sort
 
 ## Catalog sources by surface
 
-Homepage featured category cards use `StorefrontCatalog::featuredCategories()` (DB `featured` + slogan/image). Homepage New Arrivals / Best Selling product rails use `StorefrontCatalog::productsWithTag(ProductTag::…)` with `selectedBranch()` and `config('catalog.home_products_max')` (default 8) — not DemoCatalog. Each rail filters active products by that tag only. Shop / product detail / packs-saves may still use DemoCatalog until those surfaces are migrated. Header tabs use `buildStorefrontNavItems(storefront.navCategories)`. Branch session (`storefront.branch_slug` from `?branch=`) stays on StorefrontCatalog.
+Homepage featured category cards use `StorefrontCatalog::featuredCategories()`. Homepage New Arrivals / Best Selling use `StorefrontCatalog::productsWithTag` + `config('catalog.home_products_max')`. Shop, category, product detail, and Packs & Saves use `StorefrontCatalog` (DB) — never `DemoCatalog`. Durable TS types live in `resources/js/types/storefront.ts`; features bar copy in `resources/js/lib/storefront-features.ts`. Do not import product data from `storefront-demo.ts` (deprecated re-exports only). Cart / checkout / customer / driver may still use DemoCatalog until those surfaces are migrated. Header tabs use `buildStorefrontNavItems(storefront.navCategories)`. Branch session (`storefront.branch_slug` from `?branch=`) stays on StorefrontCatalog.
 
 ## ProductCard contract
 
