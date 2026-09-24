@@ -14,6 +14,7 @@ use App\Support\Storefront\DemoCatalog;
 use App\Support\Storefront\StorefrontCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -76,7 +77,8 @@ class HandleInertiaRequests extends Middleware
                 'show_platform_administrator_shifts' => (bool) config('shifts.show_platform_administrator_shifts'),
             ],
             'storefront' => [
-                'navCategories' => StorefrontCatalog::navCategories(),
+                'navCategories' => Inertia::once(fn (): array => StorefrontCatalog::navCategories())
+                    ->as('storefront-nav-categories-'.StorefrontCatalog::navCategoriesVersion()),
                 'selectedBranchId' => $request->session()->get(StorefrontCatalog::BRANCH_SESSION_KEY),
             ],
             'customerNotifications' => $portal === 'customer'
@@ -89,7 +91,7 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{0: array{user: array<string, mixed>|null}, 1: string|null, 2: array{id: int, name: string, slug: string}|null}
+     * @return array{0: array{user: array<string, mixed>|null, dashboardUrl: string|null}, 1: string|null, 2: array{id: int, name: string, slug: string, logo_url: string|null}|null}
      */
     private function resolveSharedAuth(): array
     {
@@ -97,7 +99,7 @@ class HandleInertiaRequests extends Middleware
 
         if ($guard === null) {
             return [
-                ['user' => null],
+                ['user' => null, 'dashboardUrl' => null],
                 null,
                 null,
             ];
@@ -105,6 +107,7 @@ class HandleInertiaRequests extends Middleware
 
         /** @var User $user */
         $user = Auth::guard($guard)->user();
+        $user->loadMissing('branch');
 
         return [
             [
@@ -114,6 +117,7 @@ class HandleInertiaRequests extends Middleware
                     'is_super_admin' => $user->hasRole(RoleEnum::SUPER_ADMIN->value),
                     'avatar' => MediaUrl::resolve($user->avatar, fallback: null),
                 ]),
+                'dashboardUrl' => PortalAuth::dashboardPath($user),
             ],
             $user->user_type->value,
             $this->resolveSharedBranch(),

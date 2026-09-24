@@ -12,16 +12,44 @@ use App\Support\MediaUrl;
 use App\Support\ProductSpecifications;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class StorefrontCatalog
 {
     public const BRANCH_SESSION_KEY = 'storefront.branch_slug';
 
+    public const NAV_CACHE_KEY = 'storefront.nav_categories';
+
+    public const NAV_VERSION_KEY = 'storefront.nav_categories.version';
+
     /**
      * @return list<array{label: string, categorySlug: string}>
      */
     public static function navCategories(): array
+    {
+        /** @var list<array{label: string, categorySlug: string}> */
+        return Cache::rememberForever(self::NAV_CACHE_KEY, fn (): array => self::queryNavCategories());
+    }
+
+    /**
+     * Cache version for Inertia once-prop keys so clients refetch after nav edits.
+     */
+    public static function navCategoriesVersion(): string
+    {
+        return (string) Cache::get(self::NAV_VERSION_KEY, '0');
+    }
+
+    public static function forgetNavCategories(): void
+    {
+        Cache::forget(self::NAV_CACHE_KEY);
+        Cache::forever(self::NAV_VERSION_KEY, (string) now()->getTimestampMs());
+    }
+
+    /**
+     * @return list<array{label: string, categorySlug: string}>
+     */
+    private static function queryNavCategories(): array
     {
         $limit = (int) config('catalog.nav_categories_max', 6);
 

@@ -55,22 +55,6 @@ export const storefrontCategoryItems: StorefrontCategoryItem[] = [
         image: '/images/storefront/category-tobacco.png',
         href: '/shop/tobacco',
     },
-    {
-        id: 'nicotine-pouches',
-        name: 'Nicotine Pouches',
-        description: 'Smoke-free nicotine options',
-        image: '/images/storefront/category-pouches.png',
-        href: '/shop/nicotine-pouches',
-        wide: true,
-    },
-    {
-        id: 'accessories',
-        name: 'Accessories',
-        description: 'Lighters, cases & more',
-        image: '/images/storefront/category-accessories.png',
-        href: '/shop/accessories',
-        wide: true,
-    },
 ];
 
 export const storefrontProducts: StorefrontProduct[] = [

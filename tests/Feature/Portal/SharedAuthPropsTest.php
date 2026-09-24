@@ -22,6 +22,7 @@ test('platform dashboard shares platform scoped auth props', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->where('portal', 'platform')
             ->where('branch', null)
+            ->where('auth.dashboardUrl', '/platform/dashboard')
             ->where('auth.user.is_super_admin', true)
             ->has('auth.user.roles')
             ->has('auth.user.permissions')
@@ -39,6 +40,7 @@ test('branch dashboard shares branch scoped auth props', function () {
             ->where('branch.id', $user->branch_id)
             ->where('branch.slug', BranchSeeder::SYDNEY_CBD)
             ->where('branch.logo_url', fn ($url) => is_string($url) && $url !== '')
+            ->where('auth.dashboardUrl', '/branch/'.BranchSeeder::SYDNEY_CBD.'/dashboard')
             ->where('auth.user.is_super_admin', true)
         );
 });

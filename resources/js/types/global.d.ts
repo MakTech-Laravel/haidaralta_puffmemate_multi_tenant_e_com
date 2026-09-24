@@ -46,6 +46,13 @@ declare module '@inertiajs/core' {
             portal: Portal | null;
             branch: BranchContext | null;
             sidebarOpen: boolean;
+            storefront: {
+                navCategories: Array<{
+                    label: string;
+                    categorySlug: string;
+                }>;
+                selectedBranchId: string | null;
+            };
             catalog: {
                 branch_can_create_categories: boolean;
                 branch_can_view_categories: boolean;

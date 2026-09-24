@@ -13,7 +13,7 @@ use Illuminate\Database\Seeder;
 class BranchInventorySeeder extends Seeder
 {
     /**
-     * Seed catalog products per branch with stock and prices (no Faker).
+     * Seed cigarettes / tobacco / vapes stock per branch (no Faker).
      * Depends on BranchSeeder + CatalogSeeder.
      */
     public function run(): void
@@ -25,33 +25,32 @@ class BranchInventorySeeder extends Seeder
         $inventory = app(InventoryService::class);
         $pricing = app(BranchPricingService::class);
 
-        // Sydney CBD flagship: full assortment, healthy stock, some promos.
+        // Sydney CBD flagship: full cig / tobacco / vape assortment.
         $this->seedBranch($sydney, $inventory, $pricing, [
             'marlboro-gold-soft-pack-20s' => ['qty' => 120, 'min' => 24, 'price' => '48.95', 'discount_type' => 'none', 'discount' => null],
             'winfield-blue-soft-pack-20s' => ['qty' => 140, 'min' => 30, 'price' => '46.50', 'discount_type' => 'none', 'discount' => null],
             'horizon-red-soft-pack-25s' => ['qty' => 80, 'min' => 20, 'price' => '52.90', 'discount_type' => 'fixed', 'discount' => '3.00'],
             'peter-jackson-menthol-20s' => ['qty' => 60, 'min' => 15, 'price' => '47.20', 'discount_type' => 'none', 'discount' => null],
+            'benson-hedges-smooth-soft-pack-20s' => ['qty' => 55, 'min' => 12, 'price' => '49.90', 'discount_type' => 'none', 'discount' => null],
+            'dunhill-fine-cut-soft-pack-20s' => ['qty' => 40, 'min' => 10, 'price' => '51.50', 'discount_type' => 'none', 'discount' => null],
+            'rothmans-blue-soft-pack-20s' => ['qty' => 70, 'min' => 16, 'price' => '45.50', 'discount_type' => 'fixed', 'discount' => '2.00'],
+            'winfield-red-soft-pack-20s' => ['qty' => 90, 'min' => 20, 'price' => '46.80', 'discount_type' => 'none', 'discount' => null],
+            'escort-red-soft-pack-25s' => ['qty' => 45, 'min' => 12, 'price' => '50.90', 'discount_type' => 'none', 'discount' => null],
             'iqos-iluma-starter-kit' => ['qty' => 18, 'min' => 4, 'price' => '89.00', 'discount_type' => 'percent', 'discount' => '10'],
             'terea-tobacco-sticks-20' => ['qty' => 90, 'min' => 20, 'price' => '28.00', 'discount_type' => 'none', 'discount' => null],
+            'terea-menthol-sticks-20' => ['qty' => 50, 'min' => 12, 'price' => '28.00', 'discount_type' => 'none', 'discount' => null],
+            'drum-original-hand-rolling-tobacco-50g' => ['qty' => 35, 'min' => 8, 'price' => '42.00', 'discount_type' => 'none', 'discount' => null],
             'vuse-go-5000-disposable' => ['qty' => 64, 'min' => 16, 'price' => '39.95', 'discount_type' => 'fixed', 'discount' => '5.00'],
             'puffmemate-pulse-5000' => ['qty' => 48, 'min' => 12, 'price' => '34.99', 'discount_type' => 'fixed', 'discount' => '5.00'],
             'puffmemate-mini-bar-1200' => ['qty' => 72, 'min' => 18, 'price' => '14.99', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-core-kit' => ['qty' => 24, 'min' => 6, 'price' => '39.99', 'discount_type' => 'fixed', 'discount' => '5.00'],
             'puffmemate-air-pro' => ['qty' => 18, 'min' => 4, 'price' => '44.99', 'discount_type' => 'none', 'discount' => null],
-            'harbor-fruit-blend-60ml' => ['qty' => 36, 'min' => 8, 'price' => '24.99', 'discount_type' => 'none', 'discount' => null],
-            'citrus-surge-salt-30ml' => ['qty' => 40, 'min' => 10, 'price' => '19.99', 'discount_type' => 'fixed', 'discount' => '2.00'],
-            'vanilla-custard-reserve-60ml' => ['qty' => 28, 'min' => 6, 'price' => '24.99', 'discount_type' => 'none', 'discount' => null],
-            'classic-leaf-tobacco-60ml' => ['qty' => 32, 'min' => 8, 'price' => '22.99', 'discount_type' => 'none', 'discount' => null],
-            'nordic-mint-pouches' => ['qty' => 55, 'min' => 12, 'price' => '18.50', 'discount_type' => 'none', 'discount' => null],
-            'citrus-chill-pouches' => ['qty' => 40, 'min' => 10, 'price' => '18.50', 'discount_type' => 'percent', 'discount' => '5'],
-            'core-closed-pods-2-pack' => ['qty' => 60, 'min' => 15, 'price' => '12.99', 'discount_type' => 'none', 'discount' => null],
-            'air-pro-mesh-coils-5-pack' => ['qty' => 45, 'min' => 10, 'price' => '16.99', 'discount_type' => 'none', 'discount' => null],
-            'clipper-classic-lighter' => ['qty' => 100, 'min' => 20, 'price' => '3.50', 'discount_type' => 'none', 'discount' => null],
-            'raw-classic-rolling-papers-ks' => ['qty' => 80, 'min' => 20, 'price' => '2.80', 'discount_type' => 'none', 'discount' => null],
-            'usb-c-charge-cable-1m' => ['qty' => 50, 'min' => 10, 'price' => '9.99', 'discount_type' => 'none', 'discount' => null],
-            'silicone-device-sleeve' => ['qty' => 35, 'min' => 8, 'price' => '7.99', 'discount_type' => 'none', 'discount' => null],
-            'travel-hard-case' => ['qty' => 22, 'min' => 5, 'price' => '19.99', 'discount_type' => 'fixed', 'discount' => '3.00'],
-            'lanyard-clip' => ['qty' => 40, 'min' => 10, 'price' => '4.99', 'discount_type' => 'none', 'discount' => null],
+            'iget-bar-plus-disposable' => ['qty' => 40, 'min' => 10, 'price' => '32.95', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-cloud-bar-6000' => ['qty' => 36, 'min' => 10, 'price' => '36.99', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-soft-touch-3500' => ['qty' => 30, 'min' => 8, 'price' => '29.99', 'discount_type' => 'none', 'discount' => null],
+            'vuse-epod-2-device-kit' => ['qty' => 16, 'min' => 4, 'price' => '29.99', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-max-mesh-8000' => ['qty' => 28, 'min' => 8, 'price' => '41.99', 'discount_type' => 'fixed', 'discount' => '4.00'],
+            'puffmemate-nano-pod-kit' => ['qty' => 20, 'min' => 5, 'price' => '34.99', 'discount_type' => 'none', 'discount' => null],
         ]);
 
         // Melbourne Collins: strong cigarette + heated tobacco focus, leaner vape range.
@@ -59,38 +58,36 @@ class BranchInventorySeeder extends Seeder
             'marlboro-gold-soft-pack-20s' => ['qty' => 95, 'min' => 20, 'price' => '49.50', 'discount_type' => 'none', 'discount' => null],
             'winfield-blue-soft-pack-20s' => ['qty' => 110, 'min' => 25, 'price' => '47.00', 'discount_type' => 'none', 'discount' => null],
             'horizon-red-soft-pack-25s' => ['qty' => 40, 'min' => 15, 'price' => '53.40', 'discount_type' => 'none', 'discount' => null],
+            'benson-hedges-smooth-soft-pack-20s' => ['qty' => 36, 'min' => 10, 'price' => '50.50', 'discount_type' => 'none', 'discount' => null],
+            'rothmans-blue-soft-pack-20s' => ['qty' => 42, 'min' => 12, 'price' => '45.90', 'discount_type' => 'none', 'discount' => null],
+            'winfield-red-soft-pack-20s' => ['qty' => 60, 'min' => 15, 'price' => '47.20', 'discount_type' => 'none', 'discount' => null],
             'iqos-iluma-starter-kit' => ['qty' => 12, 'min' => 3, 'price' => '92.00', 'discount_type' => 'none', 'discount' => null],
             'terea-tobacco-sticks-20' => ['qty' => 70, 'min' => 15, 'price' => '28.50', 'discount_type' => 'fixed', 'discount' => '2.00'],
+            'terea-menthol-sticks-20' => ['qty' => 32, 'min' => 8, 'price' => '28.50', 'discount_type' => 'none', 'discount' => null],
+            'drum-original-hand-rolling-tobacco-50g' => ['qty' => 22, 'min' => 6, 'price' => '42.50', 'discount_type' => 'none', 'discount' => null],
             'vuse-go-5000-disposable' => ['qty' => 30, 'min' => 10, 'price' => '40.95', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-pulse-5000' => ['qty' => 20, 'min' => 10, 'price' => '35.99', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-mini-bar-1200' => ['qty' => 8, 'min' => 12, 'price' => '15.49', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-core-kit' => ['qty' => 12, 'min' => 5, 'price' => '41.99', 'discount_type' => 'fixed', 'discount' => '4.00'],
-            'harbor-fruit-blend-60ml' => ['qty' => 15, 'min' => 6, 'price' => '25.49', 'discount_type' => 'none', 'discount' => null],
-            'citrus-surge-salt-30ml' => ['qty' => 4, 'min' => 8, 'price' => '20.49', 'discount_type' => 'none', 'discount' => null],
-            'nordic-mint-pouches' => ['qty' => 28, 'min' => 8, 'price' => '18.95', 'discount_type' => 'none', 'discount' => null],
-            'core-closed-pods-2-pack' => ['qty' => 22, 'min' => 10, 'price' => '13.49', 'discount_type' => 'none', 'discount' => null],
-            'clipper-classic-lighter' => ['qty' => 70, 'min' => 15, 'price' => '3.50', 'discount_type' => 'none', 'discount' => null],
-            'raw-classic-rolling-papers-ks' => ['qty' => 55, 'min' => 12, 'price' => '2.80', 'discount_type' => 'none', 'discount' => null],
-            'usb-c-charge-cable-1m' => ['qty' => 18, 'min' => 6, 'price' => '9.99', 'discount_type' => 'none', 'discount' => null],
-            'lanyard-clip' => ['qty' => 3, 'min' => 8, 'price' => '4.99', 'discount_type' => 'none', 'discount' => null],
+            'iget-bar-plus-disposable' => ['qty' => 18, 'min' => 6, 'price' => '33.50', 'discount_type' => 'none', 'discount' => null],
+            'vuse-epod-2-device-kit' => ['qty' => 10, 'min' => 3, 'price' => '30.50', 'discount_type' => 'none', 'discount' => null],
         ]);
 
-        // Brisbane Queen St: compact store — vapes + pouches heavy, limited cigarette SKUs.
+        // Brisbane Queen St: compact store — vapes heavy, limited cigarette SKUs.
         $this->seedBranch($brisbane, $inventory, $pricing, [
             'winfield-blue-soft-pack-20s' => ['qty' => 48, 'min' => 16, 'price' => '46.80', 'discount_type' => 'none', 'discount' => null],
             'peter-jackson-menthol-20s' => ['qty' => 22, 'min' => 10, 'price' => '47.50', 'discount_type' => 'none', 'discount' => null],
+            'rothmans-blue-soft-pack-20s' => ['qty' => 28, 'min' => 10, 'price' => '45.80', 'discount_type' => 'none', 'discount' => null],
+            'terea-tobacco-sticks-20' => ['qty' => 24, 'min' => 8, 'price' => '28.00', 'discount_type' => 'none', 'discount' => null],
             'vuse-go-5000-disposable' => ['qty' => 42, 'min' => 12, 'price' => '39.50', 'discount_type' => 'percent', 'discount' => '8'],
             'puffmemate-pulse-5000' => ['qty' => 36, 'min' => 10, 'price' => '34.50', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-mini-bar-1200' => ['qty' => 50, 'min' => 15, 'price' => '14.50', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-air-pro' => ['qty' => 10, 'min' => 4, 'price' => '43.99', 'discount_type' => 'none', 'discount' => null],
-            'citrus-surge-salt-30ml' => ['qty' => 24, 'min' => 8, 'price' => '19.50', 'discount_type' => 'none', 'discount' => null],
-            'classic-leaf-tobacco-60ml' => ['qty' => 18, 'min' => 6, 'price' => '22.50', 'discount_type' => 'none', 'discount' => null],
-            'nordic-mint-pouches' => ['qty' => 44, 'min' => 12, 'price' => '17.95', 'discount_type' => 'fixed', 'discount' => '2.00'],
-            'citrus-chill-pouches' => ['qty' => 36, 'min' => 10, 'price' => '17.95', 'discount_type' => 'none', 'discount' => null],
-            'air-pro-mesh-coils-5-pack' => ['qty' => 20, 'min' => 6, 'price' => '16.50', 'discount_type' => 'none', 'discount' => null],
-            'clipper-classic-lighter' => ['qty' => 60, 'min' => 15, 'price' => '3.20', 'discount_type' => 'none', 'discount' => null],
-            'usb-c-charge-cable-1m' => ['qty' => 25, 'min' => 8, 'price' => '9.50', 'discount_type' => 'none', 'discount' => null],
-            'travel-hard-case' => ['qty' => 9, 'min' => 4, 'price' => '18.99', 'discount_type' => 'none', 'discount' => null],
+            'iget-bar-plus-disposable' => ['qty' => 32, 'min' => 10, 'price' => '32.50', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-cloud-bar-6000' => ['qty' => 26, 'min' => 8, 'price' => '36.50', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-soft-touch-3500' => ['qty' => 22, 'min' => 6, 'price' => '29.50', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-max-mesh-8000' => ['qty' => 18, 'min' => 6, 'price' => '41.50', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-nano-pod-kit' => ['qty' => 12, 'min' => 4, 'price' => '34.50', 'discount_type' => 'none', 'discount' => null],
         ]);
 
         $this->seedVariantStock($sydney, $inventory, 'puffmemate-pulse-5000', [
@@ -123,12 +120,6 @@ class BranchInventorySeeder extends Seeder
             'HTP-TEREA-TURQ' => 18,
         ]);
 
-        $this->seedVariantStock($brisbane, $inventory, 'nordic-mint-pouches', [
-            'POUCH-NORDIC-6' => 16,
-            'POUCH-NORDIC-10' => 14,
-            'POUCH-NORDIC-16' => 10,
-        ]);
-
         $regionalSlugs = [
             BranchSeeder::PERTH_HAY,
             BranchSeeder::ADELAIDE_RUNDLE,
@@ -157,21 +148,16 @@ class BranchInventorySeeder extends Seeder
             'winfield-red-soft-pack-20s' => ['qty' => 40, 'min' => 12, 'price' => '46.80', 'discount_type' => 'none', 'discount' => null],
             'benson-hedges-smooth-soft-pack-20s' => ['qty' => 28, 'min' => 10, 'price' => '49.90', 'discount_type' => 'none', 'discount' => null],
             'rothmans-blue-soft-pack-20s' => ['qty' => 32, 'min' => 10, 'price' => '45.50', 'discount_type' => 'fixed', 'discount' => '2.00'],
+            'terea-tobacco-sticks-20' => ['qty' => 24, 'min' => 8, 'price' => '28.00', 'discount_type' => 'none', 'discount' => null],
+            'drum-original-hand-rolling-tobacco-50g' => ['qty' => 14, 'min' => 4, 'price' => '41.50', 'discount_type' => 'none', 'discount' => null],
             'vuse-go-5000-disposable' => ['qty' => 36, 'min' => 10, 'price' => '39.95', 'discount_type' => 'none', 'discount' => null],
             'iget-bar-plus-disposable' => ['qty' => 30, 'min' => 8, 'price' => '32.95', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-pulse-5000' => ['qty' => 28, 'min' => 8, 'price' => '34.99', 'discount_type' => 'fixed', 'discount' => '3.00'],
             'puffmemate-cloud-bar-6000' => ['qty' => 24, 'min' => 8, 'price' => '36.99', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-mini-bar-1200' => ['qty' => 40, 'min' => 12, 'price' => '14.99', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-core-kit' => ['qty' => 12, 'min' => 4, 'price' => '39.99', 'discount_type' => 'none', 'discount' => null],
-            'citrus-surge-salt-30ml' => ['qty' => 20, 'min' => 6, 'price' => '19.99', 'discount_type' => 'none', 'discount' => null],
-            'berry-blast-salt-30ml' => ['qty' => 18, 'min' => 6, 'price' => '19.99', 'discount_type' => 'none', 'discount' => null],
-            'mango-madness-freebase-60ml' => ['qty' => 16, 'min' => 5, 'price' => '24.99', 'discount_type' => 'none', 'discount' => null],
-            'nordic-mint-pouches' => ['qty' => 30, 'min' => 8, 'price' => '18.50', 'discount_type' => 'none', 'discount' => null],
-            'velo-cool-mint-pouches' => ['qty' => 26, 'min' => 8, 'price' => '19.50', 'discount_type' => 'percent', 'discount' => '5'],
-            'clipper-classic-lighter' => ['qty' => 60, 'min' => 15, 'price' => '3.50', 'discount_type' => 'none', 'discount' => null],
-            'bic-maxi-lighter' => ['qty' => 48, 'min' => 12, 'price' => '2.80', 'discount_type' => 'none', 'discount' => null],
-            'usb-c-charge-cable-1m' => ['qty' => 22, 'min' => 6, 'price' => '9.99', 'discount_type' => 'none', 'discount' => null],
-            'raw-classic-rolling-papers-ks' => ['qty' => 40, 'min' => 10, 'price' => '2.80', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-soft-touch-3500' => ['qty' => 18, 'min' => 6, 'price' => '29.99', 'discount_type' => 'none', 'discount' => null],
+            'puffmemate-max-mesh-8000' => ['qty' => 16, 'min' => 5, 'price' => '41.99', 'discount_type' => 'none', 'discount' => null],
         ];
     }
 

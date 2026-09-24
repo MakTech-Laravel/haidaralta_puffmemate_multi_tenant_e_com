@@ -17,6 +17,8 @@ export type User = {
 
 export type Auth = {
     user: User | null;
+    /** Portal home for the signed-in user (platform/branch/driver/customer). */
+    dashboardUrl?: string | null;
 };
 
 export type Passkey = {

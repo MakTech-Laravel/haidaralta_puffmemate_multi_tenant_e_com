@@ -41,14 +41,11 @@ export const SHOP_CATEGORY_OPTIONS = [
     { slug: 'cigarettes', label: 'Cigarettes' },
     { slug: 'vapes', label: 'Vapes' },
     { slug: 'tobacco', label: 'Tobacco' },
-    { slug: 'nicotine-pouches', label: 'Nicotine pouches' },
-    { slug: 'accessories', label: 'Accessories' },
 ] as const;
 
 export const SHOP_TYPE_OPTIONS = [
     { slug: 'best-selling', label: 'Best Selling Products' },
     { slug: 'new-arrival', label: 'New Arrival' },
-    { slug: 'packs-saves', label: 'Packs & Saves' },
 ] as const;
 
 function activePricePresetId(

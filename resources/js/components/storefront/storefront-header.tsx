@@ -14,9 +14,10 @@ import {
 } from '@/components/ui/sheet';
 import { useAppBrand } from '@/hooks/use-app-brand';
 import {
+    buildStorefrontNavItems,
     storefrontAnnouncement,
-    storefrontNavItems,
     type StorefrontChromeItem,
+    type StorefrontNavCategory,
 } from '@/lib/storefront-chrome';
 import { cn } from '@/lib/utils';
 import {
@@ -27,6 +28,7 @@ import {
     faqs,
     home,
     login,
+    packsSaves,
     shop,
     wholesale,
 } from '@/routes';
@@ -52,6 +54,8 @@ function resolveHref(item: StorefrontChromeItem): string {
             return faqs.url();
         case 'contact':
             return contact.url();
+        case 'packs-saves':
+            return packsSaves.url();
         case 'wholesale':
             return wholesale.url();
         default:
@@ -113,6 +117,9 @@ function isAccountArea(url: string): boolean {
     return (
         url === '/dashboard' ||
         url.startsWith('/dashboard?') ||
+        url.startsWith('/platform/dashboard') ||
+        url.startsWith('/driver/dashboard') ||
+        /^\/branch\/[^/]+\/dashboard/.test(url) ||
         url === '/orders' ||
         url.startsWith('/orders?') ||
         url.startsWith('/orders/') ||
@@ -136,15 +143,24 @@ export function StorefrontHeader() {
     const brand = useAppBrand();
     const {
         auth,
+        storefront,
         customerNotifications = [],
     } = page.props as {
-        auth: { user: { avatar?: string } | null };
+        auth: {
+            user: { avatar?: string } | null;
+            dashboardUrl?: string | null;
+        };
+        storefront?: {
+            navCategories?: StorefrontNavCategory[];
+        };
         customerNotifications?: NotificationItem[];
     };
     const name = brand.name;
     const url = page.url;
     const [mobileOpen, setMobileOpen] = useState(false);
-    const accountHref = auth.user ? dashboard() : login();
+    const accountHref = auth.user
+        ? (auth.dashboardUrl ?? dashboard())
+        : login();
     const accountActive = Boolean(auth.user) && isAccountArea(url);
     const avatarUrl = auth.user?.avatar;
     const cartActive =
@@ -152,7 +168,7 @@ export function StorefrontHeader() {
         url.startsWith('/cart?') ||
         url === '/checkout' ||
         url.startsWith('/checkout?');
-    const items = storefrontNavItems;
+    const items = buildStorefrontNavItems(storefront?.navCategories ?? []);
 
     return (
         <div className="sticky top-0 z-40">
@@ -178,7 +194,11 @@ export function StorefrontHeader() {
 
                     <nav className="ml-4 hidden flex-1 items-center justify-center gap-5 lg:flex xl:gap-7">
                         {items.map((item) => (
-                            <NavLabel key={item.label} item={item} url={url} />
+                            <NavLabel
+                                key={`${item.label}-${item.categorySlug ?? item.route}`}
+                                item={item}
+                                url={url}
+                            />
                         ))}
                     </nav>
 
@@ -258,7 +278,7 @@ export function StorefrontHeader() {
                                 <nav className="mt-6 flex flex-col gap-4 px-5">
                                     {items.map((item) => (
                                         <NavLabel
-                                            key={item.label}
+                                            key={`${item.label}-${item.categorySlug ?? item.route}`}
                                             item={item}
                                             url={url}
                                             className="text-base"

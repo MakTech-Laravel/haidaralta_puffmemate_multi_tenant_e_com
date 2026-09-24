@@ -6,6 +6,7 @@ use App\Http\Controllers\Storefront\CategoryController;
 use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\CmsPageController;
 use App\Http\Controllers\Storefront\HomeController;
+use App\Http\Controllers\Storefront\PacksSavesController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\ShopController;
 use App\Http\Controllers\WebAppManifestController;
@@ -26,6 +27,7 @@ Route::redirect('/customer/login', '/login');
 Route::get('/shop', ShopController::class)->name('shop');
 Route::get('/shop/{category}', [CategoryController::class, 'show'])->name('shop.category');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/packs-saves', PacksSavesController::class)->name('packs-saves');
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 

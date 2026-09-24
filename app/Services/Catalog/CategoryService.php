@@ -4,6 +4,7 @@ namespace App\Services\Catalog;
 
 use App\Models\Category;
 use App\Support\CatalogBackgroundColor;
+use App\Support\Storefront\StorefrontCatalog;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -26,7 +27,7 @@ class CategoryService
      */
     public function create(array $data, ?UploadedFile $image = null): Category
     {
-        return DB::transaction(function () use ($data, $image): Category {
+        $category = DB::transaction(function () use ($data, $image): Category {
             return Category::query()->create([
                 'parent_id' => $data['parent_id'] ?? null,
                 'name' => $data['name'],
@@ -40,6 +41,10 @@ class CategoryService
                 'nav_sort' => $data['nav_sort'] ?? null,
             ]);
         });
+
+        StorefrontCatalog::forgetNavCategories();
+
+        return $category;
     }
 
     /**
@@ -58,7 +63,7 @@ class CategoryService
      */
     public function update(Category $category, array $data, ?UploadedFile $image = null): Category
     {
-        return DB::transaction(function () use ($category, $data, $image): Category {
+        $category = DB::transaction(function () use ($category, $data, $image): Category {
             if (($data['remove_image'] ?? false) === true && $category->image) {
                 Storage::disk('public')->delete($category->image);
                 $category->image = null;
@@ -84,16 +89,24 @@ class CategoryService
 
             return $category->refresh();
         });
+
+        StorefrontCatalog::forgetNavCategories();
+
+        return $category;
     }
 
     public function delete(Category $category): void
     {
         $category->delete();
+
+        StorefrontCatalog::forgetNavCategories();
     }
 
     public function restore(Category $category): Category
     {
         $category->restore();
+
+        StorefrontCatalog::forgetNavCategories();
 
         return $category->refresh();
     }

@@ -16,11 +16,6 @@ class DemoCatalog
             'cigarettes' => 'Cigarettes',
             'tobacco' => 'Tobacco',
             'vapes' => 'Vapes',
-            'nicotine-pouches' => 'Nicotine Pouches',
-            'packs-saves' => 'Packs & Saves',
-            'wholesale' => 'Wholesale',
-            'accessories' => 'Accessories',
-            'nicotine' => 'Nicotine Pouches',
         ];
     }
 
@@ -91,22 +86,6 @@ class DemoCatalog
                 'description' => 'Rolling & pipe tobacco',
                 'image' => '/images/storefront/category-tobacco.png',
                 'href' => route('shop.category', ['category' => 'tobacco'], false),
-            ],
-            [
-                'id' => 'nicotine-pouches',
-                'name' => 'Nicotine Pouches',
-                'description' => 'Smoke-free nicotine options',
-                'image' => '/images/storefront/category-pouches.png',
-                'href' => route('shop.category', ['category' => 'nicotine-pouches'], false),
-                'wide' => true,
-            ],
-            [
-                'id' => 'accessories',
-                'name' => 'Accessories',
-                'description' => 'Lighters, cases & more',
-                'image' => '/images/storefront/category-accessories.png',
-                'href' => route('shop.category', ['category' => 'accessories'], false),
-                'wide' => true,
             ],
         ];
     }
@@ -1867,7 +1846,7 @@ class DemoCatalog
                 'createdAt' => '5 days ago',
                 'read' => false,
                 'type' => 'promo',
-                'body' => "Selected packs & saves are available again at nearby branches.\n\nOpen Shop → Packs & Saves to browse current offers. Age verification still applies at delivery.",
+                'body' => "Selected packs & saves are available again at nearby branches.\n\nOpen Packs & Saves to browse current offers. Age verification still applies at delivery.",
             ],
             [
                 'id' => 'notif-6',

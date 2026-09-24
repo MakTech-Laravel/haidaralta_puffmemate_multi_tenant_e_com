@@ -2,7 +2,9 @@
 
 use App\Models\Category;
 use App\Models\CmsPage;
+use App\Models\User;
 use App\Services\Cms\CmsPageService;
+use App\Support\Storefront\StorefrontCatalog;
 use Database\Seeders\ApplicationSettingsSeeder;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\CatalogSeeder;
@@ -42,6 +44,16 @@ test('unpublished cms page returns 404', function () {
     app(CmsPageService::class)->refresh('about');
 
     $this->get(route('about'))->assertNotFound();
+});
+
+test('storefront home shares portal dashboard url for signed-in staff', function () {
+    $user = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($user, 'platform')
+        ->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('auth.dashboardUrl', '/platform/dashboard'));
 });
 
 test('storefront home shares featured categories and tagged products', function () {
@@ -158,11 +170,68 @@ test('storefront checkout page renders', function () {
             ->where('itemCount', 2));
 });
 
-test('nav categories respect show_in_nav and configured max', function () {
-    expect(Category::query()->where('show_in_nav', true)->count())
-        ->toBeLessThanOrEqual((int) config('catalog.nav_categories_max'));
+test('nav categories respect show_in_nav and nav_sort order', function () {
+    StorefrontCatalog::forgetNavCategories();
+
+    Category::query()->update(['show_in_nav' => false, 'nav_sort' => null]);
+
+    Category::factory()->create([
+        'name' => 'Zulu Nav',
+        'slug' => 'zulu-nav',
+        'status' => true,
+        'show_in_nav' => true,
+        'nav_sort' => 2,
+    ]);
+    Category::factory()->create([
+        'name' => 'Alpha Nav',
+        'slug' => 'alpha-nav',
+        'status' => true,
+        'show_in_nav' => true,
+        'nav_sort' => 1,
+    ]);
+    Category::factory()->create([
+        'name' => 'Hidden Nav',
+        'slug' => 'hidden-nav',
+        'status' => true,
+        'show_in_nav' => false,
+        'nav_sort' => 1,
+    ]);
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->has('storefront.navCategories'));
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('storefront.navCategories', 2)
+            ->where('storefront.navCategories.0.categorySlug', 'alpha-nav')
+            ->where('storefront.navCategories.0.label', 'Alpha Nav')
+            ->where('storefront.navCategories.1.categorySlug', 'zulu-nav')
+            ->where('storefront.navCategories.1.label', 'Zulu Nav'));
+});
+
+test('nav categories are served from cache after the first resolve', function () {
+    StorefrontCatalog::forgetNavCategories();
+
+    Category::query()->update(['show_in_nav' => false]);
+    Category::factory()->create([
+        'name' => 'Cached Nav',
+        'slug' => 'cached-nav',
+        'status' => true,
+        'show_in_nav' => true,
+        'nav_sort' => 1,
+    ]);
+
+    expect(StorefrontCatalog::navCategories())->toEqual([
+        ['label' => 'Cached Nav', 'categorySlug' => 'cached-nav'],
+    ]);
+
+    Category::query()->where('slug', 'cached-nav')->update(['name' => 'Renamed Without Forget']);
+
+    expect(StorefrontCatalog::navCategories())->toEqual([
+        ['label' => 'Cached Nav', 'categorySlug' => 'cached-nav'],
+    ]);
+
+    StorefrontCatalog::forgetNavCategories();
+
+    expect(StorefrontCatalog::navCategories())->toEqual([
+        ['label' => 'Renamed Without Forget', 'categorySlug' => 'cached-nav'],
+    ]);
 });

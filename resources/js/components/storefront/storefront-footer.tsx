@@ -8,7 +8,7 @@ import {
     storefrontFooterShop,
     type StorefrontChromeItem,
 } from '@/lib/storefront-chrome';
-import { about, contact, faqs, home, privacy, shop, wholesale } from '@/routes';
+import { about, contact, faqs, home, packsSaves, privacy, shop, wholesale } from '@/routes';
 import { category as shopCategory } from '@/routes/shop';
 
 function resolveHref(item: StorefrontChromeItem): string {
@@ -27,6 +27,8 @@ function resolveHref(item: StorefrontChromeItem): string {
             return faqs.url();
         case 'contact':
             return contact.url();
+        case 'packs-saves':
+            return packsSaves.url();
         case 'wholesale':
             return wholesale.url();
         case 'privacy':
