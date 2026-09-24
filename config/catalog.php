@@ -24,7 +24,7 @@ return [
     |
     */
 
-    'nav_categories_max' => env('NAV_CATEGORIES_MAX', 6),
+    'nav_categories_max' => env('NAV_CATEGORIES_MAX', 4),
 
     /*
     |--------------------------------------------------------------------------
