@@ -5,6 +5,7 @@ paths:
   - database/seeders/CatalogSeeder.php
   - database/seeders/CategorySeeder.php
   - database/seeders/ProductSeeder.php
+  - database/seeders/PriceRangeSeeder.php
 ---
 
 # Seeders
@@ -28,6 +29,10 @@ Seed media lives under `public/images` (committed storefront + `public/images/ca
 ## Catalog split: CategorySeeder + ProductSeeder
 
 Catalog seeding is split: `CategorySeeder` then `ProductSeeder`. `CatalogSeeder` remains a thin wrapper that calls both (tests may still seed it). DatabaseSeeder calls the two seeders directly. ProductSeeder looks up categories by slug and depends on CategorySeeder.
+
+## Shop price ranges seeder
+
+`PriceRangeSeeder` seeds AUD shop sidebar bands (Under $20 … `$10,000 & above`) via `updateOrCreate` on slug, and creates `shop_price_filter_settings` (slider_min/max) when missing. Included in `DatabaseSeeder` after products. Re-run alone with `php artisan db:seed --class=PriceRangeSeeder`. “All Price” stays a client clear option — not a DB row.
 
 ## Seeded branches are AU retail locations
 

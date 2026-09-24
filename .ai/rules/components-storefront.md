@@ -1,0 +1,12 @@
+---
+paths:
+  - resources/js/components/storefront/shop-filters-sidebar.tsx
+---
+
+# Components Storefront
+
+## Shop price slider syncs with inputs
+Shop price range: min/max inputs live-sync the dual slider (no floating tooltips). Slider floor/ceiling come from `filterOptions.sliderMin` / `sliderMax`. Commit filter on blur/Enter; at floor/ceiling commit null bounds.
+
+## Shop price slider has no tooltips
+Shop dual-range price slider does not show floating value bubbles/tooltips; values are shown only via the synced min/max inputs.

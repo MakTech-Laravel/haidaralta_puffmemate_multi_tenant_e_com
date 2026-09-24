@@ -1,9 +1,13 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react';
+import type { FormEvent } from 'react';
 import { AppDateTime } from '@/components/app-datetime';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
@@ -18,27 +22,46 @@ type PriceRangeRow = {
     updated_at: string | null;
 };
 
+type SliderBounds = {
+    slider_min: string;
+    slider_max: string;
+};
+
 function formatBand(row: PriceRangeRow): string {
     if (row.min_amount === null && row.max_amount !== null) {
         return `Up to $${Number(row.max_amount).toFixed(2)}`;
     }
 
     if (row.min_amount !== null && row.max_amount === null) {
-        return `From $${Number(row.min_amount).toFixed(2)}`;
+        return `From $${Number(row.min_amount).toFixed(2)} & above`;
     }
 
     if (row.min_amount !== null && row.max_amount !== null) {
         return `$${Number(row.min_amount).toFixed(2)} – $${Number(row.max_amount).toFixed(2)}`;
     }
 
-    return 'Any';
+    return 'Open';
 }
 
 export default function PlatformPriceRangesIndex({
     priceRanges,
+    sliderBounds,
 }: {
     priceRanges: PriceRangeRow[];
+    sliderBounds: SliderBounds;
 }) {
+    const boundsForm = useForm({
+        slider_min: sliderBounds.slider_min,
+        slider_max: sliderBounds.slider_max,
+    });
+
+    const saveBounds = (event: FormEvent) => {
+        event.preventDefault();
+        boundsForm.put('/platform/price-ranges/bounds', {
+            preserveScroll: true,
+        });
+    };
+
     return (
         <>
             <Head title="Shop price ranges" />
@@ -56,6 +79,68 @@ export default function PlatformPriceRangesIndex({
                         </Link>
                     </Button>
                 </div>
+
+                <form
+                    onSubmit={saveBounds}
+                    className="border-border/80 bg-card space-y-4 rounded-2xl border p-4 shadow-sm sm:p-5"
+                >
+                    <div className="space-y-1">
+                        <h2 className="text-foreground text-base font-semibold">
+                            Shop slider bounds
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                            Fixed min and max for the storefront price slider
+                            and inputs (replaces “Any”).
+                        </p>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="slider_min">Min</Label>
+                            <Input
+                                id="slider_min"
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                inputMode="decimal"
+                                value={boundsForm.data.slider_min}
+                                onChange={(event) =>
+                                    boundsForm.setData(
+                                        'slider_min',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="0"
+                            />
+                            <InputError
+                                message={boundsForm.errors.slider_min}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="slider_max">Max</Label>
+                            <Input
+                                id="slider_max"
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                inputMode="decimal"
+                                value={boundsForm.data.slider_max}
+                                onChange={(event) =>
+                                    boundsForm.setData(
+                                        'slider_max',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="50000"
+                            />
+                            <InputError
+                                message={boundsForm.errors.slider_max}
+                            />
+                        </div>
+                    </div>
+                    <Button type="submit" disabled={boundsForm.processing}>
+                        Save slider bounds
+                    </Button>
+                </form>
 
                 {priceRanges.length === 0 ? (
                     <div className="border-border/80 bg-card rounded-2xl border p-8 text-center shadow-sm">

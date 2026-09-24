@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Platform;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StorePriceRangeRequest;
 use App\Http\Requests\Platform\UpdatePriceRangeRequest;
+use App\Http\Requests\Platform\UpdateShopPriceFilterBoundsRequest;
 use App\Models\PriceRange;
 use App\Services\Catalog\PriceRangeService;
 use App\Support\Toast;
@@ -23,7 +24,17 @@ class PriceRangeController extends Controller
     {
         return Inertia::render('platform/catalog/price-ranges/index', [
             'priceRanges' => $this->priceRanges->indexPayload(),
+            'sliderBounds' => $this->priceRanges->boundsPayload(),
         ]);
+    }
+
+    public function updateBounds(UpdateShopPriceFilterBoundsRequest $request): RedirectResponse
+    {
+        $this->priceRanges->updateSliderBounds($request->validated());
+
+        Toast::success('Shop price slider bounds saved.');
+
+        return redirect()->route('platform.price-ranges.index');
     }
 
     public function create(): Response
