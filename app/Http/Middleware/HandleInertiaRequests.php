@@ -121,7 +121,7 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{id: int, name: string, slug: string}|null
+     * @return array{id: int, name: string, slug: string, logo_url: string|null}|null
      */
     private function resolveSharedBranch(): ?array
     {
@@ -132,6 +132,11 @@ class HandleInertiaRequests extends Middleware
         /** @var Branch $branch */
         $branch = app('currentBranch');
 
-        return $branch->only(['id', 'name', 'slug']);
+        return [
+            'id' => $branch->id,
+            'name' => $branch->name,
+            'slug' => $branch->slug,
+            'logo_url' => MediaUrl::resolve($branch->logo, fallback: null),
+        ];
     }
 }

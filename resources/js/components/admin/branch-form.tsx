@@ -240,10 +240,31 @@ export function BranchForm({
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    <div className="flex items-stretch gap-4">
-                        <div className="flex w-40 shrink-0 flex-col gap-1.5 self-stretch sm:w-44">
+                    <div
+                        className={cn(
+                            'flex gap-4',
+                            hideIdentityFields
+                                ? 'items-start'
+                                : 'items-stretch',
+                        )}
+                    >
+                        <div
+                            className={cn(
+                                'flex shrink-0 flex-col gap-1.5',
+                                hideIdentityFields
+                                    ? 'w-32 sm:w-36'
+                                    : 'w-40 self-stretch sm:w-44',
+                            )}
+                        >
                             <Label>Logo</Label>
-                            <div className="flex min-h-44 flex-1 flex-col">
+                            <div
+                                className={cn(
+                                    'flex flex-col',
+                                    hideIdentityFields
+                                        ? 'h-32 sm:h-36'
+                                        : 'min-h-44 flex-1',
+                                )}
+                            >
                                 <FileUpload
                                     value={data.logo}
                                     onChange={(file) => {
@@ -277,6 +298,7 @@ export function BranchForm({
                                     maxFiles={1}
                                     multiple={false}
                                     lightbox
+                                    compactCards={hideIdentityFields}
                                     isUploading={processing}
                                     uploadProgress={
                                         progress?.percentage ?? null
@@ -286,16 +308,37 @@ export function BranchForm({
                                     hint="PNG, JPG, or WebP · up to 2MB"
                                     error={errors.logo}
                                     classNames={{
-                                        wrapper:
-                                            'flex h-full min-h-44 w-full flex-1 flex-col',
-                                        dropzone:
-                                            'flex h-full min-h-44 w-full flex-1 border-dashed border-border/60 bg-muted/30 px-3 py-4',
+                                        wrapper: cn(
+                                            'flex w-full flex-col',
+                                            hideIdentityFields
+                                                ? 'h-full'
+                                                : 'h-full min-h-44 flex-1',
+                                        ),
+                                        dropzone: cn(
+                                            'w-full border-dashed border-border/60 bg-muted/30 px-3 py-4',
+                                            hideIdentityFields
+                                                ? 'flex h-full items-center justify-center'
+                                                : 'flex h-full min-h-44 w-full flex-1',
+                                        ),
                                         dropzoneContent: 'gap-1.5',
-                                        card: 'flex h-full w-full flex-col overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
-                                        cardMedia:
-                                            'aspect-auto min-h-44 flex-1 bg-transparent',
-                                        cardImage:
-                                            'size-full object-cover object-center',
+                                        card: cn(
+                                            'flex w-full flex-col overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
+                                            hideIdentityFields
+                                                ? 'h-full'
+                                                : 'h-full',
+                                        ),
+                                        cardMedia: cn(
+                                            'bg-transparent',
+                                            hideIdentityFields
+                                                ? 'aspect-square flex-1'
+                                                : 'aspect-auto min-h-44 flex-1',
+                                        ),
+                                        cardImage: cn(
+                                            'size-full object-center',
+                                            hideIdentityFields
+                                                ? 'object-contain p-2'
+                                                : 'object-cover',
+                                        ),
                                         cardInfo:
                                             'border-border/50 border-t bg-background/70',
                                     }}

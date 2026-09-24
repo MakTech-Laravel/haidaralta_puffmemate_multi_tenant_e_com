@@ -33,6 +33,7 @@ export default function BranchLayout({
             sidebarWidth="16.5rem"
             brandEyebrow="Branch"
             brandSubtitle={branch?.name}
+            brandLogoUrl={branch?.logo_url}
             headerDensity="compact"
         >
             {children}

@@ -28,6 +28,8 @@ export type PortalShellLayoutProps = {
     brandEyebrow?: string;
     brandSubtitle?: string;
     brandTone?: 'default' | 'inverse';
+    /** Overrides the sidebar mark (branch logo). Falls back to application brand. */
+    brandLogoUrl?: string | null;
     breadcrumbs?: BreadcrumbItem[];
     children: ReactNode;
     groupLabel?: string;
@@ -59,6 +61,7 @@ export function PortalShellLayout({
     brandEyebrow,
     brandSubtitle,
     brandTone = 'default',
+    brandLogoUrl,
     breadcrumbs = [],
     children,
     groupLabel,
@@ -117,6 +120,7 @@ export function PortalShellLayout({
                                 <Link href={logoHref} prefetch>
                                     <PortalBrand
                                         tone={brandTone}
+                                        logoUrl={brandLogoUrl}
                                         {...(brandEyebrow
                                             ? { eyebrow: brandEyebrow }
                                             : {})}

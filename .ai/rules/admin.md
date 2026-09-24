@@ -66,3 +66,6 @@ AdminForm and StaffForm live-validate phone and email uniqueness via Inertia use
 
 ## Shift board on-duty stats are split by people kind
 The shift board shows two on-duty StatCards (Staff on duty + Drivers on duty), counted from liveOnDuty by user_type branch vs driver, plus the Shifts/selected-template card. Do not combine staff and drivers into one on-duty count card.
+
+## BranchForm compact logo when identity hidden
+When hideIdentityFields is true (branch Settings → General), BranchForm logo rail uses items-start, a compact fixed square (w/h 32–36), object-contain, and compactCards — do not stretch min-h-44 beside the shorter name/phone/email column. Platform create/edit keeps the tall stretch logo beside slug/code.
