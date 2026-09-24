@@ -495,8 +495,7 @@ export function ProductForm({
                     <AlertTitle>Shared catalog</AlertTitle>
                     <AlertDescription>
                         Active products are available at every branch. Set stock
-                        and price from Catalog Manage after creating the
-                        listing.
+                        from Catalog Manage after creating the listing.
                     </AlertDescription>
                 </Alert>
             ) : null}
