@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Laravel\Scout\Searchable;
 
 /**
@@ -27,6 +28,9 @@ use Laravel\Scout\Searchable;
  * @property string|null $sku
  * @property string|null $description
  * @property string|null $brand
+ * @property string|null $pack_label
+ * @property int|null $pieces_per_pack
+ * @property string|null $pack_unit
  * @property string|null $image
  * @property array<mixed>|null $tags
  * @property array<string, mixed>|null $specifications
@@ -35,8 +39,8 @@ use Laravel\Scout\Searchable;
  * @property string|null $regular_price
  * @property DiscountType $discount_type
  * @property string|null $discount_price
- * @property \Illuminate\Support\Carbon|null $discount_start_date
- * @property \Illuminate\Support\Carbon|null $discount_end_date
+ * @property Carbon|null $discount_start_date
+ * @property Carbon|null $discount_end_date
  * @property bool $status
  * @property int|null $created_by
  * @property-read Collection<int, Category> $categories
@@ -75,6 +79,9 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
         'sku',
         'description',
         'brand',
+        'pack_label',
+        'pieces_per_pack',
+        'pack_unit',
         'image',
         'tags',
         'specifications',
@@ -166,6 +173,25 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
     }
 
     /**
+     * Storefront/admin card line, e.g. "Gold Pack • 20 Cigarettes" or "Refillable Lighter".
+     */
+    public function packSummary(): ?string
+    {
+        $label = is_string($this->pack_label) ? trim($this->pack_label) : '';
+        $pieces = $this->pieces_per_pack;
+        $unit = is_string($this->pack_unit) ? trim($this->pack_unit) : '';
+
+        if ($pieces !== null && $pieces > 0) {
+            $unitPart = $unit !== '' ? $unit : 'pcs';
+            $countPart = $pieces.' '.$unitPart;
+
+            return $label !== '' ? $label.' • '.$countPart : $countPart;
+        }
+
+        return $label !== '' ? $label : null;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toSearchableArray(): array
@@ -202,6 +228,7 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
             'tags' => 'array',
             'specifications' => 'array',
             'color_code' => 'array',
+            'pieces_per_pack' => 'integer',
             'selling_price' => 'decimal:2',
             'regular_price' => 'decimal:2',
             'discount_type' => DiscountType::class,

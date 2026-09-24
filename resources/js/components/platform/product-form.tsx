@@ -83,6 +83,9 @@ interface ProductFormDefaults {
     slug?: string;
     sku?: string | null;
     brand?: string | null;
+    pack_label?: string | null;
+    pieces_per_pack?: number | null;
+    pack_unit?: string | null;
     description?: string | null;
     tags?: ProductTagValue[];
     specifications?: ProductSpecificationRow[];
@@ -235,6 +238,13 @@ export function ProductForm({
         slug: defaults?.slug ?? '',
         sku: defaults?.sku ?? '',
         brand: defaults?.brand ?? '',
+        pack_label: defaults?.pack_label ?? '',
+        pieces_per_pack:
+            defaults?.pieces_per_pack !== null &&
+            defaults?.pieces_per_pack !== undefined
+                ? String(defaults.pieces_per_pack)
+                : '',
+        pack_unit: defaults?.pack_unit ?? '',
         description: defaults?.description ?? '',
         tags: defaults?.tags ?? ([] as ProductTagValue[]),
         specifications: initialSpecifications(defaults?.specifications),
@@ -398,6 +408,9 @@ export function ProductForm({
                 remove_gallery_ids,
                 color_code,
                 brand,
+                pack_label,
+                pieces_per_pack,
+                pack_unit,
                 specifications,
                 selling_price,
                 buying_price,
@@ -418,6 +431,13 @@ export function ProductForm({
             return {
                 ...rest,
                 brand: brand.trim() === '' ? null : brand,
+                pack_label: pack_label.trim() === '' ? null : pack_label,
+                pieces_per_pack:
+                    pieces_per_pack.trim() === '' ? null : pieces_per_pack,
+                pack_unit:
+                    pieces_per_pack.trim() === '' || pack_unit.trim() === ''
+                        ? null
+                        : pack_unit,
                 specifications: JSON.stringify(filteredSpecifications),
                 color_code: JSON.stringify(
                     normalizeCatalogColorPickerValue(color_code),
@@ -786,6 +806,68 @@ export function ProductForm({
                                 placeholder="e.g. PuffMeMate"
                             />
                             <InputError message={errors.brand} />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="pack_label">Pack label</Label>
+                            <Input
+                                id="pack_label"
+                                value={data.pack_label}
+                                onChange={(event) =>
+                                    setData('pack_label', event.target.value)
+                                }
+                                placeholder="e.g. Gold Pack, Refillable Lighter"
+                            />
+                            <p className="text-muted-foreground text-xs">
+                                Short storefront line under the product name.
+                                Leave blank when not needed.
+                            </p>
+                            <InputError message={errors.pack_label} />
+                        </div>
+
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="pieces_per_pack">
+                                    Pieces per pack
+                                </Label>
+                                <Input
+                                    id="pieces_per_pack"
+                                    type="number"
+                                    min={1}
+                                    max={9999}
+                                    step={1}
+                                    value={data.pieces_per_pack}
+                                    onChange={(event) =>
+                                        setData(
+                                            'pieces_per_pack',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="e.g. 20"
+                                />
+                                <p className="text-muted-foreground text-xs">
+                                    Optional. Use for cigarettes, pouches, etc.
+                                    Skip for lighters and single devices.
+                                </p>
+                                <InputError message={errors.pieces_per_pack} />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="pack_unit">Pack unit</Label>
+                                <Input
+                                    id="pack_unit"
+                                    value={data.pack_unit}
+                                    onChange={(event) =>
+                                        setData('pack_unit', event.target.value)
+                                    }
+                                    placeholder="e.g. Cigarettes, pcs"
+                                    disabled={data.pieces_per_pack.trim() === ''}
+                                />
+                                <p className="text-muted-foreground text-xs">
+                                    Shown with the piece count (defaults to
+                                    “pcs” when empty).
+                                </p>
+                                <InputError message={errors.pack_unit} />
+                            </div>
                         </div>
 
                         <div className="flex flex-col gap-2">

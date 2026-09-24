@@ -3,6 +3,8 @@ paths:
   - 'database/seeders/**'
   - database/seeders/WorkforceShiftSeeder.php
   - database/seeders/CatalogSeeder.php
+  - database/seeders/CategorySeeder.php
+  - database/seeders/ProductSeeder.php
 ---
 
 # Seeders
@@ -13,15 +15,19 @@ UserSeeder phone constants (`PLATFORM_SUPER_ADMIN_PHONE`, `BRANCH_1_*_PHONE`, `D
 
 ## Catalog category homepage and nav caps
 
-CatalogSeeder may feature at most `config('catalog.featured_categories_max')` (5) categories and put at most `nav_categories_max` (6) in header nav (`show_in_nav` + `nav_sort`). `slogan` is the homepage card subtitle. Featured and show_in_nav are independent flags.
+CategorySeeder may feature at most `config('catalog.featured_categories_max')` (5) categories and put at most `nav_categories_max` (6) in header nav (`show_in_nav` + `nav_sort`). `slogan` is the homepage card subtitle. Featured and show_in_nav are independent flags.
 
 ## Catalog product storefront fields
 
-Seed brand, tags (`new_arrival`, `best_selling`, `popular`, `on_offer`), and specifications label/value rows for key SKUs. Keep product_variants for pack/carton and flavor SKUs until the owner explicitly approves removal. CatalogSeeder also sets products.selling_price / regular_price (Sydney flagship ticket + ~15% compare-at) so common catalog pricing works when `show_branch_pricing` is false.
+Seed brand, tags (`new_arrival`, `best_selling`, `popular`, `on_offer`), pack_label / pieces_per_pack / pack_unit, and specifications label/value rows for key SKUs. Keep product_variants for pack/carton and flavor SKUs until the owner explicitly approves removal. ProductSeeder also sets products.selling_price / regular_price (Sydney flagship ticket + ~15% compare-at) so common catalog pricing works when `show_branch_pricing` is false.
 
 ## Catalog seeder images use public web paths
 
-Seed media lives under `public/images` (committed storefront + `public/images/catalog/...` assets). DB stores `/images/...` paths — never raw remote URLs and never copies into `storage/app/public`. Keep catalog/storefront images committed for staging/production. Runtime admin uploads still use the public disk; resolve all media through `App\Support\MediaUrl`.
+Seed media lives under `public/images` (committed storefront + `public/images/catalog/...` assets). DB stores `/images/...` paths — never raw remote URLs and never copies into `storage/app/public`. Keep catalog/storefront images committed for staging/production. Runtime admin uploads still use the public disk; resolve all media through `App\Support\MediaUrl`. Shared helpers live in `database/seeders/Concerns/SeedsCatalogMedia.php`.
+
+## Catalog split: CategorySeeder + ProductSeeder
+
+Catalog seeding is split: `CategorySeeder` then `ProductSeeder`. `CatalogSeeder` remains a thin wrapper that calls both (tests may still seed it). DatabaseSeeder calls the two seeders directly. ProductSeeder looks up categories by slug and depends on CategorySeeder.
 
 ## Seeded branches are AU retail locations
 
@@ -42,4 +48,7 @@ WorkforceShiftSeeder uses personal date ranges only. Do not seed global roster p
 All seeders use handwritten real-world AU retail copy — never Faker or fake(). Branches: 9 stores (3 flagships + Perth, Adelaide, Surfers, Canberra, Newcastle, Parramatta). Users expand beyond constants. Catalog ~48 products. TransferHistorySeeder archives only. ConversationVolume is high-volume phrase banks.
 
 ## CatalogSeeder featured category set
-Featured homepage set is cigarettes, vapes, tobacco, nicotine-pouches, accessories (slogans match marketing cards). Disposables/pod-systems are vapes children with images, not in nav. Packs & Saves / Wholesale stay fixed pages. category() uses updateOrCreate so re-seed refreshes images/flags.
+Featured homepage set is cigarettes, vapes, tobacco, nicotine-pouches, accessories (slogans match marketing cards). Disposables/pod-systems are vapes children with images, not in nav. Packs & Saves / Wholesale stay fixed pages. CategorySeeder `category()` uses updateOrCreate so re-seed refreshes images/flags.
+
+## Catalog seeders are split
+Catalog seeding is CategorySeeder then ProductSeeder. CatalogSeeder is a thin wrapper for both. Shared image helpers live in Concerns/SeedsCatalogMedia.

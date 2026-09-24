@@ -9,6 +9,7 @@ paths:
   - app/Models/User.php
   - app/Models/Branch.php
   - app/Models/Category.php
+  - app/Models/Product.php
 ---
 
 # Catalog
@@ -53,4 +54,7 @@ buying_price is last purchase cost on branch_product_prices (internal, never sto
 branches.delivery_radius_km (nullable decimal km) on create_branches. Null means the branch can deliver anywhere; a value is stored for future fixed-area delivery checks from the branch pin. Edit on platform branch create/edit; show displays km or Anywhere. Do not enforce checkout distance yet.
 
 ## Category model clears storefront nav cache
-Category saved/deleted/restored/forceDeleted always call StorefrontCatalog::forgetNavCategories(). Forever nav cache survives migrate:fresh; CatalogSeeder must also forget at end of run.
+Category saved/deleted/restored/forceDeleted always call StorefrontCatalog::forgetNavCategories(). Forever nav cache survives migrate:fresh; CategorySeeder must also forget at end of run.
+
+## Product pack pieces are optional
+Optional pack_label + pieces_per_pack + pack_unit on products. Compose card line via Product::packSummary() (e.g. "Gold Pack • 20 Cigarettes" or label-only for lighters). Leave pieces null when not applicable.

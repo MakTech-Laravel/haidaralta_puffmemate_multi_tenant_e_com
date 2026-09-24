@@ -20,6 +20,10 @@ type ProductShow = {
     slug: string;
     sku: string | null;
     brand: string | null;
+    pack_label: string | null;
+    pieces_per_pack: number | null;
+    pack_unit: string | null;
+    pack_summary: string | null;
     description: string | null;
     tags: string[];
     specifications: { label: string; value: string }[];
@@ -202,6 +206,10 @@ export default function BranchProductShow({
                     sku={product.sku}
                     slug={product.slug}
                     brand={product.brand}
+                    packLabel={product.pack_label}
+                    piecesPerPack={product.pieces_per_pack}
+                    packUnit={product.pack_unit}
+                    packSummary={product.pack_summary}
                     description={product.description}
                     status={product.status}
                     imageUrl={product.image_url}

@@ -51,6 +51,56 @@ test('platform can store brand tags and specifications on a product', function (
         ]);
 });
 
+test('platform can store optional pack label and pieces per pack', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.store'), [
+            'category_ids' => [$category->id],
+            'name' => 'Marlboro Gold Soft Pack',
+            'slug' => 'marlboro-gold-pack-meta',
+            'sku' => 'CIG-PACK-META',
+            'brand' => 'Marlboro',
+            'pack_label' => 'Gold Pack',
+            'pieces_per_pack' => 20,
+            'pack_unit' => 'Cigarettes',
+            'status' => true,
+        ])
+        ->assertRedirect();
+
+    $product = Product::query()->where('slug', 'marlboro-gold-pack-meta')->firstOrFail();
+
+    expect($product->pack_label)->toBe('Gold Pack')
+        ->and($product->pieces_per_pack)->toBe(20)
+        ->and($product->pack_unit)->toBe('Cigarettes')
+        ->and($product->packSummary())->toBe('Gold Pack • 20 Cigarettes');
+});
+
+test('platform can store a pack label without pieces for single-item products', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.store'), [
+            'category_ids' => [$category->id],
+            'name' => 'Clipper Classic Lighter',
+            'slug' => 'clipper-classic-pack-meta',
+            'sku' => 'ACC-CLIPPER-META',
+            'pack_label' => 'Refillable Lighter',
+            'pieces_per_pack' => null,
+            'pack_unit' => null,
+            'status' => true,
+        ])
+        ->assertRedirect();
+
+    $product = Product::query()->where('slug', 'clipper-classic-pack-meta')->firstOrFail();
+
+    expect($product->pack_label)->toBe('Refillable Lighter')
+        ->and($product->pieces_per_pack)->toBeNull()
+        ->and($product->packSummary())->toBe('Refillable Lighter');
+});
+
 test('platform rejects invalid product tags', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $category = Category::factory()->create();

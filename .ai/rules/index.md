@@ -14,7 +14,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/auth/**,app/Actions/Fortify/CreateNewUser.php,app/Http/Requests/Auth/StoreRegisteredUserRequest.php,resources/js/layouts/auth/** | .ai/rules/auth.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php, config/shifts.php | .ai/rules/backup.md |
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/**/staff/**,resources/js/pages/platform/branch-staff/** | .ai/rules/branch-staff.md |
-| app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php, app/Models/Driver*.php, app/Models/User.php, app/Models/Branch.php, app/Models/Category.php | .ai/rules/branch.md |
+| app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php, app/Models/Driver*.php, app/Models/User.php, app/Models/Branch.php, app/Models/Category.php, app/Models/Product.php | .ai/rules/branch.md |
 | resources/js/pages/platform/branches/index.tsx, resources/js/pages/platform/branches/show.tsx | .ai/rules/branches.md |
 | app/{Models,Services/Inventory,Services/Catalog,DataTables,Support}/** | .ai/rules/catalog-data-tables-support.md |
 | resources/js/pages/**/catalog/products/index.tsx, resources/js/pages/**/catalog/products/{index,show}.tsx | .ai/rules/catalog-products.md |
@@ -110,7 +110,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | routes/settings.php, routes/fortify.php, routes/*.php | .ai/rules/routes.md |
 | resources/js/pages/driver/security/**,resources/js/components/driver/driver-account-sheet.tsx | .ai/rules/security-js-components-driver.md |
 | resources/js/components/admin/shift-*.tsx,database/seeders/WorkforceShiftSeeder.php,app/Support/WorkforcePayload.php | .ai/rules/seeders-support.md |
-| database/seeders/**, database/seeders/WorkforceShiftSeeder.php, database/seeders/CatalogSeeder.php | .ai/rules/seeders.md |
+| database/seeders/**, database/seeders/WorkforceShiftSeeder.php, database/seeders/{Catalog,Category,Product}Seeder.php | .ai/rules/seeders.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
 | app/Http/Controllers/Branch/GeneralSettingsController.php,resources/js/pages/branch/settings/**,resources/js/components/branch/nav.ts | .ai/rules/settings-js-components-branch.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |

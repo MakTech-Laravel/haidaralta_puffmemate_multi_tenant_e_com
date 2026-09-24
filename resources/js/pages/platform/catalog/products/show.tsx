@@ -93,6 +93,10 @@ type Product = {
     slug: string;
     sku: string | null;
     brand: string | null;
+    pack_label: string | null;
+    pieces_per_pack: number | null;
+    pack_unit: string | null;
+    pack_summary: string | null;
     description: string | null;
     tags: string[];
     specifications: ProductSpecificationRow[];
@@ -664,6 +668,22 @@ export default function PlatformProductsShow({
                                     <Fact
                                         label="Brand"
                                         value={product.brand ?? '—'}
+                                    />
+                                    <Fact
+                                        label="Pack summary"
+                                        value={product.pack_summary ?? '—'}
+                                    />
+                                    <Fact
+                                        label="Pieces per pack"
+                                        value={
+                                            product.pieces_per_pack !== null
+                                                ? `${product.pieces_per_pack}${
+                                                      product.pack_unit
+                                                          ? ` ${product.pack_unit}`
+                                                          : ''
+                                                  }`
+                                                : '—'
+                                        }
                                     />
                                     <Fact
                                         label="Catalog ID"

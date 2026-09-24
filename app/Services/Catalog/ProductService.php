@@ -114,6 +114,12 @@ class ProductService
                 $data['tags'] = array_values(array_unique(array_map('strval', $data['tags'])));
             }
 
+            if (array_key_exists('pieces_per_pack', $data)) {
+                $data['pieces_per_pack'] = $data['pieces_per_pack'] === null || $data['pieces_per_pack'] === ''
+                    ? null
+                    : (int) $data['pieces_per_pack'];
+            }
+
             if (! (bool) config('catalog.show_branch_pricing')) {
                 if (array_key_exists('selling_price', $data)) {
                     $data['selling_price'] = $this->nullableCatalogMoney($data['selling_price']);
@@ -192,6 +198,11 @@ class ProductService
                 : Product::skuFromSlug((string) $data['slug']),
             'description' => $data['description'] ?? null,
             'brand' => $data['brand'] ?? null,
+            'pack_label' => $data['pack_label'] ?? null,
+            'pieces_per_pack' => array_key_exists('pieces_per_pack', $data) && $data['pieces_per_pack'] !== null && $data['pieces_per_pack'] !== ''
+                ? (int) $data['pieces_per_pack']
+                : null,
+            'pack_unit' => $data['pack_unit'] ?? null,
             'tags' => array_values(array_unique(array_map(
                 'strval',
                 is_array($data['tags'] ?? null) ? $data['tags'] : [],

@@ -28,6 +28,9 @@ type Product = {
     slug: string;
     sku: string | null;
     brand: string | null;
+    pack_label: string | null;
+    pieces_per_pack: number | null;
+    pack_unit: string | null;
     description: string | null;
     tags: ProductTagValue[];
     specifications: ProductSpecificationRow[];
@@ -79,6 +82,9 @@ export default function PlatformProductsEdit({
                         slug: product.slug,
                         sku: product.sku,
                         brand: product.brand,
+                        pack_label: product.pack_label,
+                        pieces_per_pack: product.pieces_per_pack,
+                        pack_unit: product.pack_unit,
                         description: product.description,
                         tags: product.tags,
                         specifications: product.specifications,

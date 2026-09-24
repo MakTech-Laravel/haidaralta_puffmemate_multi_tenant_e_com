@@ -15,6 +15,9 @@ return new class extends Migration
             $table->string('sku')->nullable()->unique();
             $table->text('description')->nullable();
             $table->string('brand')->nullable();
+            $table->string('pack_label')->nullable();
+            $table->unsignedInteger('pieces_per_pack')->nullable();
+            $table->string('pack_unit', 40)->nullable();
             $table->string('image')->nullable();
             $table->json('tags')->nullable();
             $table->json('specifications')->nullable();

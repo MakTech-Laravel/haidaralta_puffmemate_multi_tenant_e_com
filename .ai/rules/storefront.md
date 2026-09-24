@@ -20,11 +20,11 @@ Header = Home · Shop · [DB categories with `show_in_nav`, ordered by `nav_sort
 
 ## Catalog seeder featured set
 
-`CatalogSeeder` seeds root featured categories matching homepage cards: cigarettes, vapes, tobacco, nicotine-pouches, accessories (max `featured_categories_max` = 5). Vapes children disposables / pod-systems get category images and stay out of header nav. Packs & Saves and Wholesale remain fixed pages — never catalog categories.
+`CategorySeeder` seeds root featured categories matching homepage cards: cigarettes, vapes, tobacco, nicotine-pouches, accessories (max `featured_categories_max` = 5). Vapes children disposables / pod-systems get category images and stay out of header nav. Packs & Saves and Wholesale remain fixed pages — never catalog categories.
 
 ## Nav categories are cached + Inertia once
 
-`StorefrontCatalog::navCategories()` is `Cache::rememberForever` (survives `migrate:fresh`). Category model `saved`/`deleted`/`restored`/`forceDeleted`, CategoryService mutations, and `CatalogSeeder` all call `forgetNavCategories()` (bumps version). Share via `Inertia::once(...)->as('storefront-nav-categories-{version}')` so SPA navigations skip re-query; version change forces clients to refetch. Header category tabs come only from that prop — never hard-coded category labels.
+`StorefrontCatalog::navCategories()` is `Cache::rememberForever` (survives `migrate:fresh`). Category model `saved`/`deleted`/`restored`/`forceDeleted`, CategoryService mutations, and `CategorySeeder` all call `forgetNavCategories()` (bumps version). Share via `Inertia::once(...)->as('storefront-nav-categories-{version}')` so SPA navigations skip re-query; version change forces clients to refetch. Header category tabs come only from that prop — never hard-coded category labels.
 
 ## Catalog sources by surface
 

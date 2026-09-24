@@ -14,7 +14,7 @@ class BranchInventorySeeder extends Seeder
 {
     /**
      * Seed cigarettes / tobacco / vapes / pouches / accessories stock per branch (no Faker).
-     * Depends on BranchSeeder + CatalogSeeder.
+     * Depends on BranchSeeder + CategorySeeder + ProductSeeder.
      */
     public function run(): void
     {

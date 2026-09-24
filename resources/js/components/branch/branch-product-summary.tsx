@@ -40,6 +40,10 @@ type BranchProductSummaryProps = {
     sku: string | null;
     slug: string;
     brand?: string | null;
+    packLabel?: string | null;
+    piecesPerPack?: number | null;
+    packUnit?: string | null;
+    packSummary?: string | null;
     description?: string | null;
     status: boolean;
     imageUrl?: string | null;
@@ -123,6 +127,10 @@ export function BranchProductSummary({
     sku,
     slug,
     brand = null,
+    packLabel = null,
+    piecesPerPack = null,
+    packUnit = null,
+    packSummary = null,
     description,
     status,
     imageUrl = null,
@@ -198,6 +206,20 @@ export function BranchProductSummary({
                                 }
                             />
                             <Fact label="Brand" value={brand ?? '—'} />
+                            <Fact
+                                label="Pack summary"
+                                value={packSummary ?? packLabel ?? '—'}
+                            />
+                            <Fact
+                                label="Pieces per pack"
+                                value={
+                                    piecesPerPack !== null
+                                        ? `${piecesPerPack}${
+                                              packUnit ? ` ${packUnit}` : ''
+                                          }`
+                                        : '—'
+                                }
+                            />
                             <Fact
                                 label="Status"
                                 value={status ? 'Active' : 'Inactive'}
