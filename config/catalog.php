@@ -28,15 +28,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Shop price slider ceiling
+    | Shop price slider bounds (defaults)
     |--------------------------------------------------------------------------
     |
-    | Fallback maximum for the storefront shop dual-range slider when no
-    | active price_ranges.max_amount exceeds this value.
+    | Used when creating the singleton shop_price_filter_settings row.
+    | Platform users override both values on Shop price ranges.
     |
     */
 
-    'shop_price_slider_max' => env('SHOP_PRICE_SLIDER_MAX', 10000),
+    'shop_price_slider_min' => env('SHOP_PRICE_SLIDER_MIN', 0),
+
+    'shop_price_slider_max' => env('SHOP_PRICE_SLIDER_MAX', 50000),
 
     /*
     |--------------------------------------------------------------------------

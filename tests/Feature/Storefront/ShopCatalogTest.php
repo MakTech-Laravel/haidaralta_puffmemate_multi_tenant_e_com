@@ -34,6 +34,8 @@ test('storefront shop serves catalog products without branch select props', func
             ->has('filterOptions.categories')
             ->has('filterOptions.tags', 4)
             ->has('filterOptions.priceRanges')
+            ->where('filterOptions.sliderMin', 0)
+            ->where('filterOptions.sliderMax', 50000)
             ->where('filterOptions.tags.0.value', ProductTag::NewArrival->value)
             ->missing('branches')
             ->where('filters.search', '')
@@ -123,4 +125,49 @@ test('inactive price ranges are omitted from shop filter options', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->has('filterOptions.priceRanges', 1)
             ->where('filterOptions.priceRanges.0.slug', 'active-band'));
+});
+
+test('storefront shop open-ended min price filter includes above ceiling products', function () {
+    Product::query()->update([
+        'selling_price' => 50,
+        'regular_price' => 60,
+    ]);
+
+    $above = Product::factory()->create([
+        'name' => 'Shop Open Ended Match',
+        'slug' => 'shop-open-ended-match',
+        'status' => true,
+        'selling_price' => 15000,
+        'regular_price' => 16000,
+    ]);
+
+    Product::factory()->create([
+        'name' => 'Shop Open Ended Below',
+        'slug' => 'shop-open-ended-below',
+        'status' => true,
+        'selling_price' => 8000,
+        'regular_price' => 9000,
+    ]);
+
+    $this->get(route('shop', [
+        'min_price' => 10000,
+        'sort' => 'price_asc',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/shop')
+            ->where('filters.minPrice', 10000)
+            ->where('filters.maxPrice', null)
+            ->has('products', 1)
+            ->where('products.0.id', $above->slug));
+});
+
+test('price range seeder includes ten thousand and above band', function () {
+    expect(PriceRange::query()->where('slug', '10000-above')->exists())->toBeTrue();
+
+    $range = PriceRange::query()->where('slug', '10000-above')->firstOrFail();
+
+    expect($range->label)->toBe('$10,000 & above')
+        ->and((float) $range->min_amount)->toBe(10000.0)
+        ->and($range->max_amount)->toBeNull();
 });

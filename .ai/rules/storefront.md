@@ -45,7 +45,7 @@ PDP Similar Products uses `StorefrontCatalog::similarProducts` capped by `config
 
 ## Shop price ranges are platform-managed
 
-`PriceRange` rows (label, slug, min_amount, max_amount, sort_order, status) drive shop sidebar presets. Platform CRUD at `/platform/price-ranges` under `manage-catalog`. Seed via `PriceRangeSeeder`. Slider max is `max(active max_amount, config('catalog.shop_price_slider_max'))`.
+`PriceRange` rows (label, slug, min_amount, max_amount, sort_order, status) drive shop sidebar presets. Platform CRUD at `/platform/price-ranges` under `manage-catalog`. Seed via `PriceRangeSeeder` (includes `$10,000 & above`). Slider floor/ceiling are singleton `shop_price_filter_settings` (editable on the price ranges index), not derived from preset max amounts.
 
 ## Product Scout indexes catalog prices
 

@@ -65,6 +65,7 @@ type ShopFilterOptions = {
     categories: ShopCategoryOption[];
     tags: ShopTagOption[];
     priceRanges: ShopPriceRangeOption[];
+    sliderMin: number;
     sliderMax: number;
 };
 
@@ -164,6 +165,7 @@ export default function StorefrontShop({
             categories={filterOptions.categories}
             tags={filterOptions.tags}
             priceRanges={filterOptions.priceRanges}
+            sliderMin={filterOptions.sliderMin}
             sliderMax={filterOptions.sliderMax}
             className={
                 isBelowLg ? undefined : 'lg:sticky lg:top-28 lg:self-start'

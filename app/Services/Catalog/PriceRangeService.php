@@ -3,6 +3,7 @@
 namespace App\Services\Catalog;
 
 use App\Models\PriceRange;
+use App\Models\ShopPriceFilterSetting;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -42,19 +43,62 @@ class PriceRangeService
             ->all();
     }
 
-    public function sliderMax(): int
+    /**
+     * Storefront dual-range slider floor and ceiling (AUD integers).
+     *
+     * @return array{min: int, max: int}
+     */
+    public function sliderBounds(): array
     {
-        $fallback = (int) config('catalog.shop_price_slider_max', 10_000);
-        $highest = PriceRange::query()
-            ->where('status', true)
-            ->whereNotNull('max_amount')
-            ->max('max_amount');
+        $settings = ShopPriceFilterSetting::current();
+        $min = max(0, (int) floor((float) $settings->slider_min));
+        $max = (int) ceil((float) $settings->slider_max);
 
-        if ($highest === null) {
-            return max(1, $fallback);
+        if ($max <= $min) {
+            $max = $min + 1;
         }
 
-        return max($fallback, (int) ceil((float) $highest));
+        return [
+            'min' => $min,
+            'max' => $max,
+        ];
+    }
+
+    public function sliderMin(): int
+    {
+        return $this->sliderBounds()['min'];
+    }
+
+    public function sliderMax(): int
+    {
+        return $this->sliderBounds()['max'];
+    }
+
+    /**
+     * @return array{slider_min: string, slider_max: string}
+     */
+    public function boundsPayload(): array
+    {
+        $settings = ShopPriceFilterSetting::current();
+
+        return [
+            'slider_min' => (string) $settings->slider_min,
+            'slider_max' => (string) $settings->slider_max,
+        ];
+    }
+
+    /**
+     * @param  array{slider_min: float|int|string, slider_max: float|int|string}  $data
+     */
+    public function updateSliderBounds(array $data): ShopPriceFilterSetting
+    {
+        $settings = ShopPriceFilterSetting::current();
+        $settings->fill([
+            'slider_min' => $data['slider_min'],
+            'slider_max' => $data['slider_max'],
+        ])->save();
+
+        return $settings->refresh();
     }
 
     /**
