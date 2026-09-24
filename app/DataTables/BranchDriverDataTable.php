@@ -8,6 +8,7 @@ use App\Enums\DriverVehicleType;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\User;
+use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -180,6 +181,7 @@ class BranchDriverDataTable extends AbstractDataTable
             'phone' => $model->phone,
             'email' => $model->email,
             'is_active' => (bool) $model->is_active,
+            'avatar_url' => MediaUrl::resolve($model->avatar, fallback: null),
             'vehicle_type' => $profile?->vehicle_type?->value,
             'vehicle_type_label' => $profile?->vehicle_type?->label(),
             'availability_status' => $profile?->availability_status?->value,

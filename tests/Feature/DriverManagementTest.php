@@ -505,6 +505,9 @@ test('branch drivers index only lists this branch and never exposes assignable d
             ->missing('assignableDrivers')
             ->where('table.data', fn ($rows) => collect($rows)->doesntContain(
                 fn ($row) => $row['id'] === $otherBranchDriver->id,
+            ))
+            ->where('table.data', fn ($rows) => collect($rows)->every(
+                fn ($row) => array_key_exists('avatar_url', $row),
             )));
 
     expect(Route::has('branch.drivers.assign'))->toBeFalse();

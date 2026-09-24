@@ -9,10 +9,12 @@ import {
     DataTableColumnHeader,
     DataTableRowActions,
     DataTableToolbar,
+    DataTableTruncated,
     useDataTableQuery,
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -30,6 +32,7 @@ type DriverRow = {
     phone: string;
     email: string | null;
     is_active: boolean;
+    avatar_url: string | null;
     vehicle_type_label: string | null;
     availability_status_label: string | null;
     assignment_status_label: string | null;
@@ -38,6 +41,15 @@ type DriverRow = {
 type Branch = { id: number; name: string; slug: string };
 
 type FilterOption = { value: string; label: string };
+
+function initials(name: string): string {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
+}
 
 export default function BranchDriversIndex({
     branch,
@@ -88,21 +100,39 @@ export default function BranchDriversIndex({
     const columns = useMemo<ColumnDef<DriverRow>[]>(
         () => [
             {
-                accessorKey: 'name',
+                id: 'avatar',
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Name"
+                        title="Driver"
                         sortable
                         sortKey="name"
                         currentSort={query.sort}
                         onSort={query.toggleSort}
                     />
                 ),
-            },
-            {
-                accessorKey: 'phone',
-                header: 'Phone',
+                meta: { truncate: false },
+                cell: ({ row }) => (
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Avatar className="size-10">
+                            <AvatarImage
+                                src={row.original.avatar_url ?? undefined}
+                                alt={row.original.name}
+                            />
+                            <AvatarFallback>
+                                {initials(row.original.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                            <DataTableTruncated className="font-medium">
+                                {row.original.name}
+                            </DataTableTruncated>
+                            <DataTableTruncated className="text-muted-foreground text-xs">
+                                {row.original.phone}
+                            </DataTableTruncated>
+                        </div>
+                    </div>
+                ),
             },
             {
                 id: 'vehicle',
