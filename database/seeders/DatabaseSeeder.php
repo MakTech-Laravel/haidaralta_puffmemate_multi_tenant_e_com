@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             ProductSeeder::class,
             PriceRangeSeeder::class,
+            CheckoutSettingsSeeder::class,
             BranchInventorySeeder::class,
             OrderConversationSeeder::class,
             ConversationVolumeSeeder::class,

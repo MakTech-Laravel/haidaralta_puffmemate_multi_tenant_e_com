@@ -29,7 +29,17 @@ Route::get('/shop/{category}', [CategoryController::class, 'show'])->name('shop.
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/packs-saves', PacksSavesController::class)->name('packs-saves');
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
-Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
+Route::patch('/cart/{cart_item}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/{cart_item}', [CartController::class, 'destroy'])->name('cart.destroy');
+
+Route::middleware('auth:customer')->group(function () {
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+    Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/confirmation/{order}', [CheckoutController::class, 'confirmation'])
+        ->name('checkout.confirmation');
+});
 
 Route::get('/about', fn () => app(CmsPageController::class)('about'))->name('about');
 Route::get('/faqs', fn () => app(CmsPageController::class)('faqs'))->name('faqs');

@@ -1,11 +1,11 @@
-import { Link } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { Check, Clock, Minus, Plus, ShoppingCart, Star } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { cart } from '@/routes';
 
 type ProductSummaryProps = {
+    slug: string;
     name: string;
     description: string;
     badges: string[];
@@ -19,6 +19,7 @@ type ProductSummaryProps = {
 };
 
 export function ProductSummary({
+    slug,
     name,
     description,
     badges,
@@ -131,14 +132,25 @@ export function ProductSummary({
                     </button>
                 </div>
                 <Button
-                    asChild
+                    type="button"
                     size="lg"
                     className="h-12 w-full max-w-full min-w-0 shrink rounded-none text-sm font-bold tracking-wide uppercase sm:flex-1"
+                    onClick={() =>
+                        router.post(
+                            '/cart',
+                            { product: slug, quantity },
+                            {
+                                preserveScroll: true,
+                                onSuccess: () =>
+                                    window.dispatchEvent(
+                                        new Event('storefront:cart-open'),
+                                    ),
+                            },
+                        )
+                    }
                 >
-                    <Link href={cart()} prefetch>
-                        <ShoppingCart className="size-4" />
-                        Add to cart
-                    </Link>
+                    <ShoppingCart className="size-4" />
+                    Add to cart
                 </Button>
             </div>
 

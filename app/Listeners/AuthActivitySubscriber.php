@@ -2,6 +2,9 @@
 
 namespace App\Listeners;
 
+use App\Enums\UserType;
+use App\Models\User;
+use App\Services\Storefront\CartService;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -35,6 +38,8 @@ class AuthActivitySubscriber
 
     public function onLogin(Login $event): void
     {
+        $this->mergeGuestCart($event->user);
+
         audit(
             description: 'User logged in',
             subject: $event->user,
@@ -80,6 +85,8 @@ class AuthActivitySubscriber
 
     public function onRegistered(Registered $event): void
     {
+        $this->mergeGuestCart($event->user);
+
         audit(
             description: 'User registered',
             subject: $event->user,
@@ -146,5 +153,14 @@ class AuthActivitySubscriber
             event: 'two_factor_failed',
             logName: 'auth',
         );
+    }
+
+    private function mergeGuestCart(mixed $user): void
+    {
+        if (! $user instanceof User || $user->user_type !== UserType::CUSTOMER) {
+            return;
+        }
+
+        app(CartService::class)->mergeGuestCartIntoUser(request(), $user);
     }
 }

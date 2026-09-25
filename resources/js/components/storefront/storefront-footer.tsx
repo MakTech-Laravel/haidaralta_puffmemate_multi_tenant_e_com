@@ -8,7 +8,16 @@ import {
     storefrontFooterShop,
     type StorefrontChromeItem,
 } from '@/lib/storefront-chrome';
-import { about, contact, faqs, home, packsSaves, privacy, shop, wholesale } from '@/routes';
+import {
+    about,
+    contact,
+    faqs,
+    home,
+    packsSaves,
+    privacy,
+    shop,
+    wholesale,
+} from '@/routes';
 import { category as shopCategory } from '@/routes/shop';
 
 function resolveHref(item: StorefrontChromeItem): string {

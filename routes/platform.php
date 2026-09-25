@@ -14,8 +14,10 @@ use App\Http\Controllers\Platform\CategoryController as PlatformCategoryControll
 use App\Http\Controllers\Platform\CmsPageController as PlatformCmsPageController;
 use App\Http\Controllers\Platform\ContactSettingsController as PlatformContactSettingsController;
 use App\Http\Controllers\Platform\ConversationController as PlatformConversationController;
+use App\Http\Controllers\Platform\CouponController as PlatformCouponController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
+use App\Http\Controllers\Platform\DeliverySettingsController as PlatformDeliverySettingsController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\GeneralSettingsController as PlatformGeneralSettingsController;
@@ -296,6 +298,26 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.price-ranges.move');
         Route::patch('price-ranges/{price_range}/status', [PlatformPriceRangeController::class, 'toggleStatus'])
             ->name('platform.price-ranges.status');
+
+        Route::get('coupons', [PlatformCouponController::class, 'index'])
+            ->name('platform.coupons.index');
+        Route::get('coupons/create', [PlatformCouponController::class, 'create'])
+            ->name('platform.coupons.create');
+        Route::post('coupons', [PlatformCouponController::class, 'store'])
+            ->name('platform.coupons.store');
+        Route::get('coupons/{coupon}/edit', [PlatformCouponController::class, 'edit'])
+            ->name('platform.coupons.edit');
+        Route::put('coupons/{coupon}', [PlatformCouponController::class, 'update'])
+            ->name('platform.coupons.update');
+        Route::delete('coupons/{coupon}', [PlatformCouponController::class, 'destroy'])
+            ->name('platform.coupons.destroy');
+
+        Route::get('delivery-settings', [PlatformDeliverySettingsController::class, 'index'])
+            ->name('platform.delivery-settings.index');
+        Route::put('delivery-settings/{delivery_method}', [PlatformDeliverySettingsController::class, 'update'])
+            ->name('platform.delivery-settings.update');
+        Route::get('payment-methods', [PlatformPaymentGatewaySettingsController::class, 'edit'])
+            ->name('platform.payment-methods.index');
 
         Route::post('products/{product}/variants', [PlatformProductVariantController::class, 'store'])
             ->middleware('precognitive')
