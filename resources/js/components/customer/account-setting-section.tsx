@@ -1,14 +1,17 @@
 import { Camera } from 'lucide-react';
 import { Form, usePage } from '@inertiajs/react';
 import { useEffect, useState, type ChangeEvent } from 'react';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
+import AccountController from '@/actions/App/Http/Controllers/Customer/AccountController';
 import {
     accountButtonClass,
     accountInputClass,
     accountLabelClass,
     accountSectionTitleClass,
 } from '@/components/customer/account-field-styles';
-import { AccountRegionSelect } from '@/components/customer/account-region-select';
+import {
+    AccountRegionSelect,
+    type AccountRegionOption,
+} from '@/components/customer/account-region-select';
 import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -19,7 +22,16 @@ import type { Auth } from '@/types';
 
 const DEFAULT_AVATAR = '/images/customer/profile.png';
 
+export type CustomerShippingAddress = {
+    region: string | null;
+    city: string | null;
+    zip: string | null;
+    address: string | null;
+};
+
 type AccountSettingSectionProps = {
+    shippingAddress?: CustomerShippingAddress | null;
+    regions?: readonly AccountRegionOption[];
     className?: string;
 };
 
@@ -38,13 +50,17 @@ function initialsFromName(fullName: string): string {
 }
 
 export function AccountSettingSection({
+    shippingAddress = null,
+    regions,
     className,
 }: AccountSettingSectionProps) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const user = auth.user;
     const [fullName, setFullName] = useState(user?.name ?? '');
-    const [region, setRegion] = useState('');
-    const [previewUrl, setPreviewUrl] = useState(DEFAULT_AVATAR);
+    const [region, setRegion] = useState(shippingAddress?.region ?? '');
+    const [previewUrl, setPreviewUrl] = useState(
+        user?.avatar || DEFAULT_AVATAR,
+    );
 
     useEffect(() => {
         return () => {
@@ -87,39 +103,38 @@ export function AccountSettingSection({
         >
             <h2 className={accountSectionTitleClass}>Account Setting</h2>
 
-            <div className="relative w-fit">
-                <Avatar className="size-24">
-                    <AvatarImage src={previewUrl} alt="" />
-                    <AvatarFallback className="text-lg font-semibold">
-                        {initials}
-                    </AvatarFallback>
-                </Avatar>
-                <span
-                    className="bg-primary text-primary-foreground pointer-events-none absolute right-0 bottom-0 flex size-8 items-center justify-center rounded-full"
-                    aria-hidden
-                >
-                    <Camera className="size-4" />
-                </span>
-                <input
-                    type="file"
-                    accept="image/*"
-                    className="absolute inset-0 cursor-pointer opacity-0"
-                    aria-label="Change profile photo"
-                    onChange={onAvatarChange}
-                />
-            </div>
-
             <Form
-                {...ProfileController.update.form()}
+                {...AccountController.updateProfile.form()}
+                encType="multipart/form-data"
                 options={{ preserveScroll: true }}
-                transform={(data) => ({
-                    ...data,
-                    name: fullName.trim(),
-                })}
                 className="space-y-5"
             >
                 {({ processing, errors }) => (
                     <>
+                        <div className="relative w-fit">
+                            <Avatar className="size-24">
+                                <AvatarImage src={previewUrl} alt="" />
+                                <AvatarFallback className="text-lg font-semibold">
+                                    {initials}
+                                </AvatarFallback>
+                            </Avatar>
+                            <span
+                                className="bg-primary text-primary-foreground pointer-events-none absolute right-0 bottom-0 flex size-8 items-center justify-center rounded-full"
+                                aria-hidden
+                            >
+                                <Camera className="size-4" />
+                            </span>
+                            <input
+                                type="file"
+                                name="avatar"
+                                accept="image/*"
+                                className="absolute inset-0 cursor-pointer opacity-0"
+                                aria-label="Change profile photo"
+                                onChange={onAvatarChange}
+                            />
+                        </div>
+                        <InputError message={errors.avatar} />
+
                         <div className="grid gap-2">
                             <Label
                                 htmlFor="account-full-name"
@@ -129,6 +144,7 @@ export function AccountSettingSection({
                             </Label>
                             <Input
                                 id="account-full-name"
+                                name="name"
                                 value={fullName}
                                 onChange={(event) =>
                                     setFullName(event.target.value)
@@ -184,8 +200,11 @@ export function AccountSettingSection({
                         <div className="grid gap-4 sm:grid-cols-3">
                             <AccountRegionSelect
                                 id="account-region"
+                                name="region"
                                 value={region}
                                 onValueChange={setRegion}
+                                error={errors.region}
+                                regions={regions}
                             />
                             <div className="grid gap-2">
                                 <Label
@@ -196,10 +215,12 @@ export function AccountSettingSection({
                                 </Label>
                                 <Input
                                     id="account-city"
+                                    name="city"
                                     placeholder="City"
-                                    defaultValue=""
+                                    defaultValue={shippingAddress?.city ?? ''}
                                     className={accountInputClass}
                                 />
+                                <InputError message={errors.city} />
                             </div>
                             <div className="grid gap-2">
                                 <Label
@@ -210,10 +231,12 @@ export function AccountSettingSection({
                                 </Label>
                                 <Input
                                     id="account-zip"
+                                    name="zip"
                                     placeholder="Zip Code"
-                                    defaultValue=""
+                                    defaultValue={shippingAddress?.zip ?? ''}
                                     className={accountInputClass}
                                 />
+                                <InputError message={errors.zip} />
                             </div>
                         </div>
 
@@ -226,10 +249,12 @@ export function AccountSettingSection({
                             </Label>
                             <Input
                                 id="account-address"
+                                name="address"
                                 placeholder="Address"
-                                defaultValue=""
+                                defaultValue={shippingAddress?.address ?? ''}
                                 className={accountInputClass}
                             />
+                            <InputError message={errors.address} />
                         </div>
 
                         <Button
