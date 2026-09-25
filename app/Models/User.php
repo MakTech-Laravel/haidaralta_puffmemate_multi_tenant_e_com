@@ -143,6 +143,14 @@ class User extends Authenticatable implements PasskeyUser, ScoutSearchable
     }
 
     /**
+     * @return HasMany<UserNotification, $this>
+     */
+    public function userNotifications(): HasMany
+    {
+        return $this->hasMany(UserNotification::class);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toSearchableArray(): array
