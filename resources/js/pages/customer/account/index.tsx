@@ -13,6 +13,7 @@ type CustomerAccountPageProps = {
     passwordRules: string;
     canManageTwoFactor: boolean;
     twoFactorEnabled: boolean;
+    requiresConfirmation: boolean;
     shippingAddress: CustomerShippingAddress | null;
     billingAddress: CustomerBillingAddress | null;
     regions: AccountRegionOption[];
@@ -22,6 +23,7 @@ export default function CustomerAccountIndex({
     passwordRules,
     canManageTwoFactor,
     twoFactorEnabled,
+    requiresConfirmation,
     shippingAddress,
     billingAddress,
     regions,
@@ -39,6 +41,7 @@ export default function CustomerAccountIndex({
                 <AccountTwoFactorSection
                     canManageTwoFactor={canManageTwoFactor}
                     twoFactorEnabled={twoFactorEnabled}
+                    requiresConfirmation={requiresConfirmation}
                 />
                 <AccountAddressSection
                     title="Billing Address"

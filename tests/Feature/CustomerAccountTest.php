@@ -9,6 +9,9 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
+use Laravel\Fortify\Features;
+use Laravel\Fortify\Fortify;
+use PragmaRX\Google2FA\Google2FA;
 
 test('guests are redirected from customer account', function () {
     $this->get(route('customer.account.index'))
@@ -56,6 +59,7 @@ test('customers can view the account page', function () {
             ->has('passwordRules')
             ->has('canManageTwoFactor')
             ->has('twoFactorEnabled')
+            ->has('requiresConfirmation')
             ->has('regions')
             ->where('shippingAddress.city', $shipping->city)
             ->where('shippingAddress.region', 'nsw')
@@ -277,4 +281,110 @@ test('the current password must be correct to change the account password', func
         ])
         ->assertSessionHasErrors('current_password')
         ->assertRedirect(route('customer.account.index'));
+});
+
+test('guests cannot manage two factor authentication', function (string $method, string $routeName) {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    $this->{$method}(route($routeName), [])
+        ->assertRedirect(route('login'));
+})->with([
+    'enable' => ['post', 'two-factor.enable'],
+    'confirm' => ['post', 'two-factor.confirm'],
+    'disable' => ['delete', 'two-factor.disable'],
+]);
+
+test('enabling two factor from the account page requires password confirmation', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user, 'customer')
+        ->from(route('customer.account.index'))
+        ->post(route('two-factor.enable'))
+        ->assertRedirect(route('password.confirm'));
+});
+
+test('customers can enable confirm and disable two factor from the account page', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user, 'customer')
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->from(route('customer.account.index'))
+        ->post(route('two-factor.enable'))
+        ->assertRedirect(route('customer.account.index'));
+
+    $user->refresh();
+
+    expect($user->two_factor_secret)->not->toBeNull()
+        ->and($user->two_factor_confirmed_at)->toBeNull();
+
+    $code = (new Google2FA)->getCurrentOtp(
+        Fortify::currentEncrypter()->decrypt($user->two_factor_secret),
+    );
+
+    $this->actingAs($user, 'customer')
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->from(route('customer.account.index'))
+        ->post(route('two-factor.confirm'), ['code' => $code])
+        ->assertRedirect(route('customer.account.index'));
+
+    expect($user->refresh()->two_factor_confirmed_at)->not->toBeNull();
+
+    $this->actingAs($user, 'customer')
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->from(route('customer.account.index'))
+        ->delete(route('two-factor.disable'))
+        ->assertRedirect(route('customer.account.index'));
+
+    $user->refresh();
+
+    expect($user->two_factor_secret)->toBeNull()
+        ->and($user->two_factor_confirmed_at)->toBeNull();
+});
+
+test('customers cannot view recovery codes without password confirmation', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
+    $user = User::factory()->withTwoFactor()->create();
+
+    $this->actingAs($user, 'customer')
+        ->from(route('customer.account.index'))
+        ->get(route('two-factor.recovery-codes'))
+        ->assertRedirect(route('password.confirm'));
+});
+
+test('customers can view recovery codes after confirming their password', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
+    $user = User::factory()->withTwoFactor()->create();
+
+    $this->actingAs($user, 'customer')
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->from(route('customer.account.index'))
+        ->get(route('two-factor.recovery-codes'))
+        ->assertOk()
+        ->assertExactJson(['recovery-code-1']);
 });
