@@ -15,6 +15,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['category_id', 'product_id']);
+            $table->index('product_id');
         });
     }
 

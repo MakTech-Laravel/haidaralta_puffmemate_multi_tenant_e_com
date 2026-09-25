@@ -6,10 +6,9 @@ use App\Enums\ProductTag;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\Catalog\PriceRangeService;
-use App\Support\BranchProductPriceDisplay;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
+use Laravel\Scout\Builder as ScoutBuilder;
 use Throwable;
 
 class StorefrontShopQuery
@@ -38,13 +37,6 @@ class StorefrontShopQuery
      *         maxPrice: float|null,
      *         categories: list<string>,
      *         tags: list<string>
-     *     },
-     *     filterOptions: array{
-     *         categories: list<array{slug: string, name: string}>,
-     *         tags: list<array{value: string, label: string}>,
-     *         priceRanges: list<array{slug: string, label: string, min: float|null, max: float|null}>,
-     *         sliderMin: int,
-     *         sliderMax: int
      *     }
      * }
      */
@@ -85,7 +77,6 @@ class StorefrontShopQuery
                 'categories' => $categorySlugs,
                 'tags' => $tagValues,
             ],
-            'filterOptions' => $this->filterOptions(),
         ];
     }
 
@@ -105,26 +96,33 @@ class StorefrontShopQuery
         bool $includeDescendantCategories = false,
     ): array {
         $categoryIds = $this->resolveCategoryIds($categorySlugs, $includeDescendantCategories);
-        $sort = in_array((string) $sort, self::SORTS, true) ? $sort : 'name_asc';
+        $sort = in_array((string) $sort, self::SORTS, true) ? $sort : null;
 
-        $scoutIds = $this->searchIdsViaScout($search, $limit * 2);
+        $scoutIds = $this->searchIdsViaScout(
+            $search,
+            $sort,
+            $minPrice,
+            $maxPrice,
+            $categoryIds,
+            $tags,
+            $limit,
+        );
+
+        if ($scoutIds !== null) {
+            return $this->cardsInOrder($scoutIds);
+        }
 
         $query = Product::query()
             ->where('status', true)
-            ->with(['categories:id,name,slug', 'images']);
+            ->with(['categories:id,name,slug']);
 
-        if ($scoutIds !== null) {
-            if ($scoutIds === []) {
-                return [];
-            }
-
-            $query->whereIn('id', $scoutIds);
-        } elseif (is_string($search) && $search !== '') {
+        if (is_string($search) && $search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
                 $builder->where('name', 'like', '%'.$search.'%')
                     ->orWhere('brand', 'like', '%'.$search.'%')
                     ->orWhere('sku', 'like', '%'.$search.'%')
-                    ->orWhere('description', 'like', '%'.$search.'%');
+                    ->orWhere('description', 'like', '%'.$search.'%')
+                    ->orWhere('pack_label', 'like', '%'.$search.'%');
             });
         }
 
@@ -144,16 +142,12 @@ class StorefrontShopQuery
             });
         }
 
-        $candidates = $query->limit(max($limit * 3, 150))->get();
+        $this->constrainEffectivePrice($query, $minPrice, $maxPrice);
+        $this->orderEloquent($query, $sort);
 
-        $filtered = $candidates
-            ->filter(fn (Product $product): bool => $this->matchesPrice($product, $minPrice, $maxPrice))
-            ->values();
-
-        $sorted = $this->sortProducts($filtered, $sort, $scoutIds);
-
-        return $sorted
-            ->take($limit)
+        return $query
+            ->limit($limit)
+            ->get()
             ->map(fn (Product $product): array => StorefrontCatalog::mapProductCard($product))
             ->values()
             ->all();
@@ -204,24 +198,137 @@ class StorefrontShopQuery
     }
 
     /**
-     * @return list<int>|null null means Scout unavailable / skip ID constraint
+     * @param  list<int>  $categoryIds
+     * @param  list<string>  $tags
+     * @return list<int>|null null means Scout is not the engine or the request failed
      */
-    private function searchIdsViaScout(?string $search, int $limit): ?array
-    {
-        if (! is_string($search) || $search === '') {
+    private function searchIdsViaScout(
+        ?string $search,
+        ?string $sort,
+        ?float $minPrice,
+        ?float $maxPrice,
+        array $categoryIds,
+        array $tags,
+        int $limit,
+    ): ?array {
+        if (config('scout.driver') !== 'meilisearch') {
             return null;
         }
 
         try {
-            return Product::search($search)
-                ->take($limit)
-                ->keys()
+            $builder = Product::search($search ?? '')
+                ->where('status', true)
+                ->take($limit);
+
+            if ($categoryIds !== []) {
+                $builder->whereIn('category_ids', $categoryIds);
+            }
+
+            if ($tags !== []) {
+                $builder->whereIn('tags', $tags);
+            }
+
+            if ($minPrice !== null) {
+                $builder->where('effective_price', '>=', $minPrice);
+            }
+
+            if ($maxPrice !== null) {
+                $builder->where('effective_price', '<=', $maxPrice);
+            }
+
+            $this->orderScout($builder, $sort, $search);
+
+            return $builder->keys()
                 ->map(fn ($id): int => (int) $id)
                 ->values()
                 ->all();
         } catch (Throwable) {
             return null;
         }
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}>
+     */
+    private function cardsInOrder(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $order = array_flip($ids);
+
+        return Product::query()
+            ->where('status', true)
+            ->whereIn('id', $ids)
+            ->with(['categories:id,name,slug'])
+            ->get()
+            ->sortBy(fn (Product $product): int => $order[$product->id] ?? PHP_INT_MAX)
+            ->map(fn (Product $product): array => StorefrontCatalog::mapProductCard($product))
+            ->values()
+            ->all();
+    }
+
+    private function orderScout(ScoutBuilder $builder, ?string $sort, ?string $search): void
+    {
+        if ($sort === null && is_string($search) && $search !== '') {
+            return;
+        }
+
+        match ($sort) {
+            'name_desc' => $builder->orderBy('name', 'desc'),
+            'newest' => $builder->orderBy('created_at', 'desc'),
+            'price_asc' => $builder->orderBy('effective_price', 'asc'),
+            'price_desc' => $builder->orderBy('effective_price', 'desc'),
+            default => $builder->orderBy('name', 'asc'),
+        };
+    }
+
+    private function orderEloquent(Builder $query, ?string $sort): void
+    {
+        $price = $this->effectivePriceSql($query);
+
+        match ($sort) {
+            'name_desc' => $query->orderByDesc('name'),
+            'newest' => $query->orderByDesc('created_at'),
+            'price_asc' => $query->orderByRaw('('.$price.') asc'),
+            'price_desc' => $query->orderByRaw('('.$price.') desc'),
+            default => $query->orderBy('name'),
+        };
+    }
+
+    private function constrainEffectivePrice(Builder $query, ?float $minPrice, ?float $maxPrice): void
+    {
+        if ($minPrice === null && $maxPrice === null) {
+            return;
+        }
+
+        $price = $this->effectivePriceSql($query);
+        $query->whereNotNull('selling_price');
+
+        if ($minPrice !== null) {
+            $query->whereRaw('('.$price.') >= '.$this->sqlNumber($minPrice));
+        }
+
+        if ($maxPrice !== null) {
+            $query->whereRaw('('.$price.') <= '.$this->sqlNumber($maxPrice));
+        }
+
+    }
+
+    private function sqlNumber(float $amount): string
+    {
+        return rtrim(rtrim(number_format($amount, 2, '.', ''), '0'), '.');
+    }
+
+    private function effectivePriceSql(Builder $query): string
+    {
+        $isPgsql = $query->getConnection()->getDriverName() === 'pgsql';
+        $today = $isPgsql ? 'CURRENT_DATE' : "date('now')";
+        $floor = $isPgsql ? 'GREATEST' : 'MAX';
+
+        return "CASE WHEN selling_price IS NULL THEN NULL WHEN discount_type = 'fixed' AND (discount_start_date IS NULL OR discount_start_date <= {$today}) AND (discount_end_date IS NULL OR discount_end_date >= {$today}) THEN {$floor}(0, selling_price - COALESCE(discount_price, 0)) WHEN discount_type = 'percent' AND (discount_start_date IS NULL OR discount_start_date <= {$today}) AND (discount_end_date IS NULL OR discount_end_date >= {$today}) THEN {$floor}(0, ROUND(selling_price * (1 - (COALESCE(discount_price, 0) / 100)), 2)) ELSE selling_price END";
     }
 
     /**
@@ -254,60 +361,6 @@ class StorefrontShopQuery
             ->all();
 
         return array_values(array_unique([...$ids, ...$childIds]));
-    }
-
-    private function matchesPrice(Product $product, ?float $minPrice, ?float $maxPrice): bool
-    {
-        if ($minPrice === null && $maxPrice === null) {
-            return true;
-        }
-
-        if ($product->selling_price === null) {
-            return false;
-        }
-
-        $effective = BranchProductPriceDisplay::catalogEffectiveAmount($product);
-
-        if ($minPrice !== null && $effective < $minPrice) {
-            return false;
-        }
-
-        if ($maxPrice !== null && $effective > $maxPrice) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * @param  Collection<int, Product>  $products
-     * @param  list<int>|null  $scoutIds
-     * @return Collection<int, Product>
-     */
-    private function sortProducts(Collection $products, string $sort, ?array $scoutIds): Collection
-    {
-        return match ($sort) {
-            'name_desc' => $products->sortByDesc(fn (Product $product): string => $product->name)->values(),
-            'newest' => $products->sortByDesc(fn (Product $product): int => $product->created_at?->getTimestamp() ?? 0)->values(),
-            'price_asc' => $products->sortBy(fn (Product $product): float => $this->effectiveOrMax($product))->values(),
-            'price_desc' => $products->sortByDesc(fn (Product $product): float => $this->effectiveOrMax($product))->values(),
-            default => $scoutIds === null
-                ? $products->sortBy(fn (Product $product): string => $product->name)->values()
-                : $products->sortBy(function (Product $product) use ($scoutIds): int {
-                    $position = array_search($product->id, $scoutIds, true);
-
-                    return $position === false ? PHP_INT_MAX : $position;
-                })->values(),
-        };
-    }
-
-    private function effectiveOrMax(Product $product): float
-    {
-        if ($product->selling_price === null) {
-            return PHP_FLOAT_MAX;
-        }
-
-        return BranchProductPriceDisplay::catalogEffectiveAmount($product);
     }
 
     /**

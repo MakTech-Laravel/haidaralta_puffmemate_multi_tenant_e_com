@@ -32,7 +32,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->index(['branch_id', 'status']);
+            $table->index(['branch_id', 'status', 'created_at']);
             $table->index('customer_id');
             $table->index('driver_id');
         });

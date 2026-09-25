@@ -21,7 +21,7 @@ class ShopController extends Controller
         return Inertia::render('storefront/shop', [
             'products' => $payload['products'],
             'filters' => $payload['filters'],
-            'filterOptions' => $payload['filterOptions'],
+            'filterOptions' => Inertia::once(fn (): array => $this->shopQuery->filterOptions()),
         ]);
     }
 }

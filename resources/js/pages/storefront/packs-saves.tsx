@@ -4,16 +4,10 @@ import { ProductCard } from '@/components/storefront/product-card';
 import { storefrontFeatures } from '@/lib/storefront-features';
 import type { StorefrontProduct } from '@/types/storefront';
 
-type BranchOption = {
-    id: string;
-    name: string;
-};
-
 export default function StorefrontPacksSaves({
     products,
 }: {
     products: StorefrontProduct[];
-    branches: BranchOption[];
 }) {
     return (
         <>

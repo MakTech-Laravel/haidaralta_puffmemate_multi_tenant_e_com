@@ -16,7 +16,6 @@ class PacksSavesController extends Controller
 
         return Inertia::render('storefront/packs-saves', [
             'products' => StorefrontCatalog::productsOnOffer($branch),
-            'branches' => StorefrontCatalog::branches(),
         ]);
     }
 }

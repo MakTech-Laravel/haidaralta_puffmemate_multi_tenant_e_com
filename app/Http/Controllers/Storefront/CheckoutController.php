@@ -33,15 +33,15 @@ class CheckoutController extends Controller
         }
 
         $user = $this->carts->customer() ?? request()->user('customer');
+        $addresses = $user !== null ? $this->checkout->addressesFor($user) : [];
 
         return Inertia::render('storefront/checkout', [
             ...$cart,
-            'addresses' => $user !== null ? $this->checkout->addressesFor($user) : [],
+            'addresses' => $addresses,
             'deliveryMethods' => $this->checkout->deliveryMethods(),
             'timeSlots' => $this->checkout->timeSlots(),
             'paymentMethods' => $this->payments->enabledMethods(),
-            'defaultAddressId' => collect($user !== null ? $this->checkout->addressesFor($user) : [])
-                ->firstWhere('is_default', true)['id'] ?? null,
+            'defaultAddressId' => collect($addresses)->firstWhere('is_default', true)['id'] ?? null,
             'appliedCoupon' => request()->session()->get('storefront.checkout_coupon'),
         ]);
     }

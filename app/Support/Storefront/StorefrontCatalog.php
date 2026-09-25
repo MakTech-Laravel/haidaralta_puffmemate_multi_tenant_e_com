@@ -2,6 +2,7 @@
 
 namespace App\Support\Storefront;
 
+use App\Enums\DiscountType;
 use App\Enums\ProductTag;
 use App\Models\Branch;
 use App\Models\Category;
@@ -192,7 +193,7 @@ class StorefrontCatalog
         $query = Product::query()
             ->where('status', true)
             ->whereHas('categories', fn ($builder) => $builder->where('categories.id', $category->id))
-            ->with(['categories:id,name,slug', 'images']);
+            ->with(['categories:id,name,slug']);
 
         match ($sort) {
             'name_desc' => $query->orderByDesc('name'),
@@ -225,7 +226,7 @@ class StorefrontCatalog
     ): array {
         $query = Product::query()
             ->where('status', true)
-            ->with(['categories:id,name,slug', 'images']);
+            ->with(['categories:id,name,slug']);
 
         match ($sort) {
             'name_desc' => $query->orderByDesc('name'),
@@ -259,8 +260,38 @@ class StorefrontCatalog
      */
     public static function productsOnOffer(?Branch $branch = null, ?int $limit = null): array
     {
-        return collect(self::products($branch, null, null, $limit))
-            ->filter(fn (array $product): bool => filled($product['compareAtPrice'] ?? null))
+        $today = now()->toDateString();
+
+        $query = Product::query()
+            ->where('status', true)
+            ->where(function ($builder) use ($today): void {
+                $builder->where(function ($offer): void {
+                    $offer->whereNotNull('selling_price')
+                        ->whereNotNull('regular_price')
+                        ->whereColumn('regular_price', '>', 'selling_price');
+                })->orWhere(function ($discount) use ($today): void {
+                    $discount->where('discount_type', '!=', DiscountType::None->value)
+                        ->whereNotNull('discount_price')
+                        ->whereNotNull('selling_price')
+                        ->where(function ($dates) use ($today): void {
+                            $dates->whereNull('discount_start_date')
+                                ->orWhereDate('discount_start_date', '<=', $today);
+                        })
+                        ->where(function ($dates) use ($today): void {
+                            $dates->whereNull('discount_end_date')
+                                ->orWhereDate('discount_end_date', '>=', $today);
+                        });
+                });
+            })
+            ->with(['categories:id,name,slug'])
+            ->orderBy('name');
+
+        if ($limit !== null) {
+            $query->limit(max(1, $limit));
+        }
+
+        return $query->get()
+            ->map(fn (Product $product): array => self::mapProductCard($product, $branch))
             ->values()
             ->all();
     }
@@ -275,7 +306,7 @@ class StorefrontCatalog
         $query = Product::query()
             ->where('status', true)
             ->whereJsonContains('tags', $tag->value)
-            ->with(['categories:id,name,slug', 'images'])
+            ->with(['categories:id,name,slug'])
             ->orderBy('name')
             ->limit(max(1, $limit));
 
@@ -288,15 +319,19 @@ class StorefrontCatalog
     /**
      * @return array<string, mixed>
      */
-    public static function productDetail(string $slug, ?Branch $branch = null): array
+    public static function productDetail(Product|string $product, ?Branch $branch = null): array
     {
-        $product = Product::query()
-            ->where('status', true)
-            ->where('slug', $slug)
-            ->with(['categories:id,name,slug', 'images', 'variants'])
-            ->first();
+        if (is_string($product)) {
+            $product = Product::query()
+                ->where('status', true)
+                ->where('slug', $product)
+                ->with(['categories:id,name,slug', 'images', 'variants'])
+                ->first();
+        } else {
+            $product->loadMissing(['categories:id,name,slug', 'images', 'variants']);
+        }
 
-        if ($product === null) {
+        if ($product === null || ! $product->status) {
             throw new NotFoundHttpException;
         }
 
@@ -453,7 +488,7 @@ class StorefrontCatalog
         $query = Product::query()
             ->where('status', true)
             ->where('id', '!=', $product->id)
-            ->with(['categories:id,name,slug', 'images'])
+            ->with(['categories:id,name,slug'])
             ->limit(100);
 
         if ($categoryIds->isNotEmpty()) {
@@ -484,7 +519,7 @@ class StorefrontCatalog
                 $builder->whereJsonContains('tags', ProductTag::BestSelling->value)
                     ->orWhereJsonContains('tags', ProductTag::Popular->value);
             })
-            ->with(['categories:id,name,slug', 'images'])
+            ->with(['categories:id,name,slug'])
             ->limit(max(1, $limit))
             ->get();
     }

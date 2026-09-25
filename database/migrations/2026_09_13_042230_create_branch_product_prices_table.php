@@ -3,6 +3,7 @@
 use App\Enums\DiscountType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -26,8 +27,21 @@ return new class extends Migration
 
             $table->index(['branch_id', 'product_id', 'variant_id']);
             $table->index(['start_date', 'end_date']);
-            $table->index('status');
         });
+
+        $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'mysql') {
+            Schema::table('branch_product_prices', function (Blueprint $table) {
+                $table->index(['branch_id', 'product_id', 'status']);
+            });
+
+            return;
+        }
+
+        $active = $driver === 'pgsql' ? 'status = true' : 'status = 1';
+
+        DB::statement("create index branch_product_prices_active_index on branch_product_prices (branch_id, product_id) where {$active}");
     }
 
     public function down(): void

@@ -1,6 +1,7 @@
 ---
 paths:
-    - 'database/migrations/**'
+  - 'database/migrations/**'
+  - database/migrations/2026_09_13_042225_create_products_table.php
 ---
 
 # Migrations
@@ -41,3 +42,6 @@ Pre-handover: branches.delivery_radius_km nullable decimal belongs on create_bra
 
 ## Cart columns stay on create migrations
 Pre-handover: carts (user_id, session_id, status) and cart_items (cart_id, product_id, variant_id, quantity, price_snapshot) belong on the original create_* files. Do not add Schema::table modification migrations such as add_storefront_*. Use migrate:fresh --seed when the local DB is still greenfield.
+
+## PostgreSQL catalog indexes
+PostgreSQL products indexes: partial indexes on active rows (name, created_at, selling_price), GIN jsonb_path_ops on tags, and pg_trgm GIN on name/brand/sku for LIKE fallback. SQLite tests get the same partial indexes with status = 1 and skip GIN/trgm. MySQL keeps composite btrees. Do not index effective price: the discount window uses the current date, which PostgreSQL rejects in an index expression.
