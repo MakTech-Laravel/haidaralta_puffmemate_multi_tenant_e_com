@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { Menu } from 'lucide-react';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { FeaturesBar } from '@/components/storefront/features-bar';
 import { ProductCard } from '@/components/storefront/product-card';
 import {
@@ -96,24 +96,35 @@ export default function StorefrontShop({
     const isBelowLg = useIsBelowLg();
     const [filtersOpen, setFiltersOpen] = useState(false);
     const [search, setSearch] = useState(filters.search);
+    const [sidebar, setSidebar] = useState<ShopSidebarFilters>(() =>
+        toSidebarFilters(filters),
+    );
+    const [sort, setSort] = useState(filters.sort);
+    const [updating, setUpdating] = useState(false);
+    const visitId = useRef(0);
 
     useEffect(() => {
         setSearch(filters.search);
-    }, [filters.search]);
+        setSidebar(toSidebarFilters(filters));
+        setSort(filters.sort);
+    }, [filters]);
 
     const visit = (next: VisitOptions = {}) => {
         const nextSearch = next.search ?? search;
-        const nextSort = next.sort !== undefined ? next.sort : filters.sort;
+        const nextSort = next.sort !== undefined ? next.sort : sort;
         const nextMinPrice =
-            next.minPrice !== undefined ? next.minPrice : filters.minPrice;
+            next.minPrice !== undefined ? next.minPrice : sidebar.minPrice;
         const nextMaxPrice =
-            next.maxPrice !== undefined ? next.maxPrice : filters.maxPrice;
+            next.maxPrice !== undefined ? next.maxPrice : sidebar.maxPrice;
         const nextCategories =
             next.categories !== undefined
                 ? next.categories
-                : filters.categories;
-        const nextTags = next.tags !== undefined ? next.tags : filters.tags;
+                : sidebar.categories;
+        const nextTags = next.tags !== undefined ? next.tags : sidebar.tags;
 
+        const id = visitId.current + 1;
+        visitId.current = id;
+        setUpdating(true);
         router.cancelAll();
         router.get(
             shop.url(),
@@ -134,32 +145,42 @@ export default function StorefrontShop({
             {
                 preserveState: true,
                 replace: true,
-                only: ['products', 'filters', 'filterOptions'],
+                async: true,
+                showProgress: false,
+                only: ['products', 'filters'],
+                onFinish: () => {
+                    if (visitId.current === id) {
+                        setUpdating(false);
+                    }
+                },
             },
         );
     };
 
     const updateSidebarFilters = (partial: Partial<ShopSidebarFilters>) => {
-        visit({
+        const next: ShopSidebarFilters = {
             minPrice:
                 partial.minPrice !== undefined
                     ? partial.minPrice
-                    : filters.minPrice,
+                    : sidebar.minPrice,
             maxPrice:
                 partial.maxPrice !== undefined
                     ? partial.maxPrice
-                    : filters.maxPrice,
+                    : sidebar.maxPrice,
             categories:
                 partial.categories !== undefined
                     ? partial.categories
-                    : filters.categories,
-            tags: partial.tags !== undefined ? partial.tags : filters.tags,
-        });
+                    : sidebar.categories,
+            tags: partial.tags !== undefined ? partial.tags : sidebar.tags,
+        };
+
+        setSidebar(next);
+        visit(next);
     };
 
     const filtersSidebar = (
         <ShopFiltersSidebar
-            value={toSidebarFilters(filters)}
+            value={sidebar}
             onChange={updateSidebarFilters}
             categories={filterOptions.categories}
             tags={filterOptions.tags}
@@ -222,8 +243,11 @@ export default function StorefrontShop({
                         className="lg:min-w-0 lg:flex-1"
                     />
                     <StorefrontSortSelect
-                        value={filters.sort}
-                        onChange={(sort) => visit({ sort })}
+                        value={sort}
+                        onChange={(nextSort) => {
+                            setSort(nextSort);
+                            visit({ sort: nextSort });
+                        }}
                         className="lg:w-44 lg:max-w-xs lg:shrink-0"
                     />
                 </div>
@@ -231,25 +255,40 @@ export default function StorefrontShop({
                 <div className="grid items-start gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
                     {!isBelowLg ? filtersSidebar : null}
 
-                    {products.length === 0 ? (
-                        <div className="border-border bg-card rounded-xl border p-10 text-center">
-                            <p className="text-foreground text-base font-semibold">
-                                No products match
+                    <div
+                        aria-busy={updating}
+                        className={
+                            updating
+                                ? 'pointer-events-none opacity-60 transition-opacity'
+                                : 'transition-opacity'
+                        }
+                    >
+                        {updating ? (
+                            <p className="text-muted-foreground mb-3 text-xs font-semibold tracking-[0.2em] uppercase">
+                                Updating results
                             </p>
-                            <p className="text-muted-foreground mt-2 text-sm">
-                                Try a different search or clear some filters.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {products.map((product) => (
-                                <ProductCard
-                                    key={product.id}
-                                    product={product}
-                                />
-                            ))}
-                        </div>
-                    )}
+                        ) : null}
+                        {products.length === 0 ? (
+                            <div className="border-border bg-card rounded-xl border p-10 text-center">
+                                <p className="text-foreground text-base font-semibold">
+                                    No products match
+                                </p>
+                                <p className="text-muted-foreground mt-2 text-sm">
+                                    Try a different search or clear some
+                                    filters.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {products.map((product) => (
+                                    <ProductCard
+                                        key={product.id}
+                                        product={product}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

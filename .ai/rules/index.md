@@ -81,7 +81,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/layouts/{platform,branch}/** | .ai/rules/layoutsplatformbranch.md |
 | resources/js/lib/fcm.ts, resources/js/lib/color-picker.ts, resources/js/lib/stock-query.ts, resources/js/lib/branch-people-query.ts | .ai/rules/lib.md |
 | routes/public.php,bootstrap/app.php,app/Http/Middleware/EnsurePortalGuard.php | .ai/rules/middleware.md |
-| database/migrations/** | .ai/rules/migrations.md |
+| database/migrations/**, database/migrations/2026_09_13_042225_create_products_table.php | .ai/rules/migrations.md |
 | app/Models/**.php | .ai/rules/models.md |
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/orders-js-components-driver.md |
@@ -127,7 +127,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/{pages,components}/storefront/**,app/Http/Controllers/Storefront/{Cart,Checkout}Controller.php | .ai/rules/storefront-http-controllers-storefront.md |
 | app/Support/Storefront/StorefrontShopQuery.php,resources/js/pages/storefront/shop.tsx,app/Models/PriceRange.php,config/scout.php | .ai/rules/storefront-models.md |
 | app/Services/Catalog/PriceRangeService.php,app/Models/ShopPriceFilterSetting.php,resources/js/pages/platform/catalog/price-ranges/**,resources/js/components/storefront/shop-filters-sidebar.tsx,config/catalog.php,database/seeders/PriceRangeSeeder.php | .ai/rules/storefront-seeders.md |
-| resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts, app/Support/Storefront/**, app/Http/Middleware/HandleInertiaRequests.php, app/Support/Storefront/StorefrontCatalog.php,config/catalog.php | .ai/rules/storefront.md |
+| resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts, app/Support/Storefront/**, app/Http/Middleware/HandleInertiaRequests.php, app/Support/Storefront/StorefrontCatalog.php,config/catalog.php, app/Support/Storefront/StorefrontShopQuery.php | .ai/rules/storefront.md |
 | app/DataTables/ShiftAssignmentDataTable.php,app/Support/WorkforcePayload.php,resources/js/components/admin/shift-assigned-people-page.tsx | .ai/rules/support-js-components-admin.md |
 | app/Support/Storefront/DemoCatalog.php | .ai/rules/support-storefront.md |
 | app/Models/UserShiftAssignment.php,app/Support/DutyWindow.php,app/Support/DriverAvailability.php | .ai/rules/support-support.md |

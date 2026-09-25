@@ -32,17 +32,24 @@ export default function StorefrontCategory({
     filters,
 }: CategoryPageProps) {
     const [search, setSearch] = useState(filters.search);
+    const [sort, setSort] = useState(filters.sort);
+    const [updating, setUpdating] = useState(false);
     const debounceRef = useRef<number>(undefined);
+    const visitId = useRef(0);
 
     useEffect(() => {
         window.clearTimeout(debounceRef.current);
         setSearch(filters.search);
-    }, [filters.search, category.slug]);
+        setSort(filters.sort);
+    }, [filters.search, filters.sort, category.slug]);
 
     const visit = (next: VisitOptions = {}) => {
         const nextSearch = next.search ?? search;
-        const nextSort = next.sort !== undefined ? next.sort : filters.sort;
+        const nextSort = next.sort !== undefined ? next.sort : sort;
 
+        const id = visitId.current + 1;
+        visitId.current = id;
+        setUpdating(true);
         router.cancelAll();
         router.get(
             shopCategory.url(category.slug),
@@ -53,7 +60,14 @@ export default function StorefrontCategory({
             {
                 preserveState: true,
                 replace: true,
+                async: true,
+                showProgress: false,
                 only: ['products', 'filters'],
+                onFinish: () => {
+                    if (visitId.current === id) {
+                        setUpdating(false);
+                    }
+                },
             },
         );
     };
@@ -95,28 +109,48 @@ export default function StorefrontCategory({
                         className="lg:min-w-0 lg:flex-1"
                     />
                     <StorefrontSortSelect
-                        value={filters.sort}
-                        onChange={(sort) => visit({ sort })}
+                        value={sort}
+                        onChange={(nextSort) => {
+                            setSort(nextSort);
+                            visit({ sort: nextSort });
+                        }}
                         className="lg:w-56 lg:max-w-xs lg:shrink-0"
                     />
                 </div>
 
-                {products.length === 0 ? (
-                    <div className="border-border bg-card rounded-xl border p-10 text-center">
-                        <p className="text-foreground text-base font-semibold">
-                            No products match
+                <div
+                    aria-busy={updating}
+                    className={
+                        updating
+                            ? 'pointer-events-none opacity-60 transition-opacity'
+                            : 'transition-opacity'
+                    }
+                >
+                    {updating ? (
+                        <p className="text-muted-foreground mb-3 text-xs font-semibold tracking-[0.2em] uppercase">
+                            Updating results
                         </p>
-                        <p className="text-muted-foreground mt-2 text-sm">
-                            Try a different search or sort.
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-                        {products.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
-                )}
+                    ) : null}
+                    {products.length === 0 ? (
+                        <div className="border-border bg-card rounded-xl border p-10 text-center">
+                            <p className="text-foreground text-base font-semibold">
+                                No products match
+                            </p>
+                            <p className="text-muted-foreground mt-2 text-sm">
+                                Try a different search or sort.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                            {products.map((product) => (
+                                <ProductCard
+                                    key={product.id}
+                                    product={product}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
             <FeaturesBar features={storefrontFeatures} />

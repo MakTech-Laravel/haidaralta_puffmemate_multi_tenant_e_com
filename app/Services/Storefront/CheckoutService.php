@@ -20,11 +20,15 @@ use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Support\BranchProductPriceDisplay;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class CheckoutService
 {
+    /** @var Collection<int, DeliveryMethod>|null */
+    private ?Collection $activeDeliveryMethods = null;
+
     public function __construct(
         private readonly CartService $carts,
         private readonly CouponService $coupons,
@@ -61,12 +65,7 @@ class CheckoutService
      */
     public function deliveryMethods(): array
     {
-        return DeliveryMethod::query()
-            ->where('status', true)
-            ->orderBy('sort')
-            ->orderBy('id')
-            ->with(['timeSlots' => fn ($query) => $query->where('status', true)->orderBy('sort')->orderBy('id')])
-            ->get()
+        return $this->activeDeliveryMethods()
             ->map(fn (DeliveryMethod $method): array => [
                 'id' => $method->key,
                 'label' => $method->label,
@@ -83,21 +82,38 @@ class CheckoutService
      */
     public function timeSlots(?string $methodKey = null): array
     {
-        $query = DeliveryTimeSlot::query()
-            ->where('status', true)
-            ->orderBy('sort')
-            ->orderBy('id');
+        $methods = $this->activeDeliveryMethods();
 
         if (is_string($methodKey) && $methodKey !== '') {
-            $query->whereHas('deliveryMethod', fn ($builder) => $builder->where('key', $methodKey));
+            $methods = $methods->where('key', $methodKey);
         }
 
-        return $query->get()
+        return $methods
+            ->flatMap(fn (DeliveryMethod $method) => $method->timeSlots)
+            ->unique('id')
+            ->sortBy([
+                ['sort', 'asc'],
+                ['id', 'asc'],
+            ])
             ->map(fn (DeliveryTimeSlot $slot): array => [
                 'id' => (string) $slot->id,
                 'label' => $slot->label,
             ])
+            ->values()
             ->all();
+    }
+
+    /**
+     * @return Collection<int, DeliveryMethod>
+     */
+    private function activeDeliveryMethods(): Collection
+    {
+        return $this->activeDeliveryMethods ??= DeliveryMethod::query()
+            ->where('status', true)
+            ->orderBy('sort')
+            ->orderBy('id')
+            ->with(['timeSlots' => fn ($query) => $query->where('status', true)->orderBy('sort')->orderBy('id')])
+            ->get();
     }
 
     /**

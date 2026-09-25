@@ -213,6 +213,8 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
             'slug' => $this->slug,
             'sku' => $this->sku,
             'brand' => $this->brand,
+            'description' => str(strip_tags((string) $this->description))->limit(5000)->toString(),
+            'pack_label' => $this->pack_label,
             'tags' => $this->tags ?? [],
             'status' => (bool) $this->status,
             'selling_price' => $sellingPrice,

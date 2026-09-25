@@ -5,6 +5,7 @@ paths:
   - 'app/Support/Storefront/**'
   - app/Http/Middleware/HandleInertiaRequests.php
   - 'app/Support/Storefront/StorefrontCatalog.php,config/catalog.php'
+  - app/Support/Storefront/StorefrontShopQuery.php
 ---
 
 # Storefront
@@ -53,3 +54,6 @@ PDP Similar Products uses `StorefrontCatalog::similarProducts` capped by `config
 
 ## Similar products ranked recommendations
 PDP Similar Products ranks by category (+100), brand (+40), tags best_selling/popular/on_offer/new_arrival, then compare-at. Cap via catalog.similar_products_max (default 4). Backfill from site-wide best_selling/popular when the category pool is thin.
+
+## Shop listing uses Meilisearch filters
+Shop and category listings filter in Meilisearch (status, category_ids, tags, effective_price) when SCOUT_DRIVER=meilisearch, then hydrate those ids. Collection/test driver uses the SQL effective-price CASE. Price bounds are SQL literals, not float bindings (SQLite drops the row). filterOptions is an Inertia once prop on the shop page only. Reimport products after searchableAttributes changes.

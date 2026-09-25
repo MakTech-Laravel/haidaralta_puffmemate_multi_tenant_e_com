@@ -172,8 +172,21 @@ class CartService
      */
     public function payload(Request $request): array
     {
+        return once(fn (): array => $this->buildPayload($request));
+    }
+
+    /**
+     * @return array{
+     *     itemCount: int,
+     *     items: list<array<string, mixed>>,
+     *     subtotal: float,
+     *     formattedSubtotal: string
+     * }
+     */
+    private function buildPayload(Request $request): array
+    {
         $cart = $this->activeCart($request);
-        $cart->load(['items.product.categories:id,name,slug', 'items.product.images']);
+        $cart->load(['items.product.categories:id,name,slug']);
 
         $items = [];
         $subtotal = 0.0;

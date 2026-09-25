@@ -195,6 +195,13 @@ return [
                 ],
             ],
             Product::class => [
+                'searchableAttributes' => [
+                    'name',
+                    'brand',
+                    'sku',
+                    'description',
+                    'pack_label',
+                ],
                 'filterableAttributes' => [
                     'id',
                     'category_ids',
