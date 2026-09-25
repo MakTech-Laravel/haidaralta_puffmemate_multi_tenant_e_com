@@ -1,5 +1,6 @@
-import { Link, router } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
+import { removeCartItem, syncCartQuantity } from '@/components/storefront/cart/sync-cart-item';
 import { cn } from '@/lib/utils';
 import { shop } from '@/routes';
 import { show as productShow } from '@/routes/products';
@@ -9,10 +10,6 @@ type CartItemsProps = {
     items: StorefrontCartItem[];
     className?: string;
 };
-
-function updateQuantity(itemId: number, quantity: number): void {
-    router.patch(`/cart/${itemId}`, { quantity }, { preserveScroll: true });
-}
 
 export function CartItems({ items, className }: CartItemsProps) {
     if (items.length === 0) {
@@ -81,7 +78,7 @@ export function CartItems({ items, className }: CartItemsProps) {
                                         className="text-foreground flex size-9 items-center justify-center"
                                         aria-label="Decrease quantity"
                                         onClick={() =>
-                                            updateQuantity(
+                                            syncCartQuantity(
                                                 item.id,
                                                 item.quantity - 1,
                                             )
@@ -97,7 +94,7 @@ export function CartItems({ items, className }: CartItemsProps) {
                                         className="text-foreground flex size-9 items-center justify-center"
                                         aria-label="Increase quantity"
                                         onClick={() =>
-                                            updateQuantity(
+                                            syncCartQuantity(
                                                 item.id,
                                                 item.quantity + 1,
                                             )
@@ -110,11 +107,7 @@ export function CartItems({ items, className }: CartItemsProps) {
                                     type="button"
                                     className="text-muted-foreground hover:text-destructive flex size-9 shrink-0 items-center justify-center"
                                     aria-label={`Remove ${item.name}`}
-                                    onClick={() =>
-                                        router.delete(`/cart/${item.id}`, {
-                                            preserveScroll: true,
-                                        })
-                                    }
+                                    onClick={() => removeCartItem(item.id)}
                                 >
                                     <Trash2 className="size-4" />
                                 </button>

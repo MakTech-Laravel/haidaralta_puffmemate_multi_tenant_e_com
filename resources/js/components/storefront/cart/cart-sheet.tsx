@@ -1,6 +1,7 @@
-import { Link, router } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { removeCartItem, syncCartQuantity } from '@/components/storefront/cart/sync-cart-item';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -99,16 +100,9 @@ export function CartSheet({
                                                 className="text-foreground flex size-9 items-center justify-center"
                                                 aria-label="Decrease quantity"
                                                 onClick={() =>
-                                                    router.patch(
-                                                        `/cart/${item.id}`,
-                                                        {
-                                                            quantity:
-                                                                item.quantity -
-                                                                1,
-                                                        },
-                                                        {
-                                                            preserveScroll: true,
-                                                        },
+                                                    syncCartQuantity(
+                                                        item.id,
+                                                        item.quantity - 1,
                                                     )
                                                 }
                                             >
@@ -122,16 +116,9 @@ export function CartSheet({
                                                 className="text-foreground flex size-9 items-center justify-center"
                                                 aria-label="Increase quantity"
                                                 onClick={() =>
-                                                    router.patch(
-                                                        `/cart/${item.id}`,
-                                                        {
-                                                            quantity:
-                                                                item.quantity +
-                                                                1,
-                                                        },
-                                                        {
-                                                            preserveScroll: true,
-                                                        },
+                                                    syncCartQuantity(
+                                                        item.id,
+                                                        item.quantity + 1,
                                                     )
                                                 }
                                             >
@@ -143,10 +130,7 @@ export function CartSheet({
                                             className="text-muted-foreground hover:text-destructive ml-auto flex size-9 items-center justify-center"
                                             aria-label={`Remove ${item.name}`}
                                             onClick={() =>
-                                                router.delete(
-                                                    `/cart/${item.id}`,
-                                                    { preserveScroll: true },
-                                                )
+                                                removeCartItem(item.id)
                                             }
                                         >
                                             <Trash2 className="size-4" />

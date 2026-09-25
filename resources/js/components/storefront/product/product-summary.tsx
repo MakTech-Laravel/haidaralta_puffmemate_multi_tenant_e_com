@@ -1,6 +1,6 @@
-import { router } from '@inertiajs/react';
 import { Check, Clock, Minus, Plus, ShoppingCart, Star } from 'lucide-react';
 import { useState } from 'react';
+import { addToCart } from '@/components/storefront/cart/sync-cart-item';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -135,19 +135,7 @@ export function ProductSummary({
                     type="button"
                     size="lg"
                     className="h-12 w-full max-w-full min-w-0 shrink rounded-none text-sm font-bold tracking-wide uppercase sm:flex-1"
-                    onClick={() =>
-                        router.post(
-                            '/cart',
-                            { product: slug, quantity },
-                            {
-                                preserveScroll: true,
-                                onSuccess: () =>
-                                    window.dispatchEvent(
-                                        new Event('storefront:cart-open'),
-                                    ),
-                            },
-                        )
-                    }
+                    onClick={() => addToCart(slug, quantity)}
                 >
                     <ShoppingCart className="size-4" />
                     Add to cart
