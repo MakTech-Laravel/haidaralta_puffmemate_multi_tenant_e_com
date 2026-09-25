@@ -198,3 +198,55 @@
         height: 8px;
     }
 }
+
+@keyframes navigation-road {
+    to {
+        background-position: -2.5rem 0;
+    }
+}
+
+@keyframes navigation-ride {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-0.35rem);
+    }
+}
+
+@keyframes navigation-wheel {
+    to {
+        transform: rotate(-360deg);
+    }
+}
+
+@keyframes navigation-parcel {
+    0%,
+    100% {
+        transform: translateY(0) rotate(-4deg);
+    }
+
+    50% {
+        transform: translateY(-0.28rem) rotate(3deg);
+    }
+}
+
+@utility animate-navigation-road {
+    animation: navigation-road 0.55s linear infinite;
+}
+
+@utility animate-navigation-ride {
+    animation: navigation-ride 0.45s ease-in-out infinite;
+}
+
+@utility animate-navigation-wheel {
+    animation: navigation-wheel 0.45s linear infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+@utility animate-navigation-parcel {
+    animation: navigation-parcel 0.45s ease-in-out infinite;
+}

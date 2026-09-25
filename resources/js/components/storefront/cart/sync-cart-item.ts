@@ -95,10 +95,14 @@ const visitOptions = {
     async: true,
     replace: true,
     showProgress: false,
-    only: [...CART_PROPS],
+    only: [...CART_PROPS] as string[],
 } as const;
 
-export function addToCart(productSlug: string, quantity = 1, onFinish?: () => void): void {
+export function addToCart(
+    productSlug: string,
+    quantity = 1,
+    onFinish?: () => void,
+): void {
     router.post(
         store.url(),
         { product: productSlug, quantity },
