@@ -1,23 +1,31 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppBrand } from '@/hooks/use-app-brand';
-import {
-    formatMoney,
-    type CheckoutItem,
-    type CheckoutSummary,
-} from '@/lib/storefront-checkout';
 import { cn } from '@/lib/utils';
+import type { StorefrontCartItem } from '@/types/storefront';
+import { formatStorefrontMoney } from '@/types/storefront';
+
+type AppliedCoupon = {
+    code: string;
+    discount: number;
+    formattedDiscount: string;
+} | null;
 
 type CheckoutOrderSummaryProps = {
-    items: CheckoutItem[];
+    items: StorefrontCartItem[];
     itemCount: number;
-    summary: CheckoutSummary;
-    trustBadges: string[];
-    legalNote: string;
+    subtotal: number;
+    deliveryFee: number;
+    deliveryLabel: string;
     coupon: string;
+    appliedCoupon: AppliedCoupon;
+    couponError?: string;
     termsAccepted: boolean;
+    processing?: boolean;
     onCouponChange: (value: string) => void;
+    onApplyCoupon: () => void;
     onTermsChange: (accepted: boolean) => void;
     className?: string;
 };
@@ -25,16 +33,22 @@ type CheckoutOrderSummaryProps = {
 export function CheckoutOrderSummary({
     items,
     itemCount,
-    summary,
-    trustBadges: _trustBadges,
-    legalNote,
-    coupon: _coupon,
+    subtotal,
+    deliveryFee,
+    deliveryLabel,
+    coupon,
+    appliedCoupon,
+    couponError,
     termsAccepted,
-    onCouponChange: _onCouponChange,
+    processing = false,
+    onCouponChange,
+    onApplyCoupon,
     onTermsChange,
     className,
 }: CheckoutOrderSummaryProps) {
     const brand = useAppBrand();
+    const discount = appliedCoupon?.discount ?? 0;
+    const total = Math.max(subtotal - discount + deliveryFee, 0);
 
     return (
         <aside
@@ -50,57 +64,76 @@ export function CheckoutOrderSummary({
             </div>
 
             <ul className="mt-5 space-y-4">
-                {items.map((item, index) => (
-                    <li
-                        key={item.id}
-                        className={`flex flex-col gap-1.5 ${index > 0 ? 'mt-8' : ''}`}
-                    >
-                        <p className="text-foreground text-sm font-bold break-words">
-                            {item.branchName}
-                        </p>
-
-                        <div className="flex items-center gap-3">
-                            <div className="bg-muted relative size-12 shrink-0 overflow-hidden rounded-md">
-                                <div
-                                    className="absolute inset-0 bg-cover bg-center"
-                                    style={{
-                                        backgroundImage: `url(${item.image})`,
-                                    }}
-                                    role="img"
-                                    aria-label={item.name}
-                                />
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                                <p className="text-foreground truncate text-sm font-semibold">
-                                    {item.name}
-                                </p>
-
-                                <p className="text-muted-foreground text-xs">
-                                    Quantity x {item.quantity}
-                                </p>
-                            </div>
-
-                            <p className="text-foreground shrink-0 text-sm font-bold">
-                                {formatMoney(item.unitPrice * item.quantity)}
+                {items.map((item) => (
+                    <li key={item.id} className="flex items-center gap-3">
+                        <div className="bg-muted size-12 shrink-0 overflow-hidden rounded-md">
+                            <img
+                                src={item.image}
+                                alt={item.name}
+                                className="size-full object-cover"
+                            />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-foreground truncate text-sm font-semibold">
+                                {item.name}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                                Quantity x {item.quantity}
                             </p>
                         </div>
+                        <p className="text-foreground shrink-0 text-sm font-bold">
+                            {item.formattedLineTotal}
+                        </p>
                     </li>
                 ))}
             </ul>
+
+            <div className="mt-5 space-y-2">
+                <Label htmlFor="checkout-coupon">Coupon</Label>
+                <div className="flex gap-2">
+                    <Input
+                        id="checkout-coupon"
+                        value={coupon}
+                        onChange={(event) => onCouponChange(event.target.value)}
+                        className="bg-background h-11 rounded-none border-none"
+                    />
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onApplyCoupon}
+                    >
+                        Apply
+                    </Button>
+                </div>
+                {couponError ? (
+                    <p className="text-destructive text-xs">{couponError}</p>
+                ) : null}
+                {appliedCoupon ? (
+                    <p className="text-sm font-medium">
+                        {appliedCoupon.code} · {appliedCoupon.formattedDiscount}
+                    </p>
+                ) : null}
+            </div>
+
             <dl className="mt-5 space-y-2.5">
                 <div className="flex items-center justify-between gap-3 text-sm">
                     <dt className="text-muted-foreground">Subtotal</dt>
                     <dd className="text-foreground font-semibold">
-                        {formatMoney(summary.subtotal)}
+                        {formatStorefrontMoney(subtotal)}
                     </dd>
                 </div>
+                {discount > 0 ? (
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                        <dt className="text-muted-foreground">Discount</dt>
+                        <dd className="text-foreground font-semibold">
+                            -{formatStorefrontMoney(discount)}
+                        </dd>
+                    </div>
+                ) : null}
                 <div className="flex items-center justify-between gap-3 text-sm">
                     <dt className="text-muted-foreground">Delivery</dt>
                     <dd className="text-foreground font-bold">
-                        {summary.deliveryAmount === null
-                            ? summary.deliveryLabel
-                            : formatMoney(summary.deliveryAmount)}
+                        {deliveryLabel}
                     </dd>
                 </div>
             </dl>
@@ -110,13 +143,14 @@ export function CheckoutOrderSummary({
                     Total
                 </span>
                 <span className="text-foreground text-2xl font-bold">
-                    {formatMoney(summary.total)}
+                    {formatStorefrontMoney(total)}
                 </span>
             </div>
 
             <Button
-                type="button"
+                type="submit"
                 size="lg"
+                disabled={processing}
                 className="mt-5 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
             >
                 Place order
@@ -148,21 +182,6 @@ export function CheckoutOrderSummary({
                     .
                 </Label>
             </div>
-
-            {/* <div className="mt-5 grid grid-cols-2 gap-2">
-                {trustBadges.map((badge) => (
-                    <div
-                        key={badge}
-                        className="border-border text-muted-foreground rounded-md border px-2.5 py-2 text-center text-[0.7rem] font-medium"
-                    >
-                        {badge}
-                    </div>
-                ))}
-            </div> */}
-
-            <p className="text-primary bg-primary/5 mt-5 rounded-none px-3 py-2.5 text-[0.7rem] leading-relaxed">
-                {legalNote}
-            </p>
         </aside>
     );
 }

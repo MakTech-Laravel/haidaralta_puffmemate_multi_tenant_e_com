@@ -227,6 +227,18 @@ export function buildPlatformNav(
                         icon: CircleDollarSign,
                         permissions: ['manage-catalog'],
                     }),
+                    navLink({
+                        title: 'Coupons',
+                        href: '/platform/coupons',
+                        icon: BadgePercent,
+                        permissions: ['manage-catalog'],
+                    }),
+                    navLink({
+                        title: 'Delivery settings',
+                        href: '/platform/delivery-settings',
+                        icon: Truck,
+                        permissions: ['manage-catalog'],
+                    }),
                     ...(!showBranchPricing
                         ? [
                               navLink({
@@ -410,10 +422,11 @@ export function buildPlatformNav(
                         icon: CreditCard,
                         permissions: ['manage-application-settings'],
                     }),
-                    navSoon({
-                        title: 'Delivery and fees',
-                        icon: Truck,
-                        permissions: ['manage-database-backups'],
+                    navLink({
+                        title: 'Payment methods',
+                        href: '/platform/payment-methods',
+                        icon: Banknote,
+                        permissions: ['manage-catalog'],
                     }),
                     navLink({
                         title: 'SMTP',

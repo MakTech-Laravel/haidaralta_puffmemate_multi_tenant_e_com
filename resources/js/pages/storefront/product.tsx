@@ -79,6 +79,7 @@ export default function StorefrontProduct({
                     />
                     <ProductSummary
                         className="min-w-0"
+                        slug={product.id}
                         name={product.name}
                         description={product.description}
                         badges={product.badges}

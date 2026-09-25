@@ -31,3 +31,64 @@ export type StorefrontFeature = {
     title: string;
     description: string;
 };
+
+export type StorefrontCartItem = {
+    id: number;
+    productId: number;
+    slug: string;
+    name: string;
+    category: string;
+    description: string;
+    image: string;
+    unitPrice: number;
+    formattedUnitPrice: string;
+    quantity: number;
+    lineTotal: number;
+    formattedLineTotal: string;
+};
+
+export type StorefrontCart = {
+    itemCount: number;
+    items: StorefrontCartItem[];
+    subtotal: number;
+    formattedSubtotal: string;
+};
+
+export type StorefrontAddress = {
+    id: number;
+    type: string;
+    receiver_name: string;
+    phone: string;
+    address: string;
+    city: string | null;
+    postal_code: string | null;
+    latitude: string | null;
+    longitude: string | null;
+    is_default: boolean;
+};
+
+export type StorefrontDeliveryMethod = {
+    id: string;
+    label: string;
+    description: string;
+    fee: number;
+    formattedFee: string;
+    requiresSlot: boolean;
+};
+
+export type StorefrontTimeSlot = {
+    id: string;
+    label: string;
+};
+
+export type StorefrontPaymentMethod = {
+    id: string;
+    label: string;
+    title?: string;
+    description: string;
+    badge?: string;
+};
+
+export function formatStorefrontMoney(amount: number): string {
+    return `$${amount.toFixed(2)}`;
+}

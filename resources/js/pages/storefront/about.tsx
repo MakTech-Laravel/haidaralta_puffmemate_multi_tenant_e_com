@@ -63,11 +63,7 @@ type CmsPageProp = {
     };
 };
 
-export default function StorefrontAbout({
-    cmsPage,
-}: {
-    cmsPage: CmsPageProp;
-}) {
+export default function StorefrontAbout({ cmsPage }: { cmsPage: CmsPageProp }) {
     const p = cmsPage.payload;
 
     return (

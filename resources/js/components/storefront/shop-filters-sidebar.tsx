@@ -111,13 +111,7 @@ export function ShopFiltersSidebar({
             sliderMinRef.current = nextMin;
             sliderMaxRef.current = nextMax;
         }
-    }, [
-        value.minPrice,
-        value.maxPrice,
-        isSliding,
-        sliderFloor,
-        sliderCeiling,
-    ]);
+    }, [value.minPrice, value.maxPrice, isSliding, sliderFloor, sliderCeiling]);
 
     const presetSlug = activePricePresetSlug(
         value.minPrice,
@@ -255,7 +249,10 @@ export function ShopFiltersSidebar({
                                 const raw = event.target.value;
                                 setMinDraft(raw);
 
-                                if (raw === '' || !Number.isFinite(Number(raw))) {
+                                if (
+                                    raw === '' ||
+                                    !Number.isFinite(Number(raw))
+                                ) {
                                     return;
                                 }
 

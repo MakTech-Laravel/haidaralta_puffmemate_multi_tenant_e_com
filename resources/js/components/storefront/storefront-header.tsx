@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Menu, ShoppingCart, User } from 'lucide-react';
+import { Menu, User } from 'lucide-react';
 import { useState } from 'react';
+import { CartSheet } from '@/components/storefront/cart/cart-sheet';
 import { NotificationsPopover } from '@/components/notifications/notifications-popover';
 import type { NotificationItem } from '@/components/notifications/types';
 import { PwaInstallMenuItem } from '@/components/pwa/pwa-install-menu-item';
@@ -22,7 +23,6 @@ import {
 import { cn } from '@/lib/utils';
 import {
     about,
-    cart,
     contact,
     dashboard,
     faqs,
@@ -152,6 +152,25 @@ export function StorefrontHeader() {
         };
         storefront?: {
             navCategories?: StorefrontNavCategory[];
+            cart?: {
+                itemCount: number;
+                items: Array<{
+                    id: number;
+                    productId: number;
+                    slug: string;
+                    name: string;
+                    category: string;
+                    description: string;
+                    image: string;
+                    unitPrice: number;
+                    formattedUnitPrice: string;
+                    quantity: number;
+                    lineTotal: number;
+                    formattedLineTotal: string;
+                }>;
+                subtotal: number;
+                formattedSubtotal: string;
+            };
         };
         customerNotifications?: NotificationItem[];
     };
@@ -203,23 +222,17 @@ export function StorefrontHeader() {
                     </nav>
 
                     <div className="ml-auto flex items-center gap-1 sm:gap-2">
-                        <Link
-                            href={cart()}
-                            prefetch
-                            className={cn(
-                                'relative inline-flex size-10 items-center justify-center rounded-md transition-colors',
-                                cartActive
-                                    ? 'text-primary after:bg-primary after:absolute after:inset-x-2 after:bottom-0.5 after:h-0.5'
-                                    : 'text-foreground',
-                            )}
-                            aria-label="Cart"
-                            aria-current={cartActive ? 'page' : undefined}
-                        >
-                            <ShoppingCart
-                                className="size-6 md:size-8"
-                                strokeWidth={1.75}
-                            />
-                        </Link>
+                        <CartSheet
+                            cart={
+                                storefront?.cart ?? {
+                                    itemCount: 0,
+                                    items: [],
+                                    subtotal: 0,
+                                    formattedSubtotal: '$0.00',
+                                }
+                            }
+                            active={cartActive}
+                        />
 
                         <NotificationsPopover
                             items={customerNotifications}

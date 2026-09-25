@@ -3,13 +3,16 @@
 namespace App\Models;
 
 use App\Contracts\DataTableConfigurable;
+use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -33,7 +36,22 @@ class Order extends Model implements DataTableConfigurable
         'customer_id',
         'branch_id',
         'driver_id',
+        'address_id',
+        'coupon_id',
+        'coupon_code',
         'status',
+        'fulfillment_status',
+        'subtotal',
+        'discount',
+        'delivery_fee',
+        'tax',
+        'total_amount',
+        'payment_status',
+        'payment_method',
+        'delivery_method',
+        'delivery_date',
+        'time_slot',
+        'notes',
     ];
 
     /**
@@ -83,10 +101,58 @@ class Order extends Model implements DataTableConfigurable
         return $this->hasOne(Conversation::class);
     }
 
+    /**
+     * @return BelongsTo<Address, $this>
+     */
+    public function address(): BelongsTo
+    {
+        return $this->belongsTo(Address::class);
+    }
+
+    /**
+     * @return BelongsTo<Coupon, $this>
+     */
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
+    }
+
+    /**
+     * @return HasMany<OrderItem, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * @return HasMany<OrderStatusHistory, $this>
+     */
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(OrderStatusHistory::class);
+    }
+
+    /**
+     * @return HasMany<Payment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     protected function casts(): array
     {
         return [
             'status' => OrderStatus::class,
+            'fulfillment_status' => FulfillmentStatus::class,
+            'payment_status' => PaymentStatus::class,
+            'subtotal' => 'decimal:2',
+            'discount' => 'decimal:2',
+            'delivery_fee' => 'decimal:2',
+            'tax' => 'decimal:2',
+            'total_amount' => 'decimal:2',
+            'delivery_date' => 'date',
         ];
     }
 }

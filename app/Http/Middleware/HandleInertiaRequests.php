@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\ContactSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
+use App\Services\Storefront\CartService;
 use App\Support\MediaUrl;
 use App\Support\PortalAuth;
 use App\Support\Storefront\DemoCatalog;
@@ -76,10 +77,12 @@ class HandleInertiaRequests extends Middleware
                 'allow_multiple_per_day' => (bool) config('shifts.allow_multiple_per_day'),
                 'show_platform_administrator_shifts' => (bool) config('shifts.show_platform_administrator_shifts'),
             ],
+            'appliedCoupon' => $request->session()->get('storefront.checkout_coupon'),
             'storefront' => [
                 'navCategories' => Inertia::once(fn (): array => StorefrontCatalog::navCategories())
                     ->as('storefront-nav-categories-'.StorefrontCatalog::navCategoriesVersion()),
                 'selectedBranchId' => $request->session()->get(StorefrontCatalog::BRANCH_SESSION_KEY),
+                'cart' => $this->sharedCart($request),
             ],
             'customerNotifications' => $portal === 'customer'
                 ? array_slice(DemoCatalog::customerNotifications(), 0, 5)
@@ -137,5 +140,22 @@ class HandleInertiaRequests extends Middleware
         $branch = app('currentBranch');
 
         return $branch->toPortalContext();
+    }
+
+    /**
+     * @return array{itemCount: int, items: list<array<string, mixed>>, subtotal: float, formattedSubtotal: string}
+     */
+    private function sharedCart(Request $request): array
+    {
+        try {
+            return app(CartService::class)->payload($request);
+        } catch (\Throwable) {
+            return [
+                'itemCount' => 0,
+                'items' => [],
+                'subtotal' => 0,
+                'formattedSubtotal' => '$0.00',
+            ];
+        }
     }
 }

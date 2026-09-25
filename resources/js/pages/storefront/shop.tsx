@@ -103,8 +103,7 @@ export default function StorefrontShop({
 
     const visit = (next: VisitOptions = {}) => {
         const nextSearch = next.search ?? search;
-        const nextSort =
-            next.sort !== undefined ? next.sort : filters.sort;
+        const nextSort = next.sort !== undefined ? next.sort : filters.sort;
         const nextMinPrice =
             next.minPrice !== undefined ? next.minPrice : filters.minPrice;
         const nextMaxPrice =

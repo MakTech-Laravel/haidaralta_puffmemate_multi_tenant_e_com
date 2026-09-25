@@ -19,7 +19,7 @@ export default function StorefrontPacksSaves({
         <>
             <Head title="Packs & Saves" />
 
-            <section className="border-border border-b bg-muted/40">
+            <section className="border-border bg-muted/40 border-b">
                 <div className="container mx-auto px-4 py-10 sm:px-6 sm:py-12">
                     <p className="text-muted-foreground text-xs font-semibold tracking-[0.2em] uppercase">
                         Bundles & multipacks

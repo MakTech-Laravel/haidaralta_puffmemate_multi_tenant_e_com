@@ -38,3 +38,6 @@ Pre-handover: products.discount_type (default none), discount_price, discount_st
 
 ## Delivery radius on create_branches
 Pre-handover: branches.delivery_radius_km nullable decimal belongs on create_branches beside lat/lng. Do not add a Schema::table modification for this greenfield column.
+
+## Cart columns stay on create migrations
+Pre-handover: carts (user_id, session_id, status) and cart_items (cart_id, product_id, variant_id, quantity, price_snapshot) belong on the original create_* files. Do not add Schema::table modification migrations such as add_storefront_*. Use migrate:fresh --seed when the local DB is still greenfield.
