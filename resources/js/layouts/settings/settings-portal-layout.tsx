@@ -23,7 +23,9 @@ export default function SettingsPortalLayout({
     }
 
     if (portal === 'branch') {
-        return <BranchLayout breadcrumbs={breadcrumbs}>{inner}</BranchLayout>;
+        return (
+            <BranchLayout breadcrumbs={breadcrumbs}>{children}</BranchLayout>
+        );
     }
 
     if (portal === 'driver') {

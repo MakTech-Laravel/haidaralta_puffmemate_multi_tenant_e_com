@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Download, LogOut, Shield, UserRound } from 'lucide-react';
 import {
     DropdownMenuGroup,
@@ -21,6 +21,7 @@ type Props = {
 export function UserMenuContent({ user }: Props) {
     const cleanup = useMobileNavigation();
     const pwa = usePwaInstall();
+    const { portal } = usePage().props;
 
     const handleLogout = () => {
         cleanup();
@@ -47,17 +48,19 @@ export function UserMenuContent({ user }: Props) {
                         Profile
                     </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link
-                        className="block w-full cursor-pointer"
-                        href={editSecurity()}
-                        prefetch
-                        onClick={cleanup}
-                    >
-                        <Shield className="mr-2" />
-                        Security
-                    </Link>
-                </DropdownMenuItem>
+                {portal !== 'branch' ? (
+                    <DropdownMenuItem asChild>
+                        <Link
+                            className="block w-full cursor-pointer"
+                            href={editSecurity()}
+                            prefetch
+                            onClick={cleanup}
+                        >
+                            <Shield className="mr-2" />
+                            Security
+                        </Link>
+                    </DropdownMenuItem>
+                ) : null}
                 {pwa?.showMenuItem ? (
                     <DropdownMenuItem
                         onSelect={(event) => {

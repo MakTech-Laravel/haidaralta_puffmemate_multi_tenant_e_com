@@ -3,12 +3,21 @@
 namespace App\Http\Requests\Settings;
 
 use App\Concerns\PasswordValidationRules;
+use App\Enums\UserType;
+use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProfileDeleteRequest extends FormRequest
 {
     use PasswordValidationRules;
+
+    public function authorize(): bool
+    {
+        $user = $this->user();
+
+        return ! ($user instanceof User && $user->user_type === UserType::BRANCH);
+    }
 
     /**
      * Get the validation rules that apply to the request.

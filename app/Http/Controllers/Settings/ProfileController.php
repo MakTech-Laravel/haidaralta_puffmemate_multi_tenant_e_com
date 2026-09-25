@@ -6,11 +6,11 @@ use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
 use App\Models\User;
 use App\Support\MediaUrl;
 use App\Support\PublicDiskMedia;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,7 +20,7 @@ class ProfileController extends Controller
     /**
      * Show the user's profile settings page.
      */
-    public function edit(Request $request): Response|RedirectResponse
+    public function edit(TwoFactorAuthenticationRequest $request): Response|RedirectResponse
     {
         $user = $request->user();
 
@@ -28,9 +28,10 @@ class ProfileController extends Controller
             return redirect()->route('driver.profile.edit');
         }
 
-        return Inertia::render('settings/profile', [
+        $props = [
             'mustVerifyPhone' => $user?->phone_verified_at === null,
             'status' => $request->session()->get('status'),
+            'canDeleteAccount' => $user instanceof User && $user->user_type !== UserType::BRANCH,
             'profile' => $user instanceof User ? [
                 'name' => $user->name,
                 'phone' => $user->phone,
@@ -38,7 +39,13 @@ class ProfileController extends Controller
                 'avatar' => $user->avatar,
                 'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
             ] : null,
-        ]);
+        ];
+
+        if ($user instanceof User && $user->user_type === UserType::BRANCH) {
+            $props = array_merge($props, SecurityController::pageProps($request));
+        }
+
+        return Inertia::render('settings/profile', $props);
     }
 
     /**
@@ -82,6 +89,9 @@ class ProfileController extends Controller
     public function destroy(ProfileDeleteRequest $request): RedirectResponse
     {
         $user = $request->user();
+
+        abort_if($user instanceof User && $user->user_type === UserType::BRANCH, 403);
+
         $guard = Auth::getDefaultDriver();
 
         Auth::guard($guard)->logout();
