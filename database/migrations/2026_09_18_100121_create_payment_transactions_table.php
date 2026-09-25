@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('event_type');
             $table->json('response')->nullable();
             $table->timestamps();
+
+            $table->index('payment_id');
         });
     }
 

@@ -17,6 +17,8 @@ return new class extends Migration
             $table->boolean('status')->default(true);
             $table->unsignedSmallInteger('sort')->default(0);
             $table->timestamps();
+
+            $table->index(['delivery_method_id', 'status', 'sort']);
         });
     }
 

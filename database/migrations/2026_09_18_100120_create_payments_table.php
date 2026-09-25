@@ -18,6 +18,9 @@ return new class extends Migration
             $table->string('status', 32)->default('unpaid');
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
+
+            $table->index('order_id');
+            $table->index('status');
         });
     }
 

@@ -15,6 +15,10 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->decimal('discount_amount', 12, 2);
             $table->timestamps();
+
+            $table->index('coupon_id');
+            $table->index('order_id');
+            $table->index('user_id');
         });
     }
 

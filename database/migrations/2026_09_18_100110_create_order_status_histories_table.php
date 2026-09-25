@@ -16,6 +16,8 @@ return new class extends Migration
             $table->text('comment')->nullable();
             $table->foreignId('changed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+
+            $table->index('order_id');
         });
     }
 

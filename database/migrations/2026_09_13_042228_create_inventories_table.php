@@ -19,7 +19,7 @@ return new class extends Migration
 
             $table->unique(['branch_id', 'product_id', 'variant_id']);
             $table->index(['branch_id', 'product_id']);
-            $table->index('status');
+            $table->index('product_id');
         });
     }
 
