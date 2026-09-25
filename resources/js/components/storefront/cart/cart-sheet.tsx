@@ -1,7 +1,11 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { removeCartItem, syncCartQuantity } from '@/components/storefront/cart/sync-cart-item';
+import {
+    CART_OPEN_EVENT,
+    removeCartItem,
+    syncCartQuantity,
+} from '@/components/storefront/cart/sync-cart-item';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -31,10 +35,27 @@ export function CartSheet({
 
     useEffect(() => {
         const openSheet = () => setOpen(true);
-        window.addEventListener('storefront:cart-open', openSheet);
+        window.addEventListener(CART_OPEN_EVENT, openSheet);
 
-        return () =>
-            window.removeEventListener('storefront:cart-open', openSheet);
+        const stop = router.on('before', (event) => {
+            const visit = event.detail.visit;
+
+            if (
+                visit.async === true ||
+                visit.prefetch === true ||
+                (visit.only?.length ?? 0) > 0 ||
+                (visit.except?.length ?? 0) > 0
+            ) {
+                return;
+            }
+
+            setOpen(false);
+        });
+
+        return () => {
+            window.removeEventListener(CART_OPEN_EVENT, openSheet);
+            stop();
+        };
     }, []);
 
     return (
@@ -155,13 +176,23 @@ export function CartSheet({
                         variant="outline"
                         className="h-11 w-full rounded-none text-sm font-bold"
                     >
-                        <Link href={cart.url()}>View cart</Link>
+                        <Link
+                            href={cart.url()}
+                            onClick={() => setOpen(false)}
+                        >
+                            View cart
+                        </Link>
                     </Button>
                     <Button
                         asChild
                         className="h-11 w-full rounded-none text-sm font-bold tracking-wide"
                     >
-                        <Link href={checkout.url()}>Checkout</Link>
+                        <Link
+                            href={checkout.url()}
+                            onClick={() => setOpen(false)}
+                        >
+                            Checkout
+                        </Link>
                     </Button>
                 </SheetFooter>
             </SheetContent>

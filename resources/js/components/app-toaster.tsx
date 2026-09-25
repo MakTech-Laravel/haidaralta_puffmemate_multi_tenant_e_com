@@ -21,6 +21,7 @@ export function AppToaster({ authUserId }: AppToasterProps) {
             richColors
             closeButton
             expand={true}
+            visibleToasts={4}
             duration={6000}
             className="toaster group z-[9999]"
         />

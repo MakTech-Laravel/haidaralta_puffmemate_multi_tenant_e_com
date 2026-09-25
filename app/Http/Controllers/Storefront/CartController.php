@@ -8,7 +8,6 @@ use App\Http\Requests\Storefront\UpdateCartItemRequest;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Services\Storefront\CartService;
-use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -41,8 +40,6 @@ class CartController extends Controller
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['product' => $exception->getMessage()]);
         }
-
-        Toast::success('Added to cart.');
 
         return back();
     }

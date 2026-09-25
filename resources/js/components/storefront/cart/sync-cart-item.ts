@@ -1,10 +1,31 @@
 import { router } from '@inertiajs/react';
+import { toast } from 'sonner';
 import { destroy, store, update } from '@/routes/cart';
 import {
     formatStorefrontMoney,
     type StorefrontCart,
     type StorefrontCartItem,
 } from '@/types/storefront';
+
+export const CART_OPEN_EVENT = 'storefront:cart-open';
+
+let addedToastSeq = 0;
+
+export function openCartSheet(): void {
+    window.dispatchEvent(new Event(CART_OPEN_EVENT));
+}
+
+function notifyAddedToCart(): void {
+    addedToastSeq += 1;
+
+    toast.success('Product added to cart', {
+        id: `cart-added-${addedToastSeq}`,
+        action: {
+            label: 'View Cart',
+            onClick: () => openCartSheet(),
+        },
+    });
+}
 
 const CART_PROPS = [
     'items',
@@ -108,9 +129,7 @@ export function addToCart(
         { product: productSlug, quantity },
         {
             ...visitOptions,
-            onSuccess: () => {
-                window.dispatchEvent(new Event('storefront:cart-open'));
-            },
+            onSuccess: notifyAddedToCart,
             onFinish,
         },
     );
