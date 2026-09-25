@@ -283,3 +283,14 @@
 @utility animate-navigation-speed {
     animation: navigation-speed 0.5s linear infinite;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-navigation-lane,
+    .animate-navigation-skyline,
+    .animate-navigation-ride,
+    .animate-navigation-wheel,
+    .animate-navigation-smoke,
+    .animate-navigation-speed {
+        animation: none;
+    }
+}
