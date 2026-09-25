@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\ScoutSearchable;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\CustomerAddressType;
 use App\Enums\UserType;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasFcmDeviceTokens;
@@ -43,6 +44,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Branch|null $branch
+ * @property-read CustomerAddress|null $shippingAddress
+ * @property-read CustomerAddress|null $billingAddress
  */
 #[Fillable(['name', 'phone', 'email', 'password', 'user_type', 'branch_id', 'is_active', 'avatar', 'phone_verified_at', 'email_verified_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -65,6 +68,30 @@ class User extends Authenticatable implements PasskeyUser, ScoutSearchable
     public function driverProfile(): HasOne
     {
         return $this->hasOne(DriverProfile::class);
+    }
+
+    /**
+     * @return HasMany<CustomerAddress, $this>
+     */
+    public function customerAddresses(): HasMany
+    {
+        return $this->hasMany(CustomerAddress::class);
+    }
+
+    /**
+     * @return HasOne<CustomerAddress, $this>
+     */
+    public function shippingAddress(): HasOne
+    {
+        return $this->hasOne(CustomerAddress::class)->where('type', CustomerAddressType::Shipping);
+    }
+
+    /**
+     * @return HasOne<CustomerAddress, $this>
+     */
+    public function billingAddress(): HasOne
+    {
+        return $this->hasOne(CustomerAddress::class)->where('type', CustomerAddressType::Billing);
     }
 
     /**

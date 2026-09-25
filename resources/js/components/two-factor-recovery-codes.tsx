@@ -14,41 +14,50 @@ import { regenerateRecoveryCodes } from '@/routes/two-factor';
 
 type Props = {
     recoveryCodesList: string[];
-    fetchRecoveryCodes: () => Promise<void>;
+    fetchRecoveryCodes: () => Promise<boolean | void>;
     errors: string[];
+    autoFetch?: boolean;
 };
 
 export default function TwoFactorRecoveryCodes({
     recoveryCodesList,
     fetchRecoveryCodes,
     errors,
+    autoFetch = true,
 }: Props) {
     const [codesAreVisible, setCodesAreVisible] = useState<boolean>(false);
     const codesSectionRef = useRef<HTMLDivElement | null>(null);
     const canRegenerateCodes = recoveryCodesList.length > 0 && codesAreVisible;
 
     const toggleCodesVisibility = useCallback(async () => {
-        if (!codesAreVisible && !recoveryCodesList.length) {
-            await fetchRecoveryCodes();
+        if (codesAreVisible) {
+            setCodesAreVisible(false);
+
+            return;
         }
 
-        setCodesAreVisible(!codesAreVisible);
+        if (!recoveryCodesList.length) {
+            const fetched = await fetchRecoveryCodes();
 
-        if (!codesAreVisible) {
-            setTimeout(() => {
-                codesSectionRef.current?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest',
-                });
+            if (fetched === false) {
+                return;
+            }
+        }
+
+        setCodesAreVisible(true);
+        setTimeout(() => {
+            codesSectionRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
             });
-        }
+        });
     }, [codesAreVisible, recoveryCodesList.length, fetchRecoveryCodes]);
 
     useEffect(() => {
-        if (!recoveryCodesList.length) {
+        if (autoFetch && !recoveryCodesList.length) {
             void fetchRecoveryCodes();
         }
-    }, [recoveryCodesList.length, fetchRecoveryCodes]);
+    }, [autoFetch, recoveryCodesList.length, fetchRecoveryCodes]);
 
     const RecoveryCodeIconComponent = codesAreVisible ? EyeOff : Eye;
 
@@ -110,7 +119,7 @@ export default function TwoFactorRecoveryCodes({
                             <>
                                 <div
                                     ref={codesSectionRef}
-                                    className="bg-muted grid gap-1 rounded-lg p-4 font-mono text-sm"
+                                    className="bg-muted text-foreground grid gap-1 rounded-lg p-4 font-mono text-sm"
                                     role="list"
                                     aria-label="Recovery codes"
                                 >

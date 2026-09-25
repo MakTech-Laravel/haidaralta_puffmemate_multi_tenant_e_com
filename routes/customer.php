@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['ensure.guard:customer', 'phone.verified'])->group(function () {
     Route::get('dashboard', [CustomerDashboardController::class, 'index'])->name('dashboard');
     Route::get('account', [CustomerAccountController::class, 'index'])->name('customer.account.index');
+    Route::patch('account/profile', [CustomerAccountController::class, 'updateProfile'])
+        ->middleware('precognitive')
+        ->name('customer.account.profile.update');
+    Route::put('account/password', [CustomerAccountController::class, 'updatePassword'])
+        ->name('customer.account.password.update');
+    Route::patch('account/billing-address', [CustomerAccountController::class, 'updateBillingAddress'])
+        ->name('customer.account.billing.update');
     Route::get('orders', [CustomerOrderController::class, 'index'])->name('customer.orders.index');
     Route::get('orders/{order}', [CustomerOrderController::class, 'show'])->name('customer.orders.show');
     Route::get('notifications', [CustomerNotificationController::class, 'index'])

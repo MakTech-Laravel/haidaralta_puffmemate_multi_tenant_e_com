@@ -14,7 +14,7 @@ export type UseTwoFactorAuthReturn = {
     fetchQrCode: () => Promise<void>;
     fetchSetupKey: () => Promise<void>;
     fetchSetupData: () => Promise<void>;
-    fetchRecoveryCodes: () => Promise<void>;
+    fetchRecoveryCodes: () => Promise<boolean>;
 };
 
 export const OTP_MAX_LENGTH = 6;
@@ -73,14 +73,18 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
         }
     }, [submit]);
 
-    const fetchRecoveryCodes = useCallback(async (): Promise<void> => {
+    const fetchRecoveryCodes = useCallback(async (): Promise<boolean> => {
         try {
             setErrors([]);
             const codes = (await submit(recoveryCodes())) as string[];
             setRecoveryCodesList(codes);
+
+            return true;
         } catch {
             setErrors((prev) => [...prev, 'Failed to fetch recovery codes']);
             setRecoveryCodesList([]);
+
+            return false;
         }
     }, [submit]);
 

@@ -2,12 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Enums\AustralianState;
+use App\Enums\CustomerAddressType;
 use App\Enums\DriverAssignmentStatus;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\DriverVehicleType;
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Models\Branch;
+use App\Models\CustomerAddress;
 use App\Models\DriverProfile;
 use App\Models\User;
 use App\Services\Driver\DriverService;
@@ -383,11 +386,44 @@ class UserSeeder extends Seeder
     private function seedCustomers(array $customers): void
     {
         foreach ($customers as $customer) {
-            $this->seedPortalUser(
+            $user = $this->seedPortalUser(
                 phone: $customer['phone'],
                 email: $customer['email'],
                 name: $customer['name'],
                 userType: UserType::CUSTOMER,
+            );
+
+            if ($customer['phone'] !== self::CUSTOMER_PHONE) {
+                continue;
+            }
+
+            CustomerAddress::query()->updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'type' => CustomerAddressType::Shipping,
+                ],
+                [
+                    'address' => '3 Boucaut Street',
+                    'region' => AustralianState::NewSouthWales,
+                    'city' => 'Sydney',
+                    'zip' => '2000',
+                ],
+            );
+
+            CustomerAddress::query()->updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'type' => CustomerAddressType::Billing,
+                ],
+                [
+                    'name' => 'Emma Walker',
+                    'address' => '3 Boucaut Street',
+                    'region' => AustralianState::NewSouthWales,
+                    'city' => 'Sydney',
+                    'zip' => '2000',
+                    'email' => self::CUSTOMER,
+                    'phone' => self::CUSTOMER_PHONE,
+                ],
             );
         }
     }

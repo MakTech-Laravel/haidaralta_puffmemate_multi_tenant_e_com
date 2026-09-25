@@ -1,6 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { useRef } from 'react';
-import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
+import AccountController from '@/actions/App/Http/Controllers/Customer/AccountController';
 import {
     accountButtonClass,
     accountInputClass,
@@ -35,7 +35,7 @@ export function AccountPasswordSection({
             <h2 className={accountSectionTitleClass}>Change Password</h2>
 
             <Form
-                {...SecurityController.update.form()}
+                {...AccountController.updatePassword.form()}
                 options={{ preserveScroll: true }}
                 resetOnError={[
                     'password',
