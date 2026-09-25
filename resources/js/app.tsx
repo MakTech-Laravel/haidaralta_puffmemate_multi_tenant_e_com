@@ -2,6 +2,7 @@ import { createInertiaApp, router } from '@inertiajs/react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { AppToaster } from '@/components/app-toaster';
 import { ApplicationTheme } from '@/components/application-theme';
+import { NavigationOverlay } from '@/components/navigation-overlay';
 import { ErrorBoundaryFallback } from '@/components/error-boundary/error-boundary-fallback';
 import { pushError } from '@/components/error-boundary/error-store';
 import { PwaInstallProvider } from '@/components/pwa/pwa-install-provider';
@@ -82,6 +83,7 @@ void createInertiaApp({
                         <ApplicationTheme
                             themeColor={pageProps.application?.themeColor}
                         />
+                        <NavigationOverlay />
                         {app}
                     </ErrorBoundary>
                     <AppToaster authUserId={authUserId} />
@@ -89,9 +91,7 @@ void createInertiaApp({
             </TooltipProvider>
         );
     },
-    progress: {
-        color: '#4B5563',
-    },
+    progress: false,
 });
 
 // This will set light / dark mode on load...
