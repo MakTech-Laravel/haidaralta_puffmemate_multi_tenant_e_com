@@ -16,3 +16,6 @@ Who is four columns (Customers, Drivers, Branch, Platform), each a product-categ
 
 ## Who cards for Group, comboboxes for Individual
 Who follows send mode: Group shows the original Customer/Driver/Branch/Platform ChoiceCards (multi-select). Individual shows the four category-style comboboxes plus Recipients chips. Switching mode keeps both selections. Do not show cards in Individual or comboboxes in Group.
+
+## Individual people show name and phone
+Dummy Individual people have a phone. Who combobox rows and Recipients chips show Name · +61 …. Command value includes name and phone so search matches either. Group cards stay audience-only.

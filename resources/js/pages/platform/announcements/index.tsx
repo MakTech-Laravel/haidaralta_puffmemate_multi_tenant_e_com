@@ -55,6 +55,7 @@ type ChannelId = 'phone' | 'email' | 'push' | 'system';
 type DummyPerson = {
     id: string;
     name: string;
+    phone: string;
     audience: AudienceId;
 };
 
@@ -101,15 +102,15 @@ const AUDIENCES: {
 ];
 
 const DUMMY_PEOPLE: DummyPerson[] = [
-    { id: 'c1', name: 'Liam Chen', audience: 'customer' },
-    { id: 'c2', name: 'Emma Walsh', audience: 'customer' },
-    { id: 'c3', name: 'Noah Patel', audience: 'customer' },
-    { id: 'd1', name: 'Sofia Alvarez', audience: 'driver' },
-    { id: 'd2', name: 'Jack Nguyen', audience: 'driver' },
-    { id: 'b1', name: 'Maya Brooks', audience: 'branch' },
-    { id: 'b2', name: 'Owen Hart', audience: 'branch' },
-    { id: 'p1', name: 'Priya Shah', audience: 'platform' },
-    { id: 'p2', name: 'Ethan Cole', audience: 'platform' },
+    { id: 'c1', name: 'Liam Chen', phone: '+61 400 000 001', audience: 'customer' },
+    { id: 'c2', name: 'Emma Walsh', phone: '+61 400 000 002', audience: 'customer' },
+    { id: 'c3', name: 'Noah Patel', phone: '+61 400 000 003', audience: 'customer' },
+    { id: 'd1', name: 'Sofia Alvarez', phone: '+61 400 000 004', audience: 'driver' },
+    { id: 'd2', name: 'Jack Nguyen', phone: '+61 400 000 005', audience: 'driver' },
+    { id: 'b1', name: 'Maya Brooks', phone: '+61 400 000 006', audience: 'branch' },
+    { id: 'b2', name: 'Owen Hart', phone: '+61 400 000 007', audience: 'branch' },
+    { id: 'p1', name: 'Priya Shah', phone: '+61 400 000 008', audience: 'platform' },
+    { id: 'p2', name: 'Ethan Cole', phone: '+61 400 000 009', audience: 'platform' },
 ];
 
 const CHANNELS: {
@@ -246,7 +247,7 @@ function AudienceCombobox({
                                     return (
                                         <CommandItem
                                             key={person.id}
-                                            value={person.name}
+                                            value={`${person.name} ${person.phone}`}
                                             onSelect={() =>
                                                 onToggle(person.id)
                                             }
@@ -259,7 +260,14 @@ function AudienceCombobox({
                                                         : 'opacity-0',
                                                 )}
                                             />
-                                            {person.name}
+                                            <span className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
+                                                <span className="truncate">
+                                                    {person.name}
+                                                </span>
+                                                <span className="text-muted-foreground shrink-0 text-xs">
+                                                    {person.phone}
+                                                </span>
+                                            </span>
                                         </CommandItem>
                                     );
                                 })}
@@ -403,7 +411,7 @@ export default function PlatformAnnouncementsIndex() {
 
                         <div className="mt-4 space-y-8">
                             {selectedByAudience.map((group) => (
-                                <div key={group.id} className="space-y-2">
+                                <div key={group.id} className="space-y-2 mb-4">
                                     <p className="text-sm font-medium">
                                         {group.label}
                                     </p>
@@ -415,7 +423,7 @@ export default function PlatformAnnouncementsIndex() {
                                                     variant="secondary"
                                                     className="gap-1 pr-1 font-normal"
                                                 >
-                                                    {person.name}
+                                                    {person.name} · {person.phone}
                                                     <button
                                                         type="button"
                                                         className="hover:bg-background/60 rounded-sm p-0.5"
