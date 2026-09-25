@@ -1,16 +1,19 @@
 ﻿import { router } from '@inertiajs/react';
 import { useSyncExternalStore } from 'react';
 
-const MIN_VISIBLE_MS = 1100;
+/** Same default delay as Inertia's progress bar: visits that settle sooner show nothing. */
+const SHOW_DELAY_MS = 250;
+const MIN_VISIBLE_MS = 300;
 const EXIT_MS = 280;
-const FAILSAFE_MS = 15000;
+const FAILSAFE_MS = 60000;
 
 type OverlayPhase = 'hidden' | 'visible' | 'leaving';
 
 const listeners = new Set<() => void>();
 
 let phase: OverlayPhase = 'hidden';
-let isNavigating = false;
+let activeVisitId: string | null = null;
+let showTimer: number | undefined;
 let hideTimer: number | undefined;
 let failsafeTimer: number | undefined;
 let shownAt = 0;
@@ -45,17 +48,20 @@ function conceal(): void {
 
     window.clearTimeout(hideTimer);
     hideTimer = window.setTimeout(() => {
-        if (!isNavigating) {
+        if (activeVisitId === null) {
             setPhase('hidden');
         }
     }, EXIT_MS);
 }
 
-function startNavigation(): void {
-    isNavigating = true;
+function startNavigation(visitId: string): void {
+    activeVisitId = visitId;
     window.clearTimeout(hideTimer);
+    window.clearTimeout(showTimer);
 
-    if (phase !== 'visible') {
+    if (phase === 'hidden') {
+        showTimer = window.setTimeout(reveal, SHOW_DELAY_MS);
+    } else if (phase === 'leaving') {
         reveal();
     }
 
@@ -65,12 +71,17 @@ function startNavigation(): void {
 
 function endNavigation(): void {
     window.clearTimeout(failsafeTimer);
+    window.clearTimeout(showTimer);
 
-    if (!isNavigating) {
+    if (activeVisitId === null) {
         return;
     }
 
-    isNavigating = false;
+    activeVisitId = null;
+
+    if (phase === 'hidden') {
+        return;
+    }
 
     const remaining = Math.max(0, MIN_VISIBLE_MS - (Date.now() - shownAt));
 
@@ -78,7 +89,14 @@ function endNavigation(): void {
     hideTimer = window.setTimeout(conceal, remaining);
 }
 
+function endNavigationFor(visitId: string | undefined): void {
+    if (visitId !== undefined && visitId === activeVisitId) {
+        endNavigation();
+    }
+}
+
 type VisitFlags = {
+    id: string;
     async?: boolean;
     prefetch?: boolean;
     only?: string[];
@@ -95,30 +113,31 @@ function isPageVisit(visit: VisitFlags): boolean {
 }
 
 if (typeof window !== 'undefined') {
-    // Visits served from the prefetch cache only fire `before` and `navigate`, never `start`/`finish`.
+    // Which terminal events fire depends on the path: a cached visit to the current URL
+    // fires neither `navigate` (history is replaced) nor `finish` (no request is sent),
+    // so the overlay ends on the first event that carries the active visit id.
     router.on('before', (event) => {
-        if (!isPageVisit(event.detail.visit)) {
+        const visit = event.detail.visit as VisitFlags;
+
+        if (!isPageVisit(visit)) {
             return;
         }
 
         queueMicrotask(() => {
             if (!event.defaultPrevented) {
-                startNavigation();
+                startNavigation(visit.id);
             }
         });
     });
 
-    router.on('navigate', () => {
-        if (isNavigating) {
-            endNavigation();
-        }
-    });
-
-    router.on('finish', (event) => {
-        if (isPageVisit(event.detail.visit)) {
-            endNavigation();
-        }
-    });
+    router.on('navigate', (event) => endNavigationFor(event.detail.visitId));
+    router.on('success', (event) => endNavigationFor(event.detail.visitId));
+    router.on('error', (event) => endNavigationFor(event.detail.visitId));
+    router.on('finish', (event) =>
+        endNavigationFor((event.detail.visit as VisitFlags).id),
+    );
+    router.on('httpException', () => endNavigation());
+    router.on('networkError', () => endNavigation());
 }
 
 function subscribe(listener: () => void): () => void {
