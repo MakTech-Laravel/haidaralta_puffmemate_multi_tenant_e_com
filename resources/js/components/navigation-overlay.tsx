@@ -1,19 +1,23 @@
 ﻿import { router } from '@inertiajs/react';
 import { useSyncExternalStore } from 'react';
+import { cn } from '@/lib/utils';
 
-const MIN_VISIBLE_MS = 1100;
-const EXIT_MS = 280;
-const FAILSAFE_MS = 15000;
+/** Same default delay as Inertia's progress bar: visits that settle sooner show nothing. */
+const SHOW_DELAY_MS = 250;
+const FAILSAFE_MS = 60000;
+/** Fallback only if `transitionend` does not fire. Visual fade is CSS `duration-300`. */
+const FADE_FALLBACK_MS = 350;
 
-type OverlayPhase = 'hidden' | 'visible' | 'leaving';
+type OverlayPhase = 'hidden' | 'entering' | 'visible' | 'leaving';
 
 const listeners = new Set<() => void>();
 
 let phase: OverlayPhase = 'hidden';
-let isNavigating = false;
+let activeVisitId: string | null = null;
+let showTimer: number | undefined;
 let hideTimer: number | undefined;
 let failsafeTimer: number | undefined;
-let shownAt = 0;
+let enterFrame: number | undefined;
 
 function emit(): void {
     listeners.forEach((listener) => listener());
@@ -28,9 +32,42 @@ function setPhase(next: OverlayPhase): void {
     emit();
 }
 
+function prefersReducedMotion(): boolean {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function cancelEnterFrame(): void {
+    if (enterFrame !== undefined) {
+        window.cancelAnimationFrame(enterFrame);
+        enterFrame = undefined;
+    }
+}
+
 function reveal(): void {
     window.clearTimeout(hideTimer);
-    shownAt = Date.now();
+    cancelEnterFrame();
+
+    if (prefersReducedMotion()) {
+        setPhase('visible');
+
+        return;
+    }
+
+    if (phase === 'hidden') {
+        setPhase('entering');
+        enterFrame = window.requestAnimationFrame(() => {
+            enterFrame = window.requestAnimationFrame(() => {
+                enterFrame = undefined;
+
+                if (phase === 'entering') {
+                    setPhase('visible');
+                }
+            });
+        });
+
+        return;
+    }
+
     setPhase('visible');
 }
 
@@ -39,23 +76,42 @@ function conceal(): void {
         return;
     }
 
-    if (phase === 'visible') {
-        setPhase('leaving');
+    cancelEnterFrame();
+    window.clearTimeout(hideTimer);
+
+    if (prefersReducedMotion() || phase === 'entering') {
+        setPhase('hidden');
+
+        return;
     }
 
-    window.clearTimeout(hideTimer);
+    setPhase('leaving');
     hideTimer = window.setTimeout(() => {
-        if (!isNavigating) {
+        if (phase === 'leaving' && activeVisitId === null) {
             setPhase('hidden');
         }
-    }, EXIT_MS);
+    }, FADE_FALLBACK_MS);
 }
 
-function startNavigation(): void {
-    isNavigating = true;
-    window.clearTimeout(hideTimer);
+function completeFade(propertyName: string): void {
+    if (propertyName !== 'opacity') {
+        return;
+    }
 
-    if (phase !== 'visible') {
+    if (phase === 'leaving' && activeVisitId === null) {
+        window.clearTimeout(hideTimer);
+        setPhase('hidden');
+    }
+}
+
+function startNavigation(visitId: string): void {
+    activeVisitId = visitId;
+    window.clearTimeout(hideTimer);
+    window.clearTimeout(showTimer);
+
+    if (phase === 'hidden') {
+        showTimer = window.setTimeout(reveal, SHOW_DELAY_MS);
+    } else {
         reveal();
     }
 
@@ -65,20 +121,29 @@ function startNavigation(): void {
 
 function endNavigation(): void {
     window.clearTimeout(failsafeTimer);
+    window.clearTimeout(showTimer);
 
-    if (!isNavigating) {
+    if (activeVisitId === null) {
         return;
     }
 
-    isNavigating = false;
+    activeVisitId = null;
 
-    const remaining = Math.max(0, MIN_VISIBLE_MS - (Date.now() - shownAt));
+    if (phase === 'hidden') {
+        return;
+    }
 
-    window.clearTimeout(hideTimer);
-    hideTimer = window.setTimeout(conceal, remaining);
+    conceal();
+}
+
+function endNavigationFor(visitId: string | undefined): void {
+    if (visitId !== undefined && visitId === activeVisitId) {
+        endNavigation();
+    }
 }
 
 type VisitFlags = {
+    id: string;
     async?: boolean;
     prefetch?: boolean;
     only?: string[];
@@ -95,30 +160,31 @@ function isPageVisit(visit: VisitFlags): boolean {
 }
 
 if (typeof window !== 'undefined') {
-    // Visits served from the prefetch cache only fire `before` and `navigate`, never `start`/`finish`.
+    // Which terminal events fire depends on the path: a cached visit to the current URL
+    // fires neither `navigate` (history is replaced) nor `finish` (no request is sent),
+    // so the overlay ends on the first event that carries the active visit id.
     router.on('before', (event) => {
-        if (!isPageVisit(event.detail.visit)) {
+        const visit = event.detail.visit as VisitFlags;
+
+        if (!isPageVisit(visit)) {
             return;
         }
 
         queueMicrotask(() => {
             if (!event.defaultPrevented) {
-                startNavigation();
+                startNavigation(visit.id);
             }
         });
     });
 
-    router.on('navigate', () => {
-        if (isNavigating) {
-            endNavigation();
-        }
-    });
-
-    router.on('finish', (event) => {
-        if (isPageVisit(event.detail.visit)) {
-            endNavigation();
-        }
-    });
+    router.on('navigate', (event) => endNavigationFor(event.detail.visitId));
+    router.on('success', (event) => endNavigationFor(event.detail.visitId));
+    router.on('error', (event) => endNavigationFor(event.detail.visitId));
+    router.on('finish', (event) =>
+        endNavigationFor((event.detail.visit as VisitFlags).id),
+    );
+    router.on('httpException', () => endNavigation());
+    router.on('networkError', () => endNavigation());
 }
 
 function subscribe(listener: () => void): () => void {
@@ -465,12 +531,17 @@ export function NavigationOverlay() {
         <div
             role="status"
             aria-live="polite"
-            aria-busy="true"
-            className={
-                current === 'leaving'
-                    ? 'pointer-events-none fixed inset-0 z-[200] flex items-center justify-center bg-white/72 opacity-0 backdrop-blur-md transition-opacity duration-300'
-                    : 'animate-in fade-in fixed inset-0 z-[200] flex items-center justify-center bg-white/72 opacity-100 backdrop-blur-md transition-opacity duration-300'
-            }
+            aria-busy={current !== 'leaving'}
+            className={cn(
+                'fixed inset-0 z-[200] flex items-center justify-center bg-white/72 backdrop-blur-md transition-opacity duration-300 ease-out motion-reduce:transition-none',
+                current === 'visible' ? 'opacity-100' : 'opacity-0',
+                current === 'leaving' ? 'pointer-events-none' : 'pointer-events-auto',
+            )}
+            onTransitionEnd={(event) => {
+                if (event.target === event.currentTarget) {
+                    completeFade(event.propertyName);
+                }
+            }}
         >
             <span className="sr-only">Delivering the next page</span>
             <div className="w-[26rem] max-w-[90vw]">

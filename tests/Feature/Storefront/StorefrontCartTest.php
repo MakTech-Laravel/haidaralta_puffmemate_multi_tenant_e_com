@@ -80,6 +80,18 @@ test('guest cart survives refresh and a rejected checkout', function () {
             ->has('items', 1));
 });
 
+test('adding to cart does not flash a server toast', function () {
+    $product = storefrontCartProduct(['slug' => 'no-flash-cart-item']);
+
+    $this->post(route('cart.store'), [
+        'product' => $product->slug,
+        'quantity' => 1,
+    ])->assertRedirect();
+
+    expect(session('inertia.flash_data.toast'))->toBeNull()
+        ->and(CartItem::query()->sum('quantity'))->toBe(1);
+});
+
 test('guest checkout redirects to login', function () {
     $this->get(route('checkout'))->assertRedirect(route('login'));
 });

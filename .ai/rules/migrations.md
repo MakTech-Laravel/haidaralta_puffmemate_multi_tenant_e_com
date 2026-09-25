@@ -45,3 +45,6 @@ Pre-handover: carts (user_id, session_id, status) and cart_items (cart_id, produ
 
 ## PostgreSQL catalog indexes
 PostgreSQL products indexes: partial indexes on active rows (name, created_at, selling_price), GIN jsonb_path_ops on tags, and pg_trgm GIN on name/brand/sku for LIKE fallback. SQLite tests get the same partial indexes with status = 1 and skip GIN/trgm. MySQL keeps composite btrees. Do not index effective price: the discount window uses the current date, which PostgreSQL rejects in an index expression.
+
+## GIN tags index needs jsonb
+Laravel $table->json() creates PostgreSQL json, and jsonb_path_ops rejects json. On pgsql, alter products.tags to jsonb (using tags::jsonb) before create index products_tags_gin using gin (tags jsonb_path_ops). pgvector/pg18 is unrelated.

@@ -59,6 +59,7 @@ return new class extends Migration
         DB::statement("create index products_active_selling_price_index on products (selling_price) where {$active}");
 
         if ($driver === 'pgsql') {
+            DB::statement('alter table products alter column tags type jsonb using tags::jsonb');
             DB::statement('create index products_tags_gin on products using gin (tags jsonb_path_ops)');
             DB::statement('create extension if not exists pg_trgm');
             DB::statement('create index products_name_trgm on products using gin (name gin_trgm_ops)');
