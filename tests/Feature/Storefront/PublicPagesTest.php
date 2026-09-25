@@ -288,10 +288,83 @@ test('storefront category page renders products for a valid slug', function () {
             ->where('products', fn ($products): bool => collect($products)->contains(
                 fn ($product): bool => $product['id'] === 'marlboro-gold-soft-pack-20s',
             ))
-            ->has('branches')
+            ->missing('branches')
+            ->missing('filterOptions')
             ->where('filters.search', '')
-            ->where('filters.branchId', null)
+            ->missing('filters.branchId')
             ->where('filters.sort', null));
+});
+
+test('storefront category page searches within the category via scout', function () {
+    $this->get(route('shop.category', [
+        'category' => 'cigarettes',
+        'search' => 'Marlboro',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/category')
+            ->where('filters.search', 'Marlboro')
+            ->where('products.0.id', 'marlboro-gold-soft-pack-20s')
+            ->where('products', fn ($products): bool => collect($products)->every(
+                fn ($product): bool => str_contains(strtolower((string) $product['name']), 'marlboro')
+                    || str_contains(strtolower((string) $product['id']), 'marlboro'),
+            )));
+});
+
+test('storefront category page sorts by price without a branch select', function () {
+    $this->get(route('shop.category', [
+        'category' => 'cigarettes',
+        'sort' => 'price_asc',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/category')
+            ->missing('branches')
+            ->where('filters.sort', 'price_asc')
+            ->has('products')
+            ->where('products', function ($products): bool {
+                $prices = collect($products)
+                    ->map(fn ($product): float => (float) str_replace(['$', ','], '', (string) $product['price']))
+                    ->all();
+
+                $sorted = $prices;
+                sort($sorted);
+
+                return $prices === $sorted;
+            }));
+});
+
+test('storefront category search does not leak products from other categories', function () {
+    $this->get(route('shop.category', [
+        'category' => 'cigarettes',
+        'search' => 'IQOS',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/category')
+            ->where('filters.search', 'IQOS')
+            ->has('products', 0));
+});
+
+test('storefront category page includes products from child categories', function () {
+    $child = Category::query()->where('slug', 'disposables')->firstOrFail();
+
+    $childOnly = Product::factory()->create([
+        'name' => 'Child Only Disposable',
+        'slug' => 'child-only-disposable',
+        'status' => true,
+        'selling_price' => 19,
+        'regular_price' => 22,
+    ]);
+    $childOnly->categories()->sync([$child->id]);
+
+    $this->get(route('shop.category', ['category' => 'vapes']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/category')
+            ->where('products', fn ($products): bool => collect($products)->contains(
+                fn ($product): bool => $product['id'] === 'child-only-disposable',
+            )));
 });
 
 test('storefront category page returns not found for unknown slug', function () {
@@ -392,15 +465,12 @@ test('storefront similar products prefer category brand and best-selling tags', 
 });
 
 test('storefront remembers selected branch in session from query string', function () {
-    $this->get(route('shop.category', ['category' => 'cigarettes', 'branch' => BranchSeeder::SYDNEY_CBD]))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('filters.branchId', BranchSeeder::SYDNEY_CBD));
+    $this->get(route('products.show', [
+        'product' => 'marlboro-gold-soft-pack-20s',
+        'branch' => BranchSeeder::SYDNEY_CBD,
+    ]))->assertOk();
 
-    $this->get(route('shop.category', ['category' => 'cigarettes']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('filters.branchId', BranchSeeder::SYDNEY_CBD));
+    expect(session(StorefrontCatalog::BRANCH_SESSION_KEY))->toBe(BranchSeeder::SYDNEY_CBD);
 });
 
 test('storefront cart page renders', function () {
@@ -408,23 +478,14 @@ test('storefront cart page renders', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/cart')
-            ->has('groups')
-            ->has('summary')
-            ->has('branches')
-            ->where('stockReserved', true));
+            ->has('items')
+            ->has('itemCount')
+            ->missing('groups')
+            ->missing('branches'));
 });
 
-test('storefront checkout page renders', function () {
-    $this->get(route('checkout'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('storefront/checkout')
-            ->has('items')
-            ->has('summary')
-            ->has('deliveryMethods')
-            ->has('paymentMethods')
-            ->has('timeSlots')
-            ->where('itemCount', 2));
+test('storefront checkout page requires login', function () {
+    $this->get(route('checkout'))->assertRedirect(route('login'));
 });
 
 test('nav categories respect show_in_nav and nav_sort order', function () {
