@@ -48,7 +48,7 @@ export function UserMenuContent({ user }: Props) {
                         Profile
                     </Link>
                 </DropdownMenuItem>
-                {portal !== 'branch' ? (
+                {portal !== 'branch' && portal !== 'platform' ? (
                     <DropdownMenuItem asChild>
                         <Link
                             className="block w-full cursor-pointer"

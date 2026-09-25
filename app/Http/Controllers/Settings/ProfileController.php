@@ -31,7 +31,7 @@ class ProfileController extends Controller
         $props = [
             'mustVerifyPhone' => $user?->phone_verified_at === null,
             'status' => $request->session()->get('status'),
-            'canDeleteAccount' => $user instanceof User && $user->user_type !== UserType::BRANCH,
+            'canDeleteAccount' => $user instanceof User && ! $user->user_type->usesMergedAccountProfile(),
             'profile' => $user instanceof User ? [
                 'name' => $user->name,
                 'phone' => $user->phone,
@@ -41,7 +41,7 @@ class ProfileController extends Controller
             ] : null,
         ];
 
-        if ($user instanceof User && $user->user_type === UserType::BRANCH) {
+        if ($user instanceof User && $user->user_type->usesMergedAccountProfile()) {
             $props = array_merge($props, SecurityController::pageProps($request));
         }
 
@@ -90,7 +90,7 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        abort_if($user instanceof User && $user->user_type === UserType::BRANCH, 403);
+        abort_if($user instanceof User && $user->user_type->usesMergedAccountProfile(), 403);
 
         $guard = Auth::getDefaultDriver();
 

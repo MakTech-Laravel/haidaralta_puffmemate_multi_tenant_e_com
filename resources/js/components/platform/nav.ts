@@ -40,6 +40,7 @@ import {
     Truck,
     UserCog,
     UserPlus,
+    UserRound,
     Users,
     Warehouse,
 } from 'lucide-react';
@@ -50,6 +51,7 @@ import {
     navSoon,
 } from '@/components/navigation/nav-builders';
 import type { NavSection } from '@/components/navigation/types';
+import { edit as profileEdit } from '@/routes/profile';
 
 export function buildPlatformNav(
     showBulkImport = false,
@@ -63,6 +65,11 @@ export function buildPlatformNav(
                 href: '/platform/dashboard',
                 icon: LayoutGrid,
                 permissions: ['view-dashboard'],
+            }),
+            navLink({
+                title: 'Profile',
+                href: profileEdit.url(),
+                icon: UserRound,
             }),
             navGroup({
                 title: 'Administrator',

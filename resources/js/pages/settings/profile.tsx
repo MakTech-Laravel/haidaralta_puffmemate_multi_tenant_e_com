@@ -145,15 +145,15 @@ export default function Profile({
         });
     };
 
-    const isBranch = portal === 'branch';
+    const isStaffPortal = portal === 'branch' || portal === 'platform';
     const page = (
         <>
-            <Head title={isBranch ? 'Profile' : 'Profile settings'} />
+            <Head title={isStaffPortal ? 'Profile' : 'Profile settings'} />
 
-            {!isBranch && <h1 className="sr-only">Profile settings</h1>}
+            {!isStaffPortal && <h1 className="sr-only">Profile settings</h1>}
 
             <section className="border-border/80 bg-card space-y-6 rounded-2xl border p-5 shadow-sm sm:p-6">
-                {!isBranch && (
+                {!isStaffPortal && (
                     <Heading
                         variant="small"
                         title="Profile"
@@ -164,14 +164,14 @@ export default function Profile({
                 <form onSubmit={submit} className="space-y-6">
                     <div
                         className={
-                            isBranch
+                            isStaffPortal
                                 ? 'block space-y-4'
                                 : 'flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-4'
                         }
                     >
                         <div
                             className={
-                                isBranch
+                                isStaffPortal
                                     ? 'block w-28 space-y-1.5'
                                     : 'flex w-40 shrink-0 flex-col gap-1.5 sm:w-44'
                             }
@@ -179,7 +179,7 @@ export default function Profile({
                             <Label>Avatar</Label>
                             <FileUpload
                                 variant="avatar"
-                                avatarSize={isBranch ? 112 : 176}
+                                avatarSize={isStaffPortal ? 112 : 176}
                                 value={data.avatar}
                                 onChange={(file) => {
                                     const next = Array.isArray(file)
@@ -221,7 +221,7 @@ export default function Profile({
 
                         <div
                             className={
-                                isBranch
+                                isStaffPortal
                                     ? 'block space-y-3'
                                     : 'flex min-w-0 flex-1 flex-col gap-3'
                             }
@@ -326,7 +326,7 @@ export default function Profile({
                 </form>
             </section>
 
-            {isBranch && passwordRules ? (
+            {isStaffPortal && passwordRules ? (
                 <>
                     <ChangePasswordCard
                         title="Change Password"
@@ -350,7 +350,7 @@ export default function Profile({
         </>
     );
 
-    if (isBranch) {
+    if (isStaffPortal) {
         return (
             <BranchAccountPage
                 title="Profile"

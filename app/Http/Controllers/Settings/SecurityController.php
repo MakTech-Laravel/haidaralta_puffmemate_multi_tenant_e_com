@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Settings;
 
-use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\PasswordUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
@@ -59,7 +58,7 @@ class SecurityController extends Controller
     {
         $user = $request->user();
 
-        if ($user instanceof User && $user->user_type === UserType::BRANCH) {
+        if ($user instanceof User && $user->user_type->usesMergedAccountProfile()) {
             return redirect()->route('profile.edit');
         }
 

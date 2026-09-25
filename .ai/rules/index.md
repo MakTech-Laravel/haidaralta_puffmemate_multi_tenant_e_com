@@ -31,6 +31,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/components-stock.md |
 | resources/js/components/storefront/shop-filters-sidebar.tsx, resources/js/components/storefront/product-card.tsx | .ai/rules/components-storefront.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
+| resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php,resources/js/components/{platform,branch}/nav.ts | .ai/rules/componentsplatformbranch.md |
 | config/*.php, config/scout.php | .ai/rules/config.md |
 | app/Models/Branch.php,app/Http/Controllers/Branch/** | .ai/rules/controllers-branch.md |
 | app/Http/Controllers/Customer/** | .ai/rules/controllers-customer.md |

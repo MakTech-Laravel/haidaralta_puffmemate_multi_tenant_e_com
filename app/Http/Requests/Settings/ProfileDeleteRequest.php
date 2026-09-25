@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Settings;
 
 use App\Concerns\PasswordValidationRules;
-use App\Enums\UserType;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -16,7 +15,7 @@ class ProfileDeleteRequest extends FormRequest
     {
         $user = $this->user();
 
-        return ! ($user instanceof User && $user->user_type === UserType::BRANCH);
+        return ! ($user instanceof User && $user->user_type->usesMergedAccountProfile());
     }
 
     /**

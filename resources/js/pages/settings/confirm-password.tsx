@@ -13,7 +13,6 @@ import {
 } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyConfirmationController';
 import { store } from '@/routes/password/confirm';
 import { edit as editProfile } from '@/routes/profile';
-import { edit as editSecurity } from '@/routes/security';
 
 function confirmBreadcrumbs(
     portal: string | null,
@@ -22,7 +21,7 @@ function confirmBreadcrumbs(
     if (portal === 'platform') {
         return [
             { title: 'Dashboard', href: '/platform/dashboard' },
-            { title: 'Security', href: editSecurity() },
+            { title: 'Profile', href: editProfile() },
             { title: 'Confirm password', href: '#' },
         ];
     }
@@ -50,15 +49,15 @@ export default function ConfirmPassword() {
         ),
     });
 
-    const isBranch = portal === 'branch';
+    const isStaffPortal = portal === 'branch' || portal === 'platform';
     const page = (
         <>
             <Head title="Confirm password" />
 
-            {!isBranch && <h1 className="sr-only">Confirm password</h1>}
+            {!isStaffPortal && <h1 className="sr-only">Confirm password</h1>}
 
             <section className="border-border/80 bg-card w-full max-w-lg space-y-6 rounded-2xl border p-5 shadow-sm sm:p-6">
-                {!isBranch && (
+                {!isStaffPortal && (
                     <Heading
                         variant="small"
                         title="Confirm password"
@@ -112,7 +111,7 @@ export default function ConfirmPassword() {
         </>
     );
 
-    if (isBranch) {
+    if (isStaffPortal) {
         return (
             <BranchAccountPage
                 title="Confirm password"

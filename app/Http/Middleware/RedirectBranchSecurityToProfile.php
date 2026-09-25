@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Enums\UserType;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
@@ -17,7 +16,7 @@ class RedirectBranchSecurityToProfile
     {
         $user = $request->user();
 
-        if ($user instanceof User && $user->user_type === UserType::BRANCH) {
+        if ($user instanceof User && $user->user_type->usesMergedAccountProfile()) {
             return redirect()->route('profile.edit');
         }
 

@@ -18,7 +18,7 @@ export default function SettingsPortalLayout({
 
     if (portal === 'platform') {
         return (
-            <PlatformLayout breadcrumbs={breadcrumbs}>{inner}</PlatformLayout>
+            <PlatformLayout breadcrumbs={breadcrumbs}>{children}</PlatformLayout>
         );
     }
 

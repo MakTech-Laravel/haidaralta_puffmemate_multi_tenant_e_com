@@ -21,6 +21,8 @@ test('platform users can view the profile settings page in the platform portal',
         ->assertInertia(fn (Assert $page) => $page
             ->component('settings/profile')
             ->where('portal', 'platform')
+            ->where('canDeleteAccount', false)
+            ->has('passwordRules')
         );
 });
 

@@ -264,3 +264,65 @@ test('branch user can update their password from profile', function () {
 
     expect(Hash::check('new-password', $user->refresh()->password))->toBeTrue();
 });
+
+test('platform profile page does not allow account deletion', function () {
+    $user = User::factory()->create([
+        'user_type' => UserType::PLATFORM,
+    ]);
+
+    $this->actingAs($user, 'platform')
+        ->get(route('profile.edit'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('settings/profile')
+            ->where('canDeleteAccount', false)
+            ->where('profile.name', $user->name)
+            ->where('profile.phone', $user->phone)
+            ->has('passwordRules')
+            ->has('canManageTwoFactor')
+            ->has('canManagePasskeys')
+        );
+});
+
+test('platform security page redirects to profile without password confirmation', function () {
+    $user = User::factory()->create([
+        'user_type' => UserType::PLATFORM,
+    ]);
+
+    $this->actingAs($user, 'platform')
+        ->get(route('security.edit'))
+        ->assertRedirect(route('profile.edit'));
+});
+
+test('platform user can update their password from profile', function () {
+    $user = User::factory()->create([
+        'user_type' => UserType::PLATFORM,
+    ]);
+
+    $this->actingAs($user, 'platform')
+        ->from(route('profile.edit'))
+        ->put(route('user-password.update'), [
+            'current_password' => 'password',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('profile.edit'));
+
+    expect(Hash::check('new-password', $user->refresh()->password))->toBeTrue();
+});
+
+test('platform user cannot delete their account', function () {
+    $user = User::factory()->create([
+        'user_type' => UserType::PLATFORM,
+    ]);
+
+    $this->actingAs($user, 'platform')
+        ->delete(route('profile.destroy'), [
+            'password' => 'password',
+        ])
+        ->assertForbidden();
+
+    $this->assertAuthenticatedAs($user, 'platform');
+    expect($user->fresh())->not->toBeNull();
+});
