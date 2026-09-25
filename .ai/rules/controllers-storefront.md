@@ -1,6 +1,7 @@
 ---
 paths:
   - app/Http/Controllers/Storefront/HomeController.php
+  - app/Http/Controllers/Storefront/CategoryController.php
 ---
 
 # Controllers Storefront
@@ -10,3 +11,6 @@ Homepage featured category cards use StorefrontCatalog::featuredCategories() (DB
 
 ## Home product rails are DB-tagged and capped
 Homepage bestSellingProducts / newArrivalProducts use StorefrontCatalog::productsWithTag(ProductTag::BestSelling|NewArrival, selectedBranch(), config('catalog.home_products_max')). Each rail is active products with that tag only, limited by home_products_max (default 8). Do not wire them through DemoCatalog.
+
+## Category shop uses StorefrontShopQuery
+/shop/{category} has no branch select. Search, sort, and listing go through StorefrontShopQuery (Scout/Meilisearch then Eloquent fallback), locked to that category plus one-level children. Sort options are name_asc, name_desc, newest, price_asc, price_desc.

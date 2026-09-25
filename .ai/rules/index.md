@@ -16,6 +16,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/**/staff/**,resources/js/pages/platform/branch-staff/** | .ai/rules/branch-staff.md |
 | app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php, app/Models/Driver*.php, app/Models/User.php, app/Models/Branch.php, app/Models/Category.php, app/Models/Product.php | .ai/rules/branch.md |
 | resources/js/pages/platform/branches/index.tsx, resources/js/pages/platform/branches/show.tsx | .ai/rules/branches.md |
+| resources/js/components/storefront/cart/** | .ai/rules/cart.md |
 | app/{Models,Services/Inventory,Services/Catalog,DataTables,Support}/** | .ai/rules/catalog-data-tables-support.md |
 | resources/js/pages/**/catalog/products/index.tsx, resources/js/pages/**/catalog/products/{index,show}.tsx | .ai/rules/catalog-products.md |
 | resources/js/components/catalog/** | .ai/rules/catalog.md |
@@ -28,7 +29,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx}, resources/js/components/driver/** | .ai/rules/components-driver.md |
 | resources/js/app.tsx, resources/js/components/pwa/** | .ai/rules/components-pwa.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/components-stock.md |
-| resources/js/components/storefront/shop-filters-sidebar.tsx | .ai/rules/components-storefront.md |
+| resources/js/components/storefront/shop-filters-sidebar.tsx, resources/js/components/storefront/product-card.tsx | .ai/rules/components-storefront.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
 | config/*.php, config/scout.php | .ai/rules/config.md |
 | app/Models/Branch.php,app/Http/Controllers/Branch/** | .ai/rules/controllers-branch.md |
@@ -37,7 +38,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/Workforce/**,app/Http/Controllers/{Platform,Branch}/** | .ai/rules/controllers-platform-branch.md |
 | app/Http/Controllers/Platform/AdminController.php, app/Http/Controllers/Platform/BranchStaffController.php, app/Http/Controllers/Platform/*Shift*.php | .ai/rules/controllers-platform.md |
 | resources/js/pages/settings/profile.tsx,app/Http/Controllers/Settings/ProfileController.php | .ai/rules/controllers-settings.md |
-| app/Http/Controllers/Storefront/HomeController.php | .ai/rules/controllers-storefront.md |
+| app/Http/Controllers/Storefront/HomeController.php, app/Http/Controllers/Storefront/CategoryController.php | .ai/rules/controllers-storefront.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
 | app/Services/Conversation/**,resources/js/components/conversation/** | .ai/rules/conversation.md |
 | {app/Support/ConversationInbox.php,app/Http/Controllers/*/ConversationController.php,resources/js/components/conversation/**,resources/js/pages/*/conversations/**} | .ai/rules/conversations.md |
@@ -87,6 +88,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |
 | resources/js/pages/platform/branch-staff/** | .ai/rules/pages-platform-branch-staff.md |
 | resources/js/layouts/settings/**,resources/js/pages/settings/**,routes/settings.php | .ai/rules/pages-settings.md |
+| resources/js/pages/storefront/category.tsx | .ai/rules/pages-storefront.md |
 | resources/js/components/admin/shift-*.{ts,tsx},resources/js/pages/{platform,branch}/shifts/assign.tsx | .ai/rules/pagesplatformbranch-shifts.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/platform/branch-staff/**, resources/js/components/admin/transfer-employee-sheet.tsx,resources/js/pages/platform/branch-staff/** | .ai/rules/platform-branch-staff.md |

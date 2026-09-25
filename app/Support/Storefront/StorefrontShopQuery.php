@@ -48,7 +48,7 @@ class StorefrontShopQuery
      *     }
      * }
      */
-    public function fromRequest(Request $request): array
+    public function fromRequest(Request $request, ?string $lockedCategorySlug = null): array
     {
         $search = $request->string('search')->trim()->toString();
         $sort = $request->string('sort')->trim()->toString();
@@ -57,7 +57,9 @@ class StorefrontShopQuery
         $minPrice = $this->nullableFloat($request->input('min_price'));
         $maxPrice = $this->nullableFloat($request->input('max_price'));
 
-        $categorySlugs = $this->stringList($request->input('categories'));
+        $categorySlugs = $lockedCategorySlug !== null && $lockedCategorySlug !== ''
+            ? [$lockedCategorySlug]
+            : $this->stringList($request->input('categories'));
         $tagValues = array_values(array_intersect(
             $this->stringList($request->input('tags')),
             ProductTag::values(),
@@ -70,6 +72,7 @@ class StorefrontShopQuery
             maxPrice: $maxPrice,
             categorySlugs: $categorySlugs,
             tags: $tagValues,
+            includeDescendantCategories: $lockedCategorySlug !== null && $lockedCategorySlug !== '',
         );
 
         return [
@@ -99,8 +102,9 @@ class StorefrontShopQuery
         array $categorySlugs = [],
         array $tags = [],
         int $limit = self::DEFAULT_LIMIT,
+        bool $includeDescendantCategories = false,
     ): array {
-        $categoryIds = $this->resolveCategoryIds($categorySlugs);
+        $categoryIds = $this->resolveCategoryIds($categorySlugs, $includeDescendantCategories);
         $sort = in_array((string) $sort, self::SORTS, true) ? $sort : 'name_asc';
 
         $scoutIds = $this->searchIdsViaScout($search, $limit * 2);
@@ -224,19 +228,32 @@ class StorefrontShopQuery
      * @param  list<string>  $slugs
      * @return list<int>
      */
-    private function resolveCategoryIds(array $slugs): array
+    private function resolveCategoryIds(array $slugs, bool $includeDescendants = false): array
     {
         if ($slugs === []) {
             return [];
         }
 
-        return Category::query()
+        $ids = Category::query()
             ->where('status', true)
             ->whereIn('slug', $slugs)
             ->pluck('id')
             ->map(fn ($id): int => (int) $id)
             ->values()
             ->all();
+
+        if (! $includeDescendants || $ids === []) {
+            return $ids;
+        }
+
+        $childIds = Category::query()
+            ->where('status', true)
+            ->whereIn('parent_id', $ids)
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+
+        return array_values(array_unique([...$ids, ...$childIds]));
     }
 
     private function matchesPrice(Product $product, ?float $minPrice, ?float $maxPrice): bool

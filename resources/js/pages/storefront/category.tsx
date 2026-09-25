@@ -1,13 +1,12 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FeaturesBar } from '@/components/storefront/features-bar';
 import { ProductCard } from '@/components/storefront/product-card';
-import { StorefrontBranchSelect } from '@/components/storefront/storefront-branch-select';
 import { StorefrontSearchBar } from '@/components/storefront/storefront-search-bar';
 import { StorefrontSortSelect } from '@/components/storefront/storefront-sort-select';
 import { storefrontFeatures } from '@/lib/storefront-features';
-import type { StorefrontProduct } from '@/types/storefront';
 import { category as shopCategory } from '@/routes/shop';
+import type { StorefrontProduct } from '@/types/storefront';
 
 type CategoryPageProps = {
     category: {
@@ -16,41 +15,55 @@ type CategoryPageProps = {
         slogan?: string | null;
     };
     products: StorefrontProduct[];
-    branches: Array<{ id: string; name: string }>;
     filters: {
         search: string;
-        branchId: string | null;
         sort: string | null;
     };
+};
+
+type VisitOptions = {
+    search?: string;
+    sort?: string | null;
 };
 
 export default function StorefrontCategory({
     category,
     products,
-    branches,
     filters,
 }: CategoryPageProps) {
     const [search, setSearch] = useState(filters.search);
+    const debounceRef = useRef<number>(undefined);
 
-    const visit = (next: {
-        search?: string;
-        branchId?: string | null;
-        sort?: string | null;
-    }) => {
+    useEffect(() => {
+        window.clearTimeout(debounceRef.current);
+        setSearch(filters.search);
+    }, [filters.search, category.slug]);
+
+    const visit = (next: VisitOptions = {}) => {
         const nextSearch = next.search ?? search;
-        const nextBranch =
-            next.branchId !== undefined ? next.branchId : filters.branchId;
         const nextSort = next.sort !== undefined ? next.sort : filters.sort;
 
+        router.cancelAll();
         router.get(
             shopCategory.url(category.slug),
             {
                 ...(nextSearch ? { search: nextSearch } : {}),
-                ...(nextBranch ? { branch: nextBranch } : {}),
                 ...(nextSort ? { sort: nextSort } : {}),
             },
-            { preserveState: true, replace: true },
+            {
+                preserveState: true,
+                replace: true,
+                only: ['products', 'filters'],
+            },
         );
+    };
+
+    const updateSearch = (next: string) => {
+        setSearch(next);
+        window.clearTimeout(debounceRef.current);
+        debounceRef.current = window.setTimeout(() => {
+            visit({ search: next });
+        }, 300);
     };
 
     return (
@@ -58,31 +71,52 @@ export default function StorefrontCategory({
             <Head title={category.name} />
 
             <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
-                <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-stretch">
+                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <h1 className="text-foreground text-2xl font-medium tracking-tight uppercase sm:text-[40px]">
+                            {category.name}
+                        </h1>
+                        {category.slogan ? (
+                            <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
+                                {category.slogan}
+                            </p>
+                        ) : null}
+                    </div>
+                </div>
+
+                <div className="mb-8 flex w-full flex-col gap-3 lg:flex-row lg:items-center">
                     <StorefrontSearchBar
                         value={search}
-                        onChange={setSearch}
-                        onSubmit={() => visit({ search })}
-                        className="lg:min-w-0 lg:flex-[1.4]"
-                    />
-                    <StorefrontBranchSelect
-                        branches={branches}
-                        value={filters.branchId}
-                        onChange={(branchId) => visit({ branchId })}
+                        onChange={updateSearch}
+                        onSubmit={() => {
+                            window.clearTimeout(debounceRef.current);
+                            visit({ search });
+                        }}
                         className="lg:min-w-0 lg:flex-1"
                     />
                     <StorefrontSortSelect
                         value={filters.sort}
                         onChange={(sort) => visit({ sort })}
-                        className="lg:min-w-0 lg:flex-1"
+                        className="lg:w-56 lg:max-w-xs lg:shrink-0"
                     />
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-                    {products.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
+                {products.length === 0 ? (
+                    <div className="border-border bg-card rounded-xl border p-10 text-center">
+                        <p className="text-foreground text-base font-semibold">
+                            No products match
+                        </p>
+                        <p className="text-muted-foreground mt-2 text-sm">
+                            Try a different search or sort.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                        {products.map((product) => (
+                            <ProductCard key={product.id} product={product} />
+                        ))}
+                    </div>
+                )}
             </div>
 
             <FeaturesBar features={storefrontFeatures} />
