@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\PasswordUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -14,9 +15,9 @@ use Laravel\Fortify\Features;
 class SecurityController extends Controller
 {
     /**
-     * Show the user's security settings page.
+     * @return array<string, mixed>
      */
-    public function edit(TwoFactorAuthenticationRequest $request): Response
+    public static function pageProps(TwoFactorAuthenticationRequest $request): array
     {
         $props = [
             'canManageTwoFactor' => Features::canManageTwoFactorAuthentication(),
@@ -47,7 +48,21 @@ class SecurityController extends Controller
             $props['requiresConfirmation'] = Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm');
         }
 
-        return Inertia::render('settings/security', $props);
+        return $props;
+    }
+
+    /**
+     * Show the user's security settings page.
+     */
+    public function edit(TwoFactorAuthenticationRequest $request): Response|RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user instanceof User && $user->user_type->usesMergedAccountProfile()) {
+            return redirect()->route('profile.edit');
+        }
+
+        return Inertia::render('settings/security', self::pageProps($request));
     }
 
     /**

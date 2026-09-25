@@ -244,6 +244,15 @@ class DriverService
         });
     }
 
+    public function updatePassword(User $driver, string $password): void
+    {
+        $this->assertIsDriver($driver);
+
+        $driver->update([
+            'password' => $password,
+        ]);
+    }
+
     private function restrictsToSingleActiveBranch(): bool
     {
         return (bool) config('drivers.single_active_branch');

@@ -5,6 +5,12 @@ import DeleteUser from '@/components/delete-user';
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys';
+import ManagePasskeys from '@/components/manage-passkeys';
+import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
+import ManageTwoFactor from '@/components/manage-two-factor';
+import ChangePasswordCard from '@/components/settings/change-password-card';
+import BranchAccountPage from '@/layouts/settings/branch-account-page';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +35,7 @@ type PageProps = {
     branch: { slug: string } | null;
     profile: ProfilePayload | null;
     mustVerifyPhone: boolean;
+    canDeleteAccount: boolean;
     status?: string;
 };
 
@@ -54,11 +61,21 @@ export default function Profile({
     mustVerifyPhone,
     status,
     profile,
+    canDeleteAccount,
+    passwordRules,
+    canManageTwoFactor,
+    requiresConfirmation,
+    twoFactorEnabled,
+    canManagePasskeys,
+    passkeys,
 }: {
     mustVerifyPhone: boolean;
     status?: string;
     profile: ProfilePayload | null;
-}) {
+    canDeleteAccount: boolean;
+    passwordRules?: string;
+} & ManagePasskeysProps &
+    ManageTwoFactorProps) {
     const { auth, portal, branch } = usePage<PageProps>().props;
     const user = auth.user;
 
@@ -128,26 +145,41 @@ export default function Profile({
         });
     };
 
-    return (
+    const isStaffPortal = portal === 'branch' || portal === 'platform';
+    const page = (
         <>
-            <Head title="Profile settings" />
+            <Head title={isStaffPortal ? 'Profile' : 'Profile settings'} />
 
-            <h1 className="sr-only">Profile settings</h1>
+            {!isStaffPortal && <h1 className="sr-only">Profile settings</h1>}
 
             <section className="border-border/80 bg-card space-y-6 rounded-2xl border p-5 shadow-sm sm:p-6">
-                <Heading
-                    variant="small"
-                    title="Profile"
-                    description="Update your photo, name, phone number, and optional email"
-                />
+                {!isStaffPortal && (
+                    <Heading
+                        variant="small"
+                        title="Profile"
+                        description="Update your photo, name, phone number, and optional email"
+                    />
+                )}
 
                 <form onSubmit={submit} className="space-y-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-4">
-                        <div className="flex w-40 shrink-0 flex-col gap-1.5 sm:w-44">
+                    <div
+                        className={
+                            isStaffPortal
+                                ? 'block space-y-4'
+                                : 'flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-4'
+                        }
+                    >
+                        <div
+                            className={
+                                isStaffPortal
+                                    ? 'block w-28 space-y-1.5'
+                                    : 'flex w-40 shrink-0 flex-col gap-1.5 sm:w-44'
+                            }
+                        >
                             <Label>Avatar</Label>
                             <FileUpload
                                 variant="avatar"
-                                avatarSize={176}
+                                avatarSize={isStaffPortal ? 112 : 176}
                                 value={data.avatar}
                                 onChange={(file) => {
                                     const next = Array.isArray(file)
@@ -187,7 +219,13 @@ export default function Profile({
                             />
                         </div>
 
-                        <div className="flex min-w-0 flex-1 flex-col gap-3">
+                        <div
+                            className={
+                                isStaffPortal
+                                    ? 'block space-y-3'
+                                    : 'flex min-w-0 flex-1 flex-col gap-3'
+                            }
+                        >
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="name">Name</Label>
                                 <Input
@@ -288,7 +326,40 @@ export default function Profile({
                 </form>
             </section>
 
-            <DeleteUser />
+            {isStaffPortal && passwordRules ? (
+                <>
+                    <ChangePasswordCard
+                        title="Change Password"
+                        passwordRules={passwordRules}
+                    />
+
+                    <ManageTwoFactor
+                        canManageTwoFactor={canManageTwoFactor}
+                        requiresConfirmation={requiresConfirmation}
+                        twoFactorEnabled={twoFactorEnabled}
+                    />
+
+                    <ManagePasskeys
+                        canManagePasskeys={canManagePasskeys}
+                        passkeys={passkeys}
+                    />
+                </>
+            ) : null}
+
+            {canDeleteAccount ? <DeleteUser /> : null}
         </>
     );
+
+    if (isStaffPortal) {
+        return (
+            <BranchAccountPage
+                title="Profile"
+                description="Update your photo, name, phone number, and optional email"
+            >
+                {page}
+            </BranchAccountPage>
+        );
+    }
+
+    return page;
 }

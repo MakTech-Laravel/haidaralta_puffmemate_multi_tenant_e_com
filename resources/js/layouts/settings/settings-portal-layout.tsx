@@ -18,12 +18,14 @@ export default function SettingsPortalLayout({
 
     if (portal === 'platform') {
         return (
-            <PlatformLayout breadcrumbs={breadcrumbs}>{inner}</PlatformLayout>
+            <PlatformLayout breadcrumbs={breadcrumbs}>{children}</PlatformLayout>
         );
     }
 
     if (portal === 'branch') {
-        return <BranchLayout breadcrumbs={breadcrumbs}>{inner}</BranchLayout>;
+        return (
+            <BranchLayout breadcrumbs={breadcrumbs}>{children}</BranchLayout>
+        );
     }
 
     if (portal === 'driver') {

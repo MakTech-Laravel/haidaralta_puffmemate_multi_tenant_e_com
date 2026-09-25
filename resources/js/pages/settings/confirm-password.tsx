@@ -4,6 +4,7 @@ import PasswordInput from '@/components/password-input';
 import PasskeyVerify from '@/components/passkey-verify';
 import { Button } from '@/components/ui/button';
 import Heading from '@/components/heading';
+import BranchAccountPage from '@/layouts/settings/branch-account-page';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -11,7 +12,7 @@ import {
     store as confirmStore,
 } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyConfirmationController';
 import { store } from '@/routes/password/confirm';
-import { edit as editSecurity } from '@/routes/security';
+import { edit as editProfile } from '@/routes/profile';
 
 function confirmBreadcrumbs(
     portal: string | null,
@@ -20,7 +21,7 @@ function confirmBreadcrumbs(
     if (portal === 'platform') {
         return [
             { title: 'Dashboard', href: '/platform/dashboard' },
-            { title: 'Security', href: editSecurity() },
+            { title: 'Profile', href: editProfile() },
             { title: 'Confirm password', href: '#' },
         ];
     }
@@ -28,7 +29,7 @@ function confirmBreadcrumbs(
     if (portal === 'branch' && branchSlug) {
         return [
             { title: 'Dashboard', href: `/branch/${branchSlug}/dashboard` },
-            { title: 'Security', href: editSecurity() },
+            { title: 'Profile', href: editProfile() },
             { title: 'Confirm password', href: '#' },
         ];
     }
@@ -48,18 +49,21 @@ export default function ConfirmPassword() {
         ),
     });
 
-    return (
+    const isStaffPortal = portal === 'branch' || portal === 'platform';
+    const page = (
         <>
             <Head title="Confirm password" />
 
-            <h1 className="sr-only">Confirm password</h1>
+            {!isStaffPortal && <h1 className="sr-only">Confirm password</h1>}
 
             <section className="border-border/80 bg-card w-full max-w-lg space-y-6 rounded-2xl border p-5 shadow-sm sm:p-6">
-                <Heading
-                    variant="small"
-                    title="Confirm password"
-                    description="This is a secure area. Confirm your password before continuing."
-                />
+                {!isStaffPortal && (
+                    <Heading
+                        variant="small"
+                        title="Confirm password"
+                        description="This is a secure area. Confirm your password before continuing."
+                    />
+                )}
 
                 <PasskeyVerify
                     routes={{
@@ -106,4 +110,17 @@ export default function ConfirmPassword() {
             </section>
         </>
     );
+
+    if (isStaffPortal) {
+        return (
+            <BranchAccountPage
+                title="Confirm password"
+                description="This is a secure area. Confirm your password before continuing."
+            >
+                {page}
+            </BranchAccountPage>
+        );
+    }
+
+    return page;
 }

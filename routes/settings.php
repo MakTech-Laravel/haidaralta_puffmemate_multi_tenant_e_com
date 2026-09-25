@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
+use App\Http\Middleware\RedirectBranchSecurityToProfile;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -18,7 +19,10 @@ Route::middleware(['ensure.any.portal', 'phone.verified'])->group(function () {
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('settings/security', [SecurityController::class, 'edit'])
-        ->middleware(RequirePassword::class)
+        ->middleware([
+            RedirectBranchSecurityToProfile::class,
+            RequirePassword::class,
+        ])
         ->name('security.edit');
 
     Route::put('settings/password', [SecurityController::class, 'update'])

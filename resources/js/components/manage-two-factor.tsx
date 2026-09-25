@@ -45,7 +45,7 @@ export default function ManageTwoFactor(props: Props) {
     }
 
     return (
-        <div className="space-y-6">
+        <section className="border-border/80 bg-card space-y-6 rounded-2xl border p-5 shadow-sm sm:p-6">
             <Heading
                 variant="small"
                 title="Two-factor authentication"
@@ -121,6 +121,6 @@ export default function ManageTwoFactor(props: Props) {
                 fetchSetupData={fetchSetupData}
                 errors={errors}
             />
-        </div>
+        </section>
     );
 }

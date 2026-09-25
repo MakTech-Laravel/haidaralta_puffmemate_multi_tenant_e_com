@@ -26,6 +26,14 @@ enum UserType: string
     }
 
     /**
+     * Platform and branch share one Profile page (password + Fortify 2FA).
+     */
+    public function usesMergedAccountProfile(): bool
+    {
+        return $this === self::PLATFORM || $this === self::BRANCH;
+    }
+
+    /**
      * Human-readable label for display in the UI.
      */
     public function label(): string
