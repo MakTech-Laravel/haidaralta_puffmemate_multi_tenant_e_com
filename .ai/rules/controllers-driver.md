@@ -13,3 +13,6 @@ ProfileController::index at GET /driver/profile uses DriverPayload::detail for t
 
 ## Driver profile edit is a field page
 Driver self-edit is GET/PATCH /driver/profile/edit via Driver\ProfileController, not settings/profile. Drivers may update name, phone, email, avatar, license_number, address, vehicle_type, and vehicle image. Do not let them change is_active, notes, availability_status, branches, or roster. Redirect GET /settings/profile to driver.profile.edit.
+
+## Driver security password stays on Driver stack
+Driver password changes go through Driver\SecurityController::updatePassword, DriverService::updatePassword, and UpdateDriverPasswordRequest — not Fortify user-password.update or Settings. Driver 2FA is Fortify-only (enable/confirm/disable/QR/recovery via @/routes/two-factor). Do not add a Driver 2FA service or table. Login still skips the Fortify 2FA challenge.

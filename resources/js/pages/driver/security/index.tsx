@@ -1,6 +1,9 @@
-import { Head } from '@inertiajs/react';
+import { Form, Head } from '@inertiajs/react';
 import { KeyRound, Lock, Phone, Shield, ShieldCheck } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
+import SecurityController from '@/actions/App/Http/Controllers/Driver/SecurityController';
+import { DriverTwoFactorSection } from '@/components/driver/driver-two-factor-section';
+import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,14 +48,23 @@ function Field({
 export default function DriverSecurityIndex({
     phone,
     phoneVerified,
+    passwordRules,
+    canManageTwoFactor,
     twoFactorEnabled,
+    requiresConfirmation,
     passkeyCount,
 }: {
     phone: string;
     phoneVerified: boolean;
+    passwordRules: string;
+    canManageTwoFactor: boolean;
     twoFactorEnabled: boolean;
+    requiresConfirmation: boolean;
     passkeyCount: number;
 }) {
+    const passwordInput = useRef<HTMLInputElement>(null);
+    const currentPasswordInput = useRef<HTMLInputElement>(null);
+
     return (
         <>
             <Head title="Security" />
@@ -67,8 +79,8 @@ export default function DriverSecurityIndex({
                             Security
                         </h1>
                         <p className="text-muted-foreground text-sm">
-                            Review how you sign in. Nothing here can be changed
-                            yet.
+                            Update your password and manage two-factor
+                            authentication.
                         </p>
                     </div>
                 </section>
@@ -77,65 +89,97 @@ export default function DriverSecurityIndex({
                     <h2 className="text-foreground text-base font-semibold">
                         Password
                     </h2>
-                    <div className="grid gap-5 sm:grid-cols-2">
-                        <Field
-                            icon={Lock}
-                            label="Current password"
-                            htmlFor="current_password"
-                        >
-                            <PasswordInput
-                                id="current_password"
-                                autoComplete="off"
-                                placeholder="Current password"
-                                defaultValue=""
-                                
-                            />
-                        </Field>
-                        <Field
-                            icon={KeyRound}
-                            label="New password"
-                            htmlFor="password"
-                        >
-                            <PasswordInput
-                                id="password"
-                                autoComplete="off"
-                                placeholder="New password"
-                                defaultValue=""
-                                
-                            />
-                        </Field>
-                        <Field
-                            icon={ShieldCheck}
-                            label="Confirm password"
-                            htmlFor="password_confirmation"
-                        >
-                            <PasswordInput
-                                id="password_confirmation"
-                                autoComplete="off"
-                                placeholder="Confirm password"
-                                defaultValue=""
-                                
-                            />
-                        </Field>
-                    </div>
-                    <Button
-                        type="button"
-                        size="lg"
-                        className="h-10 w-full sm:w-auto cursor-pointer"
+                    <Form
+                        {...SecurityController.updatePassword.form()}
+                        options={{ preserveScroll: true }}
+                        resetOnError={[
+                            'password',
+                            'password_confirmation',
+                            'current_password',
+                        ]}
+                        resetOnSuccess
+                        onError={(errors) => {
+                            if (errors.password) {
+                                passwordInput.current?.focus();
+                            }
+
+                            if (errors.current_password) {
+                                currentPasswordInput.current?.focus();
+                            }
+                        }}
+                        className="space-y-4"
                     >
-                        Update password
-                    </Button>
+                        {({ errors, processing }) => (
+                            <>
+                                <div className="grid gap-5 sm:grid-cols-2">
+                                    <Field
+                                        icon={Lock}
+                                        label="Current password"
+                                        htmlFor="current_password"
+                                    >
+                                        <PasswordInput
+                                            id="current_password"
+                                            ref={currentPasswordInput}
+                                            name="current_password"
+                                            autoComplete="current-password"
+                                            placeholder="Current password"
+                                        />
+                                        <InputError
+                                            message={errors.current_password}
+                                        />
+                                    </Field>
+                                    <Field
+                                        icon={KeyRound}
+                                        label="New password"
+                                        htmlFor="password"
+                                    >
+                                        <PasswordInput
+                                            id="password"
+                                            ref={passwordInput}
+                                            name="password"
+                                            autoComplete="new-password"
+                                            placeholder="New password"
+                                            passwordrules={passwordRules}
+                                        />
+                                        <InputError message={errors.password} />
+                                    </Field>
+                                    <Field
+                                        icon={ShieldCheck}
+                                        label="Confirm password"
+                                        htmlFor="password_confirmation"
+                                    >
+                                        <PasswordInput
+                                            id="password_confirmation"
+                                            name="password_confirmation"
+                                            autoComplete="new-password"
+                                            placeholder="Confirm password"
+                                            passwordrules={passwordRules}
+                                        />
+                                        <InputError
+                                            message={
+                                                errors.password_confirmation
+                                            }
+                                        />
+                                    </Field>
+                                </div>
+                                <Button
+                                    type="submit"
+                                    size="lg"
+                                    disabled={processing}
+                                    className="h-10 w-full sm:w-auto"
+                                >
+                                    Update password
+                                </Button>
+                            </>
+                        )}
+                    </Form>
                 </section>
 
-                <section className="border-border rounded-xl border p-4">
-                    <Field icon={ShieldCheck} label="Two-factor authentication">
-                        <Badge
-                            variant={twoFactorEnabled ? 'default' : 'secondary'}
-                        >
-                            {twoFactorEnabled ? 'Enabled' : 'Disabled'}
-                        </Badge>
-                    </Field>
-                </section>
+                <DriverTwoFactorSection
+                    canManageTwoFactor={canManageTwoFactor}
+                    twoFactorEnabled={twoFactorEnabled}
+                    requiresConfirmation={requiresConfirmation}
+                />
 
                 <section className="border-border rounded-xl border p-4">
                     <Field icon={KeyRound} label="Passkeys">

@@ -22,6 +22,8 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::get('notifications', [DriverNotificationController::class, 'index'])->name('driver.notifications.index');
     Route::get('profile', [DriverProfileController::class, 'index'])->name('driver.profile.index');
     Route::get('security', [DriverSecurityController::class, 'index'])->name('driver.security.index');
+    Route::put('security/password', [DriverSecurityController::class, 'updatePassword'])
+        ->name('driver.security.password.update');
     Route::get('profile/edit', [DriverProfileController::class, 'edit'])->name('driver.profile.edit');
     Route::patch('profile', [DriverProfileController::class, 'update'])
         ->middleware('precognitive')
