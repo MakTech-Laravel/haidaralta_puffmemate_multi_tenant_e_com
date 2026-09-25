@@ -343,6 +343,12 @@ export function buildPlatformNav(
                         icon: Megaphone,
                         permissions: ['manage-reports'],
                     }),
+                    navLink({
+                        title: 'Announcement',
+                        href: '/platform/announcements',
+                        icon: Megaphone,
+                        permissions: ['manage-reports'],
+                    }),
                 ],
             }),
             navGroup({

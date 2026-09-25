@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Platform\ActivityLogController as PlatformActivityLogController;
 use App\Http\Controllers\Platform\AdminController as PlatformAdminController;
+use App\Http\Controllers\Platform\AnnouncementController as PlatformAnnouncementController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchDriverController as PlatformBranchDriverController;
 use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInventoryController;
@@ -363,6 +364,11 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::middleware(['permission:view-activity-logs'])->group(function () {
         Route::get('activity-logs', [PlatformActivityLogController::class, 'index'])->name('platform.activity-logs.index');
         Route::get('activity-logs/{activity}', [PlatformActivityLogController::class, 'show'])->name('platform.activity-logs.show');
+    });
+
+    Route::middleware(['permission:manage-reports'])->group(function () {
+        Route::get('announcements', [PlatformAnnouncementController::class, 'index'])
+            ->name('platform.announcements.index');
     });
 
     Route::middleware(['permission:manage-pages'])->group(function () {
