@@ -199,9 +199,15 @@
     }
 }
 
-@keyframes navigation-road {
+@keyframes navigation-lane {
     to {
-        background-position: -2.5rem 0;
+        transform: translateX(-60px);
+    }
+}
+
+@keyframes navigation-skyline {
+    to {
+        transform: translateX(-400px);
     }
 }
 
@@ -212,41 +218,68 @@
     }
 
     50% {
-        transform: translateY(-0.35rem);
+        transform: translateY(-2px);
+    }
+}
+
+@keyframes navigation-smoke {
+    from {
+        opacity: 0.7;
+        transform: translate(0, 0) scale(0.5);
+    }
+
+    to {
+        opacity: 0;
+        transform: translate(-26px, -12px) scale(1.8);
+    }
+}
+
+@keyframes navigation-speed {
+    0% {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+
+    40% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(-16px);
     }
 }
 
 @keyframes navigation-wheel {
     to {
-        transform: rotate(-360deg);
+        transform: rotate(360deg);
     }
 }
 
-@keyframes navigation-parcel {
-    0%,
-    100% {
-        transform: translateY(0) rotate(-4deg);
-    }
-
-    50% {
-        transform: translateY(-0.28rem) rotate(3deg);
-    }
+@utility animate-navigation-lane {
+    animation: navigation-lane 0.35s linear infinite;
 }
 
-@utility animate-navigation-road {
-    animation: navigation-road 0.55s linear infinite;
+@utility animate-navigation-skyline {
+    animation: navigation-skyline 7s linear infinite;
 }
 
 @utility animate-navigation-ride {
-    animation: navigation-ride 0.45s ease-in-out infinite;
+    animation: navigation-ride 0.3s ease-in-out infinite;
 }
 
 @utility animate-navigation-wheel {
-    animation: navigation-wheel 0.45s linear infinite;
+    animation: navigation-wheel 0.35s linear infinite;
     transform-box: fill-box;
     transform-origin: center;
 }
 
-@utility animate-navigation-parcel {
-    animation: navigation-parcel 0.45s ease-in-out infinite;
+@utility animate-navigation-smoke {
+    animation: navigation-smoke 0.9s ease-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+@utility animate-navigation-speed {
+    animation: navigation-speed 0.5s linear infinite;
 }
