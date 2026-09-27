@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { NotificationLinkButton } from '@/components/notifications/notification-link-button';
 import {
     NotificationReadLabel,
     NotificationUnreadDot,
@@ -89,7 +90,10 @@ export function NotificationList({
                                         : 'bg-primary/5 ring-primary/30 ring-1',
                                 )}
                             >
-                                <NotificationTypeIcon type={item.type} />
+                                <NotificationTypeIcon
+                                    type={item.type}
+                                    icon={item.icon}
+                                />
 
                                 <Link
                                     href={getItemHref(item)}
@@ -121,6 +125,16 @@ export function NotificationList({
                                         {item.createdAt}
                                     </time>
                                     <NotificationReadLabel read={item.read} />
+                                    {item.href ? (
+                                        <NotificationLinkButton
+                                            href={item.href}
+                                            label={item.linkLabel}
+                                            size="sm"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                            }}
+                                        />
+                                    ) : null}
                                     {onDelete ? (
                                         <Button
                                             type="button"

@@ -51,7 +51,8 @@
         },
         "files": [
             "app/Support/fcm.php",
-            "app/Support/audit.php"
+            "app/Support/audit.php",
+            "app/Support/notify.php"
         ]
     },
     "autoload-dev": {

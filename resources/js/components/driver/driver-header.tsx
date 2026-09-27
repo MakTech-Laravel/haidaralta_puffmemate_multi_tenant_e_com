@@ -11,7 +11,11 @@ import type { Auth } from '@/types';
  * Field header: brand on the left, alerts + account sheet on the right.
  */
 export function DriverHeader() {
-    const { url, props } = usePage<{ auth: Auth; name: string }>();
+    const { url, props } = usePage<{
+        auth: Auth;
+        name: string;
+        notifications?: { unreadCount: number };
+    }>();
     const brand = useAppBrand();
     const user = props.auth.user;
     const notificationsHref = notificationsIndex.url();
@@ -53,6 +57,9 @@ export function DriverHeader() {
                         )}
                     >
                         <Bell className="size-6" strokeWidth={1.75} />
+                        {(props.notifications?.unreadCount ?? 0) > 0 ? (
+                            <span className="bg-primary absolute top-2 right-2 size-2 rounded-full" />
+                        ) : null}
                     </Link>
 
                     <DriverAccountSheet user={user} />

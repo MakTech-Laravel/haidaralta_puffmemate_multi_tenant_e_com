@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\ContactSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
+use App\Services\Notifications\InboxService;
 use App\Services\Storefront\CartService;
 use App\Support\MediaUrl;
 use App\Support\PortalAuth;
@@ -49,6 +50,10 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         [$auth, $portal, $branch] = $this->resolveSharedAuth();
+        $guard = PortalAuth::activeGuard();
+        $authUser = $guard !== null ? Auth::guard($guard)->user() : null;
+        $inbox = $authUser instanceof User ? app(InboxService::class) : null;
+        $preview = $inbox instanceof InboxService ? $inbox->preview($authUser) : [];
 
         return [
             ...parent::share($request),
@@ -84,9 +89,11 @@ class HandleInertiaRequests extends Middleware
                 'selectedBranchId' => $request->session()->get(StorefrontCatalog::BRANCH_SESSION_KEY),
                 'cart' => $this->sharedCart($request),
             ],
-            'customerNotifications' => $portal === 'customer'
-                ? array_slice(DemoCatalog::customerNotifications(), 0, 5)
-                : [],
+            'notifications' => [
+                'unreadCount' => $inbox instanceof InboxService ? $inbox->unreadCount($authUser) : 0,
+                'preview' => $preview,
+            ],
+            'customerNotifications' => $portal === 'customer' ? $preview : [],
             'driverSupport' => $portal === 'driver'
                 ? DemoCatalog::driverSupportContacts()
                 : null,

@@ -1,22 +1,20 @@
-import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import { NotificationList } from '@/components/notifications/notification-list';
 import type { NotificationItem } from '@/components/notifications/types';
 import {
+    destroy as notificationsDestroy,
     index as notificationsIndex,
     show as notificationsShow,
 } from '@/routes/customer/notifications';
 
 type CustomerNotificationsIndexProps = {
-    notifications: NotificationItem[];
+    items: NotificationItem[];
 };
 
 export default function CustomerNotificationsIndex({
-    notifications: initialNotifications,
+    items,
 }: CustomerNotificationsIndexProps) {
-    const [notifications, setNotifications] = useState(initialNotifications);
-
     return (
         <>
             <Head title="Notifications" />
@@ -28,14 +26,12 @@ export default function CustomerNotificationsIndex({
                 />
 
                 <NotificationList
-                    items={notifications}
+                    items={items}
                     getItemHref={(item) => notificationsShow.url(item.id)}
                     onDelete={(item) => {
-                        setNotifications((current) =>
-                            current.filter(
-                                (notification) => notification.id !== item.id,
-                            ),
-                        );
+                        router.delete(notificationsDestroy.url(item.id), {
+                            preserveScroll: true,
+                        });
                     }}
                 />
             </div>

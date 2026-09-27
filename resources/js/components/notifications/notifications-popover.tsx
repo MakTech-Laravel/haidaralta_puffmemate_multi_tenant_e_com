@@ -36,6 +36,7 @@ export function NotificationsPopover({
 }: NotificationsPopoverProps) {
     const [open, setOpen] = useState(false);
     const previewItems = items.slice(0, 5);
+    const unreadCount = items.filter((item) => !item.read).length;
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -52,6 +53,9 @@ export function NotificationsPopover({
                     data-test="notifications-bell"
                 >
                     <Bell className="size-6 md:size-8" strokeWidth={1.75} />
+                    {unreadCount > 0 ? (
+                        <span className="bg-primary absolute top-1.5 right-1.5 size-2 rounded-full" />
+                    ) : null}
                 </Button>
             </PopoverTrigger>
             <PopoverContent
@@ -114,6 +118,7 @@ export function NotificationsPopover({
                                 >
                                     <NotificationTypeIcon
                                         type={item.type}
+                                        icon={item.icon}
                                         className="size-9"
                                         iconClassName="size-4"
                                     />

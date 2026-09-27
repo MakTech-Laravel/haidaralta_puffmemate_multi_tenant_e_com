@@ -1,9 +1,18 @@
-import { setLayoutProps } from '@inertiajs/react';
-import { index } from '@/actions/App/Http/Controllers/Branch/NotificationController';
+import { router, setLayoutProps } from '@inertiajs/react';
+import {
+    destroy,
+    index,
+    show,
+} from '@/actions/App/Http/Controllers/Branch/NotificationController';
+import type { NotificationItem } from '@/components/notifications/types';
 import { NotificationsInbox } from '@/components/portal/notifications-inbox';
 import { useBranch } from '@/hooks/use-branch';
 
-export default function BranchNotificationsIndex() {
+export default function BranchNotificationsIndex({
+    items = [],
+}: {
+    items?: NotificationItem[];
+}) {
     const branch = useBranch();
 
     setLayoutProps({
@@ -15,5 +24,24 @@ export default function BranchNotificationsIndex() {
         ],
     });
 
-    return <NotificationsInbox />;
+    return (
+        <NotificationsInbox
+            notifications={items}
+            getItemHref={(item) =>
+                show.url({
+                    branch: branch.slug,
+                    userNotification: Number(item.id),
+                })
+            }
+            onDelete={(item) => {
+                router.delete(
+                    destroy.url({
+                        branch: branch.slug,
+                        userNotification: Number(item.id),
+                    }),
+                    { preserveScroll: true },
+                );
+            }}
+        />
+    );
 }
