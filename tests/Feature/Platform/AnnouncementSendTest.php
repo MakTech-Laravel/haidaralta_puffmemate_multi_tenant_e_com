@@ -167,7 +167,7 @@ test('empty group or individual lists are rejected', function () {
         ->assertSessionHasErrors('recipients');
 });
 
-test('phone email and push flags are stored but only system is sent', function () {
+test('phone and email flags are stored without sending mail or push', function () {
     Queue::fake([FanOutNotificationJob::class, SendFcmPushJob::class]);
     Mail::fake();
 
@@ -183,7 +183,7 @@ test('phone email and push flags are stored but only system is sent', function (
             'message' => 'Heads up.',
             'via_phone' => true,
             'via_email' => true,
-            'via_push' => true,
+            'via_push' => false,
         ])
         ->assertRedirect(route('platform.announcements.index'));
 
@@ -191,13 +191,55 @@ test('phone email and push flags are stored but only system is sent', function (
 
     expect($announcement->via_phone)->toBeTrue()
         ->and($announcement->via_email)->toBeTrue()
-        ->and($announcement->via_push)->toBeTrue()
+        ->and($announcement->via_push)->toBeFalse()
         ->and($announcement->via_system)->toBeTrue();
 
     Queue::assertPushed(FanOutNotificationJob::class);
     Queue::assertNotPushed(SendFcmPushJob::class);
     Mail::assertNothingOutgoing();
     $this->assertDatabaseCount('notifications', 1);
+});
+
+test('push queues an fcm job for the announcement recipients', function () {
+    Queue::fake([FanOutNotificationJob::class, SendFcmPushJob::class]);
+
+    $admin = announcementAdmin();
+    $userIds = User::query()
+        ->where('is_active', true)
+        ->where('user_type', UserType::PLATFORM)
+        ->orderBy('id')
+        ->pluck('id')
+        ->map(fn (int|string $id): int => (int) $id)
+        ->all();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.announcements.store'), [
+            'send_mode' => 'group',
+            'audiences' => ['platform'],
+            'type' => 'info',
+            'icon' => 'bell',
+            'title' => 'Push notice',
+            'message' => 'Check the shop.',
+            'via_push' => true,
+            'link_label' => 'Shop now',
+            'link_url' => 'https://example.com/shop',
+        ])
+        ->assertRedirect(route('platform.announcements.index'));
+
+    $announcement = Announcement::query()->latest('id')->first();
+
+    expect($announcement)->not->toBeNull()
+        ->and($announcement->via_push)->toBeTrue();
+
+    Queue::assertPushed(FanOutNotificationJob::class);
+    Queue::assertPushed(SendFcmPushJob::class, function (SendFcmPushJob $job) use ($userIds, $announcement): bool {
+        return $job->userIds === $userIds
+            && $job->title === 'Push notice'
+            && $job->body === 'Check the shop.'
+            && $job->data['announcement_id'] === (string) $announcement->id
+            && $job->data['url'] === 'https://example.com/shop'
+            && $job->data['link_label'] === 'Shop now';
+    });
 });
 
 test('guests cannot send announcements', function () {
