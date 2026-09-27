@@ -78,7 +78,7 @@ class CheckoutService
                 'label' => $method->label,
                 'description' => $method->description ?? '',
                 'fee' => (float) $method->fee,
-                'formattedFee' => ((float) $method->fee) <= 0 ? 'FREE' : '$'.number_format((float) $method->fee, 2),
+                'formattedFee' => 'Calculated at checkout',
                 'requiresSlot' => $method->requires_slot,
             ])
             ->all();

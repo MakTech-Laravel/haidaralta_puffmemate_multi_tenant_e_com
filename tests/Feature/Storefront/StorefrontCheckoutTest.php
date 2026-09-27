@@ -95,7 +95,9 @@ test('checkout props omit branch keys', function () {
                 ->missing('branchName')
                 ->etc())
             ->has('paymentMethods')
-            ->has('deliveryMethods'));
+            ->has('deliveryMethods', 2)
+            ->where('deliveryMethods.0.formattedFee', 'Calculated at checkout')
+            ->where('deliveryMethods.1.formattedFee', 'Calculated at checkout'));
 });
 
 test('place order writes order payment and redemption then clears ordered lines', function () {

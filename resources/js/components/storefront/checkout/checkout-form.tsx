@@ -358,6 +358,9 @@ export function CheckoutForm({
                                         <span className="text-muted-foreground mt-1 block text-sm">
                                             {method.description}
                                         </span>
+                                        <span className="mt-2 block text-sm font-medium">
+                                            {method.formattedFee}
+                                        </span>
                                     </span>
                                 </button>
                             );
