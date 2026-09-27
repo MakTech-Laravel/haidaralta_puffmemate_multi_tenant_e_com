@@ -36,7 +36,6 @@ export type CustomerOrderStatus =
 export type CustomerPaymentStatus = 'unpaid' | 'paid' | 'refunded';
 
 export type CustomerOrderDetail = {
-    id: string;
     orderNumber: string;
     status: CustomerOrderStatus;
     paymentStatus: CustomerPaymentStatus;

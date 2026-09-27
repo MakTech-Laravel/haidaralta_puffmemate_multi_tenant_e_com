@@ -6,7 +6,6 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
-use App\Support\MediaUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -53,16 +52,14 @@ class OrderController extends Controller
     }
 
     /**
-     * @return array{id: string, orderNumber: string, products: list<string>, priceLabel: string, image: string, status: string, paymentStatus: string, date: string}
+     * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, paymentStatus: string, date: string}
      */
     private function summarize(Order $order): array
     {
         return [
-            'id' => (string) $order->id,
             'orderNumber' => $order->order_number,
             'products' => $order->items->map(fn ($item): string => $item->product_name_snapshot.' (x'.$item->quantity.')')->all(),
             'priceLabel' => '$'.number_format((float) $order->total_amount, 2),
-            'image' => MediaUrl::resolve($order->items->first()?->product_snapshot['image'] ?? null),
             'status' => $order->status->value,
             'paymentStatus' => $order->payment_status->value,
             'date' => $order->created_at->format('d M Y'),
@@ -75,7 +72,6 @@ class OrderController extends Controller
     private function detail(Order $order): array
     {
         return [
-            'id' => (string) $order->id,
             'orderNumber' => $order->order_number,
             'status' => $order->status->value,
             'paymentStatus' => $order->payment_status->value,

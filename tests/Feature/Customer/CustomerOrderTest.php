@@ -63,7 +63,9 @@ test('customer order list only shows their own orders', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('customer/orders/index')
-            ->has('orders', 1));
+            ->has('orders', 1)
+            ->missing('orders.0.image')
+            ->missing('orders.0.id'));
 });
 
 test('customer order detail never leaks branch or fulfillment data', function () {
@@ -76,9 +78,32 @@ test('customer order detail never leaks branch or fulfillment data', function ()
         ->assertInertia(fn (Assert $page) => $page
             ->component('customer/orders/show')
             ->where('order.orderNumber', $order->order_number)
+            ->missing('order.id')
             ->missing('order.branch')
             ->missing('order.fulfillments')
             ->missing('order.branchName'));
+});
+
+test('customer order detail uses the order number not the database id', function () {
+    $customer = User::factory()->create();
+    $order = customerOrderWithItem($customer, [
+        'order_number' => 'PMM-2026-2451',
+    ]);
+
+    $this->actingAs($customer, 'customer')
+        ->get('/orders/'.$order->id)
+        ->assertNotFound();
+
+    $this->actingAs($customer, 'customer')
+        ->get(route('customer.orders.show', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('customer/orders/show')
+            ->where('order.orderNumber', 'PMM-2026-2451')
+            ->missing('order.id'));
+
+    expect(parse_url(route('customer.orders.show', $order), PHP_URL_PATH))
+        ->toBe('/orders/PMM-2026-2451');
 });
 
 test('a customer cannot view another customers order', function () {

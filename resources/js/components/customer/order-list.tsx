@@ -21,11 +21,9 @@ export type CustomerOrderStatus =
 export type CustomerPaymentStatus = 'unpaid' | 'paid' | 'refunded';
 
 export type CustomerOrder = {
-    id: string;
     orderNumber: string;
     products: string[];
     priceLabel: string;
-    image: string;
     status: CustomerOrderStatus;
     paymentStatus: CustomerPaymentStatus;
     date: string;
@@ -76,28 +74,17 @@ export function OrderList({
                     );
                     const hasMoreProducts =
                         order.products.length > VISIBLE_PRODUCT_COUNT;
-                    const detailsUrl = orderShow.url(Number(order.id));
+                    const detailsUrl = orderShow.url(order.orderNumber);
                     const isActive = activeStatuses.includes(order.status);
 
                     return (
-                        <li key={order.id}>
+                        <li key={order.orderNumber}>
                             <Link
                                 href={detailsUrl}
                                 prefetch
                                 aria-label={`View order ${order.orderNumber}`}
-                                className="bg-accent relative flex flex-col gap-3 rounded-xl p-3 sm:flex-row sm:items-start sm:gap-5 sm:p-5"
+                                className="bg-accent relative flex flex-col gap-3 rounded-xl p-3 sm:p-5"
                             >
-                                <div className="bg-accent relative aspect-[2/1] w-full shrink-0 overflow-hidden rounded-sm sm:aspect-auto sm:size-36 sm:w-auto md:size-40">
-                                    <div
-                                        className="absolute inset-0 bg-cover bg-center"
-                                        style={{
-                                            backgroundImage: `url(${order.image})`,
-                                        }}
-                                        role="img"
-                                        aria-label={order.orderNumber}
-                                    />
-                                </div>
-
                                 <div className="flex min-w-0 flex-1 flex-col gap-3">
                                     <div className="min-w-0 space-y-2">
                                         <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">

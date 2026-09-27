@@ -29,6 +29,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/**/permissions/**, resources/js/components/admin/permission-groups-table.tsx | .ai/rules/components-admin.md |
 | resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx | .ai/rules/components-branch.md |
 | {app/Support/ConversationInbox.php,app/Services/Conversation/**,app/Events/ConversationInboxUpdated.php,resources/js/components/conversation/**} | .ai/rules/components-conversation.md |
+| app/Http/Controllers/Customer/OrderController.php,resources/js/components/customer/order-list.tsx, app/Http/Controllers/Customer/OrderController.php,routes/customer.php,resources/js/components/customer/order-list.tsx | .ai/rules/components-customer.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx,resources/js/components/driver/driver-deliver-otp-form.tsx | .ai/rules/components-driver-js-components-driver.md |
 | resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx}, resources/js/components/driver/** | .ai/rules/components-driver.md |
 | resources/js/app.tsx, resources/js/components/pwa/** | .ai/rules/components-pwa.md |
