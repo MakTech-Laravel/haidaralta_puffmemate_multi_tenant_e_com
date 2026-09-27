@@ -13,3 +13,6 @@ After each Mail::send(), wait 2 seconds before the next recipient (skipped in te
 
 ## Announcement email is one job per user
 SendAnnouncementEmailJob sends one AnnouncementMail via Mail::send() for a single userId. Do not loop recipients or sleep inside the job. Stagger dispatch from AnnouncementService with delay(index * 2) seconds so Mailtrap is not flooded. AnnouncementMail stays synchronous (no ShouldQueue).
+
+## Pace announcement mail with RateLimited
+SendAnnouncementEmailJob is one user, one Mail::send(). Attach RateLimited('announcement-mail') and retryUntil (hours), not delay(index * N) or sleep. Do not set a low $tries; limiter releases count as attempts. AnnouncementMail stays synchronous.

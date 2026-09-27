@@ -120,18 +120,14 @@ class AnnouncementService
                     ->orderBy('id')
                     ->pluck('id');
 
-                foreach ($emailUserIds as $index => $userId) {
-                    $pending = SendAnnouncementEmailJob::dispatch(
+                foreach ($emailUserIds as $userId) {
+                    SendAnnouncementEmailJob::dispatch(
                         userId: (int) $userId,
                         title: $title,
                         message: $message,
                         linkLabel: $linkLabel,
                         linkUrl: $linkUrl,
                     )->afterCommit();
-
-                    if ($index > 0) {
-                        $pending->delay($index * 2);
-                    }
                 }
             }
 

@@ -80,6 +80,7 @@ class AppServiceProvider extends ServiceProvider
 
     /**
      * Cap chat sends so a stuck client cannot flood a thread.
+     * Pace announcement SMTP so Mailtrap Sandbox Free (1 / 10s) is not flooded.
      */
     protected function configureRateLimiters(): void
     {
@@ -89,6 +90,17 @@ class AppServiceProvider extends ServiceProvider
             return $user === null
                 ? Limit::perMinute(10)->by($request->ip())
                 : Limit::perMinute(30)->by((string) $user->getAuthIdentifier());
+        });
+
+        RateLimiter::for('announcement-mail', function (): Limit {
+            if ($this->app->environment('testing')) {
+                return Limit::none();
+            }
+
+            $maxAttempts = max(1, (int) config('mail.announcement.max_attempts'));
+            $decaySeconds = max(1, (int) config('mail.announcement.decay_seconds'));
+
+            return Limit::perSecond($maxAttempts, $decaySeconds)->by('announcement-mail');
         });
     }
 

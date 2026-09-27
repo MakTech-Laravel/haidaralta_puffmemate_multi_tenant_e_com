@@ -16,6 +16,7 @@ use App\Services\Sms\FakeSmsSender;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
@@ -218,12 +219,12 @@ test('phone and email flags queue channel jobs without sending push', function (
     Queue::assertPushedTimes(SendAnnouncementEmailJob::class, $emailUserIds->count());
     Queue::assertNotPushed(SendFcmPushJob::class);
 
-    $emailUserIds->each(function (int $userId, int $index): void {
-        Queue::assertPushed(SendAnnouncementEmailJob::class, function (SendAnnouncementEmailJob $job) use ($userId, $index): bool {
+    $emailUserIds->each(function (int $userId): void {
+        Queue::assertPushed(SendAnnouncementEmailJob::class, function (SendAnnouncementEmailJob $job) use ($userId): bool {
             return $job->userId === $userId
                 && $job->title === 'Alert'
                 && $job->message === 'Heads up.'
-                && $job->delay === ($index === 0 ? null : $index * 2);
+                && $job->delay === null;
         });
     });
     Mail::assertNothingOutgoing();
@@ -284,6 +285,17 @@ test('email goes only to recipients with an address and phone logs for each reci
         ->and($sms->messages[0]['message'])->toContain('Channel notice')
         ->and($sms->messages[0]['message'])->toContain('Please read.')
         ->and($sms->messages[0]['message'])->toContain('https://example.com/shop');
+});
+
+test('announcement email job is paced by the announcement-mail limiter', function () {
+    $job = new SendAnnouncementEmailJob(
+        userId: 1,
+        title: 'Pace',
+        message: 'Check.',
+    );
+
+    expect($job->middleware())->toHaveCount(1)
+        ->and($job->middleware()[0])->toBeInstanceOf(RateLimited::class);
 });
 
 test('announcement mail template includes the title and link', function () {

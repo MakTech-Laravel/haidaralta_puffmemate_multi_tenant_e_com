@@ -16,3 +16,6 @@ When via_phone is true, dispatch SendAnnouncementPhoneJob afterCommit; it render
 
 ## Dispatch one email job per address
 When via_email is true, query recipients with a non-empty email (ordered by id) and dispatch SendAnnouncementEmailJob afterCommit once per user. Delay each job after the first by index * 2 seconds. Do not dispatch one job with a userIds list.
+
+## Dispatch email jobs without stagger delay
+When via_email is true, dispatch one SendAnnouncementEmailJob afterCommit per non-empty email, ordered by id. Do not delay(index * 2). Throughput is the announcement-mail RateLimiter (config mail.announcement), not compose recipient caps or scheduled_at.
