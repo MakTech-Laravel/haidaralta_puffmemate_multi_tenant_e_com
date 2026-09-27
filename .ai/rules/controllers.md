@@ -15,3 +15,6 @@ SW showNotification is gated by FCM_SW_SHOW_NOTIFICATION (config services.fireba
 
 ## FCM SW is also the PWA worker
 PWA installability uses this same FCM worker at scope /. Do not add a second SW. Register it on every app boot (permission is unrelated). No fetch cache. notificationclick + skipWaiting belong here. PWA_SW_ENABLED false serves an unregistering kill-switch.
+
+## SW click unwraps FCM_MSG and defaults home
+notificationclick reads data.url, data.link, or data.FCM_MSG.data.url. Empty means origin + /. Same-origin: focus then navigate, else openWindow. Other origin: openWindow only. Do not showNotification when the FCM payload already has notification.

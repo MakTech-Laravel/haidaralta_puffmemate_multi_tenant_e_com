@@ -10,6 +10,7 @@ use Kreait\Firebase\Exception\Messaging\NotFound;
 use Kreait\Firebase\Exception\MessagingException;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
+use Kreait\Firebase\Messaging\WebPushConfig;
 use Throwable;
 
 class FcmPushService
@@ -113,17 +114,19 @@ class FcmPushService
             $notification = $notification->withImageUrl($payload->imageUrl);
         }
 
-        $message = CloudMessage::new()
-            ->withToken($token)
-            ->withNotification($notification);
-
         $data = $payload->stringData();
+        $clickUrl = filled($data['url'] ?? null) ? (string) $data['url'] : url('/');
+        $data['url'] = $clickUrl;
 
-        if ($data !== []) {
-            $message = $message->withData($data);
-        }
-
-        return $message;
+        return CloudMessage::new()
+            ->withToken($token)
+            ->withNotification($notification)
+            ->withData($data)
+            ->withWebPushConfig(WebPushConfig::fromArray([
+                'fcm_options' => [
+                    'link' => $clickUrl,
+                ],
+            ]));
     }
 
     private function forgetToken(string $token): bool

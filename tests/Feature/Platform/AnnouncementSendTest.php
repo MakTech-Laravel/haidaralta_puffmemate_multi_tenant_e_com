@@ -359,6 +359,29 @@ test('push queues an fcm job for the announcement recipients', function () {
     });
 });
 
+test('push without a compose link opens home', function () {
+    Queue::fake([FanOutNotificationJob::class, SendFcmPushJob::class]);
+
+    $admin = announcementAdmin();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.announcements.store'), [
+            'send_mode' => 'group',
+            'audiences' => ['platform'],
+            'type' => 'info',
+            'icon' => 'bell',
+            'title' => 'Home notice',
+            'message' => 'No link.',
+            'via_push' => true,
+        ])
+        ->assertRedirect(route('platform.announcements.index'));
+
+    Queue::assertPushed(SendFcmPushJob::class, function (SendFcmPushJob $job): bool {
+        return $job->title === 'Home notice'
+            && $job->data['url'] === url('/');
+    });
+});
+
 test('guests cannot send announcements', function () {
     $this->post(route('platform.announcements.store'), [
         'send_mode' => 'group',
