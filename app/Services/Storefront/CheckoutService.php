@@ -124,6 +124,36 @@ class CheckoutService
     }
 
     /**
+     * Preview the distance-based delivery fee for the current cart.
+     *
+     * @return array{fee: float, formattedFee: string}
+     */
+    public function quoteShipping(Request $request, float $latitude, float $longitude): array
+    {
+        $cart = $this->carts->activeCart($request)->load('items.product');
+
+        if ($cart->items->isEmpty()) {
+            throw ValidationException::withMessages([
+                'cart' => 'Your cart is empty.',
+            ]);
+        }
+
+        $allocations = $this->allocator->allocate($latitude, $longitude, $cart->items);
+        $fee = 0.0;
+
+        foreach ($allocations as $group) {
+            $fee += $this->shipping->cost($group['branch'], $group['distance_km']);
+        }
+
+        $fee = round($fee, 2);
+
+        return [
+            'fee' => $fee,
+            'formattedFee' => '$'.number_format($fee, 2),
+        ];
+    }
+
+    /**
      * @param  array{
      *     first_name: string,
      *     last_name: string,

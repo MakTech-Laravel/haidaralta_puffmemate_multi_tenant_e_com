@@ -44,12 +44,21 @@ type CheckoutFormProps = {
     deliveryMethods: StorefrontDeliveryMethod[];
     paymentMethods: StorefrontPaymentMethod[];
     timeSlots: StorefrontTimeSlot[];
+    errors?: Record<string, string>;
     onChange: <K extends keyof CheckoutDetails>(
         key: K,
         value: CheckoutDetails[K],
     ) => void;
     className?: string;
 };
+
+function FieldError({ message }: { message?: string }) {
+    if (!message) {
+        return null;
+    }
+
+    return <p className="text-destructive text-xs">{message}</p>;
+}
 
 const sectionCardClass =
     'bg-accent gap-3 rounded-none border-none p-3 shadow-none sm:gap-4 sm:p-5';
@@ -107,6 +116,7 @@ export function CheckoutForm({
     deliveryMethods,
     paymentMethods,
     timeSlots,
+    errors = {},
     onChange,
     className,
 }: CheckoutFormProps) {
@@ -136,8 +146,21 @@ export function CheckoutForm({
         onChange('longitude', address.longitude ?? '');
     };
 
+    const errorMessages = Object.values(errors).filter(Boolean);
+
     return (
         <div className={cn('flex flex-col gap-3 sm:gap-4', className)}>
+            {errorMessages.length > 0 ? (
+                <Alert variant="destructive">
+                    <AlertDescription>
+                        <ul className="list-disc space-y-1 pl-4">
+                            {errorMessages.map((message) => (
+                                <li key={message}>{message}</li>
+                            ))}
+                        </ul>
+                    </AlertDescription>
+                </Alert>
+            ) : null}
             <Card className={sectionCardClass}>
                 <CardHeader>
                     <CardTitle className="text-foreground text-lg font-extrabold">
@@ -398,7 +421,11 @@ export function CheckoutForm({
                                         placeholder="Select a date"
                                         min={today}
                                         className={datePickerClass}
+                                        aria-invalid={Boolean(
+                                            errors.delivery_date,
+                                        )}
                                     />
+                                    <FieldError message={errors.delivery_date} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label>
@@ -424,6 +451,7 @@ export function CheckoutForm({
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    <FieldError message={errors.time_slot_id} />
                                 </div>
                             </div>
                         </div>

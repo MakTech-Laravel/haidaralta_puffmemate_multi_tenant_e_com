@@ -97,7 +97,65 @@ test('checkout props omit branch keys', function () {
             ->has('paymentMethods')
             ->has('deliveryMethods', 2)
             ->where('deliveryMethods.0.formattedFee', 'Calculated at checkout')
-            ->where('deliveryMethods.1.formattedFee', 'Calculated at checkout'));
+            ->where('deliveryMethods.1.formattedFee', 'Calculated at checkout')
+            ->where('shippingQuote', null));
+});
+
+test('same-day checkout without a delivery date is rejected', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'same-day-needs-date']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'same-day',
+            'delivery_date' => '',
+            'time_slot_id' => '1',
+        ]))
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHasErrors('delivery_date');
+
+    expect(Order::query()->count())->toBe(0);
+});
+
+test('pinning a location quotes the distance-based shipping fee', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'quoted-shipping-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->post(route('checkout.shipping'), [
+            'latitude' => -33.8688,
+            'longitude' => 151.2093,
+        ])
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHas('storefront.checkout_shipping');
+
+    $quote = session('storefront.checkout_shipping');
+
+    expect($quote['fee'])->toBeGreaterThan(0)
+        ->and($quote['formattedFee'])->toStartWith('$');
+
+    $this->actingAs($user, 'customer')
+        ->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('shippingQuote.formattedFee', $quote['formattedFee'])
+            ->where('shippingQuote.fee', $quote['fee']));
 });
 
 test('place order writes order payment and redemption then clears ordered lines', function () {

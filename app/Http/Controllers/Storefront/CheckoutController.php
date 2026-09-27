@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Storefront\ApplyCouponRequest;
 use App\Http\Requests\Storefront\PlaceOrderRequest;
+use App\Http\Requests\Storefront\QuoteShippingRequest;
 use App\Models\Order;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Storefront\CartService;
@@ -12,6 +13,7 @@ use App\Services\Storefront\CheckoutService;
 use App\Services\Storefront\CouponService;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -43,6 +45,7 @@ class CheckoutController extends Controller
             'paymentMethods' => $this->payments->enabledMethods(),
             'defaultAddressId' => collect($addresses)->firstWhere('is_default', true)['id'] ?? null,
             'appliedCoupon' => request()->session()->get('storefront.checkout_coupon'),
+            'shippingQuote' => request()->session()->get('storefront.checkout_shipping'),
         ]);
     }
 
@@ -73,6 +76,29 @@ class CheckoutController extends Controller
         return back();
     }
 
+    public function quoteShipping(QuoteShippingRequest $request): RedirectResponse
+    {
+        try {
+            $quote = $this->checkout->quoteShipping(
+                $request,
+                (float) $request->validated('latitude'),
+                (float) $request->validated('longitude'),
+            );
+        } catch (ValidationException $exception) {
+            $request->session()->forget('storefront.checkout_shipping');
+
+            throw $exception;
+        }
+
+        $request->session()->put('storefront.checkout_shipping', [
+            ...$quote,
+            'latitude' => (string) $request->validated('latitude'),
+            'longitude' => (string) $request->validated('longitude'),
+        ]);
+
+        return back();
+    }
+
     public function store(PlaceOrderRequest $request): RedirectResponse
     {
         $user = $request->user('customer');
@@ -84,6 +110,7 @@ class CheckoutController extends Controller
         $order = $this->checkout->place($request, $user, $request->validated());
 
         $request->session()->forget('storefront.checkout_coupon');
+        $request->session()->forget('storefront.checkout_shipping');
 
         Toast::success('Order placed.');
 

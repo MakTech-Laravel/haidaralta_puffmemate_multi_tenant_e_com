@@ -37,6 +37,7 @@ Route::middleware('auth:customer')->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
     Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon');
     Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.destroy');
+    Route::post('/checkout/shipping', [CheckoutController::class, 'quoteShipping'])->name('checkout.shipping');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/confirmation/{order}', [CheckoutController::class, 'confirmation'])
         ->name('checkout.confirmation');

@@ -26,6 +26,7 @@ type CheckoutOrderSummaryProps = {
     appliedCoupon: AppliedCoupon;
     couponError?: string;
     termsAccepted: boolean;
+    termsError?: string;
     processing?: boolean;
     onCouponChange: (value: string) => void;
     onApplyCoupon: () => void;
@@ -45,6 +46,7 @@ export function CheckoutOrderSummary({
     appliedCoupon,
     couponError,
     termsAccepted,
+    termsError,
     processing = false,
     onCouponChange,
     onApplyCoupon,
@@ -244,6 +246,9 @@ export function CheckoutOrderSummary({
                     .
                 </Label>
             </div>
+            {termsError ? (
+                <p className="text-destructive mt-2 text-xs">{termsError}</p>
+            ) : null}
         </aside>
     );
 }
