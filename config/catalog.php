@@ -172,4 +172,22 @@ return [
 
     'sku_prefix' => env('CATALOG_SKU_PREFIX', 'PMM'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Default branch shipping rule
+    |--------------------------------------------------------------------------
+    |
+    | Fallback used by ShippingCalculator when a branch has no
+    | branch_shipping_rules row configured yet.
+    |
+    */
+
+    'default_shipping_base_fee' => env('DEFAULT_SHIPPING_BASE_FEE', 5),
+
+    'default_shipping_free_distance_km' => env('DEFAULT_SHIPPING_FREE_DISTANCE_KM', 0),
+
+    'default_shipping_cost_per_km' => env('DEFAULT_SHIPPING_COST_PER_KM', 1),
+
+    'default_shipping_minimum_charge' => env('DEFAULT_SHIPPING_MINIMUM_CHARGE', 0),
+
 ];

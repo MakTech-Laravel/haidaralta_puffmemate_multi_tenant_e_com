@@ -26,6 +26,7 @@ enum PermissionEnum: string
     case MANAGE_SHIFTS = 'manage-shifts';
     case VIEW_TRANSFERS = 'view-transfers';
     case MANAGE_CONVERSATIONS = 'manage-conversations';
+    case MANAGE_ORDERS = 'manage-orders';
 
     case VIEW_BRANCH_DASHBOARD = 'view-branch-dashboard';
     case MANAGE_BRANCH_PRODUCTS = 'manage-branch-products';
@@ -65,7 +66,8 @@ enum PermissionEnum: string
             self::MANAGE_DRIVERS,
             self::MANAGE_SHIFTS,
             self::VIEW_TRANSFERS,
-            self::MANAGE_CONVERSATIONS => 'platform',
+            self::MANAGE_CONVERSATIONS,
+            self::MANAGE_ORDERS => 'platform',
 
             self::VIEW_BRANCH_DASHBOARD,
             self::MANAGE_BRANCH_PRODUCTS,
@@ -105,7 +107,8 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_PRODUCTS,
             self::MANAGE_CATALOG,
             self::MANAGE_BRANCH_INVENTORIES => 'Products',
-            self::MANAGE_BRANCH_ORDERS => 'Orders',
+            self::MANAGE_BRANCH_ORDERS,
+            self::MANAGE_ORDERS => 'Orders',
             self::MANAGE_REPORTS => 'Reports',
             self::VIEW_ACTIVITY_LOGS,
             self::VIEW_BRANCH_ACTIVITY_LOGS => 'Activity',
@@ -153,6 +156,7 @@ enum PermissionEnum: string
             self::MANAGE_SHIFTS => 'Manage shifts',
             self::VIEW_TRANSFERS => 'View transfer history',
             self::MANAGE_CONVERSATIONS => 'Manage conversations',
+            self::MANAGE_ORDERS => 'Manage orders',
             self::VIEW_BRANCH_DASHBOARD => 'View branch dashboard',
             self::MANAGE_BRANCH_PRODUCTS => 'Manage branch products',
             self::MANAGE_BRANCH_ORDERS => 'Manage branch orders',

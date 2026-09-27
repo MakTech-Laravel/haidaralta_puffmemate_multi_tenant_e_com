@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
+use App\Contracts\DistanceCalculator;
 use App\Contracts\SendsSms;
 use App\Listeners\ApplyMailReplyTo;
 use App\Listeners\AuthActivitySubscriber;
 use App\Models\User;
 use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\SmtpSettingsService;
+use App\Services\Order\HaversineDistanceCalculator;
 use App\Services\Sms\FakeSmsSender;
 use App\Services\Sms\LogSmsSender;
 use App\Support\OpsDashboardAccess;
@@ -35,6 +37,11 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         Fortify::ignoreRoutes();
+
+        // Provider-independent by design — swap for a Google/Mapbox-backed
+        // implementation later without touching BranchAllocationService or
+        // ShippingCalculator.
+        $this->app->bind(DistanceCalculator::class, HaversineDistanceCalculator::class);
 
         $this->app->singleton(SendsSms::class, function (): SendsSms {
             if ($this->app->environment('testing')) {

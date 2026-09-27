@@ -12,6 +12,7 @@ class OrderStatusHistory extends Model
      */
     protected $fillable = [
         'order_id',
+        'fulfillment_id',
         'old_status',
         'new_status',
         'comment',
@@ -24,6 +25,14 @@ class OrderStatusHistory extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * @return BelongsTo<OrderFulfillment, $this>
+     */
+    public function fulfillment(): BelongsTo
+    {
+        return $this->belongsTo(OrderFulfillment::class, 'fulfillment_id');
     }
 
     /**

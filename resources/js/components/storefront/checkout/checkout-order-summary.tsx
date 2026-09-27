@@ -19,6 +19,7 @@ type CheckoutOrderSummaryProps = {
     subtotal: number;
     deliveryFee: number;
     deliveryLabel: string;
+    deliveryIsEstimate?: boolean;
     coupon: string;
     appliedCoupon: AppliedCoupon;
     couponError?: string;
@@ -36,6 +37,7 @@ export function CheckoutOrderSummary({
     subtotal,
     deliveryFee,
     deliveryLabel,
+    deliveryIsEstimate = false,
     coupon,
     appliedCoupon,
     couponError,
@@ -136,6 +138,13 @@ export function CheckoutOrderSummary({
                         {deliveryLabel}
                     </dd>
                 </div>
+                {deliveryIsEstimate ? (
+                    <p className="text-muted-foreground text-xs">
+                        Final delivery fee depends on distance to the branch
+                        fulfilling your order and is shown on your
+                        confirmation.
+                    </p>
+                ) : null}
             </dl>
 
             <div className="border-border mt-4 flex items-end justify-between gap-3 border-t pt-4">

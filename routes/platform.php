@@ -25,6 +25,7 @@ use App\Http\Controllers\Platform\GeneralSettingsController as PlatformGeneralSe
 use App\Http\Controllers\Platform\HomeBannerController as PlatformHomeBannerController;
 use App\Http\Controllers\Platform\NotificationController as PlatformNotificationController;
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
+use App\Http\Controllers\Platform\OrderController as PlatformOrderController;
 use App\Http\Controllers\Platform\PaymentGatewaySettingsController as PlatformPaymentGatewaySettingsController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\PriceRangeController as PlatformPriceRangeController;
@@ -317,6 +318,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.delivery-settings.index');
         Route::put('delivery-settings/{delivery_method}', [PlatformDeliverySettingsController::class, 'update'])
             ->name('platform.delivery-settings.update');
+        Route::put('delivery-settings/shipping-rules/{branch_shipping_rule}', [PlatformDeliverySettingsController::class, 'updateShippingRule'])
+            ->name('platform.delivery-settings.shipping-rules.update');
         Route::get('payment-methods', [PlatformPaymentGatewaySettingsController::class, 'edit'])
             ->name('platform.payment-methods.index');
 
@@ -328,6 +331,15 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.products.variants.update');
         Route::delete('products/{product}/variants/{variant}', [PlatformProductVariantController::class, 'destroy'])
             ->name('platform.products.variants.destroy');
+    });
+
+    Route::middleware(['permission:manage-orders'])->group(function () {
+        Route::get('orders', [PlatformOrderController::class, 'index'])->name('platform.orders.index');
+        Route::get('orders/{order}', [PlatformOrderController::class, 'show'])->name('platform.orders.show');
+        Route::put('orders/{order}/fulfillments/{fulfillment}/status', [PlatformOrderController::class, 'updateStatus'])
+            ->name('platform.orders.fulfillments.status');
+        Route::put('orders/{order}/payment-status', [PlatformOrderController::class, 'markPaid'])
+            ->name('platform.orders.payment-status');
     });
 
     Route::middleware(['permission:manage-conversations'])->group(function () {

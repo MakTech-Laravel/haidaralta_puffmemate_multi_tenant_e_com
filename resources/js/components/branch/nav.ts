@@ -193,11 +193,13 @@ export function buildBranchNav(
             }),
             navGroup({
                 title: 'Order management',
+                href: `/branch/${slug}/orders`,
                 icon: ShoppingBag,
                 permissions: ['manage-branch-orders'],
                 items: [
-                    navSoon({
+                    navLink({
                         title: 'Orders',
+                        href: `/branch/${slug}/orders`,
                         icon: ShoppingBag,
                         permissions: ['manage-branch-orders'],
                     }),

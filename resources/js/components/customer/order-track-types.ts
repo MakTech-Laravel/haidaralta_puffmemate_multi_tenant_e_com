@@ -25,14 +25,27 @@ export type OrderTimelineStep = {
     detail: string;
 };
 
+export type CustomerOrderStatus =
+    | 'pending'
+    | 'confirmed'
+    | 'processing'
+    | 'partially_delivered'
+    | 'delivered'
+    | 'cancelled';
+
+export type CustomerPaymentStatus = 'unpaid' | 'paid' | 'refunded';
+
 export type CustomerOrderDetail = {
     id: string;
     orderNumber: string;
-    branchName: string;
-    status: 'shipped' | 'processing' | 'delivered';
+    status: CustomerOrderStatus;
+    paymentStatus: CustomerPaymentStatus;
+    date: string;
     products: OrderTrackProduct[];
+    subtotalLabel: string;
+    deliveryFeeLabel: string;
     totalLabel: string;
     shippingAddress: OrderTrackShippingAddress;
-    driver: OrderTrackDriver;
+    driver?: OrderTrackDriver | null;
     timeline: OrderTimelineStep[];
 };

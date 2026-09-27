@@ -31,6 +31,17 @@ type DeliveryMethodRow = {
     slots: Slot[];
 };
 
+type BranchShippingRuleRow = {
+    id: number;
+    branch_id: number;
+    branch_name: string;
+    base_fee: string;
+    free_delivery_distance_km: string;
+    cost_per_km: string;
+    minimum_delivery_charge: string;
+    status: boolean;
+};
+
 function DeliveryMethodForm({ method }: { method: DeliveryMethodRow }) {
     const form = useForm({
         label: method.label,
@@ -128,10 +139,128 @@ function DeliveryMethodForm({ method }: { method: DeliveryMethodRow }) {
     );
 }
 
+function BranchShippingRuleForm({ rule }: { rule: BranchShippingRuleRow }) {
+    const form = useForm({
+        base_fee: rule.base_fee,
+        free_delivery_distance_km: rule.free_delivery_distance_km,
+        cost_per_km: rule.cost_per_km,
+        minimum_delivery_charge: rule.minimum_delivery_charge,
+        status: rule.status,
+    });
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        form.put(`/platform/delivery-settings/shipping-rules/${rule.id}`, {
+            preserveScroll: true,
+        });
+    };
+
+    return (
+        <form className={settingsCardClass} onSubmit={submit}>
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="text-foreground text-base font-semibold">
+                    {rule.branch_name}
+                </h3>
+                <Switch
+                    checked={form.data.status}
+                    onCheckedChange={(checked) =>
+                        form.setData('status', checked)
+                    }
+                    aria-label={`Toggle shipping for ${rule.branch_name}`}
+                />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                    <Label htmlFor={`base-fee-${rule.id}`}>Base fee</Label>
+                    <Input
+                        id={`base-fee-${rule.id}`}
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={form.data.base_fee}
+                        onChange={(event) =>
+                            form.setData('base_fee', event.target.value)
+                        }
+                    />
+                    <InputError message={form.errors.base_fee} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={`cost-per-km-${rule.id}`}>
+                        Cost per km
+                    </Label>
+                    <Input
+                        id={`cost-per-km-${rule.id}`}
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={form.data.cost_per_km}
+                        onChange={(event) =>
+                            form.setData('cost_per_km', event.target.value)
+                        }
+                    />
+                    <InputError message={form.errors.cost_per_km} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={`free-distance-${rule.id}`}>
+                        Free delivery distance (km)
+                    </Label>
+                    <Input
+                        id={`free-distance-${rule.id}`}
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        placeholder="No free distance"
+                        value={form.data.free_delivery_distance_km}
+                        onChange={(event) =>
+                            form.setData(
+                                'free_delivery_distance_km',
+                                event.target.value,
+                            )
+                        }
+                    />
+                    <InputError
+                        message={form.errors.free_delivery_distance_km}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={`min-charge-${rule.id}`}>
+                        Minimum delivery charge
+                    </Label>
+                    <Input
+                        id={`min-charge-${rule.id}`}
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={form.data.minimum_delivery_charge}
+                        onChange={(event) =>
+                            form.setData(
+                                'minimum_delivery_charge',
+                                event.target.value,
+                            )
+                        }
+                    />
+                    <InputError
+                        message={form.errors.minimum_delivery_charge}
+                    />
+                </div>
+            </div>
+            <p className="text-muted-foreground mt-4 text-xs">
+                Delivery fee = max(minimum charge, base fee + cost per km ×
+                distance). Free under the free-delivery distance.
+            </p>
+            <Button type="submit" className="mt-4" disabled={form.processing}>
+                Save shipping rule
+            </Button>
+        </form>
+    );
+}
+
 export default function PlatformDeliverySettingsIndex({
     methods,
+    branchShippingRules,
 }: {
     methods: DeliveryMethodRow[];
+    branchShippingRules: BranchShippingRuleRow[];
 }) {
     return (
         <>
@@ -145,6 +274,16 @@ export default function PlatformDeliverySettingsIndex({
                 <div className="grid gap-4">
                     {methods.map((method) => (
                         <DeliveryMethodForm key={method.id} method={method} />
+                    ))}
+                </div>
+
+                <Heading
+                    title="Branch shipping rules"
+                    description="Dynamic per-branch delivery fee, based on distance from the branch to the customer."
+                />
+                <div className="grid gap-4">
+                    {branchShippingRules.map((rule) => (
+                        <BranchShippingRuleForm key={rule.id} rule={rule} />
                     ))}
                 </div>
             </div>

@@ -12,13 +12,13 @@ return new class extends Migration
             $table->id();
             $table->string('order_number', 32)->unique();
             $table->foreignId('customer_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('driver_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('address_id')->nullable()->constrained('addresses')->nullOnDelete();
             $table->foreignId('coupon_id')->nullable()->constrained()->nullOnDelete();
             $table->string('coupon_code')->nullable();
             $table->string('status', 32)->default('pending');
-            $table->string('fulfillment_status', 32)->nullable();
+            $table->json('shipping_address_snapshot')->nullable();
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
             $table->decimal('subtotal', 12, 2)->default(0);
             $table->decimal('discount', 12, 2)->default(0);
             $table->decimal('delivery_fee', 12, 2)->default(0);
@@ -32,9 +32,8 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->index(['branch_id', 'status', 'created_at']);
+            $table->index(['status', 'created_at']);
             $table->index('customer_id');
-            $table->index('driver_id');
         });
     }
 

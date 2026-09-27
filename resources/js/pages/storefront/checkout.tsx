@@ -1,5 +1,5 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
     CheckoutForm,
     type CheckoutDetails,
@@ -86,14 +86,6 @@ export default function StorefrontCheckout({
         paymentMethodId: form.data.payment_method,
     };
 
-    const selectedMethod = useMemo(
-        () =>
-            deliveryMethods.find(
-                (method) => method.id === form.data.delivery_method,
-            ),
-        [deliveryMethods, form.data.delivery_method],
-    );
-
     const onDetailChange = <K extends keyof CheckoutDetails>(
         key: K,
         value: CheckoutDetails[K],
@@ -153,10 +145,9 @@ export default function StorefrontCheckout({
                             items={items}
                             itemCount={itemCount}
                             subtotal={subtotal}
-                            deliveryFee={selectedMethod?.fee ?? 0}
-                            deliveryLabel={
-                                selectedMethod?.formattedFee ?? 'FREE'
-                            }
+                            deliveryFee={0}
+                            deliveryLabel="Calculated at checkout"
+                            deliveryIsEstimate
                             coupon={couponCode}
                             appliedCoupon={appliedCoupon}
                             couponError={page.props.errors?.coupon}

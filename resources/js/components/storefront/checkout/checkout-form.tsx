@@ -195,6 +195,15 @@ export function CheckoutForm({
                             }}
                         />
                     </div>
+                    {!details.latitude || !details.longitude ? (
+                        <Alert variant="destructive">
+                            <AlertDescription>
+                                Pin your delivery location on the map so we
+                                can find the nearest branch and calculate your
+                                delivery fee.
+                            </AlertDescription>
+                        </Alert>
+                    ) : null}
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
                             <Label htmlFor="checkout-city">City</Label>
