@@ -12,6 +12,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/branch-form.tsx, resources/js/components/admin/driver-form.tsx, resources/js/components/admin/branch-location-map-dialog.tsx, resources/js/components/admin/driver-branch-assign-sheet.tsx, resources/js/components/admin/shift-*.tsx, resources/js/components/admin/{admin,staff}-form.tsx, resources/js/components/admin/shift-board.tsx | .ai/rules/admin.md |
 | resources/js/pages/platform/announcements/** | .ai/rules/announcements.md |
 | app/Http/Middleware/EnsureAnyPortalGuard.php,routes/settings.php | .ai/rules/app-http-middleware.md |
+| app/Services/Application/ApplicationSettingsService.php,resources/js/hooks/use-app-brand.ts | .ai/rules/application-js-hooks.md |
 | resources/js/pages/auth/**,app/Actions/Fortify/CreateNewUser.php,app/Http/Requests/Auth/StoreRegisteredUserRequest.php,resources/js/layouts/auth/** | .ai/rules/auth.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php, config/shifts.php | .ai/rules/backup.md |
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/**/staff/**,resources/js/pages/platform/branch-staff/** | .ai/rules/branch-staff.md |

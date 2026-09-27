@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\PaymentGatewaySetting;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
 use Database\Seeders\ApplicationSettingsSeeder;
@@ -99,6 +100,33 @@ test('checkout props omit branch keys', function () {
             ->missing('deliveryMethods.0.formattedFee')
             ->missing('deliveryMethods.1.formattedFee')
             ->where('shippingQuote', null));
+});
+
+test('checkout shares the application settings name', function () {
+    app(ApplicationSettingsService::class)->update([
+        'app_name' => 'Harbour Smoke',
+        'app_short_name' => 'Harbour',
+        'date_format' => 'Y-m-d',
+        'time_format' => 'H:i',
+        'theme_color' => '#C4472F',
+        'background_color' => '#FFFFFF',
+    ]);
+
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'branded-checkout-item']);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('name', 'Harbour Smoke')
+            ->where('application.name', 'Harbour Smoke'));
 });
 
 test('same-day checkout without a delivery date is rejected', function () {

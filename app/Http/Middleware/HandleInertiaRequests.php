@@ -49,11 +49,12 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         [$auth, $portal, $branch] = $this->resolveSharedAuth();
+        $application = app(ApplicationSettingsService::class)->sharedPayload();
 
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
-            'application' => app(ApplicationSettingsService::class)->sharedPayload(),
+            'name' => $application['name'],
+            'application' => $application,
             'contacts' => app(ContactSettingsService::class)->sharedPayload(),
             'paymentGateways' => app(PaymentGatewaySettingsService::class)->enabledMethods(),
             'auth' => $auth,
