@@ -1,5 +1,5 @@
 import { Head, router, useForm, useHttp, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     applyCoupon,
     quoteShipping,
@@ -91,15 +91,23 @@ export default function StorefrontCheckout({
 
     const [couponCode, setCouponCode] = useState(appliedCoupon?.code ?? '');
     const [quote, setQuote] = useState<ShippingQuote>(shippingQuote);
-    const [quotedPin, setQuotedPin] = useState<string | null>(
+    const requestedPin = useRef<string | null>(
         shippingQuote
             ? `${shippingQuote.latitude},${shippingQuote.longitude}`
             : null,
     );
-    const { submit, processing: quoting, errors: quoteErrors } = useHttp<
-        Record<string, never>,
+    const {
+        transform: transformQuote,
+        post: postQuote,
+        processing: quoting,
+        errors: quoteErrors,
+    } = useHttp<
+        { latitude: string; longitude: string },
         { fee: number; formattedFee: string }
-    >();
+    >({
+        latitude: '',
+        longitude: '',
+    });
 
     const details: CheckoutDetails = {
         firstName: form.data.first_name,
@@ -129,18 +137,27 @@ export default function StorefrontCheckout({
             : null;
 
     useEffect(() => {
-        if (pinKey === null || quotedMatchesPin || quotedPin === pinKey) {
+        if (
+            pinKey === null ||
+            quotedMatchesPin ||
+            requestedPin.current === pinKey
+        ) {
             return;
         }
 
         const latitude = details.latitude;
         const longitude = details.longitude;
-        setQuotedPin(pinKey);
+        const lat = Number(latitude);
+        const lng = Number(longitude);
 
-        void submit({
-            ...quoteShipping.post(),
-            data: { latitude, longitude },
-        })
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            return;
+        }
+
+        requestedPin.current = pinKey;
+        transformQuote(() => ({ latitude, longitude }));
+
+        void postQuote(quoteShipping.url())
             .then((payload) => {
                 setQuote({
                     fee: payload.fee,
@@ -156,9 +173,9 @@ export default function StorefrontCheckout({
         details.latitude,
         details.longitude,
         pinKey,
+        postQuote,
         quotedMatchesPin,
-        quotedPin,
-        submit,
+        transformQuote,
     ]);
 
     const onDetailChange = <K extends keyof CheckoutDetails>(
@@ -183,6 +200,19 @@ export default function StorefrontCheckout({
         };
 
         form.setData(map[key], value as never);
+    };
+
+    const applyPin = (
+        latitude: string,
+        longitude: string,
+        address?: string,
+    ) => {
+        form.setData((current) => ({
+            ...current,
+            latitude,
+            longitude,
+            ...(address ? { address } : {}),
+        }));
     };
 
     const errors = {
@@ -224,6 +254,7 @@ export default function StorefrontCheckout({
                             timeSlots={timeSlots}
                             errors={errors}
                             onChange={onDetailChange}
+                            onPinSelect={applyPin}
                         />
                         <CheckoutOrderSummary
                             items={items}

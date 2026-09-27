@@ -50,6 +50,11 @@ type CheckoutFormProps = {
         key: K,
         value: CheckoutDetails[K],
     ) => void;
+    onPinSelect?: (
+        latitude: string,
+        longitude: string,
+        address?: string,
+    ) => void;
     className?: string;
 };
 
@@ -119,6 +124,7 @@ export function CheckoutForm({
     timeSlots,
     errors = {},
     onChange,
+    onPinSelect,
     className,
 }: CheckoutFormProps) {
     const selectedMethod = deliveryMethods.find(
@@ -281,6 +287,11 @@ export function CheckoutForm({
                             latitude={details.latitude}
                             longitude={details.longitude}
                             onSelect={({ latitude, longitude, address }) => {
+                                if (onPinSelect) {
+                                    onPinSelect(latitude, longitude, address);
+                                    return;
+                                }
+
                                 onChange('latitude', latitude);
                                 onChange('longitude', longitude);
                                 if (address) {

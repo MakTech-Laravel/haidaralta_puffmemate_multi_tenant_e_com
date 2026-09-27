@@ -204,9 +204,19 @@ export function CheckoutMapDialog({
                     <Button
                         type="button"
                         onClick={() => {
+                            const nextLat = Number(lat);
+                            const nextLng = Number(lng);
+
+                            if (
+                                !Number.isFinite(nextLat) ||
+                                !Number.isFinite(nextLng)
+                            ) {
+                                return;
+                            }
+
                             onSelect({
-                                latitude: lat,
-                                longitude: lng,
+                                latitude: String(nextLat),
+                                longitude: String(nextLng),
                                 address,
                             });
                             setOpen(false);
