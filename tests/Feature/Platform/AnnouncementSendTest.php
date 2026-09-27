@@ -4,11 +4,15 @@ use App\Enums\AnnouncementType;
 use App\Enums\NotificationType;
 use App\Enums\UserType;
 use App\Jobs\FanOutNotificationJob;
+use App\Jobs\SendAnnouncementEmailJob;
+use App\Jobs\SendAnnouncementPhoneJob;
 use App\Jobs\SendFcmPushJob;
+use App\Mail\AnnouncementMail;
 use App\Models\Announcement;
 use App\Models\Notification;
 use App\Models\User;
 use App\Models\UserNotification;
+use App\Services\Sms\FakeSmsSender;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -167,8 +171,13 @@ test('empty group or individual lists are rejected', function () {
         ->assertSessionHasErrors('recipients');
 });
 
-test('phone and email flags are stored without sending mail or push', function () {
-    Queue::fake([FanOutNotificationJob::class, SendFcmPushJob::class]);
+test('phone and email flags queue channel jobs without sending push', function () {
+    Queue::fake([
+        FanOutNotificationJob::class,
+        SendFcmPushJob::class,
+        SendAnnouncementPhoneJob::class,
+        SendAnnouncementEmailJob::class,
+    ]);
     Mail::fake();
 
     $admin = announcementAdmin();
@@ -194,10 +203,106 @@ test('phone and email flags are stored without sending mail or push', function (
         ->and($announcement->via_push)->toBeFalse()
         ->and($announcement->via_system)->toBeTrue();
 
+    $emailUserIds = User::query()
+        ->where('is_active', true)
+        ->where('user_type', UserType::PLATFORM)
+        ->whereNotNull('email')
+        ->where('email', '!=', '')
+        ->orderBy('id')
+        ->pluck('id')
+        ->map(fn (int|string $id): int => (int) $id)
+        ->values();
+
     Queue::assertPushed(FanOutNotificationJob::class);
+    Queue::assertPushed(SendAnnouncementPhoneJob::class);
+    Queue::assertPushedTimes(SendAnnouncementEmailJob::class, $emailUserIds->count());
     Queue::assertNotPushed(SendFcmPushJob::class);
+
+    $emailUserIds->each(function (int $userId, int $index): void {
+        Queue::assertPushed(SendAnnouncementEmailJob::class, function (SendAnnouncementEmailJob $job) use ($userId, $index): bool {
+            return $job->userId === $userId
+                && $job->title === 'Alert'
+                && $job->message === 'Heads up.'
+                && $job->delay === ($index === 0 ? null : $index * 2);
+        });
+    });
     Mail::assertNothingOutgoing();
     $this->assertDatabaseCount('notifications', 1);
+});
+
+test('email goes only to recipients with an address and phone logs for each recipient', function () {
+    Queue::fake([FanOutNotificationJob::class, SendFcmPushJob::class]);
+    Mail::fake();
+
+    $admin = announcementAdmin();
+    $withEmail = User::factory()->create([
+        'user_type' => UserType::CUSTOMER,
+        'name' => 'Has Mail',
+        'email' => 'with-mail@example.com',
+    ]);
+    $withoutEmail = User::factory()->create([
+        'user_type' => UserType::CUSTOMER,
+        'name' => 'No Mail',
+        'email' => null,
+    ]);
+
+    $sms = app(FakeSmsSender::class);
+    $sms->reset();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.announcements.store'), [
+            'send_mode' => 'individual',
+            'recipients' => [
+                ['id' => $withEmail->id, 'audience' => 'customer'],
+                ['id' => $withoutEmail->id, 'audience' => 'customer'],
+            ],
+            'type' => 'info',
+            'icon' => 'bell',
+            'title' => 'Channel notice',
+            'message' => 'Please read.',
+            'link_label' => 'Shop now',
+            'link_url' => 'https://example.com/shop',
+            'via_phone' => true,
+            'via_email' => true,
+        ])
+        ->assertRedirect(route('platform.announcements.index'));
+
+    Mail::assertSent(AnnouncementMail::class, 1);
+    Mail::assertSent(AnnouncementMail::class, function (AnnouncementMail $mail) use ($withEmail): bool {
+        return $mail->hasTo($withEmail->email)
+            && $mail->title === 'Channel notice'
+            && $mail->body === 'Please read.'
+            && $mail->linkUrl === 'https://example.com/shop';
+    });
+
+    expect($sms->messages)->toHaveCount(2);
+
+    $phones = collect($sms->messages)->pluck('to')->all();
+
+    expect($phones)->toContain($withEmail->phone)
+        ->and($phones)->toContain($withoutEmail->phone)
+        ->and($sms->messages[0]['message'])->toContain('Channel notice')
+        ->and($sms->messages[0]['message'])->toContain('Please read.')
+        ->and($sms->messages[0]['message'])->toContain('https://example.com/shop');
+});
+
+test('announcement mail template includes the title and link', function () {
+    $mailable = new AnnouncementMail(
+        title: 'Sale',
+        body: 'Save today.',
+        recipientName: 'Alex',
+        linkLabel: 'Shop now',
+        linkUrl: 'https://example.com/shop',
+    );
+
+    $mailable->assertSeeInHtml('Sale')
+        ->assertSeeInHtml('Save today.')
+        ->assertSeeInHtml('Alex')
+        ->assertSeeInHtml('https://example.com/shop')
+        ->assertSeeInHtml('Shop now')
+        ->assertSeeInHtml('#C4472F')
+        ->assertSeeInText('Sale')
+        ->assertSeeInText('https://example.com/shop');
 });
 
 test('push queues an fcm job for the announcement recipients', function () {
