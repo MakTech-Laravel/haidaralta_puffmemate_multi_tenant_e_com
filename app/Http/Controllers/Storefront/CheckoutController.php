@@ -125,16 +125,8 @@ class CheckoutController extends Controller
         $user = request()->user('customer');
         abort_unless($user !== null && $order->customer_id === $user->id, 404);
 
-        $order->load('items');
-
         return Inertia::render('storefront/checkout-confirmation', [
-            'order' => [
-                'id' => $order->id,
-                'orderNumber' => $order->order_number,
-                'total' => '$'.number_format((float) $order->total_amount, 2),
-                'paymentMethod' => $order->payment_method,
-                'itemCount' => $order->items->sum('quantity'),
-            ],
+            'order' => $this->checkout->confirmation($order),
         ]);
     }
 }

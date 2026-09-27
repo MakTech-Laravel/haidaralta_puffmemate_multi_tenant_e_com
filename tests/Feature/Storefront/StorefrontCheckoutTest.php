@@ -221,13 +221,17 @@ test('place order writes order payment and redemption then clears ordered lines'
             'quantity' => 1,
         ]);
 
-    $this->actingAs($user, 'customer')
+    $response = $this->actingAs($user, 'customer')
         ->post(route('checkout.store'), checkoutPayload([
             'coupon' => $coupon->code,
-        ]))
-        ->assertRedirect();
+        ]));
 
     $order = Order::query()->firstOrFail();
+
+    $response->assertRedirect(route('checkout.confirmation', $order));
+
+    expect(parse_url((string) $response->headers->get('Location'), PHP_URL_PATH))
+        ->toBe('/checkout/confirmation/'.$order->order_number);
 
     expect($order->customer_id)->toBe($user->id)
         ->and($order->items)->toHaveCount(1)
@@ -262,7 +266,29 @@ test('place order writes order payment and redemption then clears ordered lines'
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/checkout-confirmation')
-            ->where('order.orderNumber', $order->order_number));
+            ->where('order.orderNumber', $order->order_number)
+            ->where('order.name', 'Ada Lovelace')
+            ->missing('order.id'));
+});
+
+test('checkout confirmation uses the order number not the database id', function () {
+    $user = User::factory()->create();
+    $order = Order::factory()->create([
+        'customer_id' => $user->id,
+        'order_number' => 'PMM-2026-9999',
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->get('/checkout/confirmation/'.$order->id)
+        ->assertNotFound();
+
+    $this->actingAs($user, 'customer')
+        ->get(route('checkout.confirmation', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout-confirmation')
+            ->where('order.orderNumber', 'PMM-2026-9999')
+            ->missing('order.id'));
 });
 
 test('a failed place order leaves the cart intact', function () {
@@ -449,6 +475,7 @@ test('a cart that spans branches splits into multiple fulfillments without leaki
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/checkout-confirmation')
+            ->missing('order.id')
             ->missing('order.branch')
             ->missing('order.fulfillments')
             ->missing('order.branchName'));

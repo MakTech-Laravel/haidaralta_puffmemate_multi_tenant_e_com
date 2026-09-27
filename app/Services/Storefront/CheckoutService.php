@@ -152,6 +152,67 @@ class CheckoutService
     }
 
     /**
+     * @return array{
+     *     orderNumber: string,
+     *     itemCount: int,
+     *     paymentMethod: string,
+     *     deliveryMethod: string,
+     *     deliveryDate: string|null,
+     *     timeSlot: string|null,
+     *     name: string,
+     *     mobile: string,
+     *     address: string,
+     *     city: string|null,
+     *     postalCode: string|null,
+     *     couponCode: string|null,
+     *     items: list<array{name: string, image: string, quantity: int, formattedLineTotal: string}>,
+     *     subtotal: string,
+     *     discount: string|null,
+     *     deliveryFee: string,
+     *     total: string,
+     *     viewOrderUrl: string
+     * }
+     */
+    public function confirmation(Order $order): array
+    {
+        $order->loadMissing('items');
+
+        $snapshot = $order->shipping_address_snapshot ?? [];
+        $delivery = $this->activeDeliveryMethods()->firstWhere('key', $order->delivery_method);
+
+        return [
+            'orderNumber' => $order->order_number,
+            'itemCount' => (int) $order->items->sum('quantity'),
+            'paymentMethod' => $this->payments->labelFor((string) $order->payment_method, $order->payment_method),
+            'deliveryMethod' => $delivery?->label ?? (string) $order->delivery_method,
+            'deliveryDate' => $order->delivery_date?->format('d M Y'),
+            'timeSlot' => $order->time_slot,
+            'name' => $snapshot['name'] ?? '',
+            'mobile' => $snapshot['phone'] ?? '',
+            'address' => $snapshot['address'] ?? '',
+            'city' => $snapshot['city'] ?? null,
+            'postalCode' => $snapshot['postal_code'] ?? null,
+            'couponCode' => $order->coupon_code,
+            'items' => $order->items
+                ->map(fn (OrderItem $item): array => [
+                    'name' => $item->product_name_snapshot,
+                    'image' => MediaUrl::resolve($item->product_snapshot['image'] ?? null),
+                    'quantity' => $item->quantity,
+                    'formattedLineTotal' => '$'.number_format((float) $item->subtotal, 2),
+                ])
+                ->values()
+                ->all(),
+            'subtotal' => '$'.number_format((float) $order->subtotal, 2),
+            'discount' => (float) $order->discount > 0
+                ? '-$'.number_format((float) $order->discount, 2)
+                : null,
+            'deliveryFee' => '$'.number_format((float) $order->delivery_fee, 2),
+            'total' => '$'.number_format((float) $order->total_amount, 2),
+            'viewOrderUrl' => route('customer.orders.show', $order),
+        ];
+    }
+
+    /**
      * @param  array{
      *     name: string,
      *     mobile: string,

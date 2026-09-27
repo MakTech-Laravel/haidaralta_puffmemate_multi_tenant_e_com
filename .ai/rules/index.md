@@ -85,7 +85,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/lib/pwa.ts, resources/js/lib/fcm.ts | .ai/rules/js-lib.md |
 | resources/js/components/driver/nav.ts,app/Http/Controllers/Driver/OrderController.php,resources/js/pages/driver/history.tsx | .ai/rules/js-pages-driver.md |
 | resources/js/pages/settings/profile.tsx | .ai/rules/js-pages-settings.md |
-| app/Http/Controllers/Storefront/CheckoutController.php,resources/js/pages/storefront/checkout.tsx | .ai/rules/js-pages-storefront.md |
+| app/Http/Controllers/Storefront/CheckoutController.php,resources/js/pages/storefront/checkout.tsx, app/Http/Controllers/Storefront/CheckoutController.php,routes/public.php,resources/js/pages/storefront/checkout-confirmation.tsx | .ai/rules/js-pages-storefront.md |
 | resources/js/{app.tsx,components/navigation-overlay.tsx} | .ai/rules/js.md |
 | resources/js/layouts/driver/** | .ai/rules/layouts-driver.md |
 | resources/js/layouts/settings/** | .ai/rules/layouts-settings.md |
