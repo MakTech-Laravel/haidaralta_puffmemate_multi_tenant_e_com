@@ -68,7 +68,7 @@ class CheckoutService
     }
 
     /**
-     * @return list<array{id: string, label: string, description: string, fee: float, formattedFee: string, requiresSlot: bool}>
+     * @return list<array{id: string, label: string, description: string, requiresSlot: bool}>
      */
     public function deliveryMethods(): array
     {
@@ -77,8 +77,6 @@ class CheckoutService
                 'id' => $method->key,
                 'label' => $method->label,
                 'description' => $method->description ?? '',
-                'fee' => (float) $method->fee,
-                'formattedFee' => 'Calculated at checkout',
                 'requiresSlot' => $method->requires_slot,
             ])
             ->all();

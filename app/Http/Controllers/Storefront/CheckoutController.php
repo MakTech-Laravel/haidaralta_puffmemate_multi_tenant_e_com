@@ -12,6 +12,7 @@ use App\Services\Storefront\CartService;
 use App\Services\Storefront\CheckoutService;
 use App\Services\Storefront\CouponService;
 use App\Support\Toast;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -76,7 +77,7 @@ class CheckoutController extends Controller
         return back();
     }
 
-    public function quoteShipping(QuoteShippingRequest $request): RedirectResponse
+    public function quoteShipping(QuoteShippingRequest $request): JsonResponse
     {
         try {
             $quote = $this->checkout->quoteShipping(
@@ -90,13 +91,15 @@ class CheckoutController extends Controller
             throw $exception;
         }
 
-        $request->session()->put('storefront.checkout_shipping', [
+        $payload = [
             ...$quote,
             'latitude' => (string) $request->validated('latitude'),
             'longitude' => (string) $request->validated('longitude'),
-        ]);
+        ];
 
-        return back();
+        $request->session()->put('storefront.checkout_shipping', $payload);
+
+        return response()->json($payload);
     }
 
     public function store(PlaceOrderRequest $request): RedirectResponse

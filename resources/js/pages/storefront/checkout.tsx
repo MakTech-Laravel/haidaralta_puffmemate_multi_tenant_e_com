@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, useHttp, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import {
     applyCoupon,
@@ -90,7 +90,16 @@ export default function StorefrontCheckout({
     });
 
     const [couponCode, setCouponCode] = useState(appliedCoupon?.code ?? '');
-    const [quotedPin, setQuotedPin] = useState<string | null>(null);
+    const [quote, setQuote] = useState<ShippingQuote>(shippingQuote);
+    const [quotedPin, setQuotedPin] = useState<string | null>(
+        shippingQuote
+            ? `${shippingQuote.latitude},${shippingQuote.longitude}`
+            : null,
+    );
+    const { submit, processing: quoting, errors: quoteErrors } = useHttp<
+        Record<string, never>,
+        { fee: number; formattedFee: string }
+    >();
 
     const details: CheckoutDetails = {
         firstName: form.data.first_name,
@@ -110,9 +119,9 @@ export default function StorefrontCheckout({
     };
 
     const quotedMatchesPin =
-        shippingQuote !== null &&
-        sameCoordinate(shippingQuote.latitude, details.latitude) &&
-        sameCoordinate(shippingQuote.longitude, details.longitude);
+        quote !== null &&
+        sameCoordinate(quote.latitude, details.latitude) &&
+        sameCoordinate(quote.longitude, details.longitude);
 
     const pinKey =
         details.latitude && details.longitude
@@ -124,21 +133,32 @@ export default function StorefrontCheckout({
             return;
         }
 
+        const latitude = details.latitude;
+        const longitude = details.longitude;
         setQuotedPin(pinKey);
-        router.post(
-            quoteShipping.url(),
-            {
-                latitude: details.latitude,
-                longitude: details.longitude,
-            },
-            { preserveScroll: true, preserveState: true },
-        );
+
+        void submit({
+            ...quoteShipping.post(),
+            data: { latitude, longitude },
+        })
+            .then((payload) => {
+                setQuote({
+                    fee: payload.fee,
+                    formattedFee: payload.formattedFee,
+                    latitude,
+                    longitude,
+                });
+            })
+            .catch(() => {
+                setQuote(null);
+            });
     }, [
         details.latitude,
         details.longitude,
         pinKey,
         quotedMatchesPin,
         quotedPin,
+        submit,
     ]);
 
     const onDetailChange = <K extends keyof CheckoutDetails>(
@@ -168,6 +188,7 @@ export default function StorefrontCheckout({
     const errors = {
         ...page.props.errors,
         ...form.errors,
+        ...quoteErrors,
     };
 
     return (
@@ -198,13 +219,7 @@ export default function StorefrontCheckout({
                         <CheckoutForm
                             details={details}
                             addresses={addresses}
-                            deliveryMethods={deliveryMethods.map((method) => ({
-                                ...method,
-                                formattedFee: quotedMatchesPin
-                                    ? (shippingQuote?.formattedFee ??
-                                      method.formattedFee)
-                                    : method.formattedFee,
-                            }))}
+                            deliveryMethods={deliveryMethods}
                             paymentMethods={paymentMethods}
                             timeSlots={timeSlots}
                             errors={errors}
@@ -215,15 +230,17 @@ export default function StorefrontCheckout({
                             itemCount={itemCount}
                             subtotal={subtotal}
                             deliveryFee={
-                                quotedMatchesPin ? (shippingQuote?.fee ?? 0) : 0
+                                quotedMatchesPin ? (quote?.fee ?? 0) : 0
                             }
                             deliveryLabel={
-                                quotedMatchesPin
-                                    ? (shippingQuote?.formattedFee ??
-                                      'Calculated at checkout')
-                                    : 'Calculated at checkout'
+                                quoting
+                                    ? 'Calculating…'
+                                    : quotedMatchesPin
+                                      ? (quote?.formattedFee ??
+                                        'Calculated at checkout')
+                                      : 'Calculated at checkout'
                             }
-                            deliveryIsEstimate={!quotedMatchesPin}
+                            deliveryIsEstimate={!quotedMatchesPin && !quoting}
                             coupon={couponCode}
                             appliedCoupon={appliedCoupon}
                             couponError={errors.coupon}
