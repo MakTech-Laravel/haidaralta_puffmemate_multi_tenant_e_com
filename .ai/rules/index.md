@@ -94,6 +94,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/migrations/**, database/migrations/2026_09_13_042225_create_products_table.php | .ai/rules/migrations.md |
 | app/Models/**.php | .ai/rules/models.md |
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
+| app/Services/Order/BranchAllocationService.php | .ai/rules/order.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/orders-js-components-driver.md |
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx | .ai/rules/orders.md |
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |

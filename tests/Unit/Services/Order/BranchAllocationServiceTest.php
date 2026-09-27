@@ -61,6 +61,37 @@ test('a line is split across branches when the nearest branch only has partial s
         ->and($byBranch[$far->id]['lines'][0]['quantity'])->toBe(2);
 });
 
+test('a pin nearer an empty unlimited-radius branch still uses farther stock', function () {
+    $product = Product::factory()->create();
+    $nearEmpty = Branch::factory()->create([
+        'latitude' => -32.9273,
+        'longitude' => 151.7812,
+        'delivery_radius_km' => null,
+        'status' => true,
+    ]);
+    $farStocked = Branch::factory()->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'delivery_radius_km' => null,
+        'status' => true,
+    ]);
+
+    Inventory::factory()->create([
+        'branch_id' => $farStocked->id,
+        'product_id' => $product->id,
+        'quantity' => 5,
+        'status' => true,
+    ]);
+
+    $items = collect([allocationCartItem($product, 1)]);
+
+    $groups = app(BranchAllocationService::class)->allocate(-32.8688, 151.2093, $items);
+
+    expect($groups)->toHaveCount(1)
+        ->and($groups[0]['branch']->id)->toBe($farStocked->id)
+        ->and($groups[0]['branch']->id)->not->toBe($nearEmpty->id);
+});
+
 test('allocation fails when no branch anywhere has enough total stock', function () {
     $product = Product::factory()->create();
     $branch = Branch::factory()->create(['latitude' => -33.8688, 'longitude' => 151.2093, 'status' => true]);

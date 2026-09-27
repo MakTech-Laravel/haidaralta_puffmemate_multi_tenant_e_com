@@ -13,12 +13,13 @@ use Illuminate\Validation\ValidationException;
  * Splits a cart across the branch(es) that can actually fulfil it.
  *
  * Candidates are active branches ranked nearest-first by
- * {@see DistanceCalculator} from the delivery address. Branches within their
- * own `delivery_radius_km` are preferred; if none are in radius for anyone,
- * the single nearest active branch overall is used instead so an order is
- * never hard-rejected for a radius reason alone. Each cart line is then
- * walked nearest-first and assigned to (or split across) whichever
- * candidates hold enough {@see Inventory}.
+ * {@see DistanceCalculator} from the delivery address. A branch with a null
+ * `delivery_radius_km` can deliver anywhere. A branch with a radius is a
+ * candidate only when the pin is inside that radius. If every branch has a
+ * radius and the pin is outside all of them, the single nearest active
+ * branch is used so an order is never hard-rejected for a radius reason
+ * alone. Each cart line is then walked nearest-first and assigned to (or
+ * split across) whichever candidates hold enough {@see Inventory}.
  */
 class BranchAllocationService
 {
@@ -53,17 +54,20 @@ class BranchAllocationService
             ->sortBy(fn (array $row): float => $row['distance_km'] ?? PHP_FLOAT_MAX)
             ->values();
 
-        $withinRadius = $ranked->filter(function (array $row): bool {
+        $deliverable = $ranked->filter(function (array $row): bool {
             $branch = $row['branch'];
 
+            if ($branch->delivery_radius_km === null) {
+                return true;
+            }
+
             return $row['distance_km'] !== null
-                && $branch->delivery_radius_km !== null
                 && $row['distance_km'] <= (float) $branch->delivery_radius_km;
         });
 
         // Never hard-fail an order over radius alone — fall back to the
         // single nearest active branch overall.
-        $candidates = $withinRadius->isNotEmpty() ? $withinRadius : $ranked->take(1);
+        $candidates = $deliverable->isNotEmpty() ? $deliverable : $ranked->take(1);
 
         $remaining = $cartItems
             ->map(fn (CartItem $item): array => [
