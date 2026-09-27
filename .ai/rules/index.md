@@ -144,4 +144,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Support/OpsDashboardAccess.php, config/cache.php | .ai/rules/support.md |
 | resources/js/pages/platform/reports/transfer-history.tsx,app/DataTables/TransferDataTable.php | .ai/rules/transfers-data-tables.md |
 | app/Http/Controllers/Storefront/**,app/Support/Storefront/StorefrontCatalog.php,resources/js/{pages,components}/storefront/**,resources/js/types/storefront.ts,resources/js/lib/storefront*.ts | .ai/rules/types-js-lib.md |
-| resources/js/components/ui/{time-picker,wheel-picker}.tsx | .ai/rules/ui.md |
+| resources/js/components/ui/{time-picker,wheel-picker}.tsx, resources/js/components/ui/alert.tsx | .ai/rules/ui.md |

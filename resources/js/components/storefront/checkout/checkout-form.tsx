@@ -1,4 +1,5 @@
 import { format, isValid, parse } from 'date-fns';
+import AlertError from '@/components/alert-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -146,20 +147,28 @@ export function CheckoutForm({
         onChange('longitude', address.longitude ?? '');
     };
 
-    const errorMessages = Object.values(errors).filter(Boolean);
+    const errorMessages = Object.values(errors).flatMap((value) => {
+        if (typeof value === 'string' && value.trim() !== '') {
+            return [value];
+        }
+
+        if (Array.isArray(value)) {
+            return value.filter(
+                (item): item is string =>
+                    typeof item === 'string' && item.trim() !== '',
+            );
+        }
+
+        return [];
+    });
 
     return (
         <div className={cn('flex flex-col gap-3 sm:gap-4', className)}>
             {errorMessages.length > 0 ? (
-                <Alert variant="destructive">
-                    <AlertDescription>
-                        <ul className="list-disc space-y-1 pl-4">
-                            {errorMessages.map((message) => (
-                                <li key={message}>{message}</li>
-                            ))}
-                        </ul>
-                    </AlertDescription>
-                </Alert>
+                <AlertError
+                    title="Please fix the following."
+                    errors={errorMessages}
+                />
             ) : null}
             <Card className={sectionCardClass}>
                 <CardHeader>
