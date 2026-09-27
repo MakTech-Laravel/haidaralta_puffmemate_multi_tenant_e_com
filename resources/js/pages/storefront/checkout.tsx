@@ -1,6 +1,11 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
+    applyCoupon,
+    removeCoupon,
+    store as storeCheckout,
+} from '@/actions/App/Http/Controllers/Storefront/CheckoutController';
+import {
     CheckoutForm,
     type CheckoutDetails,
 } from '@/components/storefront/checkout/checkout-form';
@@ -130,7 +135,7 @@ export default function StorefrontCheckout({
                         onSubmit={(event) => {
                             event.preventDefault();
                             form.setData('coupon', couponCode);
-                            form.post('/checkout');
+                            form.post(storeCheckout.url());
                         }}
                     >
                         <CheckoutForm
@@ -156,11 +161,18 @@ export default function StorefrontCheckout({
                             onCouponChange={setCouponCode}
                             onApplyCoupon={() =>
                                 router.post(
-                                    '/checkout/coupon',
+                                    applyCoupon.url(),
                                     { coupon: couponCode },
                                     { preserveScroll: true },
                                 )
                             }
+                            onRemoveCoupon={() => {
+                                setCouponCode('');
+                                form.setData('coupon', '');
+                                router.delete(removeCoupon.url(), {
+                                    preserveScroll: true,
+                                });
+                            }}
                             onTermsChange={(accepted) =>
                                 form.setData('terms', accepted)
                             }

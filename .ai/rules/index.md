@@ -22,6 +22,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/**/catalog/products/index.tsx, resources/js/pages/**/catalog/products/{index,show}.tsx | .ai/rules/catalog-products.md |
 | resources/js/components/catalog/** | .ai/rules/catalog.md |
 | resources/js/pages/**/catalog/categories/index.tsx | .ai/rules/categories.md |
+| resources/js/{pages,components}/storefront/checkout/** | .ai/rules/checkout.md |
 | resources/js/components/color-picker/** | .ai/rules/color-picker.md |
 | resources/js/pages/**/permissions/**, resources/js/components/admin/permission-groups-table.tsx | .ai/rules/components-admin.md |
 | resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx | .ai/rules/components-branch.md |

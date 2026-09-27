@@ -66,6 +66,13 @@ class CheckoutController extends Controller
         return back()->with(['appliedCoupon' => $applied]);
     }
 
+    public function removeCoupon(): RedirectResponse
+    {
+        request()->session()->forget('storefront.checkout_coupon');
+
+        return back();
+    }
+
     public function store(PlaceOrderRequest $request): RedirectResponse
     {
         $user = $request->user('customer');

@@ -166,6 +166,7 @@ export function CheckoutMapDialog({
                             id="checkout-lat"
                             value={lat}
                             onChange={(event) => setLat(event.target.value)}
+                            placeholder="-33.8688"
                         />
                     </div>
                     <div className="space-y-1.5">
@@ -174,6 +175,7 @@ export function CheckoutMapDialog({
                             id="checkout-lng"
                             value={lng}
                             onChange={(event) => setLng(event.target.value)}
+                            placeholder="151.2093"
                         />
                     </div>
                 </div>

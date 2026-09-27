@@ -223,6 +223,41 @@ test('invalid expired and min-not-met coupons are rejected', function () {
         ->assertSessionHasErrors('coupon');
 });
 
+test('an applied coupon can be removed from checkout', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'remove-coupon-item']);
+    Coupon::factory()->create([
+        'code' => 'SAVE10',
+        'type' => CouponType::Fixed,
+        'value' => 10,
+        'min_subtotal' => 50,
+        'status' => true,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->post(route('checkout.coupon'), ['coupon' => 'SAVE10'])
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHas('storefront.checkout_coupon');
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->delete(route('checkout.coupon.destroy'))
+        ->assertRedirect(route('checkout'))
+        ->assertSessionMissing('storefront.checkout_coupon');
+});
+
+test('guests cannot remove a checkout coupon', function () {
+    $this->delete(route('checkout.coupon.destroy'))
+        ->assertRedirect(route('login'));
+});
+
 test('a disabled payment method is rejected', function () {
     $user = User::factory()->create();
     $product = storefrontCheckoutProduct(['slug' => 'disabled-payment-item']);

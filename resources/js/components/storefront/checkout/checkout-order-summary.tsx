@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ type CheckoutOrderSummaryProps = {
     processing?: boolean;
     onCouponChange: (value: string) => void;
     onApplyCoupon: () => void;
+    onRemoveCoupon: () => void;
     onTermsChange: (accepted: boolean) => void;
     className?: string;
 };
@@ -45,11 +47,19 @@ export function CheckoutOrderSummary({
     processing = false,
     onCouponChange,
     onApplyCoupon,
+    onRemoveCoupon,
     onTermsChange,
     className,
 }: CheckoutOrderSummaryProps) {
     const brand = useAppBrand();
+    const [couponOpen, setCouponOpen] = useState(Boolean(couponError));
     const discount = appliedCoupon?.discount ?? 0;
+
+    useEffect(() => {
+        if (couponError) {
+            setCouponOpen(true);
+        }
+    }, [couponError]);
     const total = Math.max(subtotal - discount + deliveryFee, 0);
 
     return (
@@ -91,29 +101,72 @@ export function CheckoutOrderSummary({
             </ul>
 
             <div className="mt-5 space-y-2">
-                <Label htmlFor="checkout-coupon">Coupon</Label>
-                <div className="flex gap-2">
-                    <Input
-                        id="checkout-coupon"
-                        value={coupon}
-                        onChange={(event) => onCouponChange(event.target.value)}
-                        className="bg-background h-11 rounded-none border-none"
-                    />
-                    <Button
+                {appliedCoupon ? (
+                    <div className="bg-background flex items-center justify-between gap-3 p-3">
+                        <div className="min-w-0">
+                            <p className="text-foreground text-sm font-semibold">
+                                {appliedCoupon.code}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                                {appliedCoupon.formattedDiscount} off
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                                setCouponOpen(false);
+                                onRemoveCoupon();
+                            }}
+                        >
+                            Remove
+                        </Button>
+                    </div>
+                ) : couponOpen ? (
+                    <div className="space-y-2">
+                        <Label htmlFor="checkout-coupon">Coupon code</Label>
+                        <div className="flex gap-2">
+                            <Input
+                                id="checkout-coupon"
+                                value={coupon}
+                                onChange={(event) =>
+                                    onCouponChange(event.target.value)
+                                }
+                                placeholder="Enter coupon code"
+                                autoComplete="off"
+                                className="bg-background h-11 rounded-none border-none"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={onApplyCoupon}
+                            >
+                                Apply
+                            </Button>
+                        </div>
+                        <button
+                            type="button"
+                            className="text-muted-foreground text-xs underline underline-offset-2"
+                            onClick={() => {
+                                setCouponOpen(false);
+                                onCouponChange('');
+                            }}
+                        >
+                            I don’t have a coupon
+                        </button>
+                    </div>
+                ) : (
+                    <button
                         type="button"
-                        variant="outline"
-                        onClick={onApplyCoupon}
+                        className="text-foreground text-sm font-medium underline underline-offset-2"
+                        onClick={() => setCouponOpen(true)}
                     >
-                        Apply
-                    </Button>
-                </div>
+                        Have a coupon code?
+                    </button>
+                )}
                 {couponError ? (
                     <p className="text-destructive text-xs">{couponError}</p>
-                ) : null}
-                {appliedCoupon ? (
-                    <p className="text-sm font-medium">
-                        {appliedCoupon.code} · {appliedCoupon.formattedDiscount}
-                    </p>
                 ) : null}
             </div>
 
