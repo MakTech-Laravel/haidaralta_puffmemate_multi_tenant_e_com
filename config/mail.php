@@ -129,4 +129,20 @@ return [
         'name' => env('MAIL_REPLY_TO_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Announcement Mail Pacing
+    |--------------------------------------------------------------------------
+    |
+    | SendAnnouncementEmailJob uses these values with Laravel's RateLimited
+    | middleware. Defaults match Mailtrap Email Sandbox Free (1 / 10 seconds).
+    | Raise them for a production mailer that allows a higher throughput.
+    |
+    */
+
+    'announcement' => [
+        'max_attempts' => (int) env('MAIL_ANNOUNCEMENT_MAX_ATTEMPTS', 1),
+        'decay_seconds' => (int) env('MAIL_ANNOUNCEMENT_DECAY_SECONDS', 10),
+    ],
+
 ];

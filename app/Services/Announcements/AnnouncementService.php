@@ -5,6 +5,9 @@ namespace App\Services\Announcements;
 use App\Enums\AnnouncementAudience;
 use App\Enums\AnnouncementSendMode;
 use App\Enums\AnnouncementType;
+use App\Jobs\SendAnnouncementEmailJob;
+use App\Jobs\SendAnnouncementPhoneJob;
+use App\Jobs\SendFcmPushJob;
 use App\Models\Announcement;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -42,8 +45,11 @@ class AnnouncementService
 
         $linkLabel = $options['link_label'] ?? null;
         $linkUrl = $options['link_url'] ?? null;
+        $viaPush = (bool) ($options['via_push'] ?? false);
+        $viaPhone = (bool) ($options['via_phone'] ?? false);
+        $viaEmail = (bool) ($options['via_email'] ?? false);
 
-        return DB::transaction(function () use ($actor, $mode, $audiences, $userIds, $type, $icon, $title, $message, $options, $linkLabel, $linkUrl): Announcement {
+        return DB::transaction(function () use ($actor, $mode, $audiences, $userIds, $type, $icon, $title, $message, $options, $linkLabel, $linkUrl, $viaPush, $viaPhone, $viaEmail): Announcement {
             $announcement = Announcement::query()->create([
                 'send_mode' => $mode,
                 'audiences' => array_map(
@@ -83,6 +89,47 @@ class AnnouncementService
                 'recipient_count' => count($userIds),
                 'sent_at' => now(),
             ]);
+
+            if ($viaPush) {
+                SendFcmPushJob::dispatch(
+                    userIds: $userIds,
+                    title: $title,
+                    body: $message,
+                    data: [
+                        'announcement_id' => (string) $announcement->id,
+                        'url' => (string) ($linkUrl ?? ''),
+                        'link_label' => (string) ($linkLabel ?? ''),
+                    ],
+                )->afterCommit();
+            }
+
+            if ($viaPhone) {
+                SendAnnouncementPhoneJob::dispatch(
+                    userIds: $userIds,
+                    title: $title,
+                    message: $message,
+                    linkUrl: $linkUrl,
+                )->afterCommit();
+            }
+
+            if ($viaEmail) {
+                $emailUserIds = User::query()
+                    ->whereIn('id', $userIds)
+                    ->whereNotNull('email')
+                    ->where('email', '!=', '')
+                    ->orderBy('id')
+                    ->pluck('id');
+
+                foreach ($emailUserIds as $userId) {
+                    SendAnnouncementEmailJob::dispatch(
+                        userId: (int) $userId,
+                        title: $title,
+                        message: $message,
+                        linkLabel: $linkLabel,
+                        linkUrl: $linkUrl,
+                    )->afterCommit();
+                }
+            }
 
             return $announcement->refresh();
         });

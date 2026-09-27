@@ -74,6 +74,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | config/catalog.php,app/Http/Controllers/Storefront/HomeController.php | .ai/rules/http-controllers-storefront.md |
 | resources/js/layouts/branch/**,resources/js/components/portal/portal-brand.tsx,app/Http/Middleware/HandleInertiaRequests.php | .ai/rules/http-middleware.md |
 | resources/js/components/admin/role-*.tsx, resources/js/pages/{platform,branch}/roles/**, app/Http/Controllers/{Platform,Branch}/RoleController.php, app/Http/Requests/{Platform,Branch}/*RoleRequest.php | .ai/rules/http-requests-platform-branch.md |
+| app/Jobs/SendAnnouncementEmailJob.php | .ai/rules/jobs.md |
 | app/Services/Driver/**,app/Http/Requests/{Platform,Branch}/*Driver*.php,resources/js/pages/{platform,branch}/drivers/**,resources/js/components/admin/driver-branch-assign-sheet.tsx | .ai/rules/js-components-admin.md |
 | resources/js/components/branch/**, resources/js/components/branch/product-inventory-panel.tsx | .ai/rules/js-components-branch.md |
 | app/Http/Controllers/Driver/OrderController.php,resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/js-components-driver.md |
