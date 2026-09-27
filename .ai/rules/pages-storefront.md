@@ -14,3 +14,6 @@ useHttp.submit is submit(method, url, options), not submit({ url, method, data }
 
 ## React useHttp transform is not chainable
 In React, useHttp.transform() returns undefined. Call transform(() => ({ latitude, longitude })) then postQuote(quoteShipping.url()) on the next line. Do not write transform().post().
+
+## React useForm transform is not chainable
+Call form.transform(...) then form.post(url) on the next line. form.transform(...).post() throws because transform returns undefined in React.

@@ -217,10 +217,21 @@ export function CheckoutOrderSummary({
                 type="submit"
                 size="lg"
                 disabled={processing || !canPlaceOrder}
+                title={
+                    canPlaceOrder
+                        ? undefined
+                        : 'Fill every required field to place your order.'
+                }
                 className="mt-5 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
             >
-                Place order
+                {processing ? 'Placing order…' : 'Place order'}
             </Button>
+            {!canPlaceOrder && !processing ? (
+                <p className="text-muted-foreground mt-2 text-xs">
+                    Fill every required field, including a delivery date for
+                    same-day, then place your order.
+                </p>
+            ) : null}
 
             <div className="mt-4 flex items-start gap-2.5">
                 <Checkbox

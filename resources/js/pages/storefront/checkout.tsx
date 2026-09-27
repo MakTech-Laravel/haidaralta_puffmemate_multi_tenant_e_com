@@ -291,7 +291,10 @@ export default function StorefrontCheckout({
                             form.transform((data) => ({
                                 ...data,
                                 coupon: couponCode,
-                            })).post(storeCheckout.url());
+                            }));
+                            form.post(storeCheckout.url(), {
+                                preserveScroll: true,
+                            });
                         }}
                     >
                         <CheckoutForm
