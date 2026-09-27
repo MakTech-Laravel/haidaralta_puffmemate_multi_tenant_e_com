@@ -1,3 +1,4 @@
+import { NotificationLinkButton } from '@/components/notifications/notification-link-button';
 import { NotificationUnreadDot } from '@/components/notifications/notification-read-status';
 import { NotificationTypeIcon } from '@/components/notifications/notification-type-icon';
 import type { NotificationItem } from '@/components/notifications/types';
@@ -26,6 +27,7 @@ export function NotificationDetail({
             <header className="flex items-start gap-3">
                 <NotificationTypeIcon
                     type={notification.type}
+                    icon={notification.icon}
                     className="size-12"
                     iconClassName="size-6"
                 />
@@ -59,6 +61,12 @@ export function NotificationDetail({
             <p className="text-foreground text-base leading-relaxed whitespace-pre-wrap">
                 {notification.body ?? notification.description}
             </p>
+            {notification.href ? (
+                <NotificationLinkButton
+                    href={notification.href}
+                    label={notification.linkLabel}
+                />
+            ) : null}
         </article>
     );
 }

@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import {
     Bell,
     Check,
@@ -15,8 +15,13 @@ import {
     X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+    recipients as searchRecipients,
+    store,
+} from '@/actions/App/Http/Controllers/Platform/AnnouncementController';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import { LucideIconPicker } from '@/components/icons/lucide-icon-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -52,8 +57,8 @@ type AudienceId = 'customer' | 'driver' | 'branch' | 'platform';
 type MessageType = 'info' | 'promo' | 'alert' | 'update';
 type ChannelId = 'phone' | 'email' | 'push' | 'system';
 
-type DummyPerson = {
-    id: string;
+type Person = {
+    id: number;
     name: string;
     phone: string;
     audience: AudienceId;
@@ -101,17 +106,44 @@ const AUDIENCES: {
     },
 ];
 
-const DUMMY_PEOPLE: DummyPerson[] = [
-    { id: 'c1', name: 'Liam Chen', phone: '+61 400 000 001', audience: 'customer' },
-    { id: 'c2', name: 'Emma Walsh', phone: '+61 400 000 002', audience: 'customer' },
-    { id: 'c3', name: 'Noah Patel', phone: '+61 400 000 003', audience: 'customer' },
-    { id: 'd1', name: 'Sofia Alvarez', phone: '+61 400 000 004', audience: 'driver' },
-    { id: 'd2', name: 'Jack Nguyen', phone: '+61 400 000 005', audience: 'driver' },
-    { id: 'b1', name: 'Maya Brooks', phone: '+61 400 000 006', audience: 'branch' },
-    { id: 'b2', name: 'Owen Hart', phone: '+61 400 000 007', audience: 'branch' },
-    { id: 'p1', name: 'Priya Shah', phone: '+61 400 000 008', audience: 'platform' },
-    { id: 'p2', name: 'Ethan Cole', phone: '+61 400 000 009', audience: 'platform' },
-];
+function xsrfToken(): string {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+async function fetchPeople(
+    audience: AudienceId,
+    query: string,
+    signal?: AbortSignal,
+): Promise<Person[]> {
+    const url = new URL(
+        searchRecipients.url({ query: { audience, q: query } }),
+        window.location.origin,
+    );
+
+    const response = await fetch(url.toString(), {
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-XSRF-TOKEN': xsrfToken(),
+        },
+        credentials: 'same-origin',
+        signal,
+    });
+
+    if (!response.ok) {
+        return [];
+    }
+
+    const payload: { people?: Array<{ id: number; name: string; phone: string }> } =
+        await response.json();
+
+    return (payload.people ?? []).map((person) => ({
+        ...person,
+        audience,
+    }));
+}
 
 const CHANNELS: {
     id: ChannelId;
@@ -197,17 +229,34 @@ function ChoiceCard({
 
 function AudienceCombobox({
     audience,
-    selectedIds,
+    selected,
     onToggle,
 }: {
     audience: (typeof AUDIENCES)[number];
-    selectedIds: string[];
-    onToggle: (id: string) => void;
+    selected: Person[];
+    onToggle: (person: Person) => void;
 }) {
     const [open, setOpen] = useState(false);
-    const people = DUMMY_PEOPLE.filter(
-        (person) => person.audience === audience.id,
-    );
+    const [query, setQuery] = useState('');
+    const [people, setPeople] = useState<Person[]>([]);
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => {
+            void fetchPeople(audience.id, query, controller.signal).then(
+                setPeople,
+            );
+        }, 250);
+
+        return () => {
+            controller.abort();
+            window.clearTimeout(timer);
+        };
+    }, [audience.id, open, query]);
 
     return (
         <div className="flex min-w-0 flex-col gap-2">
@@ -232,30 +281,30 @@ function AudienceCombobox({
                     className="w-(--radix-popover-trigger-width) p-0"
                     align="start"
                 >
-                    <Command>
+                    <Command shouldFilter={false}>
                         <CommandInput
                             placeholder={`Search ${audience.label.toLowerCase()}…`}
+                            value={query}
+                            onValueChange={setQuery}
                         />
                         <CommandList>
                             <CommandEmpty>No people found.</CommandEmpty>
                             <CommandGroup>
                                 {people.map((person) => {
-                                    const selected = selectedIds.includes(
-                                        person.id,
+                                    const isSelected = selected.some(
+                                        (item) => item.id === person.id,
                                     );
 
                                     return (
                                         <CommandItem
                                             key={person.id}
                                             value={`${person.name} ${person.phone}`}
-                                            onSelect={() =>
-                                                onToggle(person.id)
-                                            }
+                                            onSelect={() => onToggle(person)}
                                         >
                                             <Check
                                                 className={cn(
                                                     'size-4',
-                                                    selected
+                                                    isSelected
                                                         ? 'opacity-100'
                                                         : 'opacity-0',
                                                 )}
@@ -283,7 +332,7 @@ function AudienceCombobox({
 export default function PlatformAnnouncementsIndex() {
     const [sendMode, setSendMode] = useState<SendMode>('group');
     const [audiences, setAudiences] = useState<AudienceId[]>([]);
-    const [recipientIds, setRecipientIds] = useState<string[]>([]);
+    const [recipients, setRecipients] = useState<Person[]>([]);
     const [messageType, setMessageType] = useState<MessageType>('info');
     const [iconId, setIconId] = useState('bell');
     const [title, setTitle] = useState('');
@@ -292,6 +341,20 @@ export default function PlatformAnnouncementsIndex() {
     const [linkLabel, setLinkLabel] = useState('');
     const [linkUrl, setLinkUrl] = useState('');
     const [channels, setChannels] = useState<ChannelId[]>(['system']);
+    const form = useForm({
+        send_mode: 'group',
+        audiences: [] as AudienceId[],
+        recipients: [] as Array<{ id: number; audience: AudienceId }>,
+        type: 'info',
+        icon: 'bell',
+        title: '',
+        message: '',
+        link_label: '',
+        link_url: '',
+        via_phone: false,
+        via_email: false,
+        via_push: false,
+    });
 
     const toggleAudience = (id: AudienceId) => {
         setAudiences((current) =>
@@ -301,11 +364,11 @@ export default function PlatformAnnouncementsIndex() {
         );
     };
 
-    const toggleRecipient = (id: string) => {
-        setRecipientIds((current) =>
-            current.includes(id)
-                ? current.filter((item) => item !== id)
-                : [...current, id],
+    const toggleRecipient = (person: Person) => {
+        setRecipients((current) =>
+            current.some((item) => item.id === person.id)
+                ? current.filter((item) => item.id !== person.id)
+                : [...current, person],
         );
     };
 
@@ -325,14 +388,45 @@ export default function PlatformAnnouncementsIndex() {
         () =>
             AUDIENCES.map((audience) => ({
                 ...audience,
-                people: DUMMY_PEOPLE.filter(
-                    (person) =>
-                        person.audience === audience.id &&
-                        recipientIds.includes(person.id),
+                people: recipients.filter(
+                    (person) => person.audience === audience.id,
                 ),
             })),
-        [recipientIds],
+        [recipients],
     );
+
+    const submit = () => {
+        form.transform(() => ({
+            send_mode: sendMode,
+            audiences,
+            recipients: recipients.map((person) => ({
+                id: person.id,
+                audience: person.audience,
+            })),
+            type: messageType,
+            icon: iconId,
+            title,
+            message: description,
+            link_label: showLink ? linkLabel : '',
+            link_url: showLink ? linkUrl : '',
+            via_phone: channels.includes('phone'),
+            via_email: channels.includes('email'),
+            via_push: channels.includes('push'),
+        }));
+
+        form.submit(store(), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setTitle('');
+                setDescription('');
+                setRecipients([]);
+                setAudiences([]);
+                setLinkLabel('');
+                setLinkUrl('');
+                setShowLink(false);
+            },
+        });
+    };
 
     return (
         <>
@@ -374,6 +468,9 @@ export default function PlatformAnnouncementsIndex() {
                         title="2. Who"
                         description="Any mix of Customer, Driver, Branch, and Platform."
                     />
+                    <InputError
+                        message={form.errors.audiences ?? form.errors.recipients}
+                    />
                     {sendMode === 'group' ? (
                         <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
                             {AUDIENCES.map((audience) => (
@@ -393,7 +490,10 @@ export default function PlatformAnnouncementsIndex() {
                                 <AudienceCombobox
                                     key={audience.id}
                                     audience={audience}
-                                    selectedIds={recipientIds}
+                                    selected={recipients.filter(
+                                        (person) =>
+                                            person.audience === audience.id,
+                                    )}
                                     onToggle={toggleRecipient}
                                 />
                             ))}
@@ -429,7 +529,7 @@ export default function PlatformAnnouncementsIndex() {
                                                         className="hover:bg-background/60 rounded-sm p-0.5"
                                                         onClick={() =>
                                                             toggleRecipient(
-                                                                person.id,
+                                                                person,
                                                             )
                                                         }
                                                         aria-label={`Remove ${person.name}`}
@@ -501,6 +601,7 @@ export default function PlatformAnnouncementsIndex() {
                             onChange={(event) => setTitle(event.target.value)}
                             placeholder="Short headline"
                         />
+                        <InputError message={form.errors.title} />
                     </div>
 
                     <div className="mt-4 space-y-2">
@@ -516,6 +617,7 @@ export default function PlatformAnnouncementsIndex() {
                             placeholder="What should people know?"
                             rows={4}
                         />
+                        <InputError message={form.errors.message} />
                     </div>
 
                     <div className="mt-4 space-y-3">
@@ -584,7 +686,11 @@ export default function PlatformAnnouncementsIndex() {
                 </section>
 
                 <div className="flex justify-end">
-                    <Button type="button" disabled>
+                    <Button
+                        type="button"
+                        onClick={submit}
+                        disabled={form.processing}
+                    >
                         Send announcement
                     </Button>
                 </div>

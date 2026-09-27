@@ -28,6 +28,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | {app/Support/ConversationInbox.php,app/Services/Conversation/**,app/Events/ConversationInboxUpdated.php,resources/js/components/conversation/**} | .ai/rules/components-conversation.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx,resources/js/components/driver/driver-deliver-otp-form.tsx | .ai/rules/components-driver-js-components-driver.md |
 | resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx}, resources/js/components/driver/** | .ai/rules/components-driver.md |
+| resources/js/components/notifications/** | .ai/rules/components-notifications.md |
 | resources/js/app.tsx, resources/js/components/pwa/** | .ai/rules/components-pwa.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/components-stock.md |
 | resources/js/components/storefront/shop-filters-sidebar.tsx, resources/js/components/storefront/product-card.tsx | .ai/rules/components-storefront.md |
@@ -38,7 +39,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/Customer/** | .ai/rules/controllers-customer.md |
 | app/Http/Controllers/Driver/** | .ai/rules/controllers-driver.md |
 | app/Services/Workforce/**,app/Http/Controllers/{Platform,Branch}/** | .ai/rules/controllers-platform-branch.md |
-| app/Http/Controllers/Platform/AdminController.php, app/Http/Controllers/Platform/BranchStaffController.php, app/Http/Controllers/Platform/*Shift*.php | .ai/rules/controllers-platform.md |
+| app/Http/Controllers/Platform/AdminController.php, app/Http/Controllers/Platform/BranchStaffController.php, app/Http/Controllers/Platform/*Shift*.php, app/Http/Controllers/Platform/AnnouncementController.php | .ai/rules/controllers-platform.md |
 | resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php,resources/js/components/branch/nav.ts | .ai/rules/controllers-settings-js-components-branch.md |
 | resources/js/pages/settings/profile.tsx,app/Http/Controllers/Settings/ProfileController.php | .ai/rules/controllers-settings.md |
 | app/Http/Controllers/Storefront/HomeController.php, app/Http/Controllers/Storefront/CategoryController.php | .ai/rules/controllers-storefront.md |
@@ -125,6 +126,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/driver/security/**,resources/js/components/driver/driver-account-sheet.tsx | .ai/rules/security-js-components-driver.md |
 | resources/js/components/admin/shift-*.tsx,database/seeders/WorkforceShiftSeeder.php,app/Support/WorkforcePayload.php | .ai/rules/seeders-support.md |
 | database/seeders/**, database/seeders/WorkforceShiftSeeder.php, database/seeders/CatalogSeeder.php, database/seeders/CategorySeeder.php, database/seeders/ProductSeeder.php, database/seeders/PriceRangeSeeder.php | .ai/rules/seeders.md |
+| app/Services/Announcements/** | .ai/rules/services-announcements.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
 | app/Http/Controllers/Branch/GeneralSettingsController.php,resources/js/pages/branch/settings/**,resources/js/components/branch/nav.ts | .ai/rules/settings-js-components-branch.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |

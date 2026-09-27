@@ -9,4 +9,7 @@ enum NotificationType: string
     case Delivery = 'delivery';
     case Promo = 'promo';
     case Security = 'security';
+    case Info = 'info';
+    case Alert = 'alert';
+    case Update = 'update';
 }

@@ -25,6 +25,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{branch}')->group(function () {
     Route::get('dashboard', [BranchDashboardController::class, 'index'])->name('branch.dashboard');
     Route::get('notifications', [BranchNotificationController::class, 'index'])->name('branch.notifications.index');
+    Route::get('notifications/{userNotification}', [BranchNotificationController::class, 'show'])->name('branch.notifications.show');
+    Route::post('notifications/{userNotification}/read', [BranchNotificationController::class, 'read'])->name('branch.notifications.read');
+    Route::delete('notifications/{userNotification}', [BranchNotificationController::class, 'destroy'])->name('branch.notifications.destroy');
 
     Route::middleware(['permission:manage-branch-products'])->group(function () {
         Route::get('categories/options', [BranchCategoryController::class, 'options'])

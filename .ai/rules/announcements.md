@@ -19,3 +19,6 @@ Who follows send mode: Group shows the original Customer/Driver/Branch/Platform 
 
 ## Individual people show name and phone
 Dummy Individual people have a phone. Who combobox rows and Recipients chips show Name · +61 …. Command value includes name and phone so search matches either. Group cards stay audience-only.
+
+## Announcement compose posts a live System send
+GET /platform/announcements is a live compose form, not a sketch. Individual pickers search real users. Send POSTs to AnnouncementController@store. System stays locked on; Phone/Email/Push are stored flags only. Keep Group cards vs Individual comboboxes + Recipients chips.

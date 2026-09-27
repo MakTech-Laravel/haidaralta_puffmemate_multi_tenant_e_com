@@ -3,6 +3,7 @@ paths:
   - app/Http/Controllers/Platform/AdminController.php
   - app/Http/Controllers/Platform/BranchStaffController.php
   - 'app/Http/Controllers/Platform/*Shift*.php'
+  - app/Http/Controllers/Platform/AnnouncementController.php
 ---
 
 # Controllers Platform
@@ -23,3 +24,6 @@ Branch-owned shift pages never dump every store. Always scope templates, on-duty
 
 ## Do not dump every branch into shift pages
 Branch shift combobox loads GET platform.branch-shift-templates.branch-options (20/page, filter[search]). Index/create/assign/assigned-people pass only selectedBranch, never the full branch list. Create without `?branch_id=` redirects to the empty Branch shifts index. Assign and Assigned people without `?branch_id=` stay on their URLs and show the choose-a-branch empty state. There is no New period route.
+
+## Announcement send toast has no recipient count
+After a successful compose send, flash Toast::success('Notification sent.'). Keep recipient_count on the announcements row for audit. Do not put the user count in the toast.
