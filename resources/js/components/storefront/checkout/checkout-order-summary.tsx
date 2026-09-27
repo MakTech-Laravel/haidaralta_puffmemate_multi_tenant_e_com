@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { useAppBrand } from '@/hooks/use-app-brand';
 import { cn } from '@/lib/utils';
 import type { StorefrontCartItem } from '@/types/storefront';
@@ -79,10 +80,9 @@ export function CheckoutOrderSummary({
                 {items.map((item) => (
                     <li key={item.id} className="flex items-center gap-3">
                         <div className="bg-muted size-12 shrink-0 overflow-hidden rounded-md">
-                            <img
+                            <StorefrontProductImage
                                 src={item.image}
                                 alt={item.name}
-                                className="size-full object-cover"
                             />
                         </div>
                         <div className="min-w-0 flex-1">

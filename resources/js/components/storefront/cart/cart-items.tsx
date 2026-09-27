@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { removeCartItem, syncCartQuantity } from '@/components/storefront/cart/sync-cart-item';
+import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { cn } from '@/lib/utils';
 import { shop } from '@/routes';
 import { show as productShow } from '@/routes/products';
@@ -43,10 +44,9 @@ export function CartItems({ items, className }: CartItemsProps) {
                                 href={productShow.url(item.slug)}
                                 className="bg-muted relative size-16 shrink-0 overflow-hidden rounded-lg sm:size-20"
                             >
-                                <img
+                                <StorefrontProductImage
                                     src={item.image}
                                     alt={item.name}
-                                    className="size-full object-cover"
                                 />
                             </Link>
                             <div className="min-w-0 flex-1">
