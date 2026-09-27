@@ -52,6 +52,43 @@ function sameCoordinate(left: string, right: string): boolean {
     return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) < 0.000001;
 }
 
+function filled(value: string): boolean {
+    return value.trim() !== '';
+}
+
+function checkoutCanPlaceOrder(
+    details: CheckoutDetails,
+    methods: StorefrontDeliveryMethod[],
+    termsAccepted: boolean,
+): boolean {
+    const method = methods.find((row) => row.id === details.deliveryMethodId);
+    const pinReady =
+        filled(details.latitude) &&
+        filled(details.longitude) &&
+        Number.isFinite(Number(details.latitude)) &&
+        Number.isFinite(Number(details.longitude));
+
+    if (
+        !filled(details.firstName) ||
+        !filled(details.lastName) ||
+        !filled(details.mobile) ||
+        !filled(details.address) ||
+        !filled(details.city) ||
+        !pinReady ||
+        !filled(details.deliveryMethodId) ||
+        !filled(details.paymentMethodId) ||
+        !termsAccepted
+    ) {
+        return false;
+    }
+
+    if (method?.requiresSlot) {
+        return filled(details.deliveryDate) && filled(details.timeSlotId);
+    }
+
+    return true;
+}
+
 export default function StorefrontCheckout({
     itemCount,
     items,
@@ -221,6 +258,12 @@ export default function StorefrontCheckout({
         ...quoteErrors,
     };
 
+    const canPlaceOrder = checkoutCanPlaceOrder(
+        details,
+        deliveryMethods,
+        form.data.terms,
+    );
+
     return (
         <>
             <Head title="Checkout" />
@@ -240,6 +283,11 @@ export default function StorefrontCheckout({
                         className="mt-8 grid items-start gap-6 lg:grid-cols-[1fr_22rem] lg:gap-8"
                         onSubmit={(event) => {
                             event.preventDefault();
+
+                            if (!canPlaceOrder) {
+                                return;
+                            }
+
                             form.transform((data) => ({
                                 ...data,
                                 coupon: couponCode,
@@ -278,6 +326,7 @@ export default function StorefrontCheckout({
                             termsAccepted={form.data.terms}
                             termsError={errors.terms}
                             processing={form.processing}
+                            canPlaceOrder={canPlaceOrder}
                             onCouponChange={setCouponCode}
                             onApplyCoupon={() =>
                                 router.post(

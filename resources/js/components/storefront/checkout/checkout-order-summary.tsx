@@ -28,6 +28,7 @@ type CheckoutOrderSummaryProps = {
     termsAccepted: boolean;
     termsError?: string;
     processing?: boolean;
+    canPlaceOrder?: boolean;
     onCouponChange: (value: string) => void;
     onApplyCoupon: () => void;
     onRemoveCoupon: () => void;
@@ -48,6 +49,7 @@ export function CheckoutOrderSummary({
     termsAccepted,
     termsError,
     processing = false,
+    canPlaceOrder = true,
     onCouponChange,
     onApplyCoupon,
     onRemoveCoupon,
@@ -214,7 +216,7 @@ export function CheckoutOrderSummary({
             <Button
                 type="submit"
                 size="lg"
-                disabled={processing}
+                disabled={processing || !canPlaceOrder}
                 className="mt-5 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
             >
                 Place order
