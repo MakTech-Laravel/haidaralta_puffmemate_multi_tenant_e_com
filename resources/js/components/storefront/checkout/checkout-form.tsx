@@ -23,8 +23,7 @@ import type {
 } from '@/types/storefront';
 
 export type CheckoutDetails = {
-    firstName: string;
-    lastName: string;
+    name: string;
     mobile: string;
     address: string;
     city: string;
@@ -141,10 +140,8 @@ export function CheckoutForm({
             return;
         }
 
-        const [first, ...rest] = address.receiver_name.split(' ');
         onChange('addressId', id);
-        onChange('firstName', first ?? '');
-        onChange('lastName', rest.join(' '));
+        onChange('name', address.receiver_name);
         onChange('mobile', address.phone);
         onChange('address', address.address);
         onChange('city', address.city ?? '');
@@ -211,51 +208,36 @@ export function CheckoutForm({
                     ) : null}
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
-                            <Label htmlFor="checkout-first-name">
-                                First name <RequiredMark />
+                            <Label htmlFor="checkout-full-name">
+                                Full name <RequiredMark />
                             </Label>
                             <Input
-                                id="checkout-first-name"
-                                value={details.firstName}
+                                id="checkout-full-name"
+                                value={details.name}
                                 onChange={(event) =>
-                                    onChange('firstName', event.target.value)
+                                    onChange('name', event.target.value)
                                 }
-                                placeholder="Jane"
-                                autoComplete="given-name"
+                                placeholder="Enter full name"
+                                autoComplete="name"
                                 className={fieldClass}
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="checkout-last-name">
-                                Last name <RequiredMark />
+                            <Label htmlFor="checkout-mobile">
+                                Mobile number <RequiredMark />
                             </Label>
                             <Input
-                                id="checkout-last-name"
-                                value={details.lastName}
+                                id="checkout-mobile"
+                                type="tel"
+                                value={details.mobile}
                                 onChange={(event) =>
-                                    onChange('lastName', event.target.value)
+                                    onChange('mobile', event.target.value)
                                 }
-                                placeholder="Smith"
-                                autoComplete="family-name"
+                                placeholder="0400 000 000"
+                                autoComplete="tel"
                                 className={fieldClass}
                             />
                         </div>
-                    </div>
-                    <div className="space-y-1.5">
-                        <Label htmlFor="checkout-mobile">
-                            Mobile number <RequiredMark />
-                        </Label>
-                        <Input
-                            id="checkout-mobile"
-                            type="tel"
-                            value={details.mobile}
-                            onChange={(event) =>
-                                onChange('mobile', event.target.value)
-                            }
-                            placeholder="0400 000 000"
-                            autoComplete="tel"
-                            className={fieldClass}
-                        />
                     </div>
                 </CardContent>
             </Card>

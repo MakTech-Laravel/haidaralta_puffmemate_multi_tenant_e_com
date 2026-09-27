@@ -153,8 +153,7 @@ class CheckoutService
 
     /**
      * @param  array{
-     *     first_name: string,
-     *     last_name: string,
+     *     name: string,
      *     mobile: string,
      *     address: string,
      *     city?: string|null,
@@ -285,7 +284,7 @@ class CheckoutService
                 'coupon_code' => $coupon?->code,
                 'status' => OrderStatus::Pending,
                 'shipping_address_snapshot' => [
-                    'name' => trim($data['first_name'].' '.$data['last_name']),
+                    'name' => trim($data['name']),
                     'phone' => $data['mobile'],
                     'address' => $data['address'],
                     'city' => $data['city'] ?? null,
@@ -421,7 +420,7 @@ class CheckoutService
 
         $attributes = [
             'type' => 'home',
-            'receiver_name' => trim($data['first_name'].' '.$data['last_name']),
+            'receiver_name' => trim($data['name']),
             'phone' => $data['mobile'],
             'address' => $data['address'],
             'city' => $data['city'] ?? null,

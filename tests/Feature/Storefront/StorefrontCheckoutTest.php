@@ -58,8 +58,7 @@ function storefrontCheckoutBranchWithStock(Product $product, int $quantity = 10)
 function checkoutPayload(array $overrides = []): array
 {
     return array_merge([
-        'first_name' => 'Ada',
-        'last_name' => 'Lovelace',
+        'name' => 'Ada Lovelace',
         'mobile' => '0410123456',
         'address' => '1 Test Street',
         'city' => 'Sydney',
@@ -234,7 +233,9 @@ test('place order writes order payment and redemption then clears ordered lines'
         ->and($order->items)->toHaveCount(1)
         ->and((float) $order->discount)->toBe(10.0)
         ->and($order->payment_method)->toBe(PaymentGatewaySetting::KEY_COD)
-        ->and($order->fulfillments)->toHaveCount(1);
+        ->and($order->fulfillments)->toHaveCount(1)
+        ->and($order->shipping_address_snapshot['name'])->toBe('Ada Lovelace')
+        ->and($order->address->receiver_name)->toBe('Ada Lovelace');
 
     $payment = Payment::query()->where('order_id', $order->id)->firstOrFail();
 
@@ -278,10 +279,10 @@ test('a failed place order leaves the cart intact', function () {
     $this->actingAs($user, 'customer')
         ->from(route('checkout'))
         ->post(route('checkout.store'), checkoutPayload([
-            'first_name' => '',
+            'name' => '',
         ]))
         ->assertRedirect(route('checkout'))
-        ->assertSessionHasErrors('first_name');
+        ->assertSessionHasErrors('name');
 
     expect(Order::query()->count())->toBe(0)
         ->and(CartItem::query()->sum('quantity'))->toBe(2);

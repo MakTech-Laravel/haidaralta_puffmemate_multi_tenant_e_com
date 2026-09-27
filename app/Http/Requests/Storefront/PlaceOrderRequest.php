@@ -19,8 +19,7 @@ class PlaceOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['required', 'string', 'max:80'],
-            'last_name' => ['required', 'string', 'max:80'],
+            'name' => ['required', 'string', 'max:255'],
             'mobile' => ['required', 'string', 'max:32'],
             'address' => ['required', 'string', 'max:500'],
             'city' => ['nullable', 'string', 'max:80'],

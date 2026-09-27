@@ -69,8 +69,7 @@ function checkoutCanPlaceOrder(
         Number.isFinite(Number(details.longitude));
 
     if (
-        !filled(details.firstName) ||
-        !filled(details.lastName) ||
+        !filled(details.name) ||
         !filled(details.mobile) ||
         !filled(details.address) ||
         !filled(details.city) ||
@@ -103,13 +102,8 @@ export default function StorefrontCheckout({
 }: CheckoutPageProps) {
     const page = usePage<{ errors?: Record<string, string> }>();
     const defaultAddress = addresses.find((row) => row.id === defaultAddressId);
-    const [firstName, lastName] = (defaultAddress?.receiver_name ?? '').split(
-        / (.+)/,
-    );
-
     const form = useForm({
-        first_name: firstName ?? '',
-        last_name: lastName ?? '',
+        name: defaultAddress?.receiver_name ?? '',
         mobile: defaultAddress?.phone ?? '',
         address: defaultAddress?.address ?? '',
         city: defaultAddress?.city ?? '',
@@ -147,8 +141,7 @@ export default function StorefrontCheckout({
     });
 
     const details: CheckoutDetails = {
-        firstName: form.data.first_name,
-        lastName: form.data.last_name,
+        name: form.data.name,
         mobile: form.data.mobile,
         address: form.data.address,
         city: form.data.city,
@@ -220,8 +213,7 @@ export default function StorefrontCheckout({
         value: CheckoutDetails[K],
     ) => {
         const map: Record<keyof CheckoutDetails, keyof typeof form.data> = {
-            firstName: 'first_name',
-            lastName: 'last_name',
+            name: 'name',
             mobile: 'mobile',
             address: 'address',
             city: 'city',
