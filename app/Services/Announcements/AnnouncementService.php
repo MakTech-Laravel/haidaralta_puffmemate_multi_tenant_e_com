@@ -97,7 +97,7 @@ class AnnouncementService
                     body: $message,
                     data: [
                         'announcement_id' => (string) $announcement->id,
-                        'url' => (string) ($linkUrl ?? ''),
+                        'url' => filled($linkUrl) ? (string) $linkUrl : url('/'),
                         'link_label' => (string) ($linkLabel ?? ''),
                     ],
                 )->afterCommit();

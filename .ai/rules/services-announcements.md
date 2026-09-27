@@ -19,3 +19,6 @@ When via_email is true, query recipients with a non-empty email (ordered by id) 
 
 ## Dispatch email jobs without stagger delay
 When via_email is true, dispatch one SendAnnouncementEmailJob afterCommit per non-empty email, ordered by id. Do not delay(index * 2). Throughput is the announcement-mail RateLimiter (config mail.announcement), not compose recipient caps or scheduled_at.
+
+## Announcement push url is home or compose link
+When via_push is true, SendFcmPushJob data.url is the compose link_url or url('/') when the link is empty. Never send an empty url string.

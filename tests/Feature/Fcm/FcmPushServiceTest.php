@@ -85,6 +85,46 @@ test('invalid tokens are removed and other tokens still send', function () {
         ->and(FcmDeviceToken::query()->where('token', 'like', 'good-%')->exists())->toBeTrue();
 });
 
+test('display messages include a web click link from payload url', function () {
+    $token = 'link-token-abcdefghijklmnopqrstuvwxyz0123';
+    $captured = null;
+
+    $this->messaging->shouldReceive('send')
+        ->once()
+        ->andReturnUsing(function (CloudMessage $message) use (&$captured): array {
+            $captured = $message->jsonSerialize();
+
+            return ['name' => 'ok'];
+        });
+
+    $this->service->sendToTokens([$token], new FcmPushPayload(
+        title: 'Hi',
+        body: 'Body',
+        data: ['url' => 'https://example.com/shop'],
+    ));
+
+    expect($captured['data']['url'])->toBe('https://example.com/shop')
+        ->and($captured['webpush']['fcm_options']['link'])->toBe('https://example.com/shop');
+});
+
+test('display messages default the web click link to home', function () {
+    $token = 'home-token-abcdefghijklmnopqrstuvwxyz0123';
+    $captured = null;
+
+    $this->messaging->shouldReceive('send')
+        ->once()
+        ->andReturnUsing(function (CloudMessage $message) use (&$captured): array {
+            $captured = $message->jsonSerialize();
+
+            return ['name' => 'ok'];
+        });
+
+    $this->service->sendToTokens([$token], new FcmPushPayload('Hi', 'Body'));
+
+    expect($captured['data']['url'])->toBe(url('/'))
+        ->and($captured['webpush']['fcm_options']['link'])->toBe(url('/'));
+});
+
 test('fcm_notify_users helper uses the service', function () {
     $user = User::factory()->create(['user_type' => UserType::PLATFORM]);
     FcmDeviceToken::factory()->create([
