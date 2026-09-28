@@ -10,6 +10,7 @@ use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductReview;
 use App\Support\BranchProductPriceDisplay;
+use App\Support\CompactNumber;
 use App\Support\MediaUrl;
 use App\Support\ProductSpecifications;
 use Illuminate\Http\Request;
@@ -594,7 +595,7 @@ class StorefrontCatalog
     }
 
     /**
-     * @return array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}
+     * @return array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string, views: string}
      */
     public static function mapProductCard(Product $product, ?Branch $branch = null): array
     {
@@ -617,6 +618,7 @@ class StorefrontCatalog
             'compareAtPrice' => $compareAt === null ? '' : '$'.number_format((float) $compareAt, 2),
             'category' => $categoryName,
             'image' => MediaUrl::resolve($product->image) ?? '/images/storefront/logo.png',
+            'views' => CompactNumber::format((int) $product->views),
         ];
     }
 

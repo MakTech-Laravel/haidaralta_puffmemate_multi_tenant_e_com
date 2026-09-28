@@ -43,6 +43,7 @@ use Laravel\Scout\Searchable;
  * @property Carbon|null $discount_start_date
  * @property Carbon|null $discount_end_date
  * @property bool $status
+ * @property int $views
  * @property int|null $created_by
  * @property-read Collection<int, Category> $categories
  * @property-read User|null $creator
@@ -244,6 +245,7 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
     {
         return [
             'status' => 'boolean',
+            'views' => 'integer',
             'tags' => 'array',
             'specifications' => 'array',
             'color_code' => 'array',

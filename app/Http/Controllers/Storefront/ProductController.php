@@ -28,6 +28,10 @@ class ProductController extends Controller
             throw new NotFoundHttpException;
         }
 
+        if (strtolower((string) $request->header('Purpose')) !== 'prefetch') {
+            $model->increment('views');
+        }
+
         $detail = StorefrontCatalog::productDetail($model, $branch);
         $categorySlug = $detail['categorySlug'] ?? null;
 
