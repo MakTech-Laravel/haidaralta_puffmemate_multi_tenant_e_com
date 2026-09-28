@@ -6,6 +6,7 @@ use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\User;
 use App\Support\ConversationUnreadCounts;
 use Database\Seeders\BranchSeeder;
@@ -27,9 +28,10 @@ function seedThread(Branch $branch, User $operator, int $unread = 0): Conversati
     $customer = User::query()->where('email', UserSeeder::CUSTOMER)->firstOrFail();
 
     $order = Order::factory()->create([
-        'branch_id' => $branch->id,
         'customer_id' => $customer->id,
     ]);
+
+    OrderFulfillment::factory()->forOrder($order)->create(['branch_id' => $branch->id]);
 
     $conversation = Conversation::factory()->forOrder($order)->create([
         'last_message_preview' => 'Where is my order?',

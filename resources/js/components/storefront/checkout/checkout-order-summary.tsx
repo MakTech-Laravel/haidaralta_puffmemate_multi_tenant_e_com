@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { useAppBrand } from '@/hooks/use-app-brand';
 import { cn } from '@/lib/utils';
 import type { StorefrontCartItem } from '@/types/storefront';
@@ -19,13 +21,17 @@ type CheckoutOrderSummaryProps = {
     subtotal: number;
     deliveryFee: number;
     deliveryLabel: string;
+    deliveryIsEstimate?: boolean;
     coupon: string;
     appliedCoupon: AppliedCoupon;
     couponError?: string;
     termsAccepted: boolean;
+    termsError?: string;
     processing?: boolean;
+    canPlaceOrder?: boolean;
     onCouponChange: (value: string) => void;
     onApplyCoupon: () => void;
+    onRemoveCoupon: () => void;
     onTermsChange: (accepted: boolean) => void;
     className?: string;
 };
@@ -36,18 +42,29 @@ export function CheckoutOrderSummary({
     subtotal,
     deliveryFee,
     deliveryLabel,
+    deliveryIsEstimate = false,
     coupon,
     appliedCoupon,
     couponError,
     termsAccepted,
+    termsError,
     processing = false,
+    canPlaceOrder = true,
     onCouponChange,
     onApplyCoupon,
+    onRemoveCoupon,
     onTermsChange,
     className,
 }: CheckoutOrderSummaryProps) {
     const brand = useAppBrand();
+    const [couponOpen, setCouponOpen] = useState(Boolean(couponError));
     const discount = appliedCoupon?.discount ?? 0;
+
+    useEffect(() => {
+        if (couponError) {
+            setCouponOpen(true);
+        }
+    }, [couponError]);
     const total = Math.max(subtotal - discount + deliveryFee, 0);
 
     return (
@@ -67,10 +84,9 @@ export function CheckoutOrderSummary({
                 {items.map((item) => (
                     <li key={item.id} className="flex items-center gap-3">
                         <div className="bg-muted size-12 shrink-0 overflow-hidden rounded-md">
-                            <img
+                            <StorefrontProductImage
                                 src={item.image}
                                 alt={item.name}
-                                className="size-full object-cover"
                             />
                         </div>
                         <div className="min-w-0 flex-1">
@@ -89,29 +105,72 @@ export function CheckoutOrderSummary({
             </ul>
 
             <div className="mt-5 space-y-2">
-                <Label htmlFor="checkout-coupon">Coupon</Label>
-                <div className="flex gap-2">
-                    <Input
-                        id="checkout-coupon"
-                        value={coupon}
-                        onChange={(event) => onCouponChange(event.target.value)}
-                        className="bg-background h-11 rounded-none border-none"
-                    />
-                    <Button
+                {appliedCoupon ? (
+                    <div className="bg-background flex items-center justify-between gap-3 p-3">
+                        <div className="min-w-0">
+                            <p className="text-foreground text-sm font-semibold">
+                                {appliedCoupon.code}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                                {appliedCoupon.formattedDiscount} off
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                                setCouponOpen(false);
+                                onRemoveCoupon();
+                            }}
+                        >
+                            Remove
+                        </Button>
+                    </div>
+                ) : couponOpen ? (
+                    <div className="space-y-2">
+                        <Label htmlFor="checkout-coupon">Coupon code</Label>
+                        <div className="flex gap-2">
+                            <Input
+                                id="checkout-coupon"
+                                value={coupon}
+                                onChange={(event) =>
+                                    onCouponChange(event.target.value)
+                                }
+                                placeholder="Enter coupon code"
+                                autoComplete="off"
+                                className="bg-background h-11 rounded-none border-none"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={onApplyCoupon}
+                            >
+                                Apply
+                            </Button>
+                        </div>
+                        <button
+                            type="button"
+                            className="text-muted-foreground text-xs underline underline-offset-2"
+                            onClick={() => {
+                                setCouponOpen(false);
+                                onCouponChange('');
+                            }}
+                        >
+                            I don’t have a coupon
+                        </button>
+                    </div>
+                ) : (
+                    <button
                         type="button"
-                        variant="outline"
-                        onClick={onApplyCoupon}
+                        className="text-foreground text-sm font-medium underline underline-offset-2"
+                        onClick={() => setCouponOpen(true)}
                     >
-                        Apply
-                    </Button>
-                </div>
+                        Have a coupon code?
+                    </button>
+                )}
                 {couponError ? (
                     <p className="text-destructive text-xs">{couponError}</p>
-                ) : null}
-                {appliedCoupon ? (
-                    <p className="text-sm font-medium">
-                        {appliedCoupon.code} · {appliedCoupon.formattedDiscount}
-                    </p>
                 ) : null}
             </div>
 
@@ -136,6 +195,13 @@ export function CheckoutOrderSummary({
                         {deliveryLabel}
                     </dd>
                 </div>
+                {deliveryIsEstimate ? (
+                    <p className="text-muted-foreground text-xs">
+                        Final delivery fee depends on distance to the branch
+                        fulfilling your order and is shown on your
+                        confirmation.
+                    </p>
+                ) : null}
             </dl>
 
             <div className="border-border mt-4 flex items-end justify-between gap-3 border-t pt-4">
@@ -150,11 +216,22 @@ export function CheckoutOrderSummary({
             <Button
                 type="submit"
                 size="lg"
-                disabled={processing}
+                disabled={processing || !canPlaceOrder}
+                title={
+                    canPlaceOrder
+                        ? undefined
+                        : 'Fill every required field to place your order.'
+                }
                 className="mt-5 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
             >
-                Place order
+                {processing ? 'Placing order…' : 'Place order'}
             </Button>
+            {!canPlaceOrder && !processing ? (
+                <p className="text-muted-foreground mt-2 text-xs">
+                    Fill every required field, including a delivery date for
+                    same-day, then place your order.
+                </p>
+            ) : null}
 
             <div className="mt-4 flex items-start gap-2.5">
                 <Checkbox
@@ -182,6 +259,9 @@ export function CheckoutOrderSummary({
                     .
                 </Label>
             </div>
+            {termsError ? (
+                <p className="text-destructive mt-2 text-xs">{termsError}</p>
+            ) : null}
         </aside>
     );
 }

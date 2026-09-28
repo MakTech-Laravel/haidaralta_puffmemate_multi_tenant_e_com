@@ -1,3 +1,5 @@
+import { format, isValid, parse } from 'date-fns';
+import AlertError from '@/components/alert-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -11,6 +13,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { CheckoutMapDialog } from '@/components/storefront/checkout/checkout-map-dialog';
+import { formatAppDate } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
 import type {
     StorefrontAddress,
@@ -20,8 +23,7 @@ import type {
 } from '@/types/storefront';
 
 export type CheckoutDetails = {
-    firstName: string;
-    lastName: string;
+    name: string;
     mobile: string;
     address: string;
     city: string;
@@ -42,15 +44,76 @@ type CheckoutFormProps = {
     deliveryMethods: StorefrontDeliveryMethod[];
     paymentMethods: StorefrontPaymentMethod[];
     timeSlots: StorefrontTimeSlot[];
+    errors?: Record<string, string>;
     onChange: <K extends keyof CheckoutDetails>(
         key: K,
         value: CheckoutDetails[K],
     ) => void;
+    onPinSelect?: (
+        latitude: string,
+        longitude: string,
+        address?: string,
+    ) => void;
     className?: string;
 };
 
+function FieldError({ message }: { message?: string }) {
+    if (!message) {
+        return null;
+    }
+
+    return <p className="text-destructive text-xs">{message}</p>;
+}
+
 const sectionCardClass =
     'bg-accent gap-3 rounded-none border-none p-3 shadow-none sm:gap-4 sm:p-5';
+
+const fieldClass = 'bg-background h-11 rounded-none border-none shadow-none';
+
+const datePickerClass =
+    '[&_button]:bg-background [&_button]:h-11 [&_button]:rounded-none [&_button]:border-none [&_button]:shadow-none';
+
+function RequiredMark() {
+    return <span className="text-primary">*</span>;
+}
+
+function SectionHint({ children }: { children: string }) {
+    return (
+        <span className="text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase">
+            {children}
+        </span>
+    );
+}
+
+function slotHours(slots: StorefrontTimeSlot[]): string | null {
+    if (slots.length === 0) {
+        return null;
+    }
+
+    const first = slots[0].label.split('–')[0]?.trim();
+    const lastParts = slots[slots.length - 1].label.split('–');
+    const last = lastParts[lastParts.length - 1]?.trim();
+
+    if (!first || !last) {
+        return null;
+    }
+
+    return `${first} – ${last}`;
+}
+
+function deliveryWindowLabel(
+    date: string,
+    slots: StorefrontTimeSlot[],
+): string {
+    const hours = slotHours(slots);
+    const parsed = date ? parse(date, 'yyyy-MM-dd', new Date()) : null;
+    const datePart =
+        parsed && isValid(parsed)
+            ? `${format(parsed, 'EEEE')} ${formatAppDate(date)}`
+            : 'Select a delivery date';
+
+    return hours ? `${datePart} · Delivery hours ${hours}` : datePart;
+}
 
 export function CheckoutForm({
     details,
@@ -58,13 +121,16 @@ export function CheckoutForm({
     deliveryMethods,
     paymentMethods,
     timeSlots,
+    errors = {},
     onChange,
+    onPinSelect,
     className,
 }: CheckoutFormProps) {
     const selectedMethod = deliveryMethods.find(
         (method) => method.id === details.deliveryMethodId,
     );
     const showTimeSlots = selectedMethod?.requiresSlot ?? false;
+    const today = format(new Date(), 'yyyy-MM-dd');
 
     const loadAddress = (id: string) => {
         const address = addresses.find((row) => String(row.id) === id);
@@ -74,10 +140,8 @@ export function CheckoutForm({
             return;
         }
 
-        const [first, ...rest] = address.receiver_name.split(' ');
         onChange('addressId', id);
-        onChange('firstName', first ?? '');
-        onChange('lastName', rest.join(' '));
+        onChange('name', address.receiver_name);
         onChange('mobile', address.phone);
         onChange('address', address.address);
         onChange('city', address.city ?? '');
@@ -86,8 +150,29 @@ export function CheckoutForm({
         onChange('longitude', address.longitude ?? '');
     };
 
+    const errorMessages = Object.values(errors).flatMap((value) => {
+        if (typeof value === 'string' && value.trim() !== '') {
+            return [value];
+        }
+
+        if (Array.isArray(value)) {
+            return value.filter(
+                (item): item is string =>
+                    typeof item === 'string' && item.trim() !== '',
+            );
+        }
+
+        return [];
+    });
+
     return (
         <div className={cn('flex flex-col gap-3 sm:gap-4', className)}>
+            {errorMessages.length > 0 ? (
+                <AlertError
+                    title="Please fix the following."
+                    errors={errorMessages}
+                />
+            ) : null}
             <Card className={sectionCardClass}>
                 <CardHeader>
                     <CardTitle className="text-foreground text-lg font-extrabold">
@@ -102,7 +187,7 @@ export function CheckoutForm({
                                 value={details.addressId}
                                 onValueChange={loadAddress}
                             >
-                                <SelectTrigger className="bg-background h-11 rounded-none border-none">
+                                <SelectTrigger className={fieldClass}>
                                     <SelectValue placeholder="Choose a saved address" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -123,43 +208,36 @@ export function CheckoutForm({
                     ) : null}
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
-                            <Label htmlFor="checkout-first-name">
-                                First name
+                            <Label htmlFor="checkout-full-name">
+                                Full name <RequiredMark />
                             </Label>
                             <Input
-                                id="checkout-first-name"
-                                value={details.firstName}
+                                id="checkout-full-name"
+                                value={details.name}
                                 onChange={(event) =>
-                                    onChange('firstName', event.target.value)
+                                    onChange('name', event.target.value)
                                 }
-                                className="bg-background h-11 rounded-none border-none"
+                                placeholder="Enter full name"
+                                autoComplete="name"
+                                className={fieldClass}
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="checkout-last-name">
-                                Last name
+                            <Label htmlFor="checkout-mobile">
+                                Mobile number <RequiredMark />
                             </Label>
                             <Input
-                                id="checkout-last-name"
-                                value={details.lastName}
+                                id="checkout-mobile"
+                                type="tel"
+                                value={details.mobile}
                                 onChange={(event) =>
-                                    onChange('lastName', event.target.value)
+                                    onChange('mobile', event.target.value)
                                 }
-                                className="bg-background h-11 rounded-none border-none"
+                                placeholder="0400 000 000"
+                                autoComplete="tel"
+                                className={fieldClass}
                             />
                         </div>
-                    </div>
-                    <div className="space-y-1.5">
-                        <Label htmlFor="checkout-mobile">Mobile number</Label>
-                        <Input
-                            id="checkout-mobile"
-                            type="tel"
-                            value={details.mobile}
-                            onChange={(event) =>
-                                onChange('mobile', event.target.value)
-                            }
-                            className="bg-background h-11 rounded-none border-none"
-                        />
                     </div>
                 </CardContent>
             </Card>
@@ -173,20 +251,29 @@ export function CheckoutForm({
                 <CardContent className="space-y-4 px-0">
                     <div className="flex items-end gap-2">
                         <div className="min-w-0 flex-1 space-y-1.5">
-                            <Label htmlFor="checkout-address">Address</Label>
+                            <Label htmlFor="checkout-address">
+                                Address <RequiredMark />
+                            </Label>
                             <Input
                                 id="checkout-address"
                                 value={details.address}
                                 onChange={(event) =>
                                     onChange('address', event.target.value)
                                 }
-                                className="bg-background h-11 rounded-none border-none"
+                                placeholder="Street address"
+                                autoComplete="street-address"
+                                className={fieldClass}
                             />
                         </div>
                         <CheckoutMapDialog
                             latitude={details.latitude}
                             longitude={details.longitude}
                             onSelect={({ latitude, longitude, address }) => {
+                                if (onPinSelect) {
+                                    onPinSelect(latitude, longitude, address);
+                                    return;
+                                }
+
                                 onChange('latitude', latitude);
                                 onChange('longitude', longitude);
                                 if (address) {
@@ -195,16 +282,29 @@ export function CheckoutForm({
                             }}
                         />
                     </div>
+                    {!details.latitude || !details.longitude ? (
+                        <Alert variant="destructive">
+                            <AlertDescription>
+                                Pin your delivery location on the map so we
+                                can find the nearest branch and calculate your
+                                delivery fee.
+                            </AlertDescription>
+                        </Alert>
+                    ) : null}
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
-                            <Label htmlFor="checkout-city">City</Label>
+                            <Label htmlFor="checkout-city">
+                                City <RequiredMark />
+                            </Label>
                             <Input
                                 id="checkout-city"
                                 value={details.city}
                                 onChange={(event) =>
                                     onChange('city', event.target.value)
                                 }
-                                className="bg-background h-11 rounded-none border-none"
+                                placeholder="Suburb or city"
+                                autoComplete="address-level2"
+                                className={fieldClass}
                             />
                         </div>
                         <div className="space-y-1.5">
@@ -217,7 +317,9 @@ export function CheckoutForm({
                                 onChange={(event) =>
                                     onChange('postalCode', event.target.value)
                                 }
-                                className="bg-background h-11 rounded-none border-none"
+                                placeholder="4000"
+                                autoComplete="postal-code"
+                                className={fieldClass}
                             />
                         </div>
                     </div>
@@ -235,70 +337,121 @@ export function CheckoutForm({
             </Card>
 
             <Card className={sectionCardClass}>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-start justify-between gap-3">
                     <CardTitle className="text-foreground text-lg font-extrabold">
                         3. Delivery method
                     </CardTitle>
+                    <SectionHint>Choose one</SectionHint>
                 </CardHeader>
                 <CardContent className="space-y-4 px-0">
                     <div className="grid gap-3 sm:grid-cols-2">
-                        {deliveryMethods.map((method) => (
-                            <button
-                                key={method.id}
-                                type="button"
-                                onClick={() =>
-                                    onChange('deliveryMethodId', method.id)
-                                }
-                                className={cn(
-                                    'bg-background rounded-none p-4 text-left',
-                                    details.deliveryMethodId === method.id
-                                        ? 'ring-primary ring-2'
-                                        : '',
-                                )}
-                            >
-                                <p className="font-semibold">{method.label}</p>
-                                <p className="text-muted-foreground mt-1 text-sm">
-                                    {method.description}
-                                </p>
-                                <p className="mt-2 text-sm font-medium">
-                                    {method.formattedFee}
-                                </p>
-                            </button>
-                        ))}
+                        {deliveryMethods.map((method) => {
+                            const selected =
+                                details.deliveryMethodId === method.id;
+
+                            return (
+                                <button
+                                    key={method.id}
+                                    type="button"
+                                    onClick={() =>
+                                        onChange('deliveryMethodId', method.id)
+                                    }
+                                    className={cn(
+                                        'bg-background flex items-start gap-3 rounded-none border p-4 text-left',
+                                        selected
+                                            ? 'border-primary'
+                                            : 'border-transparent',
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border',
+                                            selected
+                                                ? 'border-primary'
+                                                : 'border-muted-foreground',
+                                        )}
+                                        aria-hidden
+                                    >
+                                        {selected ? (
+                                            <span className="bg-primary size-2 rounded-full" />
+                                        ) : null}
+                                    </span>
+                                    <span>
+                                        <span className="block font-semibold">
+                                            {method.label}
+                                        </span>
+                                        <span className="text-muted-foreground mt-1 block text-sm">
+                                            {method.description}
+                                        </span>
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </div>
                     {showTimeSlots ? (
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="space-y-1.5">
-                                <Label>Delivery date</Label>
-                                <DatePicker
-                                    value={details.deliveryDate || null}
-                                    onChange={(value) =>
-                                        onChange('deliveryDate', value)
-                                    }
-                                />
+                        <div className="space-y-4">
+                            <p className="text-muted-foreground text-sm">
+                                Local delivery: Same-day service is available
+                                within selected delivery zones around
+                                participating branches.
+                            </p>
+                            <div className="space-y-2">
+                                <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+                                    Available time slots
+                                </p>
+                                <p className="text-muted-foreground text-sm">
+                                    {deliveryWindowLabel(
+                                        details.deliveryDate,
+                                        timeSlots,
+                                    )}
+                                </p>
                             </div>
-                            <div className="space-y-1.5">
-                                <Label>Time slot</Label>
-                                <Select
-                                    value={details.timeSlotId}
-                                    onValueChange={(value) =>
-                                        onChange('timeSlotId', value)
-                                    }
-                                >
-                                    <SelectTrigger className="bg-background h-11 rounded-none border-none">
-                                        <SelectValue placeholder="Select a slot" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {timeSlots.map((slot) => (
-                                            <SelectItem
-                                                key={slot.id}
-                                                value={slot.id}
-                                            >
-                                                {slot.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="checkout-delivery-date">
+                                        Delivery date <RequiredMark />
+                                    </Label>
+                                    <DatePicker
+                                        id="checkout-delivery-date"
+                                        value={details.deliveryDate || null}
+                                        onChange={(value) =>
+                                            onChange('deliveryDate', value)
+                                        }
+                                        placeholder="Select a date"
+                                        min={today}
+                                        className={datePickerClass}
+                                        aria-invalid={Boolean(
+                                            errors.delivery_date,
+                                        )}
+                                    />
+                                    <FieldError message={errors.delivery_date} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label>
+                                        Time slot <RequiredMark />
+                                    </Label>
+                                    <Select
+                                        value={details.timeSlotId}
+                                        onValueChange={(value) =>
+                                            onChange('timeSlotId', value)
+                                        }
+                                    >
+                                        <SelectTrigger className={fieldClass}>
+                                            <SelectValue placeholder="Select a time slot" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {timeSlots.map((slot) => (
+                                                <SelectItem
+                                                    key={slot.id}
+                                                    value={slot.id}
+                                                >
+                                                    {slot.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FieldError message={errors.time_slot_id} />
+                                </div>
                             </div>
                         </div>
                     ) : (
@@ -313,40 +466,51 @@ export function CheckoutForm({
             </Card>
 
             <Card className={sectionCardClass}>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-start justify-between gap-3">
                     <CardTitle className="text-foreground text-lg font-extrabold">
                         4. Payment at delivery
                     </CardTitle>
+                    <SectionHint>No online card entry</SectionHint>
                 </CardHeader>
-                <CardContent className="space-y-3 px-0">
-                    {paymentMethods.map((method) => (
-                        <label
-                            key={method.id}
-                            className={cn(
-                                'bg-background flex cursor-pointer items-start gap-3 p-4',
-                                details.paymentMethodId === method.id
-                                    ? 'ring-primary ring-2'
-                                    : '',
-                            )}
-                        >
-                            <input
-                                type="radio"
-                                name="payment_method"
-                                checked={details.paymentMethodId === method.id}
-                                onChange={() =>
-                                    onChange('paymentMethodId', method.id)
-                                }
-                            />
-                            <span>
-                                <span className="block font-semibold">
-                                    {method.label}
-                                </span>
-                                <span className="text-muted-foreground text-sm">
-                                    {method.description}
-                                </span>
-                            </span>
-                        </label>
-                    ))}
+                <CardContent className="space-y-4 px-0">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {paymentMethods.map((method) => {
+                            const selected =
+                                details.paymentMethodId === method.id;
+
+                            return (
+                                <button
+                                    key={method.id}
+                                    type="button"
+                                    onClick={() =>
+                                        onChange('paymentMethodId', method.id)
+                                    }
+                                    className={cn(
+                                        'bg-background flex flex-col items-start gap-2 rounded-none border p-4 text-left',
+                                        selected
+                                            ? 'border-foreground'
+                                            : 'border-transparent',
+                                    )}
+                                >
+                                    {method.badge ? (
+                                        <span className="text-foreground text-sm font-semibold">
+                                            {method.badge}
+                                        </span>
+                                    ) : null}
+                                    <span className="block font-semibold">
+                                        {method.title ?? method.label}
+                                    </span>
+                                    <span className="text-muted-foreground text-sm">
+                                        {method.description}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <p className="text-muted-foreground text-sm">
+                        Have your chosen payment method ready when the driver
+                        arrives.
+                    </p>
                 </CardContent>
             </Card>
         </div>

@@ -1,5 +1,11 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { Head, router, useForm, useHttp, usePage } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
+import {
+    applyCoupon,
+    quoteShipping,
+    removeCoupon,
+    store as storeCheckout,
+} from '@/actions/App/Http/Controllers/Storefront/CheckoutController';
 import {
     CheckoutForm,
     type CheckoutDetails,
@@ -19,6 +25,13 @@ type AppliedCoupon = {
     formattedDiscount: string;
 };
 
+type ShippingQuote = {
+    fee: number;
+    formattedFee: string;
+    latitude: string;
+    longitude: string;
+} | null;
+
 type CheckoutPageProps = {
     itemCount: number;
     items: StorefrontCartItem[];
@@ -29,7 +42,51 @@ type CheckoutPageProps = {
     timeSlots: StorefrontTimeSlot[];
     defaultAddressId: number | null;
     appliedCoupon?: AppliedCoupon | null;
+    shippingQuote?: ShippingQuote;
 };
+
+function sameCoordinate(left: string, right: string): boolean {
+    const a = Number(left);
+    const b = Number(right);
+
+    return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) < 0.000001;
+}
+
+function filled(value: string): boolean {
+    return value.trim() !== '';
+}
+
+function checkoutCanPlaceOrder(
+    details: CheckoutDetails,
+    methods: StorefrontDeliveryMethod[],
+    termsAccepted: boolean,
+): boolean {
+    const method = methods.find((row) => row.id === details.deliveryMethodId);
+    const pinReady =
+        filled(details.latitude) &&
+        filled(details.longitude) &&
+        Number.isFinite(Number(details.latitude)) &&
+        Number.isFinite(Number(details.longitude));
+
+    if (
+        !filled(details.name) ||
+        !filled(details.mobile) ||
+        !filled(details.address) ||
+        !filled(details.city) ||
+        !pinReady ||
+        !filled(details.deliveryMethodId) ||
+        !filled(details.paymentMethodId) ||
+        !termsAccepted
+    ) {
+        return false;
+    }
+
+    if (method?.requiresSlot) {
+        return filled(details.deliveryDate) && filled(details.timeSlotId);
+    }
+
+    return true;
+}
 
 export default function StorefrontCheckout({
     itemCount,
@@ -41,16 +98,12 @@ export default function StorefrontCheckout({
     timeSlots,
     defaultAddressId,
     appliedCoupon = null,
+    shippingQuote = null,
 }: CheckoutPageProps) {
     const page = usePage<{ errors?: Record<string, string> }>();
     const defaultAddress = addresses.find((row) => row.id === defaultAddressId);
-    const [firstName, lastName] = (defaultAddress?.receiver_name ?? '').split(
-        / (.+)/,
-    );
-
     const form = useForm({
-        first_name: firstName ?? '',
-        last_name: lastName ?? '',
+        name: defaultAddress?.receiver_name ?? '',
         mobile: defaultAddress?.phone ?? '',
         address: defaultAddress?.address ?? '',
         city: defaultAddress?.city ?? '',
@@ -68,10 +121,27 @@ export default function StorefrontCheckout({
     });
 
     const [couponCode, setCouponCode] = useState(appliedCoupon?.code ?? '');
+    const [quote, setQuote] = useState<ShippingQuote>(shippingQuote);
+    const requestedPin = useRef<string | null>(
+        shippingQuote
+            ? `${shippingQuote.latitude},${shippingQuote.longitude}`
+            : null,
+    );
+    const {
+        transform: transformQuote,
+        post: postQuote,
+        processing: quoting,
+        errors: quoteErrors,
+    } = useHttp<
+        { latitude: string; longitude: string },
+        { fee: number; formattedFee: string }
+    >({
+        latitude: '',
+        longitude: '',
+    });
 
     const details: CheckoutDetails = {
-        firstName: form.data.first_name,
-        lastName: form.data.last_name,
+        name: form.data.name,
         mobile: form.data.mobile,
         address: form.data.address,
         city: form.data.city,
@@ -86,21 +156,64 @@ export default function StorefrontCheckout({
         paymentMethodId: form.data.payment_method,
     };
 
-    const selectedMethod = useMemo(
-        () =>
-            deliveryMethods.find(
-                (method) => method.id === form.data.delivery_method,
-            ),
-        [deliveryMethods, form.data.delivery_method],
-    );
+    const quotedMatchesPin =
+        quote !== null &&
+        sameCoordinate(quote.latitude, details.latitude) &&
+        sameCoordinate(quote.longitude, details.longitude);
+
+    const pinKey =
+        details.latitude && details.longitude
+            ? `${details.latitude},${details.longitude}`
+            : null;
+
+    useEffect(() => {
+        if (
+            pinKey === null ||
+            quotedMatchesPin ||
+            requestedPin.current === pinKey
+        ) {
+            return;
+        }
+
+        const latitude = details.latitude;
+        const longitude = details.longitude;
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            return;
+        }
+
+        requestedPin.current = pinKey;
+        transformQuote(() => ({ latitude, longitude }));
+
+        void postQuote(quoteShipping.url())
+            .then((payload) => {
+                setQuote({
+                    fee: payload.fee,
+                    formattedFee: payload.formattedFee,
+                    latitude,
+                    longitude,
+                });
+            })
+            .catch(() => {
+                setQuote(null);
+            });
+    }, [
+        details.latitude,
+        details.longitude,
+        pinKey,
+        postQuote,
+        quotedMatchesPin,
+        transformQuote,
+    ]);
 
     const onDetailChange = <K extends keyof CheckoutDetails>(
         key: K,
         value: CheckoutDetails[K],
     ) => {
         const map: Record<keyof CheckoutDetails, keyof typeof form.data> = {
-            firstName: 'first_name',
-            lastName: 'last_name',
+            name: 'name',
             mobile: 'mobile',
             address: 'address',
             city: 'city',
@@ -117,6 +230,31 @@ export default function StorefrontCheckout({
 
         form.setData(map[key], value as never);
     };
+
+    const applyPin = (
+        latitude: string,
+        longitude: string,
+        address?: string,
+    ) => {
+        form.setData((current) => ({
+            ...current,
+            latitude,
+            longitude,
+            ...(address ? { address } : {}),
+        }));
+    };
+
+    const errors = {
+        ...page.props.errors,
+        ...form.errors,
+        ...quoteErrors,
+    };
+
+    const canPlaceOrder = checkoutCanPlaceOrder(
+        details,
+        deliveryMethods,
+        form.data.terms,
+    );
 
     return (
         <>
@@ -137,8 +275,18 @@ export default function StorefrontCheckout({
                         className="mt-8 grid items-start gap-6 lg:grid-cols-[1fr_22rem] lg:gap-8"
                         onSubmit={(event) => {
                             event.preventDefault();
-                            form.setData('coupon', couponCode);
-                            form.post('/checkout');
+
+                            if (!canPlaceOrder) {
+                                return;
+                            }
+
+                            form.transform((data) => ({
+                                ...data,
+                                coupon: couponCode,
+                            }));
+                            form.post(storeCheckout.url(), {
+                                preserveScroll: true,
+                            });
                         }}
                     >
                         <CheckoutForm
@@ -147,29 +295,48 @@ export default function StorefrontCheckout({
                             deliveryMethods={deliveryMethods}
                             paymentMethods={paymentMethods}
                             timeSlots={timeSlots}
+                            errors={errors}
                             onChange={onDetailChange}
+                            onPinSelect={applyPin}
                         />
                         <CheckoutOrderSummary
                             items={items}
                             itemCount={itemCount}
                             subtotal={subtotal}
-                            deliveryFee={selectedMethod?.fee ?? 0}
-                            deliveryLabel={
-                                selectedMethod?.formattedFee ?? 'FREE'
+                            deliveryFee={
+                                quotedMatchesPin ? (quote?.fee ?? 0) : 0
                             }
+                            deliveryLabel={
+                                quoting
+                                    ? 'Calculating…'
+                                    : quotedMatchesPin
+                                      ? (quote?.formattedFee ??
+                                        'Calculated at checkout')
+                                      : 'Calculated at checkout'
+                            }
+                            deliveryIsEstimate={!quotedMatchesPin && !quoting}
                             coupon={couponCode}
                             appliedCoupon={appliedCoupon}
-                            couponError={page.props.errors?.coupon}
+                            couponError={errors.coupon}
                             termsAccepted={form.data.terms}
+                            termsError={errors.terms}
                             processing={form.processing}
+                            canPlaceOrder={canPlaceOrder}
                             onCouponChange={setCouponCode}
                             onApplyCoupon={() =>
                                 router.post(
-                                    '/checkout/coupon',
+                                    applyCoupon.url(),
                                     { coupon: couponCode },
                                     { preserveScroll: true },
                                 )
                             }
+                            onRemoveCoupon={() => {
+                                setCouponCode('');
+                                form.setData('coupon', '');
+                                router.delete(removeCoupon.url(), {
+                                    preserveScroll: true,
+                                });
+                            }}
                             onTermsChange={(accepted) =>
                                 form.setData('terms', accepted)
                             }

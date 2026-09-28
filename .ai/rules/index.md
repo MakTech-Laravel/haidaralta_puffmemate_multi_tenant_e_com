@@ -12,25 +12,30 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/branch-form.tsx, resources/js/components/admin/driver-form.tsx, resources/js/components/admin/branch-location-map-dialog.tsx, resources/js/components/admin/driver-branch-assign-sheet.tsx, resources/js/components/admin/shift-*.tsx, resources/js/components/admin/{admin,staff}-form.tsx, resources/js/components/admin/shift-board.tsx | .ai/rules/admin.md |
 | resources/js/pages/platform/announcements/** | .ai/rules/announcements.md |
 | app/Http/Middleware/EnsureAnyPortalGuard.php,routes/settings.php | .ai/rules/app-http-middleware.md |
+| app/Services/Application/ApplicationSettingsService.php,resources/js/hooks/use-app-brand.ts | .ai/rules/application-js-hooks.md |
 | resources/js/pages/auth/**,app/Actions/Fortify/CreateNewUser.php,app/Http/Requests/Auth/StoreRegisteredUserRequest.php,resources/js/layouts/auth/** | .ai/rules/auth.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php, config/shifts.php | .ai/rules/backup.md |
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/**/staff/**,resources/js/pages/platform/branch-staff/** | .ai/rules/branch-staff.md |
 | app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php, app/Models/Driver*.php, app/Models/User.php, app/Models/Branch.php, app/Models/Category.php, app/Models/Product.php, app/Models/{Notification,UserNotification}.php | .ai/rules/branch.md |
 | resources/js/pages/platform/branches/index.tsx, resources/js/pages/platform/branches/show.tsx | .ai/rules/branches.md |
 | resources/js/components/storefront/cart/** | .ai/rules/cart.md |
+| app/Support/MediaUrl.php,database/seeders/Concerns/SeedsCatalogMedia.php,resources/js/components/storefront/{cart,checkout}/** | .ai/rules/cartcheckout.md |
 | app/{Models,Services/Inventory,Services/Catalog,DataTables,Support}/** | .ai/rules/catalog-data-tables-support.md |
 | resources/js/pages/**/catalog/products/index.tsx, resources/js/pages/**/catalog/products/{index,show}.tsx | .ai/rules/catalog-products.md |
 | resources/js/components/catalog/** | .ai/rules/catalog.md |
 | resources/js/pages/**/catalog/categories/index.tsx | .ai/rules/categories.md |
+| resources/js/{pages,components}/storefront/checkout/** | .ai/rules/checkout.md |
 | resources/js/components/color-picker/** | .ai/rules/color-picker.md |
 | resources/js/pages/**/permissions/**, resources/js/components/admin/permission-groups-table.tsx | .ai/rules/components-admin.md |
 | resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx | .ai/rules/components-branch.md |
 | {app/Support/ConversationInbox.php,app/Services/Conversation/**,app/Events/ConversationInboxUpdated.php,resources/js/components/conversation/**} | .ai/rules/components-conversation.md |
+| app/Http/Controllers/Customer/OrderController.php,resources/js/components/customer/order-list.tsx, app/Http/Controllers/Customer/OrderController.php,routes/customer.php,resources/js/components/customer/order-list.tsx | .ai/rules/components-customer.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx,resources/js/components/driver/driver-deliver-otp-form.tsx | .ai/rules/components-driver-js-components-driver.md |
 | resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx}, resources/js/components/driver/** | .ai/rules/components-driver.md |
 | resources/js/components/notifications/** | .ai/rules/components-notifications.md |
 | resources/js/app.tsx, resources/js/components/pwa/** | .ai/rules/components-pwa.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/components-stock.md |
+| resources/js/components/storefront/checkout/** | .ai/rules/components-storefront-checkout.md |
 | resources/js/components/storefront/shop-filters-sidebar.tsx, resources/js/components/storefront/product-card.tsx | .ai/rules/components-storefront.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
 | resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php,resources/js/components/{platform,branch}/nav.ts | .ai/rules/componentsplatformbranch.md |
@@ -83,6 +88,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/lib/pwa.ts, resources/js/lib/fcm.ts | .ai/rules/js-lib.md |
 | resources/js/components/driver/nav.ts,app/Http/Controllers/Driver/OrderController.php,resources/js/pages/driver/history.tsx | .ai/rules/js-pages-driver.md |
 | resources/js/pages/settings/profile.tsx | .ai/rules/js-pages-settings.md |
+| app/Http/Controllers/Storefront/CheckoutController.php,resources/js/pages/storefront/checkout.tsx, app/Http/Controllers/Storefront/CheckoutController.php,routes/public.php,resources/js/pages/storefront/checkout-confirmation.tsx | .ai/rules/js-pages-storefront.md |
 | resources/js/{app.tsx,components/navigation-overlay.tsx} | .ai/rules/js.md |
 | resources/js/layouts/driver/** | .ai/rules/layouts-driver.md |
 | resources/js/layouts/settings/** | .ai/rules/layouts-settings.md |
@@ -92,13 +98,15 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/migrations/**, database/migrations/2026_09_13_042225_create_products_table.php | .ai/rules/migrations.md |
 | app/Models/**.php | .ai/rules/models.md |
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
+| app/Services/Order/BranchAllocationService.php | .ai/rules/order.md |
 | app/Services/Notifications/** | .ai/rules/notifications.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/orders-js-components-driver.md |
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx | .ai/rules/orders.md |
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |
 | resources/js/pages/platform/branch-staff/** | .ai/rules/pages-platform-branch-staff.md |
 | resources/js/layouts/settings/**,resources/js/pages/settings/**,routes/settings.php | .ai/rules/pages-settings.md |
-| resources/js/pages/storefront/category.tsx | .ai/rules/pages-storefront.md |
+| resources/js/pages/storefront/category.tsx, resources/js/pages/storefront/checkout.tsx | .ai/rules/pages-storefront.md |
+| app/Http/Requests/Storefront/PlaceOrderRequest.php,app/Services/Storefront/CheckoutService.php,resources/js/{pages,components}/storefront/checkout/** | .ai/rules/pagescomponents-storefront-checkout.md |
 | resources/js/components/admin/shift-*.{ts,tsx},resources/js/pages/{platform,branch}/shifts/assign.tsx | .ai/rules/pagesplatformbranch-shifts.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/platform/branch-staff/**, resources/js/components/admin/transfer-employee-sheet.tsx,resources/js/pages/platform/branch-staff/** | .ai/rules/platform-branch-staff.md |
@@ -134,6 +142,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/Platform/*Shift*.php,resources/js/pages/platform/shifts/assign.tsx | .ai/rules/shifts.md |
 | resources/js/components/stock/**,app/Support/StockPageContext.php,app/Support/ProductManageRedirect.php | .ai/rules/stock-support-support.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/stock.md |
+| app/Services/Storefront/CheckoutService.php,resources/js/components/storefront/checkout/** | .ai/rules/storefront-checkout.md |
 | resources/js/{pages,components}/storefront/**,app/Http/Controllers/Storefront/{Cart,Checkout}Controller.php | .ai/rules/storefront-http-controllers-storefront.md |
 | app/Support/Storefront/StorefrontShopQuery.php,resources/js/pages/storefront/shop.tsx,app/Models/PriceRange.php,config/scout.php | .ai/rules/storefront-models.md |
 | app/Services/Catalog/PriceRangeService.php,app/Models/ShopPriceFilterSetting.php,resources/js/pages/platform/catalog/price-ranges/**,resources/js/components/storefront/shop-filters-sidebar.tsx,config/catalog.php,database/seeders/PriceRangeSeeder.php | .ai/rules/storefront-seeders.md |
@@ -144,4 +153,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Support/OpsDashboardAccess.php, config/cache.php | .ai/rules/support.md |
 | resources/js/pages/platform/reports/transfer-history.tsx,app/DataTables/TransferDataTable.php | .ai/rules/transfers-data-tables.md |
 | app/Http/Controllers/Storefront/**,app/Support/Storefront/StorefrontCatalog.php,resources/js/{pages,components}/storefront/**,resources/js/types/storefront.ts,resources/js/lib/storefront*.ts | .ai/rules/types-js-lib.md |
-| resources/js/components/ui/{time-picker,wheel-picker}.tsx | .ai/rules/ui.md |
+| resources/js/components/ui/{time-picker,wheel-picker}.tsx, resources/js/components/ui/alert.tsx | .ai/rules/ui.md |

@@ -25,10 +25,13 @@ export type AppBrand = {
 export function useAppBrand(): AppBrand {
     const { name, application } = usePage().props;
     const customLogo = application?.logoUrl ?? null;
+    const envName = import.meta.env.VITE_APP_NAME;
+    const displayName =
+        application?.name || name || application?.shortName || envName;
 
     return {
-        name: name || application?.shortName || 'PuffMeMate',
-        shortName: application?.shortName || name || 'PuffMeMate',
+        name: displayName,
+        shortName: application?.shortName || displayName,
         description: application?.description ?? null,
         logoUrl: customLogo || FALLBACK_LOGO,
         hasCustomLogo: Boolean(customLogo),

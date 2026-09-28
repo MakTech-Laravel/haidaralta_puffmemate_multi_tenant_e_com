@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
+use App\Support\MediaUrl;
 use Database\Seeders\ApplicationSettingsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -67,6 +68,7 @@ test('guest cart survives refresh and a rejected checkout', function () {
                 ->has('id')
                 ->has('name')
                 ->has('slug')
+                ->where('image', MediaUrl::DEFAULT_FALLBACK)
                 ->missing('branchId')
                 ->missing('branchName')
                 ->etc()));
@@ -78,6 +80,42 @@ test('guest cart survives refresh and a rejected checkout', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->where('itemCount', 1)
             ->has('items', 1));
+});
+
+test('cart line images use a public product photo or the logo fallback', function () {
+    $photo = storefrontCartProduct([
+        'slug' => 'photo-cart-item',
+        'image' => '/images/storefront/logo.png',
+    ]);
+    $stubPath = public_path('images/storefront/cart-stub-image.jpg');
+    file_put_contents($stubPath, 'fake-image-bytes');
+
+    try {
+        $broken = storefrontCartProduct([
+            'slug' => 'stub-cart-item',
+            'image' => '/images/storefront/cart-stub-image.jpg',
+        ]);
+
+        $this->post(route('cart.store'), [
+            'product' => $photo->slug,
+            'quantity' => 1,
+        ]);
+        $this->post(route('cart.store'), [
+            'product' => $broken->slug,
+            'quantity' => 1,
+        ]);
+
+        $this->get(route('cart'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('storefront/cart')
+                ->where('items.0.image', '/images/storefront/logo.png')
+                ->where('items.1.image', MediaUrl::DEFAULT_FALLBACK));
+    } finally {
+        if (is_file($stubPath)) {
+            unlink($stubPath);
+        }
+    }
 });
 
 test('adding to cart does not flash a server toast', function () {

@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
     Http::fake([
-        'images.unsplash.com/*' => Http::response('fake-image-bytes', 200, [
-            'Content-Type' => 'image/jpeg',
-        ]),
+        'images.unsplash.com/*' => Http::response(
+            file_get_contents(public_path('images/storefront/logo.png')),
+            200,
+            ['Content-Type' => 'image/png'],
+        ),
     ]);
 
     $this->seed(RolesAndPermissionsSeeder::class);

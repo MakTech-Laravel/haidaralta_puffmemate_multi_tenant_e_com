@@ -193,6 +193,7 @@ class ApplicationSettingsService
 
     /**
      * @return array{
+     *     name: string,
      *     shortName: string,
      *     description: string|null,
      *     logoUrl: string|null,
@@ -212,6 +213,7 @@ class ApplicationSettingsService
         $settings = $this->current();
 
         return [
+            'name' => $settings->app_name,
             'shortName' => $settings->app_short_name,
             'description' => $settings->short_description,
             'logoUrl' => MediaUrl::resolve($settings->logo_path, fallback: null),
@@ -320,6 +322,7 @@ class ApplicationSettingsService
 
     /**
      * @return array{
+     *     name: string,
      *     shortName: string,
      *     description: null,
      *     logoUrl: null,
@@ -333,7 +336,8 @@ class ApplicationSettingsService
     private function fallbackSharedPayload(): array
     {
         return [
-            'shortName' => (string) config('pwa.short_name', config('app.name', 'PuffMeMate')),
+            'name' => (string) config('app.name'),
+            'shortName' => (string) config('pwa.short_name', config('app.name')),
             'description' => null,
             'logoUrl' => null,
             'faviconUrl' => null,
