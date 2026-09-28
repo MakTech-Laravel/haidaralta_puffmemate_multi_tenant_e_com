@@ -17,7 +17,10 @@ export default function ProductToReviewShow({
         <>
             <Head title={`Review ${product.name}`} />
 
-            <WriteProductReviewForm productName={product.name} />
+            <WriteProductReviewForm
+                itemId={product.id}
+                productName={product.name}
+            />
         </>
     );
 }

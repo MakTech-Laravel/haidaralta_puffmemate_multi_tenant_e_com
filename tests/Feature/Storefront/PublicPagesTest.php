@@ -222,7 +222,8 @@ test('storefront product cards omit stock and use catalog price without a branch
         ->and($card['id'])->toBe('card-mapper-pack')
         ->and($card['description'])->toBe('Menthol Pack • 20 Cigarettes')
         ->and($card['price'])->toBe('$12.50')
-        ->and($card['compareAtPrice'])->toBe('$15.00');
+        ->and($card['compareAtPrice'])->toBe('$15.00')
+        ->and($card['views'])->toBe('0');
 });
 
 test('storefront home marks the last two featured categories as wide when more than three', function () {

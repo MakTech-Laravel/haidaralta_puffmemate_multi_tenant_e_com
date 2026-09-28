@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { ShoppingCart } from 'lucide-react';
+import { EyeIcon, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import { addToCart } from '@/components/storefront/cart/sync-cart-item';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,6 @@ export function ProductCard({ product, className }: ProductCardProps) {
         >
             <Link
                 href={productShow(product.id)}
-                prefetch
                 className="flex min-w-0 flex-1 flex-col"
             >
                 <div className="bg-muted relative aspect-[3/2] overflow-hidden">
@@ -50,9 +49,20 @@ export function ProductCard({ product, className }: ProductCardProps) {
                     />
                 </div>
                 <div className="flex flex-1 flex-col gap-1 p-4 pb-2">
-                    <h3 className="text-foreground truncate text-base font-semibold sm:text-lg">
-                        {product.name}
-                    </h3>
+                    <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-foreground min-w-0 truncate text-base font-semibold sm:text-lg">
+                            {product.name}
+                        </h3>
+                        <div
+                            className="bg-muted-foreground/20 flex shrink-0 items-center gap-1 rounded-full px-2 py-1"
+                            aria-label={`${product.views} views`}
+                        >
+                            <EyeIcon className="size-5" />
+                            <span className="text-sm font-medium">
+                                {product.views}
+                            </span>
+                        </div>
+                    </div>
                     <p className="text-muted-foreground truncate text-sm font-normal">
                         {product.description}
                     </p>
