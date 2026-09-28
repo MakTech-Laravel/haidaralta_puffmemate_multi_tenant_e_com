@@ -4,6 +4,7 @@ use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\Inventory;
+use App\Models\Pack;
 use App\Models\Product;
 use App\Models\User;
 use Database\Seeders\BranchSeeder;
@@ -33,8 +34,8 @@ test('branch staff can view the packs and saves list', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('branch/catalog/packs-saves/index')
-            ->has('packs', 3)
-            ->where('packs.0.name', 'Starter trio'));
+            ->has('table.data')
+            ->has('table.meta'));
 });
 
 test('branch staff can view the create pack page with this branch stock products', function () {
@@ -88,4 +89,26 @@ test('staff without manage-branch-products cannot open packs and saves', functio
     $this->actingAs($user, 'branch')
         ->get(route('branch.packs-saves.index', $this->branch))
         ->assertForbidden();
+});
+
+test('branch staff can view and edit a persisted pack', function () {
+    $pack = Pack::factory()->create([
+        'branch_id' => $this->branch->id,
+        'name' => 'Starter trio',
+    ]);
+
+    $this->actingAs($this->staff, 'branch')
+        ->get(route('branch.packs-saves.show', [$this->branch, $pack]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/packs-saves/show')
+            ->where('pack.name', 'Starter trio'));
+
+    $this->actingAs($this->staff, 'branch')
+        ->get(route('branch.packs-saves.edit', [$this->branch, $pack]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('branch/catalog/packs-saves/edit')
+            ->where('pack.name', 'Starter trio')
+            ->has('availableProducts'));
 });

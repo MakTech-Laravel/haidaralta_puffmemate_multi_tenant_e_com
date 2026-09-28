@@ -1,12 +1,17 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { useMemo } from 'react';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import PacksSavesController from '@/actions/App/Http/Controllers/Branch/PacksSavesController';
+import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
 import {
     DataTable,
+    DataTableColumnHeader,
     DataTableRowActions,
+    DataTableToolbar,
     DataTableTruncated,
-    toClientDataTablePayload,
+    useDataTableQuery,
+    type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,12 +23,12 @@ type Branch = { id: number; name: string; slug: string };
 type PackRow = {
     id: number;
     name: string;
+    slug: string;
     image_url: string | null;
     product_count: number;
     subtotal: string;
     pack_price: string;
-    offer_type: string;
-    offer_value: string;
+    quantity: number;
     status: boolean;
     starts_at: string | null;
     ends_at: string | null;
@@ -57,11 +62,14 @@ function windowLabel(row: PackRow): string {
 
 export default function BranchPacksSavesIndex({
     branch,
-    packs,
+    table: tablePayload,
 }: {
     branch: Branch;
-    packs: PackRow[];
+    table: DataTablePayload<PackRow>;
 }) {
+    const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
+    const [processing, setProcessing] = useState(false);
+
     setLayoutProps({
         breadcrumbs: [
             {
@@ -75,7 +83,17 @@ export default function BranchPacksSavesIndex({
         ],
     });
 
-    const payload = useMemo(() => toClientDataTablePayload(packs), [packs]);
+    const query = useDataTableQuery({
+        indexUrl: PacksSavesController.index.url(branch.slug),
+        initial: {
+            filter: {
+                search: tablePayload.filters.search ?? '',
+                status: tablePayload.filters.status ?? null,
+            },
+            sort: tablePayload.sort,
+            per_page: tablePayload.per_page,
+        },
+    });
 
     const columns = useMemo<ColumnDef<PackRow>[]>(
         () => [
@@ -96,7 +114,16 @@ export default function BranchPacksSavesIndex({
             },
             {
                 accessorKey: 'name',
-                header: 'Pack',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Pack"
+                        sortable
+                        sortKey="name"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <DataTableTruncated className="font-medium">
                         {row.original.name}
@@ -126,8 +153,35 @@ export default function BranchPacksSavesIndex({
                 meta: { truncate: false },
             },
             {
+                accessorKey: 'quantity',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Qty"
+                        sortable
+                        sortKey="quantity"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {row.original.quantity}
+                    </span>
+                ),
+            },
+            {
                 accessorKey: 'status',
-                header: 'Status',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Status"
+                        sortable
+                        sortKey="status"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
                 cell: ({ row }) => (
                     <Badge
                         variant={
@@ -151,17 +205,39 @@ export default function BranchPacksSavesIndex({
             {
                 id: 'actions',
                 header: '',
-                cell: () => (
+                cell: ({ row }) => (
                     <DataTableRowActions
                         items={[
-                            { label: 'View', disabled: true },
-                            { label: 'Edit', disabled: true },
+                            {
+                                label: 'View',
+                                icon: Eye,
+                                href: PacksSavesController.show.url({
+                                    branch: branch.slug,
+                                    pack: row.original.slug,
+                                }),
+                            },
+                            {
+                                label: 'Edit',
+                                icon: Pencil,
+                                href: PacksSavesController.edit.url({
+                                    branch: branch.slug,
+                                    pack: row.original.slug,
+                                }),
+                            },
+                            {
+                                label: 'Delete',
+                                icon: Trash2,
+                                destructive: true,
+                                separatorBefore: true,
+                                onSelect: () =>
+                                    setDeletingSlug(row.original.slug),
+                            },
                         ]}
                     />
                 ),
             },
         ],
-        [],
+        [branch.slug, query.sort, query.toggleSort],
     );
 
     return (
@@ -185,13 +261,47 @@ export default function BranchPacksSavesIndex({
 
                 <DataTable
                     columns={columns}
-                    payload={payload}
-                    perPage={payload.per_page}
-                    onPerPageChange={() => {}}
-                    showPagination={false}
+                    payload={tablePayload}
+                    perPage={query.perPage}
+                    onPerPageChange={query.changePerPage}
                     emptyMessage="No packs yet. Create a pack to get started."
+                    toolbar={
+                        <DataTableToolbar
+                            search={query.search}
+                            onSearchChange={query.setSearch}
+                            searchPlaceholder="Search packs…"
+                            onClear={query.clearFilters}
+                        />
+                    }
                 />
             </div>
+
+            <ConfirmDeleteDialog
+                open={deletingSlug !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeletingSlug(null);
+                    }
+                }}
+                description="This releases reserved stock back to each product and permanently deletes the pack."
+                processing={processing}
+                onConfirm={() => {
+                    if (deletingSlug === null) {
+                        return;
+                    }
+
+                    setProcessing(true);
+                    router.delete(
+                        PacksSavesController.destroy.url({
+                            branch: branch.slug,
+                            pack: deletingSlug,
+                        }),
+                        {
+                            onFinish: () => setProcessing(false),
+                        },
+                    );
+                }}
+            />
         </>
     );
 }

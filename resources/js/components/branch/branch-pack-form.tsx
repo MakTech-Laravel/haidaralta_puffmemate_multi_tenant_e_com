@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import {
     ChevronsUpDown,
     CircleDollarSign,
@@ -10,8 +10,8 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
-import { toast } from 'sonner';
-import FileUpload from '@/components/file-upload';
+import FileUpload, { type ExistingFile } from '@/components/file-upload';
+import InputError from '@/components/input-error';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,30 @@ export type PackProductOption = {
     image_url: string | null;
     selling_price: string | null;
     effective_price: string | null;
+    quantity: number;
+};
+
+export type PackGalleryImage = {
+    id: number;
+    path: string;
+    url: string;
+    sort_order: number;
+    mime_type?: string;
+};
+
+export type PackFormDefaults = {
+    name?: string;
+    description?: string | null;
+    image?: string | null;
+    image_url?: string | null;
+    gallery?: PackGalleryImage[];
+    offer_type?: OfferType;
+    offer_value?: string;
+    quantity?: number;
+    status?: boolean;
+    starts_at?: string | null;
+    ends_at?: string | null;
+    items?: { quantity: number; product: PackProductOption }[];
 };
 
 type PackLine = {
@@ -50,6 +75,11 @@ type PackLine = {
 };
 
 type OfferType = 'fixed' | 'percent' | 'pack_price';
+
+type FormAction = {
+    action: string;
+    method?: string;
+};
 
 const sectionCardClass =
     'border-border/80 bg-card rounded-2xl border p-5 shadow-sm sm:p-6';
@@ -116,22 +146,69 @@ function ProductUnitPrice({ product }: { product: PackProductOption }) {
 }
 
 export function BranchPackForm({
+    action,
     availableProducts,
     cancelHref,
+    defaults,
+    isEdit = false,
 }: {
+    action: FormAction;
     availableProducts: PackProductOption[];
     cancelHref: string;
+    defaults?: PackFormDefaults;
+    isEdit?: boolean;
 }) {
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [image, setImage] = useState<File | null>(null);
-    const [status, setStatus] = useState(true);
-    const [startsAt, setStartsAt] = useState('');
-    const [endsAt, setEndsAt] = useState('');
-    const [lines, setLines] = useState<PackLine[]>([]);
-    const [offerType, setOfferType] = useState<OfferType>('percent');
-    const [offerValue, setOfferValue] = useState('20');
+    const [existingCover, setExistingCover] = useState<ExistingFile[]>(
+        defaults?.image && defaults.image_url
+            ? [
+                  {
+                      id: 'cover',
+                      path: defaults.image,
+                      url: defaults.image_url,
+                      mime_type: 'image/jpeg',
+                  },
+              ]
+            : [],
+    );
+    const [existingGallery, setExistingGallery] = useState<ExistingFile[]>(
+        (defaults?.gallery ?? []).map((image) => ({
+            id: image.id,
+            path: image.path,
+            url: image.url,
+            mime_type: image.mime_type ?? 'image/jpeg',
+        })),
+    );
+    const [lines, setLines] = useState<PackLine[]>(
+        (defaults?.items ?? []).map((item) => ({
+            product: item.product,
+            qty: item.quantity,
+        })),
+    );
     const [pickerOpen, setPickerOpen] = useState(false);
+
+    const {
+        data,
+        setData,
+        transform,
+        post,
+        processing,
+        progress,
+        errors,
+        cancel,
+    } = useForm({
+        name: defaults?.name ?? '',
+        description: defaults?.description ?? '',
+        image: null as File | null,
+        gallery: [] as File[],
+        remove_image: false,
+        remove_gallery_ids: [] as number[],
+        status: defaults?.status ?? true,
+        starts_at: defaults?.starts_at ?? '',
+        ends_at: defaults?.ends_at ?? '',
+        offer_type: defaults?.offer_type ?? ('percent' as OfferType),
+        offer_value: defaults?.offer_value ?? '20',
+        quantity: defaults?.quantity ?? 1,
+    });
 
     const selectedIds = useMemo(
         () => new Set(lines.map((line) => line.product.id)),
@@ -146,14 +223,55 @@ export function BranchPackForm({
         [availableProducts, selectedIds],
     );
 
+    const packsToSell = Number.isFinite(Number(data.quantity))
+        ? Math.max(1, Math.floor(Number(data.quantity)))
+        : 1;
+
+    // Per-product stock validation (client-side, create mode only).
+    // Key: product id, Value: error message.
+    const stockIssues = useMemo(() => {
+        const issues: Record<number, string> = {};
+
+        if (isEdit) {
+            return issues;
+        }
+
+        for (const line of lines) {
+            const needed = line.qty * packsToSell;
+            const available = line.product.quantity;
+
+            if (needed > available) {
+                issues[line.product.id] =
+                    available <= 0
+                        ? 'Out of stock. This product has no stock available.'
+                        : `Not enough stock. Needs ${needed} (${line.qty} × ${packsToSell} packs) but only ${available} available.`;
+            }
+        }
+
+        return issues;
+    }, [lines, packsToSell, isEdit]);
+
+    const hasStockIssues = Object.keys(stockIssues).length > 0;
+
+    // Server-side per-item error (e.g. items.0.quantity / items.0.product_id).
+    function serverLineError(index: number): string | undefined {
+        const bag = errors as Record<string, string | undefined>;
+
+        return (
+            bag[`items.${index}.quantity`] ??
+            bag[`items.${index}.product_id`] ??
+            bag[`items.${index}`]
+        );
+    }
+
     const totals = useMemo(() => {
         const subtotal = lines.reduce(
             (sum, line) => sum + unitPrice(line.product) * line.qty,
             0,
         );
-        const rawOffer = parseMoney(offerValue);
+        const rawOffer = parseMoney(data.offer_value);
 
-        if (offerType === 'fixed') {
+        if (data.offer_type === 'fixed') {
             const savings = Math.min(Math.max(rawOffer, 0), subtotal);
 
             return {
@@ -163,7 +281,7 @@ export function BranchPackForm({
             };
         }
 
-        if (offerType === 'percent') {
+        if (data.offer_type === 'percent') {
             const percent = Math.min(Math.max(rawOffer, 0), 100);
             const savings = (subtotal * percent) / 100;
 
@@ -181,9 +299,13 @@ export function BranchPackForm({
             savings: Math.max(0, subtotal - packPrice),
             packPrice,
         };
-    }, [lines, offerType, offerValue]);
+    }, [lines, data.offer_type, data.offer_value]);
 
     function addProduct(product: PackProductOption): void {
+        if (isEdit) {
+            return;
+        }
+
         setLines((current) => {
             if (current.some((line) => line.product.id === product.id)) {
                 return current;
@@ -195,6 +317,10 @@ export function BranchPackForm({
     }
 
     function setQty(productId: number, qty: number): void {
+        if (isEdit) {
+            return;
+        }
+
         const next = Number.isFinite(qty) ? Math.max(1, Math.floor(qty)) : 1;
 
         setLines((current) =>
@@ -205,6 +331,10 @@ export function BranchPackForm({
     }
 
     function removeLine(productId: number): void {
+        if (isEdit) {
+            return;
+        }
+
         setLines((current) =>
             current.filter((line) => line.product.id !== productId),
         );
@@ -212,30 +342,71 @@ export function BranchPackForm({
 
     function handleSubmit(event: FormEvent): void {
         event.preventDefault();
-    }
 
-    function handleSave(): void {
-        toast.info('Saving packs comes next.');
+        // Stop here if any product doesn't have enough stock;
+        // the messages are already shown under each product.
+        if (hasStockIssues) {
+            return;
+        }
+
+        transform((form) => {
+            const {
+                image,
+                gallery,
+                remove_image,
+                remove_gallery_ids,
+                description,
+                starts_at,
+                ends_at,
+                ...rest
+            } = form;
+
+            return {
+                ...rest,
+                description: description === '' ? null : description,
+                starts_at: starts_at === '' ? null : starts_at,
+                ends_at: ends_at === '' ? null : ends_at,
+                ...(image ? { image } : {}),
+                ...(gallery.length > 0 ? { gallery } : {}),
+                ...(remove_image ? { remove_image: true } : {}),
+                ...(remove_gallery_ids.length > 0
+                    ? { remove_gallery_ids }
+                    : {}),
+                ...(!isEdit
+                    ? {
+                          items: lines.map((line) => ({
+                              product_id: line.product.id,
+                              quantity: line.qty,
+                          })),
+                      }
+                    : {}),
+            };
+        });
+
+        post(action.action, {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     }
 
     const offerInputLabel =
-        offerType === 'percent'
+        data.offer_type === 'percent'
             ? 'Discount value (%)'
-            : offerType === 'fixed'
+            : data.offer_type === 'fixed'
               ? 'Discount value (AUD)'
               : 'Pack price (AUD)';
 
     const offerPlaceholder =
-        offerType === 'percent'
+        data.offer_type === 'percent'
             ? 'e.g. 10'
-            : offerType === 'fixed'
+            : data.offer_type === 'fixed'
               ? 'e.g. 5.00'
               : 'e.g. 80.00';
 
     const offerHelper =
-        offerType === 'percent'
+        data.offer_type === 'percent'
             ? 'Percent off the combined product total (0–100).'
-            : offerType === 'fixed'
+            : data.offer_type === 'fixed'
               ? 'Amount off the combined product total, ≤ subtotal.'
               : 'Set the pack selling price. Savings is subtotal minus this price.';
 
@@ -257,16 +428,21 @@ export function BranchPackForm({
                             <div>
                                 <Label htmlFor="pack-status">Active</Label>
                                 <p className="text-muted-foreground text-sm">
-                                    Inactive packs stay hidden once saving is
-                                    wired.
+                                    Inactive packs stay hidden from selling.
                                 </p>
                             </div>
                             <Switch
                                 id="pack-status"
-                                checked={status}
-                                onCheckedChange={setStatus}
+                                checked={data.status}
+                                onCheckedChange={(status) =>
+                                    setData((current) => ({
+                                        ...current,
+                                        status,
+                                    }))
+                                }
                             />
                         </div>
+                        <InputError message={errors.status} />
 
                         <div className="space-y-2">
                             <Label htmlFor="pack-name">
@@ -275,12 +451,16 @@ export function BranchPackForm({
                             </Label>
                             <Input
                                 id="pack-name"
-                                value={name}
+                                value={data.name}
                                 onChange={(event) =>
-                                    setName(event.target.value)
+                                    setData((current) => ({
+                                        ...current,
+                                        name: event.target.value,
+                                    }))
                                 }
                                 placeholder="e.g. Starter trio"
                             />
+                            <InputError message={errors.name} />
                         </div>
 
                         <div className="space-y-2">
@@ -289,31 +469,162 @@ export function BranchPackForm({
                             </Label>
                             <Textarea
                                 id="pack-description"
-                                value={description}
+                                value={data.description}
                                 onChange={(event) =>
-                                    setDescription(event.target.value)
+                                    setData((current) => ({
+                                        ...current,
+                                        description: event.target.value,
+                                    }))
                                 }
                                 placeholder="What is in this pack and why it is a save."
                                 rows={4}
                             />
+                            <InputError message={errors.description} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="pack-quantity">
+                                Packs to sell{' '}
+                                <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                                id="pack-quantity"
+                                type="number"
+                                min={1}
+                                step={1}
+                                value={data.quantity}
+                                onChange={(event) =>
+                                    setData((current) => ({
+                                        ...current,
+                                        quantity: Number(event.target.value),
+                                    }))
+                                }
+                            />
+                            <p className="text-muted-foreground text-xs">
+                                This count is reserved from each product’s
+                                on-hand stock.
+                            </p>
+                            {/* Stock errors are shown per product below,
+                                so hide this one when a line already has an issue. */}
+                            {!hasStockIssues ? (
+                                <InputError message={errors.quantity} />
+                            ) : null}
                         </div>
 
                         <div className="space-y-2">
                             <Label>Cover image</Label>
                             <FileUpload
-                                value={image}
+                                value={data.image}
                                 onChange={(file) => {
                                     const next = Array.isArray(file)
                                         ? (file[0] ?? null)
                                         : file;
-                                    setImage(next);
+                                    setExistingCover([]);
+                                    setData((current) => ({
+                                        ...current,
+                                        image: next,
+                                        remove_image: next
+                                            ? false
+                                            : current.remove_image,
+                                    }));
+                                }}
+                                existingFiles={
+                                    data.image || data.remove_image
+                                        ? []
+                                        : existingCover
+                                }
+                                onRemoveExisting={() => {
+                                    setExistingCover([]);
+                                    setData((current) => ({
+                                        ...current,
+                                        image: null,
+                                        remove_image: true,
+                                    }));
                                 }}
                                 accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
                                 maxSize={2}
                                 lightbox
+                                isUploading={processing}
+                                uploadProgress={progress?.percentage ?? null}
+                                onCancel={processing ? cancel : undefined}
                                 placeholder="Drop or click"
                                 hint="PNG, JPG, SVG, or WebP · Max 2MB"
                                 compactCards
+                            />
+                            <InputError message={errors.image} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-3">
+                                <Label>Gallery</Label>
+                                <span className="text-muted-foreground text-xs">
+                                    {existingGallery.length +
+                                        data.gallery.length}
+                                    /12
+                                </span>
+                            </div>
+                            <FileUpload
+                                multiple
+                                dropzoneVisibility="empty"
+                                compactCards
+                                value={data.gallery}
+                                onChange={(files) => {
+                                    const next = Array.isArray(files)
+                                        ? files
+                                        : files
+                                          ? [files]
+                                          : [];
+                                    setData((current) => ({
+                                        ...current,
+                                        gallery: next,
+                                    }));
+                                }}
+                                existingFiles={existingGallery}
+                                onRemoveExisting={(id) => {
+                                    const numericId = Number(id);
+                                    setExistingGallery((current) =>
+                                        current.filter(
+                                            (file) => file.id !== id,
+                                        ),
+                                    );
+                                    setData((current) => {
+                                        const next =
+                                            current.remove_gallery_ids.includes(
+                                                numericId,
+                                            )
+                                                ? current.remove_gallery_ids
+                                                : [
+                                                      ...current.remove_gallery_ids,
+                                                      numericId,
+                                                  ];
+
+                                        return {
+                                            ...current,
+                                            remove_gallery_ids: next,
+                                        };
+                                    });
+                                }}
+                                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
+                                maxSize={2}
+                                maxFiles={12}
+                                lightbox
+                                isUploading={processing}
+                                uploadProgress={progress?.percentage ?? null}
+                                onCancel={processing ? cancel : undefined}
+                                placeholder="Add gallery images"
+                                hint="Up to 12 · PNG, JPG, SVG, or WebP"
+                                classNames={{
+                                    dropzone: 'py-5',
+                                    grid: 'grid-cols-3 gap-2 sm:grid-cols-3 lg:grid-cols-3',
+                                    card: 'aspect-square overflow-hidden',
+                                    cardMedia: 'h-full bg-muted/20',
+                                    cardImage: 'object-contain p-1',
+                                }}
+                            />
+                            <InputError
+                                message={
+                                    errors.gallery ?? errors.remove_gallery_ids
+                                }
                             />
                         </div>
 
@@ -324,21 +635,33 @@ export function BranchPackForm({
                                 </Label>
                                 <DatePicker
                                     id="pack-starts-at"
-                                    value={startsAt}
-                                    onChange={setStartsAt}
-                                    max={endsAt || undefined}
+                                    value={data.starts_at}
+                                    onChange={(starts_at) =>
+                                        setData((current) => ({
+                                            ...current,
+                                            starts_at,
+                                        }))
+                                    }
+                                    max={data.ends_at || undefined}
                                     placeholder="Optional start"
                                 />
+                                <InputError message={errors.starts_at} />
                             </div>
                             <div className="grid min-w-0 gap-2">
                                 <Label htmlFor="pack-ends-at">End date</Label>
                                 <DatePicker
                                     id="pack-ends-at"
-                                    value={endsAt}
-                                    onChange={setEndsAt}
-                                    min={startsAt || undefined}
+                                    value={data.ends_at}
+                                    onChange={(ends_at) =>
+                                        setData((current) => ({
+                                            ...current,
+                                            ends_at,
+                                        }))
+                                    }
+                                    min={data.starts_at || undefined}
                                     placeholder="Optional end"
                                 />
+                                <InputError message={errors.ends_at} />
                             </div>
                         </div>
                     </div>
@@ -350,13 +673,14 @@ export function BranchPackForm({
                             Products in this pack
                         </h2>
                         <p className="text-muted-foreground text-sm">
-                            Choose this branch’s stock products. Quantity is per
-                            pack.
+                            {isEdit
+                                ? 'Product mix is frozen after create. Change packs to sell to reserve or release stock.'
+                                : 'Choose this branch’s stock products. Quantity is per pack.'}
                         </p>
                     </div>
 
                     <div className="mt-5 space-y-4">
-                        {availableProducts.length === 0 ? (
+                        {availableProducts.length === 0 && !isEdit ? (
                             <Alert>
                                 <Package2 />
                                 <AlertTitle>
@@ -367,7 +691,9 @@ export function BranchPackForm({
                                     a pack.
                                 </AlertDescription>
                             </Alert>
-                        ) : (
+                        ) : null}
+
+                        {!isEdit && availableProducts.length > 0 ? (
                             <div className="space-y-2">
                                 <Label>Add product</Label>
                                 <Popover
@@ -433,7 +759,7 @@ export function BranchPackForm({
                                     </PopoverContent>
                                 </Popover>
                             </div>
-                        )}
+                        ) : null}
 
                         {lines.length === 0 ? (
                             <p className="text-muted-foreground text-sm">
@@ -441,14 +767,23 @@ export function BranchPackForm({
                             </p>
                         ) : (
                             <ul className="divide-border divide-y rounded-xl border">
-                                {lines.map((line) => {
+                                {lines.map((line, index) => {
                                     const lineTotal =
                                         unitPrice(line.product) * line.qty;
+                                    const reserved = line.qty * packsToSell;
+                                    const remaining = line.product.quantity;
+                                    const lineError =
+                                        stockIssues[line.product.id] ??
+                                        serverLineError(index);
 
                                     return (
                                         <li
                                             key={line.product.id}
-                                            className="flex flex-wrap items-center gap-3 p-3"
+                                            className={cn(
+                                                'flex flex-wrap items-center gap-3 p-3',
+                                                lineError &&
+                                                    'bg-destructive/5',
+                                            )}
                                         >
                                             <Avatar className="size-10 rounded-md">
                                                 <AvatarImage
@@ -477,82 +812,126 @@ export function BranchPackForm({
                                                         product={line.product}
                                                     />
                                                 </p>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="icon"
-                                                    className="size-8"
-                                                    onClick={() =>
-                                                        setQty(
-                                                            line.product.id,
-                                                            line.qty - 1,
-                                                        )
-                                                    }
-                                                    aria-label={`Decrease ${line.product.name}`}
+                                                <p
+                                                    className={cn(
+                                                        'mt-1 text-xs',
+                                                        stockIssues[
+                                                            line.product.id
+                                                        ]
+                                                            ? 'text-destructive'
+                                                            : 'text-muted-foreground',
+                                                    )}
                                                 >
-                                                    <Minus className="size-3.5" />
-                                                </Button>
-                                                <Input
-                                                    className="h-8 w-14 text-center tabular-nums"
-                                                    type="number"
-                                                    min={1}
-                                                    step={1}
-                                                    value={line.qty}
-                                                    onChange={(event) =>
-                                                        setQty(
-                                                            line.product.id,
-                                                            Number(
-                                                                event.target
-                                                                    .value,
-                                                            ),
-                                                        )
-                                                    }
-                                                    aria-label={`${line.product.name} quantity`}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="icon"
-                                                    className="size-8"
-                                                    onClick={() =>
-                                                        setQty(
-                                                            line.product.id,
-                                                            line.qty + 1,
-                                                        )
-                                                    }
-                                                    aria-label={`Increase ${line.product.name}`}
-                                                >
-                                                    <Plus className="size-3.5" />
-                                                </Button>
+                                                    Will reserve {reserved} of{' '}
+                                                    {line.product.sku ??
+                                                        line.product.name}{' '}
+                                                    ({remaining} remaining)
+                                                </p>
                                             </div>
+                                            {isEdit ? (
+                                                <p className="text-sm tabular-nums">
+                                                    ×{line.qty}
+                                                </p>
+                                            ) : (
+                                                <div className="flex items-center gap-1">
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="icon"
+                                                        className="size-8"
+                                                        onClick={() =>
+                                                            setQty(
+                                                                line.product.id,
+                                                                line.qty - 1,
+                                                            )
+                                                        }
+                                                        aria-label={`Decrease ${line.product.name}`}
+                                                    >
+                                                        <Minus className="size-3.5" />
+                                                    </Button>
+                                                    <Input
+                                                        className={cn(
+                                                            'h-8 w-14 text-center tabular-nums',
+                                                            lineError &&
+                                                                'border-destructive',
+                                                        )}
+                                                        type="number"
+                                                        min={1}
+                                                        step={1}
+                                                        value={line.qty}
+                                                        onChange={(event) =>
+                                                            setQty(
+                                                                line.product.id,
+                                                                Number(
+                                                                    event.target
+                                                                        .value,
+                                                                ),
+                                                            )
+                                                        }
+                                                        aria-label={`${line.product.name} quantity`}
+                                                        aria-invalid={
+                                                            lineError
+                                                                ? true
+                                                                : undefined
+                                                        }
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="icon"
+                                                        className="size-8"
+                                                        onClick={() =>
+                                                            setQty(
+                                                                line.product.id,
+                                                                line.qty + 1,
+                                                            )
+                                                        }
+                                                        aria-label={`Increase ${line.product.name}`}
+                                                    >
+                                                        <Plus className="size-3.5" />
+                                                    </Button>
+                                                </div>
+                                            )}
                                             <p className="w-20 text-right text-sm font-medium tabular-nums">
                                                 {formatAud(lineTotal)}
                                             </p>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-muted-foreground size-8"
-                                                onClick={() =>
-                                                    removeLine(line.product.id)
-                                                }
-                                                aria-label={`Remove ${line.product.name}`}
-                                            >
-                                                <Trash2 className="size-4" />
-                                            </Button>
+                                            {!isEdit ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-muted-foreground size-8"
+                                                    onClick={() =>
+                                                        removeLine(
+                                                            line.product.id,
+                                                        )
+                                                    }
+                                                    aria-label={`Remove ${line.product.name}`}
+                                                >
+                                                    <Trash2 className="size-4" />
+                                                </Button>
+                                            ) : null}
+
+                                            {/* Per-product stock validation message */}
+                                            {lineError ? (
+                                                <div className="basis-full">
+                                                    <InputError
+                                                        message={lineError}
+                                                    />
+                                                </div>
+                                            ) : null}
                                         </li>
                                     );
                                 })}
                             </ul>
                         )}
 
-                        {lines.length === 1 ? (
+                        {!isEdit && lines.length === 1 ? (
                             <p className="text-muted-foreground text-sm">
                                 Add at least 2 products to make a pack.
                             </p>
                         ) : null}
+                        <InputError message={errors.items} />
                     </div>
                 </section>
             </div>
@@ -562,9 +941,6 @@ export function BranchPackForm({
                     <h2 className="text-base font-semibold tracking-tight">
                         Pack offer
                     </h2>
-                    {/* <p className="text-muted-foreground text-sm">
-                        3 products totaling $100 → set $80, $20 off, or 20%.
-                    </p> */}
                 </div>
 
                 <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
@@ -578,7 +954,8 @@ export function BranchPackForm({
                             >
                                 {OFFER_TYPES.map((type) => {
                                     const Icon = type.icon;
-                                    const selected = offerType === type.value;
+                                    const selected =
+                                        data.offer_type === type.value;
 
                                     return (
                                         <Button
@@ -592,7 +969,10 @@ export function BranchPackForm({
                                                 !selected && 'text-foreground',
                                             )}
                                             onClick={() =>
-                                                setOfferType(type.value)
+                                                setData((current) => ({
+                                                    ...current,
+                                                    offer_type: type.value,
+                                                }))
                                             }
                                         >
                                             <Icon className="size-3.5" />
@@ -601,6 +981,7 @@ export function BranchPackForm({
                                     );
                                 })}
                             </div>
+                            <InputError message={errors.offer_type} />
                         </div>
 
                         <div className="grid max-w-xs gap-2">
@@ -613,17 +994,23 @@ export function BranchPackForm({
                                 step="0.01"
                                 min={0}
                                 max={
-                                    offerType === 'percent' ? 100 : undefined
+                                    data.offer_type === 'percent'
+                                        ? 100
+                                        : undefined
                                 }
                                 placeholder={offerPlaceholder}
-                                value={offerValue}
+                                value={data.offer_value}
                                 onChange={(event) =>
-                                    setOfferValue(event.target.value)
+                                    setData((current) => ({
+                                        ...current,
+                                        offer_value: event.target.value,
+                                    }))
                                 }
                             />
                             <p className="text-muted-foreground text-xs">
                                 {offerHelper}
                             </p>
+                            <InputError message={errors.offer_value} />
                         </div>
                     </div>
 
@@ -658,7 +1045,8 @@ export function BranchPackForm({
                 <Button variant="outline" asChild>
                     <Link href={cancelHref}>Cancel</Link>
                 </Button>
-                <Button type="button" onClick={handleSave}>
+                <Button type="submit" disabled={processing || hasStockIssues}>
+                    {processing ? <Spinner /> : null}
                     Save pack
                 </Button>
             </div>

@@ -61,6 +61,11 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::get('products/create', [BranchProductController::class, 'create'])->name('branch.products.create');
         Route::get('packs-saves', [BranchPacksSavesController::class, 'index'])->name('branch.packs-saves.index');
         Route::get('packs-saves/create', [BranchPacksSavesController::class, 'create'])->name('branch.packs-saves.create');
+        Route::post('packs-saves', [BranchPacksSavesController::class, 'store'])->name('branch.packs-saves.store');
+        Route::get('packs-saves/{pack}', [BranchPacksSavesController::class, 'show'])->name('branch.packs-saves.show');
+        Route::get('packs-saves/{pack}/edit', [BranchPacksSavesController::class, 'edit'])->name('branch.packs-saves.edit');
+        Route::put('packs-saves/{pack}', [BranchPacksSavesController::class, 'update'])->name('branch.packs-saves.update');
+        Route::delete('packs-saves/{pack}', [BranchPacksSavesController::class, 'destroy'])->name('branch.packs-saves.destroy');
         Route::post('products', [BranchProductController::class, 'store'])
             ->middleware('precognitive')
             ->name('branch.products.store');

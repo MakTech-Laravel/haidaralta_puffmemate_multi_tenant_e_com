@@ -60,4 +60,10 @@ Branch portal sidebar group is Staff management (not Administrator). Contains St
 Branch Product management lists Packs & Saves immediately after Products (Package2, manage-branch-products, /branch/{slug}/packs-saves). Do not wrap it in navSoon. Do not add a platform Packs & Saves menu.
 
 ## Pack offer is Amount off Percent or Pack price
-Pack pricing is a 3-button row (Amount off / Percent / Pack price) on the combined line subtotal (qty × unit effective/selling), not per-product discount fields. Picker is this branch's stock only; duplicate SKUs are not allowed. Save is type=button until persist exists.
+Pack pricing is a 3-button row (Amount off / Percent / Pack price) on the combined line subtotal (qty × unit effective/selling), not per-product discount fields. Picker is this branch's stock only; duplicate SKUs are not allowed.
+
+## Pack media is cover plus gallery
+Pack media is cover (single FileUpload) plus gallery (multiple, max 12, dropzoneVisibility empty, compactCards) using the same accept/size contract as product catalog. Edit hydrates existingFiles for cover and gallery.
+
+## Pack form posts sell qty and gallery
+BranchPackForm uses useForm + Wayfinder with forceFormData for cover and gallery. Packs to sell (min 1) shows live will-reserve N of SKU. Create picker is this branch's stock only; edit hydrates existingFiles and freezes product lines. Save submits; do not toast as a stub.

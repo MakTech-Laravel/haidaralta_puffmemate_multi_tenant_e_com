@@ -5,5 +5,5 @@ paths:
 
 # Http Controllers Branch
 
-## Packs & Saves is GET-only until persist
-Branch Packs & Saves is UI-only: GET index/create only, no POST/store, no pack tables. Index dummy packs are placeholders, not catalog data. Create availableProducts are this branch's inventory SKUs with status true and listDisplayForProductContext prices. Do not persist packs yet.
+## Packs persist per branch with reserved stock
+Branch Packs & Saves is persisted CRUD (index/create/store/show/edit/update/destroy) behind manage-branch-products. Packs are scoped by branch_id; {pack} binds by slug for the current branch URL. Available products are this branch's catalog-active inventory SKUs only. Store/update go through PackService (Reserve/Release). Do not use dummy index rows.

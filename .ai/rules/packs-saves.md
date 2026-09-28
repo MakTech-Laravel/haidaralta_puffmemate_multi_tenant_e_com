@@ -5,5 +5,5 @@ paths:
 
 # Packs Saves
 
-## Packs list uses client DataTable dummy rows
-Packs & Saves index uses toClientDataTablePayload on dummy packs with showPagination=false. Do not add AbstractDataTable until packs persist. View/Edit row actions stay disabled until show/edit routes exist.
+## Packs list uses BranchPackDataTable
+Packs & Saves index uses BranchPackDataTable::makeForBranch (table prop, filter[]/sort/per_page). Row actions View/Edit/Delete are live. Delete releases remaining reserved stock. Product mix is frozen after create — edit only name, media, offer, dates, status, and packs-to-sell.

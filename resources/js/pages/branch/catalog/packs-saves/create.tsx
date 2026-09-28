@@ -43,6 +43,7 @@ export default function BranchPacksSavesCreate({
                 />
 
                 <BranchPackForm
+                    action={PacksSavesController.store.form(branch.slug)}
                     availableProducts={availableProducts}
                     cancelHref={PacksSavesController.index.url(branch.slug)}
                 />
