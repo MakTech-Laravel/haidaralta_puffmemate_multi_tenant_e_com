@@ -12,10 +12,12 @@ class OrderItem extends Model
      */
     protected $fillable = [
         'order_id',
+        'fulfillment_id',
         'product_id',
         'variant_id',
         'product_name_snapshot',
         'sku_snapshot',
+        'product_snapshot',
         'quantity',
         'unit_price',
         'subtotal',
@@ -27,6 +29,7 @@ class OrderItem extends Model
     protected function casts(): array
     {
         return [
+            'product_snapshot' => 'array',
             'quantity' => 'integer',
             'unit_price' => 'decimal:2',
             'subtotal' => 'decimal:2',
@@ -39,6 +42,14 @@ class OrderItem extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * @return BelongsTo<OrderFulfillment, $this>
+     */
+    public function fulfillment(): BelongsTo
+    {
+        return $this->belongsTo(OrderFulfillment::class, 'fulfillment_id');
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\ConversationStatus;
+use App\Models\Branch;
 use App\Models\Conversation;
 use App\Models\Order;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -17,24 +18,24 @@ class ConversationFactory extends Factory
      */
     public function definition(): array
     {
-        $order = Order::factory();
-
         return [
-            'order_id' => $order,
-            'branch_id' => fn (array $attributes): int => Order::query()
-                ->whereKey($attributes['order_id'])
-                ->value('branch_id'),
+            'order_id' => Order::factory(),
+            'branch_id' => Branch::factory(),
             'status' => ConversationStatus::Open,
             'last_message_at' => null,
             'closed_at' => null,
         ];
     }
 
+    /**
+     * Uses the order's first fulfillment branch when one exists, otherwise a
+     * fresh branch (order has no fulfillment yet in this test scenario).
+     */
     public function forOrder(Order $order): static
     {
         return $this->state(fn (): array => [
             'order_id' => $order->id,
-            'branch_id' => $order->branch_id,
+            'branch_id' => $order->fulfillments()->oldest()->value('branch_id') ?? Branch::factory(),
         ]);
     }
 

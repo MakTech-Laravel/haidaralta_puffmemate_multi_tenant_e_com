@@ -4,12 +4,14 @@ namespace Database\Seeders;
 
 use App\Enums\ConversationParticipantRole;
 use App\Enums\ConversationStatus;
+use App\Enums\FulfillmentStatus;
 use App\Enums\MessageType;
 use App\Enums\OrderStatus;
 use App\Models\Branch;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -188,13 +190,20 @@ class ConversationVolumeSeeder extends Seeder
         for ($index = 0; $index < self::SPARE_ORDERS; $index++) {
             $branch = $branches[$index % count($branches)];
 
-            Order::query()->updateOrCreate(
+            $order = Order::query()->updateOrCreate(
                 ['order_number' => 'PMM-2026-'.($sequence + $index)],
                 [
                     'customer_id' => $customer->id,
-                    'branch_id' => $branch->id,
-                    'driver_id' => null,
                     'status' => $index % 2 === 0 ? OrderStatus::Pending : OrderStatus::Confirmed,
+                ],
+            );
+
+            OrderFulfillment::query()->updateOrCreate(
+                ['order_id' => $order->id, 'branch_id' => $branch->id],
+                [
+                    'driver_id' => null,
+                    'fulfillment_number' => $order->order_number.'-A',
+                    'status' => FulfillmentStatus::Pending,
                 ],
             );
         }
@@ -214,9 +223,16 @@ class ConversationVolumeSeeder extends Seeder
             ['order_number' => $orderNumber],
             [
                 'customer_id' => $customer->id,
-                'branch_id' => $branch->id,
+                'status' => $closed ? OrderStatus::Delivered : OrderStatus::Processing,
+            ],
+        );
+
+        OrderFulfillment::query()->updateOrCreate(
+            ['order_id' => $order->id, 'branch_id' => $branch->id],
+            [
                 'driver_id' => $driver->id,
-                'status' => $closed ? OrderStatus::Delivered : OrderStatus::OutForDelivery,
+                'fulfillment_number' => $order->order_number.'-A',
+                'status' => $closed ? FulfillmentStatus::Delivered : FulfillmentStatus::Processing,
             ],
         );
 

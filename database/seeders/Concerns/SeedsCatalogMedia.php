@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Concerns;
 
+use App\Support\MediaUrl;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -35,7 +36,7 @@ trait SeedsCatalogMedia
         $relative = ltrim(str_replace('\\', '/', $relativePublicPath), '/');
         $absolute = public_path($relative);
 
-        if (! is_file($absolute)) {
+        if (! MediaUrl::isDisplayableFile($absolute)) {
             return null;
         }
 
@@ -78,7 +79,14 @@ trait SeedsCatalogMedia
             $filename = $slug.'.'.$extension;
             $absolute = $absoluteDirectory.DIRECTORY_SEPARATOR.$filename;
 
-            file_put_contents($absolute, $response->body());
+            $body = $response->body();
+            file_put_contents($absolute, $body);
+
+            if (! MediaUrl::isDisplayableFile($absolute)) {
+                @unlink($absolute);
+
+                return null;
+            }
 
             return '/'.$directory.'/'.$filename;
         } catch (Throwable) {
@@ -91,7 +99,7 @@ trait SeedsCatalogMedia
         foreach (['jpg', 'jpeg', 'png', 'webp', 'gif'] as $extension) {
             $filename = $slug.'.'.$extension;
 
-            if (is_file($absoluteDirectory.DIRECTORY_SEPARATOR.$filename)) {
+            if (MediaUrl::isDisplayableFile($absoluteDirectory.DIRECTORY_SEPARATOR.$filename)) {
                 return $filename;
             }
         }

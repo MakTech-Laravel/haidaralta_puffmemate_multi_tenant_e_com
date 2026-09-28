@@ -15,6 +15,7 @@ use Database\Seeders\ApplicationSettingsSeeder;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Http\Request;
 use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -96,7 +97,7 @@ test('datetime format helper uses viewer timezone from request', function () {
         'background_color' => '#FFFFFF',
     ]);
 
-    $request = \Illuminate\Http\Request::create('/');
+    $request = Request::create('/');
     $request->headers->set(DateTimeFormat::VIEWER_TIMEZONE_HEADER, 'Asia/Dhaka');
     $this->app->instance('request', $request);
 
@@ -243,6 +244,7 @@ test('general settings share branding and formats on inertia pages', function ()
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('name', 'Brand Shared')
+            ->where('application.name', 'Brand Shared')
             ->where('application.shortName', 'Brand')
             ->where('application.description', 'Shared description for SEO')
             ->where('application.dateFormat', 'd/m/Y')

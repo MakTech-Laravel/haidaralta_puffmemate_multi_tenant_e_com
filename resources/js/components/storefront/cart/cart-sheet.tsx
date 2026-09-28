@@ -15,6 +15,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { cart, checkout } from '@/routes';
 import { show as productShow } from '@/routes/products';
 import type { StorefrontCart } from '@/types/storefront';
@@ -96,10 +97,9 @@ export function CartSheet({
                                     href={productShow.url(item.slug)}
                                     className="bg-muted size-16 shrink-0 overflow-hidden rounded-lg"
                                 >
-                                    <img
+                                    <StorefrontProductImage
                                         src={item.image}
                                         alt={item.name}
-                                        className="size-full object-cover"
                                     />
                                 </Link>
                                 <div className="min-w-0 flex-1">

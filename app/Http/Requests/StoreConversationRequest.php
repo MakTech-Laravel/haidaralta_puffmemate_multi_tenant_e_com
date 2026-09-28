@@ -34,7 +34,12 @@ class StoreConversationRequest extends FormRequest
                 'integer',
                 Rule::exists('orders', 'id')->when(
                     $branchId !== null,
-                    fn ($rule) => $rule->where('branch_id', $branchId),
+                    fn ($rule) => $rule->where(fn ($query) => $query->whereExists(
+                        fn ($sub) => $sub->selectRaw('1')
+                            ->from('order_fulfillments')
+                            ->whereColumn('order_fulfillments.order_id', 'orders.id')
+                            ->where('order_fulfillments.branch_id', $branchId),
+                    )),
                 ),
                 // `conversations.order_id` is unique; surfacing it here lets
                 // Precognition warn in the picker before the operator submits.

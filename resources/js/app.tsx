@@ -22,7 +22,7 @@ import SettingsPortalLayout from '@/layouts/settings/settings-portal-layout';
 import StorefrontLayout from '@/layouts/storefront/storefront-layout';
 import type { Auth } from '@/types/auth';
 
-const fallbackAppName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const fallbackAppName = import.meta.env.VITE_APP_NAME || '';
 let resolvedAppName = fallbackAppName;
 
 if (typeof window !== 'undefined') {
@@ -60,10 +60,11 @@ void createInertiaApp({
         const pageProps = page.props as {
             auth?: Auth;
             name?: string;
-            application?: { themeColor?: string | null };
+            application?: { name?: string | null; themeColor?: string | null };
         };
         const authUserId = pageProps.auth?.user?.id;
-        const productName = pageProps.name || fallbackAppName;
+        const productName =
+            pageProps.application?.name || pageProps.name || fallbackAppName;
         resolvedAppName = productName;
 
         return (

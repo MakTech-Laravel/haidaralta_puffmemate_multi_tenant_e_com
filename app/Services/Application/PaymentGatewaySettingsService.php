@@ -77,7 +77,7 @@ class PaymentGatewaySettingsService
                 'description' => $method->description ?? '',
                 'badge' => match ($method->key) {
                     PaymentGatewaySetting::KEY_COD => '$',
-                    PaymentGatewaySetting::KEY_POS => 'POS',
+                    PaymentGatewaySetting::KEY_POS => 'EFT',
                     PaymentGatewaySetting::KEY_PAYMENT_LINK => 'LINK',
                     default => strtoupper(substr($method->key, 0, 3)),
                 },
@@ -174,7 +174,7 @@ class PaymentGatewaySettingsService
                 'label' => 'POS / Card on delivery',
                 'title' => 'POS / Card on delivery',
                 'description' => 'Driver carries a POS/EFTPOS machine',
-                'badge' => 'POS',
+                'badge' => 'EFT',
             ],
         ];
     }

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Contracts\DataTableConfigurable;
-use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\AuditsChanges;
@@ -16,12 +15,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
+ * Customer-facing master order.
+ *
+ * Never carries branch/fulfillment identity directly — that detail lives on
+ * {@see OrderFulfillment} and must never be serialized to the customer guard.
+ *
  * @property int $id
  * @property string $order_number
  * @property int $customer_id
- * @property int $branch_id
- * @property int|null $driver_id
  * @property OrderStatus $status
+ * @property PaymentStatus $payment_status
  */
 class Order extends Model implements DataTableConfigurable
 {
@@ -34,13 +37,13 @@ class Order extends Model implements DataTableConfigurable
     protected $fillable = [
         'order_number',
         'customer_id',
-        'branch_id',
-        'driver_id',
         'address_id',
         'coupon_id',
         'coupon_code',
         'status',
-        'fulfillment_status',
+        'shipping_address_snapshot',
+        'latitude',
+        'longitude',
         'subtotal',
         'discount',
         'delivery_fee',
@@ -62,12 +65,12 @@ class Order extends Model implements DataTableConfigurable
     /**
      * @var list<string>
      */
-    public static array $dataTableSortable = ['order_number', 'status', 'created_at'];
+    public static array $dataTableSortable = ['order_number', 'status', 'total_amount', 'created_at'];
 
     /**
      * @var list<string>
      */
-    public static array $dataTableFilterable = ['status', 'branch_id'];
+    public static array $dataTableFilterable = ['status', 'payment_status'];
 
     /**
      * @return BelongsTo<User, $this>
@@ -75,22 +78,6 @@ class Order extends Model implements DataTableConfigurable
     public function customer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'customer_id');
-    }
-
-    /**
-     * @return BelongsTo<Branch, $this>
-     */
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
-    }
-
-    /**
-     * @return BelongsTo<User, $this>
-     */
-    public function driver(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'driver_id');
     }
 
     /**
@@ -126,11 +113,37 @@ class Order extends Model implements DataTableConfigurable
     }
 
     /**
+     * Internal per-branch delivery units. Never load/serialize this to the
+     * customer guard.
+     *
+     * @return HasMany<OrderFulfillment, $this>
+     */
+    public function fulfillments(): HasMany
+    {
+        return $this->hasMany(OrderFulfillment::class);
+    }
+
+    /**
+     * The earliest-created fulfillment, used as the "primary" branch for
+     * legacy single-branch integrations (e.g. conversations) until those are
+     * migrated to be fulfillment-aware.
+     *
+     * @return HasOne<OrderFulfillment, $this>
+     */
+    public function primaryFulfillment(): HasOne
+    {
+        return $this->hasOne(OrderFulfillment::class)->oldestOfMany();
+    }
+
+    /**
+     * Master-level status trail only (`fulfillment_id` is null). Fulfillment
+     * transitions are tracked on {@see OrderFulfillment::statusHistories()}.
+     *
      * @return HasMany<OrderStatusHistory, $this>
      */
     public function statusHistories(): HasMany
     {
-        return $this->hasMany(OrderStatusHistory::class);
+        return $this->hasMany(OrderStatusHistory::class)->whereNull('fulfillment_id');
     }
 
     /**
@@ -145,8 +158,10 @@ class Order extends Model implements DataTableConfigurable
     {
         return [
             'status' => OrderStatus::class,
-            'fulfillment_status' => FulfillmentStatus::class,
             'payment_status' => PaymentStatus::class,
+            'shipping_address_snapshot' => 'array',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
             'subtotal' => 'decimal:2',
             'discount' => 'decimal:2',
             'delivery_fee' => 'decimal:2',

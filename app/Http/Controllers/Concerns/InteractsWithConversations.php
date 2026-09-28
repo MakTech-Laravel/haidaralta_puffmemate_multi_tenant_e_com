@@ -223,9 +223,12 @@ trait InteractsWithConversations
         $term = trim((string) $request->string('search'));
 
         $orders = Order::query()
-            ->with('branch:id,name')
+            ->with('primaryFulfillment.branch:id,name')
             ->whereDoesntHave('conversation')
-            ->when($branchId !== null, fn (Builder $query) => $query->where('branch_id', $branchId))
+            ->when(
+                $branchId !== null,
+                fn (Builder $query) => $query->whereHas('fulfillments', fn (Builder $inner) => $inner->where('branch_id', $branchId)),
+            )
             ->when($term !== '', fn (Builder $query) => $query->where('order_number', 'like', '%'.$term.'%'))
             ->orderByDesc('id')
             ->limit(20)
@@ -234,10 +237,12 @@ trait InteractsWithConversations
         $options = [];
 
         foreach ($orders as $order) {
+            $branchName = $order->primaryFulfillment?->branch?->name ?? 'Unassigned';
+
             $options[] = [
                 'value' => $order->id,
                 'label' => $order->order_number,
-                'description' => $order->branch->name.' · '.$order->status->label(),
+                'description' => $branchName.' · '.$order->status->label(),
             ];
         }
 

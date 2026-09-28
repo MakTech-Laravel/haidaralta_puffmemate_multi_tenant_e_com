@@ -71,8 +71,6 @@ export type StorefrontDeliveryMethod = {
     id: string;
     label: string;
     description: string;
-    fee: number;
-    formattedFee: string;
     requiresSlot: boolean;
 };
 

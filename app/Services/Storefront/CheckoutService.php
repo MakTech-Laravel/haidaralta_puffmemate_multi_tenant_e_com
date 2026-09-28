@@ -12,13 +12,18 @@ use App\Models\CouponRedemption;
 use App\Models\DeliveryMethod;
 use App\Models\DeliveryTimeSlot;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\Payment;
 use App\Models\PaymentTransaction;
+use App\Models\Product;
 use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
+use App\Services\Order\BranchAllocationService;
+use App\Services\Order\ShippingCalculator;
 use App\Support\BranchProductPriceDisplay;
+use App\Support\MediaUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +38,8 @@ class CheckoutService
         private readonly CartService $carts,
         private readonly CouponService $coupons,
         private readonly PaymentGatewaySettingsService $payments,
+        private readonly BranchAllocationService $allocator,
+        private readonly ShippingCalculator $shipping,
     ) {}
 
     /**
@@ -61,7 +68,7 @@ class CheckoutService
     }
 
     /**
-     * @return list<array{id: string, label: string, description: string, fee: float, formattedFee: string, requiresSlot: bool}>
+     * @return list<array{id: string, label: string, description: string, requiresSlot: bool}>
      */
     public function deliveryMethods(): array
     {
@@ -70,8 +77,6 @@ class CheckoutService
                 'id' => $method->key,
                 'label' => $method->label,
                 'description' => $method->description ?? '',
-                'fee' => (float) $method->fee,
-                'formattedFee' => ((float) $method->fee) <= 0 ? 'FREE' : '$'.number_format((float) $method->fee, 2),
                 'requiresSlot' => $method->requires_slot,
             ])
             ->all();
@@ -117,15 +122,105 @@ class CheckoutService
     }
 
     /**
+     * Preview the distance-based delivery fee for the current cart.
+     *
+     * @return array{fee: float, formattedFee: string}
+     */
+    public function quoteShipping(Request $request, float $latitude, float $longitude): array
+    {
+        $cart = $this->carts->activeCart($request)->load('items.product');
+
+        if ($cart->items->isEmpty()) {
+            throw ValidationException::withMessages([
+                'cart' => 'Your cart is empty.',
+            ]);
+        }
+
+        $allocations = $this->allocator->allocate($latitude, $longitude, $cart->items);
+        $fee = 0.0;
+
+        foreach ($allocations as $group) {
+            $fee += $this->shipping->cost($group['branch'], $group['distance_km']);
+        }
+
+        $fee = round($fee, 2);
+
+        return [
+            'fee' => $fee,
+            'formattedFee' => '$'.number_format($fee, 2),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     orderNumber: string,
+     *     itemCount: int,
+     *     paymentMethod: string,
+     *     deliveryMethod: string,
+     *     deliveryDate: string|null,
+     *     timeSlot: string|null,
+     *     name: string,
+     *     mobile: string,
+     *     address: string,
+     *     city: string|null,
+     *     postalCode: string|null,
+     *     couponCode: string|null,
+     *     items: list<array{name: string, image: string, quantity: int, formattedLineTotal: string}>,
+     *     subtotal: string,
+     *     discount: string|null,
+     *     deliveryFee: string,
+     *     total: string,
+     *     viewOrderUrl: string
+     * }
+     */
+    public function confirmation(Order $order): array
+    {
+        $order->loadMissing('items');
+
+        $snapshot = $order->shipping_address_snapshot ?? [];
+        $delivery = $this->activeDeliveryMethods()->firstWhere('key', $order->delivery_method);
+
+        return [
+            'orderNumber' => $order->order_number,
+            'itemCount' => (int) $order->items->sum('quantity'),
+            'paymentMethod' => $this->payments->labelFor((string) $order->payment_method, $order->payment_method),
+            'deliveryMethod' => $delivery?->label ?? (string) $order->delivery_method,
+            'deliveryDate' => $order->delivery_date?->format('d M Y'),
+            'timeSlot' => $order->time_slot,
+            'name' => $snapshot['name'] ?? '',
+            'mobile' => $snapshot['phone'] ?? '',
+            'address' => $snapshot['address'] ?? '',
+            'city' => $snapshot['city'] ?? null,
+            'postalCode' => $snapshot['postal_code'] ?? null,
+            'couponCode' => $order->coupon_code,
+            'items' => $order->items
+                ->map(fn (OrderItem $item): array => [
+                    'name' => $item->product_name_snapshot,
+                    'image' => MediaUrl::resolve($item->product_snapshot['image'] ?? null),
+                    'quantity' => $item->quantity,
+                    'formattedLineTotal' => '$'.number_format((float) $item->subtotal, 2),
+                ])
+                ->values()
+                ->all(),
+            'subtotal' => '$'.number_format((float) $order->subtotal, 2),
+            'discount' => (float) $order->discount > 0
+                ? '-$'.number_format((float) $order->discount, 2)
+                : null,
+            'deliveryFee' => '$'.number_format((float) $order->delivery_fee, 2),
+            'total' => '$'.number_format((float) $order->total_amount, 2),
+            'viewOrderUrl' => route('customer.orders.show', $order),
+        ];
+    }
+
+    /**
      * @param  array{
-     *     first_name: string,
-     *     last_name: string,
+     *     name: string,
      *     mobile: string,
      *     address: string,
      *     city?: string|null,
      *     postal_code?: string|null,
-     *     latitude?: float|string|null,
-     *     longitude?: float|string|null,
+     *     latitude: float|string,
+     *     longitude: float|string,
      *     address_id?: int|null,
      *     save_as_default?: bool,
      *     delivery_method: string,
@@ -201,6 +296,11 @@ class CheckoutService
             }
         }
 
+        $latitude = (float) $data['latitude'];
+        $longitude = (float) $data['longitude'];
+
+        $allocations = $this->allocator->allocate($latitude, $longitude, $cart->items);
+
         $subtotal = (float) $cartPayload['subtotal'];
         $discount = 0.0;
         $coupon = null;
@@ -211,21 +311,48 @@ class CheckoutService
             $discount = $quoted['discount'];
         }
 
-        $deliveryFee = (float) $method->fee;
+        $deliveryFee = 0.0;
+
+        foreach ($allocations as $group) {
+            $deliveryFee += $this->shipping->cost($group['branch'], $group['distance_km']);
+        }
+
+        $deliveryFee = round($deliveryFee, 2);
         $total = round(max($subtotal - $discount + $deliveryFee, 0), 2);
 
-        return DB::transaction(function () use ($user, $data, $cart, $cartPayload, $method, $slotLabel, $coupon, $subtotal, $discount, $deliveryFee, $total): Order {
+        return DB::transaction(function () use (
+            $user,
+            $data,
+            $cart,
+            $method,
+            $slotLabel,
+            $coupon,
+            $subtotal,
+            $discount,
+            $deliveryFee,
+            $total,
+            $allocations,
+            $latitude,
+            $longitude,
+        ): Order {
             $address = $this->persistAddress($user, $data);
 
             $order = Order::query()->create([
                 'order_number' => $this->nextOrderNumber(),
                 'customer_id' => $user->id,
-                'branch_id' => null,
                 'address_id' => $address->id,
                 'coupon_id' => $coupon?->id,
                 'coupon_code' => $coupon?->code,
                 'status' => OrderStatus::Pending,
-                'fulfillment_status' => FulfillmentStatus::Pending,
+                'shipping_address_snapshot' => [
+                    'name' => trim($data['name']),
+                    'phone' => $data['mobile'],
+                    'address' => $data['address'],
+                    'city' => $data['city'] ?? null,
+                    'postal_code' => $data['postal_code'] ?? null,
+                ],
+                'latitude' => $latitude,
+                'longitude' => $longitude,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'delivery_fee' => $deliveryFee,
@@ -239,28 +366,56 @@ class CheckoutService
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            foreach ($cartPayload['items'] as $line) {
-                $productId = (int) $line['productId'];
-                $item = $cart->items->firstWhere('product_id', $productId);
-                $product = $item?->product;
-                $unit = $product !== null
-                    ? BranchProductPriceDisplay::catalogEffectiveAmount($product)
-                    : (float) $line['unitPrice'];
-
-                OrderItem::query()->create([
+            foreach ($allocations as $index => $group) {
+                $fulfillment = OrderFulfillment::query()->create([
                     'order_id' => $order->id,
-                    'product_id' => $productId,
-                    'variant_id' => $item?->variant_id,
-                    'product_name_snapshot' => $line['name'],
-                    'sku_snapshot' => $product?->sku,
-                    'quantity' => (int) $line['quantity'],
-                    'unit_price' => $unit,
-                    'subtotal' => $unit * (int) $line['quantity'],
+                    'branch_id' => $group['branch']->id,
+                    'fulfillment_number' => $order->order_number.'-'.chr(65 + $index),
+                    'status' => FulfillmentStatus::Pending,
+                    'distance_km' => $group['distance_km'],
+                    'shipping_cost' => $this->shipping->cost($group['branch'], $group['distance_km']),
+                ]);
+
+                foreach ($group['lines'] as $line) {
+                    $item = $cart->items->first(
+                        fn ($cartItem): bool => $cartItem->product_id === $line['product_id']
+                            && $cartItem->variant_id === $line['variant_id'],
+                    );
+                    $product = $item?->product;
+
+                    if ($product === null) {
+                        continue;
+                    }
+
+                    $unit = BranchProductPriceDisplay::catalogEffectiveAmount($product);
+
+                    OrderItem::query()->create([
+                        'order_id' => $order->id,
+                        'fulfillment_id' => $fulfillment->id,
+                        'product_id' => $product->id,
+                        'variant_id' => $line['variant_id'],
+                        'product_name_snapshot' => $product->name,
+                        'sku_snapshot' => $product->sku,
+                        'product_snapshot' => $this->productSnapshot($product),
+                        'quantity' => $line['quantity'],
+                        'unit_price' => $unit,
+                        'subtotal' => $unit * $line['quantity'],
+                    ]);
+                }
+
+                OrderStatusHistory::query()->create([
+                    'order_id' => $order->id,
+                    'fulfillment_id' => $fulfillment->id,
+                    'old_status' => null,
+                    'new_status' => FulfillmentStatus::Pending->value,
+                    'comment' => 'Fulfillment created',
+                    'changed_by' => $user->id,
                 ]);
             }
 
             OrderStatusHistory::query()->create([
                 'order_id' => $order->id,
+                'fulfillment_id' => null,
                 'old_status' => null,
                 'new_status' => OrderStatus::Pending->value,
                 'comment' => 'Order placed',
@@ -298,6 +453,25 @@ class CheckoutService
     }
 
     /**
+     * Full product attributes at time of order, so a later rename/reprice
+     * never affects how a historical order renders.
+     *
+     * @return array<string, mixed>
+     */
+    private function productSnapshot(Product $product): array
+    {
+        return [
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'sku' => $product->sku,
+            'image' => MediaUrl::resolve($product->image),
+            'description' => $product->packSummary(),
+            'brand' => $product->brand,
+            'pack_label' => $product->pack_label,
+        ];
+    }
+
+    /**
      * @param  array<string, mixed>  $data
      */
     private function persistAddress(User $user, array $data): Address
@@ -307,7 +481,7 @@ class CheckoutService
 
         $attributes = [
             'type' => 'home',
-            'receiver_name' => trim($data['first_name'].' '.$data['last_name']),
+            'receiver_name' => trim($data['name']),
             'phone' => $data['mobile'],
             'address' => $data['address'],
             'city' => $data['city'] ?? null,
