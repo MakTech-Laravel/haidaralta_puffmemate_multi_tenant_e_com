@@ -50,6 +50,7 @@ use Laravel\Scout\Searchable;
  * @property-read Collection<int, ProductImage> $images
  * @property-read Collection<int, Inventory> $inventories
  * @property-read Collection<int, BranchProductPrice> $branchPrices
+ * @property-read Collection<int, ProductReview> $reviews
  */
 class Product extends Model implements DataTableConfigurable, ScoutSearchable
 {
@@ -143,6 +144,14 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
     public function branchPrices(): HasMany
     {
         return $this->hasMany(BranchProductPrice::class);
+    }
+
+    /**
+     * @return HasMany<ProductReview, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
     }
 
     public function imageUrl(): ?string
