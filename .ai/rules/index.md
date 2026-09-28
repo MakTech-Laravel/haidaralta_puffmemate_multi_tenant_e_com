@@ -27,7 +27,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/{pages,components}/storefront/checkout/** | .ai/rules/checkout.md |
 | resources/js/components/color-picker/** | .ai/rules/color-picker.md |
 | resources/js/pages/**/permissions/**, resources/js/components/admin/permission-groups-table.tsx | .ai/rules/components-admin.md |
-| resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx | .ai/rules/components-branch.md |
+| resources/js/components/branch/**, resources/js/components/branch/nav.ts, resources/js/components/branch/product-inventory-panel.tsx, resources/js/components/branch/branch-product-summary.tsx, resources/js/components/branch/branch-pack-form.tsx | .ai/rules/components-branch.md |
 | {app/Support/ConversationInbox.php,app/Services/Conversation/**,app/Events/ConversationInboxUpdated.php,resources/js/components/conversation/**} | .ai/rules/components-conversation.md |
 | app/Http/Controllers/Customer/OrderController.php,resources/js/components/customer/order-list.tsx, app/Http/Controllers/Customer/OrderController.php,routes/customer.php,resources/js/components/customer/order-list.tsx | .ai/rules/components-customer.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx,resources/js/components/driver/driver-deliver-otp-form.tsx | .ai/rules/components-driver-js-components-driver.md |
@@ -74,6 +74,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/Fcm/** | .ai/rules/fcm.md |
 | package.json, vite.config.ts, package.json, vite.config.ts | .ai/rules/general.md |
 | resources/js/hooks/use-database-backup-realtime.ts | .ai/rules/hooks.md |
+| app/Http/Controllers/Branch/PacksSavesController.php | .ai/rules/http-controllers-branch.md |
 | app/Services/Driver/**,app/Models/Driver*.php,app/Http/Controllers/{Platform,Branch}/*Driver*.php | .ai/rules/http-controllers-platform-branch.md |
 | resources/js/layouts/settings/**,resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php | .ai/rules/http-controllers-settings.md |
 | config/catalog.php,app/Http/Controllers/Storefront/HomeController.php | .ai/rules/http-controllers-storefront.md |
@@ -103,6 +104,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/Order/BranchAllocationService.php | .ai/rules/order.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/orders-js-components-driver.md |
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx | .ai/rules/orders.md |
+| resources/js/pages/branch/catalog/packs-saves/** | .ai/rules/packs-saves.md |
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |
 | resources/js/pages/platform/branch-staff/** | .ai/rules/pages-platform-branch-staff.md |
 | resources/js/layouts/settings/**,resources/js/pages/settings/**,routes/settings.php | .ai/rules/pages-settings.md |

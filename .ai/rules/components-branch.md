@@ -1,9 +1,10 @@
 ---
 paths:
-    - 'resources/js/components/branch/**'
-    - resources/js/components/branch/nav.ts
-    - resources/js/components/branch/product-inventory-panel.tsx
-    - resources/js/components/branch/branch-product-summary.tsx
+  - 'resources/js/components/branch/**'
+  - resources/js/components/branch/nav.ts
+  - resources/js/components/branch/product-inventory-panel.tsx
+  - resources/js/components/branch/branch-product-summary.tsx
+  - resources/js/components/branch/branch-pack-form.tsx
 ---
 
 # Components Branch
@@ -54,3 +55,9 @@ Inventory & pricing is one shadow-sm card: 4-stat strip, then Stock left / Price
 
 ## Branch nav group is Staff management
 Branch portal sidebar group is Staff management (not Administrator). Contains Staff, Roles, Permissions, Shifts, Assign to shift. Platform keeps Administrator.
+
+## Packs & Saves sits under Product management
+Branch Product management lists Packs & Saves immediately after Products (Package2, manage-branch-products, /branch/{slug}/packs-saves). Do not wrap it in navSoon. Do not add a platform Packs & Saves menu.
+
+## Pack offer is Amount off Percent or Pack price
+Pack pricing is a 3-button row (Amount off / Percent / Pack price) on the combined line subtotal (qty × unit effective/selling), not per-product discount fields. Picker is this branch's stock only; duplicate SKUs are not allowed. Save is type=button until persist exists.
