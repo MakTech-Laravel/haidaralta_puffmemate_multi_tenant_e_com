@@ -8,6 +8,7 @@ use App\Http\Controllers\Branch\DashboardController as BranchDashboardController
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\GeneralSettingsController as BranchGeneralSettingsController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
+use App\Http\Controllers\Branch\OrderController as BranchOrderController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
@@ -98,6 +99,15 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.reports.price-history.export');
         Route::get('stock/product-options', [BranchStockController::class, 'productOptions'])
             ->name('branch.stock.product-options');
+    });
+
+    Route::middleware(['permission:manage-branch-orders'])->group(function () {
+        Route::get('orders', [BranchOrderController::class, 'index'])->name('branch.orders.index');
+        Route::get('orders/{fulfillment}', [BranchOrderController::class, 'show'])->name('branch.orders.show');
+        Route::put('orders/{fulfillment}/status', [BranchOrderController::class, 'updateStatus'])
+            ->name('branch.orders.status');
+        Route::post('orders/{fulfillment}/paid', [BranchOrderController::class, 'markPaid'])
+            ->name('branch.orders.paid');
     });
 
     Route::middleware(['permission:manage-branch-conversations'])->group(function () {

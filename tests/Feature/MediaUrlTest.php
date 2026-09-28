@@ -17,6 +17,21 @@ test('existing public web paths are normalized with a leading slash', function (
         ->toBe('/images/storefront/logo.png');
 });
 
+test('public files that are not real images fall back', function () {
+    $relative = 'images/storefront/media-url-stub.jpg';
+    $absolute = public_path($relative);
+    file_put_contents($absolute, 'fake-image-bytes');
+
+    try {
+        expect(MediaUrl::isDisplayableFile($absolute))->toBeFalse()
+            ->and(MediaUrl::resolve('/'.$relative))->toBe(MediaUrl::DEFAULT_FALLBACK);
+    } finally {
+        if (is_file($absolute)) {
+            unlink($absolute);
+        }
+    }
+});
+
 test('existing public disk paths resolve to storage urls', function () {
     Storage::fake('public');
     Storage::disk('public')->put('products/demo.jpg', 'fake-image');

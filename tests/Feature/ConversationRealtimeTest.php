@@ -10,6 +10,7 @@ use App\Events\MessageCreated;
 use App\Models\Branch;
 use App\Models\Conversation;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\User;
 use App\Services\Conversation\ConversationService;
 use App\Services\Conversation\OrderConversationCloser;
@@ -35,9 +36,10 @@ function openThread(): Conversation
     $customer = User::query()->where('email', UserSeeder::CUSTOMER)->firstOrFail();
 
     $order = Order::factory()->create([
-        'branch_id' => $sydney->id,
         'customer_id' => $customer->id,
     ]);
+
+    OrderFulfillment::factory()->forOrder($order)->create(['branch_id' => $sydney->id]);
 
     return app(ConversationService::class)->openForOrder($order);
 }
@@ -77,9 +79,10 @@ test('opening a conversation broadcasts the inbox row to operators who are not p
     $customer = User::query()->where('email', UserSeeder::CUSTOMER)->firstOrFail();
 
     $order = Order::factory()->create([
-        'branch_id' => $sydney->id,
         'customer_id' => $customer->id,
     ]);
+
+    OrderFulfillment::factory()->forOrder($order)->create(['branch_id' => $sydney->id]);
 
     $conversation = app(ConversationService::class)->openForOrder($order);
 

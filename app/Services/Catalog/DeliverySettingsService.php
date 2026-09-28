@@ -2,6 +2,8 @@
 
 namespace App\Services\Catalog;
 
+use App\Models\Branch;
+use App\Models\BranchShippingRule;
 use App\Models\DeliveryMethod;
 use App\Models\DeliveryTimeSlot;
 use Illuminate\Support\Collection;
@@ -103,5 +105,66 @@ class DeliverySettingsService
         }
 
         unset($shipping);
+    }
+
+    /**
+     * Every branch's shipping formula, creating a default-config row for any
+     * branch that hasn't been configured yet.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function branchShippingRulesPayload(): array
+    {
+        return Branch::query()
+            ->orderBy('name')
+            ->get()
+            ->map(function (Branch $branch): array {
+                $rule = $this->shippingRuleFor($branch);
+
+                return [
+                    'id' => $rule->id,
+                    'branch_id' => $branch->id,
+                    'branch_name' => $branch->name,
+                    'base_fee' => (string) $rule->base_fee,
+                    'free_delivery_distance_km' => $rule->free_delivery_distance_km === null
+                        ? ''
+                        : (string) $rule->free_delivery_distance_km,
+                    'cost_per_km' => (string) $rule->cost_per_km,
+                    'minimum_delivery_charge' => (string) $rule->minimum_delivery_charge,
+                    'status' => $rule->status,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    public function shippingRuleFor(Branch $branch): BranchShippingRule
+    {
+        return BranchShippingRule::query()->firstOrCreate(
+            ['branch_id' => $branch->id],
+            [
+                'base_fee' => (float) config('catalog.default_shipping_base_fee'),
+                'free_delivery_distance_km' => (float) config('catalog.default_shipping_free_distance_km') ?: null,
+                'cost_per_km' => (float) config('catalog.default_shipping_cost_per_km'),
+                'minimum_delivery_charge' => (float) config('catalog.default_shipping_minimum_charge'),
+                'status' => true,
+            ],
+        );
+    }
+
+    /**
+     * @param  array{base_fee: float|int|string, free_delivery_distance_km?: float|int|string|null, cost_per_km: float|int|string, minimum_delivery_charge: float|int|string, status: bool}  $data
+     */
+    public function updateShippingRule(BranchShippingRule $rule, array $data): BranchShippingRule
+    {
+        $rule->fill([
+            'base_fee' => $data['base_fee'],
+            'free_delivery_distance_km' => $data['free_delivery_distance_km'] ?? null,
+            'cost_per_km' => $data['cost_per_km'],
+            'minimum_delivery_charge' => $data['minimum_delivery_charge'],
+            'status' => $data['status'],
+        ])->save();
+
+        return $rule->refresh();
     }
 }

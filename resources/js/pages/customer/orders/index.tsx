@@ -1,24 +1,38 @@
-import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, router } from '@inertiajs/react';
 import {
     OrderList,
     type CustomerOrder,
 } from '@/components/customer/order-list';
+import { index as ordersIndex } from '@/routes/customer/orders';
 
 type CustomerOrdersPageProps = {
     orders: CustomerOrder[];
+    meta: {
+        currentPage: number;
+        lastPage: number;
+    };
 };
 
 export default function CustomerOrdersIndex({
     orders,
+    meta,
 }: CustomerOrdersPageProps) {
-    const [page, setPage] = useState(1);
-
     return (
         <>
             <Head title="Orders" />
 
-            <OrderList orders={orders} page={page} onPageChange={setPage} />
+            <OrderList
+                orders={orders}
+                currentPage={meta.currentPage}
+                lastPage={meta.lastPage}
+                onPageChange={(page) =>
+                    router.get(
+                        ordersIndex.url(),
+                        { page },
+                        { preserveState: true, preserveScroll: true },
+                    )
+                }
+            />
         </>
     );
 }

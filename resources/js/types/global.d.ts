@@ -13,6 +13,7 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             application: {
+                name: string;
                 shortName: string;
                 description: string | null;
                 logoUrl: string | null;

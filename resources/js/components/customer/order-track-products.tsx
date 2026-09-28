@@ -11,13 +11,11 @@ import {
 } from '@/components/ui/table';
 
 type OrderTrackProductsProps = {
-    branchName: string;
     products: OrderTrackProduct[];
     totalLabel: string;
 };
 
 export function OrderTrackProducts({
-    branchName,
     products,
     totalLabel,
 }: OrderTrackProductsProps) {
@@ -25,7 +23,7 @@ export function OrderTrackProducts({
         <Card className="gap-4 rounded-xs border-none py-5 shadow-none">
             <CardHeader className="px-5 pb-0">
                 <CardTitle className="text-foreground text-lg font-semibold sm:text-xl">
-                    {branchName}
+                    Items
                 </CardTitle>
             </CardHeader>
             <CardContent className="px-5">

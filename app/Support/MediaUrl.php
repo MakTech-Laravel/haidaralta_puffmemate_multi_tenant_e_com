@@ -94,7 +94,36 @@ final class MediaUrl
             return false;
         }
 
-        return is_file(public_path($relative));
+        return self::isDisplayableFile(public_path($relative));
+    }
+
+    /**
+     * True when the file exists and starts with a real image header.
+     * Rejects empty files and HTTP-fake stubs such as "fake-image-bytes".
+     */
+    public static function isDisplayableFile(string $absolutePath): bool
+    {
+        if (! is_file($absolutePath)) {
+            return false;
+        }
+
+        $handle = fopen($absolutePath, 'rb');
+
+        if ($handle === false) {
+            return false;
+        }
+
+        $header = fread($handle, 16) ?: '';
+        fclose($handle);
+
+        $trimmed = ltrim($header);
+
+        return str_starts_with($header, "\xFF\xD8\xFF")
+            || str_starts_with($header, "\x89PNG")
+            || str_starts_with($header, 'GIF8')
+            || str_starts_with($header, 'RIFF')
+            || str_starts_with($trimmed, '<svg')
+            || str_starts_with($trimmed, '<?xml');
     }
 
     /**

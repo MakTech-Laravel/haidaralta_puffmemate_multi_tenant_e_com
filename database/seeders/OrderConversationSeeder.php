@@ -3,12 +3,14 @@
 namespace Database\Seeders;
 
 use App\Enums\ConversationParticipantRole;
+use App\Enums\FulfillmentStatus;
 use App\Enums\MessageType;
 use App\Enums\OrderStatus;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Seeder;
@@ -38,7 +40,7 @@ class OrderConversationSeeder extends Seeder
             [
                 'order_number' => 'PMM-2026-1041',
                 'branch_email' => UserSeeder::BRANCH_1_ADMIN,
-                'order_status' => OrderStatus::OutForDelivery,
+                'order_status' => OrderStatus::Processing,
                 'with_driver' => true,
                 'messages' => [
                     ['from' => 'customer', 'body' => 'Hi, I ordered the mango ice 20mg but the confirmation email says blueberry. Can you check?', 'minutes_ago' => 190],
@@ -85,7 +87,7 @@ class OrderConversationSeeder extends Seeder
             [
                 'order_number' => 'PMM-2026-1048',
                 'branch_email' => UserSeeder::BRANCH_3_ADMIN,
-                'order_status' => OrderStatus::OutForDelivery,
+                'order_status' => OrderStatus::Processing,
                 'with_driver' => true,
                 'messages' => [
                     ['from' => 'customer', 'body' => 'Running late from work — can the driver wait until 6:15?', 'minutes_ago' => 70],
@@ -130,7 +132,7 @@ class OrderConversationSeeder extends Seeder
             [
                 'order_number' => 'PMM-2026-1057',
                 'branch_email' => 'keira.bond@gold-coast-surfers.dev',
-                'order_status' => OrderStatus::OutForDelivery,
+                'order_status' => OrderStatus::Processing,
                 'with_driver' => true,
                 'messages' => [
                     ['from' => 'customer', 'body' => 'I am in a beachfront tower — ask for the visitor parking gate code 4421.', 'minutes_ago' => 55],
@@ -180,16 +182,23 @@ class OrderConversationSeeder extends Seeder
             ['order_number' => $thread['order_number']],
             [
                 'customer_id' => $customer->id,
-                'branch_id' => $branchUser->branch_id,
-                'driver_id' => $thread['with_driver'] ? $driver->id : null,
                 'status' => $thread['order_status'],
+            ],
+        );
+
+        $fulfillment = OrderFulfillment::query()->updateOrCreate(
+            ['order_id' => $order->id, 'branch_id' => $branchUser->branch_id],
+            [
+                'driver_id' => $thread['with_driver'] ? $driver->id : null,
+                'fulfillment_number' => $order->order_number.'-A',
+                'status' => $thread['order_status']->isTerminal() ? FulfillmentStatus::Delivered : FulfillmentStatus::Processing,
             ],
         );
 
         $conversation = Conversation::query()->updateOrCreate(
             ['order_id' => $order->id],
             [
-                'branch_id' => $order->branch_id,
+                'branch_id' => $fulfillment->branch_id,
                 'status' => $thread['order_status']->isTerminal() ? 'closed' : 'open',
                 'closed_at' => $thread['order_status']->isTerminal() ? now()->subDay() : null,
             ],

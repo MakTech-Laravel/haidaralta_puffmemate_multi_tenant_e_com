@@ -18,6 +18,13 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
+// Order services are pure logic wrapped around Eloquent models (Branch,
+// Inventory, Order) — they need the database but not HTTP, so they live in
+// Unit/Services/Order and still get RefreshDatabase.
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->in('Unit/Services');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

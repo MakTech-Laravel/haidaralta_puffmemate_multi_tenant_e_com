@@ -270,13 +270,15 @@ export function buildPlatformNav(
             }),
             navGroup({
                 title: 'Order management',
+                href: '/platform/orders',
                 icon: ShoppingBag,
-                permissions: ['manage-reports'],
+                permissions: ['manage-orders'],
                 items: [
-                    navSoon({
+                    navLink({
                         title: 'Orders',
+                        href: '/platform/orders',
                         icon: ShoppingBag,
-                        permissions: ['manage-reports'],
+                        permissions: ['manage-orders'],
                     }),
                     navSoon({
                         title: 'Pickup',

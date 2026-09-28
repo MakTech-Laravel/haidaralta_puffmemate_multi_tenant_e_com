@@ -4,6 +4,7 @@ use App\Events\ConversationReceiptsUpdated;
 use App\Models\Branch;
 use App\Models\Conversation;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\User;
 use App\Services\Conversation\ConversationService;
 use Database\Seeders\BranchSeeder;
@@ -28,8 +29,11 @@ function receiptThread(): Conversation
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
 
     $order = Order::factory()->create([
-        'branch_id' => $sydney->id,
         'customer_id' => $customer->id,
+    ]);
+
+    OrderFulfillment::factory()->forOrder($order)->create([
+        'branch_id' => $sydney->id,
         'driver_id' => $driver->id,
     ]);
 
