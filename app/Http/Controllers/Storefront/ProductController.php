@@ -28,6 +28,10 @@ class ProductController extends Controller
             throw new NotFoundHttpException;
         }
 
+        if (strtolower((string) $request->header('Purpose')) !== 'prefetch') {
+            $model->increment('views');
+        }
+
         $detail = StorefrontCatalog::productDetail($model, $branch);
         $categorySlug = $detail['categorySlug'] ?? null;
 
@@ -37,6 +41,7 @@ class ProductController extends Controller
             'backHref' => is_string($categorySlug) && $categorySlug !== ''
                 ? route('shop.category', ['category' => $categorySlug], false)
                 : route('shop', absolute: false),
+            'tab' => $request->string('tab')->toString(),
         ]);
     }
 }
