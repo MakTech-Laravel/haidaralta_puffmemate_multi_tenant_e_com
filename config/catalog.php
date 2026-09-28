@@ -170,7 +170,7 @@ return [
     |
     */
 
-    'sku_prefix' => env('CATALOG_SKU_PREFIX', 'PMM'),
+    'sku_prefix' => env('CATALOG_SKU_PREFIX', 'ORD-'),
 
     /*
     |--------------------------------------------------------------------------
