@@ -14,3 +14,6 @@ Shop dual-range price slider does not show floating value bubbles/tooltips; valu
 
 ## Product cards add to cart
 Shared ProductCard keeps image/title/price as a PDP link and a separate Add to cart button (never nest the button in the Link). Cards add quantity 1 via addToCart(product.id) — card id is the product slug. Variants stay on the PDP.
+
+## Product cards show compact views
+ProductCard shows CompactNumber-formatted views from mapProductCard (1k, 1.2k, 1m, 1b). Do not prefetch the PDP link. Do not nest Add to cart inside the Link.
