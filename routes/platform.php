@@ -47,6 +47,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function () {
     Route::get('dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
     Route::get('notifications', [PlatformNotificationController::class, 'index'])->name('platform.notifications.index');
+    Route::get('notifications/{userNotification}', [PlatformNotificationController::class, 'show'])->name('platform.notifications.show');
+    Route::post('notifications/{userNotification}/read', [PlatformNotificationController::class, 'read'])->name('platform.notifications.read');
+    Route::delete('notifications/{userNotification}', [PlatformNotificationController::class, 'destroy'])->name('platform.notifications.destroy');
 
     Route::middleware(['permission:view-horizon|view-pulse'])->group(function () {
         Route::get('observability', [PlatformObservabilityController::class, 'index'])
@@ -381,6 +384,10 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::middleware(['permission:manage-reports'])->group(function () {
         Route::get('announcements', [PlatformAnnouncementController::class, 'index'])
             ->name('platform.announcements.index');
+        Route::get('announcements/recipients', [PlatformAnnouncementController::class, 'recipients'])
+            ->name('platform.announcements.recipients');
+        Route::post('announcements', [PlatformAnnouncementController::class, 'store'])
+            ->name('platform.announcements.store');
     });
 
     Route::middleware(['permission:manage-pages'])->group(function () {

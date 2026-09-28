@@ -1,13 +1,17 @@
 import {
     Bell,
     CreditCard,
+    Info,
+    Megaphone,
     Package,
+    RefreshCw,
     Shield,
     Tag,
     Truck,
     type LucideIcon,
 } from 'lucide-react';
 import type { NotificationType } from '@/components/notifications/types';
+import { Icon } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 
 const iconByType: Record<NotificationType, LucideIcon> = {
@@ -16,20 +20,25 @@ const iconByType: Record<NotificationType, LucideIcon> = {
     delivery: Truck,
     promo: Tag,
     security: Shield,
+    info: Info,
+    alert: Megaphone,
+    update: RefreshCw,
 };
 
 type NotificationTypeIconProps = {
     type?: NotificationType | null;
+    icon?: string | null;
     className?: string;
     iconClassName?: string;
 };
 
 export function NotificationTypeIcon({
     type,
+    icon,
     className,
     iconClassName,
 }: NotificationTypeIconProps) {
-    const Icon = type ? iconByType[type] : Bell;
+    const FallbackIcon = type ? iconByType[type] : Bell;
 
     return (
         <span
@@ -39,7 +48,18 @@ export function NotificationTypeIcon({
             )}
             aria-hidden
         >
-            <Icon className={cn('size-5', iconClassName)} strokeWidth={1.75} />
+            {icon ? (
+                <Icon
+                    icon={icon}
+                    className={cn('size-5', iconClassName)}
+                    strokeWidth={1.75}
+                />
+            ) : (
+                <FallbackIcon
+                    className={cn('size-5', iconClassName)}
+                    strokeWidth={1.75}
+                />
+            )}
         </span>
     );
 }

@@ -73,13 +73,37 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+function resolveNotificationClickUrl(data) {
+  const nested = data.FCM_MSG && data.FCM_MSG.data ? data.FCM_MSG.data : {};
+  const value = data.url || data.link || nested.url || nested.link || '';
+
+  if (!value) {
+    return self.location.origin + '/';
+  }
+
+  return value;
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const data = event.notification.data || {};
-  const targetUrl = data.url || data.link || '/';
+  const rawUrl = resolveNotificationClickUrl(event.notification.data || {});
 
   event.waitUntil((async () => {
+    let target;
+
+    try {
+      target = new URL(rawUrl, self.location.origin);
+    } catch (error) {
+      target = new URL('/', self.location.origin);
+    }
+
+    if (target.origin !== self.location.origin) {
+      await self.clients.openWindow(target.href);
+
+      return;
+    }
+
     const windowClients = await self.clients.matchAll({
       type: 'window',
       includeUncontrolled: true,
@@ -90,14 +114,16 @@ self.addEventListener('notificationclick', (event) => {
         await client.focus();
 
         if ('navigate' in client) {
-          await client.navigate(targetUrl);
+          await client.navigate(target.href);
+        } else {
+          await self.clients.openWindow(target.href);
         }
 
         return;
       }
     }
 
-    await self.clients.openWindow(targetUrl);
+    await self.clients.openWindow(target.href);
   })());
 });
 

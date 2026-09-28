@@ -3,7 +3,10 @@ export type NotificationType =
     | 'payment'
     | 'delivery'
     | 'promo'
-    | 'security';
+    | 'security'
+    | 'info'
+    | 'alert'
+    | 'update';
 
 export type NotificationItem = {
     id: string;
@@ -13,4 +16,12 @@ export type NotificationItem = {
     read: boolean;
     type: NotificationType;
     body?: string;
+    icon?: string | null;
+    href?: string | null;
+    linkLabel?: string | null;
+};
+
+export type SharedNotifications = {
+    unreadCount: number;
+    preview: NotificationItem[];
 };

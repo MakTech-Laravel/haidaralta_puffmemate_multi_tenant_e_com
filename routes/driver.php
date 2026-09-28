@@ -20,6 +20,9 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::post('orders/{order}/deliver', [DriverOrderController::class, 'deliver'])->name('driver.orders.deliver');
     Route::get('orders/{order}', [DriverOrderController::class, 'show'])->name('driver.orders.show');
     Route::get('notifications', [DriverNotificationController::class, 'index'])->name('driver.notifications.index');
+    Route::get('notifications/{userNotification}', [DriverNotificationController::class, 'show'])->name('driver.notifications.show');
+    Route::post('notifications/{userNotification}/read', [DriverNotificationController::class, 'read'])->name('driver.notifications.read');
+    Route::delete('notifications/{userNotification}', [DriverNotificationController::class, 'destroy'])->name('driver.notifications.destroy');
     Route::get('profile', [DriverProfileController::class, 'index'])->name('driver.profile.index');
     Route::get('security', [DriverSecurityController::class, 'index'])->name('driver.security.index');
     Route::put('security/password', [DriverSecurityController::class, 'updatePassword'])

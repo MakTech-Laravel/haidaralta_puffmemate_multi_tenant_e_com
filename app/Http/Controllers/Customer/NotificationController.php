@@ -3,36 +3,55 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Support\Storefront\DemoCatalog;
+use App\Http\Requests\Notifications\OwnsUserNotificationRequest;
+use App\Models\User;
+use App\Models\UserNotification;
+use App\Services\Notifications\InboxService;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class NotificationController extends Controller
 {
-    /**
-     * Display the customer notifications list (demo).
-     */
+    public function __construct(private InboxService $inbox) {}
+
     public function index(): Response
     {
+        /** @var User $user */
+        $user = request()->user();
+
         return Inertia::render('customer/notifications/index', [
-            'notifications' => DemoCatalog::customerNotifications(),
+            'items' => $this->inbox->listFor($user),
         ]);
     }
 
-    /**
-     * Display a demo notification detail page.
-     */
-    public function show(string $notification): Response
+    public function show(UserNotification $notification): Response
     {
-        $detail = DemoCatalog::customerNotificationDetail($notification);
-
-        if ($detail === null) {
-            throw new NotFoundHttpException;
-        }
+        /** @var User $user */
+        $user = request()->user();
+        $row = $this->inbox->findFor($user, $notification->id);
+        $this->inbox->markRead($user, $row);
 
         return Inertia::render('customer/notifications/show', [
-            'notification' => $detail,
+            'notification' => $this->inbox->toItem($row->fresh(['notification'])),
         ]);
+    }
+
+    public function read(OwnsUserNotificationRequest $request, UserNotification $notification): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $this->inbox->markRead($user, $notification);
+
+        return back();
+    }
+
+    public function destroy(OwnsUserNotificationRequest $request, UserNotification $notification): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $this->inbox->delete($user, $notification);
+
+        return redirect()->route('customer.notifications.index');
     }
 }

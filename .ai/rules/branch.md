@@ -10,6 +10,7 @@ paths:
   - app/Models/Branch.php
   - app/Models/Category.php
   - app/Models/Product.php
+  - 'app/Models/{Notification,UserNotification}.php'
 ---
 
 # Catalog
@@ -58,3 +59,6 @@ Category saved/deleted/restored/forceDeleted always call StorefrontCatalog::forg
 
 ## Product pack pieces are optional
 Optional pack_label + pieces_per_pack + pack_unit on products. Compose card line via Product::packSummary() (e.g. "Gold Pack • 20 Cigarettes" or label-only for lighters). Leave pieces null when not applicable.
+
+## In-app notifications are one parent plus per-user rows
+Notification is the parent message; UserNotification is the per-recipient inbox row (soft deletes, unique notification_id + user_id). Features must call NotificationService or notify_users(); do not write these rows by hand.

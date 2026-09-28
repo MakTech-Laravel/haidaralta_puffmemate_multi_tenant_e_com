@@ -23,7 +23,14 @@ Route::middleware(['ensure.guard:customer', 'phone.verified'])->group(function (
     Route::get('notifications', [CustomerNotificationController::class, 'index'])
         ->name('customer.notifications.index');
     Route::get('notifications/{notification}', [CustomerNotificationController::class, 'show'])
+        ->whereNumber('notification')
         ->name('customer.notifications.show');
+    Route::post('notifications/{notification}/read', [CustomerNotificationController::class, 'read'])
+        ->whereNumber('notification')
+        ->name('customer.notifications.read');
+    Route::delete('notifications/{notification}', [CustomerNotificationController::class, 'destroy'])
+        ->whereNumber('notification')
+        ->name('customer.notifications.destroy');
     Route::get('product-to-review', [CustomerProductToReviewController::class, 'index'])
         ->name('customer.product-to-review.index');
     Route::get('product-to-review/{product}', [CustomerProductToReviewController::class, 'show'])

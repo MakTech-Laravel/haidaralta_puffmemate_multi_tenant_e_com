@@ -1,3 +1,4 @@
+import type { SharedNotifications } from '@/components/notifications/types';
 import type { Auth } from '@/types/auth';
 import type { BranchContext, Portal } from '@/types/tenant';
 
@@ -75,6 +76,7 @@ declare module '@inertiajs/core' {
                 supportPhone: string;
                 branchPhone: string;
             } | null;
+            notifications: SharedNotifications;
             [key: string]: unknown;
         };
     }
