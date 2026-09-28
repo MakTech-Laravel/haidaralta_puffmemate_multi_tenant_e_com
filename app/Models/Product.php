@@ -43,6 +43,7 @@ use Laravel\Scout\Searchable;
  * @property Carbon|null $discount_start_date
  * @property Carbon|null $discount_end_date
  * @property bool $status
+ * @property int $views
  * @property int|null $created_by
  * @property-read Collection<int, Category> $categories
  * @property-read User|null $creator
@@ -50,6 +51,7 @@ use Laravel\Scout\Searchable;
  * @property-read Collection<int, ProductImage> $images
  * @property-read Collection<int, Inventory> $inventories
  * @property-read Collection<int, BranchProductPrice> $branchPrices
+ * @property-read Collection<int, ProductReview> $reviews
  */
 class Product extends Model implements DataTableConfigurable, ScoutSearchable
 {
@@ -145,6 +147,14 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
         return $this->hasMany(BranchProductPrice::class);
     }
 
+    /**
+     * @return HasMany<ProductReview, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
     public function imageUrl(): ?string
     {
         return MediaUrl::resolve($this->image, fallback: null);
@@ -235,6 +245,7 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
     {
         return [
             'status' => 'boolean',
+            'views' => 'integer',
             'tags' => 'array',
             'specifications' => 'array',
             'color_code' => 'array',

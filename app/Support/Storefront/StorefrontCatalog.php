@@ -8,7 +8,9 @@ use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\ProductReview;
 use App\Support\BranchProductPriceDisplay;
+use App\Support\CompactNumber;
 use App\Support\MediaUrl;
 use App\Support\ProductSpecifications;
 use Illuminate\Http\Request;
@@ -357,6 +359,15 @@ class StorefrontCatalog
 
         $compareAt = $price['compare_at'] ?? null;
         $displayPrice = $price['label'] ?? 'Price unavailable';
+        $reviews = ProductReview::query()
+            ->where('product_id', $product->id)
+            ->with(['user:id,name'])
+            ->latest()
+            ->get();
+        $reviewCount = $reviews->count();
+        $rating = $reviewCount > 0
+            ? (int) round((float) $reviews->avg('rating'))
+            : 0;
 
         return [
             'id' => $product->slug,
@@ -371,8 +382,8 @@ class StorefrontCatalog
             'availability' => $branch === null
                 ? 'Select a branch'
                 : ($stock > 0 ? 'Available' : 'Out of stock'),
-            'rating' => 0,
-            'reviewCount' => 0,
+            'rating' => $rating,
+            'reviewCount' => $reviewCount,
             'about' => $product->description ?: 'Branch stock and pricing may vary — select your nearest branch for accurate availability.',
             'branch' => $branch?->name ?? 'No branch selected',
             'stock' => $stock,
@@ -412,7 +423,16 @@ class StorefrontCatalog
                 'If you are pregnant or have health concerns, seek medical advice before use.',
                 'Dispose of packaging and waste responsibly.',
             ],
-            'reviews' => [],
+            'reviews' => $reviews
+                ->map(fn (ProductReview $review): array => [
+                    'id' => (string) $review->id,
+                    'author' => $review->user?->name ?? 'Customer',
+                    'date' => $review->created_at?->format('j M Y') ?? '',
+                    'rating' => $review->rating,
+                    'body' => $review->body,
+                ])
+                ->values()
+                ->all(),
         ];
     }
 
@@ -575,7 +595,7 @@ class StorefrontCatalog
     }
 
     /**
-     * @return array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}
+     * @return array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string, views: string}
      */
     public static function mapProductCard(Product $product, ?Branch $branch = null): array
     {
@@ -598,6 +618,7 @@ class StorefrontCatalog
             'compareAtPrice' => $compareAt === null ? '' : '$'.number_format((float) $compareAt, 2),
             'category' => $categoryName,
             'image' => MediaUrl::resolve($product->image) ?? '/images/storefront/logo.png',
+            'views' => CompactNumber::format((int) $product->views),
         ];
     }
 

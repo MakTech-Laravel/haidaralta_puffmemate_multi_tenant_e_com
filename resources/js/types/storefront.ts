@@ -25,6 +25,7 @@ export type StorefrontProduct = {
     compareAtPrice?: string | null;
     category: string;
     image: string;
+    views: string;
 };
 
 export type StorefrontFeature = {
