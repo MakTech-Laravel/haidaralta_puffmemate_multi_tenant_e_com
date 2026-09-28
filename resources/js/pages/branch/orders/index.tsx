@@ -134,7 +134,7 @@ export default function BranchOrdersIndex({
                             row.original.is_paid ? 'default' : 'secondary'
                         }
                     >
-                        {row.original.is_paid ? 'Paid' : 'Unpaid'}
+                        {row.original.is_paid ? 'Collected' : 'Pending collection'}
                     </Badge>
                 ),
             },

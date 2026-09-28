@@ -5,6 +5,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Branch;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
+use App\Models\Payment;
 use App\Models\User;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -20,10 +21,12 @@ beforeEach(function () {
 function branchOrderFulfillment(Branch $branch, array $overrides = []): OrderFulfillment
 {
     $order = Order::factory()->create();
-
-    return OrderFulfillment::factory()->forOrder($order)->create(array_merge([
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create(array_merge([
         'branch_id' => $branch->id,
     ], $overrides));
+    Payment::factory()->create(['order_id' => $order->id]);
+
+    return $fulfillment;
 }
 
 test('branch staff only see fulfillments for their own branch', function () {
@@ -71,7 +74,7 @@ test('branch staff can update fulfillment status and it rolls up to the master o
         ->and($fulfillment->order->refresh()->status->value)->toBe('processing');
 });
 
-test('branch staff can mark their fulfillment as paid and the order flips to paid when all fulfillments are paid', function () {
+test('branch staff can mark their fulfillment as collected', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
@@ -82,7 +85,7 @@ test('branch staff can mark their fulfillment as paid and the order flips to pai
         ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
 
     expect($fulfillment->refresh()->isPaid())->toBeTrue()
-        ->and($fulfillment->order->refresh()->payment_status)->toBe(PaymentStatus::Paid);
+        ->and($fulfillment->order->refresh()->payment_status)->toBe(PaymentStatus::Collected);
 });
 
 test('a second branchs staff cannot mark another branchs fulfillment as paid', function () {

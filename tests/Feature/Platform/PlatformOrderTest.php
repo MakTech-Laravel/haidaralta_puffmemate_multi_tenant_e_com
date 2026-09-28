@@ -5,6 +5,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Branch;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
+use App\Models\Payment;
 use App\Models\User;
 use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
@@ -40,21 +41,20 @@ test('platform admin sees orders across every branch', function () {
             ->has('table.data', 2));
 });
 
-test('platform order detail exposes every fulfillment across branches', function () {
+test('platform order detail exposes the single fulfillment', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
-    $other = Branch::factory()->create();
 
     $order = Order::factory()->create();
     OrderFulfillment::factory()->forOrder($order)->create(['branch_id' => $sydney->id]);
-    OrderFulfillment::factory()->forOrder($order)->create(['branch_id' => $other->id]);
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.orders.show', $order))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('platform/orders/show')
-            ->has('order.fulfillments', 2));
+            ->has('order.fulfillments', 1)
+            ->has('order.drivers'));
 });
 
 test('platform admin can update any branchs fulfillment status', function () {
@@ -69,25 +69,26 @@ test('platform admin can update any branchs fulfillment status', function () {
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.orders.fulfillments.status', [$order, $fulfillment]), [
-            'status' => FulfillmentStatus::Delivered->value,
+            'status' => FulfillmentStatus::Processing->value,
         ])
         ->assertRedirect(route('platform.orders.show', $order));
 
-    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Delivered)
-        ->and($order->refresh()->status->value)->toBe('delivered');
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Processing)
+        ->and($order->refresh()->status->value)->toBe('processing');
 });
 
 test('platform admin can override the master orders payment status', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
-    $order = Order::factory()->create(['payment_status' => PaymentStatus::Unpaid]);
+    $order = Order::factory()->create(['payment_status' => PaymentStatus::PendingCollection]);
     OrderFulfillment::factory()->forOrder($order)->create();
+    Payment::factory()->create(['order_id' => $order->id, 'status' => PaymentStatus::PendingCollection]);
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.orders.payment-status', $order), [
-            'payment_status' => PaymentStatus::Paid->value,
+            'payment_status' => PaymentStatus::Collected->value,
         ])
         ->assertRedirect(route('platform.orders.show', $order));
 
-    expect($order->refresh()->payment_status)->toBe(PaymentStatus::Paid);
+    expect($order->refresh()->payment_status)->toBe(PaymentStatus::Collected);
 });

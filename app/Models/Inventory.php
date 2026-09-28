@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $product_id
  * @property int|null $variant_id
  * @property int $quantity
+ * @property int $reserved_quantity
  * @property bool $status
  * @property-read Branch|null $branch
  * @property-read Product|null $product
@@ -35,6 +36,7 @@ class Inventory extends Model
         'product_id',
         'variant_id',
         'quantity',
+        'reserved_quantity',
         'status',
     ];
 
@@ -78,6 +80,7 @@ class Inventory extends Model
     {
         return [
             'quantity' => 'integer',
+            'reserved_quantity' => 'integer',
             'status' => 'boolean',
         ];
     }

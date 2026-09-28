@@ -22,6 +22,7 @@ class InventoryFactory extends Factory
             'product_id' => Product::factory(),
             'variant_id' => null,
             'quantity' => fake()->numberBetween(0, 100),
+            'reserved_quantity' => 0,
             'status' => true,
         ];
     }

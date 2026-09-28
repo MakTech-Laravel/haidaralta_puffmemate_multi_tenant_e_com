@@ -243,7 +243,7 @@ test('place order writes order payment and redemption then clears ordered lines'
 
     $payment = Payment::query()->where('order_id', $order->id)->firstOrFail();
 
-    expect($payment->status)->toBe(PaymentStatus::Unpaid)
+    expect($payment->status)->toBe(PaymentStatus::PendingCollection)
         ->and($payment->gateway)->toBe(PaymentGatewaySetting::KEY_COD);
 
     expect(CouponRedemption::query()->where('order_id', $order->id)->count())->toBe(1);
@@ -419,7 +419,7 @@ test('a disabled payment method is rejected', function () {
         ->and(CartItem::query()->count())->toBe(1);
 });
 
-test('a cart that spans branches splits into multiple fulfillments without leaking them to the customer', function () {
+test('a cart that needs another branch stays on one fulfillment without leaking branches to the customer', function () {
     $user = User::factory()->create();
     $product = storefrontCheckoutProduct(['slug' => 'split-branch-item']);
 
@@ -463,12 +463,8 @@ test('a cart that spans branches splits into multiple fulfillments without leaki
 
     $order = Order::query()->firstOrFail();
 
-    expect($order->fulfillments)->toHaveCount(2);
-
-    $quantities = $order->fulfillments->map(fn ($fulfillment) => $fulfillment->items->sum('quantity'))->all();
-    sort($quantities);
-
-    expect($quantities)->toBe([2, 3]);
+    expect($order->fulfillments)->toHaveCount(1)
+        ->and((int) $order->items->sum('quantity'))->toBe(5);
 
     $this->actingAs($user, 'customer')
         ->get(route('checkout.confirmation', $order))
@@ -478,7 +474,8 @@ test('a cart that spans branches splits into multiple fulfillments without leaki
             ->missing('order.id')
             ->missing('order.branch')
             ->missing('order.fulfillments')
-            ->missing('order.branchName'));
+            ->missing('order.branchName')
+            ->missing('order.transfers'));
 });
 
 test('order line items snapshot product details so a later catalog change does not affect the order', function () {

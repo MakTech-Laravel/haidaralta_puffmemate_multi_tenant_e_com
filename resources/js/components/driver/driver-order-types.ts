@@ -1,4 +1,14 @@
-export type DriverOrderStatus = 'out_for_delivery' | 'arrived' | 'delivered';
+export type DriverOrderStatus =
+    | 'pending'
+    | 'processing'
+    | 'ready'
+    | 'assigned'
+    | 'picked_up'
+    | 'out_for_delivery'
+    | 'delivery_failed'
+    | 'returning'
+    | 'delivered'
+    | 'cancelled';
 
 export type DriverOrderStatusFilter = 'all' | 'active' | DriverOrderStatus;
 
@@ -29,6 +39,11 @@ export type DriverOrderDetail = DriverAssignedOrder & {
     phone: string;
     notes: string | null;
     demoOtpHint: string;
+    canPickUp?: boolean;
+    canStart?: boolean;
+    canDeliver?: boolean;
+    canFail?: boolean;
+    failureReasons?: Array<{ value: string; label: string }>;
     shippingAddress: {
         line1: string;
         line2: string | null;
@@ -44,10 +59,17 @@ export type DriverOrderDetail = DriverAssignedOrder & {
     }>;
 };
 
-export const driverOrderStatusLabel: Record<DriverOrderStatus, string> = {
+export const driverOrderStatusLabel: Record<string, string> = {
+    pending: 'Pending',
+    processing: 'Processing',
+    ready: 'Ready',
+    assigned: 'Assigned',
+    picked_up: 'Picked up',
     out_for_delivery: 'Out for delivery',
-    arrived: 'Arrived',
+    delivery_failed: 'Delivery failed',
+    returning: 'Returning',
     delivered: 'Delivered',
+    cancelled: 'Cancelled',
 };
 
 export const driverOrderStatusFilterLabel: Record<
@@ -56,9 +78,16 @@ export const driverOrderStatusFilterLabel: Record<
 > = {
     all: 'All',
     active: 'Active',
+    pending: 'Pending',
+    processing: 'Processing',
+    ready: 'Ready',
+    assigned: 'Assigned',
+    picked_up: 'Picked up',
     out_for_delivery: 'On the way',
-    arrived: 'Arrived',
+    delivery_failed: 'Failed',
+    returning: 'Returning',
     delivered: 'Delivered',
+    cancelled: 'Cancelled',
 };
 
 export function filterDriverAssignedOrders(
@@ -79,15 +108,22 @@ export function filterDriverAssignedOrders(
 export function driverOrderFilterCounts(
     orders: DriverAssignedOrder[],
 ): Record<DriverOrderStatusFilter, number> {
+    const count = (status: DriverOrderStatus): number =>
+        orders.filter((order) => order.status === status).length;
+
     return {
         all: orders.length,
         active: orders.filter((order) => order.status !== 'delivered').length,
-        out_for_delivery: orders.filter(
-            (order) => order.status === 'out_for_delivery',
-        ).length,
-        arrived: orders.filter((order) => order.status === 'arrived').length,
-        delivered: orders.filter((order) => order.status === 'delivered')
-            .length,
+        pending: count('pending'),
+        processing: count('processing'),
+        ready: count('ready'),
+        assigned: count('assigned'),
+        picked_up: count('picked_up'),
+        out_for_delivery: count('out_for_delivery'),
+        delivery_failed: count('delivery_failed'),
+        returning: count('returning'),
+        delivered: count('delivered'),
+        cancelled: count('cancelled'),
     };
 }
 

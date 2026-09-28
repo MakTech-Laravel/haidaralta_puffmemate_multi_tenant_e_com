@@ -41,13 +41,14 @@ test('drivers receive sequenced remaining and completed stops on the route tab',
         'user_type' => UserType::DRIVER,
         'email_verified_at' => now(),
     ]);
+    driverPortalOrder($driver);
 
     $this->actingAs($driver, 'driver')
         ->get(route('driver.route.index'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('driver/route/index')
-            ->has('remaining')
+            ->has('remaining', 1)
             ->has('completed')
             ->missing('areas')
             ->missing('currentArea')
@@ -62,14 +63,15 @@ test('drivers can open the route tab with a highlighted drop', function () {
         'user_type' => UserType::DRIVER,
         'email_verified_at' => now(),
     ]);
+    $order = driverPortalOrder($driver);
 
     $this->actingAs($driver, 'driver')
-        ->get(route('driver.route.index', ['highlight' => 'drv-ord-1001']))
+        ->get(route('driver.route.index', ['highlight' => $order->order_number]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('driver/route/index')
-            ->where('highlightId', 'drv-ord-1001')
-            ->where('remaining.0.id', 'drv-ord-1001'));
+            ->where('highlightId', $order->order_number)
+            ->where('remaining.0.id', $order->order_number));
 });
 
 test('drivers receive support contacts for the header account sheet', function () {

@@ -22,7 +22,7 @@ class PaymentFactory extends Factory
             'gateway' => 'cod',
             'amount' => 20,
             'currency' => 'AUD',
-            'status' => PaymentStatus::Unpaid,
+            'status' => PaymentStatus::PendingCollection,
         ];
     }
 }

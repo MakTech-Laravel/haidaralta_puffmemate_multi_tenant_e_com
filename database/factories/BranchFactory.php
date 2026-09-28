@@ -31,6 +31,7 @@ class BranchFactory extends Factory
             'latitude' => fake()->optional()->latitude(),
             'longitude' => fake()->optional()->longitude(),
             'delivery_radius_km' => null,
+            'fulfillment_priority' => 100,
             'opening_time' => '09:00',
             'closing_time' => '21:00',
             'status' => true,

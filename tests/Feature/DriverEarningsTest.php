@@ -1,6 +1,9 @@
 <?php
 
+use App\Enums\PaymentStatus;
 use App\Enums\UserType;
+use App\Models\Order;
+use App\Models\Payment;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -14,21 +17,30 @@ test('drivers can view earnings for completed drops', function () {
         'user_type' => UserType::DRIVER,
         'email_verified_at' => now(),
     ]);
+    $order = Order::factory()->create([
+        'shipping_address_snapshot' => [
+            'name' => 'James Okonkwo',
+            'city' => 'Sydney',
+            'address' => '1 Test Street',
+        ],
+        'order_number' => 'PMM-2026-0100',
+        'total_amount' => 40,
+    ]);
+    Payment::factory()->create([
+        'order_id' => $order->id,
+        'amount' => 40,
+        'gateway' => 'cod',
+        'status' => PaymentStatus::Collected,
+        'collected_by' => $driver->id,
+        'collected_at' => now(),
+    ]);
 
     $this->actingAs($driver, 'driver')
         ->get(route('driver.earnings.index'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('driver/earnings/index')
-            ->where('earnings.todayLabel', '$194.40')
-            ->where('earnings.weekLabel', '$612.10')
-            ->where('earnings.tipsLabel', '$18.00')
-            ->where('earnings.perStopLabel', '$21.60')
-            ->where('earnings.payoutStatus', 'Clears tonight')
+            ->where('earnings.todayLabel', '$40.00')
             ->where('earnings.dropsToday', 1)
-            ->where('earnings.dropsWeek', 7)
-            ->where('earnings.days.0.label', 'Today')
-            ->where('earnings.days.0.entries.0.customerName', 'James Okonkwo')
-            ->where('earnings.days.1.label', 'Yesterday')
-            ->where('earnings.days.1.entries.0.customerName', 'Maya Patel'));
+            ->where('earnings.days.0.entries.0.customerName', 'James Okonkwo'));
 });

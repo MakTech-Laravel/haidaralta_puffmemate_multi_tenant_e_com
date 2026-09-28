@@ -6,6 +6,8 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
+use App\Services\Order\FulfillmentStatusService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -13,6 +15,8 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
+    public function __construct(private FulfillmentStatusService $statuses) {}
+
     /**
      * Display the customer's own order list.
      *
@@ -51,6 +55,16 @@ class OrderController extends Controller
         ]);
     }
 
+    public function cancel(Request $request, Order $order): RedirectResponse
+    {
+        abort_unless($order->customer_id === $request->user()->id, 404);
+        abort_if($order->fulfillment === null, 404);
+
+        $this->statuses->cancel($order->fulfillment, $request->user());
+
+        return back();
+    }
+
     /**
      * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, paymentStatus: string, date: string}
      */
@@ -74,7 +88,13 @@ class OrderController extends Controller
         return [
             'orderNumber' => $order->order_number,
             'status' => $order->status->value,
+            'statusLabel' => $order->status->customerLabel(),
             'paymentStatus' => $order->payment_status->value,
+            'paymentStatusLabel' => $order->payment_status->customerLabel(),
+            'handoverNotice' => $order->status === OrderStatus::OutForDelivery
+                ? 'A delivery code was sent to your phone. Give it to the driver to complete the order.'
+                : null,
+            'canCancel' => $order->status->allowsCustomerCancel(),
             'date' => $order->created_at->format('d M Y'),
             'products' => $order->items->map(fn ($item): array => [
                 'name' => $item->product_name_snapshot,
@@ -107,13 +127,13 @@ class OrderController extends Controller
         return $history
             ->map(fn ($row): array => [
                 'key' => (string) $row->id,
-                'label' => OrderStatus::from($row->new_status)->label(),
+                'label' => OrderStatus::from($row->new_status)->customerLabel(),
                 'state' => 'completed',
                 'detail' => $row->created_at->format('d M Y, h:i A'),
             ])
             ->push([
                 'key' => 'current',
-                'label' => $order->status->label(),
+                'label' => $order->status->customerLabel(),
                 'state' => $order->status->isTerminal() ? 'completed' : 'current',
                 'detail' => $order->status->isTerminal() ? 'Completed' : 'In progress',
             ])

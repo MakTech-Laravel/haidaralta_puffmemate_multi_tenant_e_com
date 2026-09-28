@@ -10,6 +10,8 @@ enum InventoryTransactionType: string
     case Reserve = 'reserve';
     case Release = 'release';
     case Sale = 'sale';
+    case TransferOut = 'transfer_out';
+    case TransferIn = 'transfer_in';
 
     public function label(): string
     {
@@ -20,6 +22,8 @@ enum InventoryTransactionType: string
             self::Reserve => 'Reserve',
             self::Release => 'Release',
             self::Sale => 'Sale',
+            self::TransferOut => 'Transfer out',
+            self::TransferIn => 'Transfer in',
         };
     }
 

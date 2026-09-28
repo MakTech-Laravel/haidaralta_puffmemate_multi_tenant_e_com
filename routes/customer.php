@@ -20,6 +20,7 @@ Route::middleware(['ensure.guard:customer', 'phone.verified'])->group(function (
         ->name('customer.account.billing.update');
     Route::get('orders', [CustomerOrderController::class, 'index'])->name('customer.orders.index');
     Route::get('orders/{order:order_number}', [CustomerOrderController::class, 'show'])->name('customer.orders.show');
+    Route::post('orders/{order:order_number}/cancel', [CustomerOrderController::class, 'cancel'])->name('customer.orders.cancel');
     Route::get('notifications', [CustomerNotificationController::class, 'index'])
         ->name('customer.notifications.index');
     Route::get('notifications/{notification}', [CustomerNotificationController::class, 'show'])

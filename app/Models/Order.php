@@ -113,9 +113,16 @@ class Order extends Model implements DataTableConfigurable
     }
 
     /**
-     * Internal per-branch delivery units. Never load/serialize this to the
-     * customer guard.
+     * The single fulfillment for this order.
      *
+     * @return HasOne<OrderFulfillment, $this>
+     */
+    public function fulfillment(): HasOne
+    {
+        return $this->hasOne(OrderFulfillment::class);
+    }
+
+    /**
      * @return HasMany<OrderFulfillment, $this>
      */
     public function fulfillments(): HasMany
@@ -124,15 +131,19 @@ class Order extends Model implements DataTableConfigurable
     }
 
     /**
-     * The earliest-created fulfillment, used as the "primary" branch for
-     * legacy single-branch integrations (e.g. conversations) until those are
-     * migrated to be fulfillment-aware.
-     *
      * @return HasOne<OrderFulfillment, $this>
      */
     public function primaryFulfillment(): HasOne
     {
-        return $this->hasOne(OrderFulfillment::class)->oldestOfMany();
+        return $this->hasOne(OrderFulfillment::class);
+    }
+
+    /**
+     * @return HasMany<StockTransfer, $this>
+     */
+    public function stockTransfers(): HasMany
+    {
+        return $this->hasMany(StockTransfer::class);
     }
 
     /**
@@ -144,6 +155,14 @@ class Order extends Model implements DataTableConfigurable
     public function statusHistories(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class)->whereNull('fulfillment_id');
+    }
+
+    /**
+     * @return HasOne<Payment, $this>
+     */
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class);
     }
 
     /**
