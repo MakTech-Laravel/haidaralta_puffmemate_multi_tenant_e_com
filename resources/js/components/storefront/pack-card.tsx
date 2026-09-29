@@ -52,14 +52,14 @@ export function PackCard({
     return (
         <article
             className={cn(
-                'border-border bg-card hover:border-primary/40 flex h-full flex-col overflow-hidden rounded-xl border transition',
+                'border-border bg-card hover:border-primary/40 @container flex h-full flex-col overflow-hidden rounded-xl border transition',
                 className,
             )}
         >
             <PackCardLink href={href}>
                 <div className="bg-muted relative aspect-3/2 overflow-hidden">
                     {pack.savings ? (
-                        <span className="bg-primary text-primary-foreground absolute top-3 left-3 z-10 rounded-md px-2.5 py-1 text-xs font-bold tracking-wide uppercase shadow-sm">
+                        <span className="bg-primary text-primary-foreground absolute top-2 left-2 z-10 max-w-[calc(100%-1rem)] truncate rounded-md px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase shadow-sm @xs:top-3 @xs:left-3 @xs:px-2.5 @xs:py-1 @xs:text-xs">
                             Save {currency} {pack.savings}
                         </span>
                     ) : null}
@@ -75,16 +75,16 @@ export function PackCard({
                         }}
                     />
                     {hasStockLeft ? (
-                        <span className="text-foreground absolute right-3 bottom-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm">
+                        <span className="text-foreground absolute right-2 bottom-2 z-10 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold shadow-sm backdrop-blur-sm @xs:right-3 @xs:bottom-3 @xs:px-2.5 @xs:py-1 @xs:text-xs">
                             {pack.stockLeft} left
                         </span>
                     ) : null}
                 </div>
-                <div className="flex flex-1 flex-col gap-1 p-4 pb-3">
-                    <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                <div className="flex flex-1 flex-col gap-1 p-3 pb-2 @xs:p-4 @xs:pb-3">
+                    <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase @xs:text-xs">
                         {pack.eyebrow}
                     </p>
-                    <h3 className="text-foreground text-lg leading-tight font-bold">
+                    <h3 className="text-foreground text-base leading-tight font-bold @xs:text-lg">
                         {pack.name}
                     </h3>
                     <p className="text-muted-foreground line-clamp-2 text-sm">
@@ -92,9 +92,9 @@ export function PackCard({
                     </p>
                 </div>
             </PackCardLink>
-            <div className="mx-4 flex items-end justify-between gap-3 border-t py-4">
+            <div className="mx-3 flex flex-col gap-2 border-t py-3 @xs:mx-4 @xs:flex-row @xs:items-end @xs:justify-between @xs:gap-3 @xs:py-4">
                 <div className="min-w-0">
-                    <p className="text-foreground text-2xl leading-none font-bold tabular-nums">
+                    <p className="text-foreground text-xl leading-none font-bold whitespace-nowrap tabular-nums @xs:text-2xl">
                         {currency} {pack.price}
                     </p>
                     <p className="text-muted-foreground mt-1 text-xs">
@@ -104,7 +104,7 @@ export function PackCard({
                 <Button
                     type="button"
                     size="sm"
-                    className="h-9 shrink-0 rounded-full px-4 text-xs font-bold tracking-wide uppercase"
+                    className="h-9 w-full shrink-0 rounded-full px-4 text-xs font-bold tracking-wide uppercase @xs:w-auto"
                     disabled={disabled || buying}
                     onClick={onBuyNow}
                 >
