@@ -29,6 +29,10 @@ use Laravel\Scout\Searchable;
  * @property string|null $latitude
  * @property string|null $longitude
  * @property string|null $delivery_radius_km
+ * @property int|null $max_active_fulfillments
+ * @property int $fulfillment_priority
+ * @property string|null $transfer_handling_fee
+ * @property string|null $transfer_cost_per_km
  * @property Carbon|null $opening_time
  * @property Carbon|null $closing_time
  * @property bool $status
@@ -75,6 +79,10 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
         'latitude',
         'longitude',
         'delivery_radius_km',
+        'max_active_fulfillments',
+        'fulfillment_priority',
+        'transfer_handling_fee',
+        'transfer_cost_per_km',
         'opening_time',
         'closing_time',
         'status',
@@ -197,6 +205,10 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
             'delivery_radius_km' => 'decimal:2',
+            'max_active_fulfillments' => 'integer',
+            'fulfillment_priority' => 'integer',
+            'transfer_handling_fee' => 'decimal:2',
+            'transfer_cost_per_km' => 'decimal:2',
             'opening_time' => 'datetime:H:i',
             'closing_time' => 'datetime:H:i',
             'status' => 'boolean',

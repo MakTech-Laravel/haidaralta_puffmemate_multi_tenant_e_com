@@ -44,8 +44,8 @@ class ConversationService
         }
 
         return DB::transaction(function () use ($order): Conversation {
-            $order->loadMissing('primaryFulfillment');
-            $fulfillment = $order->primaryFulfillment;
+            $order->loadMissing(['fulfillment', 'primaryFulfillment']);
+            $fulfillment = $order->fulfillment ?? $order->primaryFulfillment;
 
             if ($fulfillment === null) {
                 throw new RuntimeException('Cannot open a conversation for an order with no fulfillment.');
@@ -87,6 +87,19 @@ class ConversationService
             $user->id,
             ConversationParticipantRole::fromUserType($user->user_type),
         );
+    }
+
+    public function ensureDriver(Order $order, User $driver): void
+    {
+        $conversation = Conversation::query()->where('order_id', $order->id)->first();
+
+        if ($conversation === null) {
+            $this->openForOrder($order->loadMissing('primaryFulfillment', 'fulfillment'));
+
+            return;
+        }
+
+        $this->addParticipant($conversation, $driver->id, ConversationParticipantRole::Driver);
     }
 
     /**

@@ -12,6 +12,7 @@ use App\Http\Controllers\Branch\OrderController as BranchOrderController;
 use App\Http\Controllers\Branch\PacksSavesController as BranchPacksSavesController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
+use App\Http\Controllers\Branch\Reports\OrderOperationsController as BranchOrderOperationsController;
 use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
 use App\Http\Controllers\Branch\Reports\StockTransactionController as BranchStockTransactionController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Branch\ShiftAssignmentController as BranchShiftAssignme
 use App\Http\Controllers\Branch\ShiftTemplateController as BranchShiftTemplateController;
 use App\Http\Controllers\Branch\StaffController as BranchStaffController;
 use App\Http\Controllers\Branch\StockController as BranchStockController;
+use App\Http\Controllers\Branch\StockTransferController as BranchStockTransferController;
 use App\Models\Branch;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
@@ -97,6 +99,8 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('stock/import', [BranchStockController::class, 'storeImport'])->name('branch.stock.import.store');
         Route::get('stock/price', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
             ->name('branch.stock.price');
+        Route::get('reports/order-operations', [BranchOrderOperationsController::class, 'index'])
+            ->name('branch.reports.order-operations');
         Route::get('reports/stock-transactions', [BranchStockTransactionController::class, 'index'])
             ->name('branch.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [BranchStockTransactionController::class, 'export'])
@@ -116,6 +120,28 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.orders.status');
         Route::post('orders/{fulfillment}/paid', [BranchOrderController::class, 'markPaid'])
             ->name('branch.orders.paid');
+        Route::post('orders/{fulfillment}/assign-driver', [BranchOrderController::class, 'assignDriver'])
+            ->name('branch.orders.assign-driver');
+        Route::post('orders/{fulfillment}/cancel', [BranchOrderController::class, 'cancel'])
+            ->name('branch.orders.cancel');
+        Route::post('orders/{fulfillment}/retry-delivery', [BranchOrderController::class, 'retryDelivery'])
+            ->name('branch.orders.retry-delivery');
+        Route::post('orders/{fulfillment}/reschedule-delivery', [BranchOrderController::class, 'rescheduleDelivery'])
+            ->name('branch.orders.reschedule-delivery');
+        Route::post('orders/{fulfillment}/return-delivery', [BranchOrderController::class, 'returnDelivery'])
+            ->name('branch.orders.return-delivery');
+        Route::post('orders/{fulfillment}/confirm-return', [BranchOrderController::class, 'confirmReturn'])
+            ->name('branch.orders.confirm-return');
+        Route::get('stock-transfers', [BranchStockTransferController::class, 'index'])
+            ->name('branch.stock-transfers.index');
+        Route::post('stock-transfers/{stockTransfer}/approve', [BranchStockTransferController::class, 'approve'])
+            ->name('branch.stock-transfers.approve');
+        Route::post('stock-transfers/{stockTransfer}/pick', [BranchStockTransferController::class, 'pick'])
+            ->name('branch.stock-transfers.pick');
+        Route::post('stock-transfers/{stockTransfer}/dispatch', [BranchStockTransferController::class, 'dispatch'])
+            ->name('branch.stock-transfers.dispatch');
+        Route::post('stock-transfers/{stockTransfer}/receive', [BranchStockTransferController::class, 'receive'])
+            ->name('branch.stock-transfers.receive');
     });
 
     Route::middleware(['permission:manage-branch-conversations'])->group(function () {

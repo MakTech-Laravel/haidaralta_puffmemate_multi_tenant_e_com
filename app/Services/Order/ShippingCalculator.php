@@ -30,6 +30,8 @@ class ShippingCalculator
             return 0.0;
         }
 
-        return round(max($minimumCharge, $baseFee + ($costPerKm * $distanceKm)), 2);
+        $billableKm = max(0.0, $distanceKm - max($freeDistanceKm, 0.0));
+
+        return round(max($minimumCharge, $baseFee + ($costPerKm * $billableKm)), 2);
     }
 }

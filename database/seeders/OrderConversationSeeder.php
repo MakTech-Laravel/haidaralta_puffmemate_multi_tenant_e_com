@@ -53,7 +53,7 @@ class OrderConversationSeeder extends Seeder
             [
                 'order_number' => 'PMM-2026-1042',
                 'branch_email' => UserSeeder::BRANCH_2_ADMIN,
-                'order_status' => OrderStatus::Confirmed,
+                'order_status' => OrderStatus::Processing,
                 'with_driver' => false,
                 'messages' => [
                     ['from' => 'customer', 'body' => 'Can I add a second pod pack to this order before it ships?', 'minutes_ago' => 95],
@@ -98,7 +98,7 @@ class OrderConversationSeeder extends Seeder
             [
                 'order_number' => 'PMM-2026-1051',
                 'branch_email' => 'lucia.bennett@perth-hay.dev',
-                'order_status' => OrderStatus::Confirmed,
+                'order_status' => OrderStatus::Processing,
                 'with_driver' => false,
                 'messages' => [
                     ['from' => 'customer', 'body' => 'Do you still have the Velo cool mint pouches in 10mg?', 'minutes_ago' => 140],
@@ -187,10 +187,11 @@ class OrderConversationSeeder extends Seeder
         );
 
         $fulfillment = OrderFulfillment::query()->updateOrCreate(
-            ['order_id' => $order->id, 'branch_id' => $branchUser->branch_id],
+            ['order_id' => $order->id],
             [
+                'branch_id' => $branchUser->branch_id,
                 'driver_id' => $thread['with_driver'] ? $driver->id : null,
-                'fulfillment_number' => $order->order_number.'-A',
+                'fulfillment_number' => $order->order_number,
                 'status' => $thread['order_status']->isTerminal() ? FulfillmentStatus::Delivered : FulfillmentStatus::Processing,
             ],
         );

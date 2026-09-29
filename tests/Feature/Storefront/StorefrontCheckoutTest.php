@@ -3,6 +3,7 @@
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
 use App\Enums\PaymentStatus;
+use App\Models\AllocationDecisionLog;
 use App\Models\Branch;
 use App\Models\Cart;
 use App\Models\CartItem;
@@ -18,6 +19,7 @@ use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
 use Database\Seeders\ApplicationSettingsSeeder;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -243,7 +245,7 @@ test('place order writes order payment and redemption then clears ordered lines'
 
     $payment = Payment::query()->where('order_id', $order->id)->firstOrFail();
 
-    expect($payment->status)->toBe(PaymentStatus::Unpaid)
+    expect($payment->status)->toBe(PaymentStatus::PendingCollection)
         ->and($payment->gateway)->toBe(PaymentGatewaySetting::KEY_COD);
 
     expect(CouponRedemption::query()->where('order_id', $order->id)->count())->toBe(1);
@@ -419,7 +421,7 @@ test('a disabled payment method is rejected', function () {
         ->and(CartItem::query()->count())->toBe(1);
 });
 
-test('a cart that spans branches splits into multiple fulfillments without leaking them to the customer', function () {
+test('a cart that needs another branch stays on one fulfillment without leaking branches to the customer', function () {
     $user = User::factory()->create();
     $product = storefrontCheckoutProduct(['slug' => 'split-branch-item']);
 
@@ -463,12 +465,8 @@ test('a cart that spans branches splits into multiple fulfillments without leaki
 
     $order = Order::query()->firstOrFail();
 
-    expect($order->fulfillments)->toHaveCount(2);
-
-    $quantities = $order->fulfillments->map(fn ($fulfillment) => $fulfillment->items->sum('quantity'))->all();
-    sort($quantities);
-
-    expect($quantities)->toBe([2, 3]);
+    expect($order->fulfillments)->toHaveCount(1)
+        ->and((int) $order->items->sum('quantity'))->toBe(5);
 
     $this->actingAs($user, 'customer')
         ->get(route('checkout.confirmation', $order))
@@ -478,7 +476,97 @@ test('a cart that spans branches splits into multiple fulfillments without leaki
             ->missing('order.id')
             ->missing('order.branch')
             ->missing('order.fulfillments')
-            ->missing('order.branchName'));
+            ->missing('order.branchName')
+            ->missing('order.transfers'));
+});
+
+test('placing a multi-line order with a transfer issues a flat number of inventory queries, not one per line item', function () {
+    $user = User::factory()->create();
+    $local1 = storefrontCheckoutProduct(['slug' => 'inv-flat-local-1']);
+    $local2 = storefrontCheckoutProduct(['slug' => 'inv-flat-local-2']);
+    $transferred = storefrontCheckoutProduct(['slug' => 'inv-flat-transfer']);
+
+    $destination = Branch::factory()->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'delivery_radius_km' => 3000,
+        'status' => true,
+    ]);
+    $source = Branch::factory()->create([
+        'latitude' => -33.9,
+        'longitude' => 151.2,
+        'delivery_radius_km' => 3000,
+        'status' => true,
+    ]);
+
+    Inventory::factory()->create(['branch_id' => $destination->id, 'product_id' => $local1->id, 'quantity' => 5, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $destination->id, 'product_id' => $local2->id, 'quantity' => 5, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $source->id, 'product_id' => $transferred->id, 'quantity' => 5, 'status' => true]);
+
+    foreach ([$local1, $local2, $transferred] as $product) {
+        $this->actingAs($user, 'customer')
+            ->post(route('cart.store'), [
+                'product' => $product->slug,
+                'quantity' => 1,
+            ]);
+    }
+
+    $queries = [];
+    DB::listen(function ($query) use (&$queries): void {
+        if (str_contains($query->sql, 'inventories')) {
+            $queries[] = $query->sql;
+        }
+    });
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect();
+
+    // 3 base queries (allocator's sellableByBranch SELECT, the batched inventory map
+    // SELECT, the lockOrdered SELECT ... FOR UPDATE) + 2 queries per distinct inventory
+    // row actually reserved (the UPDATE plus AuditsChanges' post-save re-fetch) = 3 + 3*2 = 9.
+    // Before the N+1 fix, lockPlan()/reservePlan() each ran one extra findInventory() SELECT
+    // per line/leg item on top of this — i.e. 2 more queries per row (14 total here).
+    // This count must stay flat as line/leg items grow for the same number of distinct rows.
+    expect($queries)->toHaveCount(9, implode("\n", $queries));
+
+    $order = Order::query()->firstOrFail();
+    expect($order->items)->toHaveCount(3)
+        ->and($order->fulfillments)->toHaveCount(1);
+});
+
+test('placing an order writes an allocation decision log explaining the winner and any rejected branches', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'decision-log-item']);
+    $winner = storefrontCheckoutBranchWithStock($product);
+
+    // Out of radius, so it should show up as a rejected candidate on the log.
+    Branch::factory()->create([
+        'latitude' => -37.8136,
+        'longitude' => 144.9631,
+        'delivery_radius_km' => 1,
+        'status' => true,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect();
+
+    $order = Order::query()->firstOrFail();
+
+    $log = AllocationDecisionLog::query()->where('order_id', $order->id)->firstOrFail();
+
+    expect($log->winning_branch_id)->toBe($winner->id)
+        ->and($log->considered_branches)->not->toBeEmpty()
+        ->and($log->considered_branches[0]['branch_id'])->toBe($winner->id)
+        ->and($log->rejected_branches)->toHaveCount(1)
+        ->and($log->rejected_branches[0]['reason'])->toBe('out_of_radius');
 });
 
 test('order line items snapshot product details so a later catalog change does not affect the order', function () {

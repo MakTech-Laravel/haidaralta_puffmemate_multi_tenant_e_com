@@ -26,6 +26,8 @@ class DriverProfileFactory extends Factory
             'availability_status' => DriverAvailabilityStatus::Offline,
             'notes' => null,
             'address' => null,
+            'latitude' => null,
+            'longitude' => null,
             'vehicle_image_path' => null,
         ];
     }
@@ -33,5 +35,10 @@ class DriverProfileFactory extends Factory
     public function available(): static
     {
         return $this->state(fn (): array => ['availability_status' => DriverAvailabilityStatus::Available]);
+    }
+
+    public function locatedAt(float $latitude, float $longitude): static
+    {
+        return $this->state(fn (): array => ['latitude' => $latitude, 'longitude' => $longitude]);
     }
 }

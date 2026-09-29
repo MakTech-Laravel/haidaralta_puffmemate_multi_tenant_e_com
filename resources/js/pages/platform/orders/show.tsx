@@ -1,6 +1,7 @@
 import { Head, router, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
 import OrderController from '@/actions/App/Http/Controllers/Platform/OrderController';
+import StockTransferController from '@/actions/App/Http/Controllers/Platform/StockTransferController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,11 +26,31 @@ type FulfillmentSummary = {
     statusOptions: { value: string; label: string }[];
     shippingCostLabel: string;
     isPaid: boolean;
+    driverId: number | null;
+    canAssign: boolean;
+    canCancel: boolean;
+    canRetry: boolean;
+    canReschedule: boolean;
+    canReturn: boolean;
+    canConfirmReturn: boolean;
     items: {
         name: string;
         image: string;
         quantity: number;
         subtotalLabel: string;
+    }[];
+    transfers: {
+        id: number;
+        status: string;
+        statusLabel: string;
+        sourceName: string | null;
+        destinationName: string | null;
+        estimatedCostLabel: string;
+        items: { name: string; quantity: number }[];
+        canApprove: boolean;
+        canPick: boolean;
+        canDispatch: boolean;
+        canReceive: boolean;
     }[];
 };
 
@@ -50,6 +71,7 @@ type OrderDetail = {
         postal_code?: string;
         phone?: string;
     } | null;
+    drivers: { id: number; name: string }[];
     fulfillments: FulfillmentSummary[];
     timeline: { label: string; detail: string; comment: string | null }[];
 };
@@ -57,11 +79,16 @@ type OrderDetail = {
 function FulfillmentCard({
     orderId,
     fulfillment,
+    drivers,
 }: {
     orderId: number;
     fulfillment: FulfillmentSummary;
+    drivers: { id: number; name: string }[];
 }) {
     const [status, setStatus] = useState(fulfillment.status);
+    const [driverId, setDriverId] = useState(
+        fulfillment.driverId ? String(fulfillment.driverId) : '',
+    );
     const [processing, setProcessing] = useState(false);
 
     return (
@@ -76,7 +103,7 @@ function FulfillmentCard({
                     </p>
                 </div>
                 <Badge variant={fulfillment.isPaid ? 'default' : 'secondary'}>
-                    {fulfillment.isPaid ? 'Paid' : 'Unpaid'}
+                    {fulfillment.isPaid ? 'Collected' : 'Pending collection'}
                 </Badge>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -98,6 +125,121 @@ function FulfillmentCard({
                 <p className="text-muted-foreground text-sm">
                     Shipping: {fulfillment.shippingCostLabel}
                 </p>
+
+                {fulfillment.transfers.length > 0 ? (
+                    <div className="space-y-2">
+                        {fulfillment.transfers.map((transfer) => (
+                            <div
+                                key={transfer.id}
+                                className="space-y-2 rounded-md border p-3 text-sm"
+                            >
+                                <div className="flex items-center justify-between gap-2">
+                                    <span>
+                                        {transfer.sourceName} →{' '}
+                                        {transfer.destinationName}
+                                    </span>
+                                    <Badge variant="secondary">
+                                        {transfer.statusLabel}
+                                    </Badge>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {transfer.canApprove ? (
+                                        <Button
+                                            size="sm"
+                                            disabled={processing}
+                                            onClick={() => {
+                                                setProcessing(true);
+                                                router.post(
+                                                    StockTransferController.approve.url(
+                                                        transfer.id,
+                                                    ),
+                                                    {},
+                                                    {
+                                                        onFinish: () =>
+                                                            setProcessing(
+                                                                false,
+                                                            ),
+                                                    },
+                                                );
+                                            }}
+                                        >
+                                            Approve
+                                        </Button>
+                                    ) : null}
+                                    {transfer.canPick ? (
+                                        <Button
+                                            size="sm"
+                                            disabled={processing}
+                                            onClick={() => {
+                                                setProcessing(true);
+                                                router.post(
+                                                    StockTransferController.pick.url(
+                                                        transfer.id,
+                                                    ),
+                                                    {},
+                                                    {
+                                                        onFinish: () =>
+                                                            setProcessing(
+                                                                false,
+                                                            ),
+                                                    },
+                                                );
+                                            }}
+                                        >
+                                            Pick
+                                        </Button>
+                                    ) : null}
+                                    {transfer.canDispatch ? (
+                                        <Button
+                                            size="sm"
+                                            disabled={processing}
+                                            onClick={() => {
+                                                setProcessing(true);
+                                                router.post(
+                                                    StockTransferController.dispatch.url(
+                                                        transfer.id,
+                                                    ),
+                                                    {},
+                                                    {
+                                                        onFinish: () =>
+                                                            setProcessing(
+                                                                false,
+                                                            ),
+                                                    },
+                                                );
+                                            }}
+                                        >
+                                            Dispatch
+                                        </Button>
+                                    ) : null}
+                                    {transfer.canReceive ? (
+                                        <Button
+                                            size="sm"
+                                            disabled={processing}
+                                            onClick={() => {
+                                                setProcessing(true);
+                                                router.post(
+                                                    StockTransferController.receive.url(
+                                                        transfer.id,
+                                                    ),
+                                                    {},
+                                                    {
+                                                        onFinish: () =>
+                                                            setProcessing(
+                                                                false,
+                                                            ),
+                                                    },
+                                                );
+                                            }}
+                                        >
+                                            Receive
+                                        </Button>
+                                    ) : null}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : null}
 
                 <div className="flex items-center gap-2">
                     <Select value={status} onValueChange={setStatus}>
@@ -132,6 +274,128 @@ function FulfillmentCard({
                     >
                         Save
                     </Button>
+                </div>
+
+                {fulfillment.canAssign ? (
+                    <div className="flex items-center gap-2">
+                        <Select value={driverId} onValueChange={setDriverId}>
+                            <SelectTrigger className="flex-1">
+                                <SelectValue placeholder="Choose a driver" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {drivers.map((driver) => (
+                                    <SelectItem
+                                        key={driver.id}
+                                        value={String(driver.id)}
+                                    >
+                                        {driver.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button
+                            size="sm"
+                            disabled={processing || driverId === ''}
+                            onClick={() => {
+                                setProcessing(true);
+                                router.post(
+                                    OrderController.assignDriver.url(orderId),
+                                    { driver_id: Number(driverId) },
+                                    { onFinish: () => setProcessing(false) },
+                                );
+                            }}
+                        >
+                            Assign
+                        </Button>
+                    </div>
+                ) : null}
+
+                <div className="flex flex-wrap gap-2">
+                    {fulfillment.canCancel ? (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={processing}
+                            onClick={() => {
+                                setProcessing(true);
+                                router.post(
+                                    OrderController.cancel.url(orderId),
+                                    {},
+                                    { onFinish: () => setProcessing(false) },
+                                );
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                    ) : null}
+                    {fulfillment.canRetry ? (
+                        <Button
+                            size="sm"
+                            disabled={processing}
+                            onClick={() => {
+                                setProcessing(true);
+                                router.post(
+                                    OrderController.retryDelivery.url(orderId),
+                                    {},
+                                    { onFinish: () => setProcessing(false) },
+                                );
+                            }}
+                        >
+                            Retry
+                        </Button>
+                    ) : null}
+                    {fulfillment.canReschedule ? (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={processing}
+                            onClick={() => {
+                                setProcessing(true);
+                                router.post(
+                                    OrderController.rescheduleDelivery.url(
+                                        orderId,
+                                    ),
+                                    {},
+                                    { onFinish: () => setProcessing(false) },
+                                );
+                            }}
+                        >
+                            Reschedule
+                        </Button>
+                    ) : null}
+                    {fulfillment.canReturn ? (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={processing}
+                            onClick={() => {
+                                setProcessing(true);
+                                router.post(
+                                    OrderController.returnDelivery.url(orderId),
+                                    {},
+                                    { onFinish: () => setProcessing(false) },
+                                );
+                            }}
+                        >
+                            Return
+                        </Button>
+                    ) : null}
+                    {fulfillment.canConfirmReturn ? (
+                        <Button
+                            size="sm"
+                            disabled={processing}
+                            onClick={() => {
+                                setProcessing(true);
+                                router.post(
+                                    OrderController.confirmReturn.url(orderId),
+                                    {},
+                                    { onFinish: () => setProcessing(false) },
+                                );
+                            }}
+                        >
+                            Confirm return
+                        </Button>
+                    ) : null}
                 </div>
             </CardContent>
         </Card>
@@ -182,6 +446,7 @@ export default function PlatformOrderShow({
                                 key={fulfillment.id}
                                 orderId={order.id}
                                 fulfillment={fulfillment}
+                                drivers={order.drivers}
                             />
                         ))}
                     </div>

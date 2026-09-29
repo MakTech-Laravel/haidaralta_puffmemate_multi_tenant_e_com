@@ -25,7 +25,7 @@ type OrderRow = {
     id: number;
     order_number: string;
     customer_name: string;
-    branch_count: number;
+    fulfillment_branch: string;
     total_label: string;
     status: string;
     payment_status: string;
@@ -83,8 +83,8 @@ export default function PlatformOrdersIndex({
                 header: 'Customer',
             },
             {
-                accessorKey: 'branch_count',
-                header: 'Branches',
+                accessorKey: 'fulfillment_branch',
+                header: 'Branch',
             },
             {
                 accessorKey: 'total_label',
@@ -123,7 +123,8 @@ export default function PlatformOrdersIndex({
                 cell: ({ row }) => (
                     <Badge
                         variant={
-                            row.original.payment_status === 'paid'
+                            row.original.payment_status === 'collected' ||
+                            row.original.payment_status === 'verified'
                                 ? 'default'
                                 : 'secondary'
                         }

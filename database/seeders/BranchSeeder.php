@@ -48,6 +48,7 @@ class BranchSeeder extends Seeder
                 'address' => 'Shop 14, 420 George Street, Sydney NSW 2000',
                 'latitude' => -33.8708000,
                 'longitude' => 151.2073000,
+                'fulfillment_priority' => 1,
                 'opening_time' => '09:00',
                 'closing_time' => '21:00',
                 'status' => true,

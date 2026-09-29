@@ -209,6 +209,12 @@ export function buildBranchNav(
                         icon: ShoppingBag,
                         permissions: ['manage-branch-orders'],
                     }),
+                    navLink({
+                        title: 'Stock transfers',
+                        href: `/branch/${slug}/stock-transfers`,
+                        icon: Package2,
+                        permissions: ['manage-branch-orders'],
+                    }),
                     navSoon({
                         title: 'Pickup',
                         icon: Store,
@@ -248,8 +254,9 @@ export function buildBranchNav(
                 icon: ChartColumn,
                 permissions: ['manage-branch-orders', 'manage-branch-products'],
                 items: [
-                    navSoon({
-                        title: 'Sales',
+                    navLink({
+                        title: 'Order operations',
+                        href: `/branch/${slug}/reports/order-operations`,
                         icon: ChartColumn,
                         permissions: ['manage-branch-orders'],
                     }),

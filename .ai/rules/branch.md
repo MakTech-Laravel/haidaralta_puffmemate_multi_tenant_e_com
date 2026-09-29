@@ -12,6 +12,7 @@ paths:
   - app/Models/Product.php
   - 'app/Models/{Notification,UserNotification}.php'
   - app/Services/Catalog/PackService.php
+  - app/Services/Inventory/InventoryReservationService.php
 ---
 
 # Catalog
@@ -66,3 +67,5 @@ Notification is the parent message; UserNotification is the per-recipient inbox 
 
 ## Pack stock errors are keyed per line
 PackService reports stock shortfalls as items.{index}.quantity (every short line at once), never under quantity, so BranchPackForm shows them under the selected product. Index follows Pack::items() ordered by id, the same order the edit form renders frozen lines. quantity errors are only for the Packs to sell field rules.
+## Reserved quantity is sellable stock
+inventories.reserved_quantity is live. Sellable is quantity minus reserved_quantity. InventoryReservationService is the only order/transfer writer of those columns, always with lockForUpdate ordered by id. Manual stock-out cannot reduce quantity below reserved_quantity.

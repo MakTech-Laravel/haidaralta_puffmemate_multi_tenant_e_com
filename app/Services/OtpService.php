@@ -24,11 +24,12 @@ class OtpService
      * Issue a new OTP for the given phone and purpose. Always sends an SMS
      * (callers decide whether the phone exists for enumeration safety).
      */
-    public function issue(string $phoneE164, OtpPurpose $purpose, ?Model $subject = null): OtpRecord
+    public function issue(string $phoneE164, OtpPurpose $purpose, ?Model $subject = null, ?int $ttlMinutes = null): OtpRecord
     {
         $this->activeQuery($phoneE164, $purpose, $subject)->delete();
 
         $code = $this->generateCode();
+        $minutes = $ttlMinutes ?? self::TTL_MINUTES;
 
         $otp = OtpRecord::query()->create([
             'phone' => $phoneE164,
@@ -36,7 +37,7 @@ class OtpService
             'subject_type' => $subject?->getMorphClass(),
             'subject_id' => $subject?->getKey(),
             'code_hash' => Hash::make($code),
-            'expires_at' => now()->addMinutes(self::TTL_MINUTES),
+            'expires_at' => now()->addMinutes($minutes),
             'attempts' => 0,
         ]);
 
@@ -44,7 +45,7 @@ class OtpService
             $phoneE164,
             __('Your verification code is :code. It expires in :minutes minutes.', [
                 'code' => $code,
-                'minutes' => self::TTL_MINUTES,
+                'minutes' => $minutes,
             ]),
         );
 

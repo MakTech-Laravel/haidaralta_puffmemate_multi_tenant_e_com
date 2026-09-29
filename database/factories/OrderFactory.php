@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\UserType;
 use App\Models\Order;
 use App\Models\User;
@@ -22,6 +23,7 @@ class OrderFactory extends Factory
             'order_number' => 'PMM-'.fake()->unique()->numerify('####-####'),
             'customer_id' => User::factory()->state(['user_type' => UserType::CUSTOMER, 'branch_id' => null]),
             'status' => OrderStatus::Pending,
+            'payment_status' => PaymentStatus::PendingCollection,
         ];
     }
 

@@ -194,15 +194,16 @@ class ConversationVolumeSeeder extends Seeder
                 ['order_number' => 'PMM-2026-'.($sequence + $index)],
                 [
                     'customer_id' => $customer->id,
-                    'status' => $index % 2 === 0 ? OrderStatus::Pending : OrderStatus::Confirmed,
+                    'status' => $index % 2 === 0 ? OrderStatus::Pending : OrderStatus::Processing,
                 ],
             );
 
             OrderFulfillment::query()->updateOrCreate(
-                ['order_id' => $order->id, 'branch_id' => $branch->id],
+                ['order_id' => $order->id],
                 [
+                    'branch_id' => $branch->id,
                     'driver_id' => null,
-                    'fulfillment_number' => $order->order_number.'-A',
+                    'fulfillment_number' => $order->order_number,
                     'status' => FulfillmentStatus::Pending,
                 ],
             );
@@ -228,10 +229,11 @@ class ConversationVolumeSeeder extends Seeder
         );
 
         OrderFulfillment::query()->updateOrCreate(
-            ['order_id' => $order->id, 'branch_id' => $branch->id],
+            ['order_id' => $order->id],
             [
+                'branch_id' => $branch->id,
                 'driver_id' => $driver->id,
-                'fulfillment_number' => $order->order_number.'-A',
+                'fulfillment_number' => $order->order_number,
                 'status' => $closed ? FulfillmentStatus::Delivered : FulfillmentStatus::Processing,
             ],
         );
