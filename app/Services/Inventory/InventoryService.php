@@ -10,12 +10,16 @@ use App\Models\InventoryTransaction;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Support\PackAvailability;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class InventoryService
 {
-    public function __construct(private BranchPricingService $pricing) {}
+    public function __construct(
+        private BranchPricingService $pricing,
+        private PackAvailability $packs,
+    ) {}
 
     /**
      * @param  array{status?: bool}  $attributes
@@ -125,6 +129,10 @@ class InventoryService
                     $locked->variant,
                     $actor,
                 );
+            }
+
+            if ($locked->variant_id === null) {
+                $this->packs->syncForProduct($locked->branch_id, $locked->product_id);
             }
 
             return $locked->refresh();

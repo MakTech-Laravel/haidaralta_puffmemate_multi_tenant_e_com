@@ -28,6 +28,36 @@ export type StorefrontProduct = {
     views: string;
 };
 
+export type StorefrontPack = {
+    id: string;
+    slug: string;
+    branchSlug: string;
+    name: string;
+    eyebrow: string;
+    description: string;
+    image: string;
+    price: string;
+    currency?: string;
+    savings?: string | null;
+    stockLeft?: number | null;
+};
+
+export type StorefrontFeaturedPack = StorefrontPack & {
+    regularPrice: string;
+    discountPercent: number;
+    branchName: string;
+    items: { name: string; quantity: number }[];
+};
+
+export type StorefrontPackDetail = Omit<StorefrontFeaturedPack, 'items'> & {
+    items: { name: string; quantity: number; image: string }[];
+    images: string[];
+    productCount: number;
+    totalUnits: number;
+    startsAt: string | null;
+    endsAt: string | null;
+};
+
 export type StorefrontFeature = {
     title: string;
     description: string;

@@ -149,12 +149,12 @@ test('storefront home best selling and new arrival products come from catalog ta
             ->where('bestSellingProducts.0.id', 'tagged-best-seller')
             ->where('bestSellingProducts.0.name', 'Tagged Best Seller')
             ->where('bestSellingProducts.0.description', 'Gold Pack • 20 Cigarettes')
-            ->where('bestSellingProducts.0.price', '$14.00')
+            ->where('bestSellingProducts.0.price', 'AUD 14.00')
             ->where('bestSellingProducts.0', fn ($card): bool => ! array_key_exists('stock', collect($card)->all()))
             ->has('newArrivalProducts', 1)
             ->where('newArrivalProducts.0.id', 'tagged-new-arrival')
             ->where('newArrivalProducts.0.description', 'Cool Mint • 15 pcs')
-            ->where('newArrivalProducts.0.price', '$9.90')
+            ->where('newArrivalProducts.0.price', 'AUD 9.90')
             ->where('newArrivalProducts.0', fn ($card): bool => ! array_key_exists('stock', collect($card)->all())));
 });
 
@@ -221,8 +221,8 @@ test('storefront product cards omit stock and use catalog price without a branch
     expect($card)->not->toHaveKey('stock')
         ->and($card['id'])->toBe('card-mapper-pack')
         ->and($card['description'])->toBe('Menthol Pack • 20 Cigarettes')
-        ->and($card['price'])->toBe('$12.50')
-        ->and($card['compareAtPrice'])->toBe('$15.00')
+        ->and($card['price'])->toBe('AUD 12.50')
+        ->and($card['compareAtPrice'])->toBe('AUD 15.00')
         ->and($card['views'])->toBe('0');
 });
 

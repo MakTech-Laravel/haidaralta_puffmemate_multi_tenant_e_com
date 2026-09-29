@@ -11,25 +11,31 @@ import { cn } from '@/lib/utils';
 type ProductGalleryProps = {
     images: string[];
     alt: string;
+    fallbackImage?: string;
+    mainClassName?: string;
     className?: string;
 };
 
 export function ProductGallery({
     images,
     alt,
+    fallbackImage = '/images/storefront/product-marlboro-gold.jpg',
+    mainClassName,
     className,
 }: ProductGalleryProps) {
-    const gallery =
-        images.length > 0
-            ? images
-            : ['/images/storefront/product-marlboro-gold.jpg'];
+    const gallery = images.length > 0 ? images : [fallbackImage];
     const [activeIndex, setActiveIndex] = useState(0);
     const activeImage = gallery[activeIndex] ?? gallery[0];
     const showThumbNav = gallery.length > 5;
 
     return (
         <div className={cn('flex flex-col gap-3', className)}>
-            <div className="bg-muted relative aspect-square overflow-hidden">
+            <div
+                className={cn(
+                    'bg-muted relative aspect-square overflow-hidden',
+                    mainClassName,
+                )}
+            >
                 <div
                     className="absolute inset-0 bg-cover bg-center"
                     style={{ backgroundImage: `url(${activeImage})` }}
@@ -42,17 +48,17 @@ export function ProductGallery({
                 opts={{ align: 'start', dragFree: true }}
                 className={cn('w-full', showThumbNav && 'px-8')}
             >
-                <CarouselContent className="-ml-2">
+                <CarouselContent className="-ml-1.5">
                     {gallery.map((image, index) => (
                         <CarouselItem
                             key={`${image}-${index}`}
-                            className="basis-1/5 pl-2"
+                            className="basis-auto pl-1.5"
                         >
                             <button
                                 type="button"
                                 onClick={() => setActiveIndex(index)}
                                 className={cn(
-                                    'bg-muted relative mx-auto aspect-square w-full max-w-16 overflow-hidden border-2 transition sm:max-w-20',
+                                    'bg-muted relative size-16 overflow-hidden rounded-md border-2 transition sm:size-20',
                                     index === activeIndex
                                         ? 'border-primary'
                                         : 'hover:border-border border-transparent',

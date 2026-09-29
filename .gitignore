@@ -28,5 +28,3 @@ yarn-error.log
 /.nova
 /.zed
 
-.gitignore
-branch_structure.json

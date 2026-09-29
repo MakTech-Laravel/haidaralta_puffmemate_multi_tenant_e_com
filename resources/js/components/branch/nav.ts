@@ -61,6 +61,12 @@ export function buildBranchNav(
             icon: Package,
             permissions: ['manage-branch-products'],
         }),
+        navLink({
+            title: 'Packs & Saves',
+            href: `/branch/${slug}/packs-saves`,
+            icon: Package2,
+            permissions: ['manage-branch-products'],
+        }),
         ...(!showBranchPricing && branchCanManageCatalogPricing
             ? [
                   navLink({

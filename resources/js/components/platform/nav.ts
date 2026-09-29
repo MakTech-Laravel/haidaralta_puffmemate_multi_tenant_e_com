@@ -229,6 +229,12 @@ export function buildPlatformNav(
                         permissions: ['manage-catalog'],
                     }),
                     navLink({
+                        title: 'Packs & Saves',
+                        href: '/platform/packs-saves',
+                        icon: Package2,
+                        permissions: ['manage-catalog'],
+                    }),
+                    navLink({
                         title: 'Shop price ranges',
                         href: '/platform/price-ranges',
                         icon: CircleDollarSign,

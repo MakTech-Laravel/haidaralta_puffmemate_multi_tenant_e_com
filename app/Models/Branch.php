@@ -105,6 +105,14 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
     }
 
     /**
+     * @return HasMany<Pack, $this>
+     */
+    public function packs(): HasMany
+    {
+        return $this->hasMany(Pack::class);
+    }
+
+    /**
      * @return HasMany<BranchProductPrice, $this>
      */
     public function productPrices(): HasMany
