@@ -1,11 +1,20 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { Pencil } from 'lucide-react';
-import PacksSavesController from '@/actions/App/Http/Controllers/Branch/PacksSavesController';
-import { type PackProductOption } from '@/components/branch/branch-pack-form';
-import Heading from '@/components/heading';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Head, Link, setLayoutProps } from "@inertiajs/react";
+import { Pencil } from "lucide-react";
+import PacksSavesController from "@/actions/App/Http/Controllers/Branch/PacksSavesController";
+import { type PackProductOption } from "@/components/branch/branch-pack-form";
+import Heading from "@/components/heading";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+} from "@/components/ui/carousel";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 type Branch = { id: number; name: string; slug: string };
 
@@ -38,11 +47,11 @@ function formatAud(value: string): string {
 }
 
 function offerLabel(pack: PackShow): string {
-    if (pack.offer_type === 'percent') {
+    if (pack.offer_type === "percent") {
         return `${Number(pack.offer_value)}% off`;
     }
 
-    if (pack.offer_type === 'fixed') {
+    if (pack.offer_type === "fixed") {
         return `${formatAud(pack.offer_value)} off`;
     }
 
@@ -56,14 +65,22 @@ export default function BranchPacksSavesShow({
     branch: Branch;
     pack: PackShow;
 }) {
+    const gallery =
+        pack.gallery.length > 0
+            ? pack.gallery
+            : [{ id: 1, url: pack.image_url ?? "" }];
+    const [activeIndex, setActiveIndex] = useState(0);
+    const activeImage = gallery[activeIndex] ?? gallery[0];
+    const showThumbNav = gallery.length > 3;
+
     setLayoutProps({
         breadcrumbs: [
             {
-                title: 'Dashboard',
+                title: "Dashboard",
                 href: `/branch/${branch.slug}/dashboard`,
             },
             {
-                title: 'Packs & Saves',
+                title: "Packs & Saves",
                 href: PacksSavesController.index.url(branch.slug),
             },
             {
@@ -104,38 +121,77 @@ export default function BranchPacksSavesShow({
 
                 <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
                     <section className="border-border/80 bg-card space-y-4 rounded-2xl border p-5 shadow-sm">
-                        <Avatar className="aspect-square size-full max-h-64 rounded-xl">
-                            <AvatarImage
-                                src={pack.image_url ?? undefined}
-                                alt={pack.name}
-                                className="object-contain"
-                            />
-                            <AvatarFallback className="rounded-xl text-2xl">
-                                {initials(pack.name)}
-                            </AvatarFallback>
-                        </Avatar>
-                        {pack.gallery.length > 0 ? (
-                            <div className="grid grid-cols-4 gap-2">
-                                {pack.gallery.map((image) => (
-                                    <img
-                                        key={image.id}
-                                        src={image.url}
-                                        alt=""
-                                        className="bg-muted/20 aspect-square rounded-md object-contain"
-                                    />
+                        <div className="bg-muted relative aspect-square overflow-hidden">
+                            {activeImage?.url ? (
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center"
+                                    style={{
+                                        backgroundImage: `url(${activeImage.url})`,
+                                    }}
+                                    role="img"
+                                    aria-label={pack.name}
+                                />
+                            ) : (
+                                <div className="text-muted-foreground flex h-full items-center justify-center">
+                                    No image
+                                </div>
+                            )}
+                        </div>
+
+                        <Carousel
+                            opts={{ align: "start", dragFree: true }}
+                            className={cn("w-full", showThumbNav && "px-8")}
+                        >
+                            <CarouselContent className="-ml-2">
+                                {gallery.map((image, index) => (
+                                    <CarouselItem
+                                        key={`${image.url}-${index}`}
+                                        className="basis-1/3 pl-2"
+                                    >
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setActiveIndex(index)
+                                            }
+                                            className={cn(
+                                                "bg-muted relative mx-auto aspect-square w-full max-w-16 overflow-hidden border-2 transition sm:max-w-20",
+                                                index === activeIndex
+                                                    ? "border-primary"
+                                                    : "hover:border-border border-transparent",
+                                            )}
+                                            aria-label={`View image ${index + 1}`}
+                                            aria-current={
+                                                index === activeIndex
+                                                    ? "true"
+                                                    : undefined
+                                            }
+                                        >
+                                            <div
+                                                className="absolute inset-0 bg-cover bg-center"
+                                                style={{
+                                                    backgroundImage: `url(${image.url})`,
+                                                }}
+                                                aria-hidden
+                                            />
+                                        </button>
+                                    </CarouselItem>
                                 ))}
-                            </div>
-                        ) : null}
+                            </CarouselContent>
+                            {showThumbNav ? (
+                                <>
+                                    <CarouselPrevious className="left-0 size-7" />
+                                    <CarouselNext className="right-0 size-7" />
+                                </>
+                            ) : null}
+                        </Carousel>
                     </section>
 
                     <section className="border-border/80 bg-card space-y-5 rounded-2xl border p-5 shadow-sm sm:p-6">
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge
-                                variant={
-                                    pack.status ? 'default' : 'secondary'
-                                }
+                                variant={pack.status ? "default" : "secondary"}
                             >
-                                {pack.status ? 'Active' : 'Inactive'}
+                                {pack.status ? "Active" : "Inactive"}
                             </Badge>
                             <Badge variant="outline">{offerLabel(pack)}</Badge>
                             <Badge variant="outline">
@@ -168,8 +224,8 @@ export default function BranchPacksSavesShow({
                                 </dt>
                                 <dd>
                                     {pack.starts_at || pack.ends_at
-                                        ? `${pack.starts_at ?? '—'} – ${pack.ends_at ?? '—'}`
-                                        : 'Always on'}
+                                        ? `${pack.starts_at ?? "—"} – ${pack.ends_at ?? "—"}`
+                                        : "Always on"}
                                 </dd>
                             </div>
                         </dl>
@@ -197,7 +253,7 @@ export default function BranchPacksSavesShow({
                                             {item.product.name}
                                         </p>
                                         <p className="text-muted-foreground text-xs">
-                                            {item.product.sku ?? 'No SKU'}
+                                            {item.product.sku ?? "No SKU"}
                                         </p>
                                     </div>
                                     <p className="text-sm tabular-nums">
