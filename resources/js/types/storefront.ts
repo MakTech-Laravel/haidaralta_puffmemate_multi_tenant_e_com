@@ -28,6 +28,18 @@ export type StorefrontProduct = {
     views: string;
 };
 
+export type StorefrontPack = {
+    id: string;
+    name: string;
+    eyebrow: string;
+    description: string;
+    image: string;
+    price: string;
+    currency?: string;
+    savings?: string | null;
+    stockLeft?: number | null;
+};
+
 export type StorefrontFeature = {
     title: string;
     description: string;

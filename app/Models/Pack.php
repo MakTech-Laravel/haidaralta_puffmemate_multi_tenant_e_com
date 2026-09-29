@@ -87,7 +87,7 @@ class Pack extends Model implements DataTableConfigurable
      */
     public function items(): HasMany
     {
-        return $this->hasMany(PackItem::class);
+        return $this->hasMany(PackItem::class)->orderBy('id');
     }
 
     /**

@@ -253,14 +253,14 @@ export function BranchPackForm({
 
     const hasStockIssues = Object.keys(stockIssues).length > 0;
 
+    const itemErrors = errors as Record<string, string | undefined>;
+
     // Server-side per-item error (e.g. items.0.quantity / items.0.product_id).
     function serverLineError(index: number): string | undefined {
-        const bag = errors as Record<string, string | undefined>;
-
         return (
-            bag[`items.${index}.quantity`] ??
-            bag[`items.${index}.product_id`] ??
-            bag[`items.${index}`]
+            itemErrors[`items.${index}.quantity`] ??
+            itemErrors[`items.${index}.product_id`] ??
+            itemErrors[`items.${index}`]
         );
     }
 
@@ -504,11 +504,7 @@ export function BranchPackForm({
                                 This count is reserved from each product’s
                                 on-hand stock.
                             </p>
-                            {/* Stock errors are shown per product below,
-                                so hide this one when a line already has an issue. */}
-                            {!hasStockIssues ? (
-                                <InputError message={errors.quantity} />
-                            ) : null}
+                            <InputError message={errors.quantity} />
                         </div>
 
                         <div className="space-y-2">
@@ -931,7 +927,7 @@ export function BranchPackForm({
                                 Add at least 2 products to make a pack.
                             </p>
                         ) : null}
-                        <InputError message={errors.items} />
+                        <InputError message={itemErrors.items} />
                     </div>
                 </section>
             </div>

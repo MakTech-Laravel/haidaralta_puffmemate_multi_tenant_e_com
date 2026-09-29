@@ -144,7 +144,8 @@ test('store is rejected when a line lacks stock', function () {
         ->from(route('branch.packs-saves.create', $this->branch))
         ->post(route('branch.packs-saves.store', $this->branch), packPayload($first, $second, 2))
         ->assertRedirect(route('branch.packs-saves.create', $this->branch))
-        ->assertInvalid(['quantity']);
+        ->assertInvalid(['items.0.quantity'])
+        ->assertValid(['quantity', 'items.1.quantity']);
 
     expect(Pack::query()->count())->toBe(0)
         ->and(
@@ -233,6 +234,36 @@ test('increasing pack quantity reserves more stock and decreasing releases it', 
                 ->where('type', InventoryTransactionType::Release)
                 ->exists(),
         )->toBeTrue();
+});
+
+test('increasing pack quantity beyond a line stock reports the error on that line', function () {
+    $first = stockedProduct($this->branch, 20);
+    $second = stockedProduct($this->branch, 5);
+
+    $this->actingAs($this->staff, 'branch')
+        ->post(route('branch.packs-saves.store', $this->branch), packPayload($first, $second, 2));
+
+    $pack = Pack::query()->firstOrFail();
+
+    $this->actingAs($this->staff, 'branch')
+        ->from(route('branch.packs-saves.edit', [$this->branch, $pack]))
+        ->put(route('branch.packs-saves.update', [$this->branch, $pack]), [
+            'name' => $pack->name,
+            'offer_type' => $pack->offer_type->value,
+            'offer_value' => $pack->offer_value,
+            'quantity' => 4,
+            'status' => true,
+        ])
+        ->assertInvalid(['items.1.quantity'])
+        ->assertValid(['quantity', 'items.0.quantity']);
+
+    expect($pack->refresh()->quantity)->toBe(2)
+        ->and(
+            Inventory::query()
+                ->where('product_id', $second->id)
+                ->whereNull('variant_id')
+                ->value('quantity'),
+        )->toBe(1);
 });
 
 test('a pack that reserved the last units stays active while other packs needing that sku turn off', function () {

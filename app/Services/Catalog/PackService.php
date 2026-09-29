@@ -277,15 +277,21 @@ class PackService
      */
     private function assertStock(Branch $branch, array $items, int $packQuantity): void
     {
-        foreach ($items as $item) {
+        $messages = [];
+
+        foreach ($items as $index => $item) {
             $needed = $item['quantity'] * $packQuantity;
             $onHand = $this->availability->remainingOnHand($branch->id, $item['product']->id);
 
             if ($onHand < $needed) {
-                throw ValidationException::withMessages([
-                    'quantity' => 'Not enough stock to allocate this pack. '.$item['product']->name.' needs '.$needed.' units.',
-                ]);
+                $messages["items.{$index}.quantity"] = $onHand <= 0
+                    ? 'Out of stock. '.$item['product']->name.' has no stock available.'
+                    : 'Not enough stock. '.$item['product']->name.' needs '.$needed.' units but only '.$onHand.' available.';
             }
+        }
+
+        if ($messages !== []) {
+            throw ValidationException::withMessages($messages);
         }
     }
 
@@ -336,15 +342,15 @@ class PackService
 
     private function allocate(Branch $branch, Pack $pack, int $packQuantity, ?User $actor): void
     {
-        foreach ($pack->items as $item) {
-            $this->adjustItem($branch, $pack, $item, $packQuantity, InventoryTransactionType::Reserve, $actor);
+        foreach ($pack->items->values() as $index => $item) {
+            $this->adjustItem($branch, $pack, $item, $index, $packQuantity, InventoryTransactionType::Reserve, $actor);
         }
     }
 
     private function release(Branch $branch, Pack $pack, int $packQuantity, ?User $actor): void
     {
-        foreach ($pack->items as $item) {
-            $this->adjustItem($branch, $pack, $item, $packQuantity, InventoryTransactionType::Release, $actor);
+        foreach ($pack->items->values() as $index => $item) {
+            $this->adjustItem($branch, $pack, $item, $index, $packQuantity, InventoryTransactionType::Release, $actor);
         }
     }
 
@@ -352,6 +358,7 @@ class PackService
         Branch $branch,
         Pack $pack,
         PackItem $item,
+        int $index,
         int $packQuantity,
         InventoryTransactionType $type,
         ?User $actor,
@@ -380,7 +387,7 @@ class PackService
             );
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages([
-                'quantity' => $exception->getMessage(),
+                "items.{$index}.quantity" => $exception->getMessage(),
             ]);
         }
     }

@@ -11,6 +11,7 @@ paths:
   - app/Models/Category.php
   - app/Models/Product.php
   - 'app/Models/{Notification,UserNotification}.php'
+  - app/Services/Catalog/PackService.php
 ---
 
 # Catalog
@@ -62,3 +63,6 @@ Optional pack_label + pieces_per_pack + pack_unit on products. Compose card line
 
 ## In-app notifications are one parent plus per-user rows
 Notification is the parent message; UserNotification is the per-recipient inbox row (soft deletes, unique notification_id + user_id). Features must call NotificationService or notify_users(); do not write these rows by hand.
+
+## Pack stock errors are keyed per line
+PackService reports stock shortfalls as items.{index}.quantity (every short line at once), never under quantity, so BranchPackForm shows them under the selected product. Index follows Pack::items() ordered by id, the same order the edit form renders frozen lines. quantity errors are only for the Packs to sell field rules.
