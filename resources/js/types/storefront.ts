@@ -121,3 +121,7 @@ export type StorefrontPaymentMethod = {
 export function formatStorefrontMoney(amount: number): string {
     return `$${amount.toFixed(2)}`;
 }
+
+export function formatStorefrontAud(amount: string): string {
+    return `A$${amount}`;
+}
