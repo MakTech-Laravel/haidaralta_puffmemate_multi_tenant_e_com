@@ -2,6 +2,7 @@
 paths:
   - resources/js/pages/storefront/category.tsx
   - resources/js/pages/storefront/checkout.tsx
+  - 'resources/js/pages/storefront/{shop,category,product}.tsx'
 ---
 
 # Pages Storefront
@@ -17,3 +18,6 @@ In React, useHttp.transform() returns undefined. Call transform(() => ({ latitud
 
 ## React useForm transform is not chainable
 Call form.transform(...) then form.post(url) on the next line. form.transform(...).post() throws because transform returns undefined in React.
+
+## Storefront product grids are 2 columns on mobile
+ProductCard grids on shop, category and product (similar products) start at grid-cols-2 on mobile, matching the home carousel's basis-1/2. Never use grid-cols-1 for product card grids; larger breakpoints (md/lg/xl) add columns.
