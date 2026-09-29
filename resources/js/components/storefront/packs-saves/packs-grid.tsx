@@ -1,4 +1,5 @@
 import { PackCard } from '@/components/storefront/pack-card';
+import { show as packShow } from '@/routes/packs-saves';
 import type { StorefrontPack } from '@/types/storefront';
 import { cn } from '@/lib/utils';
 
@@ -39,7 +40,14 @@ export function PacksGrid({
                 ) : (
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-6">
                         {packs.map((pack) => (
-                            <PackCard key={pack.id} pack={pack} />
+                            <PackCard
+                                key={pack.id}
+                                pack={pack}
+                                href={packShow.url({
+                                    branch: pack.branchSlug,
+                                    pack: pack.slug,
+                                })}
+                            />
                         ))}
                     </div>
                 )}

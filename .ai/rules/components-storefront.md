@@ -3,6 +3,7 @@ paths:
   - resources/js/components/storefront/shop-filters-sidebar.tsx
   - resources/js/components/storefront/product-card.tsx
   - resources/js/components/storefront/pack-card.tsx
+  - 'resources/js/components/storefront/**'
 ---
 
 # Components Storefront
@@ -21,3 +22,6 @@ ProductCard shows CompactNumber-formatted views from mapProductCard (1k, 1.2k, 1
 
 ## PackCard is presentational only
 Storefront PackCard takes a StorefrontPack (types/storefront.ts) plus optional href, onBuyNow, buying, disabled. It fetches no data and has no cart wiring; pages own that. Save badge shows only when savings is set, the 'N left' pill only when stockLeft is set. Image/text sit in the Link when href is given; the Buy now button stays outside the Link. Red is bg-primary fill only; price text stays foreground.
+
+## Storefront product and pack prices show AUD, never $
+Product and pack cards and detail pages display prices as "AUD 0.00" ("Start from AUD 0.00" for multi-price products). Backend labels come from BranchProductPriceDisplay::formatAud (label, compare_at_formatted, StorefrontCatalog compareAtPrice); pack components render "{currency} {price}" from plain numbers. Cart, checkout, orders and portals still use $ until changed separately.

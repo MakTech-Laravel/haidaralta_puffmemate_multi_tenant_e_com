@@ -33,6 +33,8 @@ test('packs and saves page lists only active in-window packs as cards', function
             ->has('packs', 1)
             ->where('packs.0', [
                 'id' => 'sydney:starter-duo',
+                'slug' => 'starter-duo',
+                'branchSlug' => 'sydney',
                 'name' => 'Starter Duo',
                 'eyebrow' => '5-Pack Bundle',
                 'description' => 'Two devices, one price.',

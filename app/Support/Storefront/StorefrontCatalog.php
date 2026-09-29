@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Pack;
+use App\Models\PackImage;
 use App\Models\PackItem;
 use App\Models\Product;
 use App\Models\ProductReview;
@@ -381,7 +382,7 @@ class StorefrontCatalog
             'badges' => array_values(array_unique(array_filter([$categoryName, ...$tagBadges]))),
             'images' => $gallery !== [] ? $gallery : [$image],
             'price' => $displayPrice,
-            'compareAtPrice' => $compareAt === null ? '' : '$'.number_format((float) $compareAt, 2),
+            'compareAtPrice' => $compareAt === null ? '' : BranchProductPriceDisplay::formatAud((float) $compareAt),
             'availability' => $branch === null
                 ? 'Select a branch'
                 : ($stock > 0 ? 'Available' : 'Out of stock'),
@@ -618,7 +619,7 @@ class StorefrontCatalog
             'name' => $product->name,
             'description' => self::cardDescription($product),
             'price' => $price['label'] ?? 'Select a branch',
-            'compareAtPrice' => $compareAt === null ? '' : '$'.number_format((float) $compareAt, 2),
+            'compareAtPrice' => $compareAt === null ? '' : BranchProductPriceDisplay::formatAud((float) $compareAt),
             'category' => $categoryName,
             'image' => MediaUrl::resolve($product->image) ?? '/images/storefront/logo.png',
             'views' => CompactNumber::format((int) $product->views),
@@ -628,7 +629,7 @@ class StorefrontCatalog
     /**
      * Active, in-window branch packs for the storefront Packs & Saves grid.
      *
-     * @return list<array{id: string, name: string, eyebrow: string, description: string, image: string, price: string, currency: string, savings: string|null, stockLeft: int}>
+     * @return list<array{id: string, slug: string, branchSlug: string, name: string, eyebrow: string, description: string, image: string, price: string, currency: string, savings: string|null, stockLeft: int}>
      */
     public static function packs(?Branch $branch = null, ?string $search = null, ?string $sort = null): array
     {
@@ -660,7 +661,7 @@ class StorefrontCatalog
      * The platform-highlighted active pack, falling back to the active pack
      * with the biggest saving, shown as the flagship offer.
      *
-     * @return array{id: string, name: string, eyebrow: string, description: string, image: string, price: string, currency: string, savings: string|null, stockLeft: int, regularPrice: string, discountPercent: int, branchName: string, items: list<array{name: string, quantity: int}>}|null
+     * @return array{id: string, slug: string, branchSlug: string, name: string, eyebrow: string, description: string, image: string, price: string, currency: string, savings: string|null, stockLeft: int, regularPrice: string, discountPercent: int, branchName: string, items: list<array{name: string, quantity: int}>}|null
      */
     public static function featuredPack(?Branch $branch = null): ?array
     {
@@ -677,11 +678,114 @@ class StorefrontCatalog
             return null;
         }
 
+        return [
+            ...self::mapPackCard($pack),
+            ...self::packOffer($pack),
+        ];
+    }
+
+    /**
+     * An active, in-window pack addressed by its branch slug and pack slug.
+     */
+    public static function findActivePack(string $branchSlug, string $packSlug): ?Pack
+    {
+        return self::activePacksQuery(null)
+            ->where('slug', $packSlug)
+            ->whereHas('branch', fn (Builder $builder) => $builder->where('slug', $branchSlug))
+            ->with(['images', 'items.product:id,name,slug,image'])
+            ->first();
+    }
+
+    /**
+     * Storefront pack detail payload.
+     *
+     * @return array{id: string, slug: string, branchSlug: string, name: string, eyebrow: string, description: string, image: string, price: string, currency: string, savings: string|null, stockLeft: int, regularPrice: string, discountPercent: int, branchName: string, items: list<array{name: string, quantity: int, image: string}>, images: list<string>, productCount: int, totalUnits: int, startsAt: string|null, endsAt: string|null}
+     */
+    public static function packDetail(Pack $pack): array
+    {
+        $images = collect([$pack->imageUrl()])
+            ->merge($pack->images->map(fn (PackImage $image): string => $image->url()))
+            ->filter(fn (?string $url): bool => is_string($url) && $url !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        return [
+            ...self::mapPackCard($pack),
+            ...self::packOffer($pack),
+            'items' => $pack->items
+                ->map(fn (PackItem $item): array => [
+                    'name' => $item->product->name ?? '',
+                    'quantity' => $item->quantity,
+                    'image' => $item->product?->imageUrl() ?? '',
+                ])
+                ->values()
+                ->all(),
+            'images' => $images,
+            'productCount' => $pack->items->count(),
+            'totalUnits' => (int) $pack->items->sum('quantity'),
+            'startsAt' => $pack->starts_at?->format('j M Y'),
+            'endsAt' => $pack->ends_at?->format('j M Y'),
+        ];
+    }
+
+    /**
+     * Other active packs, same branch first, then biggest saving.
+     *
+     * @return list<array{id: string, slug: string, branchSlug: string, name: string, eyebrow: string, description: string, image: string, price: string, currency: string, savings: string|null, stockLeft: int}>
+     */
+    public static function relatedPacks(Pack $pack, int $limit = 4): array
+    {
+        return self::activePacksQuery(null)
+            ->whereKeyNot($pack->id)
+            ->orderByRaw('case when branch_id = ? then 0 else 1 end', [$pack->branch_id])
+            ->orderByRaw('(subtotal - pack_price) desc')
+            ->orderBy('id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (Pack $related): array => self::mapPackCard($related))
+            ->values()
+            ->all();
+    }
+
+    public static function activePackCount(Branch $branch): int
+    {
+        return self::activePacksQuery($branch)->count();
+    }
+
+    /**
+     * @return array{id: string, slug: string, branchSlug: string, name: string, eyebrow: string, description: string, image: string, price: string, currency: string, savings: string|null, stockLeft: int}
+     */
+    public static function mapPackCard(Pack $pack): array
+    {
+        $savings = (float) $pack->subtotal - (float) $pack->pack_price;
+        $units = (int) $pack->items->sum('quantity');
+        $branchSlug = (string) ($pack->branch->slug ?? $pack->branch_id);
+
+        return [
+            'id' => $branchSlug.':'.$pack->slug,
+            'slug' => $pack->slug,
+            'branchSlug' => $branchSlug,
+            'name' => $pack->name,
+            'eyebrow' => $units > 0 ? $units.'-Pack Bundle' : 'Pack Bundle',
+            'description' => (string) $pack->description,
+            'image' => $pack->imageUrl() ?? '',
+            'price' => number_format((float) $pack->pack_price, 2, '.', ''),
+            'currency' => 'AUD',
+            'savings' => $savings > 0 ? number_format($savings, 2, '.', '') : null,
+            'stockLeft' => $pack->quantity,
+        ];
+    }
+
+    /**
+     * @return array{regularPrice: string, discountPercent: int, branchName: string, items: list<array{name: string, quantity: int}>}
+     */
+    private static function packOffer(Pack $pack): array
+    {
         $subtotal = (float) $pack->subtotal;
         $savings = max(0, $subtotal - (float) $pack->pack_price);
 
         return [
-            ...self::mapPackCard($pack),
             'regularPrice' => number_format($subtotal, 2, '.', ''),
             'discountPercent' => $subtotal > 0 ? (int) round($savings / $subtotal * 100) : 0,
             'branchName' => $pack->branch->name ?? '',
@@ -692,27 +796,6 @@ class StorefrontCatalog
                 ])
                 ->values()
                 ->all(),
-        ];
-    }
-
-    /**
-     * @return array{id: string, name: string, eyebrow: string, description: string, image: string, price: string, currency: string, savings: string|null, stockLeft: int}
-     */
-    public static function mapPackCard(Pack $pack): array
-    {
-        $savings = (float) $pack->subtotal - (float) $pack->pack_price;
-        $units = (int) $pack->items->sum('quantity');
-
-        return [
-            'id' => ($pack->branch->slug ?? $pack->branch_id).':'.$pack->slug,
-            'name' => $pack->name,
-            'eyebrow' => $units > 0 ? $units.'-Pack Bundle' : 'Pack Bundle',
-            'description' => (string) $pack->description,
-            'image' => $pack->imageUrl() ?? '',
-            'price' => number_format((float) $pack->pack_price, 2, '.', ''),
-            'currency' => 'AUD',
-            'savings' => $savings > 0 ? number_format($savings, 2, '.', '') : null,
-            'stockLeft' => $pack->quantity,
         ];
     }
 

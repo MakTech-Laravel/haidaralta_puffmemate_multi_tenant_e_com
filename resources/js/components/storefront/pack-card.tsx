@@ -95,10 +95,10 @@ export function PackCard({
             <div className="mx-4 flex items-end justify-between gap-3 border-t py-4">
                 <div className="min-w-0">
                     <p className="text-foreground text-2xl leading-none font-bold tabular-nums">
-                        {pack.price}
+                        {currency} {pack.price}
                     </p>
                     <p className="text-muted-foreground mt-1 text-xs">
-                        {currency} inc. tax
+                        inc. tax
                     </p>
                 </div>
                 <Button

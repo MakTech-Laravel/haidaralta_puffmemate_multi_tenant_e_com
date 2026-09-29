@@ -36,7 +36,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/app.tsx, resources/js/components/pwa/** | .ai/rules/components-pwa.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/components-stock.md |
 | resources/js/components/storefront/checkout/** | .ai/rules/components-storefront-checkout.md |
-| resources/js/components/storefront/shop-filters-sidebar.tsx, resources/js/components/storefront/product-card.tsx, resources/js/components/storefront/pack-card.tsx | .ai/rules/components-storefront.md |
+| resources/js/components/storefront/shop-filters-sidebar.tsx, resources/js/components/storefront/product-card.tsx, resources/js/components/storefront/pack-card.tsx, resources/js/components/storefront/** | .ai/rules/components-storefront.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
 | resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php,resources/js/components/{platform,branch}/nav.ts | .ai/rules/componentsplatformbranch.md |
 | config/*.php, config/scout.php | .ai/rules/config.md |
@@ -111,7 +111,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/layouts/settings/**,resources/js/pages/settings/**,routes/settings.php | .ai/rules/pages-settings.md |
 | resources/js/pages/storefront/category.tsx, resources/js/pages/storefront/checkout.tsx | .ai/rules/pages-storefront.md |
 | app/Http/Requests/Storefront/PlaceOrderRequest.php,app/Services/Storefront/CheckoutService.php,resources/js/{pages,components}/storefront/checkout/** | .ai/rules/pagescomponents-storefront-checkout.md |
-| resources/js/{pages,components}/storefront/packs-saves*/** | .ai/rules/pagescomponents-storefront.md |
+| resources/js/{pages,components}/storefront/packs-saves*/**, resources/js/{pages,components}/storefront/pack*/** | .ai/rules/pagescomponents-storefront.md |
 | resources/js/components/admin/shift-*.{ts,tsx},resources/js/pages/{platform,branch}/shifts/assign.tsx | .ai/rules/pagesplatformbranch-shifts.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/platform/branch-staff/**, resources/js/components/admin/transfer-employee-sheet.tsx,resources/js/pages/platform/branch-staff/** | .ai/rules/platform-branch-staff.md |

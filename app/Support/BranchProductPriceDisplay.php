@@ -64,8 +64,8 @@ class BranchProductPriceDisplay
             'label' => $amount === null
                 ? null
                 : ($isFrom
-                    ? 'Start from $'.number_format($amount, 2)
-                    : '$'.number_format($amount, 2)),
+                    ? 'Start from '.self::formatAud($amount)
+                    : self::formatAud($amount)),
             'is_from' => $isFrom,
             'count' => $prices->count(),
         ];
@@ -116,7 +116,7 @@ class BranchProductPriceDisplay
             'effective' => $effective,
             'compare_at' => $compareAt,
             'has_discount' => $list['has_discount'],
-            'label' => '$'.number_format($effective, 2),
+            'label' => self::formatAud($effective),
             'is_from' => false,
             'count' => 1,
         ];
@@ -245,7 +245,7 @@ class BranchProductPriceDisplay
                 'amount' => $effective,
                 'compare_at' => $selling,
                 'has_discount' => true,
-                'compare_at_formatted' => '$'.number_format($selling, 2),
+                'compare_at_formatted' => self::formatAud($selling),
             ];
         }
 
@@ -254,7 +254,7 @@ class BranchProductPriceDisplay
                 'amount' => $selling,
                 'compare_at' => $regular,
                 'has_discount' => false,
-                'compare_at_formatted' => '$'.number_format($regular, 2),
+                'compare_at_formatted' => self::formatAud($regular),
             ];
         }
 
@@ -264,6 +264,14 @@ class BranchProductPriceDisplay
             'has_discount' => false,
             'compare_at_formatted' => '',
         ];
+    }
+
+    /**
+     * Storefront price label, e.g. "AUD 12.00".
+     */
+    public static function formatAud(float $amount): string
+    {
+        return 'AUD '.number_format($amount, 2);
     }
 
     public static function discountIsLive(BranchProductPrice $price): bool
