@@ -25,3 +25,6 @@ Storefront PackCard takes a StorefrontPack (types/storefront.ts) plus optional h
 
 ## Storefront product and pack prices show AUD, never $
 Product and pack cards and detail pages display prices as "AUD 0.00" ("Start from AUD 0.00" for multi-price products). Backend labels come from BranchProductPriceDisplay::formatAud (label, compare_at_formatted, StorefrontCatalog compareAtPrice); pack components render "{currency} {price}" from plain numbers. Cart, checkout, orders and portals still use $ until changed separately.
+
+## PackCard sizes itself with container queries
+PackCard sits in 2/3/4-column grids (packs grid, related packs), so it uses @container on the article and @xs: (card >= 320px) variants instead of screen breakpoints. Narrow cards use smaller badge/pill/text and stack the price above a full-width Buy Now button; @xs restores the side-by-side footer.

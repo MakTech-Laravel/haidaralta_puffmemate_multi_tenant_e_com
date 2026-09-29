@@ -58,7 +58,7 @@ export function PackDetailSummary({ pack, className }: PackDetailSummaryProps) {
 
             <PackBuyControls
                 stockLeft={pack.stockLeft}
-                buyLabel={`Buy now ${currency} ${pack.price}`}
+                buyLabel={`Buy now`}
             />
 
             <div className="flex flex-wrap items-start justify-between gap-3 text-xs">
