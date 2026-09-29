@@ -49,6 +49,29 @@ test('guests can add update and remove cart items', function () {
     expect(CartItem::query()->count())->toBe(0);
 });
 
+test('adding to cart from a product card counts a view', function () {
+    $product = storefrontCartProduct(['slug' => 'card-view-item']);
+
+    $this->post(route('cart.store'), [
+        'product' => $product->slug,
+        'quantity' => 1,
+        'count_view' => true,
+    ])->assertRedirect();
+
+    expect($product->fresh()->views)->toBe(1);
+});
+
+test('adding to cart without count_view leaves views unchanged', function () {
+    $product = storefrontCartProduct(['slug' => 'pdp-add-item']);
+
+    $this->post(route('cart.store'), [
+        'product' => $product->slug,
+        'quantity' => 1,
+    ])->assertRedirect();
+
+    expect($product->fresh()->views)->toBe(0);
+});
+
 test('guest cart survives refresh and a rejected checkout', function () {
     $product = storefrontCartProduct(['slug' => 'persist-cart-item']);
 

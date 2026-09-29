@@ -119,17 +119,30 @@ const visitOptions = {
     only: [...CART_PROPS] as string[],
 } as const;
 
+type AddToCartOptions = {
+    countView?: boolean;
+    onSuccess?: () => void;
+};
+
 export function addToCart(
     productSlug: string,
     quantity = 1,
     onFinish?: () => void,
+    options: AddToCartOptions = {},
 ): void {
     router.post(
         store.url(),
-        { product: productSlug, quantity },
+        {
+            product: productSlug,
+            quantity,
+            ...(options.countView ? { count_view: true } : {}),
+        },
         {
             ...visitOptions,
-            onSuccess: notifyAddedToCart,
+            onSuccess: () => {
+                notifyAddedToCart();
+                options.onSuccess?.();
+            },
             onFinish,
         },
     );

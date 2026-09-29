@@ -41,6 +41,10 @@ class CartController extends Controller
             return back()->withErrors(['product' => $exception->getMessage()]);
         }
 
+        if ($request->boolean('count_view')) {
+            $product->increment('views');
+        }
+
         return back();
     }
 

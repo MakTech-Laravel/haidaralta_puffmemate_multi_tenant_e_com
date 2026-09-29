@@ -8,6 +8,7 @@ use App\Support\Storefront\StorefrontCatalog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Inertia\Support\Header;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ProductController extends Controller
@@ -28,7 +29,7 @@ class ProductController extends Controller
             throw new NotFoundHttpException;
         }
 
-        if (strtolower((string) $request->header('Purpose')) !== 'prefetch') {
+        if ($this->shouldCountView($request)) {
             $model->increment('views');
         }
 
@@ -43,5 +44,18 @@ class ProductController extends Controller
                 : route('shop', absolute: false),
             'tab' => $request->string('tab')->toString(),
         ]);
+    }
+
+    /**
+     * Only real page visits count: prefetches and Inertia partial reloads
+     * (such as the cart reload after Add to cart redirects back) do not.
+     */
+    private function shouldCountView(Request $request): bool
+    {
+        if (strtolower((string) $request->header('Purpose')) === 'prefetch') {
+            return false;
+        }
+
+        return $request->header(Header::PARTIAL_COMPONENT) !== 'storefront/product';
     }
 }

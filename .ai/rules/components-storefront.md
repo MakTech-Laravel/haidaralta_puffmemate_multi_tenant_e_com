@@ -18,7 +18,7 @@ Shop dual-range price slider does not show floating value bubbles/tooltips; valu
 Shared ProductCard keeps image/title/price as a PDP link and a separate Add to cart button (never nest the button in the Link). Cards add quantity 1 via addToCart(product.id) — card id is the product slug. Variants stay on the PDP.
 
 ## Product cards show compact views
-ProductCard shows CompactNumber-formatted views from mapProductCard (1k, 1.2k, 1m, 1b). Do not prefetch the PDP link. Do not nest Add to cart inside the Link.
+ProductCard shows CompactNumber-formatted views from mapProductCard (1k, 1.2k, 1m, 1b) as a pill in the bottom-right of the image (Offer badge stays top-right). Card Add to cart sends countView and bumps the shown count locally when it is a plain number. Do not prefetch the PDP link. Do not nest Add to cart inside the Link.
 
 ## PackCard is presentational only
 Storefront PackCard takes a StorefrontPack (types/storefront.ts) plus optional href, onBuyNow, buying, disabled. It fetches no data and has no cart wiring; pages own that. Save badge shows only when savings is set, the 'N left' pill only when stockLeft is set. Image/text sit in the Link when href is given; the Buy now button stays outside the Link. Red is bg-primary fill only; price text stays foreground.
