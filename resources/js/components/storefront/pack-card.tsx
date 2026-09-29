@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import type { StorefrontPack } from '@/types/storefront';
+import { formatStorefrontAud, type StorefrontPack } from '@/types/storefront';
 import { cn } from '@/lib/utils';
 
 const FALLBACK_IMAGE = '/images/storefront/logo.png';
@@ -44,7 +44,6 @@ export function PackCard({
     disabled = false,
     className,
 }: PackCardProps) {
-    const currency = pack.currency ?? 'AUD';
     const imageSrc = pack.image || FALLBACK_IMAGE;
     const hasStockLeft =
         pack.stockLeft !== null && pack.stockLeft !== undefined;
@@ -60,7 +59,7 @@ export function PackCard({
                 <div className="bg-muted relative aspect-3/2 overflow-hidden">
                     {pack.savings ? (
                         <span className="bg-primary text-primary-foreground absolute top-2 left-2 z-10 max-w-[calc(100%-1rem)] truncate rounded-md px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase shadow-sm @xs:top-3 @xs:left-3 @xs:px-2.5 @xs:py-1 @xs:text-xs">
-                            Save {currency} {pack.savings}
+                            Save {formatStorefrontAud(pack.savings)}
                         </span>
                     ) : null}
                     <img
@@ -95,7 +94,7 @@ export function PackCard({
             <div className="mx-3 flex flex-col gap-2 border-t py-3 @xs:mx-4 @xs:flex-row @xs:items-end @xs:justify-between @xs:gap-3 @xs:py-4">
                 <div className="min-w-0">
                     <p className="text-foreground text-xl leading-none font-bold whitespace-nowrap tabular-nums @xs:text-2xl">
-                        {currency} {pack.price}
+                        {formatStorefrontAud(pack.price)}
                     </p>
                     <p className="text-muted-foreground mt-1 text-xs">
                         inc. tax

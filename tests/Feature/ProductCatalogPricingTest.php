@@ -151,7 +151,7 @@ test('price display uses product catalog columns when branch pricing is hidden',
 
     expect($display['amount'])->toBe(19.99)
         ->and($display['compare_at'])->toBe(24.99)
-        ->and($display['label'])->toBe('AUD 19.99')
+        ->and($display['label'])->toBe('A$19.99')
         ->and($list['selling_price'])->toBe('19.99')
         ->and($list['has_compare_at'])->toBeTrue();
 });

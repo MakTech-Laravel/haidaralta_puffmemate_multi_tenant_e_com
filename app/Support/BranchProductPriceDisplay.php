@@ -267,11 +267,11 @@ class BranchProductPriceDisplay
     }
 
     /**
-     * Storefront price label, e.g. "AUD 12.00".
+     * Storefront price label, e.g. "A$12.00".
      */
     public static function formatAud(float $amount): string
     {
-        return 'AUD '.number_format($amount, 2);
+        return 'A$'.number_format($amount, 2);
     }
 
     public static function discountIsLive(BranchProductPrice $price): bool
