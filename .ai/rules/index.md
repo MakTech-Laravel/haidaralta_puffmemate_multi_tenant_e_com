@@ -111,6 +111,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/layouts/settings/**,resources/js/pages/settings/**,routes/settings.php | .ai/rules/pages-settings.md |
 | resources/js/pages/storefront/category.tsx, resources/js/pages/storefront/checkout.tsx | .ai/rules/pages-storefront.md |
 | app/Http/Requests/Storefront/PlaceOrderRequest.php,app/Services/Storefront/CheckoutService.php,resources/js/{pages,components}/storefront/checkout/** | .ai/rules/pagescomponents-storefront-checkout.md |
+| resources/js/{pages,components}/storefront/packs-saves*/** | .ai/rules/pagescomponents-storefront.md |
 | resources/js/components/admin/shift-*.{ts,tsx},resources/js/pages/{platform,branch}/shifts/assign.tsx | .ai/rules/pagesplatformbranch-shifts.md |
 | resources/js/pages/**/permissions/** | .ai/rules/permissions.md |
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/platform/branch-staff/**, resources/js/components/admin/transfer-employee-sheet.tsx,resources/js/pages/platform/branch-staff/** | .ai/rules/platform-branch-staff.md |

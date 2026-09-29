@@ -40,6 +40,13 @@ export type StorefrontPack = {
     stockLeft?: number | null;
 };
 
+export type StorefrontFeaturedPack = StorefrontPack & {
+    regularPrice: string;
+    discountPercent: number;
+    branchName: string;
+    items: { name: string; quantity: number }[];
+};
+
 export type StorefrontFeature = {
     title: string;
     description: string;
