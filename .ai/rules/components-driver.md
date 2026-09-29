@@ -3,6 +3,7 @@ paths:
   - resources/js/components/driver/nav.ts
   - 'resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx}'
   - 'resources/js/components/driver/**'
+  - resources/js/components/driver/driver-account-sheet.tsx
 ---
 
 # Components Driver
@@ -17,7 +18,7 @@ DriverAssignedOrder may include areaId/areaLabel as address metadata for maps an
 Driver tab bar is Dashboard, Orders, Route, Earnings, Profile. Account options (edit details, security, activity, support, safety, log out) live in the header sheet, not on a field Account hub. Do not restore an Account, Activity, or Alerts footer tab.
 
 ## Header avatar opens a right sheet
-The driver header avatar opens DriverAccountSheet (right Sheet on every breakpoint), not a dropdown and not a direct /driver/account link. Keep profile, edit details (settings/profile), security, my activity, call support/branch from shared driverSupport, safety check-in, and log out. Do not reuse UserMenuContent, put End shift or Appearance in the sheet, or restore an Alerts or Account footer tab.
+The driver header avatar opens DriverAccountSheet (right Sheet on every breakpoint), not a dropdown and not a direct /driver/account link. Keep profile, edit details, security, my activity, Place order (GET /driver/place-order), call support/branch from shared driverSupport, safety check-in, and log out. Do not reuse UserMenuContent, put End shift or Appearance in the sheet, or restore an Alerts or Account footer tab.
 
 ## Driver field tab is Profile not Account
 The fifth field tab is Profile at GET /driver/profile. It is the signed-in driver’s identity, vehicle, branches, and roster. Do not turn it back into a link list. Activity stays sheet-only. Notifications stay on the header bell.
@@ -30,3 +31,6 @@ DriverAccountSheet Edit details links to driver.profile.edit, not settings/profi
 
 ## Account sheet Security is live field page
 DriverAccountSheet Security links to GET /driver/security (password update + Fortify 2FA), not settings/security and not a static display-only page.
+
+## Account sheet links Place order
+DriverAccountSheet Quick actions includes Place order linking to GET /driver/place-order. Do not add Place order as a sixth footer tab; keep it in the avatar sheet only until product asks otherwise.
