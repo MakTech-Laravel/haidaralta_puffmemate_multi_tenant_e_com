@@ -15,7 +15,7 @@ export function FeaturesBar({ features, className }: FeaturesBarProps) {
                         <li
                             key={feature.title}
                             className={cn(
-                                'relative flex flex-col items-center justify-center gap-1 px-6 py-10 text-center sm:py-12',
+                                'relative flex flex-col items-center justify-center gap-1 px-6 py-6 text-center sm:py-12',
                                 index > 0 &&
                                     'before:bg-border before:absolute before:top-1/2 before:left-0 before:hidden before:h-12 before:w-px before:-translate-y-1/2 lg:before:block',
                             )}
