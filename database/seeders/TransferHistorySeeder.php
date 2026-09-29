@@ -7,6 +7,7 @@ use App\Enums\TransferType;
 use App\Models\Branch;
 use App\Models\User;
 use App\Models\UserTransferHistory;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Seeder;
 
 /**
@@ -15,6 +16,8 @@ use Illuminate\Database\Seeder;
  */
 class TransferHistorySeeder extends Seeder
 {
+    use ReportsSeedProgress;
+
     public function run(): void
     {
         $actor = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->first();
@@ -129,11 +132,11 @@ class TransferHistorySeeder extends Seeder
             ],
         ];
 
-        foreach ($rows as $row) {
+        $this->withSeedProgress('Transfers', $rows, function (array $row) use ($actor): void {
             $user = User::query()->where('email', $row['email'])->first();
 
             if ($user === null) {
-                continue;
+                return;
             }
 
             $exists = UserTransferHistory::query()
@@ -145,7 +148,7 @@ class TransferHistorySeeder extends Seeder
                 ->exists();
 
             if ($exists) {
-                continue;
+                return;
             }
 
             UserTransferHistory::query()->create([
@@ -160,6 +163,6 @@ class TransferHistorySeeder extends Seeder
                 'reason' => $row['reason'],
                 'transferred_by' => $actor?->id,
             ]);
-        }
+        }, fn (): string => sprintf('%d transfer history rows on file.', UserTransferHistory::query()->count()));
     }
 }

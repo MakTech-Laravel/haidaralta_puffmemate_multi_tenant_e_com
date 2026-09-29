@@ -4,10 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\PriceRange;
 use App\Models\ShopPriceFilterSetting;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Seeder;
 
 class PriceRangeSeeder extends Seeder
 {
+    use ReportsSeedProgress;
+
     /**
      * Seed shop price-range presets (AUD bands) and slider bounds.
      */
@@ -30,17 +33,15 @@ class PriceRangeSeeder extends Seeder
             ['label' => '$10,000 & above', 'slug' => '10000-above', 'min_amount' => 10000, 'max_amount' => null, 'sort_order' => 7],
         ];
 
-        foreach ($ranges as $range) {
-            PriceRange::query()->updateOrCreate(
-                ['slug' => $range['slug']],
-                [
-                    'label' => $range['label'],
-                    'min_amount' => $range['min_amount'],
-                    'max_amount' => $range['max_amount'],
-                    'sort_order' => $range['sort_order'],
-                    'status' => true,
-                ],
-            );
-        }
+        $this->withSeedProgress('Price bands', $ranges, fn (array $range) => PriceRange::query()->updateOrCreate(
+            ['slug' => $range['slug']],
+            [
+                'label' => $range['label'],
+                'min_amount' => $range['min_amount'],
+                'max_amount' => $range['max_amount'],
+                'sort_order' => $range['sort_order'],
+                'status' => true,
+            ],
+        ), fn (): string => sprintf('%d shop price bands ready.', PriceRange::query()->count()));
     }
 }

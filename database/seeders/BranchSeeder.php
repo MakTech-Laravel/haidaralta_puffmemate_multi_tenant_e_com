@@ -3,11 +3,14 @@
 namespace Database\Seeders;
 
 use App\Models\Branch;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
 class BranchSeeder extends Seeder
 {
+    use ReportsSeedProgress;
+
     public const SYDNEY_CBD = 'sydney-cbd';
 
     public const MELBOURNE_COLLINS = 'melbourne-collins';
@@ -169,14 +172,14 @@ class BranchSeeder extends Seeder
 
         $rolesSeeder = app(RolesAndPermissionsSeeder::class);
 
-        foreach ($branches as $branchData) {
+        $this->withSeedProgress('Branches', $branches, function (array $branchData) use ($rolesSeeder): void {
             $branch = Branch::query()->updateOrCreate(
                 ['slug' => $branchData['slug']],
                 $branchData,
             );
 
             $rolesSeeder->seedBranchRolesForBranch($branch);
-        }
+        }, sprintf('%d core branches ready.', count($branches)));
     }
 
     private function clearObsoleteSeedLogos(): void

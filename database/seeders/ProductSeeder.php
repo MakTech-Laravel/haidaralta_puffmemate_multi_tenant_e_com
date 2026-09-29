@@ -7,11 +7,13 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\User;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Database\Seeders\Concerns\SeedsCatalogMedia;
 use Illuminate\Database\Seeder;
 
 class ProductSeeder extends Seeder
 {
+    use ReportsSeedProgress;
     use SeedsCatalogMedia;
 
     /**
@@ -737,6 +739,19 @@ class ProductSeeder extends Seeder
             'variants' => [],
         ]);
 
+        $this->runQueuedSeedSteps(
+            'Products',
+            fn (int $total): string => sprintf('%d core products ready.', $total),
+        );
+    }
+
+    /**
+     * @param  list<Category>  $categories
+     * @param  array<string, mixed>  $data
+     */
+    private function product(array $categories, ?User $creator, array $data): void
+    {
+        $this->queueSeedStep(fn () => $this->createProduct($categories, $creator, $data));
     }
 
     /**
@@ -761,7 +776,7 @@ class ProductSeeder extends Seeder
      *     gallery_urls?: list<string>
      * }  $data
      */
-    private function product(array $categories, ?User $creator, array $data): Product
+    private function createProduct(array $categories, ?User $creator, array $data): Product
     {
         $imagePath = $this->resolveImagePath(
             publicRelative: $data['image'] ?? null,
