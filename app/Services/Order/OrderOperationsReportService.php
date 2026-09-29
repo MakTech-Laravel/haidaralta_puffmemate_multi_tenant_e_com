@@ -3,6 +3,7 @@
 namespace App\Services\Order;
 
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Branch;
 use App\Models\DeliveryAttempt;
@@ -21,8 +22,8 @@ class OrderOperationsReportService
     {
         return [
             'orders' => Order::query()->count(),
-            'delivered' => Order::query()->where('status', FulfillmentStatus::Delivered)->count(),
-            'sales' => (float) Order::query()->where('status', FulfillmentStatus::Delivered)->sum('total_amount'),
+            'delivered' => Order::query()->where('status', OrderStatus::Delivered)->count(),
+            'sales' => (float) Order::query()->where('status', OrderStatus::Delivered)->sum('total_amount'),
             'transferCost' => (float) StockTransfer::query()->sum('estimated_cost'),
             'payments' => $this->paymentTotals(),
         ];
@@ -59,16 +60,19 @@ class OrderOperationsReportService
      */
     public function driver(User $driver): array
     {
+        $collections = Payment::query()
+            ->where('collected_by', $driver->id)
+            ->whereIn('status', [PaymentStatus::Collected, PaymentStatus::Verified]);
+
         return [
             'delivered' => OrderFulfillment::query()
                 ->where('driver_id', $driver->id)
                 ->where('status', FulfillmentStatus::Delivered)
                 ->count(),
             'failedAttempts' => DeliveryAttempt::query()->where('driver_id', $driver->id)->count(),
-            'collected' => (float) Payment::query()
-                ->where('collected_by', $driver->id)
-                ->whereIn('status', [PaymentStatus::Collected, PaymentStatus::Verified])
-                ->sum('amount'),
+            'collected' => (float) $collections->clone()->sum('amount'),
+            'collectedCod' => (float) $collections->clone()->where('gateway', 'cod')->sum('amount'),
+            'collectedPos' => (float) $collections->clone()->where('gateway', 'pos')->sum('amount'),
         ];
     }
 

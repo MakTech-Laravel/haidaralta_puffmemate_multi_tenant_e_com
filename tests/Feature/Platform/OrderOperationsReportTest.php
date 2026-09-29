@@ -2,9 +2,12 @@
 
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
+use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
+use App\Models\Payment;
 use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\Order\OrderOperationsReportService;
@@ -50,6 +53,57 @@ test('sydney delivered sales are absent from melbourne branch reports', function
         ->and($reports->branch($melbourne)['outboundTransfers'])->toBe(1)
         ->and($reports->branch($melbourne)['outboundTransferCost'])->toBe(17.5)
         ->and($reports->platform()['transferCost'])->toBe(17.5);
+});
+
+test('a failed attempt increments the driver failure count and a cancellation does not', function () {
+    $driver = User::factory()->create(['user_type' => UserType::DRIVER]);
+
+    $delivered = Order::factory()->create();
+    OrderFulfillment::factory()->forOrder($delivered)->create([
+        'driver_id' => $driver->id,
+        'status' => FulfillmentStatus::Delivered,
+    ]);
+
+    $cancelled = Order::factory()->create();
+    OrderFulfillment::factory()->forOrder($cancelled)->create([
+        'driver_id' => $driver->id,
+        'status' => FulfillmentStatus::Cancelled,
+    ]);
+
+    $reports = app(OrderOperationsReportService::class);
+
+    expect($reports->driver($driver)['delivered'])->toBe(1)
+        ->and($reports->driver($driver)['failedAttempts'])->toBe(0);
+});
+
+test('driver collections split by cod and pos', function () {
+    $driver = User::factory()->create(['user_type' => UserType::DRIVER]);
+
+    $codOrder = Order::factory()->create();
+    OrderFulfillment::factory()->forOrder($codOrder)->create(['driver_id' => $driver->id]);
+    Payment::factory()->create([
+        'order_id' => $codOrder->id,
+        'gateway' => 'cod',
+        'amount' => 40,
+        'status' => PaymentStatus::Collected,
+        'collected_by' => $driver->id,
+    ]);
+
+    $posOrder = Order::factory()->create();
+    OrderFulfillment::factory()->forOrder($posOrder)->create(['driver_id' => $driver->id]);
+    Payment::factory()->create([
+        'order_id' => $posOrder->id,
+        'gateway' => 'pos',
+        'amount' => 25,
+        'status' => PaymentStatus::Verified,
+        'collected_by' => $driver->id,
+    ]);
+
+    $report = app(OrderOperationsReportService::class)->driver($driver);
+
+    expect($report['collectedCod'])->toBe(40.0)
+        ->and($report['collectedPos'])->toBe(25.0)
+        ->and($report['collected'])->toBe(65.0);
 });
 
 test('platform admins can open the order operations report', function () {

@@ -211,6 +211,26 @@ test('unknown driver orders return 404', function () {
         ->assertNotFound();
 });
 
+test('a driver cannot open another drivers assigned order', function () {
+    $owner = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $other = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($owner);
+
+    $this->actingAs($other, 'driver')
+        ->get(route('driver.orders.show', $order))
+        ->assertNotFound();
+
+    $this->actingAs($other, 'driver')
+        ->get(route('driver.orders.chat', $order))
+        ->assertNotFound();
+});
+
 test('deliver rejects a short otp', function () {
     $driver = User::factory()->create([
         'user_type' => UserType::DRIVER,

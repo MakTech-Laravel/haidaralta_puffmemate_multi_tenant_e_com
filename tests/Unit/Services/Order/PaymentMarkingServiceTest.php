@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\PaymentTransaction;
 use App\Models\User;
 use App\Services\Order\PaymentMarkingService;
+use Illuminate\Validation\ValidationException;
 
 test('collecting payment twice stays collected without a second ledger event', function () {
     $collector = User::factory()->create();
@@ -22,4 +23,31 @@ test('collecting payment twice stays collected without a second ledger event', f
         ->and($second->status)->toBe(PaymentStatus::Collected)
         ->and($order->refresh()->payment_status)->toBe(PaymentStatus::Collected)
         ->and(PaymentTransaction::query()->where('event_type', 'collected')->count())->toBe(1);
+});
+
+test('verifying before collecting is rejected', function () {
+    $verifier = User::factory()->create();
+    $order = Order::factory()->create(['payment_status' => PaymentStatus::PendingCollection]);
+    OrderFulfillment::factory()->forOrder($order)->create();
+    Payment::factory()->create(['order_id' => $order->id, 'status' => PaymentStatus::PendingCollection]);
+
+    $service = app(PaymentMarkingService::class);
+
+    expect(fn () => $service->verify($order, $verifier))->toThrow(ValidationException::class);
+});
+
+test('verifying twice stays verified without a second ledger event', function () {
+    $collector = User::factory()->create();
+    $order = Order::factory()->create(['payment_status' => PaymentStatus::PendingCollection]);
+    OrderFulfillment::factory()->forOrder($order)->create();
+    Payment::factory()->create(['order_id' => $order->id, 'status' => PaymentStatus::PendingCollection]);
+
+    $service = app(PaymentMarkingService::class);
+    $service->collect($order, $collector);
+    $first = $service->verify($order->refresh(), $collector);
+    $second = $service->verify($order->refresh(), $collector);
+
+    expect($first->status)->toBe(PaymentStatus::Verified)
+        ->and($second->status)->toBe(PaymentStatus::Verified)
+        ->and(PaymentTransaction::query()->where('event_type', 'verified')->count())->toBe(1);
 });
