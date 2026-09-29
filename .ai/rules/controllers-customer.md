@@ -1,9 +1,13 @@
 ---
 paths:
   - 'app/Http/Controllers/Customer/**'
+  - app/Http/Controllers/Customer/ProductToReviewController.php
 ---
 
 # Controllers Customer
 
 ## Customer account writes stay on Customer stack
 Customer /account mutations (profile + shipping, password, billing) go through Customer\AccountController, CustomerAccountService, and app/Http/Requests/Customer/* — not Settings ProfileController/SecurityController. Persist structured addresses on customer_addresses (unique user_id+type shipping|billing). Account 2FA is Fortify-only: enable/confirm/disable/QR/recovery use Fortify routes (`@/routes/two-factor`). Do not add a Customer 2FA service or table. Login still skips the Fortify 2FA challenge.
+
+## Write review returns to the list
+POST customer.product-to-review.store persists the review then redirects to customer.product-to-review.index. GET show for an already-reviewed order+product also redirects to the list. View Review still uses storefront products.show?tab=reviews.

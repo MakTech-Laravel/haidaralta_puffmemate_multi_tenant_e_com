@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ProductCard } from '@/components/storefront/product-card';
 import { ProductGallery } from '@/components/storefront/product/product-gallery';
 import { ProductResponsibleRetail } from '@/components/storefront/product/product-responsible-retail';
@@ -47,15 +47,35 @@ type ProductPageProps = {
     product: ProductDetail;
     similarProducts: StorefrontProduct[];
     backHref: string;
+    tab?: string;
 };
+
+function resolveTab(tab: string | undefined): ProductSectionTabId {
+    if (
+        tab === 'reviews' ||
+        tab === 'shipping' ||
+        tab === 'responsible' ||
+        tab === 'specifications'
+    ) {
+        return tab;
+    }
+
+    return 'specifications';
+}
 
 export default function StorefrontProduct({
     product,
     similarProducts,
     backHref,
+    tab,
 }: ProductPageProps) {
-    const [activeTab, setActiveTab] =
-        useState<ProductSectionTabId>('specifications');
+    const [activeTab, setActiveTab] = useState<ProductSectionTabId>(() =>
+        resolveTab(tab),
+    );
+
+    useEffect(() => {
+        setActiveTab(resolveTab(tab));
+    }, [tab]);
 
     return (
         <>

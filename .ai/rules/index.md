@@ -41,13 +41,13 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php,resources/js/components/{platform,branch}/nav.ts | .ai/rules/componentsplatformbranch.md |
 | config/*.php, config/scout.php | .ai/rules/config.md |
 | app/Models/Branch.php,app/Http/Controllers/Branch/** | .ai/rules/controllers-branch.md |
-| app/Http/Controllers/Customer/** | .ai/rules/controllers-customer.md |
+| app/Http/Controllers/Customer/**, app/Http/Controllers/Customer/ProductToReviewController.php | .ai/rules/controllers-customer.md |
 | app/Http/Controllers/Driver/** | .ai/rules/controllers-driver.md |
 | app/Services/Workforce/**,app/Http/Controllers/{Platform,Branch}/** | .ai/rules/controllers-platform-branch.md |
 | app/Http/Controllers/Platform/AdminController.php, app/Http/Controllers/Platform/BranchStaffController.php, app/Http/Controllers/Platform/*Shift*.php, app/Http/Controllers/Platform/AnnouncementController.php | .ai/rules/controllers-platform.md |
 | resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php,resources/js/components/branch/nav.ts | .ai/rules/controllers-settings-js-components-branch.md |
 | resources/js/pages/settings/profile.tsx,app/Http/Controllers/Settings/ProfileController.php | .ai/rules/controllers-settings.md |
-| app/Http/Controllers/Storefront/HomeController.php, app/Http/Controllers/Storefront/CategoryController.php | .ai/rules/controllers-storefront.md |
+| app/Http/Controllers/Storefront/HomeController.php, app/Http/Controllers/Storefront/CategoryController.php, app/Http/Controllers/Storefront/ProductController.php | .ai/rules/controllers-storefront.md |
 | app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/controllers.md |
 | app/Services/Conversation/**,resources/js/components/conversation/** | .ai/rules/conversation.md |
 | {app/Support/ConversationInbox.php,app/Http/Controllers/*/ConversationController.php,resources/js/components/conversation/**,resources/js/pages/*/conversations/**} | .ai/rules/conversations.md |
@@ -82,6 +82,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Jobs/SendAnnouncementEmailJob.php | .ai/rules/jobs.md |
 | app/Services/Driver/**,app/Http/Requests/{Platform,Branch}/*Driver*.php,resources/js/pages/{platform,branch}/drivers/**,resources/js/components/admin/driver-branch-assign-sheet.tsx | .ai/rules/js-components-admin.md |
 | resources/js/components/branch/**, resources/js/components/branch/product-inventory-panel.tsx | .ai/rules/js-components-branch.md |
+| resources/js/components/customer/product-to-review-*.tsx, resources/js/components/customer/write-product-review-form.tsx | .ai/rules/js-components-customer.md |
 | app/Http/Controllers/Driver/OrderController.php,resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/js-components-driver.md |
 | resources/js/components/manage-two-factor.tsx,resources/js/components/manage-passkeys.tsx | .ai/rules/js-components.md |
 | app/Services/Conversation/**,app/Events/Conversation*,resources/js/components/conversation/**,resources/js/hooks/use-chat-scroll.ts | .ai/rules/js-hooks.md |
@@ -136,6 +137,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/shift-*.tsx,database/seeders/WorkforceShiftSeeder.php,app/Support/WorkforcePayload.php | .ai/rules/seeders-support.md |
 | database/seeders/**, database/seeders/WorkforceShiftSeeder.php, database/seeders/CatalogSeeder.php, database/seeders/CategorySeeder.php, database/seeders/ProductSeeder.php, database/seeders/PriceRangeSeeder.php | .ai/rules/seeders.md |
 | app/Services/Announcements/** | .ai/rules/services-announcements.md |
+| app/Services/Customer/** | .ai/rules/services-customer.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
 | app/Http/Controllers/Branch/GeneralSettingsController.php,resources/js/pages/branch/settings/**,resources/js/components/branch/nav.ts | .ai/rules/settings-js-components-branch.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |
@@ -144,6 +146,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/stock.md |
 | app/Services/Storefront/CheckoutService.php,resources/js/components/storefront/checkout/** | .ai/rules/storefront-checkout.md |
 | resources/js/{pages,components}/storefront/**,app/Http/Controllers/Storefront/{Cart,Checkout}Controller.php | .ai/rules/storefront-http-controllers-storefront.md |
+| app/Support/Storefront/StorefrontCatalog.php,resources/js/pages/storefront/product.tsx | .ai/rules/storefront-js-pages-storefront.md |
 | app/Support/Storefront/StorefrontShopQuery.php,resources/js/pages/storefront/shop.tsx,app/Models/PriceRange.php,config/scout.php | .ai/rules/storefront-models.md |
 | app/Services/Catalog/PriceRangeService.php,app/Models/ShopPriceFilterSetting.php,resources/js/pages/platform/catalog/price-ranges/**,resources/js/components/storefront/shop-filters-sidebar.tsx,config/catalog.php,database/seeders/PriceRangeSeeder.php | .ai/rules/storefront-seeders.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts, app/Support/Storefront/**, app/Http/Middleware/HandleInertiaRequests.php, app/Support/Storefront/StorefrontCatalog.php,config/catalog.php, app/Support/Storefront/StorefrontShopQuery.php | .ai/rules/storefront.md |
