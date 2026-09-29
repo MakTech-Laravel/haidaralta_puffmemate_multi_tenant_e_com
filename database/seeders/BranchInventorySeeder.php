@@ -8,10 +8,13 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\Inventory\BranchPricingService;
 use App\Services\Inventory\InventoryService;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Seeder;
 
 class BranchInventorySeeder extends Seeder
 {
+    use ReportsSeedProgress;
+
     /**
      * Seed cigarettes / tobacco / vapes / pouches / accessories stock per branch (no Faker).
      * Depends on BranchSeeder + CategorySeeder + ProductSeeder.
@@ -154,6 +157,11 @@ class BranchInventorySeeder extends Seeder
             $branch = Branch::query()->where('slug', $slug)->firstOrFail();
             $this->seedBranch($branch, $inventory, $pricing, $this->regionalAssortment());
         }
+
+        $this->runQueuedSeedSteps(
+            'Core stock',
+            fn (int $total): string => sprintf('%d hand-tuned stock and price lines across the 9 core branches.', $total),
+        );
     }
 
     /**
@@ -198,31 +206,44 @@ class BranchInventorySeeder extends Seeder
         array $lines,
     ): void {
         foreach ($lines as $slug => $line) {
-            $product = Product::query()->where('slug', $slug)->firstOrFail();
-
-            $row = $inventory->firstOrCreate($branch, $product);
-            $selling = (float) $line['price'];
-            $buying = number_format(round($selling * 0.62, 2), 2, '.', '');
-            $regular = number_format(round($selling * 1.15, 2), 2, '.', '');
-
-            if ($row->quantity === 0 && $line['qty'] > 0) {
-                $inventory->adjust(
-                    $row,
-                    InventoryTransactionType::StockIn,
-                    $line['qty'],
-                    unitCost: $buying,
-                );
-            }
-
-            $pricing->upsert($branch, $product, [
-                'buying_price' => $buying,
-                'regular_price' => $regular,
-                'selling_price' => $line['price'],
-                'discount_type' => $line['discount_type'],
-                'discount_price' => $line['discount'],
-                'status' => true,
-            ]);
+            $this->queueSeedStep(fn () => $this->seedLine($branch, $inventory, $pricing, $slug, $line));
         }
+    }
+
+    /**
+     * @param  array{qty: int, min: int, price: string, discount_type: string, discount: string|null}  $line
+     */
+    private function seedLine(
+        Branch $branch,
+        InventoryService $inventory,
+        BranchPricingService $pricing,
+        string $slug,
+        array $line,
+    ): void {
+        $product = Product::query()->where('slug', $slug)->firstOrFail();
+
+        $row = $inventory->firstOrCreate($branch, $product);
+        $selling = (float) $line['price'];
+        $buying = number_format(round($selling * 0.62, 2), 2, '.', '');
+        $regular = number_format(round($selling * 1.15, 2), 2, '.', '');
+
+        if ($row->quantity === 0 && $line['qty'] > 0) {
+            $inventory->adjust(
+                $row,
+                InventoryTransactionType::StockIn,
+                $line['qty'],
+                unitCost: $buying,
+            );
+        }
+
+        $pricing->upsert($branch, $product, [
+            'buying_price' => $buying,
+            'regular_price' => $regular,
+            'selling_price' => $line['price'],
+            'discount_type' => $line['discount_type'],
+            'discount_price' => $line['discount'],
+            'status' => true,
+        ]);
     }
 
     /**
@@ -234,21 +255,22 @@ class BranchInventorySeeder extends Seeder
         string $productSlug,
         array $variantSkus,
     ): void {
-        $product = Product::query()->where('slug', $productSlug)->firstOrFail();
-
         foreach ($variantSkus as $sku => $qty) {
-            $variant = ProductVariant::query()->where('sku', $sku)->firstOrFail();
+            $this->queueSeedStep(function () use ($branch, $inventory, $productSlug, $sku, $qty): void {
+                $product = Product::query()->where('slug', $productSlug)->firstOrFail();
+                $variant = ProductVariant::query()->where('sku', $sku)->firstOrFail();
 
-            $row = $inventory->firstOrCreate($branch, $product, $variant);
+                $row = $inventory->firstOrCreate($branch, $product, $variant);
 
-            if ($row->quantity === 0 && $qty > 0) {
-                $inventory->adjust(
-                    $row,
-                    InventoryTransactionType::StockIn,
-                    $qty,
-                    unitCost: '10.00',
-                );
-            }
+                if ($row->quantity === 0 && $qty > 0) {
+                    $inventory->adjust(
+                        $row,
+                        InventoryTransactionType::StockIn,
+                        $qty,
+                        unitCost: '10.00',
+                    );
+                }
+            });
         }
     }
 
@@ -261,19 +283,20 @@ class BranchInventorySeeder extends Seeder
         string $productSlug,
         array $variantPrices,
     ): void {
-        $product = Product::query()->where('slug', $productSlug)->firstOrFail();
-
         foreach ($variantPrices as $sku => $price) {
-            $variant = ProductVariant::query()->where('sku', $sku)->firstOrFail();
+            $this->queueSeedStep(function () use ($branch, $pricing, $productSlug, $sku, $price): void {
+                $product = Product::query()->where('slug', $productSlug)->firstOrFail();
+                $variant = ProductVariant::query()->where('sku', $sku)->firstOrFail();
 
-            $pricing->upsert($branch, $product, [
-                'buying_price' => number_format(round(((float) $price) * 0.62, 2), 2, '.', ''),
-                'regular_price' => number_format(round(((float) $price) * 1.15, 2), 2, '.', ''),
-                'selling_price' => $price,
-                'discount_type' => 'none',
-                'discount_price' => null,
-                'status' => true,
-            ], $variant);
+                $pricing->upsert($branch, $product, [
+                    'buying_price' => number_format(round(((float) $price) * 0.62, 2), 2, '.', ''),
+                    'regular_price' => number_format(round(((float) $price) * 1.15, 2), 2, '.', ''),
+                    'selling_price' => $price,
+                    'discount_type' => 'none',
+                    'discount_price' => null,
+                    'status' => true,
+                ], $variant);
+            });
         }
     }
 }

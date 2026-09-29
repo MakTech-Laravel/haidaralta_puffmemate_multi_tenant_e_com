@@ -13,6 +13,7 @@ use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Models\User;
 use Carbon\CarbonInterface;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -25,6 +26,8 @@ use Illuminate\Support\Str;
  */
 class OrderConversationSeeder extends Seeder
 {
+    use ReportsSeedProgress;
+
     /**
      * @return list<array{
      *     order_number: string,
@@ -152,15 +155,15 @@ class OrderConversationSeeder extends Seeder
             return;
         }
 
-        foreach ($this->threads() as $thread) {
+        $this->withSeedProgress('Threads', $this->threads(), function (array $thread) use ($customer, $driver): void {
             $branchUser = User::query()->where('email', $thread['branch_email'])->first();
 
             if ($branchUser === null || $branchUser->branch_id === null) {
-                continue;
+                return;
             }
 
             $this->seedThread($thread, $customer, $driver, $branchUser);
-        }
+        }, fn (int $total): string => sprintf('%d showcase order conversations ready.', $total));
     }
 
     /**

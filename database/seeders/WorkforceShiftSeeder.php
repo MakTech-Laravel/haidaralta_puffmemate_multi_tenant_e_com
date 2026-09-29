@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\UserShiftAssignment;
 use App\Services\Workforce\AssignShiftService;
 use App\Services\Workforce\ShiftTemplateService;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Seeder;
 
 /**
@@ -22,6 +23,8 @@ use Illuminate\Database\Seeder;
  */
 class WorkforceShiftSeeder extends Seeder
 {
+    use ReportsSeedProgress;
+
     private const WEEKDAYS = [1, 2, 3, 4, 5];
 
     private const LATE_DAYS = [1, 2, 3, 4, 5, 6];
@@ -166,6 +169,9 @@ class WorkforceShiftSeeder extends Seeder
             ],
         ];
 
+        $this->startSeedProgress('Shifts', count($branchPlans) + 2);
+        $this->advanceSeedProgress();
+
         foreach ($branchPlans as $slug => $plan) {
             $branch = Branch::query()->where('slug', $slug)->firstOrFail();
 
@@ -232,6 +238,8 @@ class WorkforceShiftSeeder extends Seeder
                     'reason' => 'Morning dispatch from '.$branch->name.'.',
                 ]);
             }
+
+            $this->advanceSeedProgress();
         }
 
         $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -275,6 +283,12 @@ class WorkforceShiftSeeder extends Seeder
             'days_of_week' => self::ALL_DAYS,
             'reason' => 'Covering dispatch while Daniel is on leave.',
         ]);
+
+        $this->finishSeedProgress(fn (): string => sprintf(
+            '%d shift templates and %d assignments ready.',
+            ShiftTemplate::query()->count(),
+            UserShiftAssignment::query()->count(),
+        ));
     }
 
     private function replaceOvernightOps(): void

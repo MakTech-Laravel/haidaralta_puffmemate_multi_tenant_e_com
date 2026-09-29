@@ -4,11 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Support\Storefront\StorefrontCatalog;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Database\Seeders\Concerns\SeedsCatalogMedia;
 use Illuminate\Database\Seeder;
 
 class CategorySeeder extends Seeder
 {
+    use ReportsSeedProgress;
     use SeedsCatalogMedia;
 
     /**
@@ -19,89 +21,102 @@ class CategorySeeder extends Seeder
     {
         $this->clearObsoleteSeedStorage();
 
-        $this->category([
-            'name' => 'Cigarettes',
-            'slug' => 'cigarettes',
-            'parent_id' => null,
-            'featured' => true,
-            'show_in_nav' => true,
-            'nav_sort' => 1,
-            'slogan' => 'Premium International Brands',
-            'image' => 'images/storefront/category-cigarettes.png',
-            'color_code' => ['mode' => 'solid', 'color' => '#F5E6D3'],
-        ]);
-
-        $vapes = $this->category([
-            'name' => 'Vapes & Disposables',
-            'slug' => 'vapes',
-            'parent_id' => null,
-            'featured' => true,
-            'show_in_nav' => true,
-            'nav_sort' => 3,
-            'slogan' => 'Disposable & Rechargeable',
-            'image' => 'images/storefront/category-vapes.png',
-            'color_code' => ['mode' => 'solid', 'color' => '#E8F0FE'],
-        ]);
-
-        $this->category([
-            'name' => 'Tobacco',
-            'slug' => 'tobacco',
-            'parent_id' => null,
-            'featured' => true,
-            'show_in_nav' => true,
-            'nav_sort' => 2,
-            'slogan' => 'Rolling & Specialty Blends',
-            'image' => 'images/storefront/category-tobacco.png',
-            'color_code' => [
-                'mode' => 'gradient',
-                'from' => '#1F2937',
-                'to' => '#6B7280',
-                'angle' => 140,
+        $roots = [
+            [
+                'name' => 'Cigarettes',
+                'slug' => 'cigarettes',
+                'parent_id' => null,
+                'featured' => true,
+                'show_in_nav' => true,
+                'nav_sort' => 1,
+                'slogan' => 'Premium International Brands',
+                'image' => 'images/storefront/category-cigarettes.png',
+                'color_code' => ['mode' => 'solid', 'color' => '#F5E6D3'],
             ],
-        ]);
+            [
+                'name' => 'Vapes & Disposables',
+                'slug' => 'vapes',
+                'parent_id' => null,
+                'featured' => true,
+                'show_in_nav' => true,
+                'nav_sort' => 3,
+                'slogan' => 'Disposable & Rechargeable',
+                'image' => 'images/storefront/category-vapes.png',
+                'color_code' => ['mode' => 'solid', 'color' => '#E8F0FE'],
+            ],
+            [
+                'name' => 'Tobacco',
+                'slug' => 'tobacco',
+                'parent_id' => null,
+                'featured' => true,
+                'show_in_nav' => true,
+                'nav_sort' => 2,
+                'slogan' => 'Rolling & Specialty Blends',
+                'image' => 'images/storefront/category-tobacco.png',
+                'color_code' => [
+                    'mode' => 'gradient',
+                    'from' => '#1F2937',
+                    'to' => '#6B7280',
+                    'angle' => 140,
+                ],
+            ],
+            [
+                'name' => 'Nicotine Pouches',
+                'slug' => 'nicotine-pouches',
+                'parent_id' => null,
+                'featured' => true,
+                'show_in_nav' => true,
+                'nav_sort' => 4,
+                'slogan' => 'Smoke free alternatives',
+                'image' => 'images/storefront/category-pouches.png',
+                'color_code' => ['mode' => 'solid', 'color' => '#FEF3C7'],
+            ],
+            [
+                'name' => 'Accessories',
+                'slug' => 'accessories',
+                'parent_id' => null,
+                'featured' => true,
+                'show_in_nav' => false,
+                'slogan' => 'Everything you need to complete your setup',
+                'image' => 'images/storefront/category-accessories.png',
+                'color_code' => ['mode' => 'solid', 'color' => '#F1F5F9'],
+            ],
+        ];
 
-        $this->category([
-            'name' => 'Nicotine Pouches',
-            'slug' => 'nicotine-pouches',
-            'parent_id' => null,
-            'featured' => true,
-            'show_in_nav' => true,
-            'nav_sort' => 4,
-            'slogan' => 'Smoke free alternatives',
-            'image' => 'images/storefront/category-pouches.png',
-            'color_code' => ['mode' => 'solid', 'color' => '#FEF3C7'],
-        ]);
+        $vapesChildren = [
+            [
+                'name' => 'Disposables',
+                'slug' => 'disposables',
+                'featured' => false,
+                'show_in_nav' => false,
+                'image' => 'images/storefront/category-vapes.png',
+            ],
+            [
+                'name' => 'Pod Systems',
+                'slug' => 'pod-systems',
+                'featured' => false,
+                'show_in_nav' => false,
+                'image' => 'images/storefront/category-vapes.png',
+            ],
+        ];
 
-        $this->category([
-            'name' => 'Accessories',
-            'slug' => 'accessories',
-            'parent_id' => null,
-            'featured' => true,
-            'show_in_nav' => false,
-            'slogan' => 'Everything you need to complete your setup',
-            'image' => 'images/storefront/category-accessories.png',
-            'color_code' => ['mode' => 'solid', 'color' => '#F1F5F9'],
-        ]);
+        $this->startSeedProgress('Categories', count($roots) + count($vapesChildren));
 
-        $this->category([
-            'name' => 'Disposables',
-            'slug' => 'disposables',
-            'parent_id' => $vapes->id,
-            'featured' => false,
-            'show_in_nav' => false,
-            'image' => 'images/storefront/category-vapes.png',
-        ]);
+        $seededRoots = [];
 
-        $this->category([
-            'name' => 'Pod Systems',
-            'slug' => 'pod-systems',
-            'parent_id' => $vapes->id,
-            'featured' => false,
-            'show_in_nav' => false,
-            'image' => 'images/storefront/category-vapes.png',
-        ]);
+        foreach ($roots as $root) {
+            $seededRoots[$root['slug']] = $this->category($root);
+            $this->advanceSeedProgress();
+        }
+
+        foreach ($vapesChildren as $child) {
+            $this->category([...$child, 'parent_id' => $seededRoots['vapes']->id]);
+            $this->advanceSeedProgress();
+        }
 
         StorefrontCatalog::forgetNavCategories();
+
+        $this->finishSeedProgress(sprintf('%d core categories ready.', count($roots) + count($vapesChildren)));
     }
 
     /**

@@ -7,11 +7,14 @@ use App\Enums\RoleEnum;
 use App\Models\Branch;
 use App\Models\Permission;
 use App\Models\Role;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
+    use ReportsSeedProgress;
+
     public const PLATFORM_GUARD = 'platform';
 
     public const BRANCH_GUARD = 'branch';
@@ -23,8 +26,13 @@ class RolesAndPermissionsSeeder extends Seeder
     {
         $this->resetTeamContext();
 
-        $platformPermissions = $this->createPermissions(PermissionEnum::forGuard(self::PLATFORM_GUARD));
-        $this->createPermissions(PermissionEnum::forGuard(self::BRANCH_GUARD));
+        $platformCases = PermissionEnum::forGuard(self::PLATFORM_GUARD);
+        $branchCases = PermissionEnum::forGuard(self::BRANCH_GUARD);
+
+        $this->startSeedProgress('Permissions', count($platformCases) + count($branchCases) + count(RoleEnum::cases()));
+
+        $platformPermissions = $this->createPermissions($platformCases);
+        $this->createPermissions($branchCases);
 
         $this->createGuardRoles(
             self::PLATFORM_GUARD,
@@ -41,6 +49,12 @@ class RolesAndPermissionsSeeder extends Seeder
         );
 
         $this->resetTeamContext();
+
+        $this->finishSeedProgress(sprintf(
+            '%d permissions and %d platform roles ready (branch roles are seeded per branch).',
+            count($platformCases) + count($branchCases),
+            count(RoleEnum::cases()),
+        ));
     }
 
     /**
@@ -79,6 +93,8 @@ class RolesAndPermissionsSeeder extends Seeder
                 'name' => $permissionCase->value,
                 'guard_name' => $permissionCase->guard(),
             ]);
+
+            $this->advanceSeedProgress();
         }
 
         return $permissions;
@@ -128,6 +144,7 @@ class RolesAndPermissionsSeeder extends Seeder
             };
 
             $role->syncPermissions($rolePermissions);
+            $this->advanceSeedProgress();
         }
     }
 
