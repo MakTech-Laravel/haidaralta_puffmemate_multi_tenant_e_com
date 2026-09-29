@@ -1,10 +1,13 @@
 <?php
 
 use App\Enums\CartStatus;
+use App\Enums\FulfillmentStatus;
 use App\Models\Branch;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Inventory;
+use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\Order\OrderAllocationEngine;
@@ -203,4 +206,155 @@ test('equal candidates break ties with fulfillment priority', function () {
     $plan = app(OrderAllocationEngine::class)->allocate(-33.8688, 151.2093, collect([allocationCartItem($product, 1)]));
 
     expect($plan['branch']->id)->toBe($preferred->id);
+});
+
+test('a branch needing any transfer always loses to a branch needing zero transfer, regardless of cost', function () {
+    $needed = Product::factory()->create();
+    $local = Product::factory()->create();
+
+    $cheapTransferDestination = Branch::factory()->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'delivery_radius_km' => null,
+        'status' => true,
+        'transfer_handling_fee' => 0,
+        'transfer_cost_per_km' => 0,
+    ]);
+    $cheapTransferSource = Branch::factory()->create([
+        'latitude' => -33.9,
+        'longitude' => 151.2,
+        'delivery_radius_km' => null,
+        'status' => true,
+    ]);
+    $farButCompleteStock = Branch::factory()->create([
+        'latitude' => -37.8136,
+        'longitude' => 144.9631,
+        'delivery_radius_km' => null,
+        'status' => true,
+    ]);
+
+    Inventory::factory()->create(['branch_id' => $cheapTransferDestination->id, 'product_id' => $local->id, 'quantity' => 1, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $cheapTransferSource->id, 'product_id' => $needed->id, 'quantity' => 1, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $farButCompleteStock->id, 'product_id' => $local->id, 'quantity' => 1, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $farButCompleteStock->id, 'product_id' => $needed->id, 'quantity' => 1, 'status' => true]);
+
+    $plan = app(OrderAllocationEngine::class)->allocate(
+        -33.8688,
+        151.2093,
+        collect([allocationCartItem($local, 1), allocationCartItem($needed, 1)]),
+    );
+
+    expect($plan['branch']->id)->toBe($farButCompleteStock->id)
+        ->and($plan['transfers'])->toHaveCount(0);
+});
+
+test('equal candidates break ties with branch workload before priority', function () {
+    $product = Product::factory()->create();
+    $lessBusy = Branch::factory()->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'delivery_radius_km' => null,
+        'status' => true,
+        'fulfillment_priority' => 100,
+    ]);
+    $busier = Branch::factory()->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'delivery_radius_km' => null,
+        'status' => true,
+        'fulfillment_priority' => 1,
+    ]);
+    Inventory::factory()->create(['branch_id' => $lessBusy->id, 'product_id' => $product->id, 'quantity' => 5, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $busier->id, 'product_id' => $product->id, 'quantity' => 5, 'status' => true]);
+
+    $customer = User::factory()->create();
+
+    // order_fulfillments.order_id is unique (one fulfillment per order), so each
+    // open fulfillment needs its own order.
+    for ($i = 0; $i < 3; $i++) {
+        OrderFulfillment::factory()->create([
+            'branch_id' => $busier->id,
+            'order_id' => Order::factory()->create(['customer_id' => $customer->id])->id,
+            'status' => FulfillmentStatus::Pending,
+        ]);
+    }
+
+    $plan = app(OrderAllocationEngine::class)->allocate(-33.8688, 151.2093, collect([allocationCartItem($product, 1)]));
+
+    expect($plan['branch']->id)->toBe($lessBusy->id);
+});
+
+test('equal candidates break ties with fewer transferred units before priority', function () {
+    // Both destinations need a transfer (so needs_transfer ties at 1), and both
+    // pull from the same source at the same coordinates (so operational_cost,
+    // distance_km, shipping_cost and load all tie too) — isolating transferred
+    // units as the only dimension that differs, ahead of fulfillment_priority.
+    $productA = Product::factory()->create();
+    $productB = Product::factory()->create();
+
+    $fewerTransfers = Branch::factory()->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'delivery_radius_km' => null,
+        'status' => true,
+        'fulfillment_priority' => 100,
+    ]);
+    $moreTransfers = Branch::factory()->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'delivery_radius_km' => null,
+        'status' => true,
+        'fulfillment_priority' => 1,
+    ]);
+    // Placed far enough away with a tiny radius that it can never win as a direct
+    // destination itself — it exists here purely as a transfer source.
+    $source = Branch::factory()->create([
+        'latitude' => -34.0,
+        'longitude' => 151.5,
+        'delivery_radius_km' => 1,
+        'status' => true,
+    ]);
+
+    Inventory::factory()->create(['branch_id' => $fewerTransfers->id, 'product_id' => $productA->id, 'quantity' => 1, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $moreTransfers->id, 'product_id' => $productA->id, 'quantity' => 0, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $source->id, 'product_id' => $productA->id, 'quantity' => 1, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $source->id, 'product_id' => $productB->id, 'quantity' => 1, 'status' => true]);
+
+    $plan = app(OrderAllocationEngine::class)->allocate(
+        -33.8688,
+        151.2093,
+        collect([allocationCartItem($productA, 1), allocationCartItem($productB, 1)]),
+    );
+
+    expect($plan['branch']->id)->toBe($fewerTransfers->id)
+        ->and($plan['transferred_units'])->toBe(1);
+});
+
+test('allocation is deterministic when every scored dimension ties, always picking the lowest branch id', function () {
+    $product = Product::factory()->create();
+    $first = Branch::factory()->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'delivery_radius_km' => null,
+        'status' => true,
+        'fulfillment_priority' => 50,
+    ]);
+    $second = Branch::factory()->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'delivery_radius_km' => null,
+        'status' => true,
+        'fulfillment_priority' => 50,
+    ]);
+    Inventory::factory()->create(['branch_id' => $first->id, 'product_id' => $product->id, 'quantity' => 5, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $second->id, 'product_id' => $product->id, 'quantity' => 5, 'status' => true]);
+
+    $winners = [];
+
+    for ($i = 0; $i < 5; $i++) {
+        $plan = app(OrderAllocationEngine::class)->allocate(-33.8688, 151.2093, collect([allocationCartItem($product, 1)]));
+        $winners[] = $plan['branch']->id;
+    }
+
+    expect($winners)->each(fn ($id) => $id->toBe(min($first->id, $second->id)));
 });

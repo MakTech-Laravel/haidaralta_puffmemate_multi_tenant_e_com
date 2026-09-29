@@ -23,6 +23,7 @@ use App\Models\User;
 use App\Services\Conversation\ConversationService;
 use App\Services\Inventory\InventoryReservationService;
 use App\Services\Notifications\NotificationService;
+use App\Services\Order\AllocationDecisionRecorder;
 use App\Services\Order\OrderAllocationEngine;
 use App\Services\Order\StockTransferService;
 use App\Support\BranchProductPriceDisplay;
@@ -39,6 +40,7 @@ class PlaceOrderAction
         private StockTransferService $transfers,
         private ConversationService $conversations,
         private NotificationService $notifications,
+        private AllocationDecisionRecorder $decisions,
     ) {}
 
     /**
@@ -96,7 +98,8 @@ class PlaceOrderAction
                 $data['delivery_method'],
             );
 
-            $locked = $this->lockPlan($plan);
+            $inventoryMap = $this->loadInventoryMap($plan);
+            $locked = $this->lockPlan($plan, $inventoryMap);
 
             $address = $this->persistAddress($user, $data);
             $deliveryFee = $plan['shipping_cost'];
@@ -130,6 +133,8 @@ class PlaceOrderAction
                 'time_slot' => $data['time_slot'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
+
+            $this->decisions->record($order, $plan['branch']->id, $plan['decision_trace']);
 
             $fulfillment = OrderFulfillment::query()->create([
                 'order_id' => $order->id,
@@ -171,7 +176,7 @@ class PlaceOrderAction
                 $this->transfers->createForFulfillment($fulfillment, $leg);
             }
 
-            $this->reservePlan($plan, $locked, $order);
+            $this->reservePlan($plan, $inventoryMap, $locked, $order);
 
             OrderStatusHistory::query()->create([
                 'order_id' => $order->id,
@@ -235,22 +240,63 @@ class PlaceOrderAction
     }
 
     /**
+     * Batch-loads every inventory row this plan could touch (local lines plus every
+     * transfer leg's source) in a single query, keyed by "branch:product:variant".
+     * Replaces the previous per-line/per-leg lookups that caused N+1 queries.
+     *
      * @param  array<string, mixed>  $plan
-     * @return Collection<int, Inventory>
+     * @return array<string, Inventory>
      */
-    private function lockPlan(array $plan): Collection
+    private function loadInventoryMap(array $plan): array
     {
-        $ids = [];
+        $keys = [];
 
         foreach ($plan['lines'] as $line) {
             if ($line['local_quantity'] > 0) {
-                $ids[] = $this->findInventory($plan['branch']->id, $line['product_id'], $line['variant_id'])->id;
+                $keys[] = [$plan['branch']->id, $line['product_id'], $line['variant_id']];
             }
         }
 
         foreach ($plan['transfers'] as $leg) {
             foreach ($leg['items'] as $item) {
-                $ids[] = $this->findInventory($leg['source_branch_id'], $item['product_id'], $item['variant_id'])->id;
+                $keys[] = [$leg['source_branch_id'], $item['product_id'], $item['variant_id']];
+            }
+        }
+
+        if ($keys === []) {
+            return [];
+        }
+
+        $branchIds = array_values(array_unique(array_column($keys, 0)));
+        $productIds = array_values(array_unique(array_column($keys, 1)));
+
+        $map = [];
+
+        foreach (Inventory::query()->whereIn('branch_id', $branchIds)->whereIn('product_id', $productIds)->get() as $row) {
+            $map[$this->inventoryKey($row->branch_id, $row->product_id, $row->variant_id)] = $row;
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param  array<string, mixed>  $plan
+     * @param  array<string, Inventory>  $inventoryMap
+     * @return Collection<int, Inventory>
+     */
+    private function lockPlan(array $plan, array $inventoryMap): Collection
+    {
+        $ids = [];
+
+        foreach ($plan['lines'] as $line) {
+            if ($line['local_quantity'] > 0) {
+                $ids[] = $this->resolveInventory($inventoryMap, $plan['branch']->id, $line['product_id'], $line['variant_id'])->id;
+            }
+        }
+
+        foreach ($plan['transfers'] as $leg) {
+            foreach ($leg['items'] as $item) {
+                $ids[] = $this->resolveInventory($inventoryMap, $leg['source_branch_id'], $item['product_id'], $item['variant_id'])->id;
             }
         }
 
@@ -259,40 +305,34 @@ class PlaceOrderAction
 
     /**
      * @param  array<string, mixed>  $plan
+     * @param  array<string, Inventory>  $inventoryMap
      * @param  Collection<int, Inventory>  $locked
      */
-    private function reservePlan(array $plan, $locked, Order $order): void
+    private function reservePlan(array $plan, array $inventoryMap, $locked, Order $order): void
     {
         foreach ($plan['lines'] as $line) {
             if ($line['local_quantity'] <= 0) {
                 continue;
             }
 
-            $inventory = $this->findInventory($plan['branch']->id, $line['product_id'], $line['variant_id']);
+            $inventory = $this->resolveInventory($inventoryMap, $plan['branch']->id, $line['product_id'], $line['variant_id']);
             $this->reservations->reserve($locked[$inventory->id], $line['local_quantity'], $order);
         }
 
         foreach ($plan['transfers'] as $leg) {
             foreach ($leg['items'] as $item) {
-                $inventory = $this->findInventory($leg['source_branch_id'], $item['product_id'], $item['variant_id']);
+                $inventory = $this->resolveInventory($inventoryMap, $leg['source_branch_id'], $item['product_id'], $item['variant_id']);
                 $this->reservations->reserve($locked[$inventory->id], $item['quantity'], $order);
             }
         }
     }
 
-    private function findInventory(int $branchId, int $productId, ?int $variantId): Inventory
+    /**
+     * @param  array<string, Inventory>  $inventoryMap
+     */
+    private function resolveInventory(array $inventoryMap, int $branchId, int $productId, ?int $variantId): Inventory
     {
-        $query = Inventory::query()
-            ->where('branch_id', $branchId)
-            ->where('product_id', $productId);
-
-        if ($variantId === null) {
-            $query->whereNull('variant_id');
-        } else {
-            $query->where('variant_id', $variantId);
-        }
-
-        $inventory = $query->first();
+        $inventory = $inventoryMap[$this->inventoryKey($branchId, $productId, $variantId)] ?? null;
 
         if ($inventory === null) {
             throw ValidationException::withMessages([
@@ -301,6 +341,11 @@ class PlaceOrderAction
         }
 
         return $inventory;
+    }
+
+    private function inventoryKey(int $branchId, int $productId, ?int $variantId): string
+    {
+        return $branchId.':'.$productId.':'.($variantId ?? '0');
     }
 
     /**
