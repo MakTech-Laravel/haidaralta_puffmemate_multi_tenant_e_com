@@ -1,5 +1,15 @@
 import { Head } from '@inertiajs/react';
 
+type DriverReportRow = {
+    id: number;
+    name: string;
+    delivered: number;
+    failedAttempts: number;
+    collected: number;
+    collectedCod: number;
+    collectedPos: number;
+};
+
 type PlatformOrderOperationsProps = {
     report: {
         orders: number;
@@ -8,10 +18,12 @@ type PlatformOrderOperationsProps = {
         transferCost: number;
         payments: Record<string, number>;
     };
+    drivers: DriverReportRow[];
 };
 
 export default function PlatformOrderOperations({
     report,
+    drivers,
 }: PlatformOrderOperationsProps) {
     return (
         <>
@@ -42,6 +54,65 @@ export default function PlatformOrderOperations({
                         </dd>
                     </div>
                 </dl>
+
+                <div className="space-y-2">
+                    <h2 className="text-lg font-semibold">
+                        Driver performance
+                    </h2>
+                    <div className="border-border overflow-hidden rounded-lg border">
+                        <table className="w-full text-sm">
+                            <thead className="bg-muted/50">
+                                <tr>
+                                    <th className="p-2 text-left">Driver</th>
+                                    <th className="p-2 text-right">
+                                        Delivered
+                                    </th>
+                                    <th className="p-2 text-right">
+                                        Failed attempts
+                                    </th>
+                                    <th className="p-2 text-right">
+                                        Collected (COD)
+                                    </th>
+                                    <th className="p-2 text-right">
+                                        Collected (POS)
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {drivers.length === 0 && (
+                                    <tr>
+                                        <td
+                                            className="text-muted-foreground p-2"
+                                            colSpan={5}
+                                        >
+                                            No drivers yet.
+                                        </td>
+                                    </tr>
+                                )}
+                                {drivers.map((driver) => (
+                                    <tr
+                                        key={driver.id}
+                                        className="border-border border-t"
+                                    >
+                                        <td className="p-2">{driver.name}</td>
+                                        <td className="p-2 text-right">
+                                            {driver.delivered}
+                                        </td>
+                                        <td className="p-2 text-right">
+                                            {driver.failedAttempts}
+                                        </td>
+                                        <td className="p-2 text-right">
+                                            ${driver.collectedCod.toFixed(2)}
+                                        </td>
+                                        <td className="p-2 text-right">
+                                            ${driver.collectedPos.toFixed(2)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </>
     );

@@ -2,6 +2,7 @@
 
 use App\Enums\FulfillmentStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
@@ -91,4 +92,60 @@ test('platform admin can override the master orders payment status', function ()
         ->assertRedirect(route('platform.orders.show', $order));
 
     expect($order->refresh()->payment_status)->toBe(PaymentStatus::Collected);
+});
+
+test('the platform override rejects verifying an uncollected payment', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $order = Order::factory()->create(['payment_status' => PaymentStatus::PendingCollection]);
+    OrderFulfillment::factory()->forOrder($order)->create();
+    Payment::factory()->create(['order_id' => $order->id, 'status' => PaymentStatus::PendingCollection]);
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.orders.payment-status', $order), [
+            'payment_status' => PaymentStatus::Verified->value,
+        ])
+        ->assertSessionHasErrors('payment_status');
+
+    expect($order->refresh()->payment_status)->toBe(PaymentStatus::PendingCollection);
+});
+
+test('platform admin can retry reschedule and confirm a returned delivery for any branch', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $other = Branch::factory()->create();
+    $driver = User::factory()->create(['user_type' => UserType::DRIVER, 'branch_id' => null]);
+
+    $order = Order::factory()->create([
+        'shipping_address_snapshot' => [
+            'name' => 'Ada Lovelace',
+            'phone' => '+61410111222',
+            'address' => '1 Test Street',
+            'city' => 'Sydney',
+        ],
+    ]);
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create([
+        'branch_id' => $other->id,
+        'status' => FulfillmentStatus::DeliveryFailed,
+        'driver_id' => $driver->id,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.orders.retry-delivery', $order))
+        ->assertRedirect(route('platform.orders.show', $order));
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::OutForDelivery);
+
+    $fulfillment->forceFill(['status' => FulfillmentStatus::DeliveryFailed])->save();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.orders.return-delivery', $order))
+        ->assertRedirect(route('platform.orders.show', $order));
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Returning);
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.orders.confirm-return', $order))
+        ->assertRedirect(route('platform.orders.show', $order));
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Cancelled);
 });

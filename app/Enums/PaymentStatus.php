@@ -44,4 +44,23 @@ enum PaymentStatus: string
             self::cases(),
         );
     }
+
+    /**
+     * Targets a branch or platform user may set through the payment override.
+     * `pending_collection` is a placement default, not a manual target.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    public static function actionableOptions(): array
+    {
+        $cases = array_filter(self::cases(), fn (self $status): bool => $status !== self::PendingCollection);
+
+        return array_values(array_map(
+            fn (self $status): array => [
+                'value' => $status->value,
+                'label' => $status->label(),
+            ],
+            $cases,
+        ));
+    }
 }

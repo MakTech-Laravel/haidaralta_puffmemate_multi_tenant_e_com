@@ -62,3 +62,41 @@ test('cancelling a pending order releases reserved stock', function () {
         ->and($inventory->refresh()->reserved_quantity)->toBe(0)
         ->and($order->refresh()->status->value)->toBe('cancelled');
 });
+
+test('a customer cannot cancel a ready order but staff can', function () {
+    $customer = User::factory()->create(['user_type' => UserType::CUSTOMER]);
+    $staff = User::factory()->create(['user_type' => UserType::BRANCH]);
+    $order = Order::factory()->create();
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create(['status' => FulfillmentStatus::Ready]);
+
+    expect(fn () => app(FulfillmentStatusService::class)->transition($fulfillment, FulfillmentStatus::Cancelled, $customer))
+        ->toThrow(ValidationException::class);
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Ready);
+
+    app(FulfillmentStatusService::class)->transition($fulfillment, FulfillmentStatus::Cancelled, $staff);
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Cancelled);
+});
+
+test('cancel is rejected once an order is delivered', function () {
+    $staff = User::factory()->create(['user_type' => UserType::BRANCH]);
+    $order = Order::factory()->create();
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create(['status' => FulfillmentStatus::Delivered]);
+
+    expect(fn () => app(FulfillmentStatusService::class)->cancel($fulfillment, $staff))
+        ->toThrow(ValidationException::class);
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Delivered);
+});
+
+test('a status jump outside the graph is rejected', function () {
+    $staff = User::factory()->create(['user_type' => UserType::BRANCH]);
+    $order = Order::factory()->create();
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create(['status' => FulfillmentStatus::Pending]);
+
+    expect(fn () => app(FulfillmentStatusService::class)->transition($fulfillment, FulfillmentStatus::Delivered, $staff))
+        ->toThrow(ValidationException::class);
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Pending);
+});

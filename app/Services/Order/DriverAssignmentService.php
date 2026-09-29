@@ -2,6 +2,7 @@
 
 namespace App\Services\Order;
 
+use App\Contracts\DistanceCalculator;
 use App\Enums\DriverAssignmentStatus;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\FulfillmentStatus;
@@ -17,6 +18,7 @@ class DriverAssignmentService
     public function __construct(
         private FulfillmentStatusService $statuses,
         private ConversationService $conversations,
+        private DistanceCalculator $distances,
     ) {}
 
     /**
@@ -47,13 +49,34 @@ class DriverAssignmentService
             })
             ->with('driverProfile')
             ->get()
-            ->sortBy(function (User $driver) use ($workload): array {
+            ->sortBy(function (User $driver) use ($fulfillment, $workload): array {
                 $available = $driver->driverProfile?->availability_status === DriverAvailabilityStatus::Available ? 0 : 1;
                 $load = (int) ($workload[$driver->id] ?? 0);
 
-                return [$available, $load, $driver->id];
+                return [$available, $load, $this->distanceFromBranch($fulfillment, $driver), $driver->id];
             })
             ->values();
+    }
+
+    /**
+     * Distance from the branch to the driver's profile address, when it has
+     * coordinates. Missing coordinates sort last without excluding the driver.
+     */
+    private function distanceFromBranch(OrderFulfillment $fulfillment, User $driver): float
+    {
+        $profile = $driver->driverProfile;
+        $branch = $fulfillment->branch;
+
+        if ($profile?->latitude === null || $profile->longitude === null || $branch?->latitude === null || $branch->longitude === null) {
+            return PHP_FLOAT_MAX;
+        }
+
+        return $this->distances->distanceKm(
+            (float) $branch->latitude,
+            (float) $branch->longitude,
+            (float) $profile->latitude,
+            (float) $profile->longitude,
+        );
     }
 
     public function assign(OrderFulfillment $fulfillment, User $driver, User $actor): OrderFulfillment

@@ -170,3 +170,67 @@ test('the available driver with the least workload is ranked first', function ()
     expect($candidates[0])->toBe($freeDriver->id)
         ->and($candidates)->toContain($busyDriver->id);
 });
+
+test('the closer available driver with equal workload is ranked first', function () {
+    $sydney = Branch::factory()->create(['latitude' => -33.8688, 'longitude' => 151.2093]);
+    $order = Order::factory()->create();
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create([
+        'branch_id' => $sydney->id,
+        'status' => FulfillmentStatus::Ready,
+    ]);
+
+    $farDriver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'is_active' => true,
+        'branch_id' => null,
+    ]);
+    DriverProfile::factory()->locatedAt(-37.8136, 144.9631)->create([
+        'user_id' => $farDriver->id,
+        'availability_status' => DriverAvailabilityStatus::Available,
+    ]);
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $farDriver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Active,
+    ]);
+
+    $nearDriver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'is_active' => true,
+        'branch_id' => null,
+    ]);
+    DriverProfile::factory()->locatedAt(-33.8650, 151.2094)->create([
+        'user_id' => $nearDriver->id,
+        'availability_status' => DriverAvailabilityStatus::Available,
+    ]);
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $nearDriver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Active,
+    ]);
+
+    $missingCoordinatesDriver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'is_active' => true,
+        'branch_id' => null,
+    ]);
+    DriverProfile::factory()->create([
+        'user_id' => $missingCoordinatesDriver->id,
+        'availability_status' => DriverAvailabilityStatus::Available,
+    ]);
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $missingCoordinatesDriver->id,
+        'branch_id' => $sydney->id,
+        'status' => DriverAssignmentStatus::Active,
+    ]);
+
+    $service = app(DriverAssignmentService::class);
+    $candidates = $service->candidates($fulfillment)->pluck('id')->all();
+
+    expect($candidates[0])->toBe($nearDriver->id)
+        ->and($candidates[1])->toBe($farDriver->id)
+        ->and($candidates)->toContain($missingCoordinatesDriver->id)
+        ->and(array_search($missingCoordinatesDriver->id, $candidates, true))->toBeGreaterThan(
+            array_search($farDriver->id, $candidates, true)
+        );
+});

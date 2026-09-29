@@ -2,6 +2,7 @@
 
 namespace App\Services\Order;
 
+use App\Enums\FulfillmentStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
@@ -115,19 +116,47 @@ class PaymentMarkingService
         if ($status === PaymentStatus::Collected && $actor instanceof User) {
             $this->collect($order, $actor);
         } elseif ($status === PaymentStatus::Verified && $actor instanceof User) {
-            if ($payment->status === PaymentStatus::PendingCollection) {
-                $this->collect($order, $actor);
-            }
-
-            $this->verify($order->refresh(), $actor);
+            $this->verify($order, $actor);
         } elseif ($status === PaymentStatus::Failed) {
             $this->fail($order);
+        } elseif ($status === PaymentStatus::Refunded && $actor instanceof User) {
+            $this->refund($order, $actor);
         } else {
-            $payment->forceFill(['status' => $status])->save();
-            $this->syncOrder($order, $payment->refresh());
+            throw ValidationException::withMessages([
+                'payment_status' => 'This payment status cannot be set directly.',
+            ]);
         }
 
         return $order->refresh();
+    }
+
+    public function refund(Order $order, User $actor): Payment
+    {
+        $payment = $this->paymentFor($order);
+
+        if (! in_array($payment->status, [PaymentStatus::Collected, PaymentStatus::Verified], true)) {
+            throw ValidationException::withMessages([
+                'payment_status' => 'Collect or verify the payment before refunding it.',
+            ]);
+        }
+
+        if ($order->fulfillment?->status !== FulfillmentStatus::Delivered) {
+            throw ValidationException::withMessages([
+                'payment_status' => 'Refund is only available after the order is delivered.',
+            ]);
+        }
+
+        $payment->forceFill(['status' => PaymentStatus::Refunded])->save();
+
+        PaymentTransaction::query()->create([
+            'payment_id' => $payment->id,
+            'event_type' => 'refunded',
+            'response' => ['actor_id' => $actor->id],
+        ]);
+
+        $this->syncOrder($order, $payment->refresh());
+
+        return $payment->refresh();
     }
 
     private function paymentFor(Order $order): Payment

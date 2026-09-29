@@ -20,7 +20,6 @@ class FulfillmentStatusService
         private InventoryReservationService $reservations,
         private StockTransferService $transfers,
         private OrderConversationCloser $conversations,
-        private OrderStatusAggregator $aggregator,
     ) {}
 
     public function transition(
@@ -123,7 +122,9 @@ class FulfillmentStatusService
         $order = $fulfillment->order()->first();
 
         if ($order !== null) {
-            $this->aggregator->recompute($order);
+            // The master order copies the single fulfillment's status directly;
+            // there is nothing to aggregate across branches in this design.
+            $order->forceFill(['status' => OrderStatus::from($status->value)])->save();
             $this->conversations->transition($order->refresh(), OrderStatus::from($status->value));
         }
 

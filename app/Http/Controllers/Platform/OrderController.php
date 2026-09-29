@@ -158,7 +158,7 @@ class OrderController extends Controller
             'orderNumber' => $order->order_number,
             'status' => $order->status->value,
             'paymentStatus' => $order->payment_status->value,
-            'paymentStatusOptions' => PaymentStatus::options(),
+            'paymentStatusOptions' => PaymentStatus::actionableOptions(),
             'customerName' => $order->customer?->name ?? 'Customer',
             'totalLabel' => '$'.number_format((float) $order->total_amount, 2),
             'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
