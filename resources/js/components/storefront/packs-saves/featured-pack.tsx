@@ -3,7 +3,10 @@ import { Star } from 'lucide-react';
 import { PackBuyControls } from '@/components/storefront/packs-saves/pack-buy-controls';
 import { PackInsideList } from '@/components/storefront/packs-saves/pack-inside-list';
 import { show as packShow } from '@/routes/packs-saves';
-import type { StorefrontFeaturedPack } from '@/types/storefront';
+import {
+    formatStorefrontAud,
+    type StorefrontFeaturedPack,
+} from '@/types/storefront';
 import { cn } from '@/lib/utils';
 
 const FALLBACK_IMAGE = '/images/storefront/logo.png';
@@ -14,7 +17,6 @@ type FeaturedPackProps = {
 };
 
 export function FeaturedPack({ pack, className }: FeaturedPackProps) {
-    const currency = pack.currency ?? 'AUD';
     const detailHref = packShow.url({
         branch: pack.branchSlug,
         pack: pack.slug,
@@ -85,17 +87,17 @@ export function FeaturedPack({ pack, className }: FeaturedPackProps) {
                             <p className="text-muted-foreground text-sm">
                                 Regular price:{' '}
                                 <span className="line-through">
-                                    {currency} {pack.regularPrice}
+                                    {formatStorefrontAud(pack.regularPrice)}
                                 </span>
                             </p>
                         ) : null}
                         <div className="mt-1 flex flex-wrap items-center gap-3">
                             <p className="text-foreground text-3xl font-extrabold tabular-nums">
-                                {currency} {pack.price}
+                                {formatStorefrontAud(pack.price)}
                             </p>
                             {pack.savings ? (
                                 <span className="bg-primary/10 text-foreground rounded-md px-2 py-0.5 text-xs font-bold uppercase">
-                                    Save {currency} {pack.savings}
+                                    Save {formatStorefrontAud(pack.savings)}
                                 </span>
                             ) : null}
                         </div>

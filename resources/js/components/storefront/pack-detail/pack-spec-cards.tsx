@@ -1,4 +1,7 @@
-import type { StorefrontPackDetail } from '@/types/storefront';
+import {
+    formatStorefrontAud,
+    type StorefrontPackDetail,
+} from '@/types/storefront';
 
 type PackSpecCardsProps = {
     pack: StorefrontPackDetail;
@@ -30,7 +33,6 @@ function offerWindow(pack: StorefrontPackDetail): SpecCard {
 }
 
 export function PackSpecCards({ pack, className }: PackSpecCardsProps) {
-    const currency = pack.currency ?? 'AUD';
     const cards: SpecCard[] = [
         {
             label: 'Products in pack',
@@ -44,7 +46,7 @@ export function PackSpecCards({ pack, className }: PackSpecCardsProps) {
         },
         {
             label: 'You save',
-            value: pack.savings ? `${currency} ${pack.savings}` : '—',
+            value: pack.savings ? formatStorefrontAud(pack.savings) : '—',
             description:
                 pack.discountPercent > 0
                     ? `${pack.discountPercent}% off buying separately`

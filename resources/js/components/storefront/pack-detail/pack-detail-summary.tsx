@@ -1,7 +1,10 @@
 import { PackageCheck } from 'lucide-react';
 import { PackBuyControls } from '@/components/storefront/packs-saves/pack-buy-controls';
 import { PackInsideList } from '@/components/storefront/packs-saves/pack-inside-list';
-import type { StorefrontPackDetail } from '@/types/storefront';
+import {
+    formatStorefrontAud,
+    type StorefrontPackDetail,
+} from '@/types/storefront';
 import { cn } from '@/lib/utils';
 
 const PAYMENT_OPTIONS = ['POS Machine', 'Cash Accepted'];
@@ -12,7 +15,6 @@ type PackDetailSummaryProps = {
 };
 
 export function PackDetailSummary({ pack, className }: PackDetailSummaryProps) {
-    const currency = pack.currency ?? 'AUD';
     const subtitle = [pack.eyebrow, pack.branchName]
         .filter(Boolean)
         .join(' · ');
@@ -47,11 +49,11 @@ export function PackDetailSummary({ pack, className }: PackDetailSummaryProps) {
 
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <p className="text-primary text-3xl font-extrabold tabular-nums">
-                    {currency} {pack.price}
+                    {formatStorefrontAud(pack.price)}
                 </p>
                 {pack.savings ? (
                     <span className="text-muted-foreground text-sm line-through tabular-nums">
-                        {currency} {pack.regularPrice} RRP
+                        {formatStorefrontAud(pack.regularPrice)} RRP
                     </span>
                 ) : null}
             </div>

@@ -148,7 +148,7 @@ test('branch product price display uses start from when multiple active prices e
 
     expect($display['is_from'])->toBeTrue()
         ->and($display['amount'])->toBe(48.95)
-        ->and($display['label'])->toBe('Start from AUD 48.95')
+        ->and($display['label'])->toBe('Start from A$48.95')
         ->and($display['count'])->toBe(2);
 });
 
@@ -166,7 +166,7 @@ test('branch product price display uses a single price label when only one activ
 
     expect($display['is_from'])->toBeFalse()
         ->and($display['amount'])->toBe(18.5)
-        ->and($display['label'])->toBe('AUD 18.50')
+        ->and($display['label'])->toBe('A$18.50')
         ->and($display['count'])->toBe(1);
 });
 
@@ -213,8 +213,8 @@ test('storefront compare-at uses selling when a live discount is on', function (
 
     $detail = StorefrontCatalog::productDetail($product->slug, $branch);
 
-    expect($detail['price'])->toBe('AUD 15.00')
-        ->and($detail['compareAtPrice'])->toBe('AUD 20.00');
+    expect($detail['price'])->toBe('A$15.00')
+        ->and($detail['compareAtPrice'])->toBe('A$20.00');
 });
 
 test('fixed discount subtracts the value from selling price', function () {
@@ -257,6 +257,6 @@ test('storefront compare-at uses selling when a live fixed discount is on', func
 
     $detail = StorefrontCatalog::productDetail($product->slug, $branch);
 
-    expect($detail['price'])->toBe('AUD 17.99')
-        ->and($detail['compareAtPrice'])->toBe('AUD 19.99');
+    expect($detail['price'])->toBe('A$17.99')
+        ->and($detail['compareAtPrice'])->toBe('A$19.99');
 });
