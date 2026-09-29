@@ -12,13 +12,22 @@ import { show as orderShow } from '@/routes/customer/orders';
 
 export type CustomerOrderStatus =
     | 'pending'
-    | 'confirmed'
     | 'processing'
-    | 'partially_delivered'
+    | 'ready'
+    | 'assigned'
+    | 'picked_up'
+    | 'out_for_delivery'
+    | 'delivery_failed'
+    | 'returning'
     | 'delivered'
     | 'cancelled';
 
-export type CustomerPaymentStatus = 'unpaid' | 'paid' | 'refunded';
+export type CustomerPaymentStatus =
+    | 'pending_collection'
+    | 'collected'
+    | 'verified'
+    | 'failed'
+    | 'refunded';
 
 export type CustomerOrder = {
     orderNumber: string;
@@ -31,20 +40,28 @@ export type CustomerOrder = {
 
 const VISIBLE_PRODUCT_COUNT = 2;
 
-const statusLabel: Record<CustomerOrderStatus, string> = {
-    pending: 'Pending',
-    confirmed: 'Confirmed',
-    processing: 'Processing',
-    partially_delivered: 'Partially delivered',
+const statusLabel: Record<string, string> = {
+    pending: 'Order Placed',
+    processing: 'Preparing Your Order',
+    ready: 'Ready For Delivery',
+    assigned: 'Driver Assigned',
+    picked_up: 'Order Picked Up',
+    out_for_delivery: 'On The Way',
+    delivery_failed: 'Delivery unsuccessful',
+    returning: 'Returning your order',
     delivered: 'Delivered',
     cancelled: 'Cancelled',
 };
 
-const activeStatuses: CustomerOrderStatus[] = [
+const activeStatuses = [
     'pending',
-    'confirmed',
     'processing',
-    'partially_delivered',
+    'ready',
+    'assigned',
+    'picked_up',
+    'out_for_delivery',
+    'delivery_failed',
+    'returning',
 ];
 
 type OrderListProps = {

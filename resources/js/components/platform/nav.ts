@@ -280,6 +280,12 @@ export function buildPlatformNav(
                         icon: ShoppingBag,
                         permissions: ['manage-orders'],
                     }),
+                    navLink({
+                        title: 'Stock transfers',
+                        href: '/platform/stock-transfers',
+                        icon: Package2,
+                        permissions: ['manage-orders'],
+                    }),
                     navSoon({
                         title: 'Pickup',
                         icon: Store,
@@ -362,8 +368,9 @@ export function buildPlatformNav(
                     'view-transfers',
                 ],
                 items: [
-                    navSoon({
-                        title: 'Sales',
+                    navLink({
+                        title: 'Order operations',
+                        href: '/platform/reports/order-operations',
                         icon: Banknote,
                         permissions: ['manage-reports'],
                     }),

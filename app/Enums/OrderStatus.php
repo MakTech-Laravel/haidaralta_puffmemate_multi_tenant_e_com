@@ -5,33 +5,34 @@ namespace App\Enums;
 enum OrderStatus: string
 {
     case Pending = 'pending';
-    case Confirmed = 'confirmed';
     case Processing = 'processing';
-    case PartiallyDelivered = 'partially_delivered';
+    case Ready = 'ready';
+    case Assigned = 'assigned';
+    case PickedUp = 'picked_up';
+    case OutForDelivery = 'out_for_delivery';
+    case DeliveryFailed = 'delivery_failed';
+    case Returning = 'returning';
     case Delivered = 'delivered';
     case Cancelled = 'cancelled';
 
     public function label(): string
     {
-        return match ($this) {
-            self::Pending => 'Pending',
-            self::Confirmed => 'Confirmed',
-            self::Processing => 'Processing',
-            self::PartiallyDelivered => 'Partially delivered',
-            self::Delivered => 'Delivered',
-            self::Cancelled => 'Cancelled',
-        };
+        return FulfillmentStatus::from($this->value)->label();
     }
 
-    /**
-     * Terminal statuses close the order conversation.
-     */
+    public function customerLabel(): string
+    {
+        return FulfillmentStatus::from($this->value)->customerLabel();
+    }
+
+    public function allowsCustomerCancel(): bool
+    {
+        return FulfillmentStatus::from($this->value)->allowsCustomerCancel();
+    }
+
     public function isTerminal(): bool
     {
-        return match ($this) {
-            self::Delivered, self::Cancelled => true,
-            default => false,
-        };
+        return FulfillmentStatus::from($this->value)->isTerminal();
     }
 
     /**

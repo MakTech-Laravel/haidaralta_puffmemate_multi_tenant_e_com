@@ -11,6 +11,7 @@ paths:
   - app/Models/Category.php
   - app/Models/Product.php
   - 'app/Models/{Notification,UserNotification}.php'
+  - app/Services/Inventory/InventoryReservationService.php
 ---
 
 # Catalog
@@ -62,3 +63,6 @@ Optional pack_label + pieces_per_pack + pack_unit on products. Compose card line
 
 ## In-app notifications are one parent plus per-user rows
 Notification is the parent message; UserNotification is the per-recipient inbox row (soft deletes, unique notification_id + user_id). Features must call NotificationService or notify_users(); do not write these rows by hand.
+
+## Reserved quantity is sellable stock
+inventories.reserved_quantity is live. Sellable is quantity minus reserved_quantity. InventoryReservationService is the only order/transfer writer of those columns, always with lockForUpdate ordered by id. Manual stock-out cannot reduce quantity below reserved_quantity.

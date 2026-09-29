@@ -27,18 +27,31 @@ export type OrderTimelineStep = {
 
 export type CustomerOrderStatus =
     | 'pending'
-    | 'confirmed'
     | 'processing'
-    | 'partially_delivered'
+    | 'ready'
+    | 'assigned'
+    | 'picked_up'
+    | 'out_for_delivery'
+    | 'delivery_failed'
+    | 'returning'
     | 'delivered'
     | 'cancelled';
 
-export type CustomerPaymentStatus = 'unpaid' | 'paid' | 'refunded';
+export type CustomerPaymentStatus =
+    | 'pending_collection'
+    | 'collected'
+    | 'verified'
+    | 'failed'
+    | 'refunded';
 
 export type CustomerOrderDetail = {
     orderNumber: string;
     status: CustomerOrderStatus;
+    statusLabel?: string;
     paymentStatus: CustomerPaymentStatus;
+    paymentStatusLabel?: string;
+    handoverNotice?: string | null;
+    canCancel?: boolean;
     date: string;
     products: OrderTrackProduct[];
     subtotalLabel: string;

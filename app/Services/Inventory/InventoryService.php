@@ -89,6 +89,10 @@ class InventoryService
                 throw new InvalidArgumentException('Insufficient stock for this adjustment.');
             }
 
+            if ($after < $locked->reserved_quantity) {
+                throw new InvalidArgumentException('Cannot reduce stock below reserved quantity.');
+            }
+
             $locked->quantity = $after;
             $locked->save();
 

@@ -24,7 +24,7 @@ return new class extends Migration
             $table->decimal('delivery_fee', 12, 2)->default(0);
             $table->decimal('tax', 12, 2)->default(0);
             $table->decimal('total_amount', 12, 2)->default(0);
-            $table->string('payment_status', 32)->default('unpaid');
+            $table->string('payment_status', 32)->default('pending_collection');
             $table->string('payment_method')->nullable();
             $table->string('delivery_method')->nullable();
             $table->date('delivery_date')->nullable();

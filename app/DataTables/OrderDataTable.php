@@ -30,7 +30,7 @@ class OrderDataTable extends AbstractDataTable
      */
     protected function baseQuery(): Builder
     {
-        return Order::query()->with(['customer:id,name', 'fulfillments:id,order_id,branch_id']);
+        return Order::query()->with(['customer:id,name', 'fulfillment.branch:id,name']);
     }
 
     /**
@@ -73,10 +73,7 @@ class OrderDataTable extends AbstractDataTable
     {
         return [
             'status' => OrderStatus::options(),
-            'payment_status' => array_map(
-                fn (PaymentStatus $status): array => ['value' => $status->value, 'label' => ucfirst($status->value)],
-                PaymentStatus::cases(),
-            ),
+            'payment_status' => PaymentStatus::options(),
         ];
     }
 
@@ -90,7 +87,7 @@ class OrderDataTable extends AbstractDataTable
             'id' => $model->id,
             'order_number' => $model->order_number,
             'customer_name' => $model->customer?->name ?? 'Customer',
-            'branch_count' => $model->fulfillments->pluck('branch_id')->unique()->count(),
+            'fulfillment_branch' => $model->fulfillment?->branch?->name ?? '—',
             'total_label' => '$'.number_format((float) $model->total_amount, 2),
             'status' => $model->status->value,
             'payment_status' => $model->payment_status->value,

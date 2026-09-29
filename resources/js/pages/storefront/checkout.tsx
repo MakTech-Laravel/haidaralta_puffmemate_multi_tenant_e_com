@@ -133,11 +133,12 @@ export default function StorefrontCheckout({
         processing: quoting,
         errors: quoteErrors,
     } = useHttp<
-        { latitude: string; longitude: string },
+        { latitude: string; longitude: string; delivery_method: string },
         { fee: number; formattedFee: string }
     >({
         latitude: '',
         longitude: '',
+        delivery_method: '',
     });
 
     const details: CheckoutDetails = {
@@ -163,15 +164,11 @@ export default function StorefrontCheckout({
 
     const pinKey =
         details.latitude && details.longitude
-            ? `${details.latitude},${details.longitude}`
+            ? `${details.latitude},${details.longitude}:${details.deliveryMethodId}`
             : null;
 
     useEffect(() => {
-        if (
-            pinKey === null ||
-            quotedMatchesPin ||
-            requestedPin.current === pinKey
-        ) {
+        if (pinKey === null || requestedPin.current === pinKey) {
             return;
         }
 
@@ -185,7 +182,11 @@ export default function StorefrontCheckout({
         }
 
         requestedPin.current = pinKey;
-        transformQuote(() => ({ latitude, longitude }));
+        transformQuote(() => ({
+            latitude,
+            longitude,
+            delivery_method: form.data.delivery_method,
+        }));
 
         void postQuote(quoteShipping.url())
             .then((payload) => {
@@ -202,9 +203,9 @@ export default function StorefrontCheckout({
     }, [
         details.latitude,
         details.longitude,
+        details.deliveryMethodId,
         pinKey,
         postQuote,
-        quotedMatchesPin,
         transformQuote,
     ]);
 

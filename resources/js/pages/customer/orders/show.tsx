@@ -1,4 +1,5 @@
-import { Head } from '@inertiajs/react';
+import { Form, Head } from '@inertiajs/react';
+import OrderController from '@/actions/App/Http/Controllers/Customer/OrderController';
 import { OrderDeliveryTimeline } from '@/components/customer/order-delivery-timeline';
 import { OrderTrackAddress } from '@/components/customer/order-track-address';
 import { OrderTrackDriverCard } from '@/components/customer/order-track-driver';
@@ -6,21 +7,28 @@ import { OrderTrackMap } from '@/components/customer/order-track-map';
 import { OrderTrackProducts } from '@/components/customer/order-track-products';
 import type { CustomerOrderDetail } from '@/components/customer/order-track-types';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { index as ordersIndex } from '@/routes/customer/orders';
 
-const statusLabel: Record<CustomerOrderDetail['status'], string> = {
-    pending: 'Pending',
-    confirmed: 'Confirmed',
-    processing: 'Processing',
-    partially_delivered: 'Partially delivered',
+const statusLabel: Record<string, string> = {
+    pending: 'Order Placed',
+    processing: 'Preparing Your Order',
+    ready: 'Ready For Delivery',
+    assigned: 'Driver Assigned',
+    picked_up: 'Order Picked Up',
+    out_for_delivery: 'On The Way',
+    delivery_failed: 'Delivery unsuccessful',
+    returning: 'Returning your order',
     delivered: 'Delivered',
     cancelled: 'Cancelled',
 };
 
-const paymentStatusLabel: Record<CustomerOrderDetail['paymentStatus'], string> = {
-    unpaid: 'Payment due on delivery',
-    paid: 'Paid',
+const paymentStatusLabel: Record<string, string> = {
+    pending_collection: 'Payment due on delivery',
+    collected: 'Payment received',
+    verified: 'Payment received',
+    failed: 'Payment unsuccessful',
     refunded: 'Refunded',
 };
 
@@ -41,7 +49,9 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                         </h2>
                         <p className="text-muted-foreground text-sm">
                             Placed on {order.date} ·{' '}
-                            {paymentStatusLabel[order.paymentStatus]}
+                            {order.paymentStatusLabel ??
+                                paymentStatusLabel[order.paymentStatus] ??
+                                order.paymentStatus}
                         </p>
                     </div>
                     <Badge
@@ -53,9 +63,32 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                                 : 'bg-primary text-primary-foreground border-transparent',
                         )}
                     >
-                        {statusLabel[order.status]}
+                        {order.statusLabel ?? statusLabel[order.status]}
                     </Badge>
                 </div>
+
+                {order.handoverNotice ? (
+                    <p className="bg-primary/10 text-foreground rounded-md p-3 text-sm">
+                        {order.handoverNotice}
+                    </p>
+                ) : null}
+
+                {order.canCancel ? (
+                    <Form
+                        {...OrderController.cancel.form(order.orderNumber)}
+                        className="flex justify-end"
+                    >
+                        {({ processing }) => (
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                disabled={processing}
+                            >
+                                Cancel order
+                            </Button>
+                        )}
+                    </Form>
+                ) : null}
 
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
                     <div className="order-2 flex min-w-0 flex-col gap-5 lg:order-1">

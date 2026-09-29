@@ -32,6 +32,7 @@ use App\Http\Controllers\Platform\PriceRangeController as PlatformPriceRangeCont
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
+use App\Http\Controllers\Platform\Reports\OrderOperationsController as PlatformOrderOperationsController;
 use App\Http\Controllers\Platform\Reports\PriceHistoryController as PlatformPriceHistoryController;
 use App\Http\Controllers\Platform\Reports\StockTransactionController as PlatformStockTransactionController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
@@ -39,6 +40,7 @@ use App\Http\Controllers\Platform\ShiftAssignmentController as PlatformShiftAssi
 use App\Http\Controllers\Platform\ShiftTemplateController as PlatformShiftTemplateController;
 use App\Http\Controllers\Platform\SmtpSettingsController as PlatformSmtpSettingsController;
 use App\Http\Controllers\Platform\StockController as PlatformStockController;
+use App\Http\Controllers\Platform\StockTransferController as PlatformStockTransferController;
 use App\Http\Controllers\Platform\TransferController as PlatformTransferController;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
@@ -234,6 +236,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('stock/import', [PlatformStockController::class, 'storeImport'])->name('platform.stock.import.store');
         Route::get('stock/price', fn (Request $request) => ProductManageRedirect::platform($request))
             ->name('platform.stock.price');
+        Route::get('reports/order-operations', [PlatformOrderOperationsController::class, 'index'])
+            ->name('platform.reports.order-operations');
         Route::get('reports/stock-transactions', [PlatformStockTransactionController::class, 'index'])
             ->name('platform.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [PlatformStockTransactionController::class, 'export'])
@@ -341,8 +345,30 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::get('orders/{order}', [PlatformOrderController::class, 'show'])->name('platform.orders.show');
         Route::put('orders/{order}/fulfillments/{fulfillment}/status', [PlatformOrderController::class, 'updateStatus'])
             ->name('platform.orders.fulfillments.status');
+        Route::post('orders/{order}/assign-driver', [PlatformOrderController::class, 'assignDriver'])
+            ->name('platform.orders.assign-driver');
+        Route::post('orders/{order}/cancel', [PlatformOrderController::class, 'cancel'])
+            ->name('platform.orders.cancel');
+        Route::post('orders/{order}/retry-delivery', [PlatformOrderController::class, 'retryDelivery'])
+            ->name('platform.orders.retry-delivery');
+        Route::post('orders/{order}/reschedule-delivery', [PlatformOrderController::class, 'rescheduleDelivery'])
+            ->name('platform.orders.reschedule-delivery');
+        Route::post('orders/{order}/return-delivery', [PlatformOrderController::class, 'returnDelivery'])
+            ->name('platform.orders.return-delivery');
+        Route::post('orders/{order}/confirm-return', [PlatformOrderController::class, 'confirmReturn'])
+            ->name('platform.orders.confirm-return');
         Route::put('orders/{order}/payment-status', [PlatformOrderController::class, 'markPaid'])
             ->name('platform.orders.payment-status');
+        Route::get('stock-transfers', [PlatformStockTransferController::class, 'index'])
+            ->name('platform.stock-transfers.index');
+        Route::post('stock-transfers/{stockTransfer}/approve', [PlatformStockTransferController::class, 'approve'])
+            ->name('platform.stock-transfers.approve');
+        Route::post('stock-transfers/{stockTransfer}/pick', [PlatformStockTransferController::class, 'pick'])
+            ->name('platform.stock-transfers.pick');
+        Route::post('stock-transfers/{stockTransfer}/dispatch', [PlatformStockTransferController::class, 'dispatch'])
+            ->name('platform.stock-transfers.dispatch');
+        Route::post('stock-transfers/{stockTransfer}/receive', [PlatformStockTransferController::class, 'receive'])
+            ->name('platform.stock-transfers.receive');
     });
 
     Route::middleware(['permission:manage-conversations'])->group(function () {

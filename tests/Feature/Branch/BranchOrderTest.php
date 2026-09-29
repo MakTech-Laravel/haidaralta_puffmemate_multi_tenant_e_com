@@ -2,9 +2,11 @@
 
 use App\Enums\FulfillmentStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
+use App\Models\Payment;
 use App\Models\User;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -19,11 +21,20 @@ beforeEach(function () {
 
 function branchOrderFulfillment(Branch $branch, array $overrides = []): OrderFulfillment
 {
-    $order = Order::factory()->create();
-
-    return OrderFulfillment::factory()->forOrder($order)->create(array_merge([
+    $order = Order::factory()->create([
+        'shipping_address_snapshot' => [
+            'name' => 'Ada Lovelace',
+            'phone' => '+61410111222',
+            'address' => '1 Test Street',
+            'city' => 'Sydney',
+        ],
+    ]);
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create(array_merge([
         'branch_id' => $branch->id,
     ], $overrides));
+    Payment::factory()->create(['order_id' => $order->id]);
+
+    return $fulfillment;
 }
 
 test('branch staff only see fulfillments for their own branch', function () {
@@ -71,7 +82,7 @@ test('branch staff can update fulfillment status and it rolls up to the master o
         ->and($fulfillment->order->refresh()->status->value)->toBe('processing');
 });
 
-test('branch staff can mark their fulfillment as paid and the order flips to paid when all fulfillments are paid', function () {
+test('branch staff can mark their fulfillment as collected', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
@@ -82,7 +93,7 @@ test('branch staff can mark their fulfillment as paid and the order flips to pai
         ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
 
     expect($fulfillment->refresh()->isPaid())->toBeTrue()
-        ->and($fulfillment->order->refresh()->payment_status)->toBe(PaymentStatus::Paid);
+        ->and($fulfillment->order->refresh()->payment_status)->toBe(PaymentStatus::Collected);
 });
 
 test('a second branchs staff cannot mark another branchs fulfillment as paid', function () {
@@ -97,4 +108,60 @@ test('a second branchs staff cannot mark another branchs fulfillment as paid', f
         ->assertNotFound();
 
     expect($fulfillment->refresh()->isPaid())->toBeFalse();
+});
+
+test('branch staff can retry reschedule and confirm a returned delivery', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $driver = User::factory()->create(['user_type' => UserType::DRIVER, 'branch_id' => null]);
+
+    $fulfillment = branchOrderFulfillment($sydney, [
+        'status' => FulfillmentStatus::DeliveryFailed,
+        'driver_id' => $driver->id,
+    ]);
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.orders.retry-delivery', [$sydney, $fulfillment]))
+        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::OutForDelivery);
+
+    $fulfillment->forceFill(['status' => FulfillmentStatus::DeliveryFailed])->save();
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.orders.reschedule-delivery', [$sydney, $fulfillment]))
+        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Ready)
+        ->and($fulfillment->driver_id)->toBeNull();
+
+    $fulfillment->forceFill(['status' => FulfillmentStatus::DeliveryFailed, 'driver_id' => $driver->id])->save();
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.orders.return-delivery', [$sydney, $fulfillment]))
+        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Returning);
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.orders.confirm-return', [$sydney, $fulfillment]))
+        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Cancelled);
+});
+
+test('a branch cannot retry another branchs failed delivery', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $other = Branch::factory()->create();
+    $driver = User::factory()->create(['user_type' => UserType::DRIVER, 'branch_id' => null]);
+
+    $fulfillment = branchOrderFulfillment($other, [
+        'status' => FulfillmentStatus::DeliveryFailed,
+        'driver_id' => $driver->id,
+    ]);
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.orders.retry-delivery', [$sydney, $fulfillment]))
+        ->assertNotFound();
 });

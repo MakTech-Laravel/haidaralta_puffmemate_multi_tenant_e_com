@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property DriverAvailabilityStatus $availability_status
  * @property string|null $notes
  * @property string|null $address
+ * @property string|null $latitude
+ * @property string|null $longitude
  * @property string|null $vehicle_image_path
  * @property-read User|null $user
  */
@@ -36,6 +38,8 @@ class DriverProfile extends Model
         'availability_status',
         'notes',
         'address',
+        'latitude',
+        'longitude',
         'vehicle_image_path',
     ];
 
@@ -55,6 +59,8 @@ class DriverProfile extends Model
         return [
             'vehicle_type' => DriverVehicleType::class,
             'availability_status' => DriverAvailabilityStatus::class,
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
         ];
     }
 }

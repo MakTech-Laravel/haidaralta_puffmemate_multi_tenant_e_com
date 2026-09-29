@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['branch_id', 'status']);
-            $table->index('order_id');
+            $table->unique('order_id');
         });
     }
 
