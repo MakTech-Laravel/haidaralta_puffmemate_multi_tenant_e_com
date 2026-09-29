@@ -94,6 +94,7 @@ class BranchPackDataTable extends AbstractDataTable
             'status' => (bool) $model->status,
             'starts_at' => $model->starts_at?->toDateString(),
             'ends_at' => $model->ends_at?->toDateString(),
+            'is_highlighted' => $model->highlighted_at !== null,
         ];
     }
 }

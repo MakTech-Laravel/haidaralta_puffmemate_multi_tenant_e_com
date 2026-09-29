@@ -7,17 +7,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Branch\StorePackRequest;
 use App\Http\Requests\Branch\UpdatePackRequest;
 use App\Models\Branch;
-use App\Models\BranchProductPrice;
-use App\Models\Inventory;
 use App\Models\Pack;
-use App\Models\PackItem;
-use App\Models\Product;
 use App\Services\Catalog\PackService;
-use App\Support\BranchProductPriceDisplay;
+use App\Support\PackPortalPayload;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -41,7 +36,7 @@ class PacksSavesController extends Controller
 
         return Inertia::render('branch/catalog/packs-saves/create', [
             'branch' => $branch->toPortalContext(),
-            'availableProducts' => $this->availableProducts($branch),
+            'availableProducts' => PackPortalPayload::availableProducts($branch),
         ]);
     }
 
@@ -50,13 +45,13 @@ class PacksSavesController extends Controller
         $branch = $this->currentBranch();
         $data = $request->safe()->except(['image', 'gallery']);
         $data['status'] = $request->boolean('status', true);
-        $data['items'] = $this->normalizedItems($request->validated('items'));
+        $data['items'] = $request->packItems();
 
         $pack = $this->packs->create(
             $branch,
             $data,
             $request->file('image'),
-            $this->uploadedGallery($request),
+            $request->galleryFiles(),
             $request->user('branch'),
         );
 
@@ -72,7 +67,7 @@ class PacksSavesController extends Controller
 
         return Inertia::render('branch/catalog/packs-saves/show', [
             'branch' => $branch->toPortalContext(),
-            'pack' => $this->mapPack($branch, $pack, detailed: true),
+            'pack' => PackPortalPayload::pack($branch, $pack, detailed: true),
         ]);
     }
 
@@ -83,8 +78,8 @@ class PacksSavesController extends Controller
 
         return Inertia::render('branch/catalog/packs-saves/edit', [
             'branch' => $branch->toPortalContext(),
-            'pack' => $this->mapPack($branch, $pack, detailed: true),
-            'availableProducts' => $this->availableProducts($branch),
+            'pack' => PackPortalPayload::pack($branch, $pack, detailed: true),
+            'availableProducts' => PackPortalPayload::availableProducts($branch),
         ]);
     }
 
@@ -102,7 +97,7 @@ class PacksSavesController extends Controller
             $pack,
             $data,
             $request->file('image'),
-            $this->uploadedGallery($request),
+            $request->galleryFiles(),
             $request->user('branch'),
         );
 
@@ -120,163 +115,6 @@ class PacksSavesController extends Controller
         Toast::success('Pack deleted.');
 
         return redirect()->route('branch.packs-saves.index', $branch);
-    }
-
-    /**
-     * Catalog-active SKUs that already have a stock row at this branch.
-     *
-     * @return list<array{
-     *     id: int,
-     *     name: string,
-     *     sku: string|null,
-     *     image_url: string|null,
-     *     selling_price: string|null,
-     *     effective_price: string|null,
-     *     quantity: int
-     * }>
-     */
-    private function availableProducts(Branch $branch): array
-    {
-        $inventories = Inventory::query()
-            ->where('branch_id', $branch->id)
-            ->whereNull('variant_id')
-            ->orderBy('product_id')
-            ->pluck('quantity', 'product_id');
-
-        if ($inventories->isEmpty()) {
-            return [];
-        }
-
-        $products = Product::query()
-            ->whereIn('id', $inventories->keys())
-            ->where('status', true)
-            ->orderBy('name')
-            ->orderBy('id')
-            ->get();
-
-        $prices = collect();
-
-        if (BranchProductPriceDisplay::usesBranchPricing() && $products->isNotEmpty()) {
-            $prices = BranchProductPrice::query()
-                ->where('branch_id', $branch->id)
-                ->whereIn('product_id', $products->modelKeys())
-                ->whereNull('variant_id')
-                ->where('status', true)
-                ->get()
-                ->keyBy('product_id');
-        }
-
-        return $products
-            ->map(function (Product $product) use ($prices, $inventories): array {
-                /** @var BranchProductPrice|null $price */
-                $price = $prices->get($product->id);
-                $display = BranchProductPriceDisplay::listDisplayForProductContext(
-                    $price,
-                    $product,
-                );
-
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'sku' => $product->sku,
-                    'image_url' => $product->imageUrl(),
-                    'selling_price' => $display['selling_price'],
-                    'effective_price' => $display['effective_price'],
-                    'quantity' => (int) $inventories->get($product->id, 0),
-                ];
-            })
-            ->values()
-            ->all();
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function mapPack(Branch $branch, Pack $pack, bool $detailed = false): array
-    {
-        $payload = $pack->toPortal($detailed);
-
-        if (! $detailed) {
-            return $payload;
-        }
-
-        $productIds = $pack->items->pluck('product_id');
-        $remaining = Inventory::query()
-            ->where('branch_id', $branch->id)
-            ->whereIn('product_id', $productIds)
-            ->whereNull('variant_id')
-            ->pluck('quantity', 'product_id');
-
-        $prices = collect();
-
-        if (BranchProductPriceDisplay::usesBranchPricing() && $productIds->isNotEmpty()) {
-            $prices = BranchProductPrice::query()
-                ->where('branch_id', $branch->id)
-                ->whereIn('product_id', $productIds)
-                ->whereNull('variant_id')
-                ->where('status', true)
-                ->get()
-                ->keyBy('product_id');
-        }
-
-        $payload['items'] = $pack->items
-            ->map(function (PackItem $item) use ($prices, $remaining): array {
-                $product = $item->product;
-                $display = BranchProductPriceDisplay::listDisplayForProductContext(
-                    $prices->get($item->product_id),
-                    $product,
-                );
-
-                return [
-                    'product_id' => $item->product_id,
-                    'quantity' => $item->quantity,
-                    'product' => [
-                        'id' => $product?->id,
-                        'name' => $product?->name ?? 'Unknown product',
-                        'sku' => $product?->sku,
-                        'image_url' => $product?->imageUrl(),
-                        'selling_price' => $display['selling_price'],
-                        'effective_price' => $display['effective_price'],
-                        'quantity' => (int) $remaining->get($item->product_id, 0),
-                    ],
-                ];
-            })
-            ->values()
-            ->all();
-
-        return $payload;
-    }
-
-    /**
-     * @param  list<array{product_id: mixed, quantity: mixed}>  $items
-     * @return list<array{product_id: int, quantity: int}>
-     */
-    private function normalizedItems(array $items): array
-    {
-        return collect($items)
-            ->map(fn (array $item): array => [
-                'product_id' => (int) $item['product_id'],
-                'quantity' => (int) $item['quantity'],
-            ])
-            ->values()
-            ->all();
-    }
-
-    /**
-     * @return list<UploadedFile>
-     */
-    private function uploadedGallery(Request $request): array
-    {
-        $files = $request->file('gallery', []);
-
-        if ($files instanceof UploadedFile) {
-            return [$files];
-        }
-
-        return array_values(array_filter(
-            is_array($files) ? $files : [],
-            fn ($file): bool => $file instanceof UploadedFile,
-        ));
     }
 
     private function currentBranch(): Branch

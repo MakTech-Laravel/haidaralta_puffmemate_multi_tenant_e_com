@@ -64,9 +64,15 @@ export type PackFormDefaults = {
     offer_value?: string;
     quantity?: number;
     status?: boolean;
+    is_highlighted?: boolean;
     starts_at?: string | null;
     ends_at?: string | null;
     items?: { quantity: number; product: PackProductOption }[];
+};
+
+type EmptyProductsMessage = {
+    title: string;
+    description: string;
 };
 
 type PackLine = {
@@ -151,12 +157,21 @@ export function BranchPackForm({
     cancelHref,
     defaults,
     isEdit = false,
+    extraData,
+    canHighlight = false,
+    emptyProductsMessage = {
+        title: 'No stock products on this branch',
+        description: 'Add products first, then come back to build a pack.',
+    },
 }: {
     action: FormAction;
     availableProducts: PackProductOption[];
     cancelHref: string;
     defaults?: PackFormDefaults;
     isEdit?: boolean;
+    extraData?: { branch_id: number | null };
+    canHighlight?: boolean;
+    emptyProductsMessage?: EmptyProductsMessage;
 }) {
     const [existingCover, setExistingCover] = useState<ExistingFile[]>(
         defaults?.image && defaults.image_url
@@ -203,6 +218,7 @@ export function BranchPackForm({
         remove_image: false,
         remove_gallery_ids: [] as number[],
         status: defaults?.status ?? true,
+        is_highlighted: defaults?.is_highlighted ?? false,
         starts_at: defaults?.starts_at ?? '',
         ends_at: defaults?.ends_at ?? '',
         offer_type: defaults?.offer_type ?? ('percent' as OfferType),
@@ -358,11 +374,14 @@ export function BranchPackForm({
                 description,
                 starts_at,
                 ends_at,
+                is_highlighted,
                 ...rest
             } = form;
 
             return {
                 ...rest,
+                ...(extraData ?? {}),
+                ...(canHighlight ? { is_highlighted } : {}),
                 description: description === '' ? null : description,
                 starts_at: starts_at === '' ? null : starts_at,
                 ends_at: ends_at === '' ? null : ends_at,
@@ -443,6 +462,30 @@ export function BranchPackForm({
                             />
                         </div>
                         <InputError message={errors.status} />
+
+                        {canHighlight ? (
+                            <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                                <div>
+                                    <Label htmlFor="pack-highlighted">
+                                        Highlight on storefront
+                                    </Label>
+                                    <p className="text-muted-foreground text-sm">
+                                        Shows as the featured pack on Packs &amp;
+                                        Saves. Only one pack can be highlighted.
+                                    </p>
+                                </div>
+                                <Switch
+                                    id="pack-highlighted"
+                                    checked={data.is_highlighted}
+                                    onCheckedChange={(is_highlighted) =>
+                                        setData((current) => ({
+                                            ...current,
+                                            is_highlighted,
+                                        }))
+                                    }
+                                />
+                            </div>
+                        ) : null}
 
                         <div className="space-y-2">
                             <Label htmlFor="pack-name">
@@ -680,11 +723,10 @@ export function BranchPackForm({
                             <Alert>
                                 <Package2 />
                                 <AlertTitle>
-                                    No stock products on this branch
+                                    {emptyProductsMessage.title}
                                 </AlertTitle>
                                 <AlertDescription>
-                                    Add products first, then come back to build
-                                    a pack.
+                                    {emptyProductsMessage.description}
                                 </AlertDescription>
                             </Alert>
                         ) : null}

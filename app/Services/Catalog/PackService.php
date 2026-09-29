@@ -37,6 +37,7 @@ class PackService
      *     offer_value: float|string,
      *     quantity: int,
      *     status?: bool,
+     *     is_highlighted?: bool,
      *     starts_at?: string|null,
      *     ends_at?: string|null,
      *     items: list<array{product_id: int, quantity: int}>,
@@ -90,6 +91,10 @@ class PackService
             $this->allocate($branch, $pack->fresh(['items.product']) ?? $pack, $quantity, $actor);
             $this->persistStatus($pack, $wantsActive && $quantity > 0);
 
+            if (array_key_exists('is_highlighted', $data)) {
+                $this->setHighlighted($pack, (bool) $data['is_highlighted']);
+            }
+
             return $pack->refresh()->load(['items.product', 'images']);
         });
     }
@@ -102,6 +107,7 @@ class PackService
      *     offer_value: float|string,
      *     quantity: int,
      *     status?: bool,
+     *     is_highlighted?: bool,
      *     starts_at?: string|null,
      *     ends_at?: string|null,
      *     remove_image?: bool,
@@ -183,7 +189,36 @@ class PackService
             $pack->save();
             $this->persistStatus($pack, $status);
 
+            if (array_key_exists('is_highlighted', $data)) {
+                $this->setHighlighted($pack, (bool) $data['is_highlighted']);
+            }
+
             return $pack->refresh()->load(['items.product', 'images']);
+        });
+    }
+
+    /**
+     * Only one pack store-wide can be highlighted for the storefront featured section.
+     */
+    public function setHighlighted(Pack $pack, bool $highlighted): Pack
+    {
+        return DB::transaction(function () use ($pack, $highlighted): Pack {
+            if (! $highlighted) {
+                $pack->forceFill(['highlighted_at' => null])->save();
+
+                return $pack;
+            }
+
+            Pack::query()
+                ->whereKeyNot($pack->id)
+                ->whereNotNull('highlighted_at')
+                ->update(['highlighted_at' => null]);
+
+            if ($pack->highlighted_at === null) {
+                $pack->forceFill(['highlighted_at' => now()])->save();
+            }
+
+            return $pack;
         });
     }
 

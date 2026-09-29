@@ -65,6 +65,35 @@ test('featured pack is the active pack with the biggest saving', function () {
             ->where('packs.0.name', 'Carton Saver'));
 });
 
+test('featured pack is the highlighted pack even when another saves more', function () {
+    $branch = Branch::factory()->create();
+    Pack::factory()->for($branch)->create(['name' => 'Big Saver', 'subtotal' => '200.00', 'pack_price' => '100.00']);
+    Pack::factory()->for($branch)->create([
+        'name' => 'Highlighted Pick',
+        'subtotal' => '100.00',
+        'pack_price' => '95.00',
+        'highlighted_at' => now(),
+    ]);
+
+    $this->get(route('packs-saves'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('featuredPack.name', 'Highlighted Pick'));
+});
+
+test('an inactive highlighted pack falls back to the biggest saving', function () {
+    $branch = Branch::factory()->create();
+    Pack::factory()->for($branch)->create(['name' => 'Big Saver', 'subtotal' => '200.00', 'pack_price' => '100.00']);
+    Pack::factory()->for($branch)->create([
+        'name' => 'Highlighted Off',
+        'status' => false,
+        'highlighted_at' => now(),
+    ]);
+
+    $this->get(route('packs-saves'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('featuredPack.name', 'Big Saver'));
+});
+
 test('featured pack is null when no pack is active', function () {
     Pack::factory()->create(['status' => false]);
 

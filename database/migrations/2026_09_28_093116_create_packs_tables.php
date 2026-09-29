@@ -23,6 +23,7 @@ return new class extends Migration
             $table->boolean('status')->default(true);
             $table->date('starts_at')->nullable();
             $table->date('ends_at')->nullable();
+            $table->timestamp('highlighted_at')->nullable()->index();
             $table->timestamps();
 
             $table->unique(['branch_id', 'slug']);

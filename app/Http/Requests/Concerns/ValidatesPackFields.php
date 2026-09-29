@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Concerns;
 
 use App\Enums\PackOfferType;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 
 trait ValidatesPackFields
@@ -47,5 +48,36 @@ trait ValidatesPackFields
         }
 
         return $rules;
+    }
+
+    /**
+     * @return list<array{product_id: int, quantity: int}>
+     */
+    public function packItems(): array
+    {
+        return collect($this->validated('items', []))
+            ->map(fn (array $item): array => [
+                'product_id' => (int) $item['product_id'],
+                'quantity' => (int) $item['quantity'],
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<UploadedFile>
+     */
+    public function galleryFiles(): array
+    {
+        $files = $this->file('gallery', []);
+
+        if ($files instanceof UploadedFile) {
+            return [$files];
+        }
+
+        return array_values(array_filter(
+            is_array($files) ? $files : [],
+            fn ($file): bool => $file instanceof UploadedFile,
+        ));
     }
 }

@@ -381,6 +381,31 @@ test('deleting a pack releases remaining allocation', function () {
         )->toBeTrue();
 });
 
+test('branch staff cannot highlight a pack', function () {
+    $first = stockedProduct($this->branch);
+    $second = stockedProduct($this->branch);
+
+    $this->actingAs($this->staff, 'branch')
+        ->post(route('branch.packs-saves.store', $this->branch), packPayload($first, $second, 1, [
+            'is_highlighted' => true,
+        ]));
+
+    $pack = Pack::query()->firstOrFail();
+
+    $this->actingAs($this->staff, 'branch')
+        ->put(route('branch.packs-saves.update', [$this->branch, $pack]), [
+            'name' => $pack->name,
+            'offer_type' => $pack->offer_type->value,
+            'offer_value' => $pack->offer_value,
+            'quantity' => $pack->quantity,
+            'status' => true,
+            'is_highlighted' => true,
+        ])
+        ->assertRedirect(route('branch.packs-saves.show', [$this->branch, $pack]));
+
+    expect($pack->refresh()->highlighted_at)->toBeNull();
+});
+
 test('a pack from another branch is not found on this branch url', function () {
     $otherBranch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
     $pack = Pack::factory()->create([

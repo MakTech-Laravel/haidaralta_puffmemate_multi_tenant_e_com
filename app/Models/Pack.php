@@ -30,6 +30,7 @@ use Illuminate\Support\Carbon;
  * @property bool $status
  * @property Carbon|null $starts_at
  * @property Carbon|null $ends_at
+ * @property Carbon|null $highlighted_at
  * @property-read Branch|null $branch
  * @property-read Collection<int, PackItem> $items
  * @property-read Collection<int, PackImage> $images
@@ -72,6 +73,7 @@ class Pack extends Model implements DataTableConfigurable
         'status',
         'starts_at',
         'ends_at',
+        'highlighted_at',
     ];
 
     /**
@@ -123,6 +125,7 @@ class Pack extends Model implements DataTableConfigurable
             'status' => (bool) $this->status,
             'starts_at' => $this->starts_at?->toDateString(),
             'ends_at' => $this->ends_at?->toDateString(),
+            'is_highlighted' => $this->highlighted_at !== null,
             'product_count' => (int) ($this->items_count ?? $this->items->count()),
         ];
 
@@ -169,8 +172,15 @@ class Pack extends Model implements DataTableConfigurable
         return 'slug';
     }
 
+    /**
+     * Branch routes bind by slug inside the branch; platform routes bind `{pack:id}` across branches.
+     */
     public function resolveRouteBinding($value, $field = null): ?Model
     {
+        if ($field === 'id') {
+            return $this->whereKey($value)->first();
+        }
+
         $branchId = $this->boundBranchId();
 
         if ($branchId === null) {
@@ -220,6 +230,7 @@ class Pack extends Model implements DataTableConfigurable
             'status' => 'boolean',
             'starts_at' => 'date',
             'ends_at' => 'date',
+            'highlighted_at' => 'datetime',
         ];
     }
 }

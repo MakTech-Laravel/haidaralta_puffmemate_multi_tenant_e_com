@@ -26,6 +26,7 @@ use App\Http\Controllers\Platform\HomeBannerController as PlatformHomeBannerCont
 use App\Http\Controllers\Platform\NotificationController as PlatformNotificationController;
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
 use App\Http\Controllers\Platform\OrderController as PlatformOrderController;
+use App\Http\Controllers\Platform\PacksSavesController as PlatformPacksSavesController;
 use App\Http\Controllers\Platform\PaymentGatewaySettingsController as PlatformPaymentGatewaySettingsController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\PriceRangeController as PlatformPriceRangeController;
@@ -279,6 +280,30 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('products/{product}/restore', [PlatformProductController::class, 'restore'])
             ->name('platform.products.restore')
             ->withTrashed();
+
+        Route::get('packs-saves/branch-options', [PlatformPacksSavesController::class, 'branchOptions'])
+            ->name('platform.packs-saves.branch-options');
+        Route::get('packs-saves', [PlatformPacksSavesController::class, 'index'])
+            ->name('platform.packs-saves.index');
+        Route::get('packs-saves/create', [PlatformPacksSavesController::class, 'create'])
+            ->name('platform.packs-saves.create');
+        Route::post('packs-saves', [PlatformPacksSavesController::class, 'store'])
+            ->name('platform.packs-saves.store');
+        Route::get('packs-saves/{pack:id}', [PlatformPacksSavesController::class, 'show'])
+            ->whereNumber('pack')
+            ->name('platform.packs-saves.show');
+        Route::get('packs-saves/{pack:id}/edit', [PlatformPacksSavesController::class, 'edit'])
+            ->whereNumber('pack')
+            ->name('platform.packs-saves.edit');
+        Route::put('packs-saves/{pack:id}', [PlatformPacksSavesController::class, 'update'])
+            ->whereNumber('pack')
+            ->name('platform.packs-saves.update');
+        Route::put('packs-saves/{pack:id}/highlight', [PlatformPacksSavesController::class, 'highlight'])
+            ->whereNumber('pack')
+            ->name('platform.packs-saves.highlight');
+        Route::delete('packs-saves/{pack:id}', [PlatformPacksSavesController::class, 'destroy'])
+            ->whereNumber('pack')
+            ->name('platform.packs-saves.destroy');
 
         Route::get('catalog/pricing/manage', [PlatformCatalogPricingController::class, 'manage'])
             ->name('platform.catalog.pricing.manage');

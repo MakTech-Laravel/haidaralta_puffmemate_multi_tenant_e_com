@@ -57,7 +57,7 @@ Inventory & pricing is one shadow-sm card: 4-stat strip, then Stock left / Price
 Branch portal sidebar group is Staff management (not Administrator). Contains Staff, Roles, Permissions, Shifts, Assign to shift. Platform keeps Administrator.
 
 ## Packs & Saves sits under Product management
-Branch Product management lists Packs & Saves immediately after Products (Package2, manage-branch-products, /branch/{slug}/packs-saves). Do not wrap it in navSoon. Do not add a platform Packs & Saves menu.
+Branch Product management lists Packs & Saves immediately after Products (Package2, manage-branch-products, /branch/{slug}/packs-saves). Do not wrap it in navSoon. Platform has its own Packs & Saves link after Products (manage-catalog, /platform/packs-saves). Branch lists show a read-only Highlighted badge only.
 
 ## Pack offer is Amount off Percent or Pack price
 Pack pricing is a 3-button row (Amount off / Percent / Pack price) on the combined line subtotal (qty × unit effective/selling), not per-product discount fields. Picker is this branch's stock only; duplicate SKUs are not allowed.

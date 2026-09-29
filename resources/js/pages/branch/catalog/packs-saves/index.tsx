@@ -32,6 +32,7 @@ type PackRow = {
     status: boolean;
     starts_at: string | null;
     ends_at: string | null;
+    is_highlighted: boolean;
 };
 
 function initials(name: string): string {
@@ -125,9 +126,16 @@ export default function BranchPacksSavesIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <DataTableTruncated className="font-medium">
-                        {row.original.name}
-                    </DataTableTruncated>
+                    <div className="flex min-w-0 items-center gap-2">
+                        <DataTableTruncated className="font-medium">
+                            {row.original.name}
+                        </DataTableTruncated>
+                        {row.original.is_highlighted ? (
+                            <Badge variant="outline" className="shrink-0">
+                                Highlighted
+                            </Badge>
+                        ) : null}
+                    </div>
                 ),
             },
             {

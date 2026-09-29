@@ -4,6 +4,7 @@ paths:
   - app/Http/Controllers/Platform/BranchStaffController.php
   - 'app/Http/Controllers/Platform/*Shift*.php'
   - app/Http/Controllers/Platform/AnnouncementController.php
+  - app/Http/Controllers/Platform/PacksSavesController.php
 ---
 
 # Controllers Platform
@@ -27,3 +28,6 @@ Branch shift combobox loads GET platform.branch-shift-templates.branch-options (
 
 ## Announcement send toast has no recipient count
 After a successful compose send, flash Toast::success('Notification sent.'). Keep recipient_count on the announcements row for audit. Do not put the user count in the toast.
+
+## Platform Packs & Saves and the single store-wide highlight
+Platform manages every branch's packs under manage-catalog: create picks branch_id, and routes bind {pack:id} because slugs are only unique per branch. Branch portal keeps its own slug-scoped CRUD. Only platform may set packs.highlighted_at via PackService::setHighlighted (clears every other pack). Branch requests do not validate is_highlighted, so branches can never set it. StorefrontCatalog::featuredPack shows the highlighted active pack, falling back to the biggest saving.

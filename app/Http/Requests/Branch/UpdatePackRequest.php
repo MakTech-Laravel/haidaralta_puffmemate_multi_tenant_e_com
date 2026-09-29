@@ -7,7 +7,6 @@ use App\Http\Requests\Concerns\ValidatesPackFields;
 use App\Models\Pack;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -70,24 +69,10 @@ class UpdatePackRequest extends FormRequest
                     ->when($removeIds !== [], fn ($query) => $query->whereNotIn('id', $removeIds))
                     ->count();
 
-                if ($existing + $this->uploadedGalleryCount() > 12) {
+                if ($existing + count($this->galleryFiles()) > 12) {
                     $validator->errors()->add('gallery', 'A pack can have at most 12 gallery images.');
                 }
             },
         ];
-    }
-
-    private function uploadedGalleryCount(): int
-    {
-        $files = $this->file('gallery', []);
-
-        if ($files instanceof UploadedFile) {
-            return 1;
-        }
-
-        return count(array_filter(
-            is_array($files) ? $files : [],
-            fn ($file): bool => $file instanceof UploadedFile,
-        ));
     }
 }

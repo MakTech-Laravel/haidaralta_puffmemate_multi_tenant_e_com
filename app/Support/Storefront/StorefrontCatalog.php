@@ -657,16 +657,21 @@ class StorefrontCatalog
     }
 
     /**
-     * The active pack with the biggest saving, shown as the flagship offer.
+     * The platform-highlighted active pack, falling back to the active pack
+     * with the biggest saving, shown as the flagship offer.
      *
      * @return array{id: string, name: string, eyebrow: string, description: string, image: string, price: string, currency: string, savings: string|null, stockLeft: int, regularPrice: string, discountPercent: int, branchName: string, items: list<array{name: string, quantity: int}>}|null
      */
     public static function featuredPack(?Branch $branch = null): ?array
     {
         $pack = self::activePacksQuery($branch)
-            ->orderByRaw('(subtotal - pack_price) desc')
-            ->orderBy('id')
-            ->first();
+            ->whereNotNull('highlighted_at')
+            ->latest('highlighted_at')
+            ->first()
+            ?? self::activePacksQuery($branch)
+                ->orderByRaw('(subtotal - pack_price) desc')
+                ->orderBy('id')
+                ->first();
 
         if ($pack === null) {
             return null;
