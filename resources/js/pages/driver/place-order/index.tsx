@@ -2,15 +2,14 @@ import { Head } from '@inertiajs/react';
 import { Package, UserRound, Wallet } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
-import { PlaceOrderCustomerMode } from '@/components/driver/place-order/place-order-customer-mode';
 import {
     PlaceOrderCustomerSection,
+    looksLikePhone,
     type CustomerFormValues,
 } from '@/components/driver/place-order/place-order-customer-section';
 import { PlaceOrderPaymentSection } from '@/components/driver/place-order/place-order-payment-section';
 import { PlaceOrderProductsSection } from '@/components/driver/place-order/place-order-products-section';
 import type {
-    CustomerMode,
     DriverPlaceOrderCatalog,
     DriverPlaceOrderCustomer,
 } from '@/components/driver/place-order/place-order-types';
@@ -20,8 +19,6 @@ import { index as placeOrderIndex } from '@/routes/driver/place-order';
 const emptyCustomer: CustomerFormValues = {
     name: '',
     phone: '',
-    address: '',
-    locationLabel: '',
 };
 
 type DriverPlaceOrderIndexProps = DriverPlaceOrderCatalog;
@@ -68,8 +65,8 @@ export default function DriverPlaceOrderIndex({
     products,
     paymentMethods,
 }: DriverPlaceOrderIndexProps) {
-    const [mode, setMode] = useState<CustomerMode>('registered');
     const [customerQuery, setCustomerQuery] = useState('');
+    const [isAddingNew, setIsAddingNew] = useState(false);
     const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
         null,
     );
@@ -105,25 +102,34 @@ export default function DriverPlaceOrderIndex({
     const canPlace =
         customer.name.trim() !== '' &&
         customer.phone.trim() !== '' &&
-        customer.address.trim() !== '' &&
         paymentMethodId !== null &&
         itemCount > 0;
 
-    const handleModeChange = (next: CustomerMode): void => {
-        setMode(next);
+    const resetCustomerSearch = (): void => {
         setSelectedCustomerId(null);
+        setIsAddingNew(false);
         setCustomer(emptyCustomer);
         setCustomerQuery('');
     };
 
     const handleSelectCustomer = (selected: DriverPlaceOrderCustomer): void => {
         setSelectedCustomerId(selected.id);
+        setIsAddingNew(false);
         setCustomer({
             name: selected.name,
             phone: selected.phone,
-            address: selected.address,
-            locationLabel: selected.locationLabel,
         });
+    };
+
+    const handleStartAdd = (query: string): void => {
+        setSelectedCustomerId(null);
+        setIsAddingNew(true);
+
+        if (looksLikePhone(query)) {
+            setCustomer({ name: '', phone: query });
+        } else {
+            setCustomer({ name: query, phone: '' });
+        }
     };
 
     const handlePlaceOrder = (): void => {
@@ -144,35 +150,30 @@ export default function DriverPlaceOrderIndex({
         <>
             <Head title="Place order" />
 
-            <div className="flex flex-col gap-5 pb-36 xl:pb-28">
+            <div className="flex flex-col gap-5 pb-4">
                 <div className="space-y-1.5">
                     <h1 className="text-foreground text-2xl font-bold tracking-tight">
                         Place order
                     </h1>
                     <p className="text-muted-foreground text-sm leading-relaxed">
-                        Sell branch-assigned stock to a registered customer or
-                        add details manually.
+                        Sell branch-assigned stock to a customer. Search first,
+                        or add them if they are not listed.
                     </p>
                 </div>
 
                 <SectionShell
                     icon={UserRound}
                     title="Customer"
-                    description="Search a registered shopper, or enter details for a new one."
+                    description="Search a customer, or add one if they are not listed."
                 >
-                    <PlaceOrderCustomerMode
-                        mode={mode}
-                        onChange={handleModeChange}
-                    />
                     <PlaceOrderCustomerSection
-                        mode={mode}
                         customers={customers}
                         selectedCustomerId={selectedCustomerId}
+                        isAddingNew={isAddingNew}
                         onSelectCustomer={handleSelectCustomer}
-                        onClearSelection={() => {
-                            setSelectedCustomerId(null);
-                            setCustomer(emptyCustomer);
-                        }}
+                        onClearSelection={resetCustomerSearch}
+                        onStartAdd={handleStartAdd}
+                        onCancelAdd={resetCustomerSearch}
                         values={customer}
                         onChange={(field, value) =>
                             setCustomer((current) => ({
@@ -188,7 +189,7 @@ export default function DriverPlaceOrderIndex({
                 <SectionShell
                     icon={Package}
                     title="Products"
-                    description="Only in-stock assigned products can be sold."
+                    description="Search assigned stock. Selected items stay in your order."
                 >
                     <PlaceOrderProductsSection
                         products={products}
@@ -213,11 +214,9 @@ export default function DriverPlaceOrderIndex({
                         onSelect={setPaymentMethodId}
                     />
                 </SectionShell>
-            </div>
 
-            <div className="border-border/80 bg-background/90 fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 border-t backdrop-blur-md supports-backdrop-filter:bg-background/75 xl:bottom-0">
-                <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                    <div>
+                <div className="border-border/80 bg-background/95 sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 -mx-1 flex items-center justify-between gap-4 rounded-2xl border px-4 py-3 shadow-sm backdrop-blur-md supports-backdrop-filter:bg-background/85 xl:bottom-0">
+                    <div className="min-w-0">
                         <p className="text-muted-foreground text-xs font-medium">
                             {itemCount} {itemCount === 1 ? 'item' : 'items'}
                         </p>
@@ -228,7 +227,7 @@ export default function DriverPlaceOrderIndex({
                     <Button
                         type="button"
                         size="lg"
-                        className="h-12 w-full rounded-2xl sm:w-auto sm:min-w-44"
+                        className="h-12 shrink-0 rounded-2xl px-6 sm:min-w-44"
                         disabled={!canPlace}
                         onClick={handlePlaceOrder}
                     >

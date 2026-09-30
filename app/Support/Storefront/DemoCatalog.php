@@ -1359,6 +1359,7 @@ class DemoCatalog
      *         id: string,
      *         name: string,
      *         description: string,
+     *         category: string,
      *         priceLabel: string,
      *         price: float,
      *         stock: int,
@@ -1370,6 +1371,34 @@ class DemoCatalog
     public static function driverPlaceOrder(): array
     {
         $catalog = self::products();
+        $stockById = [
+            '1' => 12,
+            '2' => 8,
+            '3' => 0,
+            '4' => 5,
+            '5' => 3,
+            '6' => 7,
+            '7' => 4,
+            '8' => 2,
+            '9' => 9,
+            '10' => 6,
+            '11' => 1,
+            '12' => 0,
+        ];
+        $priceById = [
+            '1' => 14.0,
+            '2' => 13.5,
+            '3' => 89.0,
+            '4' => 18.0,
+            '5' => 13.0,
+            '6' => 12.5,
+            '7' => 22.0,
+            '8' => 9.5,
+            '9' => 14.0,
+            '10' => 13.5,
+            '11' => 13.0,
+            '12' => 12.5,
+        ];
 
         return [
             'customers' => [
@@ -1395,53 +1424,24 @@ class DemoCatalog
                     'locationLabel' => 'Bondi Junction · Sydney',
                 ],
             ],
-            'products' => [
-                [
-                    'id' => $catalog[0]['id'],
-                    'name' => $catalog[0]['name'],
-                    'description' => $catalog[0]['description'],
-                    'priceLabel' => $catalog[0]['price'],
-                    'price' => 14.0,
-                    'stock' => 12,
-                    'image' => $catalog[0]['image'],
-                ],
-                [
-                    'id' => $catalog[1]['id'],
-                    'name' => $catalog[1]['name'],
-                    'description' => $catalog[1]['description'],
-                    'priceLabel' => $catalog[1]['price'],
-                    'price' => 13.5,
-                    'stock' => 8,
-                    'image' => $catalog[1]['image'],
-                ],
-                [
-                    'id' => $catalog[2]['id'],
-                    'name' => $catalog[2]['name'],
-                    'description' => $catalog[2]['description'],
-                    'priceLabel' => $catalog[2]['price'],
-                    'price' => 89.0,
-                    'stock' => 0,
-                    'image' => $catalog[2]['image'],
-                ],
-                [
-                    'id' => $catalog[3]['id'],
-                    'name' => $catalog[3]['name'],
-                    'description' => $catalog[3]['description'],
-                    'priceLabel' => $catalog[3]['price'],
-                    'price' => 18.0,
-                    'stock' => 5,
-                    'image' => $catalog[3]['image'],
-                ],
-                [
-                    'id' => $catalog[4]['id'],
-                    'name' => $catalog[4]['name'],
-                    'description' => $catalog[4]['description'],
-                    'priceLabel' => $catalog[4]['price'],
-                    'price' => 13.0,
-                    'stock' => 3,
-                    'image' => $catalog[4]['image'],
-                ],
-            ],
+            'products' => array_values(array_map(
+                static function (array $product) use ($stockById, $priceById): array {
+                    $id = (string) $product['id'];
+                    $price = $priceById[$id] ?? (float) preg_replace('/[^\d.]/', '', $product['price']);
+
+                    return [
+                        'id' => $id,
+                        'name' => $product['name'],
+                        'description' => $product['description'],
+                        'category' => $product['category'],
+                        'priceLabel' => $product['price'],
+                        'price' => $price,
+                        'stock' => $stockById[$id] ?? 5,
+                        'image' => $product['image'],
+                    ];
+                },
+                $catalog,
+            )),
             'paymentMethods' => [
                 ['id' => 'cod', 'label' => 'Cash on delivery'],
                 ['id' => 'pos', 'label' => 'POS machine'],

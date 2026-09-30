@@ -24,6 +24,7 @@ test('drivers can open the design-only place order page', function () {
             ->has('products')
             ->has('paymentMethods')
             ->where('customers.0.name', 'James Okonkwo')
+            ->where('products.0.category', 'Cigarettes')
             ->where('products.2.stock', 0)
             ->where('paymentMethods.0.id', 'cod'));
 });

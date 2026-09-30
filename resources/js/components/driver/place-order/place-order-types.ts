@@ -10,6 +10,7 @@ export type DriverPlaceOrderProduct = {
     id: string;
     name: string;
     description: string;
+    category: string;
     priceLabel: string;
     price: number;
     stock: number;
@@ -26,5 +27,3 @@ export type DriverPlaceOrderCatalog = {
     products: DriverPlaceOrderProduct[];
     paymentMethods: DriverPlaceOrderPaymentMethod[];
 };
-
-export type CustomerMode = 'registered' | 'new';
