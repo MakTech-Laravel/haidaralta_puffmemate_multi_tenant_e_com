@@ -97,6 +97,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/layouts/settings/** | .ai/rules/layouts-settings.md |
 | resources/js/layouts/{platform,branch}/** | .ai/rules/layoutsplatformbranch.md |
 | resources/js/lib/fcm.ts, resources/js/lib/color-picker.ts, resources/js/lib/stock-query.ts, resources/js/lib/branch-people-query.ts | .ai/rules/lib.md |
+| routes/public.php,app/Http/Middleware/EnsureStorefrontCustomer.php,app/Http/Controllers/Storefront/CheckoutController.php | .ai/rules/middleware-http-controllers-storefront.md |
 | routes/public.php,bootstrap/app.php,app/Http/Middleware/EnsurePortalGuard.php | .ai/rules/middleware.md |
 | database/migrations/**, database/migrations/2026_09_13_042225_create_products_table.php | .ai/rules/migrations.md |
 | app/Models/**.php | .ai/rules/models.md |

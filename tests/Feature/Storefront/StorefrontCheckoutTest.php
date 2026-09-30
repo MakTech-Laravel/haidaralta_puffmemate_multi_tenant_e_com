@@ -3,6 +3,7 @@
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
 use App\Enums\PaymentStatus;
+use App\Enums\UserType;
 use App\Models\AllocationDecisionLog;
 use App\Models\Branch;
 use App\Models\Cart;
@@ -140,6 +141,61 @@ test('checkout shares the application settings name', function () {
             ->where('name', 'Harbour Smoke')
             ->where('application.name', 'Harbour Smoke'));
 });
+
+test('platform branch and driver staff cannot open storefront checkout', function (string $guard, UserType $type) {
+    $user = User::factory()->create([
+        'user_type' => $type,
+        'branch_id' => $type === UserType::BRANCH
+            ? Branch::factory()->create()->id
+            : null,
+    ]);
+
+    $this->actingAs($user, $guard)
+        ->get(route('checkout'))
+        ->assertRedirect(match ($type) {
+            UserType::PLATFORM => '/platform/dashboard',
+            UserType::BRANCH => '/branch/'.$user->branch->slug.'/dashboard',
+            UserType::DRIVER => '/driver/dashboard',
+            default => route('login'),
+        });
+})->with([
+    'platform' => ['platform', UserType::PLATFORM],
+    'branch' => ['branch', UserType::BRANCH],
+    'driver' => ['driver', UserType::DRIVER],
+]);
+
+test('platform branch and driver staff cannot place a storefront order', function (string $guard, UserType $type) {
+    $product = storefrontCheckoutProduct(['slug' => "staff-blocked-{$guard}"]);
+    storefrontCheckoutBranchWithStock($product);
+
+    $user = User::factory()->create([
+        'user_type' => $type,
+        'branch_id' => $type === UserType::BRANCH
+            ? Branch::factory()->create()->id
+            : null,
+    ]);
+
+    $this->actingAs($user, $guard)
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, $guard)
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect(match ($type) {
+            UserType::PLATFORM => '/platform/dashboard',
+            UserType::BRANCH => '/branch/'.$user->branch->slug.'/dashboard',
+            UserType::DRIVER => '/driver/dashboard',
+            default => route('login'),
+        });
+
+    expect(Order::query()->count())->toBe(0);
+})->with([
+    'platform' => ['platform', UserType::PLATFORM],
+    'branch' => ['branch', UserType::BRANCH],
+    'driver' => ['driver', UserType::DRIVER],
+]);
 
 test('express checkout without a delivery date is rejected', function () {
     $user = User::factory()->create();

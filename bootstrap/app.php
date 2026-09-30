@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureAnyPortalGuard;
 use App\Http\Middleware\EnsurePhoneIsVerified;
 use App\Http\Middleware\EnsurePortalGuard;
+use App\Http\Middleware\EnsureStorefrontCustomer;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ResolveBranchContext;
@@ -49,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'ensure.guard' => EnsurePortalGuard::class,
             'ensure.any.portal' => EnsureAnyPortalGuard::class,
+            'ensure.storefront.customer' => EnsureStorefrontCustomer::class,
             'resolve.branch' => ResolveBranchContext::class,
             'permission' => PermissionMiddleware::class,
             'role' => RoleMiddleware::class,

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Storefront;
 
 use App\Models\DeliveryMethod;
+use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -12,7 +13,9 @@ class PlaceOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user('customer');
+
+        return $user instanceof User && $user->isCustomer() && $user->is_active;
     }
 
     /**

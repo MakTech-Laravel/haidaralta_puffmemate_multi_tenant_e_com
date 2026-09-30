@@ -105,7 +105,7 @@ class CheckoutController extends Controller
     {
         $user = $request->user('customer');
 
-        if ($user === null) {
+        if ($user === null || ! $user->isCustomer()) {
             return redirect()->guest(route('login'));
         }
 
@@ -122,7 +122,10 @@ class CheckoutController extends Controller
     public function confirmation(Order $order): Response
     {
         $user = request()->user('customer');
-        abort_unless($user !== null && $order->customer_id === $user->id, 404);
+        abort_unless(
+            $user !== null && $user->isCustomer() && $order->customer_id === $user->id,
+            404,
+        );
 
         return Inertia::render('storefront/checkout-confirmation', [
             'order' => $this->checkout->confirmation($order),

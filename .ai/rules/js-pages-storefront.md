@@ -14,3 +14,6 @@ POST /checkout/shipping returns JSON (fee + lat/long) and stores storefront.chec
 
 ## Confirmation URL uses order number
 GET /checkout/confirmation/{order:order_number} binds on orders.order_number (PMM-YYYY-NNNN), never the database id. Confirmation UI matches checkout cards and the order summary. Do not put order.id, branches, or fulfillments in the confirmation payload.
+
+## Checkout is customer-only
+All /checkout routes use ensure.storefront.customer. Platform, branch, and driver sessions are redirected to their portal dashboard with a toast; guests go to login. PlaceOrderRequest authorize and store/confirmation also require an active customer user_type. Do not use auth:customer alone for checkout.
