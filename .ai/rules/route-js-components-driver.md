@@ -5,8 +5,8 @@ paths:
 
 # Route Js Components Driver
 
-## Driver fifth tab is Route not Chat
-The fifth driver field tab is Route (center): GET /driver/route, RouteController::index, sequenced remaining then completed stops from DemoCatalog. Do not restore a Chats tab. Activity stays sidebar/account only.
+## Driver center tab is Route not Chat
+The center driver field tab is Route: GET /driver/route, RouteController::index, sequenced remaining then completed stops from DemoCatalog. Do not restore a Chats tab. Activity stays account-sheet only.
 
-## Earnings is a driver field tab
-Route stays the center tab. Earnings is the fourth field tab at GET /driver/earnings. The fifth tab is Profile. Activity stays in the header sheet. Do not restore a Chats, Activity, Account, or Alerts footer tab.
+## Earnings and Place order are field tabs
+Route stays the center tab. Earnings is the fourth field tab at GET /driver/earnings. The fifth tab is Place order at GET /driver/place-order. Activity stays in the header sheet. Do not restore a Chats, Activity, Account, Profile, Old orders, or Alerts footer tab.

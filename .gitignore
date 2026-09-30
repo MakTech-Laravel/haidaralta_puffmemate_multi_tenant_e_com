@@ -28,3 +28,6 @@ yarn-error.log
 /.nova
 /.zed
 
+branch_structure.json
+temp_interactive_push.bat
+.gitignore

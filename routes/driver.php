@@ -5,6 +5,7 @@ use App\Http\Controllers\Driver\DashboardController as DriverDashboardController
 use App\Http\Controllers\Driver\EarningsController as DriverEarningsController;
 use App\Http\Controllers\Driver\NotificationController as DriverNotificationController;
 use App\Http\Controllers\Driver\OrderController as DriverOrderController;
+use App\Http\Controllers\Driver\PlaceOrderController as DriverPlaceOrderController;
 use App\Http\Controllers\Driver\ProfileController as DriverProfileController;
 use App\Http\Controllers\Driver\RouteController as DriverRouteController;
 use App\Http\Controllers\Driver\SecurityController as DriverSecurityController;
@@ -16,6 +17,7 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::get('orders', [DriverOrderController::class, 'index'])->name('driver.orders.index');
     Route::get('history', [DriverOrderController::class, 'history'])->name('driver.history.index');
     Route::get('earnings', [DriverEarningsController::class, 'index'])->name('driver.earnings.index');
+    Route::get('place-order', [DriverPlaceOrderController::class, 'index'])->name('driver.place-order.index');
     Route::get('orders/{order:order_number}/chat', [DriverOrderController::class, 'chat'])->name('driver.orders.chat');
     Route::post('orders/{order:order_number}/pick-up', [DriverOrderController::class, 'pickUp'])->name('driver.orders.pick-up');
     Route::post('orders/{order:order_number}/start', [DriverOrderController::class, 'start'])->name('driver.orders.start');
