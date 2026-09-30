@@ -149,6 +149,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | database/seeders/**, database/seeders/WorkforceShiftSeeder.php, database/seeders/CatalogSeeder.php, database/seeders/CategorySeeder.php, database/seeders/ProductSeeder.php, database/seeders/PriceRangeSeeder.php | .ai/rules/seeders.md |
 | app/Services/Announcements/** | .ai/rules/services-announcements.md |
 | app/Services/Customer/** | .ai/rules/services-customer.md |
+| app/Http/Controllers/Storefront/ProductController.php,app/Http/Controllers/Storefront/CartController.php,app/Services/Storefront/ProductViewService.php,app/Models/ProductViewLog.php | .ai/rules/services-storefront-models.md |
 | app/Services/OtpService.php | .ai/rules/services.md |
 | app/Http/Controllers/Branch/GeneralSettingsController.php,resources/js/pages/branch/settings/**,resources/js/components/branch/nav.ts | .ai/rules/settings-js-components-branch.md |
 | resources/js/{app.tsx,layouts/settings/**} | .ai/rules/settings.md |

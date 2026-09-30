@@ -88,7 +88,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
                         setAdding(true);
                         addToCart(product.id, 1, () => setAdding(false), {
                             countView: true,
-                            onSuccess: () => setAddedViews((count) => count + 1),
+                            onSuccess: (page) => {
+                                if (page.flash?.view_counted === true) {
+                                    setAddedViews((count) => count + 1);
+                                }
+                            },
                         });
                     }}
                 >
