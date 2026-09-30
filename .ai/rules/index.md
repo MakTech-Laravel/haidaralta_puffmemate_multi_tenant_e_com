@@ -84,7 +84,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Jobs/SendAnnouncementEmailJob.php | .ai/rules/jobs.md |
 | app/Services/Driver/**,app/Http/Requests/{Platform,Branch}/*Driver*.php,resources/js/pages/{platform,branch}/drivers/**,resources/js/components/admin/driver-branch-assign-sheet.tsx | .ai/rules/js-components-admin.md |
 | resources/js/components/branch/**, resources/js/components/branch/product-inventory-panel.tsx | .ai/rules/js-components-branch.md |
-| resources/js/components/customer/product-to-review-*.tsx, resources/js/components/customer/write-product-review-form.tsx | .ai/rules/js-components-customer.md |
+| resources/js/components/customer/product-to-review-*.tsx, resources/js/components/customer/write-product-review-form.tsx, resources/js/components/customer/order-list.tsx | .ai/rules/js-components-customer.md |
 | app/Http/Controllers/Driver/OrderController.php,resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/js-components-driver.md |
 | resources/js/components/manage-two-factor.tsx,resources/js/components/manage-passkeys.tsx | .ai/rules/js-components.md |
 | app/Services/Conversation/**,app/Events/Conversation*,resources/js/components/conversation/**,resources/js/hooks/use-chat-scroll.ts | .ai/rules/js-hooks.md |
@@ -154,6 +154,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Support/Storefront/StorefrontShopQuery.php,resources/js/pages/storefront/shop.tsx,app/Models/PriceRange.php,config/scout.php | .ai/rules/storefront-models.md |
 | app/Services/Catalog/PriceRangeService.php,app/Models/ShopPriceFilterSetting.php,resources/js/pages/platform/catalog/price-ranges/**,resources/js/components/storefront/shop-filters-sidebar.tsx,config/catalog.php,database/seeders/PriceRangeSeeder.php | .ai/rules/storefront-seeders.md |
 | resources/js/{layouts,components,pages}/storefront/**, resources/js/lib/storefront*.ts, app/Support/Storefront/**, app/Http/Middleware/HandleInertiaRequests.php, app/Support/Storefront/StorefrontCatalog.php,config/catalog.php, app/Support/Storefront/StorefrontShopQuery.php | .ai/rules/storefront.md |
+| resources/js/components/storefront/{cart,checkout}/** | .ai/rules/storefrontcartcheckout.md |
 | app/DataTables/ShiftAssignmentDataTable.php,app/Support/WorkforcePayload.php,resources/js/components/admin/shift-assigned-people-page.tsx | .ai/rules/support-js-components-admin.md |
 | app/Support/Storefront/DemoCatalog.php | .ai/rules/support-storefront.md |
 | app/Models/UserShiftAssignment.php,app/Support/DutyWindow.php,app/Support/DriverAvailability.php | .ai/rules/support-support.md |

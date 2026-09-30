@@ -209,6 +209,17 @@ return [
 
     'transfer_handling_buffer_hours' => env('TRANSFER_HANDLING_BUFFER_HOURS', 1),
 
+    'express_max_transfer_hours' => env(
+        'EXPRESS_MAX_TRANSFER_HOURS',
+        env('SAME_DAY_MAX_TRANSFER_HOURS', 4),
+    ),
+
+    'regular_max_transfer_hours' => env(
+        'REGULAR_MAX_TRANSFER_HOURS',
+        env('AUSTRALIA_WIDE_MAX_TRANSFER_HOURS', 72),
+    ),
+
+    // Legacy aliases — prefer express_* / regular_* above.
     'same_day_max_transfer_hours' => env('SAME_DAY_MAX_TRANSFER_HOURS', 4),
 
     'australia_wide_max_transfer_hours' => env('AUSTRALIA_WIDE_MAX_TRANSFER_HOURS', 72),

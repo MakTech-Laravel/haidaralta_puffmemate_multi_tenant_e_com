@@ -42,7 +42,6 @@ class CheckoutController extends Controller
             ...$cart,
             'addresses' => $addresses,
             'deliveryMethods' => $this->checkout->deliveryMethods(),
-            'timeSlots' => $this->checkout->timeSlots(),
             'paymentMethods' => $this->payments->enabledMethods(),
             'defaultAddressId' => collect($addresses)->firstWhere('is_default', true)['id'] ?? null,
             'appliedCoupon' => request()->session()->get('storefront.checkout_coupon'),

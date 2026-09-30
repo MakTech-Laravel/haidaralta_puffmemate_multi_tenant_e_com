@@ -58,7 +58,7 @@ class CheckoutService
     }
 
     /**
-     * @return list<array{id: string, label: string, description: string, requiresSlot: bool}>
+     * @return list<array{id: string, label: string, description: string, requiresSlot: bool, timeSlots: list<array{id: string, label: string}>}>
      */
     public function deliveryMethods(): array
     {
@@ -68,6 +68,13 @@ class CheckoutService
                 'label' => $method->label,
                 'description' => $method->description ?? '',
                 'requiresSlot' => $method->requires_slot,
+                'timeSlots' => $method->timeSlots
+                    ->map(fn (DeliveryTimeSlot $slot): array => [
+                        'id' => (string) $slot->id,
+                        'label' => $slot->label,
+                    ])
+                    ->values()
+                    ->all(),
             ])
             ->all();
     }

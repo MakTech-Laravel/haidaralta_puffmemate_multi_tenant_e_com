@@ -122,8 +122,8 @@ test('allocation fails when there is no active branch at all', function () {
         ->toThrow(ValidationException::class);
 });
 
-test('same-day delivery rejects a transfer that exceeds the sla', function () {
-    config(['catalog.same_day_max_transfer_hours' => 1, 'catalog.transfer_hours_per_km' => 1, 'catalog.transfer_handling_buffer_hours' => 1]);
+test('express delivery rejects a transfer that exceeds the sla', function () {
+    config(['catalog.express_max_transfer_hours' => 1, 'catalog.transfer_hours_per_km' => 1, 'catalog.transfer_handling_buffer_hours' => 1]);
 
     $local = Product::factory()->create();
     $missing = Product::factory()->create();
@@ -144,7 +144,7 @@ test('same-day delivery rejects a transfer that exceeds the sla', function () {
 
     $items = collect([allocationCartItem($local, 1), allocationCartItem($missing, 1)]);
 
-    expect(fn () => app(OrderAllocationEngine::class)->allocate(-33.8688, 151.2093, $items, 'same-day'))
+    expect(fn () => app(OrderAllocationEngine::class)->allocate(-33.8688, 151.2093, $items, 'express'))
         ->toThrow(ValidationException::class);
 });
 

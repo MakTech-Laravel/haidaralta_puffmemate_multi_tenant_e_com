@@ -1,6 +1,5 @@
 import { format, isValid, parse } from 'date-fns';
 import AlertError from '@/components/alert-error';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
@@ -43,7 +42,6 @@ type CheckoutFormProps = {
     addresses: StorefrontAddress[];
     deliveryMethods: StorefrontDeliveryMethod[];
     paymentMethods: StorefrontPaymentMethod[];
-    timeSlots: StorefrontTimeSlot[];
     errors?: Record<string, string>;
     onChange: <K extends keyof CheckoutDetails>(
         key: K,
@@ -120,7 +118,6 @@ export function CheckoutForm({
     addresses,
     deliveryMethods,
     paymentMethods,
-    timeSlots,
     errors = {},
     onChange,
     onPinSelect,
@@ -129,8 +126,18 @@ export function CheckoutForm({
     const selectedMethod = deliveryMethods.find(
         (method) => method.id === details.deliveryMethodId,
     );
+    const timeSlots = selectedMethod?.timeSlots ?? [];
     const showTimeSlots = selectedMethod?.requiresSlot ?? false;
     const today = format(new Date(), 'yyyy-MM-dd');
+    const paymentHint = paymentMethods.some(
+        (method) => method.id === 'payment_link',
+    )
+        ? null
+        : paymentMethods.every(
+                (method) => method.id === 'cod' || method.id === 'pos',
+            )
+          ? 'Pay on delivery'
+          : null;
 
     const loadAddress = (id: string) => {
         const address = addresses.find((row) => String(row.id) === id);
@@ -354,7 +361,10 @@ export function CheckoutForm({
                                     key={method.id}
                                     type="button"
                                     onClick={() =>
-                                        onChange('deliveryMethodId', method.id)
+                                        onChange(
+                                            'deliveryMethodId',
+                                            method.id,
+                                        )
                                     }
                                     className={cn(
                                         'bg-background flex items-start gap-3 rounded-none border p-4 text-left',
@@ -391,9 +401,9 @@ export function CheckoutForm({
                     {showTimeSlots ? (
                         <div className="space-y-4">
                             <p className="text-muted-foreground text-sm">
-                                Local delivery: Same-day service is available
-                                within selected delivery zones around
-                                participating branches.
+                                Express delivery is available within selected
+                                zones around participating branches. Pick a
+                                recommended date and time slot below.
                             </p>
                             <div className="space-y-2">
                                 <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">
@@ -454,23 +464,18 @@ export function CheckoutForm({
                                 </div>
                             </div>
                         </div>
-                    ) : (
-                        <Alert>
-                            <AlertDescription>
-                                Australia-wide shipping does not need a time
-                                slot.
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                    ) : null}
                 </CardContent>
             </Card>
 
             <Card className={sectionCardClass}>
                 <CardHeader className="flex flex-row items-start justify-between gap-3">
                     <CardTitle className="text-foreground text-lg font-extrabold">
-                        4. Payment at delivery
+                        4. Payment method
                     </CardTitle>
-                    <SectionHint>No online card entry</SectionHint>
+                    {paymentHint ? (
+                        <SectionHint>{paymentHint}</SectionHint>
+                    ) : null}
                 </CardHeader>
                 <CardContent className="space-y-4 px-0">
                     <div className="grid gap-3 sm:grid-cols-2">
