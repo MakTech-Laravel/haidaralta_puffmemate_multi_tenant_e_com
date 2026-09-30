@@ -5,5 +5,5 @@ paths:
 
 # Js Pages Driver
 
-## Old orders is sidebar-only history
-Old orders is a desktop sidebar item at GET /driver/history (OrderController::history), not a fifth-tab replacement. Do not put it in DriverMobileNav. Today’s Orders tab stays /driver/orders.
+## Old orders is not in driver nav
+GET /driver/history (OrderController::history) may remain as a route for deep links and tests, but must not appear in driverNavItems (sidebar or tabs). Today’s Orders tab stays /driver/orders. The fifth field tab is Place order.

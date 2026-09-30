@@ -1345,6 +1345,112 @@ class DemoCatalog
     }
 
     /**
+     * Demo catalog for the driver Place Order screen (design-only).
+     *
+     * @return array{
+     *     customers: list<array{
+     *         id: string,
+     *         name: string,
+     *         phone: string,
+     *         address: string,
+     *         locationLabel: string
+     *     }>,
+     *     products: list<array{
+     *         id: string,
+     *         name: string,
+     *         description: string,
+     *         category: string,
+     *         priceLabel: string,
+     *         price: float,
+     *         stock: int,
+     *         image: string
+     *     }>,
+     *     paymentMethods: list<array{id: string, label: string}>
+     * }
+     */
+    public static function driverPlaceOrder(): array
+    {
+        $catalog = self::products();
+        $stockById = [
+            '1' => 12,
+            '2' => 8,
+            '3' => 0,
+            '4' => 5,
+            '5' => 3,
+            '6' => 7,
+            '7' => 4,
+            '8' => 2,
+            '9' => 9,
+            '10' => 6,
+            '11' => 1,
+            '12' => 0,
+        ];
+        $priceById = [
+            '1' => 14.0,
+            '2' => 13.5,
+            '3' => 89.0,
+            '4' => 18.0,
+            '5' => 13.0,
+            '6' => 12.5,
+            '7' => 22.0,
+            '8' => 9.5,
+            '9' => 14.0,
+            '10' => 13.5,
+            '11' => 13.0,
+            '12' => 12.5,
+        ];
+
+        return [
+            'customers' => [
+                [
+                    'id' => 'cust-1',
+                    'name' => 'James Okonkwo',
+                    'phone' => '+61 412 345 678',
+                    'address' => '14 Harris St, Pyrmont NSW 2009',
+                    'locationLabel' => 'Pyrmont · Sydney',
+                ],
+                [
+                    'id' => 'cust-2',
+                    'name' => 'Sofia Nguyen',
+                    'phone' => '+61 423 890 112',
+                    'address' => '88 Crown St, Surry Hills NSW 2010',
+                    'locationLabel' => 'Surry Hills · Sydney',
+                ],
+                [
+                    'id' => 'cust-3',
+                    'name' => 'Marcus Blake',
+                    'phone' => '+61 401 556 220',
+                    'address' => '3 Oxford St, Bondi Junction NSW 2022',
+                    'locationLabel' => 'Bondi Junction · Sydney',
+                ],
+            ],
+            'products' => array_values(array_map(
+                static function (array $product) use ($stockById, $priceById): array {
+                    $id = (string) $product['id'];
+                    $price = $priceById[$id] ?? (float) preg_replace('/[^\d.]/', '', $product['price']);
+
+                    return [
+                        'id' => $id,
+                        'name' => $product['name'],
+                        'description' => $product['description'],
+                        'category' => $product['category'],
+                        'priceLabel' => $product['price'],
+                        'price' => $price,
+                        'stock' => $stockById[$id] ?? 5,
+                        'image' => $product['image'],
+                    ];
+                },
+                $catalog,
+            )),
+            'paymentMethods' => [
+                ['id' => 'cod', 'label' => 'Cash on delivery'],
+                ['id' => 'pos', 'label' => 'POS machine'],
+                ['id' => 'cash', 'label' => 'Cash collected'],
+            ],
+        ];
+    }
+
+    /**
      * @param  array<string, mixed>  $order
      * @return array{
      *     id: string,
