@@ -73,7 +73,10 @@ export type StorefrontCartItem = {
     image: string;
     unitPrice: number;
     formattedUnitPrice: string;
+    compareAtUnitPrice: number | null;
+    formattedCompareAtUnitPrice: string | null;
     quantity: number;
+    maxQuantity: number;
     lineTotal: number;
     formattedLineTotal: string;
 };
@@ -98,16 +101,17 @@ export type StorefrontAddress = {
     is_default: boolean;
 };
 
+export type StorefrontTimeSlot = {
+    id: string;
+    label: string;
+};
+
 export type StorefrontDeliveryMethod = {
     id: string;
     label: string;
     description: string;
     requiresSlot: boolean;
-};
-
-export type StorefrontTimeSlot = {
-    id: string;
-    label: string;
+    timeSlots: StorefrontTimeSlot[];
 };
 
 export type StorefrontPaymentMethod = {
@@ -119,7 +123,10 @@ export type StorefrontPaymentMethod = {
 };
 
 export function formatStorefrontMoney(amount: number): string {
-    return `$${amount.toFixed(2)}`;
+    return `$${amount.toLocaleString('en-AU', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}`;
 }
 
 export function formatStorefrontAud(amount: string): string {

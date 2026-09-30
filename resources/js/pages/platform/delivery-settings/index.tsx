@@ -269,7 +269,7 @@ export default function PlatformDeliverySettingsIndex({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title="Delivery settings"
-                    description="Same-day and Australia-wide methods shown at checkout."
+                    description="Regular and Express methods shown at checkout."
                 />
                 <div className="grid gap-4">
                     {methods.map((method) => (

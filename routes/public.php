@@ -35,7 +35,7 @@ Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
 Route::patch('/cart/{cart_item}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/{cart_item}', [CartController::class, 'destroy'])->name('cart.destroy');
 
-Route::middleware('auth:customer')->group(function () {
+Route::middleware('ensure.storefront.customer')->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
     Route::post('/checkout/coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon');
     Route::delete('/checkout/coupon', [CheckoutController::class, 'removeCoupon'])->name('checkout.coupon.destroy');

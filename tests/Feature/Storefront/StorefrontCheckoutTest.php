@@ -3,12 +3,14 @@
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
 use App\Enums\PaymentStatus;
+use App\Enums\UserType;
 use App\Models\AllocationDecisionLog;
 use App\Models\Branch;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
+use App\Models\DeliveryMethod;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\Payment;
@@ -67,7 +69,7 @@ function checkoutPayload(array $overrides = []): array
         'postal_code' => '2000',
         'latitude' => -33.8688,
         'longitude' => 151.2093,
-        'delivery_method' => 'australia-wide',
+        'delivery_method' => 'regular',
         'payment_method' => PaymentGatewaySetting::KEY_COD,
         'terms' => true,
     ], $overrides);
@@ -96,8 +98,18 @@ test('checkout props omit branch keys', function () {
                 ->missing('branchId')
                 ->missing('branchName')
                 ->etc())
-            ->has('paymentMethods')
+            ->has('paymentMethods', 2)
+            ->where('paymentMethods.0.id', PaymentGatewaySetting::KEY_COD)
+            ->where('paymentMethods.1.id', PaymentGatewaySetting::KEY_POS)
             ->has('deliveryMethods', 2)
+            ->where('deliveryMethods.0.id', 'regular')
+            ->where('deliveryMethods.0.label', 'Regular delivery')
+            ->where('deliveryMethods.0.requiresSlot', false)
+            ->where('deliveryMethods.1.id', 'express')
+            ->where('deliveryMethods.1.label', 'Express delivery')
+            ->where('deliveryMethods.1.requiresSlot', true)
+            ->has('deliveryMethods.1.timeSlots', 4)
+            ->missing('timeSlots')
             ->missing('deliveryMethods.0.formattedFee')
             ->missing('deliveryMethods.1.formattedFee')
             ->where('shippingQuote', null));
@@ -130,9 +142,64 @@ test('checkout shares the application settings name', function () {
             ->where('application.name', 'Harbour Smoke'));
 });
 
-test('same-day checkout without a delivery date is rejected', function () {
+test('platform branch and driver staff cannot open storefront checkout', function (string $guard, UserType $type) {
+    $user = User::factory()->create([
+        'user_type' => $type,
+        'branch_id' => $type === UserType::BRANCH
+            ? Branch::factory()->create()->id
+            : null,
+    ]);
+
+    $this->actingAs($user, $guard)
+        ->get(route('checkout'))
+        ->assertRedirect(match ($type) {
+            UserType::PLATFORM => '/platform/dashboard',
+            UserType::BRANCH => '/branch/'.$user->branch->slug.'/dashboard',
+            UserType::DRIVER => '/driver/dashboard',
+            default => route('login'),
+        });
+})->with([
+    'platform' => ['platform', UserType::PLATFORM],
+    'branch' => ['branch', UserType::BRANCH],
+    'driver' => ['driver', UserType::DRIVER],
+]);
+
+test('platform branch and driver staff cannot place a storefront order', function (string $guard, UserType $type) {
+    $product = storefrontCheckoutProduct(['slug' => "staff-blocked-{$guard}"]);
+    storefrontCheckoutBranchWithStock($product);
+
+    $user = User::factory()->create([
+        'user_type' => $type,
+        'branch_id' => $type === UserType::BRANCH
+            ? Branch::factory()->create()->id
+            : null,
+    ]);
+
+    $this->actingAs($user, $guard)
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, $guard)
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect(match ($type) {
+            UserType::PLATFORM => '/platform/dashboard',
+            UserType::BRANCH => '/branch/'.$user->branch->slug.'/dashboard',
+            UserType::DRIVER => '/driver/dashboard',
+            default => route('login'),
+        });
+
+    expect(Order::query()->count())->toBe(0);
+})->with([
+    'platform' => ['platform', UserType::PLATFORM],
+    'branch' => ['branch', UserType::BRANCH],
+    'driver' => ['driver', UserType::DRIVER],
+]);
+
+test('express checkout without a delivery date is rejected', function () {
     $user = User::factory()->create();
-    $product = storefrontCheckoutProduct(['slug' => 'same-day-needs-date']);
+    $product = storefrontCheckoutProduct(['slug' => 'express-needs-date']);
     storefrontCheckoutBranchWithStock($product);
 
     $this->actingAs($user, 'customer')
@@ -144,7 +211,7 @@ test('same-day checkout without a delivery date is rejected', function () {
     $this->actingAs($user, 'customer')
         ->from(route('checkout'))
         ->post(route('checkout.store'), checkoutPayload([
-            'delivery_method' => 'same-day',
+            'delivery_method' => 'express',
             'delivery_date' => '',
             'time_slot_id' => '1',
         ]))
@@ -152,6 +219,65 @@ test('same-day checkout without a delivery date is rejected', function () {
         ->assertSessionHasErrors('delivery_date');
 
     expect(Order::query()->count())->toBe(0);
+});
+
+test('regular checkout does not require a delivery date or time slot', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'regular-no-slot']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'regular',
+            'delivery_date' => null,
+            'time_slot_id' => null,
+        ]))
+        ->assertRedirect();
+
+    $order = Order::query()->firstOrFail();
+
+    expect($order->delivery_method)->toBe('regular')
+        ->and($order->delivery_date)->toBeNull()
+        ->and($order->time_slot)->toBeNull();
+});
+
+test('express checkout accepts a recommended date and time slot', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'express-with-slot']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $slotId = (string) DeliveryMethod::query()
+        ->where('key', 'express')
+        ->firstOrFail()
+        ->timeSlots()
+        ->orderBy('sort')
+        ->value('id');
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'express',
+            'delivery_date' => now()->toDateString(),
+            'time_slot_id' => $slotId,
+        ]))
+        ->assertRedirect();
+
+    $order = Order::query()->firstOrFail();
+
+    expect($order->delivery_method)->toBe('express')
+        ->and($order->delivery_date?->toDateString())->toBe(now()->toDateString())
+        ->and($order->time_slot)->not->toBeNull();
 });
 
 test('pinning a location quotes the distance-based shipping fee', function () {

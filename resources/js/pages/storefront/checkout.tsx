@@ -1,4 +1,5 @@
 import { Head, router, useForm, useHttp, usePage } from '@inertiajs/react';
+import { format } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
 import {
     applyCoupon,
@@ -16,7 +17,6 @@ import type {
     StorefrontCartItem,
     StorefrontDeliveryMethod,
     StorefrontPaymentMethod,
-    StorefrontTimeSlot,
 } from '@/types/storefront';
 
 type AppliedCoupon = {
@@ -39,7 +39,6 @@ type CheckoutPageProps = {
     addresses: StorefrontAddress[];
     deliveryMethods: StorefrontDeliveryMethod[];
     paymentMethods: StorefrontPaymentMethod[];
-    timeSlots: StorefrontTimeSlot[];
     defaultAddressId: number | null;
     appliedCoupon?: AppliedCoupon | null;
     shippingQuote?: ShippingQuote;
@@ -95,13 +94,13 @@ export default function StorefrontCheckout({
     addresses,
     deliveryMethods,
     paymentMethods,
-    timeSlots,
     defaultAddressId,
     appliedCoupon = null,
     shippingQuote = null,
 }: CheckoutPageProps) {
     const page = usePage<{ errors?: Record<string, string> }>();
     const defaultAddress = addresses.find((row) => row.id === defaultAddressId);
+    const defaultMethod = deliveryMethods[0];
     const form = useForm({
         name: defaultAddress?.receiver_name ?? '',
         mobile: defaultAddress?.phone ?? '',
@@ -112,9 +111,13 @@ export default function StorefrontCheckout({
         longitude: defaultAddress?.longitude ?? '',
         address_id: defaultAddressId ? String(defaultAddressId) : '',
         save_as_default: false,
-        delivery_method: deliveryMethods[0]?.id ?? '',
-        delivery_date: '',
-        time_slot_id: timeSlots[0]?.id ?? '',
+        delivery_method: defaultMethod?.id ?? '',
+        delivery_date: defaultMethod?.requiresSlot
+            ? format(new Date(), 'yyyy-MM-dd')
+            : '',
+        time_slot_id: defaultMethod?.requiresSlot
+            ? (defaultMethod.timeSlots[0]?.id ?? '')
+            : '',
         payment_method: paymentMethods[0]?.id ?? '',
         coupon: appliedCoupon?.code ?? '',
         terms: false,
@@ -213,6 +216,37 @@ export default function StorefrontCheckout({
         key: K,
         value: CheckoutDetails[K],
     ) => {
+        if (key === 'deliveryMethodId') {
+            const method = deliveryMethods.find((row) => row.id === value);
+
+            form.setData((current) => {
+                if (!method?.requiresSlot) {
+                    return {
+                        ...current,
+                        delivery_method: String(value),
+                        delivery_date: '',
+                        time_slot_id: '',
+                    };
+                }
+
+                const slotStillValid = method.timeSlots.some(
+                    (slot) => slot.id === current.time_slot_id,
+                );
+
+                return {
+                    ...current,
+                    delivery_method: String(value),
+                    delivery_date:
+                        current.delivery_date || format(new Date(), 'yyyy-MM-dd'),
+                    time_slot_id: slotStillValid
+                        ? current.time_slot_id
+                        : (method.timeSlots[0]?.id ?? ''),
+                };
+            });
+
+            return;
+        }
+
         const map: Record<keyof CheckoutDetails, keyof typeof form.data> = {
             name: 'name',
             mobile: 'mobile',
@@ -295,7 +329,6 @@ export default function StorefrontCheckout({
                             addresses={addresses}
                             deliveryMethods={deliveryMethods}
                             paymentMethods={paymentMethods}
-                            timeSlots={timeSlots}
                             errors={errors}
                             onChange={onDetailChange}
                             onPinSelect={applyPin}

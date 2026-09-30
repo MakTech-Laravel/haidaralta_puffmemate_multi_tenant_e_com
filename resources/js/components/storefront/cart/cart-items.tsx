@@ -68,9 +68,22 @@ export function CartItems({ items, className }: CartItemsProps) {
                         </div>
 
                         <div className="flex w-full min-w-0 items-center justify-between gap-3 xl:max-w-sm xl:shrink-0">
-                            <p className="text-primary shrink-0 text-base font-bold">
-                                {item.formattedLineTotal}
-                            </p>
+                            <div className="min-w-0 shrink-0">
+                                <p className="text-primary text-base font-bold">
+                                    {item.formattedLineTotal}
+                                </p>
+                                <p className="text-muted-foreground text-xs font-medium">
+                                    {item.formattedCompareAtUnitPrice ? (
+                                        <span className="mr-1.5 line-through">
+                                            {item.formattedCompareAtUnitPrice}
+                                        </span>
+                                    ) : null}
+                                    <span className="text-foreground font-semibold">
+                                        {item.formattedUnitPrice}
+                                    </span>{' '}
+                                    each
+                                </p>
+                            </div>
                             <div className="flex h-9 shrink-0 items-center gap-3">
                                 <div className="border-primary/50 flex h-9 items-center border">
                                     <button
@@ -79,7 +92,7 @@ export function CartItems({ items, className }: CartItemsProps) {
                                         aria-label="Decrease quantity"
                                         onClick={() =>
                                             syncCartQuantity(
-                                                item.id,
+                                                item,
                                                 item.quantity - 1,
                                             )
                                         }
@@ -91,11 +104,14 @@ export function CartItems({ items, className }: CartItemsProps) {
                                     </span>
                                     <button
                                         type="button"
-                                        className="text-foreground flex size-9 items-center justify-center"
+                                        className="text-foreground flex size-9 items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label="Increase quantity"
+                                        disabled={
+                                            item.quantity >= item.maxQuantity
+                                        }
                                         onClick={() =>
                                             syncCartQuantity(
-                                                item.id,
+                                                item,
                                                 item.quantity + 1,
                                             )
                                         }
