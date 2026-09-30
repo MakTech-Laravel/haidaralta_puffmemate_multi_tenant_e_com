@@ -229,7 +229,7 @@ export function CheckoutOrderSummary({
             {!canPlaceOrder && !processing ? (
                 <p className="text-muted-foreground mt-2 text-xs">
                     Fill every required field, including a delivery date for
-                    same-day, then place your order.
+                    Express delivery, then place your order.
                 </p>
             ) : null}
 

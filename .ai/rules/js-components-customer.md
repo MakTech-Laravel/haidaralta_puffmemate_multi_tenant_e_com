@@ -2,6 +2,7 @@
 paths:
   - 'resources/js/components/customer/product-to-review-*.tsx'
   - resources/js/components/customer/write-product-review-form.tsx
+  - resources/js/components/customer/order-list.tsx
 ---
 
 # Js Components Customer
@@ -14,3 +15,6 @@ Product To Review Action is Write a Review until a review exists for that order+
 
 ## Write review form posts to store
 WriteProductReviewForm posts rating and body with Inertia useForm to customer.product-to-review.store via Wayfinder. Do not keep a local-only submit that clears the fields.
+
+## Customer orders empty state
+When orders is empty, OrderList shows a bordered empty state (icon, No orders yet, short copy) plus a Browse the shop Link to shop.url(). Do not leave a blank white panel.

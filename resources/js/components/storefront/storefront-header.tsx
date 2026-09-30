@@ -37,6 +37,7 @@ import {
     show as notificationsShow,
 } from '@/routes/customer/notifications';
 import { category as shopCategory } from '@/routes/shop';
+import type { StorefrontCart } from '@/types/storefront';
 
 function resolveHref(item: StorefrontChromeItem): string {
     if (item.categorySlug) {
@@ -152,25 +153,7 @@ export function StorefrontHeader() {
         };
         storefront?: {
             navCategories?: StorefrontNavCategory[];
-            cart?: {
-                itemCount: number;
-                items: Array<{
-                    id: number;
-                    productId: number;
-                    slug: string;
-                    name: string;
-                    category: string;
-                    description: string;
-                    image: string;
-                    unitPrice: number;
-                    formattedUnitPrice: string;
-                    quantity: number;
-                    lineTotal: number;
-                    formattedLineTotal: string;
-                }>;
-                subtotal: number;
-                formattedSubtotal: string;
-            };
+            cart?: StorefrontCart;
         };
         customerNotifications?: NotificationItem[];
     };

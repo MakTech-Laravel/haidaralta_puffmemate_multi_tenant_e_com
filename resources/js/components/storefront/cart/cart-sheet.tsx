@@ -111,8 +111,21 @@ export function CartSheet({
                                             {item.description}
                                         </p>
                                     ) : null}
-                                    <p className="text-primary mt-1 text-sm font-bold">
-                                        {item.formattedUnitPrice}
+                                    <p className="mt-1 text-sm">
+                                        <span className="text-primary font-bold">
+                                            {item.formattedUnitPrice}
+                                        </span>
+                                        {item.formattedCompareAtUnitPrice ? (
+                                            <span className="text-muted-foreground ml-1.5 text-xs line-through">
+                                                {
+                                                    item.formattedCompareAtUnitPrice
+                                                }
+                                            </span>
+                                        ) : null}
+                                        <span className="text-muted-foreground text-xs">
+                                            {' '}
+                                            each
+                                        </span>
                                     </p>
                                     <div className="mt-3 flex items-center gap-3">
                                         <div className="border-primary/50 flex h-9 items-center border">
@@ -122,7 +135,7 @@ export function CartSheet({
                                                 aria-label="Decrease quantity"
                                                 onClick={() =>
                                                     syncCartQuantity(
-                                                        item.id,
+                                                        item,
                                                         item.quantity - 1,
                                                     )
                                                 }
@@ -134,11 +147,15 @@ export function CartSheet({
                                             </span>
                                             <button
                                                 type="button"
-                                                className="text-foreground flex size-9 items-center justify-center"
+                                                className="text-foreground flex size-9 items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
                                                 aria-label="Increase quantity"
+                                                disabled={
+                                                    item.quantity >=
+                                                    item.maxQuantity
+                                                }
                                                 onClick={() =>
                                                     syncCartQuantity(
-                                                        item.id,
+                                                        item,
                                                         item.quantity + 1,
                                                     )
                                                 }
