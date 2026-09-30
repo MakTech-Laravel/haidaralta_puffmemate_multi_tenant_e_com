@@ -60,7 +60,10 @@ test('platform order detail exposes the single fulfillment', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('platform/orders/show')
             ->has('order.fulfillments', 1)
-            ->has('order.drivers'));
+            ->has('order.drivers')
+            ->has('order.statusLabel')
+            ->has('order.paymentStatusLabel')
+            ->where('order.paymentStatusLabel', $order->payment_status->label()));
 });
 
 test('platform admin can update any branchs fulfillment status', function () {

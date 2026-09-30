@@ -112,6 +112,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/branch/catalog/packs-saves/** | .ai/rules/packs-saves.md |
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |
 | resources/js/pages/platform/branch-staff/** | .ai/rules/pages-platform-branch-staff.md |
+| app/Http/Controllers/Platform/OrderController.php,resources/js/pages/platform/orders/show.tsx | .ai/rules/pages-platform-orders.md |
 | resources/js/layouts/settings/**,resources/js/pages/settings/**,routes/settings.php | .ai/rules/pages-settings.md |
 | resources/js/pages/storefront/category.tsx, resources/js/pages/storefront/checkout.tsx, resources/js/pages/storefront/{shop,category,product}.tsx | .ai/rules/pages-storefront.md |
 | app/Http/Requests/Storefront/PlaceOrderRequest.php,app/Services/Storefront/CheckoutService.php,resources/js/{pages,components}/storefront/checkout/** | .ai/rules/pagescomponents-storefront-checkout.md |
