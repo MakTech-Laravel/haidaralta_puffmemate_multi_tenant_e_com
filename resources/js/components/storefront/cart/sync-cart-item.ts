@@ -119,9 +119,15 @@ const visitOptions = {
     only: [...CART_PROPS] as string[],
 } as const;
 
+type AddToCartSuccessPage = {
+    flash?: {
+        view_counted?: boolean;
+    };
+};
+
 type AddToCartOptions = {
     countView?: boolean;
-    onSuccess?: () => void;
+    onSuccess?: (page: AddToCartSuccessPage) => void;
 };
 
 export function addToCart(
@@ -139,9 +145,9 @@ export function addToCart(
         },
         {
             ...visitOptions,
-            onSuccess: () => {
+            onSuccess: (page) => {
                 notifyAddedToCart();
-                options.onSuccess?.();
+                options.onSuccess?.(page as AddToCartSuccessPage);
             },
             onFinish,
         },

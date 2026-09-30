@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\Storefront\ProductViewService;
 use App\Support\Storefront\StorefrontCatalog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,6 +14,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ProductController extends Controller
 {
+    public function __construct(
+        private ProductViewService $views,
+    ) {}
+
     /**
      * Display a storefront product details page.
      */
@@ -30,7 +35,7 @@ class ProductController extends Controller
         }
 
         if ($this->shouldCountView($request)) {
-            $model->increment('views');
+            $this->views->record($request, $model);
         }
 
         $detail = StorefrontCatalog::productDetail($model, $branch);

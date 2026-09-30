@@ -16,5 +16,5 @@ Homepage bestSellingProducts / newArrivalProducts use StorefrontCatalog::product
 ## Category shop uses StorefrontShopQuery
 /shop/{category} has no branch select. Search, sort, and listing go through StorefrontShopQuery (Scout/Meilisearch then Eloquent fallback), locked to that category plus one-level children. Sort options are name_asc, name_desc, newest, price_asc, price_desc.
 
-## PDP GET counts product views
-products.views increments on storefront products.show GET unless the Purpose header is prefetch or it is an Inertia partial reload of storefront/product (X-Inertia-Partial-Component — cart actions redirect back and reload only cart props), and on cart.store only when count_view is true (sent by ProductCard's Add to cart, after the add succeeds). PDP Add to cart never sends count_view because the page visit already counted. ProductCard must not prefetch the PDP so each card click is a real view.
+## PDP GET counts unique IP product views
+products.views increments via ProductViewService on products.show GET (skip prefetch / Inertia partial reload of storefront/product) and on cart.store when count_view is true. At most one count per product_id+IP per 24 hours; logs live in product_view_logs and are pruned after 7 days without decreasing products.views. Cart flashes view_counted for ProductCard. PDP Add to cart never sends count_view. ProductCard must not prefetch the PDP.
