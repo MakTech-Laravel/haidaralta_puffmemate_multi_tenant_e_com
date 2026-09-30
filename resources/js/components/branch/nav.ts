@@ -178,6 +178,12 @@ export function buildBranchNav(
                         icon: Truck,
                         permissions: ['manage-branch-drivers'],
                     }),
+                    navLink({
+                        title: 'Assign Product',
+                        href: `/branch/${slug}/assign-products`,
+                        icon: PackagePlus,
+                        permissions: ['manage-branch-drivers'],
+                    }),
                     navSoon({
                         title: 'Live tracking',
                         icon: MapPinned,

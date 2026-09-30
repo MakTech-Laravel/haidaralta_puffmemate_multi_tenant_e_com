@@ -6,6 +6,7 @@ use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\ConversationController as BranchConversationController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
+use App\Http\Controllers\Branch\DriverProductAssignController as BranchDriverProductAssignController;
 use App\Http\Controllers\Branch\GeneralSettingsController as BranchGeneralSettingsController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
 use App\Http\Controllers\Branch\OrderController as BranchOrderController;
@@ -210,11 +211,36 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('drivers', [BranchDriverController::class, 'store'])
             ->middleware('precognitive')
             ->name('branch.drivers.store');
-        Route::get('drivers/{user}', [BranchDriverController::class, 'show'])->name('branch.drivers.show');
-        Route::get('drivers/{user}/edit', [BranchDriverController::class, 'edit'])->name('branch.drivers.edit');
+
+        // Legacy nested URLs (before drivers/{user} so they never bind as a user id).
+        Route::get('drivers/assign-products', function (Branch $branch) {
+            return redirect()->route('branch.assign-products.create', $branch);
+        });
+        Route::get('drivers/assign-products/driver-options', function (Branch $branch) {
+            return redirect()->route('branch.assign-products.driver-options', $branch);
+        });
+        Route::post('drivers/assign-products', function (Branch $branch) {
+            return redirect()->route('branch.assign-products.store', $branch, 308);
+        });
+
+        Route::get('drivers/{user}', [BranchDriverController::class, 'show'])
+            ->whereNumber('user')
+            ->name('branch.drivers.show');
+        Route::get('drivers/{user}/edit', [BranchDriverController::class, 'edit'])
+            ->whereNumber('user')
+            ->name('branch.drivers.edit');
         Route::put('drivers/{user}', [BranchDriverController::class, 'update'])
             ->middleware('precognitive')
+            ->whereNumber('user')
             ->name('branch.drivers.update');
+
+        // Sibling of /drivers (not nested) so Drivers nav is not prefix-active on this page.
+        Route::get('assign-products', [BranchDriverProductAssignController::class, 'create'])
+            ->name('branch.assign-products.create');
+        Route::get('assign-products/driver-options', [BranchDriverProductAssignController::class, 'driverOptions'])
+            ->name('branch.assign-products.driver-options');
+        Route::post('assign-products', [BranchDriverProductAssignController::class, 'store'])
+            ->name('branch.assign-products.store');
     });
 
     Route::middleware(['permission:manage-branch-shifts'])->group(function () {

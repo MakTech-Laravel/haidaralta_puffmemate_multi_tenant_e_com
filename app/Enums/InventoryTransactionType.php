@@ -12,6 +12,7 @@ enum InventoryTransactionType: string
     case Sale = 'sale';
     case TransferOut = 'transfer_out';
     case TransferIn = 'transfer_in';
+    case DriverAssign = 'driver_assign';
 
     public function label(): string
     {
@@ -24,6 +25,7 @@ enum InventoryTransactionType: string
             self::Sale => 'Sale',
             self::TransferOut => 'Transfer out',
             self::TransferIn => 'Transfer in',
+            self::DriverAssign => 'Driver assign',
         };
     }
 
