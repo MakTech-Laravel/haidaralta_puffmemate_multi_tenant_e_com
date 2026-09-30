@@ -1,5 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
 import { driverTabItems } from '@/components/driver/nav';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 /**
@@ -18,31 +23,36 @@ export function DriverMobileNav() {
                 {driverTabItems.map((item) => {
                     const active = item.match(url);
                     const Icon = item.icon;
+                    const tip = item.tabLabel ?? item.label;
 
                     return (
                         <li key={item.id} className="min-w-0">
-                            <Link
-                                href={item.href!}
-                                prefetch
-                                aria-label={item.label}
-                                aria-current={active ? 'page' : undefined}
-                                data-test={`driver-tab-${item.id}`}
-                                className={cn(
-                                    'flex h-full min-h-14 flex-col items-center justify-center gap-0.5 px-1 transition-colors',
-                                    active
-                                        ? 'text-primary'
-                                        : 'text-muted-foreground',
-                                )}
-                            >
-                                <Icon
-                                    className="size-6 shrink-0"
-                                    strokeWidth={active ? 2.25 : 1.75}
-                                    aria-hidden
-                                />
-                                <span className="max-w-full truncate text-[11px] leading-none font-medium">
-                                    {item.tabLabel ?? item.label}
-                                </span>
-                            </Link>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Link
+                                        href={item.href!}
+                                        prefetch
+                                        aria-label={item.label}
+                                        aria-current={
+                                            active ? 'page' : undefined
+                                        }
+                                        data-test={`driver-tab-${item.id}`}
+                                        className={cn(
+                                            'flex h-full min-h-14 flex-col items-center justify-center px-1 transition-colors',
+                                            active
+                                                ? 'text-primary'
+                                                : 'text-muted-foreground',
+                                        )}
+                                    >
+                                        <Icon
+                                            className="size-6 shrink-0"
+                                            strokeWidth={active ? 2.25 : 1.75}
+                                            aria-hidden
+                                        />
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">{tip}</TooltipContent>
+                            </Tooltip>
                         </li>
                     );
                 })}
