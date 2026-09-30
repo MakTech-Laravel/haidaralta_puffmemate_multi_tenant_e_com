@@ -19,6 +19,7 @@ class DriverInventoryTransactionExport implements FromQuery, WithHeadings, WithM
      */
     public function __construct(
         private Builder $query,
+        private bool $includeBranch = false,
     ) {}
 
     /**
@@ -34,9 +35,14 @@ class DriverInventoryTransactionExport implements FromQuery, WithHeadings, WithM
      */
     public function headings(): array
     {
+        $headings = ['Driver', 'Phone'];
+
+        if ($this->includeBranch) {
+            $headings[] = 'Branch';
+        }
+
         return [
-            'Driver',
-            'Phone',
+            ...$headings,
             'Product',
             'SKU',
             'Type',
@@ -54,9 +60,17 @@ class DriverInventoryTransactionExport implements FromQuery, WithHeadings, WithM
      */
     public function map(mixed $row): array
     {
-        return [
+        $values = [
             $row->driver?->name,
             $row->driver?->phone,
+        ];
+
+        if ($this->includeBranch) {
+            $values[] = $row->branch?->name;
+        }
+
+        return [
+            ...$values,
             $row->product?->name,
             $row->product?->sku,
             $row->type->label(),

@@ -28,6 +28,8 @@ import { cn } from '@/lib/utils';
 
 type TransactionRow = {
     id: number;
+    branch_name?: string | null;
+    branch_url?: string | null;
     driver_id: number;
     driver_name: string | null;
     driver_phone: string | null;
@@ -45,6 +47,12 @@ type TransactionRow = {
     created_by_name: string | null;
     created_by_url: string | null;
     created_at: string | null;
+};
+
+type SelectedBranchOption = {
+    id: number;
+    name: string;
+    slug?: string | null;
 };
 
 type SelectedProductOption = {
@@ -101,9 +109,13 @@ export function ProductAssignTransactionsPage({
     exportUrl,
     productOptionsUrl,
     driverOptionsUrl,
+    branchOptionsUrl,
+    hideBranchFilter = true,
+    description = 'History of stock moved onto drivers from this branch',
 }: {
     table: DataTablePayload<TransactionRow> & {
         filterOptions?: {
+            selected_branch?: SelectedBranchOption | null;
             selected_driver?: SelectedDriverOption | null;
             selected_product?: SelectedProductOption | null;
             types?: FilterOption[];
@@ -113,12 +125,16 @@ export function ProductAssignTransactionsPage({
     exportUrl: string;
     productOptionsUrl: string;
     driverOptionsUrl: string;
+    branchOptionsUrl?: string;
+    hideBranchFilter?: boolean;
+    description?: string;
 }) {
     const query = useDataTableQuery({
         indexUrl,
         initial: {
             filter: {
                 search: tablePayload.filters.search ?? '',
+                branch_id: tablePayload.filters.branch_id ?? 'all',
                 driver_id: tablePayload.filters.driver_id ?? 'all',
                 product_id: tablePayload.filters.product_id ?? 'all',
                 type: tablePayload.filters.type ?? 'all',
@@ -213,6 +229,19 @@ export function ProductAssignTransactionsPage({
                     </div>
                 ),
             },
+            ...(hideBranchFilter
+                ? []
+                : [
+                      {
+                          accessorKey: 'branch_name',
+                          header: 'Branch',
+                          cell: ({ row }) => (
+                              <NameLink href={row.original.branch_url ?? null}>
+                                  {row.original.branch_name ?? null}
+                              </NameLink>
+                          ),
+                      } satisfies ColumnDef<TransactionRow>,
+                  ]),
             {
                 accessorKey: 'type_label',
                 header: ({ column }) => (
@@ -308,12 +337,14 @@ export function ProductAssignTransactionsPage({
                 ),
             },
         ],
-        [query.sort, query.toggleSort],
+        [hideBranchFilter, query.sort, query.toggleSort],
     );
 
     const types = tablePayload.filterOptions?.types ?? [];
+    const selectedBranch = tablePayload.filterOptions?.selected_branch;
     const selectedDriver = tablePayload.filterOptions?.selected_driver;
     const selectedProduct = tablePayload.filterOptions?.selected_product;
+    const branchFilter = String(query.filters.branch_id ?? 'all');
     const driverFilter = String(query.filters.driver_id ?? 'all');
     const productFilter = String(query.filters.product_id ?? 'all');
     const selectedDriverLabel =
@@ -329,7 +360,7 @@ export function ProductAssignTransactionsPage({
             <div className="space-y-4 p-2 md:p-4">
                 <Heading
                     title="Product assign transactions"
-                    description="History of stock moved onto drivers from this branch"
+                    description={description}
                 />
                 <DataTable
                     columns={columns}
@@ -341,7 +372,11 @@ export function ProductAssignTransactionsPage({
                         <DataTableToolbar
                             search={query.search}
                             onSearchChange={query.setSearch}
-                            searchPlaceholder="Search driver, product, or SKU…"
+                            searchPlaceholder={
+                                hideBranchFilter
+                                    ? 'Search driver, product, or SKU…'
+                                    : 'Search branch, driver, product, or SKU…'
+                            }
                             onClear={query.clearFilters}
                             actions={
                                 <ExportDropdown
@@ -359,6 +394,35 @@ export function ProductAssignTransactionsPage({
                             }
                             filters={
                                 <>
+                                    {hideBranchFilter ||
+                                    !branchOptionsUrl ? null : (
+                                        <div className="grid gap-2">
+                                            <Label>Branch</Label>
+                                            <InfiniteScrollCombobox
+                                                optionsUrl={branchOptionsUrl}
+                                                value={
+                                                    branchFilter === 'all'
+                                                        ? null
+                                                        : branchFilter
+                                                }
+                                                onValueChange={(value) =>
+                                                    query.setFilter(
+                                                        'branch_id',
+                                                        value,
+                                                    )
+                                                }
+                                                selectedLabel={
+                                                    selectedBranch?.name ?? null
+                                                }
+                                                placeholder="All branches"
+                                                searchPlaceholder="Search branches…"
+                                                emptyText="No branch found."
+                                                noneLabel="All branches"
+                                                descriptionKey={null}
+                                                className="w-52"
+                                            />
+                                        </div>
+                                    )}
                                     <div className="grid gap-2">
                                         <Label>Driver</Label>
                                         <InfiniteScrollCombobox

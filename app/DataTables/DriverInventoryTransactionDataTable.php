@@ -4,6 +4,7 @@ namespace App\DataTables;
 
 use App\Enums\InventoryTransactionType;
 use App\Enums\UserType;
+use App\Models\Branch;
 use App\Models\DriverInventoryTransaction;
 use App\Models\Product;
 use App\Models\User;
@@ -20,8 +21,8 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
 {
     public function __construct(
         Request $request,
-        protected int $scopedBranchId,
-        protected string $currentBranchSlug,
+        protected ?int $scopedBranchId = null,
+        protected ?string $currentBranchSlug = null,
     ) {
         parent::__construct($request);
     }
@@ -31,18 +32,23 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
      */
     public static function makeFor(
         Request $request,
-        int $scopedBranchId,
-        string $currentBranchSlug,
+        ?int $scopedBranchId = null,
+        ?string $currentBranchSlug = null,
     ): array {
         return static::instanceFor($request, $scopedBranchId, $currentBranchSlug)->toArray();
     }
 
     public static function instanceFor(
         Request $request,
-        int $scopedBranchId,
-        string $currentBranchSlug,
+        ?int $scopedBranchId = null,
+        ?string $currentBranchSlug = null,
     ): static {
         return new static($request, $scopedBranchId, $currentBranchSlug);
+    }
+
+    public function includesBranchColumn(): bool
+    {
+        return $this->scopedBranchId === null;
     }
 
     /**
@@ -58,13 +64,19 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
      */
     protected function baseQuery(): Builder
     {
-        return DriverInventoryTransaction::query()
-            ->where('branch_id', $this->scopedBranchId)
+        $query = DriverInventoryTransaction::query()
             ->with([
+                'branch:id,name,slug',
                 'driver:id,name,phone,avatar',
                 'product:id,name,slug,sku,image',
                 'creator:id,name,user_type,branch_id',
             ]);
+
+        if ($this->scopedBranchId !== null) {
+            $query->where('branch_id', $this->scopedBranchId);
+        }
+
+        return $query;
     }
 
     /**
@@ -114,7 +126,23 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
                                 ->where('name', 'like', '%'.$term.'%')
                                 ->orWhere('phone', 'like', '%'.$term.'%'),
                         );
+
+                    if ($this->scopedBranchId === null) {
+                        $builder->orWhereHas(
+                            'branch',
+                            fn (Builder $branches): Builder => $branches
+                                ->where('name', 'like', '%'.$term.'%')
+                                ->orWhere('slug', 'like', '%'.$term.'%'),
+                        );
+                    }
                 });
+            }),
+            AllowedFilter::callback('branch_id', function (Builder $query, mixed $value): void {
+                if ($this->scopedBranchId !== null || $value === null || $value === '' || $value === 'all') {
+                    return;
+                }
+
+                $query->where('branch_id', (int) $value);
             }),
             AllowedFilter::callback('driver_id', function (Builder $query, mixed $value): void {
                 if ($value === null || $value === '' || $value === 'all') {
@@ -164,10 +192,14 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
     protected function filterOptions(): array
     {
         $filters = $this->normalizedFilters();
+        $branchId = $this->optionId($filters['branch_id'] ?? null);
         $driverId = $this->optionId($filters['driver_id'] ?? null);
         $productId = $this->optionId($filters['product_id'] ?? null);
 
         return [
+            'selected_branch' => $this->scopedBranchId !== null
+                ? null
+                : $this->selectedBranch($branchId),
             'selected_driver' => $this->selectedDriver($driverId),
             'selected_product' => $this->selectedProduct($productId),
             'types' => InventoryTransactionType::driverAssignOptions(),
@@ -183,6 +215,9 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
         /** @var DriverInventoryTransaction $model */
         return [
             'id' => $model->id,
+            'branch_id' => $model->branch_id,
+            'branch_name' => $model->branch?->name,
+            'branch_url' => $this->branchUrl($model->branch),
             'driver_id' => $model->user_id,
             'driver_name' => $model->driver?->name,
             'driver_phone' => $model->driver?->phone,
@@ -213,6 +248,28 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
         $id = (int) $value;
 
         return $id > 0 ? $id : null;
+    }
+
+    /**
+     * @return array{id: int, name: string, slug: string}|null
+     */
+    private function selectedBranch(?int $branchId): ?array
+    {
+        if ($branchId === null) {
+            return null;
+        }
+
+        $branch = Branch::query()->find($branchId);
+
+        if ($branch === null) {
+            return null;
+        }
+
+        return [
+            'id' => $branch->id,
+            'name' => $branch->name,
+            'slug' => $branch->slug,
+        ];
     }
 
     /**
@@ -259,16 +316,29 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
         ];
     }
 
+    private function branchUrl(?Branch $branch): ?string
+    {
+        if ($branch === null || $this->scopedBranchId !== null) {
+            return null;
+        }
+
+        return route('platform.branches.show', $branch);
+    }
+
     private function driverUrl(?User $driver): ?string
     {
         if ($driver === null) {
             return null;
         }
 
-        return route('branch.drivers.show', [
-            'branch' => $this->currentBranchSlug,
-            'user' => $driver,
-        ]);
+        if ($this->scopedBranchId !== null && $this->currentBranchSlug !== null) {
+            return route('branch.drivers.show', [
+                'branch' => $this->currentBranchSlug,
+                'user' => $driver,
+            ]);
+        }
+
+        return route('platform.drivers.show', $driver);
     }
 
     private function productUrl(?Product $product): ?string
@@ -277,18 +347,34 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
             return null;
         }
 
-        return route('branch.products.show', [
-            'branch' => $this->currentBranchSlug,
-            'product' => $product,
-        ]);
+        if ($this->scopedBranchId !== null && $this->currentBranchSlug !== null) {
+            return route('branch.products.show', [
+                'branch' => $this->currentBranchSlug,
+                'product' => $product,
+            ]);
+        }
+
+        return route('platform.products.show', $product);
     }
 
     private function creatorUrl(?User $creator): ?string
     {
+        if ($creator === null) {
+            return null;
+        }
+
+        if ($this->scopedBranchId === null) {
+            return match ($creator->user_type) {
+                UserType::PLATFORM => route('platform.admins.show', $creator),
+                UserType::BRANCH => route('platform.branch-staff.show', $creator),
+                default => null,
+            };
+        }
+
         if (
-            $creator === null
-            || $creator->user_type !== UserType::BRANCH
+            $creator->user_type !== UserType::BRANCH
             || $creator->branch_id !== $this->scopedBranchId
+            || $this->currentBranchSlug === null
         ) {
             return null;
         }

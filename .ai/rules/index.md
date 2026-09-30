@@ -121,6 +121,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/platform/branch-staff/**, resources/js/components/admin/transfer-employee-sheet.tsx,resources/js/pages/platform/branch-staff/** | .ai/rules/platform-branch-staff.md |
 | app/Http/Controllers/{Platform,Branch}/**, app/Http/Controllers/{Platform,Branch}/*Driver*.php | .ai/rules/platform-branch.md |
 | resources/js/lib/stock-query.ts, resources/js/pages/**/products/index.tsx, resources/js/pages/platform/catalog/products/branches.tsx | .ai/rules/platform-catalog-products.md |
+| app/Http/Controllers/Platform/DriverProductAssignController.php,app/Http/Controllers/Platform/Reports/ProductAssignTransactionController.php,resources/js/pages/platform/drivers/assign-products.tsx,resources/js/pages/platform/reports/product-assign-transactions.tsx | .ai/rules/platform-reports.md |
 | resources/js/components/admin/shift-*-empty-state.tsx,resources/js/pages/platform/shifts/assign.tsx | .ai/rules/platform-shifts.md |
 | resources/js/components/platform/product-form.tsx, resources/js/components/platform/category-form.tsx, resources/js/components/platform/{category,product}-form.tsx, resources/js/components/platform/category-profile.tsx, resources/js/components/platform/nav.ts | .ai/rules/platform.md |
 | resources/js/components/{platform,admin}/*-form.tsx | .ai/rules/platformadmin.md |

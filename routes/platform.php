@@ -20,6 +20,7 @@ use App\Http\Controllers\Platform\DashboardController as PlatformDashboardContro
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\DeliverySettingsController as PlatformDeliverySettingsController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
+use App\Http\Controllers\Platform\DriverProductAssignController as PlatformDriverProductAssignController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\GeneralSettingsController as PlatformGeneralSettingsController;
 use App\Http\Controllers\Platform\HomeBannerController as PlatformHomeBannerController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVar
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
 use App\Http\Controllers\Platform\Reports\OrderOperationsController as PlatformOrderOperationsController;
 use App\Http\Controllers\Platform\Reports\PriceHistoryController as PlatformPriceHistoryController;
+use App\Http\Controllers\Platform\Reports\ProductAssignTransactionController as PlatformProductAssignTransactionController;
 use App\Http\Controllers\Platform\Reports\StockTransactionController as PlatformStockTransactionController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
 use App\Http\Controllers\Platform\ShiftAssignmentController as PlatformShiftAssignmentController;
@@ -137,6 +139,24 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::put('branches/{branch}/drivers/{user}', [PlatformBranchDriverController::class, 'update'])
             ->middleware('precognitive')
             ->name('platform.branches.drivers.update');
+
+        Route::get('assign-products', [PlatformDriverProductAssignController::class, 'create'])
+            ->name('platform.assign-products.create');
+        Route::get('assign-products/driver-options', [PlatformDriverProductAssignController::class, 'driverOptions'])
+            ->name('platform.assign-products.driver-options');
+        Route::post('assign-products', [PlatformDriverProductAssignController::class, 'store'])
+            ->name('platform.assign-products.store');
+
+        Route::get('reports/product-assign-transactions', [PlatformProductAssignTransactionController::class, 'index'])
+            ->name('platform.reports.product-assign-transactions');
+        Route::get('reports/product-assign-transactions/product-options', [PlatformProductAssignTransactionController::class, 'productOptions'])
+            ->name('platform.reports.product-assign-transactions.product-options');
+        Route::get('reports/product-assign-transactions/branch-options', [PlatformProductAssignTransactionController::class, 'branchOptions'])
+            ->name('platform.reports.product-assign-transactions.branch-options');
+        Route::get('reports/product-assign-transactions/driver-options', [PlatformProductAssignTransactionController::class, 'driverOptions'])
+            ->name('platform.reports.product-assign-transactions.driver-options');
+        Route::get('reports/product-assign-transactions/export', [PlatformProductAssignTransactionController::class, 'export'])
+            ->name('platform.reports.product-assign-transactions.export');
     });
 
     Route::middleware(['permission:view-transfers'])->group(function () {
