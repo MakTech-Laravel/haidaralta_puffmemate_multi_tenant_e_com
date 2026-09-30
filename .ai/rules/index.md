@@ -63,6 +63,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | Dockerfile | .ai/rules/dockerfile.md |
 | resources/js/pages/driver/account/**,resources/js/pages/driver/activity/**,resources/js/components/driver/driver-account-sheet.tsx | .ai/rules/driver-activity-js-components-driver.md |
 | resources/js/pages/driver/dashboard.tsx,resources/js/components/driver/driver-dashboard-hub.tsx | .ai/rules/driver-js-components-driver.md |
+| app/Http/Controllers/Driver/PlaceOrderController.php,app/Support/Driver/DriverPlaceOrderCatalog.php,resources/js/components/driver/place-order/** | .ai/rules/driver-place-order.md |
 | resources/js/pages/driver/route/**,resources/js/components/driver/driver-route-map-panel.tsx | .ai/rules/driver-route-js-components-driver.md |
 | app/Services/Driver/**, app/Models/Driver*.php, app/Http/Controllers/{Platform,Branch}/*Driver*.php, resources/js/pages/{platform,branch}/drivers/**, resources/js/pages/platform/branches/drivers/**, app/Http/Controllers/{Platform,Branch}/** | .ai/rules/driver.md |
 | resources/js/pages/branch/drivers/index.tsx,app/DataTables/BranchDriverDataTable.php | .ai/rules/drivers-data-tables.md |
