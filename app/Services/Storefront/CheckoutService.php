@@ -249,6 +249,7 @@ class CheckoutService
         }
 
         $slotLabel = null;
+        $deliveryDate = null;
 
         if ($method->requires_slot) {
             $slot = DeliveryTimeSlot::query()
@@ -257,13 +258,14 @@ class CheckoutService
                 ->where('status', true)
                 ->first();
 
-            if ($slot === null || blank($data['delivery_date'] ?? null)) {
+            if ($slot === null) {
                 throw ValidationException::withMessages([
-                    'time_slot_id' => 'Choose a delivery date and time slot.',
+                    'time_slot_id' => 'Choose a time slot.',
                 ]);
             }
 
             $slotLabel = $slot->label;
+            $deliveryDate = now()->toDateString();
         }
 
         $enabledKeys = collect($this->payments->enabledMethods())->pluck('id')->all();
@@ -304,6 +306,7 @@ class CheckoutService
 
         return $this->placeOrder->handle($user, $cart, [
             ...$data,
+            'delivery_date' => $deliveryDate,
             'time_slot' => $slotLabel,
             'coupon' => $coupon,
             'discount' => $discount,

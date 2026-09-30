@@ -228,8 +228,8 @@ export function CheckoutOrderSummary({
             </Button>
             {!canPlaceOrder && !processing ? (
                 <p className="text-muted-foreground mt-2 text-xs">
-                    Fill every required field, including a delivery date for
-                    Express delivery, then place your order.
+                    Fill every required field, including an Express time
+                    slot when Express is selected, then place your order.
                 </p>
             ) : null}
 
