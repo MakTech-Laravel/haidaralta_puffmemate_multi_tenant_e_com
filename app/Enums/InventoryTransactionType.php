@@ -54,4 +54,17 @@ enum InventoryTransactionType: string
             self::manualCases(),
         );
     }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    public static function driverAssignOptions(): array
+    {
+        return [
+            [
+                'value' => self::DriverAssign->value,
+                'label' => self::DriverAssign->label(),
+            ],
+        ];
+    }
 }

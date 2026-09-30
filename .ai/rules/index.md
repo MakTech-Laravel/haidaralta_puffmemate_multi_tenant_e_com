@@ -15,7 +15,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/Application/ApplicationSettingsService.php,resources/js/hooks/use-app-brand.ts | .ai/rules/application-js-hooks.md |
 | resources/js/pages/auth/**,app/Actions/Fortify/CreateNewUser.php,app/Http/Requests/Auth/StoreRegisteredUserRequest.php,resources/js/layouts/auth/** | .ai/rules/auth.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php, config/shifts.php | .ai/rules/backup.md |
-| app/Services/Driver/**,app/Http/Controllers/Branch/DriverProductAssignController.php,resources/js/pages/branch/drivers/assign-products.tsx | .ai/rules/branch-drivers.md |
+| app/Services/Driver/**,app/Http/Controllers/Branch/DriverProductAssignController.php,resources/js/pages/branch/assign-products.tsx | .ai/rules/branch-drivers.md |
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/**/staff/**,resources/js/pages/platform/branch-staff/** | .ai/rules/branch-staff.md |
 | app/Models/{Category,Product,ProductVariant,Inventory,InventoryTransaction,BranchProductPrice}.php, app/Services/Catalog/**, app/Services/Inventory/**, app/Models/ProductImage.php, app/Models/{Category,Product}.php, app/Models/Driver*.php, app/Models/User.php, app/Models/Branch.php, app/Models/Category.php, app/Models/Product.php, app/Models/{Notification,UserNotification}.php, app/Services/Catalog/PackService.php, app/Services/Inventory/InventoryReservationService.php | .ai/rules/branch.md |
 | resources/js/pages/platform/branches/index.tsx, resources/js/pages/platform/branches/show.tsx | .ai/rules/branches.md |
@@ -108,6 +108,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/orders-js-components-driver.md |
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx | .ai/rules/orders.md |
 | resources/js/pages/branch/catalog/packs-saves/** | .ai/rules/packs-saves.md |
+| app/Services/Driver/**,app/Http/Controllers/Branch/DriverProductAssignController.php,resources/js/pages/branch/drivers/assign-products.tsx | .ai/rules/pages-branch-drivers.md |
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |
 | resources/js/pages/platform/branch-staff/** | .ai/rules/pages-platform-branch-staff.md |
 | resources/js/layouts/settings/**,resources/js/pages/settings/**,routes/settings.php | .ai/rules/pages-settings.md |
@@ -132,6 +133,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/platform/catalog/products/show.tsx, resources/js/pages/platform/catalog/products/**, resources/js/pages/branch/catalog/products/show.tsx | .ai/rules/products.md |
 | resources/js/pages/driver/profile/** | .ai/rules/profile.md |
 | config/pwa.php, pwa-assets.config.ts, resources/views/app.blade.php, resources/js/lib/pwa.ts, resources/js/components/pwa/**, docker/nginx.conf, routes/public.php, app/Http/Controllers/WebAppManifestController.php, app/Http/Controllers/FirebaseMessagingServiceWorkerController.php | .ai/rules/pwa.md |
+| app/Services/Driver/**,app/Http/Controllers/Branch/Reports/ProductAssignTransactionController.php,resources/js/pages/branch/reports/product-assign-transactions.tsx,resources/js/components/driver/product-assign-transactions-page.tsx | .ai/rules/reports-js-components-driver.md |
 | app/Http/Controllers/{Platform,Branch}/Reports/**, resources/js/pages/{platform,branch}/reports/** | .ai/rules/reports.md |
 | app/Http/Requests/Driver/** | .ai/rules/requests-driver.md |
 | app/Http/Requests/{Platform,Branch}/*Product*Request.php | .ai/rules/requests-platform-branch.md |

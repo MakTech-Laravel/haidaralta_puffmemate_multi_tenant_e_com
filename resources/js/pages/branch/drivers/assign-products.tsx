@@ -38,6 +38,7 @@ type LineDraft = {
     productId: number;
     variantId: number | null;
     name: string;
+    sku: string | null;
     available: number;
     quantity: number;
 };
@@ -97,7 +98,7 @@ export default function BranchDriversAssignProducts({
                 href: DriverController.index.url(branch.slug),
             },
             {
-                title: "Assign Product",
+                title: "Assign Products",
                 href: DriverProductAssignController.create.url(branch.slug),
             },
         ],
@@ -262,6 +263,7 @@ export default function BranchDriversAssignProducts({
                 productId: product.id,
                 variantId: product.variantId,
                 name: product.name,
+                sku: product.sku,
                 available: product.available,
                 quantity: 1,
             },
@@ -317,11 +319,11 @@ export default function BranchDriversAssignProducts({
 
     return (
         <>
-            <Head title="Assign Product" />
+            <Head title="Assign Products" />
 
             <div className="flex w-full min-w-0 max-w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
-                    title="Assign Product"
+                    title="Assign Products"
                     description={`Move branch stock onto ${branch.name} drivers. Each selected driver receives the same quantity.`}
                 />
 
@@ -409,7 +411,7 @@ export default function BranchDriversAssignProducts({
                     )}
                 </section>
 
-                <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_35rem] lg:items-start">
+                <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_65rem] lg:items-start">
                     <section className="border-border bg-card w-full min-w-0 space-y-4 rounded-2xl border p-4 shadow-sm">
                         <div className="space-y-1.5">
                             <Label htmlFor="assign-product-search">
@@ -426,7 +428,7 @@ export default function BranchDriversAssignProducts({
                                     onChange={(event) =>
                                         setProductQuery(event.target.value)
                                     }
-                                    placeholder="Search branch stock"
+                                    placeholder="Search by name or SKU"
                                     className="h-12 rounded-2xl pl-10"
                                 />
                             </div>
@@ -459,6 +461,9 @@ export default function BranchDriversAssignProducts({
                                                         {product.name}
                                                     </p>
                                                     <p className="text-muted-foreground truncate text-xs">
+                                                        {product.sku
+                                                            ? `${product.sku} · `
+                                                            : ""}
                                                         {product.available}{" "}
                                                         available ·{" "}
                                                         {product.priceLabel}
@@ -521,7 +526,10 @@ export default function BranchDriversAssignProducts({
                                                     <p className="text-foreground truncate text-sm font-semibold">
                                                         {line.name}
                                                     </p>
-                                                    <p className="text-muted-foreground text-xs">
+                                                    <p className="text-muted-foreground truncate text-xs">
+                                                        {line.sku
+                                                            ? `${line.sku} · `
+                                                            : ""}
                                                         {line.available}{" "}
                                                         available
                                                     </p>

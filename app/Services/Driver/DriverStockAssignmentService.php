@@ -8,6 +8,7 @@ use App\Enums\InventoryTransactionType;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\DriverInventory;
+use App\Models\DriverInventoryTransaction;
 use App\Models\DriverStockAssignment;
 use App\Models\Inventory;
 use App\Models\User;
@@ -122,13 +123,15 @@ class DriverStockAssignmentService
                         $assignment->id,
                     );
 
-                    foreach ($drivers as $driver) {
+                    foreach ($drivers->sortBy('id')->values() as $driver) {
                         $this->incrementDriverInventory(
                             $driver->id,
                             $branch->id,
                             $item['product_id'],
                             $item['variant_id'],
                             $item['quantity'],
+                            $assignment,
+                            $actor,
                         );
                     }
                 }
@@ -208,6 +211,8 @@ class DriverStockAssignmentService
         int $productId,
         ?int $variantId,
         int $quantity,
+        DriverStockAssignment $assignment,
+        ?User $actor,
     ): void {
         $query = DriverInventory::query()
             ->where('user_id', $userId)
@@ -222,6 +227,8 @@ class DriverStockAssignmentService
         }
 
         $row = $query->first();
+        $before = $row?->quantity ?? 0;
+        $after = $before + $quantity;
 
         if ($row === null) {
             DriverInventory::query()->create([
@@ -231,11 +238,26 @@ class DriverStockAssignmentService
                 'variant_id' => $variantId,
                 'quantity' => $quantity,
             ]);
-
-            return;
+        } else {
+            $row->quantity = $after;
+            $row->save();
         }
 
-        $row->quantity += $quantity;
-        $row->save();
+        DriverInventoryTransaction::query()->create([
+            'branch_id' => $branchId,
+            'user_id' => $userId,
+            'product_id' => $productId,
+            'variant_id' => $variantId,
+            'type' => InventoryTransactionType::DriverAssign,
+            'reason' => null,
+            'reason_note' => null,
+            'quantity' => $quantity,
+            'before_quantity' => $before,
+            'after_quantity' => $after,
+            'reference_type' => DriverStockAssignment::class,
+            'reference_id' => $assignment->id,
+            'created_by' => $actor?->id,
+            'created_at' => now(),
+        ]);
     }
 }
