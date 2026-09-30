@@ -179,7 +179,7 @@ export function buildBranchNav(
                         permissions: ['manage-branch-drivers'],
                     }),
                     navLink({
-                        title: 'Assign Product',
+                        title: 'Assign Products',
                         href: `/branch/${slug}/assign-products`,
                         icon: PackagePlus,
                         permissions: ['manage-branch-drivers'],
@@ -258,7 +258,11 @@ export function buildBranchNav(
             navGroup({
                 title: 'Reports and history',
                 icon: ChartColumn,
-                permissions: ['manage-branch-orders', 'manage-branch-products'],
+                permissions: [
+                    'manage-branch-orders',
+                    'manage-branch-products',
+                    'manage-branch-drivers',
+                ],
                 items: [
                     navLink({
                         title: 'Order operations',
@@ -282,6 +286,12 @@ export function buildBranchNav(
                               }),
                           ]
                         : []),
+                    navLink({
+                        title: 'Product assign transactions',
+                        href: `/branch/${slug}/reports/product-assign-transactions`,
+                        icon: PackagePlus,
+                        permissions: ['manage-branch-drivers'],
+                    }),
                 ],
             }),
             navGroup({

@@ -15,6 +15,7 @@ use App\Http\Controllers\Branch\PermissionController as BranchPermissionControll
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\Reports\OrderOperationsController as BranchOrderOperationsController;
 use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
+use App\Http\Controllers\Branch\Reports\ProductAssignTransactionController as BranchProductAssignTransactionController;
 use App\Http\Controllers\Branch\Reports\StockTransactionController as BranchStockTransactionController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
 use App\Http\Controllers\Branch\ShiftAssignmentController as BranchShiftAssignmentController;
@@ -241,6 +242,13 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.assign-products.driver-options');
         Route::post('assign-products', [BranchDriverProductAssignController::class, 'store'])
             ->name('branch.assign-products.store');
+
+        Route::get('reports/product-assign-transactions', [BranchProductAssignTransactionController::class, 'index'])
+            ->name('branch.reports.product-assign-transactions');
+        Route::get('reports/product-assign-transactions/product-options', [BranchProductAssignTransactionController::class, 'productOptions'])
+            ->name('branch.reports.product-assign-transactions.product-options');
+        Route::get('reports/product-assign-transactions/export', [BranchProductAssignTransactionController::class, 'export'])
+            ->name('branch.reports.product-assign-transactions.export');
     });
 
     Route::middleware(['permission:manage-branch-shifts'])->group(function () {
