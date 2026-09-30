@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { CircleHelp, CircleUser, LogOut, Phone, ScrollText, Settings, Shield, UserRound } from 'lucide-react';
+import { CircleHelp, CircleUser, ClipboardList, LogOut, Phone, ScrollText, Settings, Shield, UserRound } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { PwaInstallMenuItem } from '@/components/pwa/pwa-install-menu-item';
@@ -20,6 +20,7 @@ import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
 import { index as activityIndex } from '@/routes/driver/activity';
+import { index as placeOrderIndex } from '@/routes/driver/place-order';
 import { edit as editProfile, index as profileIndex } from '@/routes/driver/profile';
 import { index as securityIndex } from '@/routes/driver/security';
 import type { User } from '@/types';
@@ -183,6 +184,12 @@ export function DriverAccountSheet({ user }: DriverAccountSheetProps) {
                         <p className="text-muted-foreground px-3 text-xs font-medium tracking-wide uppercase">
                             Quick actions
                         </p>
+                        <AccountSheetItem
+                            href={placeOrderIndex.url()}
+                            icon={ClipboardList}
+                        >
+                            Place order
+                        </AccountSheetItem>
                         {supportPhone ? (
                             <AccountSheetItem
                                 href={`tel:${supportPhone}`}

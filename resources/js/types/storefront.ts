@@ -128,3 +128,7 @@ export function formatStorefrontMoney(amount: number): string {
         maximumFractionDigits: 2,
     })}`;
 }
+
+export function formatStorefrontAud(amount: string): string {
+    return `A$${amount}`;
+}
