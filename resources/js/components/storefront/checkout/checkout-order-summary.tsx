@@ -80,7 +80,7 @@ export function CheckoutOrderSummary({
                 </span>
             </div>
 
-            <ul className="mt-5 space-y-4">
+            <ul className="border-border mt-5 max-h-64 space-y-4 overflow-y-auto overscroll-contain border-y py-4 pr-1">
                 {items.map((item) => (
                     <li key={item.id} className="flex items-center gap-3">
                         <div className="bg-muted size-12 shrink-0 overflow-hidden rounded-md">
