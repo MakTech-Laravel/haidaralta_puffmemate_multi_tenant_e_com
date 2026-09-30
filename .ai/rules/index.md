@@ -106,6 +106,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
 | app/Services/Notifications/** | .ai/rules/notifications.md |
 | app/Services/Order/OrderAllocationEngine.php, app/Actions/Order/PlaceOrderAction.php | .ai/rules/order.md |
+| app/Http/Controllers/Customer/OrderController.php,resources/js/pages/customer/orders/show.tsx,resources/js/components/customer/order-track-*.tsx | .ai/rules/orders-js-components-customer.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/orders-js-components-driver.md |
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx | .ai/rules/orders.md |
 | resources/js/pages/branch/catalog/packs-saves/** | .ai/rules/packs-saves.md |
