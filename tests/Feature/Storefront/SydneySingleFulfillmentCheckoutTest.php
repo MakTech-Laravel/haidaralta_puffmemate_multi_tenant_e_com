@@ -88,7 +88,7 @@ test('a sydney customer with mixed sydney and melbourne stock gets one fulfillme
             'postal_code' => '2000',
             'latitude' => -33.8688,
             'longitude' => 151.2093,
-            'delivery_method' => 'australia-wide',
+            'delivery_method' => 'regular',
             'payment_method' => PaymentGatewaySetting::KEY_COD,
             'terms' => true,
         ])

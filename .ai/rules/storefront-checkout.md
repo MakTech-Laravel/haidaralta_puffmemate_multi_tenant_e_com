@@ -9,4 +9,10 @@ paths:
 DeliveryMethod.fee is a leftover flat amount (seeded 0). Real shipping is ShippingCalculator distance cost at place(). Never label method.formattedFee as FREE. Checkout cards and the order summary say Calculated at checkout.
 
 ## Delivery method cards omit shipping cost
-DeliveryMethod.fee is leftover and unused. deliveryMethods() returns id/label/description/requiresSlot only. Distance cost lives in the checkout summary via the shipping quote, not on the method cards.
+DeliveryMethod.fee is leftover and unused. deliveryMethods() returns id/label/description/requiresSlot/timeSlots only. Distance cost lives in the checkout summary via the shipping quote, not on the method cards.
+
+## Delivery keys are regular and express
+Checkout delivery_methods keys are `regular` (sort 0, no slot) and `express` (sort 1, requires_slot, recommended 9–12/12–3/3–6/6–9 windows). DeliverySLACalculator uses `express_max_transfer_hours` for express/same-day and `regular_max_transfer_hours` otherwise. Do not restore australia-wide/same-day labels in checkout UI.
+
+## Payment methods come from payment_gateway_settings
+Checkout paymentMethods are PaymentGatewaySettingsService::enabledMethods() (cod/pos/payment_link fixed keys). PlaceOrderRequest validates payment_method with Rule::in(enabled keys). Do not hardcode the checkout payment list in React.

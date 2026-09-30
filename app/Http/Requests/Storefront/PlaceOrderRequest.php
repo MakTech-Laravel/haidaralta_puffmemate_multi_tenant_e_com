@@ -3,8 +3,10 @@
 namespace App\Http\Requests\Storefront;
 
 use App\Models\DeliveryMethod;
+use App\Services\Application\PaymentGatewaySettingsService;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PlaceOrderRequest extends FormRequest
 {
@@ -18,6 +20,10 @@ class PlaceOrderRequest extends FormRequest
      */
     public function rules(): array
     {
+        $enabledPaymentKeys = collect(app(PaymentGatewaySettingsService::class)->enabledMethods())
+            ->pluck('id')
+            ->all();
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'mobile' => ['required', 'string', 'max:32'],
@@ -31,10 +37,20 @@ class PlaceOrderRequest extends FormRequest
             'delivery_method' => ['required', 'string'],
             'delivery_date' => ['nullable', 'date'],
             'time_slot_id' => ['nullable', 'string'],
-            'payment_method' => ['required', 'string'],
+            'payment_method' => ['required', 'string', Rule::in($enabledPaymentKeys)],
             'coupon' => ['nullable', 'string', 'max:60'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'terms' => ['accepted'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'payment_method.in' => 'Choose an available payment method.',
         ];
     }
 

@@ -1,4 +1,6 @@
 import { Link } from '@inertiajs/react';
+import { ClipboardList } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
     Pagination,
     PaginationContent,
@@ -8,6 +10,7 @@ import {
     PaginationPrevious,
 } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
+import { shop } from '@/routes';
 import { show as orderShow } from '@/routes/customer/orders';
 
 export type CustomerOrderStatus =
@@ -80,6 +83,35 @@ export function OrderList({
     className,
 }: OrderListProps) {
     const showPagination = lastPage > 1;
+
+    if (orders.length === 0) {
+        return (
+            <div
+                className={cn(
+                    'border-border bg-background flex flex-col items-center justify-center rounded-xl border px-6 py-16 text-center',
+                    className,
+                )}
+            >
+                <ClipboardList
+                    className="text-muted-foreground mb-4 size-10"
+                    strokeWidth={1.5}
+                    aria-hidden
+                />
+                <h2 className="text-foreground text-lg font-semibold tracking-tight">
+                    No orders yet
+                </h2>
+                <p className="text-muted-foreground mt-2 max-w-sm text-sm leading-relaxed">
+                    When you place an order, it will show up here so you can
+                    track delivery and review past purchases.
+                </p>
+                <Button asChild className="mt-6">
+                    <Link href={shop.url()} prefetch>
+                        Browse the shop
+                    </Link>
+                </Button>
+            </div>
+        );
+    }
 
     return (
         <div className={cn('flex flex-col gap-6', className)}>
