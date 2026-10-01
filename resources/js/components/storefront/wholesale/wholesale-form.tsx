@@ -1,9 +1,9 @@
-import { type FormEvent, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
+import { type FormEvent, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 type WholesaleFormCopy = Record<string, string>;
 
@@ -13,20 +13,20 @@ type WholesaleFormProps = {
 };
 
 const boxedFieldClass =
-    'border-border h-10  rounded-none bg-transparent shadow-none';
+    "border-border h-10  rounded-none bg-transparent shadow-none";
 
 function RequiredMark() {
     return <span className="text-primary">*</span>;
 }
 
 export function WholesaleForm({ className, copy }: WholesaleFormProps) {
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [phone, setPhone] = useState('');
-    const [email, setEmail] = useState('');
-    const [company, setCompany] = useState('');
-    const [askQuestion, setAskQuestion] = useState('');
-    const [message, setMessage] = useState('');
+    const [fullName, setFullName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [email, setEmail] = useState("");
+    const [company, setCompany] = useState("");
+    const [askQuestion, setAskQuestion] = useState("");
+    const [address, setAddress] = useState("");
+    const [message, setMessage] = useState("");
 
     const onSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -35,7 +35,7 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
     return (
         <div
             className={cn(
-                'bg-background relative flex h-full min-h-full flex-col p-6 sm:p-8 lg:p-10',
+                "bg-background relative flex h-full min-h-full flex-col p-6 sm:p-8 lg:p-10",
                 className,
             )}
         >
@@ -43,39 +43,23 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                 onSubmit={onSubmit}
                 className="relative z-10 flex flex-1 flex-col gap-5 pb-16"
             >
+                <div className="space-y-2">
+                    <Label htmlFor="wholesale-full-name">
+                        {copy.fullName ?? "Full Name"} <RequiredMark />
+                    </Label>
+                    <Input
+                        id="wholesale-full-name"
+                        required
+                        value={fullName}
+                        onChange={(event) => setFullName(event.target.value)}
+                        placeholder={copy.fullNamePlaceholder}
+                        className={boxedFieldClass}
+                    />
+                </div>
                 <div className="grid gap-5 sm:grid-cols-2">
                     <div className="space-y-2">
-                        <Label htmlFor="wholesale-first-name">
-                            {copy.firstName ?? 'First Name'} <RequiredMark />
-                        </Label>
-                        <Input
-                            id="wholesale-first-name"
-                            required
-                            value={firstName}
-                            onChange={(event) =>
-                                setFirstName(event.target.value)
-                            }
-                            placeholder={copy.firstNamePlaceholder}
-                            className={boxedFieldClass}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="wholesale-last-name">
-                            {copy.lastName ?? 'Last Name'}
-                        </Label>
-                        <Input
-                            id="wholesale-last-name"
-                            value={lastName}
-                            onChange={(event) =>
-                                setLastName(event.target.value)
-                            }
-                            placeholder={copy.lastNamePlaceholder}
-                            className={boxedFieldClass}
-                        />
-                    </div>
-                    <div className="space-y-2">
                         <Label htmlFor="wholesale-phone">
-                            {copy.phone ?? 'Phone'} <RequiredMark />
+                            {copy.phone ?? "Phone"} <RequiredMark />
                         </Label>
                         <Input
                             id="wholesale-phone"
@@ -89,7 +73,7 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-email">
-                            {copy.email ?? 'Email'} <RequiredMark />
+                            {copy.email ?? "Email"} <RequiredMark />
                         </Label>
                         <Input
                             id="wholesale-email"
@@ -103,7 +87,7 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-company">
-                            {copy.company ?? 'Company (If Applicable)'}
+                            {copy.company ?? "Company (If Applicable)"}
                         </Label>
                         <Input
                             id="wholesale-company"
@@ -115,7 +99,7 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-ask-question">
-                            {copy.askQuestion ?? 'Ask Question'}
+                            {copy.askQuestion ?? "Ask Question"}
                         </Label>
                         <Input
                             id="wholesale-ask-question"
@@ -130,8 +114,23 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                 </div>
 
                 <div className="space-y-2">
+                    <Label htmlFor="wholesale-address">
+                        {copy.address ?? "Address"}
+                    </Label>
+                    <Input
+                        id="wholesale-address"
+                        value={address}
+                        onChange={(event) => setAddress(event.target.value)}
+                        placeholder={
+                            copy.addressPlaceholder ?? "Street, suburb, state"
+                        }
+                        className={boxedFieldClass}
+                    />
+                </div>
+
+                <div className="space-y-2">
                     <Label htmlFor="wholesale-message">
-                        {copy.message ?? 'Message'}
+                        {copy.message ?? "Message"}
                     </Label>
                     <Textarea
                         id="wholesale-message"
@@ -146,9 +145,9 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                 <div className="mt-auto flex justify-end pt-4">
                     <Button
                         type="submit"
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-md px-6 font-semibold"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-none px-6 font-semibold cursor-pointer"
                     >
-                        {copy.submitLabel ?? 'Send Message'}
+                        {copy.submitLabel ?? "Send Message"}
                     </Button>
                 </div>
             </form>

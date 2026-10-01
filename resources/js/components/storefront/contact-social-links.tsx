@@ -1,4 +1,4 @@
-import { CachedLucideIcon } from '@/components/icons/cached-lucide-icon';
+import { coerceValidLucideIconKey, Icon } from '@/lib/icons';
 
 function SocialGlyph({ id }: { id: string }) {
     if (id === 'twitter' || id === 'x') {
@@ -48,23 +48,24 @@ export function ContactSocialLinks({
 
     return (
         <div className="relative z-10 mt-auto flex gap-3 pt-12">
-            {socials.map((social) => (
-                <a
-                    key={social.key || social.label}
-                    href={social.url || '#'}
-                    aria-label={social.label}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 flex size-9 items-center justify-center rounded-full transition"
-                >
-                    {social.icon ? (
-                        <CachedLucideIcon
-                            name={social.icon}
-                            className="size-3.5"
-                        />
-                    ) : (
-                        <SocialGlyph id={social.key} />
-                    )}
-                </a>
-            ))}
+            {socials.map((social) => {
+                const lucideKey = coerceValidLucideIconKey(social.icon);
+
+                return (
+                    <a
+                        key={social.key || social.label}
+                        href={social.url || '#'}
+                        aria-label={social.label}
+                        className="bg-primary text-primary-foreground hover:bg-primary-foreground hover:text-foreground flex size-9 items-center justify-center rounded-full transition"
+                    >
+                        {lucideKey ? (
+                            <Icon icon={lucideKey} className="size-3.5" />
+                        ) : (
+                            <SocialGlyph id={social.key} />
+                        )}
+                    </a>
+                );
+            })}
         </div>
     );
 }
