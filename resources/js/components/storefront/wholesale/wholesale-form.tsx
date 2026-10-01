@@ -1,9 +1,12 @@
-import { type FormEvent, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { useForm } from '@inertiajs/react';
+import type { FormEvent } from 'react';
+import WholesaleInquiryController from '@/actions/App/Http/Controllers/Storefront/WholesaleInquiryController';
+import InputError from '@/components/input-error';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 type WholesaleFormCopy = Record<string, string>;
 
@@ -13,29 +16,35 @@ type WholesaleFormProps = {
 };
 
 const boxedFieldClass =
-    "border-border h-10  rounded-none bg-transparent shadow-none";
+    'border-border h-10  rounded-none bg-transparent shadow-none';
 
 function RequiredMark() {
     return <span className="text-primary">*</span>;
 }
 
 export function WholesaleForm({ className, copy }: WholesaleFormProps) {
-    const [fullName, setFullName] = useState("");
-    const [phone, setPhone] = useState("");
-    const [email, setEmail] = useState("");
-    const [company, setCompany] = useState("");
-    const [askQuestion, setAskQuestion] = useState("");
-    const [address, setAddress] = useState("");
-    const [message, setMessage] = useState("");
+    const { data, setData, post, processing, errors, reset } = useForm({
+        full_name: '',
+        phone: '',
+        email: '',
+        company: '',
+        ask_question: '',
+        address: '',
+        message: '',
+    });
 
     const onSubmit = (event: FormEvent) => {
         event.preventDefault();
+        post(WholesaleInquiryController.store.url(), {
+            preserveScroll: true,
+            onSuccess: () => reset(),
+        });
     };
 
     return (
         <div
             className={cn(
-                "bg-background relative flex h-full min-h-full flex-col p-6 sm:p-8 lg:p-10",
+                'bg-background relative flex h-full min-h-full flex-col p-6 sm:p-8 lg:p-10',
                 className,
             )}
         >
@@ -45,109 +54,137 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
             >
                 <div className="space-y-2">
                     <Label htmlFor="wholesale-full-name">
-                        {copy.fullName ?? "Full Name"} <RequiredMark />
+                        {copy.fullName ?? 'Full Name'} <RequiredMark />
                     </Label>
                     <Input
                         id="wholesale-full-name"
-                        required
-                        value={fullName}
-                        onChange={(event) => setFullName(event.target.value)}
+                        name="full_name"
+                        
+                        value={data.full_name}
+                        onChange={(event) =>
+                            setData('full_name', event.target.value)
+                        }
                         placeholder={copy.fullNamePlaceholder}
                         className={boxedFieldClass}
                     />
+                    <InputError message={errors.full_name} />
                 </div>
                 <div className="grid gap-5 sm:grid-cols-2">
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-phone">
-                            {copy.phone ?? "Phone"} <RequiredMark />
+                            {copy.phone ?? 'Phone'} <RequiredMark />
                         </Label>
                         <Input
                             id="wholesale-phone"
+                            name="phone"
                             type="tel"
-                            required
-                            value={phone}
-                            onChange={(event) => setPhone(event.target.value)}
+                            
+                            value={data.phone}
+                            onChange={(event) =>
+                                setData('phone', event.target.value)
+                            }
                             placeholder={copy.phonePlaceholder}
                             className={boxedFieldClass}
                         />
+                        <InputError message={errors.phone} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-email">
-                            {copy.email ?? "Email"} <RequiredMark />
+                            {copy.email ?? 'Email'}
                         </Label>
                         <Input
                             id="wholesale-email"
+                            name="email"
                             type="email"
-                            required
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
+                            value={data.email}
+                            onChange={(event) =>
+                                setData('email', event.target.value)
+                            }
                             placeholder={copy.emailPlaceholder}
                             className={boxedFieldClass}
                         />
+                        <InputError message={errors.email} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-company">
-                            {copy.company ?? "Company (If Applicable)"}
+                            {copy.company ?? 'Company (If Applicable)'}
                         </Label>
                         <Input
                             id="wholesale-company"
-                            value={company}
-                            onChange={(event) => setCompany(event.target.value)}
+                            name="company"
+                            value={data.company}
+                            onChange={(event) =>
+                                setData('company', event.target.value)
+                            }
                             placeholder={copy.companyPlaceholder}
                             className={boxedFieldClass}
                         />
+                        <InputError message={errors.company} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="wholesale-ask-question">
-                            {copy.askQuestion ?? "Ask Question"}
+                            {copy.askQuestion ?? 'Ask Question'}
                         </Label>
                         <Input
                             id="wholesale-ask-question"
-                            value={askQuestion}
+                            name="ask_question"
+                            value={data.ask_question}
                             onChange={(event) =>
-                                setAskQuestion(event.target.value)
+                                setData('ask_question', event.target.value)
                             }
                             placeholder={copy.askQuestionPlaceholder}
                             className={boxedFieldClass}
                         />
+                        <InputError message={errors.ask_question} />
                     </div>
                 </div>
 
                 <div className="space-y-2">
                     <Label htmlFor="wholesale-address">
-                        {copy.address ?? "Address"}
+                        {copy.address ?? 'Address'} <RequiredMark />
                     </Label>
                     <Input
                         id="wholesale-address"
-                        value={address}
-                        onChange={(event) => setAddress(event.target.value)}
+                        name="address"
+                        
+                        value={data.address}
+                        onChange={(event) =>
+                            setData('address', event.target.value)
+                        }
                         placeholder={
-                            copy.addressPlaceholder ?? "Street, suburb, state"
+                            copy.addressPlaceholder ?? 'Street, suburb, state'
                         }
                         className={boxedFieldClass}
                     />
+                    <InputError message={errors.address} />
                 </div>
 
                 <div className="space-y-2">
                     <Label htmlFor="wholesale-message">
-                        {copy.message ?? "Message"}
+                        {copy.message ?? 'Message'} <RequiredMark />
                     </Label>
                     <Textarea
                         id="wholesale-message"
-                        value={message}
-                        onChange={(event) => setMessage(event.target.value)}
+                        name="message"
+                        
+                        value={data.message}
+                        onChange={(event) =>
+                            setData('message', event.target.value)
+                        }
                         placeholder={copy.messagePlaceholder}
                         rows={4}
                         className="border-border min-h-24 resize-none rounded-none bg-transparent shadow-none"
                     />
+                    <InputError message={errors.message} />
                 </div>
 
                 <div className="mt-auto flex justify-end pt-4">
                     <Button
                         type="submit"
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-none px-6 font-semibold cursor-pointer"
+                        disabled={processing}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 cursor-pointer rounded-none px-6 font-semibold"
                     >
-                        {copy.submitLabel ?? "Send Message"}
+                        {copy.submitLabel ?? 'Send Message'}
                     </Button>
                 </div>
             </form>

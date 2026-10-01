@@ -129,8 +129,9 @@ export function buildPlatformNav(
                         icon: Star,
                         permissions: ['manage-users'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Wholesale',
+                        href: '/platform/wholesale-inquiries',
                         icon: Warehouse,
                         permissions: ['manage-users'],
                     }),
