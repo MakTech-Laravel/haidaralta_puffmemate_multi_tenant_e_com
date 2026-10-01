@@ -45,6 +45,7 @@ use App\Http\Controllers\Platform\SmtpSettingsController as PlatformSmtpSettings
 use App\Http\Controllers\Platform\StockController as PlatformStockController;
 use App\Http\Controllers\Platform\StockTransferController as PlatformStockTransferController;
 use App\Http\Controllers\Platform\TransferController as PlatformTransferController;
+use App\Http\Controllers\Platform\WholesaleInquiryController as PlatformWholesaleInquiryController;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -83,6 +84,15 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->parameters(['admins' => 'user'])
             ->names('platform.admins')
             ->middlewareFor(['store', 'update'], 'precognitive');
+
+        Route::get('wholesale-inquiries', [PlatformWholesaleInquiryController::class, 'index'])
+            ->name('platform.wholesale-inquiries.index');
+        Route::get('wholesale-inquiries/branch-options', [PlatformWholesaleInquiryController::class, 'branchOptions'])
+            ->name('platform.wholesale-inquiries.branch-options');
+        Route::get('wholesale-inquiries/{wholesaleInquiry}/place-order', [PlatformWholesaleInquiryController::class, 'placeOrder'])
+            ->name('platform.wholesale-inquiries.place-order');
+        Route::get('wholesale-inquiries/{wholesaleInquiry}', [PlatformWholesaleInquiryController::class, 'show'])
+            ->name('platform.wholesale-inquiries.show');
     });
 
     Route::permanentRedirect('staff', '/platform/admins');

@@ -10,6 +10,7 @@ use App\Http\Controllers\Storefront\PackController;
 use App\Http\Controllers\Storefront\PacksSavesController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\ShopController;
+use App\Http\Controllers\Storefront\WholesaleInquiryController;
 use App\Http\Controllers\WebAppManifestController;
 use Illuminate\Support\Facades\Route;
 
@@ -49,5 +50,8 @@ Route::get('/about', fn () => app(CmsPageController::class)('about'))->name('abo
 Route::get('/faqs', fn () => app(CmsPageController::class)('faqs'))->name('faqs');
 Route::get('/contact', fn () => app(CmsPageController::class)('contact'))->name('contact');
 Route::get('/wholesale', fn () => app(CmsPageController::class)('wholesale'))->name('wholesale');
+Route::post('/wholesale', [WholesaleInquiryController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('wholesale.store');
 Route::get('/privacy', fn () => app(CmsPageController::class)('privacy'))->name('privacy');
 Route::get('/terms', fn () => app(CmsPageController::class)('terms'))->name('terms');
