@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\DataTableConfigurable;
 use App\Enums\WholesaleInquiryStatus;
 use App\Models\Concerns\HasDataTableConfig;
+use App\Services\Storefront\WholesaleInquiryService;
 use Database\Factories\WholesaleInquiryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -78,13 +79,6 @@ class WholesaleInquiry extends Model implements DataTableConfigurable
 
     public function markRead(): void
     {
-        if ($this->status === WholesaleInquiryStatus::Read) {
-            return;
-        }
-
-        $this->forceFill([
-            'status' => WholesaleInquiryStatus::Read,
-            'read_at' => now(),
-        ])->save();
+        app(WholesaleInquiryService::class)->markRead($this);
     }
 }

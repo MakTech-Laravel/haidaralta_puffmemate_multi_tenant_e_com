@@ -82,7 +82,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/platform/wholesale-inquiries/show.tsx,app/Http/Controllers/Platform/WholesaleInquiryController.php | .ai/rules/http-controllers-platform.md |
 | resources/js/layouts/settings/**,resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php | .ai/rules/http-controllers-settings.md |
 | config/catalog.php,app/Http/Controllers/Storefront/HomeController.php | .ai/rules/http-controllers-storefront.md |
-| app/Services/Storefront/ContactInquiryService.php,app/Http/Controllers/**/ContactInquiryController.php | .ai/rules/http-controllers.md |
+| app/Services/Storefront/ContactInquiryService.php,app/Http/Controllers/**/ContactInquiryController.php, app/Services/Storefront/WholesaleInquiryService.php,app/Http/Controllers/**/WholesaleInquiryController.php | .ai/rules/http-controllers.md |
 | resources/js/layouts/branch/**,resources/js/components/portal/portal-brand.tsx,app/Http/Middleware/HandleInertiaRequests.php | .ai/rules/http-middleware.md |
 | resources/js/components/admin/role-*.tsx, resources/js/pages/{platform,branch}/roles/**, app/Http/Controllers/{Platform,Branch}/RoleController.php, app/Http/Requests/{Platform,Branch}/*RoleRequest.php | .ai/rules/http-requests-platform-branch.md |
 | app/Services/Catalog/**,app/Services/Inventory/**,app/Support/PackAvailability.php | .ai/rules/inventory-support.md |
