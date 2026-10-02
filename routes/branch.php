@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Branch\ActivityLogController as BranchActivityLogController;
+use App\Http\Controllers\Branch\AreaController as BranchAreaController;
 use App\Http\Controllers\Branch\CatalogPricingController as BranchCatalogPricingController;
 use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\ConversationController as BranchConversationController;
@@ -188,6 +189,18 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::put('settings/general', [BranchGeneralSettingsController::class, 'update'])
             ->middleware('precognitive')
             ->name('branch.settings.general.update');
+
+        Route::get('areas', [BranchAreaController::class, 'index'])->name('branch.areas.index');
+        Route::get('areas/create', [BranchAreaController::class, 'create'])->name('branch.areas.create');
+        Route::post('areas', [BranchAreaController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('branch.areas.store');
+        Route::get('areas/{area}', [BranchAreaController::class, 'show'])->name('branch.areas.show');
+        Route::get('areas/{area}/edit', [BranchAreaController::class, 'edit'])->name('branch.areas.edit');
+        Route::put('areas/{area}', [BranchAreaController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('branch.areas.update');
+        Route::delete('areas/{area}', [BranchAreaController::class, 'destroy'])->name('branch.areas.destroy');
     });
 
     Route::middleware(['permission:manage-branch-roles'])->group(function () {

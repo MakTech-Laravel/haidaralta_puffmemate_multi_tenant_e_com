@@ -196,6 +196,12 @@ export function buildPlatformNav(
                         permissions: ['view-branches'],
                     }),
                     navLink({
+                        title: 'Areas',
+                        href: '/platform/branch-areas',
+                        icon: MapPinned,
+                        permissions: ['view-branches'],
+                    }),
+                    navLink({
                         title: 'Staff',
                         href: '/platform/branch-staff',
                         icon: Users,

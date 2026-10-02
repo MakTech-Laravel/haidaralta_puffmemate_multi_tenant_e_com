@@ -233,6 +233,12 @@ export function buildBranchNav(
                     }),
                 ],
             }),
+            navLink({
+                title: 'Areas',
+                href: `/branch/${slug}/areas`,
+                icon: MapPinned,
+                permissions: ['manage-branch-settings'],
+            }),
             navGroup({
                 title: 'Conversations',
                 href: `/branch/${slug}/conversations`,

@@ -3,6 +3,8 @@
 use App\Http\Controllers\Platform\ActivityLogController as PlatformActivityLogController;
 use App\Http\Controllers\Platform\AdminController as PlatformAdminController;
 use App\Http\Controllers\Platform\AnnouncementController as PlatformAnnouncementController;
+use App\Http\Controllers\Platform\BranchAreaController as PlatformBranchAreaController;
+use App\Http\Controllers\Platform\BranchAreasController as PlatformBranchAreasController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchDriverController as PlatformBranchDriverController;
 use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInventoryController;
@@ -238,6 +240,12 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::middleware(['permission:view-branches'])->group(function () {
         Route::get('branches', [PlatformBranchController::class, 'index'])->name('platform.branches.index');
         Route::get('branches/{branch}', [PlatformBranchController::class, 'show'])->name('platform.branches.show');
+        Route::get('branch-areas', [PlatformBranchAreasController::class, 'index'])
+            ->name('platform.branch-areas.index');
+        Route::get('branch-areas-branch-options', [PlatformBranchAreasController::class, 'branchOptions'])
+            ->name('platform.branch-areas.branch-options');
+        Route::get('branches/{branch}/areas', [PlatformBranchAreaController::class, 'index'])
+            ->name('platform.branches.areas.index');
     });
 
     Route::middleware(['permission:edit-branches'])->group(function () {
@@ -245,6 +253,40 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::put('branches/{branch}', [PlatformBranchController::class, 'update'])
             ->middleware('precognitive')
             ->name('platform.branches.update');
+        Route::get('branch-areas/create', [PlatformBranchAreasController::class, 'create'])
+            ->name('platform.branch-areas.create');
+        Route::post('branch-areas', [PlatformBranchAreasController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.branch-areas.store');
+        Route::get('branch-areas/{area}/edit', [PlatformBranchAreasController::class, 'edit'])
+            ->name('platform.branch-areas.edit');
+        Route::put('branch-areas/{area}', [PlatformBranchAreasController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.branch-areas.update');
+        Route::delete('branch-areas/{area}', [PlatformBranchAreasController::class, 'destroy'])
+            ->name('platform.branch-areas.destroy');
+        Route::post('branch-areas/{area}/transfer', [PlatformBranchAreasController::class, 'transfer'])
+            ->middleware('precognitive')
+            ->name('platform.branch-areas.transfer');
+        Route::get('branches/{branch}/areas/create', [PlatformBranchAreaController::class, 'create'])
+            ->name('platform.branches.areas.create');
+        Route::post('branches/{branch}/areas', [PlatformBranchAreaController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.branches.areas.store');
+        Route::get('branches/{branch}/areas/{area}/edit', [PlatformBranchAreaController::class, 'edit'])
+            ->name('platform.branches.areas.edit');
+        Route::put('branches/{branch}/areas/{area}', [PlatformBranchAreaController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.branches.areas.update');
+        Route::delete('branches/{branch}/areas/{area}', [PlatformBranchAreaController::class, 'destroy'])
+            ->name('platform.branches.areas.destroy');
+    });
+
+    Route::middleware(['permission:view-branches'])->group(function () {
+        Route::get('branch-areas/{area}', [PlatformBranchAreasController::class, 'show'])
+            ->name('platform.branch-areas.show');
+        Route::get('branches/{branch}/areas/{area}', [PlatformBranchAreaController::class, 'show'])
+            ->name('platform.branches.areas.show');
     });
 
     Route::middleware(['permission:delete-branches'])->group(function () {
