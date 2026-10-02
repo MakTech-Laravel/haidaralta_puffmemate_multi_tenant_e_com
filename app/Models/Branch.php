@@ -43,6 +43,7 @@ use Laravel\Scout\Searchable;
  * @property-read Collection<int, DriverRoster> $driverRosters
  * @property-read Collection<int, Conversation> $conversations
  * @property-read Collection<int, OrderFulfillment> $fulfillments
+ * @property-read Collection<int, BranchArea> $areas
  * @property-read BranchShippingRule|null $shippingRule
  */
 class Branch extends Model implements DataTableConfigurable, ScoutSearchable
@@ -150,6 +151,14 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
     public function fulfillments(): HasMany
     {
         return $this->hasMany(OrderFulfillment::class);
+    }
+
+    /**
+     * @return HasMany<BranchArea, $this>
+     */
+    public function areas(): HasMany
+    {
+        return $this->hasMany(BranchArea::class);
     }
 
     /**
