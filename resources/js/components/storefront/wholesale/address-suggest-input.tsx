@@ -15,6 +15,9 @@ export type AddressSuggestSelection = {
     address: string;
     latitude: string;
     longitude: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
 };
 
 type AddressSuggestInputProps = {
@@ -198,6 +201,9 @@ export function AddressSuggestInput({
                                             address: place.displayName,
                                             latitude: place.latitude,
                                             longitude: place.longitude,
+                                            city: place.city,
+                                            state: place.state,
+                                            postalCode: place.postalCode,
                                         });
                                     }}
                                 >
