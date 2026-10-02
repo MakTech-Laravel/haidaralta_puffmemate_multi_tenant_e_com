@@ -112,6 +112,20 @@ test('platform admin can open wholesale place-order without branch', function ()
             ->has('branchOptionsUrl'));
 });
 
+test('platform admin can open blank wholesale place-order from create route', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.wholesale-inquiries.place-order.create'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/wholesale-inquiries/place-order')
+            ->where('inquiry', null)
+            ->where('branch', null)
+            ->where('products', [])
+            ->has('branchOptionsUrl'));
+});
+
 test('platform admin place-order loads stock for selected branch', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_ADMIN)->firstOrFail();
     $inquiry = WholesaleInquiry::factory()->create();
@@ -172,6 +186,9 @@ test('guest cannot access wholesale inquiry platform routes', function () {
 
     $this->get(route('platform.wholesale-inquiries.place-order', $inquiry))
         ->assertRedirect();
+
+    $this->get(route('platform.wholesale-inquiries.place-order.create'))
+        ->assertRedirect();
 });
 
 test('platform user without manage-users cannot access wholesale inquiries', function () {
@@ -196,5 +213,9 @@ test('platform user without manage-users cannot access wholesale inquiries', fun
 
     $this->actingAs($user, 'platform')
         ->get(route('platform.wholesale-inquiries.place-order', $inquiry))
+        ->assertForbidden();
+
+    $this->actingAs($user, 'platform')
+        ->get(route('platform.wholesale-inquiries.place-order.create'))
         ->assertForbidden();
 });

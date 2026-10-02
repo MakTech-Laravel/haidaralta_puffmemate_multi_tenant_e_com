@@ -53,5 +53,7 @@ export type WholesalePlaceOrderCustomerForm = {
     email: string;
     company: string;
     address: string;
+    latitude: string;
+    longitude: string;
     note: string;
 };

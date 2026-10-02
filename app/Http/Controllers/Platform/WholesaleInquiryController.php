@@ -33,12 +33,22 @@ class WholesaleInquiryController extends Controller
         ]);
     }
 
+    public function createPlaceOrder(Request $request): Response
+    {
+        return $this->renderPlaceOrder($request, null);
+    }
+
     public function placeOrder(Request $request, WholesaleInquiry $wholesaleInquiry): Response
+    {
+        return $this->renderPlaceOrder($request, $wholesaleInquiry);
+    }
+
+    private function renderPlaceOrder(Request $request, ?WholesaleInquiry $inquiry): Response
     {
         $branch = StockPageContext::optionalBranch($request);
 
         return Inertia::render('platform/wholesale-inquiries/place-order', [
-            'inquiry' => $this->inquiryPayload($wholesaleInquiry),
+            'inquiry' => $inquiry === null ? null : $this->inquiryPayload($inquiry),
             'branch' => $branch?->toPortalContext(),
             'branchOptionsUrl' => route('platform.wholesale-inquiries.branch-options'),
             'products' => $branch === null ? [] : $this->productsForBranch($branch),

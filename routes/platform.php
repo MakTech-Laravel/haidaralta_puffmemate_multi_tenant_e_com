@@ -89,6 +89,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.wholesale-inquiries.index');
         Route::get('wholesale-inquiries/branch-options', [PlatformWholesaleInquiryController::class, 'branchOptions'])
             ->name('platform.wholesale-inquiries.branch-options');
+        Route::get('wholesale-inquiries/place-order', [PlatformWholesaleInquiryController::class, 'createPlaceOrder'])
+            ->name('platform.wholesale-inquiries.place-order.create');
         Route::get('wholesale-inquiries/{wholesaleInquiry}/place-order', [PlatformWholesaleInquiryController::class, 'placeOrder'])
             ->name('platform.wholesale-inquiries.place-order');
         Route::get('wholesale-inquiries/{wholesaleInquiry}', [PlatformWholesaleInquiryController::class, 'show'])
