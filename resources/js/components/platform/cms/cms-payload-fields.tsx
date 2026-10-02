@@ -56,17 +56,18 @@ type CmsPayloadFieldsProps = {
 type FieldDef = { key: string; label: string };
 
 const CONTACT_LABEL_FIELDS: FieldDef[] = [
-    { key: 'firstName', label: 'First name' },
-    { key: 'lastName', label: 'Last name' },
+    { key: 'fullName', label: 'Full name' },
     { key: 'email', label: 'Email' },
     { key: 'phone', label: 'Phone' },
+    { key: 'type', label: 'Type' },
     { key: 'message', label: 'Message' },
     { key: 'submitLabel', label: 'Submit button' },
 ];
 
 const CONTACT_PLACEHOLDER_FIELDS: FieldDef[] = [
-    { key: 'lastNamePlaceholder', label: 'Last name placeholder' },
+    { key: 'fullNamePlaceholder', label: 'Full name placeholder' },
     { key: 'phonePlaceholder', label: 'Phone placeholder' },
+    { key: 'typePlaceholder', label: 'Type placeholder' },
     { key: 'messagePlaceholder', label: 'Message placeholder' },
 ];
 

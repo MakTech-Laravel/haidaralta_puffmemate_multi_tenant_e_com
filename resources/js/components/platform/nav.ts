@@ -135,6 +135,12 @@ export function buildPlatformNav(
                         icon: Warehouse,
                         permissions: ['manage-users'],
                     }),
+                    navLink({
+                        title: 'Contact',
+                        href: '/platform/contact-inquiries',
+                        icon: MessageCircle,
+                        permissions: ['manage-users'],
+                    }),
                     navSoon({
                         title: 'Age verification',
                         icon: IdCard,
