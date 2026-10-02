@@ -217,15 +217,15 @@ export function StorefrontHeader() {
                             active={cartActive}
                         />
 
-                        <NotificationsPopover
-                            items={customerNotifications}
-                            viewAllHref={notificationsIndex.url()}
-                            getItemHref={(item) =>
-                                notificationsShow.url(item.id)
-                            }
-                            isGuest={!auth.user}
-                            guestHref={login.url()}
-                        />
+                        {auth.user ? (
+                            <NotificationsPopover
+                                items={customerNotifications}
+                                viewAllHref={notificationsIndex.url()}
+                                getItemHref={(item) =>
+                                    notificationsShow.url(item.id)
+                                }
+                            />
+                        ) : null}
 
                         <Link
                             href={accountHref}
