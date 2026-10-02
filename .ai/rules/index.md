@@ -41,6 +41,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
 | resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php,resources/js/components/{platform,branch}/nav.ts | .ai/rules/componentsplatformbranch.md |
 | config/*.php, config/scout.php | .ai/rules/config.md |
+| app/Http/Controllers/**/ContactInquiryController.php,app/Http/Requests/Storefront/StoreContactInquiryRequest.php,resources/js/components/storefront/contact/**,resources/js/pages/platform/contact-inquiries/**,routes/public.php,routes/platform.php | .ai/rules/contact-inquiries.md |
 | app/Models/Branch.php,app/Http/Controllers/Branch/** | .ai/rules/controllers-branch.md |
 | app/Http/Controllers/Customer/**, app/Http/Controllers/Customer/ProductToReviewController.php | .ai/rules/controllers-customer.md |
 | app/Http/Controllers/Driver/**, app/Http/Controllers/Driver/PlaceOrderController.php | .ai/rules/controllers-driver.md |
@@ -81,6 +82,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/platform/wholesale-inquiries/show.tsx,app/Http/Controllers/Platform/WholesaleInquiryController.php | .ai/rules/http-controllers-platform.md |
 | resources/js/layouts/settings/**,resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php | .ai/rules/http-controllers-settings.md |
 | config/catalog.php,app/Http/Controllers/Storefront/HomeController.php | .ai/rules/http-controllers-storefront.md |
+| app/Services/Storefront/ContactInquiryService.php,app/Http/Controllers/**/ContactInquiryController.php, app/Services/Storefront/WholesaleInquiryService.php,app/Http/Controllers/**/WholesaleInquiryController.php | .ai/rules/http-controllers.md |
 | resources/js/layouts/branch/**,resources/js/components/portal/portal-brand.tsx,app/Http/Middleware/HandleInertiaRequests.php | .ai/rules/http-middleware.md |
 | resources/js/components/admin/role-*.tsx, resources/js/pages/{platform,branch}/roles/**, app/Http/Controllers/{Platform,Branch}/RoleController.php, app/Http/Requests/{Platform,Branch}/*RoleRequest.php | .ai/rules/http-requests-platform-branch.md |
 | app/Services/Catalog/**,app/Services/Inventory/**,app/Support/PackAvailability.php | .ai/rules/inventory-support.md |

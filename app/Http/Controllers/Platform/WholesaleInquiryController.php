@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Inventory;
 use App\Models\WholesaleInquiry;
+use App\Services\Storefront\WholesaleInquiryService;
 use App\Support\BranchMap;
 use App\Support\MediaUrl;
 use App\Support\StockPageContext;
@@ -24,9 +25,11 @@ class WholesaleInquiryController extends Controller
         ]);
     }
 
-    public function show(WholesaleInquiry $wholesaleInquiry): Response
-    {
-        $wholesaleInquiry->markRead();
+    public function show(
+        WholesaleInquiry $wholesaleInquiry,
+        WholesaleInquiryService $wholesaleInquiries,
+    ): Response {
+        $wholesaleInquiries->markRead($wholesaleInquiry);
 
         return Inertia::render('platform/wholesale-inquiries/show', [
             'inquiry' => $this->inquiryPayload($wholesaleInquiry),

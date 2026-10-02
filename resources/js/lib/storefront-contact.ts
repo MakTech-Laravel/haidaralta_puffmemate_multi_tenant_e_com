@@ -19,13 +19,14 @@ export const contactInfo = {
 };
 
 export const contactFormCopy = {
-    firstName: 'First Name',
-    lastName: 'Last Name',
+    fullName: 'Full Name',
     email: 'Email',
     phone: 'Phone Number',
+    type: 'Type',
     message: 'Message',
-    lastNamePlaceholder: 'Doe',
+    fullNamePlaceholder: 'Jane Citizen',
     phonePlaceholder: '+1 012 3456 789',
+    typePlaceholder: 'Select a contact type',
     messagePlaceholder: 'Write your message..',
     submitLabel: 'Send Message',
 };

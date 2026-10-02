@@ -13,6 +13,7 @@ use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffCo
 use App\Http\Controllers\Platform\CatalogPricingController as PlatformCatalogPricingController;
 use App\Http\Controllers\Platform\CategoryController as PlatformCategoryController;
 use App\Http\Controllers\Platform\CmsPageController as PlatformCmsPageController;
+use App\Http\Controllers\Platform\ContactInquiryController as PlatformContactInquiryController;
 use App\Http\Controllers\Platform\ContactSettingsController as PlatformContactSettingsController;
 use App\Http\Controllers\Platform\ConversationController as PlatformConversationController;
 use App\Http\Controllers\Platform\CouponController as PlatformCouponController;
@@ -95,6 +96,11 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.wholesale-inquiries.place-order');
         Route::get('wholesale-inquiries/{wholesaleInquiry}', [PlatformWholesaleInquiryController::class, 'show'])
             ->name('platform.wholesale-inquiries.show');
+
+        Route::get('contact-inquiries', [PlatformContactInquiryController::class, 'index'])
+            ->name('platform.contact-inquiries.index');
+        Route::get('contact-inquiries/{contactInquiry}', [PlatformContactInquiryController::class, 'show'])
+            ->name('platform.contact-inquiries.show');
     });
 
     Route::permanentRedirect('staff', '/platform/admins');
