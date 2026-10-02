@@ -3,9 +3,15 @@ export type WholesalePlaceOrderInquiry = {
     full_name: string;
     phone: string;
     company: string | null;
-    ask_question: string | null;
     email: string | null;
     address: string;
+    latitude: string | null;
+    longitude: string | null;
+    map: {
+        google: string;
+        open_street_map: string;
+        embed: string;
+    } | null;
     message: string;
     status: string;
     status_label: string;
@@ -47,5 +53,7 @@ export type WholesalePlaceOrderCustomerForm = {
     email: string;
     company: string;
     address: string;
+    latitude: string;
+    longitude: string;
     note: string;
 };

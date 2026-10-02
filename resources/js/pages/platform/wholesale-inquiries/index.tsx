@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, ShoppingBag } from 'lucide-react';
 import { useMemo } from 'react';
@@ -14,6 +14,7 @@ import {
 } from '@/components/data-table';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -167,10 +168,20 @@ export default function PlatformWholesaleInquiriesIndex({
             <Head title="Wholesale inquiries" />
 
             <div className="space-y-4 p-2 md:p-4">
-                <Heading
-                    title="Wholesale inquiries"
-                    description="Inbound wholesale form submissions from the storefront."
-                />
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <Heading
+                        title="Wholesale inquiries"
+                        description="Inbound wholesale form submissions from the storefront."
+                    />
+                    <Button asChild>
+                        <Link
+                            href={WholesaleInquiryController.createPlaceOrder.url()}
+                        >
+                            <ShoppingBag className="size-4" />
+                            Place Order
+                        </Link>
+                    </Button>
+                </div>
 
                 <DataTableToolbar
                     search={query.search}

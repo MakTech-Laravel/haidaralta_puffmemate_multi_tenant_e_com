@@ -2,6 +2,9 @@ import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import WholesaleInquiryController from '@/actions/App/Http/Controllers/Storefront/WholesaleInquiryController';
 import InputError from '@/components/input-error';
+import { CheckoutMapDialog } from '@/components/storefront/checkout/checkout-map-dialog';
+import { AddressSuggestInput } from '@/components/storefront/wholesale/address-suggest-input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,8 +31,9 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
         phone: '',
         email: '',
         company: '',
-        ask_question: '',
         address: '',
+        latitude: '',
+        longitude: '',
         message: '',
     });
 
@@ -59,7 +63,6 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                     <Input
                         id="wholesale-full-name"
                         name="full_name"
-                        
                         value={data.full_name}
                         onChange={(event) =>
                             setData('full_name', event.target.value)
@@ -78,7 +81,6 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                             id="wholesale-phone"
                             name="phone"
                             type="tel"
-                            
                             value={data.phone}
                             onChange={(event) =>
                                 setData('phone', event.target.value)
@@ -105,7 +107,7 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                         />
                         <InputError message={errors.email} />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="wholesale-company">
                             {copy.company ?? 'Company (If Applicable)'}
                         </Label>
@@ -121,42 +123,66 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                         />
                         <InputError message={errors.company} />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="wholesale-ask-question">
-                            {copy.askQuestion ?? 'Ask Question'}
-                        </Label>
-                        <Input
-                            id="wholesale-ask-question"
-                            name="ask_question"
-                            value={data.ask_question}
-                            onChange={(event) =>
-                                setData('ask_question', event.target.value)
-                            }
-                            placeholder={copy.askQuestionPlaceholder}
-                            className={boxedFieldClass}
-                        />
-                        <InputError message={errors.ask_question} />
-                    </div>
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="wholesale-address">
-                        {copy.address ?? 'Address'} <RequiredMark />
-                    </Label>
-                    <Input
-                        id="wholesale-address"
-                        name="address"
-                        
-                        value={data.address}
-                        onChange={(event) =>
-                            setData('address', event.target.value)
-                        }
-                        placeholder={
-                            copy.addressPlaceholder ?? 'Street, suburb, state'
-                        }
-                        className={boxedFieldClass}
-                    />
+                    <div className="flex items-end gap-2">
+                        <div className="min-w-0 flex-1 space-y-2">
+                            <Label htmlFor="wholesale-address">
+                                {copy.address ?? 'Address'} <RequiredMark />
+                            </Label>
+                            <AddressSuggestInput
+                                id="wholesale-address"
+                                name="address"
+                                value={data.address}
+                                placeholder={
+                                    copy.addressPlaceholder ??
+                                    'Start typing and select an address'
+                                }
+                                className={boxedFieldClass}
+                                onSelect={({ address, latitude, longitude }) => {
+                                    setData((current) => ({
+                                        ...current,
+                                        address,
+                                        latitude,
+                                        longitude,
+                                    }));
+                                }}
+                                onClear={() => {
+                                    setData((current) => ({
+                                        ...current,
+                                        address: '',
+                                        latitude: '',
+                                        longitude: '',
+                                    }));
+                                }}
+                            />
+                        </div>
+                        <CheckoutMapDialog
+                            latitude={data.latitude}
+                            longitude={data.longitude}
+                            onSelect={({ latitude, longitude, address }) => {
+                                setData((current) => ({
+                                    ...current,
+                                    latitude,
+                                    longitude,
+                                    address: address || current.address,
+                                }));
+                            }}
+                        />
+                    </div>
                     <InputError message={errors.address} />
+                    <InputError message={errors.latitude} />
+                    <InputError message={errors.longitude} />
+                    {!data.latitude || !data.longitude ? (
+                        <Alert variant="destructive">
+                            <AlertDescription>
+                                Select an address from the suggestions or pin
+                                your location on the map so we can follow up on
+                                your wholesale inquiry.
+                            </AlertDescription>
+                        </Alert>
+                    ) : null}
                 </div>
 
                 <div className="space-y-2">
@@ -166,7 +192,6 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                     <Textarea
                         id="wholesale-message"
                         name="message"
-                        
                         value={data.message}
                         onChange={(event) =>
                             setData('message', event.target.value)

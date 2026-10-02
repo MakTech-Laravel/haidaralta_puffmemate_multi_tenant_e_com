@@ -76,7 +76,7 @@ const WHOLESALE_LABEL_FIELDS: FieldDef[] = [
     { key: 'phone', label: 'Phone' },
     { key: 'email', label: 'Email' },
     { key: 'company', label: 'Company' },
-    { key: 'askQuestion', label: 'Ask question' },
+    { key: 'address', label: 'Address' },
     { key: 'message', label: 'Message' },
     { key: 'submitLabel', label: 'Submit button' },
 ];
@@ -87,7 +87,7 @@ const WHOLESALE_PLACEHOLDER_FIELDS: FieldDef[] = [
     { key: 'phonePlaceholder', label: 'Phone placeholder' },
     { key: 'emailPlaceholder', label: 'Email placeholder' },
     { key: 'companyPlaceholder', label: 'Company placeholder' },
-    { key: 'askQuestionPlaceholder', label: 'Ask question placeholder' },
+    { key: 'addressPlaceholder', label: 'Address placeholder' },
     { key: 'messagePlaceholder', label: 'Message placeholder' },
 ];
 

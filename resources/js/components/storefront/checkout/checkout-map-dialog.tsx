@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { reverseGeocode } from '@/lib/nominatim';
 
 type Pin = {
     latitude: string;
@@ -32,24 +33,6 @@ function toNumber(value: string, fallback: number): number {
     const parsed = Number(value);
 
     return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-async function reverseGeocode(
-    lat: number,
-    lng: number,
-): Promise<string | undefined> {
-    const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-        { headers: { Accept: 'application/json' } },
-    );
-
-    if (!response.ok) {
-        return undefined;
-    }
-
-    const payload = (await response.json()) as { display_name?: string };
-
-    return payload.display_name;
 }
 
 export function CheckoutMapDialog({

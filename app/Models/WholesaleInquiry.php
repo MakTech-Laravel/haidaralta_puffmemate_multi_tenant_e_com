@@ -15,9 +15,10 @@ use Illuminate\Support\Carbon;
  * @property string $full_name
  * @property string $phone
  * @property string|null $company
- * @property string|null $ask_question
  * @property string|null $email
  * @property string $address
+ * @property string|null $latitude
+ * @property string|null $longitude
  * @property string $message
  * @property WholesaleInquiryStatus $status
  * @property Carbon|null $read_at
@@ -53,9 +54,10 @@ class WholesaleInquiry extends Model implements DataTableConfigurable
         'full_name',
         'phone',
         'company',
-        'ask_question',
         'email',
         'address',
+        'latitude',
+        'longitude',
         'message',
         'status',
         'read_at',

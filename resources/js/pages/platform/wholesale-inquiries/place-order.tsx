@@ -11,8 +11,11 @@ import type {
     WholesalePlaceOrderLine,
     WholesalePlaceOrderProduct,
 } from '@/components/platform/wholesale/place-order-types';
+import { CheckoutMapDialog } from '@/components/storefront/checkout/checkout-map-dialog';
+import { AddressSuggestInput } from '@/components/storefront/wholesale/address-suggest-input';
 import Heading from '@/components/heading';
 import { InfiniteScrollCombobox } from '@/components/stock/infinite-scroll-combobox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,18 +64,20 @@ export default function PlatformWholesalePlaceOrder({
     branchOptionsUrl,
     products,
 }: {
-    inquiry: WholesalePlaceOrderInquiry;
+    inquiry: WholesalePlaceOrderInquiry | null;
     branch: WholesalePlaceOrderBranch | null;
     branchOptionsUrl: string;
     products: WholesalePlaceOrderProduct[];
 }) {
     const [customer, setCustomer] = useState<WholesalePlaceOrderCustomerForm>({
-        full_name: inquiry.full_name,
-        phone: inquiry.phone,
-        email: inquiry.email ?? '',
-        company: inquiry.company ?? '',
-        address: inquiry.address,
-        note: inquiry.message,
+        full_name: inquiry?.full_name ?? '',
+        phone: inquiry?.phone ?? '',
+        email: inquiry?.email ?? '',
+        company: inquiry?.company ?? '',
+        address: inquiry?.address ?? '',
+        latitude: inquiry?.latitude ?? '',
+        longitude: inquiry?.longitude ?? '',
+        note: inquiry?.message ?? '',
     });
     const [lines, setLines] = useState<WholesalePlaceOrderLine[]>([]);
 
@@ -91,7 +96,9 @@ export default function PlatformWholesalePlaceOrder({
         lines.length > 0 &&
         customer.full_name.trim() !== '' &&
         customer.phone.trim() !== '' &&
-        customer.address.trim() !== '';
+        customer.address.trim() !== '' &&
+        customer.latitude.trim() !== '' &&
+        customer.longitude.trim() !== '';
 
     const setCustomerField = (
         field: keyof WholesalePlaceOrderCustomerForm,
@@ -101,8 +108,13 @@ export default function PlatformWholesalePlaceOrder({
     };
 
     const selectBranch = (value: string | null): void => {
+        const url =
+            inquiry === null
+                ? WholesaleInquiryController.createPlaceOrder.url()
+                : WholesaleInquiryController.placeOrder.url(inquiry.id);
+
         router.get(
-            WholesaleInquiryController.placeOrder.url(inquiry.id),
+            url,
             value === null ? {} : { branch: value },
             {
                 preserveState: false,
@@ -161,19 +173,33 @@ export default function PlatformWholesalePlaceOrder({
 
     return (
         <>
-            <Head title={`Place order · Inquiry #${inquiry.id}`} />
+            <Head
+                title={
+                    inquiry
+                        ? `Place order · Inquiry #${inquiry.id}`
+                        : 'Place order'
+                }
+            />
 
             <div className="flex w-full min-w-0 max-w-full flex-col gap-4 p-2 pb-28 md:p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title="Place order"
-                        description={`From wholesale inquiry #${inquiry.id} · ${inquiry.full_name}`}
+                        description={
+                            inquiry
+                                ? `From wholesale inquiry #${inquiry.id} · ${inquiry.full_name}`
+                                : 'Enter customer details, choose a branch, and add products.'
+                        }
                     />
                     <Button variant="secondary" asChild>
                         <Link
-                            href={WholesaleInquiryController.show.url(
-                                inquiry.id,
-                            )}
+                            href={
+                                inquiry
+                                    ? WholesaleInquiryController.show.url(
+                                          inquiry.id,
+                                      )
+                                    : WholesaleInquiryController.index.url()
+                            }
                         >
                             Back
                         </Link>
@@ -183,7 +209,11 @@ export default function PlatformWholesalePlaceOrder({
                 <SectionShell
                     icon={UserRound}
                     title="Customer"
-                    description="Prefills from the inquiry — edit before placing the order."
+                    description={
+                        inquiry
+                            ? 'Prefills from the inquiry — edit before placing the order.'
+                            : 'Fill in customer details before placing the order.'
+                    }
                 >
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="grid gap-2 sm:col-span-2">
@@ -235,17 +265,63 @@ export default function PlatformWholesalePlaceOrder({
                             />
                         </div>
                         <div className="grid gap-2 sm:col-span-2">
-                            <Label htmlFor="wo-address">Address</Label>
-                            <Input
-                                id="wo-address"
-                                value={customer.address}
-                                onChange={(event) =>
-                                    setCustomerField(
-                                        'address',
-                                        event.target.value,
-                                    )
-                                }
-                            />
+                            <div className="flex items-end gap-2">
+                                <div className="min-w-0 flex-1 space-y-2">
+                                    <Label htmlFor="wo-address">Address</Label>
+                                    <AddressSuggestInput
+                                        id="wo-address"
+                                        name="address"
+                                        value={customer.address}
+                                        placeholder="Start typing and select an address"
+                                        onSelect={({
+                                            address,
+                                            latitude,
+                                            longitude,
+                                        }) => {
+                                            setCustomer((current) => ({
+                                                ...current,
+                                                address,
+                                                latitude,
+                                                longitude,
+                                            }));
+                                        }}
+                                        onClear={() => {
+                                            setCustomer((current) => ({
+                                                ...current,
+                                                address: '',
+                                                latitude: '',
+                                                longitude: '',
+                                            }));
+                                        }}
+                                    />
+                                </div>
+                                <CheckoutMapDialog
+                                    latitude={customer.latitude}
+                                    longitude={customer.longitude}
+                                    onSelect={({
+                                        latitude,
+                                        longitude,
+                                        address,
+                                    }) => {
+                                        setCustomer((current) => ({
+                                            ...current,
+                                            latitude,
+                                            longitude,
+                                            address:
+                                                address || current.address,
+                                        }));
+                                    }}
+                                />
+                            </div>
+                            {!customer.latitude || !customer.longitude ? (
+                                <Alert variant="destructive">
+                                    <AlertDescription>
+                                        Select an address from the suggestions
+                                        or pin the location on the map before
+                                        placing the order.
+                                    </AlertDescription>
+                                </Alert>
+                            ) : null}
                         </div>
                         <div className="grid gap-2 sm:col-span-2">
                             <Label htmlFor="wo-note">Note</Label>
