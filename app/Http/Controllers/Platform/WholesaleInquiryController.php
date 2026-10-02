@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Inventory;
 use App\Models\WholesaleInquiry;
+use App\Support\BranchMap;
 use App\Support\MediaUrl;
 use App\Support\StockPageContext;
 use Illuminate\Http\JsonResponse;
@@ -95,9 +96,11 @@ class WholesaleInquiryController extends Controller
      *     full_name: string,
      *     phone: string,
      *     company: ?string,
-     *     ask_question: ?string,
      *     email: ?string,
      *     address: string,
+     *     latitude: ?string,
+     *     longitude: ?string,
+     *     map: ?array{google: string, open_street_map: string, embed: string},
      *     message: string,
      *     status: string,
      *     status_label: string,
@@ -114,9 +117,11 @@ class WholesaleInquiryController extends Controller
             'full_name' => $inquiry->full_name,
             'phone' => $inquiry->phone,
             'company' => $inquiry->company,
-            'ask_question' => $inquiry->ask_question,
             'email' => $inquiry->email,
             'address' => $inquiry->address,
+            'latitude' => $inquiry->latitude,
+            'longitude' => $inquiry->longitude,
+            'map' => BranchMap::links($inquiry->latitude, $inquiry->longitude),
             'message' => $inquiry->message,
             'status' => $inquiry->status->value,
             'status_label' => $inquiry->status->label(),

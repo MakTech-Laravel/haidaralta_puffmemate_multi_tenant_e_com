@@ -29,9 +29,10 @@ function wholesaleInquiryPayload(array $overrides = []): array
         'full_name' => 'Alex Wholesale',
         'phone' => '0412345678',
         'company' => 'Alex Co',
-        'ask_question' => 'Bulk pricing?',
         'email' => 'alex@example.com',
         'address' => '12 Example St, Sydney NSW',
+        'latitude' => '-33.8688',
+        'longitude' => '151.2093',
         'message' => 'Looking for wholesale supply.',
         ...$overrides,
     ];
@@ -49,16 +50,18 @@ test('guest can submit a valid wholesale inquiry', function () {
         ->and($inquiry->phone)->toBe('0412345678')
         ->and($inquiry->email)->toBe('alex@example.com')
         ->and($inquiry->address)->toBe('12 Example St, Sydney NSW')
+        ->and($inquiry->latitude)->toBe('-33.8688')
+        ->and($inquiry->longitude)->toBe('151.2093')
         ->and($inquiry->message)->toBe('Looking for wholesale supply.')
         ->and($inquiry->status)->toBe(WholesaleInquiryStatus::New)
         ->and($inquiry->read_at)->toBeNull();
 });
 
-test('wholesale inquiry validation requires name phone address and message', function () {
+test('wholesale inquiry validation requires name phone address pin and message', function () {
     $this->from(route('wholesale'))
         ->post(route('wholesale.store'), [])
         ->assertRedirect(route('wholesale'))
-        ->assertSessionHasErrors(['full_name', 'phone', 'address', 'message']);
+        ->assertSessionHasErrors(['full_name', 'phone', 'address', 'latitude', 'longitude', 'message']);
 
     expect(WholesaleInquiry::query()->count())->toBe(0);
 });
@@ -80,7 +83,10 @@ test('platform admin with manage-users can index and show marks inquiry read', f
         ->assertInertia(fn ($page) => $page
             ->component('platform/wholesale-inquiries/show')
             ->where('inquiry.id', $inquiry->id)
-            ->where('inquiry.status', WholesaleInquiryStatus::Read->value));
+            ->where('inquiry.status', WholesaleInquiryStatus::Read->value)
+            ->where('inquiry.map.google', fn ($url) => is_string($url) && str_contains($url, 'google.com/maps'))
+            ->where('inquiry.map.open_street_map', fn ($url) => is_string($url) && str_contains($url, 'openstreetmap.org'))
+            ->has('inquiry.map.embed'));
 
     expect($inquiry->fresh()->status)->toBe(WholesaleInquiryStatus::Read)
         ->and($inquiry->fresh()->read_at)->not->toBeNull();
