@@ -2,21 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\InteractsWithAppMedia;
+use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * @property int $id
  * @property string $app_name
  * @property string $app_short_name
  * @property string|null $short_description
- * @property string|null $logo_path
- * @property string|null $favicon_path
- * @property string|null $pwa_icon_192_path
- * @property string|null $pwa_icon_512_path
- * @property string|null $pwa_maskable_path
- * @property string|null $apple_touch_icon_path
  * @property string $theme_color
  * @property string $background_color
  * @property string $date_format
@@ -25,8 +22,34 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class ApplicationSetting extends Model
+class ApplicationSetting extends Model implements HasMedia
 {
+    use InteractsWithAppMedia;
+
+    public const LOGO_COLLECTION = 'logo';
+
+    public const FAVICON_COLLECTION = 'favicon';
+
+    public const PWA_192_COLLECTION = 'pwa_192';
+
+    public const PWA_512_COLLECTION = 'pwa_512';
+
+    public const PWA_MASKABLE_COLLECTION = 'pwa_maskable';
+
+    public const APPLE_TOUCH_COLLECTION = 'apple_touch';
+
+    /**
+     * @var list<string>
+     */
+    public const MEDIA_COLLECTIONS = [
+        self::LOGO_COLLECTION,
+        self::FAVICON_COLLECTION,
+        self::PWA_192_COLLECTION,
+        self::PWA_512_COLLECTION,
+        self::PWA_MASKABLE_COLLECTION,
+        self::APPLE_TOUCH_COLLECTION,
+    ];
+
     /**
      * @var list<string>
      */
@@ -34,18 +57,24 @@ class ApplicationSetting extends Model
         'app_name',
         'app_short_name',
         'short_description',
-        'logo_path',
-        'favicon_path',
-        'pwa_icon_192_path',
-        'pwa_icon_512_path',
-        'pwa_maskable_path',
-        'apple_touch_icon_path',
         'theme_color',
         'background_color',
         'date_format',
         'time_format',
         'updated_by',
     ];
+
+    public function registerMediaCollections(): void
+    {
+        foreach (self::MEDIA_COLLECTIONS as $collection) {
+            $this->registerSingleFileCollection($collection);
+        }
+    }
+
+    public function mediaCollectionUrl(string $collection, ?string $fallback = null): ?string
+    {
+        return MediaUrl::fromCollection($this, $collection, $fallback);
+    }
 
     /**
      * @return BelongsTo<User, $this>

@@ -35,8 +35,44 @@ test('platform can upload svg category image', function () {
 
     $category = Category::query()->where('slug', 'svg-category')->firstOrFail();
 
-    expect($category->image)->toEndWith('.svg')
-        ->and(Storage::disk('public')->exists($category->image))->toBeTrue();
+    $media = $category->getFirstMedia('image');
+
+    expect($media)->not->toBeNull()
+        ->and($media->file_name)->toEndWith('.svg')
+        ->and($media->mime_type)->toContain('svg')
+        ->and(Storage::disk('public')->exists($media->getPathRelativeToRoot()))->toBeTrue();
+});
+
+test('platform category raster upload is stored as webp and can be removed', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create(['slug' => 'raster-category']);
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.categories.update', $category), [
+            'name' => $category->name,
+            'slug' => $category->slug,
+            'status' => true,
+            'image' => UploadedFile::fake()->image('cover.png', 200, 200),
+        ])
+        ->assertRedirect();
+
+    $media = $category->fresh()->getFirstMedia('image');
+
+    expect($media)->not->toBeNull()
+        ->and($media->mime_type)->toBe('image/webp')
+        ->and($category->fresh()->imageUrl())->toBe($media->getUrl());
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.categories.update', $category), [
+            'name' => $category->name,
+            'slug' => $category->slug,
+            'status' => true,
+            'remove_image' => true,
+        ])
+        ->assertRedirect();
+
+    expect($category->fresh()->hasMedia('image'))->toBeFalse()
+        ->and($category->fresh()->imageUrl())->toBeNull();
 });
 
 test('platform rejects unsupported category image mime types', function () {

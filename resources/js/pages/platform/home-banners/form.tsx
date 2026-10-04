@@ -21,7 +21,6 @@ type BannerForm = {
     eyebrow: string;
     title: string;
     description: string;
-    image_path: string | null;
     image_url: string | null;
     primary_cta_label: string;
     primary_cta_href: string;
@@ -115,7 +114,7 @@ export default function PlatformHomeBannerForm({ banner }: Props) {
                                 path={
                                     form.data.remove_image
                                         ? null
-                                        : banner?.image_path
+                                        : banner?.image_url
                                 }
                                 url={
                                     form.data.remove_image

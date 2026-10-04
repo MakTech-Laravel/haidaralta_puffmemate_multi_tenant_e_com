@@ -3,18 +3,22 @@
 namespace App\Services\Application;
 
 use App\Models\ApplicationSetting;
-use App\Support\MediaUrl;
-use App\Support\PublicDiskMedia;
+use App\Services\Media\MediaUploadService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class ApplicationSettingsService
 {
     public const CACHE_KEY = 'application_settings.current';
 
-    public const MEDIA_DIRECTORY = 'application';
+    public const MEDIA_CACHE_KEY = 'application_settings.media_urls';
+
+    public function __construct(
+        private readonly MediaUploadService $media,
+    ) {}
 
     /**
      * @var list<string>
@@ -51,6 +55,7 @@ class ApplicationSettingsService
     public function refresh(): ApplicationSetting
     {
         Cache::forget(self::CACHE_KEY);
+        Cache::forget(self::MEDIA_CACHE_KEY);
 
         $settings = $this->resolveOrCreate();
         Cache::forever(self::CACHE_KEY, $settings->getAttributes());
@@ -75,11 +80,11 @@ class ApplicationSettingsService
 
         $icons = [];
 
-        $icon192 = MediaUrl::resolve($settings->pwa_icon_192_path, fallback: null)
+        $icon192 = $this->mediaUrl(ApplicationSetting::PWA_192_COLLECTION)
             ?? '/pwa/pwa-192x192.png';
-        $icon512 = MediaUrl::resolve($settings->pwa_icon_512_path, fallback: null)
+        $icon512 = $this->mediaUrl(ApplicationSetting::PWA_512_COLLECTION)
             ?? '/pwa/pwa-512x512.png';
-        $maskable = MediaUrl::resolve($settings->pwa_maskable_path, fallback: null)
+        $maskable = $this->mediaUrl(ApplicationSetting::PWA_MASKABLE_COLLECTION)
             ?? '/pwa/maskable-icon-512x512.png';
 
         $icons[] = [
@@ -145,45 +150,20 @@ class ApplicationSettingsService
             'updated_by' => $updatedBy,
         ]);
 
-        $settings->logo_path = PublicDiskMedia::replace(
-            $settings->logo_path,
-            $logo,
-            self::MEDIA_DIRECTORY.'/logo',
-            (bool) ($data['remove_logo'] ?? false),
-        );
-        $settings->favicon_path = PublicDiskMedia::replace(
-            $settings->favicon_path,
-            $favicon,
-            self::MEDIA_DIRECTORY.'/favicon',
-            (bool) ($data['remove_favicon'] ?? false),
-        );
-        $settings->pwa_icon_192_path = PublicDiskMedia::replace(
-            $settings->pwa_icon_192_path,
-            $pwaIcon192,
-            self::MEDIA_DIRECTORY.'/pwa',
-            (bool) ($data['remove_pwa_icon_192'] ?? false),
-        );
-        $settings->pwa_icon_512_path = PublicDiskMedia::replace(
-            $settings->pwa_icon_512_path,
-            $pwaIcon512,
-            self::MEDIA_DIRECTORY.'/pwa',
-            (bool) ($data['remove_pwa_icon_512'] ?? false),
-        );
-        $settings->pwa_maskable_path = PublicDiskMedia::replace(
-            $settings->pwa_maskable_path,
-            $pwaMaskable,
-            self::MEDIA_DIRECTORY.'/pwa',
-            (bool) ($data['remove_pwa_maskable'] ?? false),
-        );
-        $settings->apple_touch_icon_path = PublicDiskMedia::replace(
-            $settings->apple_touch_icon_path,
-            $appleTouchIcon,
-            self::MEDIA_DIRECTORY.'/pwa',
-            (bool) ($data['remove_apple_touch_icon'] ?? false),
-        );
-
         $settings->save();
 
+        $uploads = [
+            ApplicationSetting::LOGO_COLLECTION => [$logo, 'remove_logo'],
+            ApplicationSetting::FAVICON_COLLECTION => [$favicon, 'remove_favicon'],
+            ApplicationSetting::PWA_192_COLLECTION => [$pwaIcon192, 'remove_pwa_icon_192'],
+            ApplicationSetting::PWA_512_COLLECTION => [$pwaIcon512, 'remove_pwa_icon_512'],
+            ApplicationSetting::PWA_MASKABLE_COLLECTION => [$pwaMaskable, 'remove_pwa_maskable'],
+            ApplicationSetting::APPLE_TOUCH_COLLECTION => [$appleTouchIcon, 'remove_apple_touch_icon'],
+        ];
+
+        foreach ($uploads as $collection => [$file, $removeKey]) {
+            $this->media->syncSingle($settings, $collection, $file, (bool) ($data[$removeKey] ?? false));
+        }
         if (array_key_exists('maintenance_mode', $data)) {
             $this->syncMaintenanceMode((bool) $data['maintenance_mode']);
         }
@@ -216,8 +196,8 @@ class ApplicationSettingsService
             'name' => $settings->app_name,
             'shortName' => $settings->app_short_name,
             'description' => $settings->short_description,
-            'logoUrl' => MediaUrl::resolve($settings->logo_path, fallback: null),
-            'faviconUrl' => MediaUrl::resolve($settings->favicon_path, fallback: null),
+            'logoUrl' => $this->mediaUrl(ApplicationSetting::LOGO_COLLECTION),
+            'faviconUrl' => $this->mediaUrl(ApplicationSetting::FAVICON_COLLECTION),
             'dateFormat' => $settings->date_format,
             'timeFormat' => $settings->time_format,
             'themeColor' => $settings->theme_color,
@@ -231,7 +211,7 @@ class ApplicationSettingsService
             return false;
         }
 
-        return filled($this->current()->favicon_path);
+        return $this->mediaUrl(ApplicationSetting::FAVICON_COLLECTION) !== null;
     }
 
     public function faviconHref(): string
@@ -240,7 +220,7 @@ class ApplicationSettingsService
             return '/favicon.ico';
         }
 
-        return MediaUrl::resolve($this->current()->favicon_path, fallback: null) ?? '/favicon.ico';
+        return $this->mediaUrl(ApplicationSetting::FAVICON_COLLECTION) ?? '/favicon.ico';
     }
 
     public function appleTouchIconHref(): string
@@ -249,7 +229,7 @@ class ApplicationSettingsService
             return '/apple-touch-icon.png';
         }
 
-        return MediaUrl::resolve($this->current()->apple_touch_icon_path, fallback: null)
+        return $this->mediaUrl(ApplicationSetting::APPLE_TOUCH_COLLECTION)
             ?? '/apple-touch-icon.png';
     }
 
@@ -298,6 +278,38 @@ class ApplicationSettingsService
 
         if (! $enabled && $maintenance->active()) {
             $maintenance->deactivate();
+        }
+    }
+
+    /**
+     * Public URL for an uploaded settings image, or null when none is set.
+     */
+    public function mediaUrl(string $collection): ?string
+    {
+        return $this->mediaUrls()[$collection] ?? null;
+    }
+
+    /**
+     * @return array<string, string|null>
+     */
+    public function mediaUrls(): array
+    {
+        try {
+            /** @var array<string, string|null> */
+            $urls = Cache::rememberForever(self::MEDIA_CACHE_KEY, function (): array {
+                $settings = $this->current();
+                $urls = [];
+
+                foreach (ApplicationSetting::MEDIA_COLLECTIONS as $collection) {
+                    $urls[$collection] = $settings->mediaCollectionUrl($collection);
+                }
+
+                return $urls;
+            });
+
+            return $urls;
+        } catch (Throwable) {
+            return [];
         }
     }
 
@@ -352,7 +364,7 @@ class ApplicationSettingsService
     {
         try {
             return Schema::hasTable('application_settings');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return false;
         }
     }

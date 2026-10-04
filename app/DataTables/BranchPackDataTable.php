@@ -45,6 +45,7 @@ class BranchPackDataTable extends AbstractDataTable
     {
         return Pack::query()
             ->where('branch_id', $this->branch->id)
+            ->with('media')
             ->withCount('items');
     }
 

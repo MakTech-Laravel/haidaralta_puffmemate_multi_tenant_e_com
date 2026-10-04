@@ -2,10 +2,13 @@
 
 namespace Database\Seeders\Concerns;
 
+use App\Services\Media\MediaUploadService;
 use App\Support\MediaUrl;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Throwable;
 
 trait SeedsCatalogMedia
@@ -29,6 +32,34 @@ trait SeedsCatalogMedia
         }
 
         return null;
+    }
+
+    /**
+     * Attach a committed `public/images/...` web path into a Spatie media collection.
+     * Skips when the collection already holds the same file name so re-seeding stays idempotent.
+     */
+    protected function attachSeedMedia(HasMedia $model, string $collection, ?string $webPath): void
+    {
+        if ($webPath === null || $webPath === '') {
+            return;
+        }
+
+        $absolute = public_path(ltrim($webPath, '/'));
+
+        if (! MediaUrl::isDisplayableFile($absolute)) {
+            return;
+        }
+
+        $alreadyAttached = $model->getMedia($collection)
+            ->contains(fn (Media $media): bool => $media->getCustomProperty('seed_source') === $webPath);
+
+        if ($alreadyAttached) {
+            return;
+        }
+
+        $media = app(MediaUploadService::class)->attachFromPath($model, $collection, $absolute);
+
+        $media?->setCustomProperty('seed_source', $webPath)->save();
     }
 
     protected function publicWebPath(string $relativePublicPath): ?string

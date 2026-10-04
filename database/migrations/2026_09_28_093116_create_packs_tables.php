@@ -14,7 +14,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug');
             $table->text('description')->nullable();
-            $table->string('image')->nullable();
             $table->string('offer_type');
             $table->decimal('offer_value', 12, 2);
             $table->decimal('subtotal', 12, 2);
@@ -40,20 +39,10 @@ return new class extends Migration
             $table->unique(['pack_id', 'product_id']);
         });
 
-        Schema::create('pack_images', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('pack_id')->constrained()->cascadeOnDelete();
-            $table->string('path');
-            $table->unsignedInteger('sort_order')->default(0);
-            $table->timestamps();
-
-            $table->index(['pack_id', 'sort_order']);
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('pack_images');
         Schema::dropIfExists('pack_items');
         Schema::dropIfExists('packs');
     }

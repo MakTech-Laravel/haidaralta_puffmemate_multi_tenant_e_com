@@ -18,5 +18,5 @@ Driver self-edit is GET/PATCH /driver/profile/edit via Driver\ProfileController,
 ## Driver security password stays on Driver stack
 Driver password changes go through Driver\SecurityController::updatePassword, DriverService::updatePassword, and UpdateDriverPasswordRequest — not Fortify user-password.update or Settings. Driver 2FA is Fortify-only (enable/confirm/disable/QR/recovery via @/routes/two-factor). Do not add a Driver 2FA service or table. Login still skips the Fortify 2FA challenge.
 
-## Driver Place Order is DemoCatalog design-only
-GET /driver/place-order (PlaceOrderController@index) renders driver/place-order/index with DemoCatalog::driverPlaceOrder() (customers, stocked/out-of-stock branch-assigned products, paymentMethods). No POST/create yet; Place order button is a demo toast until live order create and branch assignment exist.
+## Driver Place Order products use driver_inventories
+GET /driver/place-order builds products via DriverPlaceOrderCatalog from the signed-in driver’s driver_inventories. Customers and paymentMethods stay DemoCatalog. No POST/create yet; Place order button is a demo toast until live order create exists.

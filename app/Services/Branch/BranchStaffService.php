@@ -8,8 +8,7 @@ use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\Role;
 use App\Models\User;
-use App\Support\MediaUrl;
-use App\Support\PublicDiskMedia;
+use App\Services\Media\MediaUploadService;
 use App\Support\SuperAdmin;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
@@ -19,6 +18,8 @@ use Spatie\Permission\PermissionRegistrar;
 
 class BranchStaffService
 {
+    public function __construct(private MediaUploadService $media) {}
+
     /**
      * @param  array{name: string, phone: string, email?: string|null, password: string, roles?: list<string>, is_active?: bool}  $data
      */
@@ -36,9 +37,9 @@ class BranchStaffService
                 'branch_id' => $branch->id,
                 'is_active' => $data['is_active'] ?? true,
                 'phone_verified_at' => now(),
-                'avatar' => PublicDiskMedia::store($avatar, PublicDiskMedia::USER_AVATARS),
             ]);
 
+            $this->media->syncSingle($user, 'avatar', $avatar);
             $user->syncRoles($data['roles'] ?? []);
 
             $this->clearTeam();
@@ -62,12 +63,6 @@ class BranchStaffService
                 'is_active' => $data['is_active'],
                 'user_type' => UserType::BRANCH,
                 'branch_id' => $branch->id,
-                'avatar' => PublicDiskMedia::replace(
-                    $user->avatar,
-                    $avatar,
-                    PublicDiskMedia::USER_AVATARS,
-                    (bool) ($data['remove_avatar'] ?? false),
-                ),
             ];
 
             if (filled($data['password'] ?? null)) {
@@ -75,6 +70,12 @@ class BranchStaffService
             }
 
             $user->update($payload);
+            $this->media->syncSingle(
+                $user,
+                'avatar',
+                $avatar,
+                (bool) ($data['remove_avatar'] ?? false),
+            );
             $user->unsetRelation('roles');
             $user->syncRoles($data['roles']);
 
@@ -88,7 +89,6 @@ class BranchStaffService
     {
         $this->useBranchTeam($branch);
 
-        PublicDiskMedia::delete($user->avatar);
         $user->delete();
 
         $this->clearTeam();
@@ -173,8 +173,8 @@ class BranchStaffService
             'name' => $user->name,
             'phone' => $user->phone,
             'email' => $user->email,
-            'avatar' => $user->avatar,
-            'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+            'avatar' => $user->hasMedia('avatar') ? 'avatar' : null,
+            'avatar_url' => $user->avatarUrl(),
             'is_active' => $user->is_active,
             'branch_id' => $branch->id,
             'branch' => $branch->only(['id', 'name', 'slug']),
@@ -238,7 +238,7 @@ class BranchStaffService
                     'name' => $user->name,
                     'phone' => $user->phone,
                     'email' => $user->email,
-                    'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+                    'avatar_url' => $user->avatarUrl(),
                     'is_active' => $user->is_active,
                     'roles' => $user->getRoleNames()->values()->all(),
                 ];
@@ -299,7 +299,7 @@ class BranchStaffService
                     'name' => $user->name,
                     'phone' => $user->phone,
                     'email' => $user->email,
-                    'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+                    'avatar_url' => $user->avatarUrl(),
                     'is_active' => $user->is_active,
                     'branch' => $user->branch?->only(['id', 'name', 'slug']),
                     'roles' => $roles,

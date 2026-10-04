@@ -16,10 +16,12 @@ use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
@@ -323,4 +325,68 @@ test('payment gateway settings update labels and feed enabled methods', function
 test('guests are redirected from application settings', function () {
     $this->get(route('platform.settings.general.edit'))
         ->assertRedirect(route('login'));
+});
+
+test('platform admin can upload and remove application branding media', function () {
+    Storage::fake('public');
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_ADMIN)->firstOrFail();
+
+    $fields = [
+        '_method' => 'PUT',
+        'app_name' => 'PuffMeMate',
+        'app_short_name' => 'PuffMeMate',
+        'theme_color' => '#C4472F',
+        'background_color' => '#FFFFFF',
+        'date_format' => 'Y-m-d',
+        'time_format' => 'H:i',
+        'maintenance_mode' => false,
+    ];
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.settings.general.update'), [
+            ...$fields,
+            'logo' => UploadedFile::fake()->image('logo.png', 300, 100),
+            'favicon' => UploadedFile::fake()->image('favicon.png', 64, 64),
+            'pwa_icon_192' => UploadedFile::fake()->image('i192.png', 192, 192),
+            'pwa_icon_512' => UploadedFile::fake()->image('i512.png', 512, 512),
+            'pwa_maskable' => UploadedFile::fake()->image('mask.png', 512, 512),
+            'apple_touch_icon' => UploadedFile::fake()->image('apple.png', 180, 180),
+        ])
+        ->assertRedirect(route('platform.settings.general.edit'));
+
+    $settings = ApplicationSetting::query()->firstOrFail();
+
+    foreach (ApplicationSetting::MEDIA_COLLECTIONS as $collection) {
+        expect($settings->hasMedia($collection))->toBeTrue();
+    }
+
+    $service = app(ApplicationSettingsService::class);
+
+    expect($service->sharedPayload()['logoUrl'])->toBe($settings->getFirstMediaUrl('logo'))
+        ->and($service->faviconHref())->toBe($settings->getFirstMediaUrl('favicon'))
+        ->and($service->appleTouchIconHref())->toBe($settings->getFirstMediaUrl('apple_touch'))
+        ->and(config('pwa.icons.0.src'))->toBe($settings->getFirstMediaUrl('pwa_192'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.settings.general.edit'))
+        ->assertInertia(fn ($page) => $page
+            ->where('settings.logo_url', $settings->getFirstMediaUrl('logo'))
+            ->where('settings.pwa_maskable_url', $settings->getFirstMediaUrl('pwa_maskable'))
+            ->missing('settings.logo_path'));
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.settings.general.update'), [
+            ...$fields,
+            'remove_logo' => true,
+            'remove_favicon' => true,
+        ])
+        ->assertRedirect(route('platform.settings.general.edit'));
+
+    $settings = ApplicationSetting::query()->firstOrFail();
+
+    expect($settings->hasMedia('logo'))->toBeFalse()
+        ->and($settings->hasMedia('favicon'))->toBeFalse()
+        ->and($settings->hasMedia('apple_touch'))->toBeTrue()
+        ->and($service->sharedPayload()['logoUrl'])->toBeNull()
+        ->and($service->faviconHref())->toBe('/favicon.ico');
 });

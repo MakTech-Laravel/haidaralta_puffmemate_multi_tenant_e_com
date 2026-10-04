@@ -7,7 +7,6 @@ use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\User;
-use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -213,7 +212,7 @@ class BranchStaffDataTable extends AbstractDataTable
             'name' => $model->name,
             'phone' => $model->phone,
             'email' => $model->email,
-            'avatar_url' => MediaUrl::resolve($model->avatar, fallback: null),
+            'avatar_url' => $model->avatarUrl(),
             'is_active' => (bool) $model->is_active,
             'roles' => $roles,
         ];

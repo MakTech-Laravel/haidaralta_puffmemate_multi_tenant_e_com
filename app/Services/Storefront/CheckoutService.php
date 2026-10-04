@@ -125,7 +125,7 @@ class CheckoutService
      */
     public function quoteShipping(Request $request, float $latitude, float $longitude): array
     {
-        $cart = $this->carts->activeCart($request)->load('items.product');
+        $cart = $this->carts->activeCart($request)->load(['items.product.media']);
 
         if ($cart->items->isEmpty()) {
             throw ValidationException::withMessages([
@@ -276,7 +276,7 @@ class CheckoutService
             ]);
         }
 
-        $cart = $this->carts->activeCart($request)->load('items.product');
+        $cart = $this->carts->activeCart($request)->load(['items.product.media']);
 
         foreach ($cart->items as $item) {
             $product = $item->product;

@@ -6,6 +6,7 @@ use App\Contracts\DataTableConfigurable;
 use App\Contracts\ScoutSearchable;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
+use App\Models\Concerns\InteractsWithAppMedia;
 use App\Support\CatalogBackgroundColor;
 use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
@@ -19,13 +20,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * @property int $id
  * @property int|null $parent_id
  * @property string $name
  * @property string $slug
- * @property string|null $image
  * @property string|null $slogan
  * @property array<string, mixed>|null $color_code
  * @property bool $status
@@ -36,10 +37,15 @@ use Laravel\Scout\Searchable;
  * @property-read Collection<int, Category> $children
  * @property-read Collection<int, Product> $products
  */
-class Category extends Model implements DataTableConfigurable, ScoutSearchable
+class Category extends Model implements DataTableConfigurable, HasMedia, ScoutSearchable
 {
     /** @use HasFactory<CategoryFactory> */
-    use AuditsChanges, HasDataTableConfig, HasFactory, Searchable, SoftDeletes;
+    use AuditsChanges, HasDataTableConfig, HasFactory, InteractsWithAppMedia, Searchable, SoftDeletes;
+
+    public function registerMediaCollections(): void
+    {
+        $this->registerSingleFileCollection('image');
+    }
 
     /**
      * @var list<string>
@@ -73,7 +79,6 @@ class Category extends Model implements DataTableConfigurable, ScoutSearchable
         'name',
         'slug',
         'slogan',
-        'image',
         'color_code',
         'status',
         'featured',
@@ -117,9 +122,9 @@ class Category extends Model implements DataTableConfigurable, ScoutSearchable
         return $this->belongsToMany(Product::class)->withTimestamps();
     }
 
-    public function imageUrl(): ?string
+    public function imageUrl(?string $fallback = null): ?string
     {
-        return MediaUrl::resolve($this->image, fallback: null);
+        return MediaUrl::fromCollection($this, 'image', $fallback);
     }
 
     /**

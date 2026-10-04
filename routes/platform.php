@@ -3,6 +3,8 @@
 use App\Http\Controllers\Platform\ActivityLogController as PlatformActivityLogController;
 use App\Http\Controllers\Platform\AdminController as PlatformAdminController;
 use App\Http\Controllers\Platform\AnnouncementController as PlatformAnnouncementController;
+use App\Http\Controllers\Platform\BranchAreaController as PlatformBranchAreaController;
+use App\Http\Controllers\Platform\BranchAreasController as PlatformBranchAreasController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchDriverController as PlatformBranchDriverController;
 use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInventoryController;
@@ -13,6 +15,7 @@ use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffCo
 use App\Http\Controllers\Platform\CatalogPricingController as PlatformCatalogPricingController;
 use App\Http\Controllers\Platform\CategoryController as PlatformCategoryController;
 use App\Http\Controllers\Platform\CmsPageController as PlatformCmsPageController;
+use App\Http\Controllers\Platform\ContactInquiryController as PlatformContactInquiryController;
 use App\Http\Controllers\Platform\ContactSettingsController as PlatformContactSettingsController;
 use App\Http\Controllers\Platform\ConversationController as PlatformConversationController;
 use App\Http\Controllers\Platform\CouponController as PlatformCouponController;
@@ -20,6 +23,7 @@ use App\Http\Controllers\Platform\DashboardController as PlatformDashboardContro
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\DeliverySettingsController as PlatformDeliverySettingsController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
+use App\Http\Controllers\Platform\DriverProductAssignController as PlatformDriverProductAssignController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\GeneralSettingsController as PlatformGeneralSettingsController;
 use App\Http\Controllers\Platform\HomeBannerController as PlatformHomeBannerController;
@@ -35,6 +39,7 @@ use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVar
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
 use App\Http\Controllers\Platform\Reports\OrderOperationsController as PlatformOrderOperationsController;
 use App\Http\Controllers\Platform\Reports\PriceHistoryController as PlatformPriceHistoryController;
+use App\Http\Controllers\Platform\Reports\ProductAssignTransactionController as PlatformProductAssignTransactionController;
 use App\Http\Controllers\Platform\Reports\StockTransactionController as PlatformStockTransactionController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
 use App\Http\Controllers\Platform\ShiftAssignmentController as PlatformShiftAssignmentController;
@@ -43,6 +48,7 @@ use App\Http\Controllers\Platform\SmtpSettingsController as PlatformSmtpSettings
 use App\Http\Controllers\Platform\StockController as PlatformStockController;
 use App\Http\Controllers\Platform\StockTransferController as PlatformStockTransferController;
 use App\Http\Controllers\Platform\TransferController as PlatformTransferController;
+use App\Http\Controllers\Platform\WholesaleInquiryController as PlatformWholesaleInquiryController;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -81,6 +87,22 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->parameters(['admins' => 'user'])
             ->names('platform.admins')
             ->middlewareFor(['store', 'update'], 'precognitive');
+
+        Route::get('wholesale-inquiries', [PlatformWholesaleInquiryController::class, 'index'])
+            ->name('platform.wholesale-inquiries.index');
+        Route::get('wholesale-inquiries/branch-options', [PlatformWholesaleInquiryController::class, 'branchOptions'])
+            ->name('platform.wholesale-inquiries.branch-options');
+        Route::get('wholesale-inquiries/place-order', [PlatformWholesaleInquiryController::class, 'createPlaceOrder'])
+            ->name('platform.wholesale-inquiries.place-order.create');
+        Route::get('wholesale-inquiries/{wholesaleInquiry}/place-order', [PlatformWholesaleInquiryController::class, 'placeOrder'])
+            ->name('platform.wholesale-inquiries.place-order');
+        Route::get('wholesale-inquiries/{wholesaleInquiry}', [PlatformWholesaleInquiryController::class, 'show'])
+            ->name('platform.wholesale-inquiries.show');
+
+        Route::get('contact-inquiries', [PlatformContactInquiryController::class, 'index'])
+            ->name('platform.contact-inquiries.index');
+        Route::get('contact-inquiries/{contactInquiry}', [PlatformContactInquiryController::class, 'show'])
+            ->name('platform.contact-inquiries.show');
     });
 
     Route::permanentRedirect('staff', '/platform/admins');
@@ -137,6 +159,24 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::put('branches/{branch}/drivers/{user}', [PlatformBranchDriverController::class, 'update'])
             ->middleware('precognitive')
             ->name('platform.branches.drivers.update');
+
+        Route::get('assign-products', [PlatformDriverProductAssignController::class, 'create'])
+            ->name('platform.assign-products.create');
+        Route::get('assign-products/driver-options', [PlatformDriverProductAssignController::class, 'driverOptions'])
+            ->name('platform.assign-products.driver-options');
+        Route::post('assign-products', [PlatformDriverProductAssignController::class, 'store'])
+            ->name('platform.assign-products.store');
+
+        Route::get('reports/product-assign-transactions', [PlatformProductAssignTransactionController::class, 'index'])
+            ->name('platform.reports.product-assign-transactions');
+        Route::get('reports/product-assign-transactions/product-options', [PlatformProductAssignTransactionController::class, 'productOptions'])
+            ->name('platform.reports.product-assign-transactions.product-options');
+        Route::get('reports/product-assign-transactions/branch-options', [PlatformProductAssignTransactionController::class, 'branchOptions'])
+            ->name('platform.reports.product-assign-transactions.branch-options');
+        Route::get('reports/product-assign-transactions/driver-options', [PlatformProductAssignTransactionController::class, 'driverOptions'])
+            ->name('platform.reports.product-assign-transactions.driver-options');
+        Route::get('reports/product-assign-transactions/export', [PlatformProductAssignTransactionController::class, 'export'])
+            ->name('platform.reports.product-assign-transactions.export');
     });
 
     Route::middleware(['permission:view-transfers'])->group(function () {
@@ -200,6 +240,12 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::middleware(['permission:view-branches'])->group(function () {
         Route::get('branches', [PlatformBranchController::class, 'index'])->name('platform.branches.index');
         Route::get('branches/{branch}', [PlatformBranchController::class, 'show'])->name('platform.branches.show');
+        Route::get('branch-areas', [PlatformBranchAreasController::class, 'index'])
+            ->name('platform.branch-areas.index');
+        Route::get('branch-areas-branch-options', [PlatformBranchAreasController::class, 'branchOptions'])
+            ->name('platform.branch-areas.branch-options');
+        Route::get('branches/{branch}/areas', [PlatformBranchAreaController::class, 'index'])
+            ->name('platform.branches.areas.index');
     });
 
     Route::middleware(['permission:edit-branches'])->group(function () {
@@ -207,6 +253,40 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::put('branches/{branch}', [PlatformBranchController::class, 'update'])
             ->middleware('precognitive')
             ->name('platform.branches.update');
+        Route::get('branch-areas/create', [PlatformBranchAreasController::class, 'create'])
+            ->name('platform.branch-areas.create');
+        Route::post('branch-areas', [PlatformBranchAreasController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.branch-areas.store');
+        Route::get('branch-areas/{area}/edit', [PlatformBranchAreasController::class, 'edit'])
+            ->name('platform.branch-areas.edit');
+        Route::put('branch-areas/{area}', [PlatformBranchAreasController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.branch-areas.update');
+        Route::delete('branch-areas/{area}', [PlatformBranchAreasController::class, 'destroy'])
+            ->name('platform.branch-areas.destroy');
+        Route::post('branch-areas/{area}/transfer', [PlatformBranchAreasController::class, 'transfer'])
+            ->middleware('precognitive')
+            ->name('platform.branch-areas.transfer');
+        Route::get('branches/{branch}/areas/create', [PlatformBranchAreaController::class, 'create'])
+            ->name('platform.branches.areas.create');
+        Route::post('branches/{branch}/areas', [PlatformBranchAreaController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.branches.areas.store');
+        Route::get('branches/{branch}/areas/{area}/edit', [PlatformBranchAreaController::class, 'edit'])
+            ->name('platform.branches.areas.edit');
+        Route::put('branches/{branch}/areas/{area}', [PlatformBranchAreaController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.branches.areas.update');
+        Route::delete('branches/{branch}/areas/{area}', [PlatformBranchAreaController::class, 'destroy'])
+            ->name('platform.branches.areas.destroy');
+    });
+
+    Route::middleware(['permission:view-branches'])->group(function () {
+        Route::get('branch-areas/{area}', [PlatformBranchAreasController::class, 'show'])
+            ->name('platform.branch-areas.show');
+        Route::get('branches/{branch}/areas/{area}', [PlatformBranchAreaController::class, 'show'])
+            ->name('platform.branches.areas.show');
     });
 
     Route::middleware(['permission:delete-branches'])->group(function () {

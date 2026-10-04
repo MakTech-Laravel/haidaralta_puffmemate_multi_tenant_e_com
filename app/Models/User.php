@@ -8,6 +8,8 @@ use App\Enums\CustomerAddressType;
 use App\Enums\UserType;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasFcmDeviceTokens;
+use App\Models\Concerns\InteractsWithAppMedia;
+use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -23,6 +25,7 @@ use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Scout\Searchable;
+use Spatie\MediaLibrary\HasMedia;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -36,7 +39,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @property UserType $user_type
  * @property int|null $branch_id
  * @property bool $is_active
- * @property string|null $avatar
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -47,12 +49,22 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read CustomerAddress|null $shippingAddress
  * @property-read CustomerAddress|null $billingAddress
  */
-#[Fillable(['name', 'phone', 'email', 'password', 'user_type', 'branch_id', 'is_active', 'avatar', 'phone_verified_at', 'email_verified_at'])]
+#[Fillable(['name', 'phone', 'email', 'password', 'user_type', 'branch_id', 'is_active', 'phone_verified_at', 'email_verified_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
-class User extends Authenticatable implements PasskeyUser, ScoutSearchable
+class User extends Authenticatable implements HasMedia, PasskeyUser, ScoutSearchable
 {
     /** @use HasFactory<UserFactory> */
-    use AuditsChanges, HasFactory, HasFcmDeviceTokens, HasRoles, Notifiable, PasskeyAuthenticatable, Searchable, TwoFactorAuthenticatable;
+    use AuditsChanges, HasFactory, HasFcmDeviceTokens, HasRoles, InteractsWithAppMedia, Notifiable, PasskeyAuthenticatable, Searchable, TwoFactorAuthenticatable;
+
+    public function registerMediaCollections(): void
+    {
+        $this->registerSingleFileCollection('avatar');
+    }
+
+    public function avatarUrl(?string $fallback = null): ?string
+    {
+        return MediaUrl::fromCollection($this, 'avatar', $fallback);
+    }
 
     /**
      * @return BelongsTo<Branch, $this>

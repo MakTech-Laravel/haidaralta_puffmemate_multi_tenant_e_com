@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Branch\ActivityLogController as BranchActivityLogController;
+use App\Http\Controllers\Branch\AreaController as BranchAreaController;
 use App\Http\Controllers\Branch\CatalogPricingController as BranchCatalogPricingController;
 use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\ConversationController as BranchConversationController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Branch\PermissionController as BranchPermissionControll
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\Reports\OrderOperationsController as BranchOrderOperationsController;
 use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
+use App\Http\Controllers\Branch\Reports\ProductAssignTransactionController as BranchProductAssignTransactionController;
 use App\Http\Controllers\Branch\Reports\StockTransactionController as BranchStockTransactionController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
 use App\Http\Controllers\Branch\ShiftAssignmentController as BranchShiftAssignmentController;
@@ -187,6 +189,18 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::put('settings/general', [BranchGeneralSettingsController::class, 'update'])
             ->middleware('precognitive')
             ->name('branch.settings.general.update');
+
+        Route::get('areas', [BranchAreaController::class, 'index'])->name('branch.areas.index');
+        Route::get('areas/create', [BranchAreaController::class, 'create'])->name('branch.areas.create');
+        Route::post('areas', [BranchAreaController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('branch.areas.store');
+        Route::get('areas/{area}', [BranchAreaController::class, 'show'])->name('branch.areas.show');
+        Route::get('areas/{area}/edit', [BranchAreaController::class, 'edit'])->name('branch.areas.edit');
+        Route::put('areas/{area}', [BranchAreaController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('branch.areas.update');
+        Route::delete('areas/{area}', [BranchAreaController::class, 'destroy'])->name('branch.areas.destroy');
     });
 
     Route::middleware(['permission:manage-branch-roles'])->group(function () {
@@ -241,6 +255,13 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.assign-products.driver-options');
         Route::post('assign-products', [BranchDriverProductAssignController::class, 'store'])
             ->name('branch.assign-products.store');
+
+        Route::get('reports/product-assign-transactions', [BranchProductAssignTransactionController::class, 'index'])
+            ->name('branch.reports.product-assign-transactions');
+        Route::get('reports/product-assign-transactions/product-options', [BranchProductAssignTransactionController::class, 'productOptions'])
+            ->name('branch.reports.product-assign-transactions.product-options');
+        Route::get('reports/product-assign-transactions/export', [BranchProductAssignTransactionController::class, 'export'])
+            ->name('branch.reports.product-assign-transactions.export');
     });
 
     Route::middleware(['permission:manage-branch-shifts'])->group(function () {

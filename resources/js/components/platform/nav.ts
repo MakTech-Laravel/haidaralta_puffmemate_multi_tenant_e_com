@@ -129,9 +129,16 @@ export function buildPlatformNav(
                         icon: Star,
                         permissions: ['manage-users'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Wholesale',
+                        href: '/platform/wholesale-inquiries',
                         icon: Warehouse,
+                        permissions: ['manage-users'],
+                    }),
+                    navLink({
+                        title: 'Contact',
+                        href: '/platform/contact-inquiries',
+                        icon: MessageCircle,
                         permissions: ['manage-users'],
                     }),
                     navSoon({
@@ -151,6 +158,12 @@ export function buildPlatformNav(
                         title: 'Drivers',
                         href: '/platform/drivers',
                         icon: Truck,
+                        permissions: ['manage-drivers'],
+                    }),
+                    navLink({
+                        title: 'Assign Product',
+                        href: '/platform/assign-products',
+                        icon: PackagePlus,
                         permissions: ['manage-drivers'],
                     }),
                     navSoon({
@@ -180,6 +193,12 @@ export function buildPlatformNav(
                         title: 'Branches',
                         href: '/platform/branches',
                         icon: Building2,
+                        permissions: ['view-branches'],
+                    }),
+                    navLink({
+                        title: 'Areas',
+                        href: '/platform/branch-areas',
+                        icon: MapPinned,
                         permissions: ['view-branches'],
                     }),
                     navLink({
@@ -372,6 +391,7 @@ export function buildPlatformNav(
                     'manage-reports',
                     'manage-branch-inventories',
                     'view-transfers',
+                    'manage-drivers',
                 ],
                 items: [
                     navLink({
@@ -402,10 +422,11 @@ export function buildPlatformNav(
                         icon: History,
                         permissions: ['view-transfers'],
                     }),
-                    navSoon({
-                        title: 'Drivers',
-                        icon: Truck,
-                        permissions: ['manage-reports'],
+                    navLink({
+                        title: 'Product assign transactions',
+                        href: '/platform/reports/product-assign-transactions',
+                        icon: PackagePlus,
+                        permissions: ['manage-drivers'],
                     }),
                     navSoon({
                         title: 'Customers',

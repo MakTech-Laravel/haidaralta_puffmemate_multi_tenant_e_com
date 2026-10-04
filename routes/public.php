@@ -5,11 +5,13 @@ use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CategoryController;
 use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\CmsPageController;
+use App\Http\Controllers\Storefront\ContactInquiryController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\PackController;
 use App\Http\Controllers\Storefront\PacksSavesController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\ShopController;
+use App\Http\Controllers\Storefront\WholesaleInquiryController;
 use App\Http\Controllers\WebAppManifestController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +50,12 @@ Route::middleware('ensure.storefront.customer')->group(function () {
 Route::get('/about', fn () => app(CmsPageController::class)('about'))->name('about');
 Route::get('/faqs', fn () => app(CmsPageController::class)('faqs'))->name('faqs');
 Route::get('/contact', fn () => app(CmsPageController::class)('contact'))->name('contact');
+Route::post('/contact', [ContactInquiryController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('contact.store');
 Route::get('/wholesale', fn () => app(CmsPageController::class)('wholesale'))->name('wholesale');
+Route::post('/wholesale', [WholesaleInquiryController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('wholesale.store');
 Route::get('/privacy', fn () => app(CmsPageController::class)('privacy'))->name('privacy');
 Route::get('/terms', fn () => app(CmsPageController::class)('terms'))->name('terms');

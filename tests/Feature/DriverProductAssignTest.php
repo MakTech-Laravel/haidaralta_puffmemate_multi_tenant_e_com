@@ -8,6 +8,7 @@ use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\DriverBranchAssignment;
 use App\Models\DriverInventory;
+use App\Models\DriverInventoryTransaction;
 use App\Models\Inventory;
 use App\Models\InventoryTransaction;
 use App\Models\Product;
@@ -171,6 +172,20 @@ test('single driver assign reduces branch stock and increases driver inventory',
             ->where('product_id', $product->id)
             ->where('type', InventoryTransactionType::DriverAssign)
             ->value('quantity'))->toBe(3);
+
+    $driverTxn = DriverInventoryTransaction::query()
+        ->where('branch_id', $this->branch->id)
+        ->where('user_id', $this->driver->id)
+        ->where('product_id', $product->id)
+        ->where('type', InventoryTransactionType::DriverAssign)
+        ->first();
+
+    expect($driverTxn)->not->toBeNull()
+        ->and($driverTxn->quantity)->toBe(3)
+        ->and($driverTxn->before_quantity)->toBe(0)
+        ->and($driverTxn->after_quantity)->toBe(3)
+        ->and($driverTxn->reason)->toBeNull()
+        ->and(DriverInventoryTransaction::query()->count())->toBe(1);
 });
 
 test('multiple drivers each receive the same quantity and branch loses N times qty', function () {
@@ -215,7 +230,28 @@ test('multiple drivers each receive the same quantity and branch loses N times q
         ->and(DriverInventory::query()
             ->where('user_id', $secondDriver->id)
             ->where('product_id', $product->id)
-            ->value('quantity'))->toBe(3);
+            ->value('quantity'))->toBe(3)
+        ->and(InventoryTransaction::query()
+            ->where('branch_id', $this->branch->id)
+            ->where('product_id', $product->id)
+            ->where('type', InventoryTransactionType::DriverAssign)
+            ->value('quantity'))->toBe(6);
+
+    $driverTxns = DriverInventoryTransaction::query()
+        ->where('branch_id', $this->branch->id)
+        ->where('product_id', $product->id)
+        ->where('type', InventoryTransactionType::DriverAssign)
+        ->orderBy('user_id')
+        ->get();
+
+    expect($driverTxns)->toHaveCount(2)
+        ->and($driverTxns->pluck('user_id')->all())->toEqualCanonicalizing([
+            $this->driver->id,
+            $secondDriver->id,
+        ])
+        ->and($driverTxns->every(fn (DriverInventoryTransaction $txn): bool => $txn->quantity === 3
+            && $txn->before_quantity === 0
+            && $txn->after_quantity === 3))->toBeTrue();
 });
 
 test('insufficient stock is rejected without writing driver inventory', function () {
@@ -244,7 +280,8 @@ test('insufficient stock is rejected without writing driver inventory', function
         ->assertSessionHasErrors('items');
 
     expect($inventory->fresh()->quantity)->toBe(5)
-        ->and(DriverInventory::query()->count())->toBe(0);
+        ->and(DriverInventory::query()->count())->toBe(0)
+        ->and(DriverInventoryTransaction::query()->count())->toBe(0);
 });
 
 test('driver from another branch cannot be assigned stock', function () {

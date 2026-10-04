@@ -61,7 +61,7 @@ class ConversationInboxUpdated implements ShouldBroadcastNow, ShouldDispatchAfte
     public function broadcastWith(): array
     {
         if ($this->message !== null) {
-            $this->message->loadMissing(['sender:id,name,avatar', 'attachments']);
+            $this->message->loadMissing(['sender:id,name', 'sender.media', 'attachments']);
         }
 
         return [

@@ -2,32 +2,35 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\AuditsChanges;
-use App\Support\MediaUrl;
-use Database\Factories\ProductImageFactory;
+use Database\Factories\ProductViewLogFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $product_id
- * @property string $path
- * @property int $sort_order
+ * @property string $ip_address
+ * @property string|null $user_agent
+ * @property Carbon $viewed_at
  * @property-read Product|null $product
  */
-class ProductImage extends Model
+class ProductViewLog extends Model
 {
-    /** @use HasFactory<ProductImageFactory> */
-    use AuditsChanges, HasFactory;
+    /** @use HasFactory<ProductViewLogFactory> */
+    use HasFactory;
+
+    public $timestamps = false;
 
     /**
      * @var list<string>
      */
     protected $fillable = [
         'product_id',
-        'path',
-        'sort_order',
+        'ip_address',
+        'user_agent',
+        'viewed_at',
     ];
 
     /**
@@ -38,18 +41,13 @@ class ProductImage extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function url(): string
-    {
-        return MediaUrl::resolve($this->path) ?? MediaUrl::DEFAULT_FALLBACK;
-    }
-
     /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
-            'sort_order' => 'integer',
+            'viewed_at' => 'datetime',
         ];
     }
 }

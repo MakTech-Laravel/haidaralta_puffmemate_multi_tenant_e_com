@@ -130,7 +130,6 @@ test('customers can upload an avatar from the account page', function () {
     $user = User::factory()->create([
         'phone' => '+61412345678',
         'phone_verified_at' => now(),
-        'avatar' => null,
     ]);
 
     $avatar = UploadedFile::fake()->image('avatar.png', 120, 120);
@@ -148,8 +147,8 @@ test('customers can upload an avatar from the account page', function () {
 
     $user->refresh();
 
-    expect($user->avatar)->not->toBeNull();
-    Storage::disk('public')->assertExists($user->avatar);
+    expect($user->hasMedia('avatar'))->toBeTrue()
+        ->and($user->getFirstMedia('avatar')->mime_type)->toBe('image/webp');
 });
 
 test('customer profile update rejects a phone that belongs to another user', function () {

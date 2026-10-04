@@ -6,6 +6,8 @@ use App\Contracts\DataTableConfigurable;
 use App\Enums\PackOfferType;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
+use App\Models\Concerns\InteractsWithAppMedia;
+use App\Support\CatalogMediaPayload;
 use App\Support\MediaUrl;
 use Database\Factories\PackFactory;
 use Illuminate\Database\Eloquent\Collection;
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * @property int $id
@@ -21,7 +24,6 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string $slug
  * @property string|null $description
- * @property string|null $image
  * @property PackOfferType $offer_type
  * @property string $offer_value
  * @property string $subtotal
@@ -33,13 +35,18 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $highlighted_at
  * @property-read Branch|null $branch
  * @property-read Collection<int, PackItem> $items
- * @property-read Collection<int, PackImage> $images
  * @property-read int $items_count
  */
-class Pack extends Model implements DataTableConfigurable
+class Pack extends Model implements DataTableConfigurable, HasMedia
 {
     /** @use HasFactory<PackFactory> */
-    use AuditsChanges, HasDataTableConfig, HasFactory;
+    use AuditsChanges, HasDataTableConfig, HasFactory, InteractsWithAppMedia;
+
+    public function registerMediaCollections(): void
+    {
+        $this->registerSingleFileCollection('image');
+        $this->registerMultiFileCollection('gallery');
+    }
 
     /**
      * @var list<string>
@@ -64,7 +71,6 @@ class Pack extends Model implements DataTableConfigurable
         'name',
         'slug',
         'description',
-        'image',
         'offer_type',
         'offer_value',
         'subtotal',
@@ -92,17 +98,17 @@ class Pack extends Model implements DataTableConfigurable
         return $this->hasMany(PackItem::class)->orderBy('id');
     }
 
-    /**
-     * @return HasMany<PackImage, $this>
-     */
-    public function images(): HasMany
+    public function imageUrl(?string $fallback = null): ?string
     {
-        return $this->hasMany(PackImage::class)->orderBy('sort_order')->orderBy('id');
+        return MediaUrl::fromCollection($this, 'image', $fallback);
     }
 
-    public function imageUrl(): ?string
+    /**
+     * @return list<string>
+     */
+    public function galleryUrls(): array
     {
-        return MediaUrl::resolve($this->image, fallback: null);
+        return $this->mediaUrlsFor('gallery');
     }
 
     /**
@@ -115,7 +121,7 @@ class Pack extends Model implements DataTableConfigurable
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
-            'image' => $this->image,
+            'image' => CatalogMediaPayload::fileName($this),
             'image_url' => $this->imageUrl(),
             'offer_type' => $this->offer_type->value,
             'offer_value' => $this->offer_value,
@@ -133,18 +139,9 @@ class Pack extends Model implements DataTableConfigurable
             return $payload;
         }
 
-        $this->loadMissing(['items.product', 'images']);
+        $this->loadMissing(['items.product.media', 'media']);
 
-        $payload['gallery'] = $this->images
-            ->map(fn (PackImage $image): array => [
-                'id' => $image->id,
-                'path' => $image->path,
-                'url' => $image->url(),
-                'sort_order' => $image->sort_order,
-                'mime_type' => 'image/jpeg',
-            ])
-            ->values()
-            ->all();
+        $payload['gallery'] = CatalogMediaPayload::gallery($this);
 
         $payload['items'] = $this->items
             ->map(function (PackItem $item): array {

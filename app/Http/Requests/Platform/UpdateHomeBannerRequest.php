@@ -50,7 +50,7 @@ class UpdateHomeBannerRequest extends FormRequest
             $banner = $this->route('home_banner');
             $removing = $this->boolean('remove_image');
             $hasUpload = $this->file('image') !== null;
-            $hasExisting = filled($banner->image_path) && ! $removing;
+            $hasExisting = $banner->hasMedia(HomeBanner::IMAGE_COLLECTION) && ! $removing;
 
             if (! $hasUpload && ! $hasExisting) {
                 $validator->errors()->add(

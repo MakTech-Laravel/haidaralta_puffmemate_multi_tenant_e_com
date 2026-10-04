@@ -31,7 +31,6 @@ class ProductFactory extends Factory
             'pack_unit' => null,
             'tags' => [],
             'specifications' => [],
-            'image' => null,
             'color_code' => null,
             'selling_price' => null,
             'regular_price' => null,

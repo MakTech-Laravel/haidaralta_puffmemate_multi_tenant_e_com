@@ -3,16 +3,14 @@
 namespace Database\Factories;
 
 use App\Models\Product;
-use App\Models\ProductImage;
+use App\Models\ProductViewLog;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<ProductImage>
+ * @extends Factory<ProductViewLog>
  */
-class ProductImageFactory extends Factory
+class ProductViewLogFactory extends Factory
 {
-    protected $model = ProductImage::class;
-
     /**
      * @return array<string, mixed>
      */
@@ -20,8 +18,9 @@ class ProductImageFactory extends Factory
     {
         return [
             'product_id' => Product::factory(),
-            'path' => 'products/gallery/sample.jpg',
-            'sort_order' => 0,
+            'ip_address' => fake()->ipv4(),
+            'user_agent' => fake()->userAgent(),
+            'viewed_at' => now(),
         ];
     }
 }

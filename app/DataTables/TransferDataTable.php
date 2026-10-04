@@ -29,7 +29,7 @@ class TransferDataTable extends AbstractDataTable
     protected function baseQuery(): Builder
     {
         return UserTransferHistory::query()
-            ->with(['user:id,name,user_type,avatar', 'fromBranch:id,name,slug', 'toBranch:id,name,slug', 'transferredBy:id,name']);
+            ->with(['user:id,name,user_type', 'user.media', 'fromBranch:id,name,slug', 'toBranch:id,name,slug', 'transferredBy:id,name']);
     }
 
     /**

@@ -5,12 +5,14 @@ namespace App\Services\Customer;
 use App\Enums\CustomerAddressType;
 use App\Models\CustomerAddress;
 use App\Models\User;
-use App\Support\PublicDiskMedia;
+use App\Services\Media\MediaUploadService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 class CustomerAccountService
 {
+    public function __construct(private MediaUploadService $media) {}
+
     /**
      * @param  array{name: string, phone: string, email?: string|null, region?: string|null, city?: string|null, zip?: string|null, address?: string|null, remove_avatar?: bool}  $data
      */
@@ -31,14 +33,14 @@ class CustomerAccountService
                 $user->email_verified_at = null;
             }
 
-            $user->avatar = PublicDiskMedia::replace(
-                $user->avatar,
+            $user->save();
+
+            $this->media->syncSingle(
+                $user,
+                'avatar',
                 $avatar,
-                PublicDiskMedia::USER_AVATARS,
                 (bool) ($data['remove_avatar'] ?? false),
             );
-
-            $user->save();
 
             CustomerAddress::query()->updateOrCreate(
                 [

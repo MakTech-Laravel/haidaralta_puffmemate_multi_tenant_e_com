@@ -109,8 +109,8 @@ test('staff store persists pack items and media and reserves stock', function ()
         ->and($pack->status)->toBeTrue()
         ->and($pack->quantity)->toBe(2)
         ->and($pack->items)->toHaveCount(2)
-        ->and($pack->images)->toHaveCount(1)
-        ->and($pack->image)->not->toBeNull();
+        ->and($pack->getMedia('gallery'))->toHaveCount(1)
+        ->and($pack->getFirstMedia('image')?->mime_type)->toBe('image/webp');
 
     expect(
         Inventory::query()

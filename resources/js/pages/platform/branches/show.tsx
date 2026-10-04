@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/select';
 import { usePermission } from '@/hooks/use-permissions';
 import {
+    filteredBranchAreasUrl,
     filteredBranchDriversUrl,
     filteredBranchStaffUrl,
 } from '@/lib/branch-people-query';
@@ -364,6 +365,13 @@ export default function PlatformBranchesShow({
                                     href={filteredBranchDriversUrl(branch.id)}
                                 >
                                     Drivers
+                                </Link>
+                            </Button>
+                        ) : null}
+                        {can('view-branches') ? (
+                            <Button variant="outline" asChild>
+                                <Link href={filteredBranchAreasUrl(branch.id)}>
+                                    Areas
                                 </Link>
                             </Button>
                         ) : null}

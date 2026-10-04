@@ -6,6 +6,7 @@ use App\Contracts\DataTableConfigurable;
 use App\Contracts\ScoutSearchable;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
+use App\Models\Concerns\InteractsWithAppMedia;
 use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
 use Database\Factories\BranchFactory;
@@ -16,13 +17,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Laravel\Scout\Searchable;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * @property int $id
  * @property string $name
  * @property string $slug
  * @property string $code
- * @property string|null $logo
  * @property string|null $phone
  * @property string|null $email
  * @property string|null $address
@@ -43,12 +44,23 @@ use Laravel\Scout\Searchable;
  * @property-read Collection<int, DriverRoster> $driverRosters
  * @property-read Collection<int, Conversation> $conversations
  * @property-read Collection<int, OrderFulfillment> $fulfillments
+ * @property-read Collection<int, BranchArea> $areas
  * @property-read BranchShippingRule|null $shippingRule
  */
-class Branch extends Model implements DataTableConfigurable, ScoutSearchable
+class Branch extends Model implements DataTableConfigurable, HasMedia, ScoutSearchable
 {
     /** @use HasFactory<BranchFactory> */
-    use AuditsChanges, HasDataTableConfig, HasFactory, Searchable;
+    use AuditsChanges, HasDataTableConfig, HasFactory, InteractsWithAppMedia, Searchable;
+
+    public function registerMediaCollections(): void
+    {
+        $this->registerSingleFileCollection('logo');
+    }
+
+    public function logoUrl(?string $fallback = null): ?string
+    {
+        return MediaUrl::fromCollection($this, 'logo', $fallback);
+    }
 
     /**
      * @var list<string>
@@ -72,7 +84,6 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
         'name',
         'slug',
         'code',
-        'logo',
         'phone',
         'email',
         'address',
@@ -153,6 +164,14 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
     }
 
     /**
+     * @return HasMany<BranchArea, $this>
+     */
+    public function areas(): HasMany
+    {
+        return $this->hasMany(BranchArea::class);
+    }
+
+    /**
      * @return HasOne<BranchShippingRule, $this>
      */
     public function shippingRule(): HasOne
@@ -192,7 +211,7 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
-            'logo_url' => MediaUrl::resolve($this->logo, fallback: null),
+            'logo_url' => $this->logoUrl(),
         ];
     }
 
