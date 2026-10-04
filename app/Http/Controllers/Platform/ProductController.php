@@ -9,10 +9,10 @@ use App\Http\Requests\Platform\StoreProductRequest;
 use App\Http\Requests\Platform\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductSuggestionService;
+use App\Support\CatalogMediaPayload;
 use App\Support\CatalogReturnTo;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
@@ -81,7 +81,7 @@ class ProductController extends Controller
 
     public function show(Request $request, Product $product): Response
     {
-        $product->load(['categories:id,name,slug', 'variants', 'images', 'creator:id,name']);
+        $product->load(['categories:id,name,slug', 'variants', 'media', 'creator:id,name']);
 
         return Inertia::render('platform/catalog/products/show', [
             'product' => $this->mapProduct($product, detailed: true),
@@ -91,7 +91,7 @@ class ProductController extends Controller
 
     public function edit(Product $product): Response
     {
-        $product->load(['categories:id,name,slug', 'images']);
+        $product->load(['categories:id,name,slug', 'media']);
 
         return Inertia::render('platform/catalog/products/edit', [
             'product' => $this->mapProduct($product, detailed: true),
@@ -201,7 +201,7 @@ class ProductController extends Controller
             'pack_summary' => $product->packSummary(),
             'tags' => $product->tags ?? [],
             'specifications' => $product->specifications ?? [],
-            'image' => $product->image,
+            'image' => CatalogMediaPayload::fileName($product),
             'image_url' => $product->imageUrl(),
             'color_code' => $product->color_code,
             'selling_price' => $product->selling_price,
@@ -209,18 +209,7 @@ class ProductController extends Controller
             'status' => (bool) $product->status,
             'created_at' => $product->created_at?->toIso8601String(),
             'updated_at' => $product->updated_at?->toIso8601String(),
-            'gallery' => $product->relationLoaded('images')
-                ? $product->images
-                    ->map(fn (ProductImage $image): array => [
-                        'id' => $image->id,
-                        'path' => $image->path,
-                        'url' => $image->url(),
-                        'sort_order' => $image->sort_order,
-                        'mime_type' => 'image/jpeg',
-                    ])
-                    ->values()
-                    ->all()
-                : [],
+            'gallery' => CatalogMediaPayload::gallery($product),
         ];
 
         if ($detailed) {

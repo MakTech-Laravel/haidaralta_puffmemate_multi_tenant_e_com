@@ -10,7 +10,6 @@ use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\InventoryTransaction;
 use App\Models\Product;
-use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -24,7 +23,7 @@ final class BranchProductShowPayload
      */
     public static function product(Branch $branch, Product $product): array
     {
-        $product->loadMissing(['categories:id,name,slug', 'variants', 'images', 'creator:id,name']);
+        $product->loadMissing(['categories:id,name,slug', 'variants', 'media', 'creator:id,name']);
 
         $inventories = Inventory::query()
             ->where('branch_id', $branch->id)
@@ -90,16 +89,7 @@ final class BranchProductShowPayload
                 ->values()
                 ->all(),
             'category_name' => $product->categoryNamesLabel(),
-            'gallery' => $product->images
-                ->sortBy('sort_order')
-                ->values()
-                ->map(fn (ProductImage $image): array => [
-                    'id' => $image->id,
-                    'path' => $image->path,
-                    'url' => $image->url(),
-                    'sort_order' => $image->sort_order,
-                ])
-                ->all(),
+            'gallery' => CatalogMediaPayload::gallery($product),
             'variants' => $product->variants->map(fn (ProductVariant $variant): array => [
                 'id' => $variant->id,
                 'name' => $variant->name,

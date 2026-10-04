@@ -59,7 +59,7 @@ class BranchProductListingDataTable extends AbstractDataTable
      */
     protected function baseQuery(): Builder
     {
-        return Product::query()->with('categories:id,name,slug');
+        return Product::query()->with(['categories:id,name,slug', 'media']);
     }
 
     /**

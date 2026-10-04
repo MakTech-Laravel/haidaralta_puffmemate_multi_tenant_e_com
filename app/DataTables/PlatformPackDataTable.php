@@ -30,7 +30,7 @@ class PlatformPackDataTable extends AbstractDataTable
     protected function baseQuery(): Builder
     {
         return Pack::query()
-            ->with('branch:id,name,slug')
+            ->with(['branch:id,name,slug', 'media'])
             ->withCount('items');
     }
 

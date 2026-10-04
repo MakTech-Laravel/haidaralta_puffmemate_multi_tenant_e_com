@@ -8,7 +8,6 @@ use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Pack;
-use App\Models\PackImage;
 use App\Models\PackItem;
 use App\Models\Product;
 use App\Models\ProductReview;
@@ -107,7 +106,7 @@ class StorefrontCatalog
                     'id' => $category->slug,
                     'name' => $category->name,
                     'description' => $category->slogan ?: 'Shop '.$category->name,
-                    'image' => MediaUrl::resolve($category->image) ?? '/images/storefront/logo.png',
+                    'image' => $category->imageUrl(MediaUrl::DEFAULT_FALLBACK),
                     'href' => route('shop.category', ['category' => $category->slug], false),
                     'wide' => $total > 3 && $index >= $total - 2,
                 ];
@@ -199,7 +198,7 @@ class StorefrontCatalog
         $query = Product::query()
             ->where('status', true)
             ->whereHas('categories', fn ($builder) => $builder->where('categories.id', $category->id))
-            ->with(['categories:id,name,slug']);
+            ->with(['categories:id,name,slug', 'media']);
 
         match ($sort) {
             'name_desc' => $query->orderByDesc('name'),
@@ -232,7 +231,7 @@ class StorefrontCatalog
     ): array {
         $query = Product::query()
             ->where('status', true)
-            ->with(['categories:id,name,slug']);
+            ->with(['categories:id,name,slug', 'media']);
 
         match ($sort) {
             'name_desc' => $query->orderByDesc('name'),
@@ -289,7 +288,7 @@ class StorefrontCatalog
                         });
                 });
             })
-            ->with(['categories:id,name,slug'])
+            ->with(['categories:id,name,slug', 'media'])
             ->orderBy('name');
 
         if ($limit !== null) {
@@ -312,7 +311,7 @@ class StorefrontCatalog
         $query = Product::query()
             ->where('status', true)
             ->whereJsonContains('tags', $tag->value)
-            ->with(['categories:id,name,slug'])
+            ->with(['categories:id,name,slug', 'media'])
             ->orderBy('name')
             ->limit(max(1, $limit));
 
@@ -331,10 +330,10 @@ class StorefrontCatalog
             $product = Product::query()
                 ->where('status', true)
                 ->where('slug', $product)
-                ->with(['categories:id,name,slug', 'images', 'variants'])
+                ->with(['categories:id,name,slug', 'media', 'variants'])
                 ->first();
         } else {
-            $product->loadMissing(['categories:id,name,slug', 'images', 'variants']);
+            $product->loadMissing(['categories:id,name,slug', 'media', 'variants']);
         }
 
         if ($product === null || ! $product->status) {
@@ -344,10 +343,10 @@ class StorefrontCatalog
         $primaryCategory = $product->categories->first();
         $categoryName = $primaryCategory?->name ?? 'Catalog';
         $categorySlug = $primaryCategory?->slug;
-        $image = MediaUrl::resolve($product->image) ?? '/images/storefront/logo.png';
+        $image = $product->imageUrl(MediaUrl::DEFAULT_FALLBACK);
         $gallery = collect([
             $image,
-            ...$product->images->map(fn ($img): string => MediaUrl::resolve($img->path) ?? $image)->all(),
+            ...$product->galleryUrls(),
         ])->filter()->unique()->values()->all();
 
         $price = $branch !== null
@@ -512,7 +511,7 @@ class StorefrontCatalog
         $query = Product::query()
             ->where('status', true)
             ->where('id', '!=', $product->id)
-            ->with(['categories:id,name,slug'])
+            ->with(['categories:id,name,slug', 'media'])
             ->limit(100);
 
         if ($categoryIds->isNotEmpty()) {
@@ -543,7 +542,7 @@ class StorefrontCatalog
                 $builder->whereJsonContains('tags', ProductTag::BestSelling->value)
                     ->orWhereJsonContains('tags', ProductTag::Popular->value);
             })
-            ->with(['categories:id,name,slug'])
+            ->with(['categories:id,name,slug', 'media'])
             ->limit(max(1, $limit))
             ->get();
     }
@@ -607,6 +606,8 @@ class StorefrontCatalog
             $product->load('categories:id,name,slug');
         }
 
+        $product->loadMissing('media');
+
         $categoryName = $product->categories->first()?->name ?? 'Catalog';
         $price = $branch !== null
             ? BranchProductPriceDisplay::forBranchProduct($branch, $product)
@@ -621,7 +622,7 @@ class StorefrontCatalog
             'price' => $price['label'] ?? 'Select a branch',
             'compareAtPrice' => $compareAt === null ? '' : BranchProductPriceDisplay::formatAud((float) $compareAt),
             'category' => $categoryName,
-            'image' => MediaUrl::resolve($product->image) ?? '/images/storefront/logo.png',
+            'image' => $product->imageUrl(MediaUrl::DEFAULT_FALLBACK),
             'views' => CompactNumber::format((int) $product->views),
         ];
     }
@@ -692,7 +693,7 @@ class StorefrontCatalog
         return self::activePacksQuery(null)
             ->where('slug', $packSlug)
             ->whereHas('branch', fn (Builder $builder) => $builder->where('slug', $branchSlug))
-            ->with(['images', 'items.product:id,name,slug,image'])
+            ->with(['media', 'items.product:id,name,slug', 'items.product.media'])
             ->first();
     }
 
@@ -704,7 +705,7 @@ class StorefrontCatalog
     public static function packDetail(Pack $pack): array
     {
         $images = collect([$pack->imageUrl()])
-            ->merge($pack->images->map(fn (PackImage $image): string => $image->url()))
+            ->merge($pack->galleryUrls())
             ->filter(fn (?string $url): bool => is_string($url) && $url !== '')
             ->unique()
             ->values()
@@ -813,7 +814,7 @@ class StorefrontCatalog
             ->where(fn (Builder $dates) => $dates->whereNull('ends_at')->orWhereDate('ends_at', '>=', $today))
             ->whereHas('branch', fn (Builder $builder) => $builder->where('status', true))
             ->when($branch !== null, fn (Builder $builder) => $builder->where('branch_id', $branch?->id))
-            ->with(['branch:id,name,slug', 'items.product:id,name']);
+            ->with(['branch:id,name,slug', 'media', 'items.product:id,name']);
     }
 
     private static function cardDescription(Product $product): string

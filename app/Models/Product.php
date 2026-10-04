@@ -7,6 +7,7 @@ use App\Contracts\ScoutSearchable;
 use App\Enums\DiscountType;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
+use App\Models\Concerns\InteractsWithAppMedia;
 use App\Support\BranchProductPriceDisplay;
 use App\Support\CatalogBackgroundColor;
 use App\Support\MediaUrl;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Laravel\Scout\Searchable;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * @property int $id
@@ -32,7 +34,6 @@ use Laravel\Scout\Searchable;
  * @property string|null $pack_label
  * @property int|null $pieces_per_pack
  * @property string|null $pack_unit
- * @property string|null $image
  * @property array<mixed>|null $tags
  * @property array<string, mixed>|null $specifications
  * @property array<string, mixed>|null $color_code
@@ -48,15 +49,20 @@ use Laravel\Scout\Searchable;
  * @property-read Collection<int, Category> $categories
  * @property-read User|null $creator
  * @property-read Collection<int, ProductVariant> $variants
- * @property-read Collection<int, ProductImage> $images
  * @property-read Collection<int, Inventory> $inventories
  * @property-read Collection<int, BranchProductPrice> $branchPrices
  * @property-read Collection<int, ProductReview> $reviews
  */
-class Product extends Model implements DataTableConfigurable, ScoutSearchable
+class Product extends Model implements DataTableConfigurable, HasMedia, ScoutSearchable
 {
     /** @use HasFactory<ProductFactory> */
-    use AuditsChanges, HasDataTableConfig, HasFactory, Searchable, SoftDeletes;
+    use AuditsChanges, HasDataTableConfig, HasFactory, InteractsWithAppMedia, Searchable, SoftDeletes;
+
+    public function registerMediaCollections(): void
+    {
+        $this->registerSingleFileCollection('image');
+        $this->registerMultiFileCollection('gallery');
+    }
 
     /**
      * @var list<string>
@@ -85,7 +91,6 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
         'pack_label',
         'pieces_per_pack',
         'pack_unit',
-        'image',
         'tags',
         'specifications',
         'color_code',
@@ -124,14 +129,6 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
     }
 
     /**
-     * @return HasMany<ProductImage, $this>
-     */
-    public function images(): HasMany
-    {
-        return $this->hasMany(ProductImage::class)->orderBy('sort_order')->orderBy('id');
-    }
-
-    /**
      * @return HasMany<Inventory, $this>
      */
     public function inventories(): HasMany
@@ -155,9 +152,17 @@ class Product extends Model implements DataTableConfigurable, ScoutSearchable
         return $this->hasMany(ProductReview::class);
     }
 
-    public function imageUrl(): ?string
+    public function imageUrl(?string $fallback = null): ?string
     {
-        return MediaUrl::resolve($this->image, fallback: null);
+        return MediaUrl::fromCollection($this, 'image', $fallback);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function galleryUrls(): array
+    {
+        return $this->mediaUrlsFor('gallery');
     }
 
     public static function skuFromSlug(string $slug): string

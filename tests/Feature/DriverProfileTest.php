@@ -103,15 +103,14 @@ test('drivers can update contact license address and vehicle details', function 
         ->and($driver->email)->toBe('daniel.field@puffmemate.dev')
         ->and($driver->is_active)->toBeTrue()
         ->and($driver->phone_verified_at)->toBeNull()
-        ->and($driver->avatar)->not->toBeNull()
+        ->and($driver->hasMedia('avatar'))->toBeTrue()
+        ->and($driver->getFirstMedia('avatar')->mime_type)->toBe('image/webp')
         ->and($profile?->license_number)->toBe('DL-NEW-204')
         ->and($profile?->vehicle_type)->toBe(DriverVehicleType::Motorcycle)
         ->and($profile?->address)->toBe('418 Crown St, Surry Hills')
         ->and($profile?->notes)->toBe('Desk only')
-        ->and($profile?->vehicle_image_path)->not->toBeNull();
-
-    Storage::disk('public')->assertExists($driver->avatar);
-    Storage::disk('public')->assertExists($profile?->vehicle_image_path);
+        ->and($profile?->hasMedia('vehicle'))->toBeTrue()
+        ->and($profile?->getFirstMedia('vehicle')->mime_type)->toBe('image/webp');
 });
 
 test('drivers can upload photos larger than two megabytes', function () {
@@ -142,8 +141,8 @@ test('drivers can upload photos larger than two megabytes', function () {
     $driver->refresh();
     $profile = $driver->driverProfile;
 
-    expect($driver->avatar)->not->toBeNull()
-        ->and($profile?->vehicle_image_path)->not->toBeNull();
+    expect($driver->hasMedia('avatar'))->toBeTrue()
+        ->and($profile?->hasMedia('vehicle'))->toBeTrue();
 });
 
 test('drivers cannot save a profile without a name or vehicle type', function () {

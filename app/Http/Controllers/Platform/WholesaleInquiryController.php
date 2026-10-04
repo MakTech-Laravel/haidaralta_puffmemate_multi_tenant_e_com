@@ -9,7 +9,6 @@ use App\Models\Inventory;
 use App\Models\WholesaleInquiry;
 use App\Services\Storefront\WholesaleInquiryService;
 use App\Support\BranchMap;
-use App\Support\MediaUrl;
 use App\Support\StockPageContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -162,7 +161,7 @@ class WholesaleInquiryController extends Controller
             ->where('branch_id', $branch->id)
             ->where('status', true)
             ->where('quantity', '>', 0)
-            ->with(['product:id,name,sku,image,selling_price,status'])
+            ->with(['product:id,name,sku,selling_price,status', 'product.media'])
             ->whereHas('product', fn ($query) => $query->where('status', true))
             ->orderBy('product_id')
             ->get()
@@ -186,7 +185,7 @@ class WholesaleInquiryController extends Controller
                     'sku' => (string) ($product->sku ?? ''),
                     'price' => (float) $product->selling_price,
                     'stock' => $available,
-                    'image' => MediaUrl::resolve($product->image, fallback: null),
+                    'image' => $product->imageUrl(),
                 ];
             })
             ->filter()

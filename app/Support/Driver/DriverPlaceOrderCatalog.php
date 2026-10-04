@@ -58,6 +58,7 @@ class DriverPlaceOrderCatalog
             ->where('quantity', '>', 0)
             ->with([
                 'product.categories:id,name',
+                'product.media',
                 'variant:id,name,sku',
             ])
             ->get();

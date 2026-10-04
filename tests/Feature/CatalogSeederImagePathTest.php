@@ -8,8 +8,12 @@ use Database\Seeders\CatalogSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 beforeEach(function () {
+    Storage::fake('public');
+
     Http::fake([
         'images.unsplash.com/*' => Http::response(
             file_get_contents(public_path('images/storefront/logo.png')),
@@ -24,21 +28,32 @@ beforeEach(function () {
     $this->seed(CatalogSeeder::class);
 });
 
-test('catalog seeder stores public web image paths for categories and products', function () {
+test('catalog seeder attaches committed public images as media without moving the originals', function () {
     $category = Category::query()->where('slug', 'cigarettes')->firstOrFail();
     $storefrontProduct = Product::query()->where('slug', 'marlboro-gold-soft-pack-20s')->firstOrFail();
     $remoteProduct = Product::query()->where('slug', 'horizon-red-soft-pack-25s')->firstOrFail();
 
-    expect($category->image)->toStartWith('/images/')
-        ->and(is_file(public_path(ltrim((string) $category->image, '/'))))->toBeTrue()
-        ->and($storefrontProduct->image)->toBe('/images/storefront/product-marlboro-gold.jpg')
-        ->and(is_file(public_path(ltrim((string) $storefrontProduct->image, '/'))))->toBeTrue()
-        ->and($remoteProduct->image)->toStartWith('/images/catalog/products/')
-        ->and(is_file(public_path(ltrim((string) $remoteProduct->image, '/'))))->toBeTrue();
+    expect($category->hasMedia('image'))->toBeTrue()
+        ->and($category->getFirstMedia('image')->file_name)->toBe('category-cigarettes.png')
+        ->and($category->imageUrl())->toBe($category->getFirstMediaUrl('image'))
+        ->and($storefrontProduct->getFirstMedia('image')->file_name)->toBe('product-marlboro-gold.jpg')
+        ->and(is_file(public_path('images/storefront/product-marlboro-gold.jpg')))->toBeTrue()
+        ->and($remoteProduct->getFirstMedia('image')->file_name)->toStartWith('horizon-red-soft-pack-25s')
+        ->and(Media::query()->where('collection_name', 'gallery')->exists())->toBeTrue();
+});
+
+test('catalog seeder does not duplicate media when re-run', function () {
+    $before = Media::query()->count();
+
+    $this->seed(CatalogSeeder::class);
+
+    expect(Media::query()->count())->toBe($before);
 });
 
 test('branch seeder stores the public logo path', function () {
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
-    expect($branch->logo)->toBe('/images/storefront/logo.png');
+    expect($branch->hasMedia('logo'))->toBeTrue()
+        ->and($branch->getFirstMedia('logo')->getCustomProperty('seed_source'))->toBe('/images/storefront/logo.png')
+        ->and($branch->logoUrl())->not->toBeNull();
 });

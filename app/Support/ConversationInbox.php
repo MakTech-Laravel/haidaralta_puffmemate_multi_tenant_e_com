@@ -52,7 +52,8 @@ final class ConversationInbox
             ->with([
                 'order:id,order_number,status',
                 'branch:id,name,slug',
-                'participants.user:id,name,avatar',
+                'participants.user:id,name',
+                'participants.user.media',
             ])
             ->when(
                 $this->scopedBranchId !== null,

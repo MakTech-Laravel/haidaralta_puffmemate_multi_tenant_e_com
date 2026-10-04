@@ -13,7 +13,6 @@ return new class extends Migration
             $table->foreignId('parent_id')->nullable()->constrained('categories')->nullOnDelete();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->string('image')->nullable();
             $table->string('slogan')->nullable();
             $table->json('color_code')->nullable();
             $table->boolean('status')->default(true);

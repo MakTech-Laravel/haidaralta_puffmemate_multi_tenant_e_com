@@ -4,16 +4,17 @@ namespace App\Services\Catalog;
 
 use App\Models\Branch;
 use App\Models\Product;
-use App\Models\ProductImage;
 use App\Models\User;
+use App\Services\Media\MediaUploadService;
 use App\Support\CatalogBackgroundColor;
 use App\Support\ProductSpecifications;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ProductService
 {
+    public function __construct(private MediaUploadService $media) {}
+
     /**
      * @param  array{
      *     category_ids: list<int>,
@@ -82,17 +83,7 @@ class ProductService
         array $galleryImages = [],
     ): Product {
         return DB::transaction(function () use ($product, $data, $primaryImage, $galleryImages): Product {
-            if (($data['remove_image'] ?? false) === true && $product->image) {
-                Storage::disk('public')->delete($product->image);
-                $product->image = null;
-            }
-
-            if ($primaryImage !== null) {
-                if ($product->image) {
-                    Storage::disk('public')->delete($product->image);
-                }
-                $product->image = $primaryImage->store('products', 'public');
-            }
+            $removeImage = (bool) ($data['remove_image'] ?? false);
 
             /** @var list<int> $removeGalleryIds */
             $removeGalleryIds = $data['remove_gallery_ids'] ?? [];
@@ -132,22 +123,24 @@ class ProductService
                 unset($data['selling_price'], $data['regular_price']);
             }
 
-            if ($removeGalleryIds !== []) {
-                $this->deleteGalleryImages($product, $removeGalleryIds);
-            }
-
             $product->fill($data);
             $product->save();
+
+            $this->media->syncSingle($product, 'image', $primaryImage, $removeImage && $primaryImage === null);
+
+            if ($removeGalleryIds !== []) {
+                $this->media->deleteFromCollection($product, 'gallery', $removeGalleryIds);
+            }
 
             if ($categoryIds !== null) {
                 $product->categories()->sync($categoryIds);
             }
 
             if ($galleryImages !== []) {
-                $this->appendGalleryImages($product, $galleryImages);
+                $this->media->syncMany($product, 'gallery', $galleryImages);
             }
 
-            return $product->refresh()->load(['images', 'categories:id,name,slug']);
+            return $product->refresh()->load(['media', 'categories:id,name,slug']);
         });
     }
 
@@ -181,13 +174,6 @@ class ProductService
         array $galleryImages,
         ?User $actor,
     ): Product {
-        $primaryPath = $primaryImage?->store('products', 'public');
-
-        if ($primaryPath === null && $galleryImages !== []) {
-            $primaryPath = $galleryImages[0]->store('products', 'public');
-            $galleryImages = array_slice($galleryImages, 1);
-        }
-
         $categoryIds = array_values(array_unique(array_map('intval', $data['category_ids'])));
 
         $product = Product::query()->create([
@@ -208,7 +194,6 @@ class ProductService
                 is_array($data['tags'] ?? null) ? $data['tags'] : [],
             ))),
             'specifications' => ProductSpecifications::normalize($data['specifications'] ?? []),
-            'image' => $primaryPath,
             'color_code' => CatalogBackgroundColor::normalize($data['color_code'] ?? null),
             'selling_price' => $this->nullableCatalogMoney($data['selling_price'] ?? null),
             'regular_price' => $this->nullableCatalogMoney($data['regular_price'] ?? null),
@@ -218,45 +203,18 @@ class ProductService
 
         $product->categories()->sync($categoryIds);
 
+        if ($primaryImage === null && $galleryImages !== []) {
+            $primaryImage = $galleryImages[0];
+            $galleryImages = array_slice($galleryImages, 1);
+        }
+
+        $this->media->syncSingle($product, 'image', $primaryImage);
+
         if ($galleryImages !== []) {
-            $this->appendGalleryImages($product, $galleryImages);
+            $this->media->syncMany($product, 'gallery', $galleryImages);
         }
 
-        return $product->refresh()->load(['images', 'categories:id,name,slug']);
-    }
-
-    /**
-     * @param  list<UploadedFile>  $galleryImages
-     */
-    private function appendGalleryImages(Product $product, array $galleryImages): void
-    {
-        $nextSort = (int) $product->images()->max('sort_order');
-
-        foreach ($galleryImages as $file) {
-            $nextSort++;
-
-            ProductImage::query()->create([
-                'product_id' => $product->id,
-                'path' => $file->store('products/gallery', 'public'),
-                'sort_order' => $nextSort,
-            ]);
-        }
-    }
-
-    /**
-     * @param  list<int>  $imageIds
-     */
-    private function deleteGalleryImages(Product $product, array $imageIds): void
-    {
-        $images = ProductImage::query()
-            ->where('product_id', $product->id)
-            ->whereIn('id', $imageIds)
-            ->get();
-
-        foreach ($images as $image) {
-            Storage::disk('public')->delete($image->path);
-            $image->delete();
-        }
+        return $product->refresh()->load(['media', 'categories:id,name,slug']);
     }
 
     private function nullableCatalogMoney(mixed $value): ?string

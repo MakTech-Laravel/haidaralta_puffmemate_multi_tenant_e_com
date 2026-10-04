@@ -11,6 +11,7 @@ use App\Http\Requests\Platform\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Services\Catalog\CategoryService;
 use App\Services\Catalog\CategorySuggestionService;
+use App\Support\CatalogMediaPayload;
 use App\Support\CategoryOptions;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
@@ -184,7 +185,7 @@ class CategoryController extends Controller
                     'slug' => $category->parent->slug,
                 ]
                 : null,
-            'image' => $category->image,
+            'image' => CatalogMediaPayload::fileName($category),
             'image_url' => $category->imageUrl(),
             'slogan' => $category->slogan,
             'color_code' => $category->color_code,

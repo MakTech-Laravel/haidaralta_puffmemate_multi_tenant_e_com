@@ -3,10 +3,29 @@
 namespace App\Support;
 
 use Illuminate\Support\Facades\Storage;
+use Spatie\MediaLibrary\HasMedia;
 
 final class MediaUrl
 {
     public const DEFAULT_FALLBACK = '/images/storefront/logo.png';
+
+    /**
+     * Resolve the first media URL for a HasMedia model collection.
+     */
+    public static function fromCollection(
+        HasMedia $model,
+        string $collection,
+        ?string $fallback = self::DEFAULT_FALLBACK,
+        string $conversion = '',
+    ): ?string {
+        $url = $model->getFirstMediaUrl($collection, $conversion);
+
+        if ($url !== '') {
+            return $url;
+        }
+
+        return $fallback;
+    }
 
     /**
      * Resolve a media value to a browser-usable URL.

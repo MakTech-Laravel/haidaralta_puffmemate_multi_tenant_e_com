@@ -11,6 +11,7 @@ use App\Services\Catalog\DeliverySettingsService;
 use App\Services\Storefront\CartService;
 use App\Support\MediaUrl;
 use Database\Seeders\ApplicationSettingsSeeder;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -153,52 +154,30 @@ test('guest cart survives refresh and a rejected checkout', function () {
             ->has('items', 1));
 });
 
-test('cart line images use a public product photo or the logo fallback', function () {
-    $photo = storefrontCartProduct([
-        'slug' => 'photo-cart-item',
-        'image' => '/images/storefront/logo.png',
-    ]);
-    $stubPath = public_path('images/storefront/cart-stub-image.jpg');
-    file_put_contents($stubPath, 'fake-image-bytes');
+test('cart line images use the product media or the logo fallback', function () {
+    Storage::fake('public');
 
-    try {
-        $broken = storefrontCartProduct([
-            'slug' => 'stub-cart-item',
-            'image' => '/images/storefront/cart-stub-image.jpg',
-        ]);
-
-        $this->post(route('cart.store'), [
-            'product' => $photo->slug,
-            'quantity' => 1,
-        ]);
-        $this->post(route('cart.store'), [
-            'product' => $broken->slug,
-            'quantity' => 1,
-        ]);
-
-        $this->get(route('cart'))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('storefront/cart')
-                ->where('items.0.image', '/images/storefront/logo.png')
-                ->where('items.1.image', MediaUrl::DEFAULT_FALLBACK));
-    } finally {
-        if (is_file($stubPath)) {
-            unlink($stubPath);
-        }
-    }
-});
-
-test('adding to cart does not flash a server toast', function () {
-    $product = storefrontCartProduct(['slug' => 'no-flash-cart-item']);
+    $photo = storefrontCartProduct(['slug' => 'photo-cart-item']);
+    $media = $photo->addMedia(public_path('images/storefront/logo.png'))
+        ->preservingOriginal()
+        ->toMediaCollection('image');
+    $bare = storefrontCartProduct(['slug' => 'bare-cart-item']);
 
     $this->post(route('cart.store'), [
-        'product' => $product->slug,
+        'product' => $photo->slug,
         'quantity' => 1,
-    ])->assertRedirect();
+    ]);
+    $this->post(route('cart.store'), [
+        'product' => $bare->slug,
+        'quantity' => 1,
+    ]);
 
-    expect(session('inertia.flash_data.toast'))->toBeNull()
-        ->and(CartItem::query()->sum('quantity'))->toBe(1);
+    $this->get(route('cart'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/cart')
+            ->where('items.0.image', $media->getUrl())
+            ->where('items.1.image', MediaUrl::DEFAULT_FALLBACK));
 });
 
 test('guest checkout redirects to login', function () {

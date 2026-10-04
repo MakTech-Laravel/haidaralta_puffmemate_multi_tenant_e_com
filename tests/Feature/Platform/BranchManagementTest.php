@@ -66,9 +66,8 @@ test('platform super admin can create a branch with its first super admin atomic
         ->and($branch->code)->toBe('MID-001')
         ->and($branch->phone)->toBe('+61298765432')
         ->and($branch->status)->toBeTrue()
-        ->and($branch->logo)->not->toBeNull();
-
-    Storage::disk('public')->assertExists($branch->logo);
+        ->and($branch->hasMedia('logo'))->toBeTrue()
+        ->and($branch->getFirstMedia('logo')->mime_type)->toBe('image/webp');
 
     $superAdmin = User::query()->where('phone', '+61412000099')->firstOrFail();
 
@@ -241,7 +240,6 @@ test('platform admin can update a branch', function () {
         'name' => 'Old Name',
         'slug' => 'old-name',
         'code' => 'OLD-001',
-        'logo' => null,
     ]);
 
     $logo = UploadedFile::fake()->image('new-name.png', 120, 120);
@@ -267,9 +265,8 @@ test('platform admin can update a branch', function () {
         ->and($branch->code)->toBe('NEW-001')
         ->and($branch->phone)->toBe('+61387654321')
         ->and((float) $branch->delivery_radius_km)->toBe(12.5)
-        ->and($branch->logo)->not->toBeNull();
-
-    Storage::disk('public')->assertExists($branch->logo);
+        ->and($branch->hasMedia('logo'))->toBeTrue()
+        ->and($branch->getFirstMedia('logo')->mime_type)->toBe('image/webp');
 });
 
 test('branch delivery radius can be cleared so the branch delivers anywhere', function () {

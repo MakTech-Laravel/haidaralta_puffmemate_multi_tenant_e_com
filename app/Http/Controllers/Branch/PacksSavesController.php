@@ -63,7 +63,7 @@ class PacksSavesController extends Controller
     public function show(string $branchSlug, Pack $pack): Response
     {
         $branch = $this->currentBranch();
-        $pack->load(['items.product', 'images']);
+        $pack->load(['items.product', 'media']);
 
         return Inertia::render('branch/catalog/packs-saves/show', [
             'branch' => $branch->toPortalContext(),
@@ -74,7 +74,7 @@ class PacksSavesController extends Controller
     public function edit(string $branchSlug, Pack $pack): Response
     {
         $branch = $this->currentBranch();
-        $pack->load(['items.product', 'images']);
+        $pack->load(['items.product', 'media']);
 
         return Inertia::render('branch/catalog/packs-saves/edit', [
             'branch' => $branch->toPortalContext(),

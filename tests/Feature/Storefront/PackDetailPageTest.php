@@ -2,24 +2,27 @@
 
 use App\Models\Branch;
 use App\Models\Pack;
-use App\Models\PackImage;
 use App\Models\PackItem;
 use App\Models\Product;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('an active pack renders its detail page', function () {
+    Storage::fake('public');
+
     $branch = Branch::factory()->create(['name' => 'Richmond Hub', 'slug' => 'richmond']);
     $pack = Pack::factory()->for($branch)->create([
         'name' => 'Carton Saver',
         'slug' => 'carton-saver',
-        'image' => 'https://cdn.test/cover.jpg',
         'subtotal' => '200.00',
         'pack_price' => '150.00',
         'quantity' => 6,
         'starts_at' => null,
         'ends_at' => now()->addWeek(),
     ]);
-    PackImage::factory()->for($pack)->create(['path' => 'https://cdn.test/gallery.jpg']);
+    $logo = public_path('images/storefront/logo.png');
+    $cover = $pack->addMedia($logo)->preservingOriginal()->usingFileName('cover.png')->toMediaCollection('image');
+    $gallery = $pack->addMedia($logo)->preservingOriginal()->usingFileName('gallery.png')->toMediaCollection('gallery');
     PackItem::factory()->for($pack)->for(Product::factory()->create(['name' => 'Gold 20s']))->create(['quantity' => 5]);
     PackItem::factory()->for($pack)->for(Product::factory()->create(['name' => 'Clipper Lighter']))->create(['quantity' => 1]);
     Pack::factory()->for($branch)->create();
@@ -35,7 +38,7 @@ test('an active pack renders its detail page', function () {
             ->where('pack.savings', '50.00')
             ->where('pack.discountPercent', 25)
             ->where('pack.branchName', 'Richmond Hub')
-            ->where('pack.images', ['https://cdn.test/cover.jpg', 'https://cdn.test/gallery.jpg'])
+            ->where('pack.images', [$cover->getUrl(), $gallery->getUrl()])
             ->where('pack.items.0.name', 'Gold 20s')
             ->where('pack.items.0.quantity', 5)
             ->where('pack.productCount', 2)

@@ -71,9 +71,8 @@ test('branch admin can update general settings without changing slug code or sta
         ->and($this->branch->address)->toBe('1 Updated St')
         ->and($this->branch->opening_time?->format('H:i'))->toBe('08:30')
         ->and($this->branch->closing_time?->format('H:i'))->toBe('22:00')
-        ->and($this->branch->logo)->not->toBeNull();
-
-    Storage::disk('public')->assertExists($this->branch->logo);
+        ->and($this->branch->hasMedia('logo'))->toBeTrue()
+        ->and($this->branch->getFirstMedia('logo')->mime_type)->toBe('image/webp');
 });
 
 test('branch manager can open general settings', function () {

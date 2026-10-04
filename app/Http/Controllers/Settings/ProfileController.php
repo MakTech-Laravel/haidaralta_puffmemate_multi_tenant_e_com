@@ -8,8 +8,7 @@ use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
 use App\Models\User;
-use App\Support\MediaUrl;
-use App\Support\PublicDiskMedia;
+use App\Services\Media\MediaUploadService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -17,6 +16,8 @@ use Inertia\Response;
 
 class ProfileController extends Controller
 {
+    public function __construct(private MediaUploadService $media) {}
+
     /**
      * Show the user's profile settings page.
      */
@@ -36,8 +37,8 @@ class ProfileController extends Controller
                 'name' => $user->name,
                 'phone' => $user->phone,
                 'email' => $user->email,
-                'avatar' => $user->avatar,
-                'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+                'avatar' => $user->hasMedia('avatar') ? 'avatar' : null,
+                'avatar_url' => $user->avatarUrl(),
             ] : null,
         ];
 
@@ -69,14 +70,14 @@ class ProfileController extends Controller
             $user->email_verified_at = null;
         }
 
-        $user->avatar = PublicDiskMedia::replace(
-            $user->avatar,
+        $user->save();
+
+        $this->media->syncSingle(
+            $user,
+            'avatar',
             $request->file('avatar'),
-            PublicDiskMedia::USER_AVATARS,
             $request->boolean('remove_avatar'),
         );
-
-        $user->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
 
@@ -97,7 +98,6 @@ class ProfileController extends Controller
         Auth::guard($guard)->logout();
 
         if ($user instanceof User) {
-            PublicDiskMedia::delete($user->avatar);
             $user->delete();
         }
 

@@ -42,6 +42,7 @@ class PackPortalPayload
         $products = Product::query()
             ->whereIn('id', $inventories->keys())
             ->where('status', true)
+            ->with('media')
             ->orderBy('name')
             ->orderBy('id')
             ->get();

@@ -95,11 +95,12 @@ class ShiftAssignmentDataTable extends AbstractDataTable
         $templateId = $this->shiftTemplateFilterId();
 
         return User::query()
-            ->select(['users.id', 'users.name', 'users.phone', 'users.avatar', 'users.user_type', 'users.branch_id'])
+            ->select(['users.id', 'users.name', 'users.phone', 'users.user_type', 'users.branch_id'])
             ->whereHas('shiftDays', function (Builder $days) use ($templateId): void {
                 $this->constrainDutyDays($days, $templateId);
             })
             ->with([
+                'media',
                 'shiftDays' => function ($days) use ($templateId): void {
                     $this->constrainDutyDays($days->getQuery(), $templateId);
                     $days->orderBy('duty_on');

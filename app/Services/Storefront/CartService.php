@@ -190,7 +190,7 @@ class CartService
     private function buildPayload(Request $request): array
     {
         $cart = $this->activeCart($request);
-        $cart->load(['items.product.categories:id,name,slug']);
+        $cart->load(['items.product.categories:id,name,slug', 'items.product.media']);
 
         $items = [];
         $subtotal = 0.0;
@@ -216,7 +216,7 @@ class CartService
                 'name' => $product->name,
                 'category' => $category?->name ?? 'Catalog',
                 'description' => $product->packSummary() ?? '',
-                'image' => MediaUrl::resolve($product->image) ?? '/images/storefront/logo.png',
+                'image' => $product->imageUrl(MediaUrl::DEFAULT_FALLBACK),
                 'unitPrice' => $unit,
                 'formattedUnitPrice' => '$'.number_format($unit, 2),
                 'compareAtUnitPrice' => $compareAt,

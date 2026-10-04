@@ -75,7 +75,9 @@ final class WorkforcePayload
 
         $user = self::assignablePeopleQuery($branchId, $userType)
             ->whereKey($userId)
-            ->first(['id', 'name', 'user_type', 'branch_id', 'avatar']);
+            ->first(['id', 'name', 'user_type', 'branch_id']);
+
+        $user?->loadMissing('media');
 
         return $user;
     }
@@ -89,7 +91,7 @@ final class WorkforcePayload
             'id' => $user->id,
             'name' => $user->name,
             'user_type' => $user->user_type->value,
-            'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+            'avatar_url' => $user->avatarUrl(),
         ];
     }
 
@@ -336,7 +338,7 @@ final class WorkforcePayload
      */
     public static function assignment(UserShiftAssignment $assignment, ?CarbonInterface $at = null): array
     {
-        $assignment->loadMissing(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar,branch_id']);
+        $assignment->loadMissing(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,branch_id', 'user.media']);
         $days = $assignment->normalizedDaysOfWeek();
         $template = $assignment->shiftTemplate;
         $moment = DateTimeFormat::at($at);
@@ -348,7 +350,7 @@ final class WorkforcePayload
             'user_type' => $assignment->user?->user_type?->value,
             'user_type_label' => $assignment->user?->user_type?->label(),
             'role_label' => self::roleLabelFor($assignment->user),
-            'avatar_url' => MediaUrl::resolve($assignment->user?->avatar, fallback: null),
+            'avatar_url' => $assignment->user?->avatarUrl(),
             'branch_id' => $assignment->branch_id,
             'branch_name' => $assignment->branch?->name,
             'shift_template_id' => $assignment->shift_template_id,
@@ -387,7 +389,7 @@ final class WorkforcePayload
             'phone' => $user->phone,
             'user_type' => $user->user_type?->value,
             'people_kind_label' => $peopleKindLabel,
-            'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+            'avatar_url' => $user->avatarUrl(),
             'branch_id' => $branchId ?? $user->branch_id,
             'assigned_dates_label' => ShiftDateRuns::compactMonthDayLabel($dates),
             'assigned_day_count' => count($dates),
@@ -400,7 +402,7 @@ final class WorkforcePayload
      */
     public static function assignedPerson(UserShiftAssignment $assignment): array
     {
-        $assignment->loadMissing(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type,avatar']);
+        $assignment->loadMissing(['shiftTemplate', 'branch:id,name,slug', 'user:id,name,user_type', 'user.media']);
         $template = $assignment->shiftTemplate;
         $startDate = $assignment->start_date->format('Y-m-d');
         $endDate = $assignment->end_date->format('Y-m-d');
@@ -410,7 +412,7 @@ final class WorkforcePayload
             'user_id' => $assignment->user_id,
             'user_name' => $assignment->user?->name,
             'user_type' => $assignment->user?->user_type?->value,
-            'avatar_url' => MediaUrl::resolve($assignment->user?->avatar, fallback: null),
+            'avatar_url' => $assignment->user?->avatarUrl(),
             'branch_id' => $assignment->branch_id,
             'branch_name' => $assignment->branch?->name,
             'shift_template_id' => $assignment->shift_template_id,
@@ -492,7 +494,7 @@ final class WorkforcePayload
         $moment = DateTimeFormat::at($at);
 
         $day = UserShiftDay::query()
-            ->with(['shiftTemplate', 'assignment.branch:id,name,slug', 'user:id,name,user_type,avatar,branch_id'])
+            ->with(['shiftTemplate', 'assignment.branch:id,name,slug', 'user:id,name,user_type,branch_id', 'user.media'])
             ->where('user_id', $user->id)
             ->onDuty()
             ->whereDate('duty_on', $moment->toDateString())
@@ -519,13 +521,13 @@ final class WorkforcePayload
      */
     public static function transfer(UserTransferHistory $history): array
     {
-        $history->loadMissing(['user:id,name,user_type,avatar', 'fromBranch:id,name,slug', 'toBranch:id,name,slug', 'transferredBy:id,name']);
+        $history->loadMissing(['user:id,name,user_type', 'user.media', 'fromBranch:id,name,slug', 'toBranch:id,name,slug', 'transferredBy:id,name']);
 
         return [
             'id' => $history->id,
             'user_id' => $history->user_id,
             'user_name' => $history->user?->name,
-            'avatar_url' => MediaUrl::resolve($history->user?->avatar, fallback: null),
+            'avatar_url' => $history->user?->avatarUrl(),
             'subject_type' => $history->subject_type->value,
             'subject_type_label' => $history->subject_type->label(),
             'transfer_type' => $history->transfer_type->value,
@@ -628,7 +630,14 @@ final class WorkforcePayload
         $moment = DateTimeFormat::at($at);
 
         $query = UserShiftDay::query()
-            ->with(['shiftTemplate', 'assignment.branch:id,name,slug', 'assignment.user:id,name,user_type,avatar,branch_id', 'user:id,name,user_type,avatar,branch_id'])
+            ->with([
+                'shiftTemplate',
+                'assignment.branch:id,name,slug',
+                'assignment.user:id,name,user_type,branch_id',
+                'assignment.user.media',
+                'user:id,name,user_type,branch_id',
+                'user.media',
+            ])
             ->onDuty()
             ->whereDate('duty_on', $moment->toDateString())
             ->whereHas('assignment', fn ($assignments) => $assignments->where('status', ShiftAssignmentStatus::Scheduled));
@@ -656,7 +665,7 @@ final class WorkforcePayload
                         'user_type' => $day->user?->user_type?->value,
                         'user_type_label' => $day->user?->user_type?->label(),
                         'role_label' => self::roleLabelFor($day->user),
-                        'avatar_url' => MediaUrl::resolve($day->user?->avatar, fallback: null),
+                        'avatar_url' => $day->user?->avatarUrl(),
                         'branch_id' => $day->branch_id,
                         'branch_name' => null,
                     ]
@@ -713,14 +722,15 @@ final class WorkforcePayload
                 });
             })
             ->orderBy('name')
-            ->get(['id', 'name', 'user_type', 'branch_id', 'avatar'])
+            ->with('media')
+            ->get(['id', 'name', 'user_type', 'branch_id'])
             ->map(fn (User $user): array => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'user_type' => $user->user_type->value,
                 'user_type_label' => $user->user_type->label(),
                 'branch_id' => $user->branch_id,
-                'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+                'avatar_url' => $user->avatarUrl(),
             ])
             ->values()
             ->all());
@@ -743,6 +753,7 @@ final class WorkforcePayload
         $userType = $peopleKind === 'driver' ? UserType::DRIVER : UserType::BRANCH;
 
         $paginator = self::assignablePeopleQuery($branchId, $userType)
+            ->with('media')
             ->when($term !== '', function ($query) use ($term): void {
                 $query->where('name', 'like', '%'.$term.'%');
             })
@@ -757,7 +768,7 @@ final class WorkforcePayload
                         'id' => $user->id,
                         'name' => $user->name,
                         'user_type' => $user->user_type->value,
-                        'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+                        'avatar_url' => $user->avatarUrl(),
                     ])
                     ->all(),
             ),
