@@ -1,5 +1,4 @@
 import { Head, router, useForm, useHttp, usePage } from '@inertiajs/react';
-import { format } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
 import {
     applyCoupon,
@@ -81,7 +80,7 @@ function checkoutCanPlaceOrder(
     }
 
     if (method?.requiresSlot) {
-        return filled(details.deliveryDate) && filled(details.timeSlotId);
+        return filled(details.timeSlotId);
     }
 
     return true;
@@ -112,9 +111,6 @@ export default function StorefrontCheckout({
         address_id: defaultAddressId ? String(defaultAddressId) : '',
         save_as_default: false,
         delivery_method: defaultMethod?.id ?? '',
-        delivery_date: defaultMethod?.requiresSlot
-            ? format(new Date(), 'yyyy-MM-dd')
-            : '',
         time_slot_id: defaultMethod?.requiresSlot
             ? (defaultMethod.timeSlots[0]?.id ?? '')
             : '',
@@ -155,7 +151,6 @@ export default function StorefrontCheckout({
         addressId: form.data.address_id,
         saveAsDefault: form.data.save_as_default,
         deliveryMethodId: form.data.delivery_method,
-        deliveryDate: form.data.delivery_date,
         timeSlotId: form.data.time_slot_id,
         paymentMethodId: form.data.payment_method,
     };
@@ -224,7 +219,6 @@ export default function StorefrontCheckout({
                     return {
                         ...current,
                         delivery_method: String(value),
-                        delivery_date: '',
                         time_slot_id: '',
                     };
                 }
@@ -236,8 +230,6 @@ export default function StorefrontCheckout({
                 return {
                     ...current,
                     delivery_method: String(value),
-                    delivery_date:
-                        current.delivery_date || format(new Date(), 'yyyy-MM-dd'),
                     time_slot_id: slotStillValid
                         ? current.time_slot_id
                         : (method.timeSlots[0]?.id ?? ''),
@@ -258,7 +250,6 @@ export default function StorefrontCheckout({
             addressId: 'address_id',
             saveAsDefault: 'save_as_default',
             deliveryMethodId: 'delivery_method',
-            deliveryDate: 'delivery_date',
             timeSlotId: 'time_slot_id',
             paymentMethodId: 'payment_method',
         };

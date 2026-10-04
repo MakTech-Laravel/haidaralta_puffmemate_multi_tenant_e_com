@@ -36,7 +36,10 @@ function customerOrderWithItem(User $customer, array $overrides = []): Order
         'variant_id' => null,
         'product_name_snapshot' => $product->name,
         'sku_snapshot' => $product->sku,
-        'product_snapshot' => ['name' => $product->name, 'image' => null],
+        'product_snapshot' => [
+            'name' => $product->name,
+            'image' => '/images/storefront/logo.png',
+        ],
         'quantity' => 2,
         'unit_price' => 30,
         'subtotal' => 60,
@@ -80,6 +83,12 @@ test('customer order detail never leaks branch or fulfillment data', function ()
         ->assertInertia(fn (Assert $page) => $page
             ->component('customer/orders/show')
             ->where('order.orderNumber', $order->order_number)
+            ->where('order.products.0.name', 'Test Product')
+            ->where('order.products.0.image', '/images/storefront/logo.png')
+            ->where('order.products.0.quantityLabel', 'Quantity x 2')
+            ->where('order.subtotalLabel', '$60.00')
+            ->where('order.deliveryFeeLabel', '$10.00')
+            ->where('order.totalLabel', '$70.00')
             ->missing('order.id')
             ->missing('order.branch')
             ->missing('order.fulfillments')

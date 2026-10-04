@@ -161,7 +161,7 @@ export default function StorefrontCheckoutConfirmation({
                                 </span>
                             </div>
 
-                            <ul className="mt-5 space-y-4">
+                            <ul className="border-border mt-5 max-h-56 space-y-4 overflow-y-auto overscroll-contain border-y py-4 pr-1">
                                 {order.items.map((item, index) => (
                                     <li
                                         key={`${item.name}-${index}`}

@@ -90,7 +90,9 @@ class OrderDataTable extends AbstractDataTable
             'fulfillment_branch' => $model->fulfillment?->branch?->name ?? '—',
             'total_label' => '$'.number_format((float) $model->total_amount, 2),
             'status' => $model->status->value,
+            'status_label' => $model->status->label(),
             'payment_status' => $model->payment_status->value,
+            'payment_status_label' => $model->payment_status->label(),
             'created_at' => $model->created_at?->toIso8601String(),
         ];
     }

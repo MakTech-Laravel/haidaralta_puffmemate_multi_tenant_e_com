@@ -28,7 +28,9 @@ type OrderRow = {
     fulfillment_branch: string;
     total_label: string;
     status: string;
+    status_label: string;
     payment_status: string;
+    payment_status_label: string;
 };
 
 export default function PlatformOrdersIndex({
@@ -112,9 +114,7 @@ export default function PlatformOrdersIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <Badge variant="secondary" className="capitalize">
-                        {row.original.status.replaceAll('_', ' ')}
-                    </Badge>
+                    <Badge variant="secondary">{row.original.status_label}</Badge>
                 ),
             },
             {
@@ -128,9 +128,8 @@ export default function PlatformOrdersIndex({
                                 ? 'default'
                                 : 'secondary'
                         }
-                        className="capitalize"
                     >
-                        {row.original.payment_status}
+                        {row.original.payment_status_label}
                     </Badge>
                 ),
             },
