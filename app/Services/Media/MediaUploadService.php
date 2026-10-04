@@ -20,6 +20,9 @@ class MediaUploadService
 
     /**
      * Replace or clear a single-file collection.
+     *
+     * A new upload always clears the collection first so the previous media
+     * row and disk files are deleted (file wins over remove).
      */
     public function syncSingle(
         HasMedia $model,
@@ -27,17 +30,19 @@ class MediaUploadService
         ?UploadedFile $file = null,
         bool $remove = false,
     ): ?Media {
+        if ($file !== null) {
+            $model->clearMediaCollection($collection);
+
+            return $this->attachUploadedFile($model, $collection, $file);
+        }
+
         if ($remove) {
             $model->clearMediaCollection($collection);
 
             return null;
         }
 
-        if ($file === null) {
-            return $model->getFirstMedia($collection);
-        }
-
-        return $this->attachUploadedFile($model, $collection, $file);
+        return $model->getFirstMedia($collection);
     }
 
     /**
