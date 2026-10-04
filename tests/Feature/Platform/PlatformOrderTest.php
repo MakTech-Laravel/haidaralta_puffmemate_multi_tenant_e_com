@@ -31,7 +31,9 @@ test('platform admin sees orders across every branch', function () {
     $orderOne = Order::factory()->create();
     OrderFulfillment::factory()->forOrder($orderOne)->create(['branch_id' => $sydney->id]);
 
-    $orderTwo = Order::factory()->create();
+    $orderTwo = Order::factory()->create([
+        'payment_status' => PaymentStatus::PendingCollection,
+    ]);
     OrderFulfillment::factory()->forOrder($orderTwo)->create(['branch_id' => $other->id]);
 
     $this->actingAs($admin, 'platform')
@@ -39,7 +41,10 @@ test('platform admin sees orders across every branch', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('platform/orders/index')
-            ->has('table.data', 2));
+            ->has('table.data', 2)
+            ->where('table.data.0.payment_status', PaymentStatus::PendingCollection->value)
+            ->where('table.data.0.payment_status_label', 'Pending collection')
+            ->has('table.data.0.status_label'));
 });
 
 test('platform order detail exposes the single fulfillment', function () {
@@ -55,7 +60,10 @@ test('platform order detail exposes the single fulfillment', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('platform/orders/show')
             ->has('order.fulfillments', 1)
-            ->has('order.drivers'));
+            ->has('order.drivers')
+            ->has('order.statusLabel')
+            ->has('order.paymentStatusLabel')
+            ->where('order.paymentStatusLabel', $order->payment_status->label()));
 });
 
 test('platform admin can update any branchs fulfillment status', function () {

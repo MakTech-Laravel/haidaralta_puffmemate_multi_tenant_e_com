@@ -1,5 +1,6 @@
 export type OrderTrackProduct = {
     name: string;
+    image: string;
     quantityLabel: string;
     priceLabel: string;
 };
@@ -55,6 +56,8 @@ export type CustomerOrderDetail = {
     date: string;
     products: OrderTrackProduct[];
     subtotalLabel: string;
+    discountLabel?: string | null;
+    couponCode?: string | null;
     deliveryFeeLabel: string;
     totalLabel: string;
     shippingAddress: OrderTrackShippingAddress;

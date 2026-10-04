@@ -209,6 +209,7 @@ class OrderController extends Controller
                 'customerName' => $order->customer?->name ?? 'Customer',
                 'paymentMethod' => $order->payment_method,
                 'paymentStatus' => $order->payment_status->value,
+                'paymentStatusLabel' => $order->payment_status->label(),
                 'shippingAddress' => $order->shipping_address_snapshot,
             ],
             'items' => $fulfillment->items->map(fn ($item): array => [
