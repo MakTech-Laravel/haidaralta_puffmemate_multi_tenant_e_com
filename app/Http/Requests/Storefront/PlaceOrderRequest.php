@@ -75,10 +75,6 @@ class PlaceOrderRequest extends FormRequest
                 return;
             }
 
-            if (blank($this->input('delivery_date'))) {
-                $validator->errors()->add('delivery_date', 'Choose a delivery date.');
-            }
-
             if (blank($this->input('time_slot_id'))) {
                 $validator->errors()->add('time_slot_id', 'Choose a time slot.');
             }

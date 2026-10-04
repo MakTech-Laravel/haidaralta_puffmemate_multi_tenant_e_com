@@ -96,6 +96,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/branch/**, resources/js/components/branch/product-inventory-panel.tsx | .ai/rules/js-components-branch.md |
 | resources/js/components/customer/product-to-review-*.tsx, resources/js/components/customer/write-product-review-form.tsx, resources/js/components/customer/order-list.tsx | .ai/rules/js-components-customer.md |
 | app/Http/Controllers/Driver/OrderController.php,resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/js-components-driver.md |
+| resources/js/pages/storefront/checkout*.tsx,resources/js/components/storefront/checkout/** | .ai/rules/js-components-storefront-checkout.md |
 | resources/js/components/manage-two-factor.tsx,resources/js/components/manage-passkeys.tsx | .ai/rules/js-components.md |
 | app/Services/Conversation/**,app/Events/Conversation*,resources/js/components/conversation/**,resources/js/hooks/use-chat-scroll.ts | .ai/rules/js-hooks.md |
 | resources/js/lib/pwa.ts, resources/js/lib/fcm.ts | .ai/rules/js-lib.md |
@@ -114,12 +115,14 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
 | app/Services/Notifications/** | .ai/rules/notifications.md |
 | app/Services/Order/OrderAllocationEngine.php, app/Actions/Order/PlaceOrderAction.php | .ai/rules/order.md |
+| app/Http/Controllers/Customer/OrderController.php,resources/js/pages/customer/orders/show.tsx,resources/js/components/customer/order-track-*.tsx | .ai/rules/orders-js-components-customer.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/orders-js-components-driver.md |
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx | .ai/rules/orders.md |
 | resources/js/pages/branch/catalog/packs-saves/** | .ai/rules/packs-saves.md |
 | app/Services/Driver/**,app/Http/Controllers/Branch/DriverProductAssignController.php,resources/js/pages/branch/drivers/assign-products.tsx | .ai/rules/pages-branch-drivers.md |
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |
 | resources/js/pages/platform/branch-staff/** | .ai/rules/pages-platform-branch-staff.md |
+| app/Http/Controllers/Platform/OrderController.php,resources/js/pages/platform/orders/show.tsx | .ai/rules/pages-platform-orders.md |
 | app/Http/Controllers/Platform/WholesaleInquiryController.php,resources/js/pages/platform/wholesale-inquiries/**,routes/platform.php | .ai/rules/pages-platform-wholesale-inquiries.md |
 | resources/js/layouts/settings/**,resources/js/pages/settings/**,routes/settings.php | .ai/rules/pages-settings.md |
 | resources/js/pages/storefront/category.tsx, resources/js/pages/storefront/checkout.tsx, resources/js/pages/storefront/{shop,category,product}.tsx | .ai/rules/pages-storefront.md |
@@ -132,6 +135,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/staff-*.tsx,resources/js/pages/platform/branch-staff/**, resources/js/components/admin/transfer-employee-sheet.tsx,resources/js/pages/platform/branch-staff/** | .ai/rules/platform-branch-staff.md |
 | app/Http/Controllers/{Platform,Branch}/**, app/Http/Controllers/{Platform,Branch}/*Driver*.php | .ai/rules/platform-branch.md |
 | resources/js/lib/stock-query.ts, resources/js/pages/**/products/index.tsx, resources/js/pages/platform/catalog/products/branches.tsx | .ai/rules/platform-catalog-products.md |
+| app/DataTables/OrderDataTable.php,resources/js/pages/platform/orders/index.tsx | .ai/rules/platform-orders.md |
 | app/Models/BranchArea*.php,app/Services/Branch/BranchAreaService.php,app/Http/Controllers/Platform/BranchAreasController.php,resources/js/components/admin/transfer-branch-area-sheet.tsx | .ai/rules/platform-js-components-admin.md |
 | app/Http/Controllers/Platform/DriverProductAssignController.php,app/Http/Controllers/Platform/Reports/ProductAssignTransactionController.php,resources/js/pages/platform/drivers/assign-products.tsx,resources/js/pages/platform/reports/product-assign-transactions.tsx | .ai/rules/platform-reports.md |
 | resources/js/components/admin/shift-*-empty-state.tsx,resources/js/pages/platform/shifts/assign.tsx | .ai/rules/platform-shifts.md |

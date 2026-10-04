@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
 use App\Services\Order\FulfillmentStatusService;
+use App\Support\MediaUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -96,12 +97,21 @@ class OrderController extends Controller
                 : null,
             'canCancel' => $order->status->allowsCustomerCancel(),
             'date' => $order->created_at->format('d M Y'),
-            'products' => $order->items->map(fn ($item): array => [
-                'name' => $item->product_name_snapshot,
-                'quantityLabel' => $item->quantity === 1 ? '1 Unit' : $item->quantity.' Units',
-                'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
-            ])->all(),
+            'products' => $order->items->map(function ($item): array {
+                $snapshot = is_array($item->product_snapshot) ? $item->product_snapshot : [];
+
+                return [
+                    'name' => $item->product_name_snapshot,
+                    'image' => MediaUrl::resolve($snapshot['image'] ?? null),
+                    'quantityLabel' => 'Quantity x '.$item->quantity,
+                    'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
+                ];
+            })->all(),
             'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
+            'discountLabel' => (float) $order->discount > 0
+                ? '$'.number_format((float) $order->discount, 2)
+                : null,
+            'couponCode' => $order->coupon_code,
             'deliveryFeeLabel' => '$'.number_format((float) $order->delivery_fee, 2),
             'totalLabel' => '$'.number_format((float) $order->total_amount, 2),
             'shippingAddress' => [

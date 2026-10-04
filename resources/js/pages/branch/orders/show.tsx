@@ -48,6 +48,7 @@ type FulfillmentDetail = {
         customerName: string;
         paymentMethod: string;
         paymentStatus: string;
+        paymentStatusLabel: string;
         shippingAddress: {
             name?: string;
             address?: string;
@@ -343,8 +344,8 @@ export default function BranchOrderShow({
                                 </p>
                                 <p className="text-sm">
                                     Order payment status:{' '}
-                                    <span className="font-medium capitalize">
-                                        {fulfillment.order.paymentStatus}
+                                    <span className="font-medium">
+                                        {fulfillment.order.paymentStatusLabel}
                                     </span>
                                 </p>
                                 {fulfillment.isPaid ? (

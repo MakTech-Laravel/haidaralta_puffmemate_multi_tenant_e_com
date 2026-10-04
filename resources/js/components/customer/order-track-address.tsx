@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { OrderTrackShippingAddress } from '@/components/customer/order-track-types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type OrderTrackAddressProps = {
     address: OrderTrackShippingAddress;
@@ -7,27 +7,20 @@ type OrderTrackAddressProps = {
 
 export function OrderTrackAddress({ address }: OrderTrackAddressProps) {
     return (
-        <Card className="gap-3 rounded-sm border-none py-5 shadow-none">
+        <Card className="bg-background gap-3 rounded-none border-none py-5 shadow-none">
             <CardHeader className="px-5 pb-0">
                 <CardTitle className="text-foreground text-lg font-semibold sm:text-xl">
-                    Shipping Address
+                    Shipping address
                 </CardTitle>
             </CardHeader>
-            <CardContent className="text-muted-foreground space-y-0.5 px-5 text-sm leading-relaxed">
-                <p className="text-muted-foreground text-sm font-normal">
-                    {address.name}
-                </p>
+            <CardContent className="space-y-1 px-5 text-sm leading-relaxed">
+                <p className="text-foreground font-semibold">{address.name}</p>
                 {address.lines.map((line) => (
-                    <p
-                        key={line}
-                        className="text-muted-foreground text-sm font-normal"
-                    >
+                    <p key={line} className="text-muted-foreground">
                         {line}
                     </p>
                 ))}
-                <p className="text-muted-foreground text-sm font-normal">
-                    {address.mobile}
-                </p>
+                <p className="text-muted-foreground">{address.mobile}</p>
             </CardContent>
         </Card>
     );

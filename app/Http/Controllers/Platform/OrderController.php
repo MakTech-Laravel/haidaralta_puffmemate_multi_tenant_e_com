@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Platform;
 
 use App\DataTables\OrderDataTable;
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StockTransferStatus;
 use App\Http\Controllers\Controller;
@@ -153,15 +154,32 @@ class OrderController extends Controller
     {
         $fulfillment = $order->fulfillment;
 
+        $paymentOptions = collect(PaymentStatus::actionableOptions());
+
+        if ($paymentOptions->doesntContain(fn (array $option): bool => $option['value'] === $order->payment_status->value)) {
+            $paymentOptions->prepend([
+                'value' => $order->payment_status->value,
+                'label' => $order->payment_status->label(),
+            ]);
+        }
+
         return [
             'id' => $order->id,
             'orderNumber' => $order->order_number,
             'status' => $order->status->value,
+            'statusLabel' => $order->status->label(),
             'paymentStatus' => $order->payment_status->value,
-            'paymentStatusOptions' => PaymentStatus::actionableOptions(),
+            'paymentStatusLabel' => $order->payment_status->label(),
+            'paymentStatusOptions' => $paymentOptions->values()->all(),
+            'paymentMethod' => $order->payment_method,
             'customerName' => $order->customer?->name ?? 'Customer',
+            'placedAt' => $order->created_at?->format('d M Y, h:i A'),
             'totalLabel' => '$'.number_format((float) $order->total_amount, 2),
             'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
+            'discountLabel' => (float) $order->discount > 0
+                ? '$'.number_format((float) $order->discount, 2)
+                : null,
+            'couponCode' => $order->coupon_code,
             'deliveryFeeLabel' => '$'.number_format((float) $order->delivery_fee, 2),
             'shippingAddress' => $order->shipping_address_snapshot,
             'drivers' => $fulfillment === null
@@ -175,6 +193,7 @@ class OrderController extends Controller
                 'fulfillmentNumber' => $row->fulfillment_number,
                 'branchName' => $row->branch->name,
                 'status' => $row->status->value,
+                'statusLabel' => $row->status->label(),
                 'statusOptions' => collect([$row->status, ...$row->status->staffNext()])
                     ->unique(fn (FulfillmentStatus $status): string => $status->value)
                     ->map(fn (FulfillmentStatus $status): array => [
@@ -192,12 +211,16 @@ class OrderController extends Controller
                 'canReschedule' => $row->status === FulfillmentStatus::DeliveryFailed,
                 'canReturn' => $row->status === FulfillmentStatus::DeliveryFailed,
                 'canConfirmReturn' => $row->status === FulfillmentStatus::Returning,
-                'items' => $row->items->map(fn ($item): array => [
-                    'name' => $item->product_name_snapshot,
-                    'image' => MediaUrl::resolve($item->product_snapshot['image'] ?? null),
-                    'quantity' => $item->quantity,
-                    'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),
-                ])->all(),
+                'items' => $row->items->map(function ($item): array {
+                    $snapshot = is_array($item->product_snapshot) ? $item->product_snapshot : [];
+
+                    return [
+                        'name' => $item->product_name_snapshot,
+                        'image' => MediaUrl::resolve($snapshot['image'] ?? null),
+                        'quantity' => $item->quantity,
+                        'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),
+                    ];
+                })->all(),
                 'transfers' => $row->stockTransfers->map(fn (StockTransfer $transfer): array => [
                     'id' => $transfer->id,
                     'status' => $transfer->status->value,
@@ -216,7 +239,9 @@ class OrderController extends Controller
                 ])->all(),
             ])->all(),
             'timeline' => $order->statusHistories->map(fn ($row): array => [
-                'label' => $row->new_status,
+                'label' => OrderStatus::tryFrom((string) $row->new_status)?->label()
+                    ?? FulfillmentStatus::tryFrom((string) $row->new_status)?->label()
+                    ?? (string) $row->new_status,
                 'detail' => $row->created_at->format('d M Y, h:i A'),
                 'comment' => $row->comment,
             ])->all(),

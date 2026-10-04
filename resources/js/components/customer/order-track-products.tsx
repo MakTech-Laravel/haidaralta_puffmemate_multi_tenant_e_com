@@ -1,73 +1,92 @@
 import type { OrderTrackProduct } from '@/components/customer/order-track-types';
+import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 
 type OrderTrackProductsProps = {
     products: OrderTrackProduct[];
+    subtotalLabel: string;
+    discountLabel?: string | null;
+    couponCode?: string | null;
+    deliveryFeeLabel: string;
     totalLabel: string;
 };
 
 export function OrderTrackProducts({
     products,
+    subtotalLabel,
+    discountLabel,
+    couponCode,
+    deliveryFeeLabel,
     totalLabel,
 }: OrderTrackProductsProps) {
     return (
-        <Card className="gap-4 rounded-xs border-none py-5 shadow-none">
-            <CardHeader className="px-5 pb-0">
+        <Card className="bg-background gap-0 rounded-none border-none py-5 shadow-none">
+            <CardHeader className="flex flex-row items-center justify-between gap-3 px-5 pb-0">
                 <CardTitle className="text-foreground text-lg font-semibold sm:text-xl">
                     Items
                 </CardTitle>
+                <span className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
+                    {products.length} item{products.length === 1 ? '' : 's'}
+                </span>
             </CardHeader>
             <CardContent className="px-5">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                            <TableHead className="text-muted-foreground h-9 px-0 text-sm font-normal">
-                                Product Name
-                            </TableHead>
-                            <TableHead className="text-muted-foreground h-9 px-0 text-sm font-normal">
-                                Quantity
-                            </TableHead>
-                            <TableHead className="text-muted-foreground h-9 px-0 text-right text-sm font-normal">
-                                Price
-                            </TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {products.map((product) => (
-                            <TableRow
-                                key={`${product.name}-${product.quantityLabel}`}
-                                className="hover:bg-transparent"
-                            >
-                                <TableCell className="text-foreground px-0 py-3 text-sm font-normal whitespace-normal">
+                <ul className="border-border mt-5 max-h-72 space-y-4 overflow-y-auto overscroll-contain border-y py-4 pr-1">
+                    {products.map((product, index) => (
+                        <li
+                            key={`${product.name}-${index}`}
+                            className="flex items-center gap-3"
+                        >
+                            <div className="bg-muted size-14 shrink-0 overflow-hidden rounded-md">
+                                <StorefrontProductImage
+                                    src={product.image}
+                                    alt={product.name}
+                                />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-foreground truncate text-sm font-semibold">
                                     {product.name}
-                                </TableCell>
-                                <TableCell className="text-foreground px-0 py-3 text-sm font-normal">
+                                </p>
+                                <p className="text-muted-foreground text-xs">
                                     {product.quantityLabel}
-                                </TableCell>
-                                <TableCell className="text-foreground px-0 py-3 text-right text-sm font-normal">
-                                    {product.priceLabel}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                                </p>
+                            </div>
+                            <p className="text-foreground shrink-0 text-sm font-bold">
+                                {product.priceLabel}
+                            </p>
+                        </li>
+                    ))}
+                </ul>
 
-                <Separator className="my-4" />
+                <dl className="mt-5 space-y-2.5">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                        <dt className="text-muted-foreground">Subtotal</dt>
+                        <dd className="text-foreground font-semibold">
+                            {subtotalLabel}
+                        </dd>
+                    </div>
+                    {discountLabel ? (
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                            <dt className="text-muted-foreground">
+                                {couponCode ?? 'Discount'}
+                            </dt>
+                            <dd className="text-foreground font-semibold">
+                                {discountLabel}
+                            </dd>
+                        </div>
+                    ) : null}
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                        <dt className="text-muted-foreground">Delivery</dt>
+                        <dd className="text-foreground font-bold">
+                            {deliveryFeeLabel}
+                        </dd>
+                    </div>
+                </dl>
 
-                <div className="flex items-center justify-between gap-4">
-                    <span className="text-foreground text-xl font-bold">
+                <div className="border-border mt-4 flex items-end justify-between gap-3 border-t pt-4">
+                    <span className="text-foreground text-base font-bold">
                         Total
                     </span>
-                    <span className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
+                    <span className="text-foreground text-2xl font-bold tracking-tight">
                         {totalLabel}
                     </span>
                 </div>
