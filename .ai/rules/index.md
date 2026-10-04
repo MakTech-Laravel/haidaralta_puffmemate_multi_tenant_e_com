@@ -44,6 +44,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/storefront/shop-filters-sidebar.tsx, resources/js/components/storefront/product-card.tsx, resources/js/components/storefront/pack-card.tsx, resources/js/components/storefront/** | .ai/rules/components-storefront.md |
 | resources/js/components/file-upload.tsx, resources/js/components/product-gallery.tsx, resources/js/components/permission-selector.tsx | .ai/rules/components.md |
 | resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php,resources/js/components/{platform,branch}/nav.ts | .ai/rules/componentsplatformbranch.md |
+| app/Services/Media/**,app/Models/Concerns/InteractsWithAppMedia.php,app/Support/MediaUrl.php | .ai/rules/concerns-support.md |
 | config/*.php, config/scout.php | .ai/rules/config.md |
 | app/Http/Controllers/**/ContactInquiryController.php,app/Http/Requests/Storefront/StoreContactInquiryRequest.php,resources/js/components/storefront/contact/**,resources/js/pages/platform/contact-inquiries/**,routes/public.php,routes/platform.php | .ai/rules/contact-inquiries.md |
 | app/Models/Branch.php,app/Http/Controllers/Branch/** | .ai/rules/controllers-branch.md |

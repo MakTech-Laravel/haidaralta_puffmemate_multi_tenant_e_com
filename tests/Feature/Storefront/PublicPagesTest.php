@@ -6,6 +6,7 @@ use App\Models\CmsPage;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\Cms\CmsPageService;
+use App\Support\MediaUrl;
 use App\Support\Storefront\StorefrontCatalog;
 use Database\Seeders\ApplicationSettingsSeeder;
 use Database\Seeders\BranchSeeder;
@@ -14,6 +15,7 @@ use Database\Seeders\CmsPageSeeder;
 use Database\Seeders\HomeBannerSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -71,23 +73,26 @@ test('storefront home shares featured categories and tagged products', function 
 });
 
 test('storefront home featured categories come from the catalog database', function () {
+    Storage::fake('public');
+
     Category::query()->update(['featured' => false]);
 
-    Category::factory()->create([
+    $alpha = Category::factory()->create([
         'name' => 'Featured Alpha',
         'slug' => 'featured-alpha',
         'status' => true,
         'featured' => true,
         'slogan' => 'Alpha slogan',
-        'image' => '/images/storefront/category-cigarettes.png',
     ]);
+    $alpha->addMedia(public_path('images/storefront/category-cigarettes.png'))
+        ->preservingOriginal()
+        ->toMediaCollection('image');
     Category::factory()->create([
         'name' => 'Featured Beta',
         'slug' => 'featured-beta',
         'status' => true,
         'featured' => true,
         'slogan' => 'Beta slogan',
-        'image' => '/images/storefront/category-vapes.png',
     ]);
     Category::factory()->create([
         'name' => 'Not Featured',
@@ -105,6 +110,8 @@ test('storefront home featured categories come from the catalog database', funct
             ->where('featuredCategories.0.name', 'Featured Alpha')
             ->where('featuredCategories.0.description', 'Alpha slogan')
             ->where('featuredCategories.0.href', '/shop/featured-alpha')
+            ->where('featuredCategories.0.image', $alpha->fresh()->getFirstMediaUrl('image'))
+            ->where('featuredCategories.1.image', MediaUrl::DEFAULT_FALLBACK)
             ->where('featuredCategories.0.wide', false)
             ->where('featuredCategories.1.id', 'featured-beta')
             ->where('featuredCategories.1.wide', false));

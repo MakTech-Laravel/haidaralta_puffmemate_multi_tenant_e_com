@@ -4,7 +4,6 @@ use App\Enums\PermissionEnum;
 use App\Events\DatabaseBackupHistoryUpdated;
 use App\Models\Conversation;
 use App\Models\User;
-use App\Support\MediaUrl;
 use App\Support\PlatformTeamResolver;
 use App\Support\PortalAuth;
 use Illuminate\Support\Facades\Broadcast;
@@ -67,7 +66,7 @@ Broadcast::channel(
         return [
             'id' => (int) $user->id,
             'name' => $user->name,
-            'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+            'avatar_url' => $user->avatarUrl(),
         ];
     },
     ['guards' => [...PortalAuth::PORTAL_GUARDS, 'web']],

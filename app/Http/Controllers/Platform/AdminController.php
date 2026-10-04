@@ -12,7 +12,6 @@ use App\Http\Requests\Platform\UpdatePlatformAdminRequest;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\Platform\PlatformAdminService;
-use App\Support\MediaUrl;
 use App\Support\PlatformTeamResolver;
 use App\Support\SuperAdmin;
 use App\Support\Toast;
@@ -183,8 +182,8 @@ class AdminController extends Controller
             'name' => $user->name,
             'phone' => $user->phone,
             'email' => $user->email,
-            'avatar' => $user->avatar,
-            'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+            'avatar' => $user->hasMedia('avatar') ? 'avatar' : null,
+            'avatar_url' => $user->avatarUrl(),
             'is_active' => $user->is_active,
             'roles' => $user->getRoleNames()->values()->all(),
             'phone_verified_at' => $user->phone_verified_at?->toIso8601String(),

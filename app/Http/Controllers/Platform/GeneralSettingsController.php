@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\UpdateGeneralSettingsRequest;
+use App\Models\ApplicationSetting;
 use App\Services\Application\ApplicationSettingsService;
-use App\Support\MediaUrl;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -30,18 +30,12 @@ class GeneralSettingsController extends Controller
                 'background_color' => $current->background_color,
                 'date_format' => $current->date_format,
                 'time_format' => $current->time_format,
-                'logo_path' => $current->logo_path,
-                'logo_url' => MediaUrl::resolve($current->logo_path, fallback: null),
-                'favicon_path' => $current->favicon_path,
-                'favicon_url' => MediaUrl::resolve($current->favicon_path, fallback: null),
-                'pwa_icon_192_path' => $current->pwa_icon_192_path,
-                'pwa_icon_192_url' => MediaUrl::resolve($current->pwa_icon_192_path, fallback: null),
-                'pwa_icon_512_path' => $current->pwa_icon_512_path,
-                'pwa_icon_512_url' => MediaUrl::resolve($current->pwa_icon_512_path, fallback: null),
-                'pwa_maskable_path' => $current->pwa_maskable_path,
-                'pwa_maskable_url' => MediaUrl::resolve($current->pwa_maskable_path, fallback: null),
-                'apple_touch_icon_path' => $current->apple_touch_icon_path,
-                'apple_touch_icon_url' => MediaUrl::resolve($current->apple_touch_icon_path, fallback: null),
+                'logo_url' => $this->settings->mediaUrl(ApplicationSetting::LOGO_COLLECTION),
+                'favicon_url' => $this->settings->mediaUrl(ApplicationSetting::FAVICON_COLLECTION),
+                'pwa_icon_192_url' => $this->settings->mediaUrl(ApplicationSetting::PWA_192_COLLECTION),
+                'pwa_icon_512_url' => $this->settings->mediaUrl(ApplicationSetting::PWA_512_COLLECTION),
+                'pwa_maskable_url' => $this->settings->mediaUrl(ApplicationSetting::PWA_MASKABLE_COLLECTION),
+                'apple_touch_icon_url' => $this->settings->mediaUrl(ApplicationSetting::APPLE_TOUCH_COLLECTION),
             ],
             'dateFormatPresets' => ApplicationSettingsService::DATE_FORMAT_PRESETS,
             'timeFormatPresets' => ApplicationSettingsService::TIME_FORMAT_PRESETS,

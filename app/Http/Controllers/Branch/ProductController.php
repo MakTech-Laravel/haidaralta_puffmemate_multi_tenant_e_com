@@ -15,13 +15,13 @@ use App\Http\Requests\Branch\UpsertBranchProductPriceRequest;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductSuggestionService;
 use App\Services\Inventory\BranchPricingService;
 use App\Services\Inventory\InventoryService;
+use App\Support\CatalogMediaPayload;
 use App\Support\CatalogReturnTo;
 use App\Support\ProductManageRedirect;
 use App\Support\ProductSpecifications;
@@ -135,7 +135,7 @@ class ProductController extends Controller
     public function show(string $branchSlug, Product $product): Response
     {
         $branch = $this->currentBranch();
-        $product->load(['categories:id,name,slug', 'images', 'creator:id,name']);
+        $product->load(['categories:id,name,slug', 'media', 'creator:id,name']);
 
         return Inertia::render('branch/catalog/products/show', [
             'branch' => $branch->toPortalContext(),
@@ -146,7 +146,7 @@ class ProductController extends Controller
     public function edit(string $branchSlug, Product $product): Response
     {
         $branch = $this->currentBranch();
-        $product->load(['categories:id,name,slug', 'images']);
+        $product->load(['categories:id,name,slug', 'media']);
 
         return Inertia::render('branch/catalog/products/edit', [
             'branch' => $branch->toPortalContext(),
@@ -163,22 +163,13 @@ class ProductController extends Controller
                 'pack_unit' => $product->pack_unit,
                 'tags' => $product->tags ?? [],
                 'specifications' => $product->specifications ?? [],
-                'image' => $product->image,
+                'image' => CatalogMediaPayload::fileName($product),
                 'image_url' => $product->imageUrl(),
                 'color_code' => $product->color_code,
                 'selling_price' => $product->selling_price,
                 'regular_price' => $product->regular_price,
                 'status' => (bool) $product->status,
-                'gallery' => $product->images
-                    ->map(fn (ProductImage $image): array => [
-                        'id' => $image->id,
-                        'path' => $image->path,
-                        'url' => $image->url(),
-                        'sort_order' => $image->sort_order,
-                        'mime_type' => 'image/jpeg',
-                    ])
-                    ->values()
-                    ->all(),
+                'gallery' => CatalogMediaPayload::gallery($product),
             ],
             'categoryOptions' => Category::query()
                 ->orderBy('name')
@@ -370,17 +361,7 @@ class ProductController extends Controller
             'created_at' => $product->created_at?->toIso8601String(),
             'updated_at' => $product->updated_at?->toIso8601String(),
             'created_by_name' => $product->creator?->name,
-            'gallery' => $product->relationLoaded('images')
-                ? $product->images
-                    ->map(fn (ProductImage $image): array => [
-                        'id' => $image->id,
-                        'path' => $image->path,
-                        'url' => $image->url(),
-                        'sort_order' => $image->sort_order,
-                    ])
-                    ->values()
-                    ->all()
-                : [],
+            'gallery' => CatalogMediaPayload::gallery($product),
         ];
     }
 

@@ -7,15 +7,16 @@ use App\Enums\UserType;
 use App\Exceptions\BranchAlreadyHasSuperAdminException;
 use App\Models\Branch;
 use App\Models\User;
-use App\Support\MediaUrl;
+use App\Services\Media\MediaUploadService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\PermissionRegistrar;
 
 class BranchService
 {
+    public function __construct(private MediaUploadService $media) {}
+
     public function create(array $data, ?UploadedFile $logo = null): Branch
     {
         return DB::transaction(function () use ($data, $logo): Branch {
@@ -45,7 +46,6 @@ class BranchService
             'name' => $data['name'],
             'slug' => $data['slug'],
             'code' => $data['code'],
-            'logo' => $this->storeLogo($logo),
             'phone' => $data['phone'] ?? null,
             'email' => $data['email'] ?? null,
             'address' => $data['address'] ?? null,
@@ -56,6 +56,8 @@ class BranchService
             'closing_time' => $data['closing_time'] ?? null,
             'status' => $data['status'] ?? true,
         ]);
+
+        $this->media->syncSingle($branch, 'logo', $logo);
 
         app(RolesAndPermissionsSeeder::class)->seedBranchRolesForBranch($branch);
 
@@ -64,21 +66,10 @@ class BranchService
 
     public function update(Branch $branch, array $data, ?UploadedFile $logo = null, bool $removeLogo = false): Branch
     {
-        $logoPath = $branch->logo;
-
-        if ($removeLogo) {
-            $this->deleteLogo($logoPath);
-            $logoPath = null;
-        } elseif ($logo !== null) {
-            $this->deleteLogo($logoPath);
-            $logoPath = $this->storeLogo($logo);
-        }
-
         $branch->update([
             'name' => $data['name'],
             'slug' => $data['slug'],
             'code' => $data['code'],
-            'logo' => $logoPath,
             'phone' => $data['phone'] ?? null,
             'email' => $data['email'] ?? null,
             'address' => $data['address'] ?? null,
@@ -89,6 +80,8 @@ class BranchService
             'closing_time' => $data['closing_time'] ?? null,
             'status' => $data['status'] ?? true,
         ]);
+
+        $this->media->syncSingle($branch, 'logo', $logo, $removeLogo);
 
         return $branch->refresh();
     }
@@ -171,30 +164,11 @@ class BranchService
 
     public function delete(Branch $branch): void
     {
-        $this->deleteLogo($branch->logo);
         $branch->delete();
     }
 
-    public function logoUrl(?string $path): ?string
+    public function logoUrl(Branch $branch): ?string
     {
-        return MediaUrl::resolve($path, fallback: null);
-    }
-
-    private function storeLogo(?UploadedFile $file): ?string
-    {
-        if ($file === null) {
-            return null;
-        }
-
-        return $file->store('branches', 'public');
-    }
-
-    private function deleteLogo(?string $path): void
-    {
-        if ($path === null || $path === '' || ! str_contains($path, '/')) {
-            return;
-        }
-
-        Storage::disk('public')->delete($path);
+        return $branch->logoUrl();
     }
 }

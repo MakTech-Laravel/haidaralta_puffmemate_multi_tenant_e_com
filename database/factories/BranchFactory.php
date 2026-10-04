@@ -24,7 +24,6 @@ class BranchFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
             'code' => strtoupper(fake()->unique()->bothify('BR-###??')),
-            'logo' => null,
             'phone' => fake()->optional()->phoneNumber(),
             'email' => fake()->optional()->companyEmail(),
             'address' => fake()->optional()->address(),

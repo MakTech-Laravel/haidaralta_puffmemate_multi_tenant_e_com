@@ -137,7 +137,7 @@ class ConversationService
             return $message;
         });
 
-        $message->load(['sender:id,name,avatar', 'attachments']);
+        $message->load(['sender:id,name', 'sender.media', 'attachments']);
 
         broadcast(new MessageCreated($message))->toOthers();
         $this->notifyInbox($conversation, $message);
@@ -189,7 +189,7 @@ class ConversationService
         $conversation->refresh();
 
         if ($systemMessage instanceof Message) {
-            $systemMessage->load(['sender:id,name,avatar', 'attachments']);
+            $systemMessage->load(['sender:id,name', 'sender.media', 'attachments']);
 
             broadcast(new MessageCreated($systemMessage));
             broadcast(new ConversationClosed($conversation));

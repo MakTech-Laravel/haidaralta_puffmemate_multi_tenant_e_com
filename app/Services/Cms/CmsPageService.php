@@ -3,10 +3,11 @@
 namespace App\Services\Cms;
 
 use App\Models\CmsPage;
+use App\Services\Media\MediaUploadService;
 use App\Support\Cms\CmsPageDefaults;
 use App\Support\MediaUrl;
-use App\Support\PublicDiskMedia;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
@@ -15,7 +16,9 @@ class CmsPageService
 {
     public const CACHE_PREFIX = 'cms_page.';
 
-    public const MEDIA_DIRECTORY = 'cms';
+    public function __construct(
+        private readonly MediaUploadService $media,
+    ) {}
 
     /**
      * @return Collection<int, CmsPage>
@@ -90,21 +93,22 @@ class CmsPageService
         }
 
         $payload = $this->normalizePayload($slug, $data['payload'] ?? []);
-        $directory = self::MEDIA_DIRECTORY.'/'.$slug;
 
         $payload = $this->applyImageUpload(
+            $page,
             $payload,
             ['hero', 'image'],
+            CmsPage::HERO_COLLECTION,
             $heroImage,
-            $directory.'/hero',
             (bool) ($data['remove_hero_image'] ?? false),
         );
 
         $payload = $this->applyImageUpload(
+            $page,
             $payload,
             ['who_we_are', 'mediaImage'],
+            CmsPage::MEDIA_COLLECTION,
             $mediaImage,
-            $directory.'/media',
             (bool) ($data['remove_media_image'] ?? false),
         );
 
@@ -143,7 +147,7 @@ class CmsPageService
             'meta_title' => $page->meta_title,
             'meta_description' => $page->meta_description,
             'is_published' => $page->is_published,
-            'payload' => $this->enrichPayloadForForm($page->payload ?? []),
+            'payload' => $this->enrichPayloadForForm($page, $page->payload ?? []),
             'updated_at' => $page->updated_at?->toIso8601String(),
         ];
     }
@@ -160,7 +164,7 @@ class CmsPageService
     public function publicPayload(CmsPage $page): array
     {
         $payload = $page->payload ?? [];
-        $payload = $this->resolvePublicImageUrls($payload);
+        $payload = $this->resolvePublicImageUrls($page, $payload);
 
         return [
             'slug' => $page->slug,
@@ -203,6 +207,8 @@ class CmsPageService
      */
     private function normalizePayload(string $slug, array $payload): array
     {
+        unset($payload['hero']['image_url'], $payload['who_we_are']['mediaImage_url']);
+
         if (in_array($slug, ['privacy', 'terms'], true) && isset($payload['updatedAt'])) {
             $payload['updatedAt'] = $this->normalizeUpdatedAt(
                 is_string($payload['updatedAt']) ? $payload['updatedAt'] : null,
@@ -247,23 +253,32 @@ class CmsPageService
     }
 
     /**
+     * Sync uploads to the media collection. The payload only ever keeps the page's
+     * existing static seed path (never client-submitted paths or uploaded file paths).
+     *
      * @param  array<string, mixed>  $payload
      * @param  list<string>  $path
      * @return array<string, mixed>
      */
     private function applyImageUpload(
+        CmsPage $page,
         array $payload,
         array $path,
+        string $collection,
         ?UploadedFile $file,
-        string $directory,
         bool $remove,
     ): array {
-        $current = data_get($payload, implode('.', $path));
-        $currentPath = is_string($current) ? $current : null;
+        $key = implode('.', $path);
 
-        $next = PublicDiskMedia::replace($currentPath, $file, $directory, $remove);
+        $this->media->syncSingle($page, $collection, $file, $remove);
 
-        data_set($payload, implode('.', $path), $next);
+        $stored = data_get($page->payload ?? [], $key);
+        $replaced = $remove || $file !== null;
+        $staticPath = ! $replaced && is_string($stored) ? $stored : null;
+
+        if ($replaced || $staticPath !== null || Arr::has($payload, $key)) {
+            data_set($payload, $key, $staticPath);
+        }
 
         return $payload;
     }
@@ -272,24 +287,28 @@ class CmsPageService
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
-    private function enrichPayloadForForm(array $payload): array
+    private function enrichPayloadForForm(CmsPage $page, array $payload): array
     {
         if (isset($payload['updatedAt']) && is_string($payload['updatedAt'])) {
             $payload['updatedAt'] = $this->normalizeUpdatedAt($payload['updatedAt']) ?? $payload['updatedAt'];
         }
 
         if (isset($payload['hero']) && is_array($payload['hero'])) {
-            $image = $payload['hero']['image'] ?? null;
-            $payload['hero']['image_url'] = is_string($image)
-                ? MediaUrl::resolve($image, fallback: null)
-                : null;
+            $payload['hero']['image_url'] = $this->imageUrlFor(
+                $page,
+                CmsPage::HERO_COLLECTION,
+                $payload['hero']['image'] ?? null,
+                null,
+            );
         }
 
         if (isset($payload['who_we_are']) && is_array($payload['who_we_are'])) {
-            $image = $payload['who_we_are']['mediaImage'] ?? null;
-            $payload['who_we_are']['mediaImage_url'] = is_string($image)
-                ? MediaUrl::resolve($image, fallback: null)
-                : null;
+            $payload['who_we_are']['mediaImage_url'] = $this->imageUrlFor(
+                $page,
+                CmsPage::MEDIA_COLLECTION,
+                $payload['who_we_are']['mediaImage'] ?? null,
+                null,
+            );
         }
 
         return $payload;
@@ -299,18 +318,39 @@ class CmsPageService
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
-    private function resolvePublicImageUrls(array $payload): array
+    private function resolvePublicImageUrls(CmsPage $page, array $payload): array
     {
-        if (isset($payload['hero']['image']) && is_string($payload['hero']['image'])) {
-            $payload['hero']['image'] = MediaUrl::resolve($payload['hero']['image']) ?? $payload['hero']['image'];
+        if (isset($payload['hero']) && is_array($payload['hero'])
+            && ($page->hasMedia(CmsPage::HERO_COLLECTION) || is_string($payload['hero']['image'] ?? null))) {
+            $payload['hero']['image'] = $this->imageUrlFor(
+                $page,
+                CmsPage::HERO_COLLECTION,
+                $payload['hero']['image'] ?? null,
+                MediaUrl::DEFAULT_FALLBACK,
+            );
         }
 
-        if (isset($payload['who_we_are']['mediaImage']) && is_string($payload['who_we_are']['mediaImage'])) {
-            $payload['who_we_are']['mediaImage'] = MediaUrl::resolve($payload['who_we_are']['mediaImage'])
-                ?? $payload['who_we_are']['mediaImage'];
+        if (isset($payload['who_we_are']) && is_array($payload['who_we_are'])
+            && ($page->hasMedia(CmsPage::MEDIA_COLLECTION) || is_string($payload['who_we_are']['mediaImage'] ?? null))) {
+            $payload['who_we_are']['mediaImage'] = $this->imageUrlFor(
+                $page,
+                CmsPage::MEDIA_COLLECTION,
+                $payload['who_we_are']['mediaImage'] ?? null,
+                MediaUrl::DEFAULT_FALLBACK,
+            );
         }
 
         return $payload;
+    }
+
+    /**
+     * Uploaded media wins; otherwise resolve the static seed path stored in the payload.
+     */
+    private function imageUrlFor(CmsPage $page, string $collection, mixed $staticPath, ?string $fallback): ?string
+    {
+        $static = is_string($staticPath) ? MediaUrl::resolve($staticPath, $fallback) : $fallback;
+
+        return MediaUrl::fromCollection($page, $collection, $static);
     }
 
     public function normalizeUpdatedAt(?string $value): ?string

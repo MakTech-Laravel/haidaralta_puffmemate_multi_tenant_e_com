@@ -97,7 +97,7 @@ class HomeBannerController extends Controller
 
         $active = $request->boolean('is_active');
 
-        if ($active && blank($homeBanner->image_path)) {
+        if ($active && ! $homeBanner->hasMedia(HomeBanner::IMAGE_COLLECTION)) {
             Toast::error('Add an image before activating this banner.');
 
             return redirect()->route('platform.home-banners.edit', $homeBanner);

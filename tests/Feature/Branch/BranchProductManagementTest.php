@@ -15,6 +15,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -76,6 +77,8 @@ test('branch create stores stock and price for the creating branch only', functi
 });
 
 test('branch create persists gallery images', function () {
+    Storage::fake('public');
+
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $category = Category::factory()->create();
@@ -97,8 +100,9 @@ test('branch create persists gallery images', function () {
 
     $response->assertRedirect(ProductManageRedirect::branchUrl($branch, $product));
 
-    expect($product->image)->not->toBeNull()
-        ->and($product->images()->count())->toBe(2);
+    expect($product->getFirstMedia('image')?->mime_type)->toBe('image/webp')
+        ->and($product->getMedia('gallery'))->toHaveCount(2)
+        ->and($product->imageUrl())->not->toBeNull();
 });
 
 test('a catalog product created elsewhere is listed at this branch', function () {

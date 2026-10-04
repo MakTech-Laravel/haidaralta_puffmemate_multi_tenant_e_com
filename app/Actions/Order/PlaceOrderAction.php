@@ -65,7 +65,7 @@ class PlaceOrderAction
      */
     public function handle(User $user, Cart $cart, array $data): Order
     {
-        $cart->load('items.product');
+        $cart->load(['items.product.media']);
 
         if ($cart->items->isEmpty()) {
             throw ValidationException::withMessages([
@@ -357,7 +357,7 @@ class PlaceOrderAction
             'name' => $product->name,
             'slug' => $product->slug,
             'sku' => $product->sku,
-            'image' => MediaUrl::resolve($product->image),
+            'image' => $product->imageUrl(MediaUrl::DEFAULT_FALLBACK),
             'description' => $product->packSummary(),
             'brand' => $product->brand,
             'pack_label' => $product->pack_label,

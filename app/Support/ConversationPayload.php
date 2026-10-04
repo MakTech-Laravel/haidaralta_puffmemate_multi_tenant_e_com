@@ -78,7 +78,7 @@ final class ConversationPayload
             'name' => $user->name,
             'role' => $participant->role->value,
             'role_label' => $participant->role->label(),
-            'avatar_url' => MediaUrl::resolve($user->avatar, fallback: null),
+            'avatar_url' => $user->avatarUrl(),
         ];
     }
 
@@ -92,7 +92,8 @@ final class ConversationPayload
         $conversation->loadMissing([
             'order:id,order_number,status',
             'branch:id,name,slug',
-            'participants.user:id,name,avatar',
+            'participants.user:id,name',
+            'participants.user.media',
         ]);
 
         return [
@@ -109,7 +110,7 @@ final class ConversationPayload
                     'user_id' => $participant->user_id,
                     'name' => $participant->user->name,
                     'role_label' => $participant->role->label(),
-                    'avatar_url' => MediaUrl::resolve($participant->user->avatar, fallback: null),
+                    'avatar_url' => $participant->user->avatarUrl(),
                 ])
                 ->values()
                 ->all(),
@@ -162,7 +163,7 @@ final class ConversationPayload
         return [
             'id' => $sender->id,
             'name' => $sender->name,
-            'avatar_url' => MediaUrl::resolve($sender->avatar, fallback: null),
+            'avatar_url' => $sender->avatarUrl(),
         ];
     }
 }

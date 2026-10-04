@@ -5,14 +5,12 @@ namespace App\DataTables;
 use App\DataTables\Filters\StatusBooleanFilter;
 use App\Enums\UserType;
 use App\Models\User;
-use App\Support\MediaUrl;
 use App\Support\PlatformTeamResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\AllowedSort;
 
 /**
  * @extends AbstractDataTable<User>
@@ -87,8 +85,8 @@ class PlatformAdminDataTable extends AbstractDataTable
             'name' => $model->name,
             'phone' => $model->phone,
             'email' => $model->email,
-            'avatar' => $model->avatar,
-            'avatar_url' => MediaUrl::resolve($model->avatar, fallback: null),
+            'avatar' => $model->hasMedia('avatar') ? 'avatar' : null,
+            'avatar_url' => $model->avatarUrl(),
             'is_active' => (bool) $model->is_active,
             'roles' => $model->getRoleNames()->values()->all(),
         ];

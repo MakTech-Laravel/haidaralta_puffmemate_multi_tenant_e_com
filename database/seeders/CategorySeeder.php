@@ -153,13 +153,13 @@ class CategorySeeder extends Seeder
             'nav_sort' => $data['nav_sort'] ?? null,
         ];
 
-        if ($imagePath !== null) {
-            $attributes['image'] = $imagePath;
-        }
-
-        return Category::query()->updateOrCreate(
+        $category = Category::query()->updateOrCreate(
             ['slug' => $data['slug']],
             $attributes,
         );
+
+        $this->attachSeedMedia($category, 'image', $imagePath);
+
+        return $category;
     }
 }

@@ -5,10 +5,13 @@ namespace App\Models;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\DriverVehicleType;
 use App\Models\Concerns\AuditsChanges;
+use App\Models\Concerns\InteractsWithAppMedia;
+use App\Support\MediaUrl;
 use Database\Factories\DriverProfileFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * @property int $id
@@ -20,13 +23,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $address
  * @property string|null $latitude
  * @property string|null $longitude
- * @property string|null $vehicle_image_path
  * @property-read User|null $user
  */
-class DriverProfile extends Model
+class DriverProfile extends Model implements HasMedia
 {
     /** @use HasFactory<DriverProfileFactory> */
-    use AuditsChanges, HasFactory;
+    use AuditsChanges, HasFactory, InteractsWithAppMedia;
 
     /**
      * @var list<string>
@@ -40,8 +42,17 @@ class DriverProfile extends Model
         'address',
         'latitude',
         'longitude',
-        'vehicle_image_path',
     ];
+
+    public function registerMediaCollections(): void
+    {
+        $this->registerSingleFileCollection('vehicle');
+    }
+
+    public function vehicleImageUrl(?string $fallback = null): ?string
+    {
+        return MediaUrl::fromCollection($this, 'vehicle', $fallback);
+    }
 
     /**
      * @return BelongsTo<User, $this>

@@ -3,15 +3,17 @@
 namespace App\Services\Catalog;
 
 use App\Models\Category;
+use App\Services\Media\MediaUploadService;
 use App\Support\CatalogBackgroundColor;
 use App\Support\Storefront\StorefrontCatalog;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class CategoryService
 {
+    public function __construct(private MediaUploadService $media) {}
+
     /**
      * @param  array{
      *     parent_id?: int|null,
@@ -28,18 +30,21 @@ class CategoryService
     public function create(array $data, ?UploadedFile $image = null): Category
     {
         $category = DB::transaction(function () use ($data, $image): Category {
-            return Category::query()->create([
+            $category = Category::query()->create([
                 'parent_id' => $data['parent_id'] ?? null,
                 'name' => $data['name'],
                 'slug' => $data['slug'],
                 'slogan' => $data['slogan'] ?? null,
-                'image' => $image?->store('categories', 'public'),
                 'color_code' => CatalogBackgroundColor::normalize($data['color_code'] ?? null),
                 'status' => $data['status'] ?? true,
                 'featured' => $data['featured'] ?? false,
                 'show_in_nav' => $data['show_in_nav'] ?? false,
                 'nav_sort' => $data['nav_sort'] ?? null,
             ]);
+
+            $this->media->syncSingle($category, 'image', $image);
+
+            return $category;
         });
 
         StorefrontCatalog::forgetNavCategories();
@@ -64,18 +69,7 @@ class CategoryService
     public function update(Category $category, array $data, ?UploadedFile $image = null): Category
     {
         $category = DB::transaction(function () use ($category, $data, $image): Category {
-            if (($data['remove_image'] ?? false) === true && $category->image) {
-                Storage::disk('public')->delete($category->image);
-                $category->image = null;
-            }
-
-            if ($image !== null) {
-                if ($category->image) {
-                    Storage::disk('public')->delete($category->image);
-                }
-                $category->image = $image->store('categories', 'public');
-            }
-
+            $removeImage = (bool) ($data['remove_image'] ?? false);
             unset($data['remove_image']);
 
             if (array_key_exists('color_code', $data)) {
@@ -86,6 +80,8 @@ class CategoryService
 
             $category->fill($data);
             $category->save();
+
+            $this->media->syncSingle($category, 'image', $image, $removeImage && $image === null);
 
             return $category->refresh();
         });

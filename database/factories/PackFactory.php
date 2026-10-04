@@ -25,7 +25,6 @@ class PackFactory extends Factory
             'name' => Str::title($name),
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
             'description' => fake()->optional()->sentence(),
-            'image' => null,
             'offer_type' => PackOfferType::Percent,
             'offer_value' => '20.00',
             'subtotal' => '100.00',

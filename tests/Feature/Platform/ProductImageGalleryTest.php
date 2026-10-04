@@ -2,13 +2,14 @@
 
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductImage;
 use App\Models\User;
+use App\Services\Media\MediaUploadService;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 beforeEach(function () {
     Storage::fake('public');
@@ -47,9 +48,12 @@ test('platform can upload svg primary and gallery images', function () {
 
     $product = Product::query()->where('slug', 'svg-pack')->firstOrFail();
 
-    expect($product->image)->toEndWith('.svg')
-        ->and(Storage::disk('public')->exists($product->image))->toBeTrue()
-        ->and(ProductImage::query()->where('product_id', $product->id)->count())->toBe(2);
+    $primary = $product->getFirstMedia('image');
+
+    expect($primary)->not->toBeNull()
+        ->and($primary->file_name)->toEndWith('.svg')
+        ->and(Storage::disk('public')->exists($primary->getPathRelativeToRoot()))->toBeTrue()
+        ->and($product->getMedia('gallery'))->toHaveCount(2);
 });
 
 test('platform rejects unsupported primary image mime types', function () {
@@ -89,9 +93,14 @@ test('platform can create a product with primary image and gallery', function ()
 
     $product = Product::query()->where('slug', 'gallery-pack')->firstOrFail();
 
-    expect($product->image)->not->toBeNull()
-        ->and(Storage::disk('public')->exists($product->image))->toBeTrue()
-        ->and(ProductImage::query()->where('product_id', $product->id)->count())->toBe(2);
+    $primary = $product->getFirstMedia('image');
+    $gallery = $product->getMedia('gallery');
+
+    expect($primary)->not->toBeNull()
+        ->and($primary->mime_type)->toBe('image/webp')
+        ->and(Storage::disk('public')->exists($primary->getPathRelativeToRoot()))->toBeTrue()
+        ->and($gallery)->toHaveCount(2)
+        ->and($gallery->every(fn ($media): bool => $media->mime_type === 'image/webp'))->toBeTrue();
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.products.show', $product))
@@ -106,25 +115,13 @@ test('platform can create a product with primary image and gallery', function ()
 
 test('platform can remove gallery images on update', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
-    $product = Product::factory()->create([
-        'slug' => 'gallery-edit',
-        'image' => 'products/primary.jpg',
-    ]);
+    $product = Product::factory()->create(['slug' => 'gallery-edit']);
 
-    Storage::disk('public')->put('products/primary.jpg', 'primary');
-    Storage::disk('public')->put('products/gallery/one.jpg', 'one');
-    Storage::disk('public')->put('products/gallery/two.jpg', 'two');
-
-    $keep = ProductImage::factory()->create([
-        'product_id' => $product->id,
-        'path' => 'products/gallery/one.jpg',
-        'sort_order' => 1,
+    [$keep, $remove] = app(MediaUploadService::class)->syncMany($product, 'gallery', [
+        UploadedFile::fake()->image('one.jpg', 200, 200),
+        UploadedFile::fake()->image('two.jpg', 200, 200),
     ]);
-    $remove = ProductImage::factory()->create([
-        'product_id' => $product->id,
-        'path' => 'products/gallery/two.jpg',
-        'sort_order' => 2,
-    ]);
+    $removedPath = $remove->getPathRelativeToRoot();
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.products.update', $product), [
@@ -138,7 +135,64 @@ test('platform can remove gallery images on update', function () {
         ])
         ->assertRedirect(route('platform.products.show', $product));
 
-    expect(ProductImage::query()->whereKey($keep->id)->exists())->toBeTrue()
-        ->and(ProductImage::query()->whereKey($remove->id)->exists())->toBeFalse()
-        ->and(Storage::disk('public')->exists('products/gallery/two.jpg'))->toBeFalse();
+    $remaining = $product->fresh()->getMedia('gallery');
+
+    expect($remaining->pluck('id')->all())->toBe([$keep->id])
+        ->and(Media::query()->whereKey($remove->id)->exists())->toBeFalse()
+        ->and(Storage::disk('public')->exists($removedPath))->toBeFalse();
+});
+
+test('platform cannot remove gallery media that belongs to another product', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $product = Product::factory()->create(['slug' => 'gallery-owner']);
+    $other = Product::factory()->create(['slug' => 'gallery-other']);
+
+    [$foreign] = app(MediaUploadService::class)->syncMany($other, 'gallery', [
+        UploadedFile::fake()->image('foreign.jpg', 200, 200),
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.products.update', $product), [
+            'category_ids' => $product->categories()->pluck('categories.id')->all(),
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'sku' => $product->sku,
+            'status' => true,
+            'remove_gallery_ids' => [$foreign->id],
+        ])
+        ->assertSessionHasErrors('remove_gallery_ids.0');
+
+    expect(Media::query()->whereKey($foreign->id)->exists())->toBeTrue();
+});
+
+test('platform can replace and remove the primary product image', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $product = Product::factory()->create(['slug' => 'primary-edit']);
+    app(MediaUploadService::class)->syncSingle($product, 'image', UploadedFile::fake()->image('old.jpg', 200, 200));
+
+    $payload = [
+        'category_ids' => $product->categories()->pluck('categories.id')->all(),
+        'name' => $product->name,
+        'slug' => $product->slug,
+        'sku' => $product->sku,
+        'status' => true,
+    ];
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.products.update', $product), [
+            ...$payload,
+            'image' => UploadedFile::fake()->image('new.jpg', 200, 200),
+        ])
+        ->assertRedirect();
+
+    $media = $product->fresh()->getMedia('image');
+
+    expect($media)->toHaveCount(1)
+        ->and($media->first()->file_name)->toBe('new.webp');
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.products.update', $product), [...$payload, 'remove_image' => true])
+        ->assertRedirect();
+
+    expect($product->fresh()->hasMedia('image'))->toBeFalse();
 });

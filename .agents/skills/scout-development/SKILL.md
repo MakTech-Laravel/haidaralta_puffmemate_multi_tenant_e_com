@@ -3,7 +3,7 @@ name: scout-development
 description: "Develops full-text, semantic, and hybrid search with Laravel Scout. Activates when installing or configuring Scout; choosing a search engine (Algolia, Meilisearch, Typesense, Turbopuffer, Database, Collection); adding the Searchable trait to models; customizing toSearchableArray, toSearchableEmbedding, or searchableAs; importing or flushing search indexes; writing search queries with filters, pagination, semantic search, or hybrid search; configuring index or embedding settings; troubleshooting search results; or when the user mentions Scout, full-text search, vector search, embeddings, search indexing, or search engines in a Laravel project. Make sure to use this skill whenever the user works with search functionality in Laravel, even if they don't explicitly mention Scout."
 license: MIT
 metadata:
-    author: laravel
+  author: laravel
 ---
 
 # Scout Search
@@ -80,14 +80,14 @@ If an engine is already configured, skip the engine selection step and work with
 
 When no engine is configured, present these options and let the user decide — never choose for them.
 
-| Engine          | Type                | Best For                                        | Tradeoffs                                                                                                      |
-| --------------- | ------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Database**    | Built-in            | Typical applications, simple search             | No external deps. MySQL/PostgreSQL only. LIKE + full-text indexes. No typo tolerance.                          |
-| **Collection**  | Built-in            | Local dev, tiny datasets (<500 records)         | Loads all records into memory. Most portable but least efficient.                                              |
-| **Algolia**     | Hosted SaaS         | Advanced search without managing infra          | Typo tolerance, analytics, faceting. Paid service. No self-hosting.                                            |
-| **Meilisearch** | Self-hosted / Cloud | Teams wanting infrastructure control            | Fast, open-source. Self-hostable or cloud. Requires filterable attribute config.                               |
-| **Typesense**   | Self-hosted / Cloud | Keyword, geo, and custom vector search          | Open-source. Self-hostable or cloud. Strict schema requirements; Scout's semantic/hybrid APIs are unsupported. |
-| **Turbopuffer** | Hosted SaaS         | Full-text, semantic, and hybrid search at scale | Serverless and built for vector search. Paid hosted service.                                                   |
+| Engine | Type | Best For | Tradeoffs |
+|--------|------|----------|-----------|
+| **Database** | Built-in | Typical applications, simple search | No external deps. MySQL/PostgreSQL only. LIKE + full-text indexes. No typo tolerance. |
+| **Collection** | Built-in | Local dev, tiny datasets (<500 records) | Loads all records into memory. Most portable but least efficient. |
+| **Algolia** | Hosted SaaS | Advanced search without managing infra | Typo tolerance, analytics, faceting. Paid service. No self-hosting. |
+| **Meilisearch** | Self-hosted / Cloud | Teams wanting infrastructure control | Fast, open-source. Self-hostable or cloud. Requires filterable attribute config. |
+| **Typesense** | Self-hosted / Cloud | Keyword, geo, and custom vector search | Open-source. Self-hostable or cloud. Strict schema requirements; Scout's semantic/hybrid APIs are unsupported. |
+| **Turbopuffer** | Hosted SaaS | Full-text, semantic, and hybrid search at scale | Serverless and built for vector search. Paid hosted service. |
 
 After the user chooses, use `search-docs` for that engine's prerequisites and configuration.
 
@@ -194,14 +194,14 @@ Do not invent embedding dimensions or model settings. They must match the config
 
 ## Key Artisan Commands
 
-| Command                                            | Purpose                                    |
-| -------------------------------------------------- | ------------------------------------------ |
-| `php artisan scout:import "App\Models\Post"`       | Import model records into search index     |
-| `php artisan scout:queue-import "App\Models\Post"` | Import via queued jobs (large datasets)    |
-| `php artisan scout:flush "App\Models\Post"`        | Remove all model records from search index |
-| `php artisan scout:sync-index-settings`            | Sync index settings to the search engine   |
-| `php artisan scout:index posts`                    | Create a search index                      |
-| `php artisan scout:delete-index posts`             | Delete a search index                      |
+| Command | Purpose |
+|---------|---------|
+| `php artisan scout:import "App\Models\Post"` | Import model records into search index |
+| `php artisan scout:queue-import "App\Models\Post"` | Import via queued jobs (large datasets) |
+| `php artisan scout:flush "App\Models\Post"` | Remove all model records from search index |
+| `php artisan scout:sync-index-settings` | Sync index settings to the search engine |
+| `php artisan scout:index posts` | Create a search index |
+| `php artisan scout:delete-index posts` | Delete a search index |
 
 ## Testing
 

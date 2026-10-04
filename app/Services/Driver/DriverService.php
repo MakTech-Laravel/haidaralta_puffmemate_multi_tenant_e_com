@@ -9,7 +9,7 @@ use App\Models\Branch;
 use App\Models\DriverBranchAssignment;
 use App\Models\DriverProfile;
 use App\Models\User;
-use App\Support\PublicDiskMedia;
+use App\Services\Media\MediaUploadService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -17,6 +17,8 @@ use InvalidArgumentException;
 class DriverService
 {
     public const ONE_ACTIVE_BRANCH_MESSAGE = 'A driver can only be assigned to one branch at a time.';
+
+    public function __construct(private MediaUploadService $media) {}
 
     /**
      * @param  array{name: string, phone: string, email?: string|null, password: string, license_number?: string|null, vehicle_type: string, availability_status?: string, notes?: string|null, address?: string|null, branch_ids?: list<int>}  $data
@@ -52,18 +54,20 @@ class DriverService
                 'branch_id' => null,
                 'is_active' => $data['is_active'] ?? true,
                 'phone_verified_at' => now(),
-                'avatar' => PublicDiskMedia::store($avatar, PublicDiskMedia::USER_AVATARS),
             ]);
 
-            DriverProfile::query()->create([
+            $this->media->syncSingle($driver, 'avatar', $avatar);
+
+            $profile = DriverProfile::query()->create([
                 'user_id' => $driver->id,
                 'license_number' => $data['license_number'] ?? null,
                 'vehicle_type' => $data['vehicle_type'],
                 'availability_status' => $data['availability_status'] ?? DriverAvailabilityStatus::Offline->value,
                 'notes' => $data['notes'] ?? null,
                 'address' => $data['address'] ?? null,
-                'vehicle_image_path' => PublicDiskMedia::store($vehicleImage, PublicDiskMedia::DRIVER_VEHICLES),
             ]);
+
+            $this->media->syncSingle($profile, 'vehicle', $vehicleImage);
 
             $this->syncBranchAssignments($driver, $branchIds, DriverAssignmentStatus::Active, $assignedBy);
 
@@ -97,14 +101,16 @@ class DriverService
                 $userPayload['password'] = $data['password'];
             }
 
-            $userPayload['avatar'] = PublicDiskMedia::replace(
-                $driver->avatar,
+            if ($userPayload !== []) {
+                $driver->update($userPayload);
+            }
+
+            $this->media->syncSingle(
+                $driver,
+                'avatar',
                 $avatar,
-                PublicDiskMedia::USER_AVATARS,
                 (bool) ($data['remove_avatar'] ?? false),
             );
-
-            $driver->update($userPayload);
 
             $profile = $driver->driverProfile;
 
@@ -112,19 +118,7 @@ class DriverService
                 throw new InvalidArgumentException('Driver profile does not exist.');
             }
 
-            $vehiclePath = $profile->vehicle_image_path;
-
-            if (($data['remove_vehicle_image'] ?? false) === true) {
-                PublicDiskMedia::delete($vehiclePath);
-                $vehiclePath = null;
-            } elseif ($vehicleImage !== null) {
-                PublicDiskMedia::delete($vehiclePath);
-                $vehiclePath = PublicDiskMedia::store($vehicleImage, PublicDiskMedia::DRIVER_VEHICLES);
-            }
-
-            $profilePayload = [
-                'vehicle_image_path' => $vehiclePath,
-            ];
+            $profilePayload = [];
 
             foreach (['license_number', 'vehicle_type', 'availability_status', 'notes', 'address'] as $field) {
                 if (array_key_exists($field, $data)) {
@@ -132,7 +126,16 @@ class DriverService
                 }
             }
 
-            $profile->update($profilePayload);
+            if ($profilePayload !== []) {
+                $profile->update($profilePayload);
+            }
+
+            $this->media->syncSingle(
+                $profile,
+                'vehicle',
+                $vehicleImage,
+                (bool) ($data['remove_vehicle_image'] ?? false),
+            );
 
             return $driver->refresh();
         });
