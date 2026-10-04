@@ -5,8 +5,5 @@ paths:
 
 # Js Pages Settings
 
-## Branch profile avatar sits on the right
-On Branch /settings/profile the identity card keeps name/phone/email on the left and a smaller avatar upload (112px) on the right. Do not stack the avatar above the fields. Platform keeps the larger left-side avatar.
-
-## Branch profile avatar is block and left
-On Branch /settings/profile the avatar upload is a smaller (112px) block on the left, stacked above name/phone/email. Do not put it in a flex row with the fields or align it to the right. Platform keeps the larger side-by-side avatar.
+## Settings profile matches customer account layout
+On `/settings/profile` (branch and platform), keep the avatar upload on the left (`shrink-0`, FileUpload `variant="avatar"`) and put name / phone / email in a `min-w-0 flex-1` column so fields fill the remaining width. Stack on small screens (`flex-col` → `sm:flex-row`). Put the Save button inside the fields column (not as a separate form footer). Staff avatar size stays 112px; non-staff keeps the larger avatar.
