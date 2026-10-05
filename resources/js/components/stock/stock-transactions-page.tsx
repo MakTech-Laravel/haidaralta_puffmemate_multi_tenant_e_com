@@ -332,6 +332,7 @@ export function StockTransactionsPage({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No stock transactions found."
                     toolbar={
