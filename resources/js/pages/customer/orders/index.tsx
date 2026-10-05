@@ -29,7 +29,12 @@ export default function CustomerOrdersIndex({
                     router.get(
                         ordersIndex.url(),
                         { page },
-                        { preserveState: true, preserveScroll: true },
+                        {
+                            preserveState: true,
+                            preserveScroll: true,
+                            async: true,
+                            showProgress: false,
+                        },
                     )
                 }
             />

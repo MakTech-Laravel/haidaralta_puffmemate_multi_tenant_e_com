@@ -254,6 +254,7 @@ export default function PlatformBranchStaffIndex({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No branch staff found."
                     toolbar={

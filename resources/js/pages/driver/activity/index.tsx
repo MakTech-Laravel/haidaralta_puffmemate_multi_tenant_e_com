@@ -48,6 +48,8 @@ function visitActivity(options: {
             preserveState: true,
             preserveScroll: true,
             replace: true,
+            async: true,
+            showProgress: false,
         },
     );
 }

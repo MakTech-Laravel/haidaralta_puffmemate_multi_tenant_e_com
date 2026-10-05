@@ -554,6 +554,7 @@ export default function PlatformBranchesShow({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No staff match this filter."
                     toolbar={

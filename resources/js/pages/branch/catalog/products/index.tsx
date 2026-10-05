@@ -271,6 +271,7 @@ export default function BranchProductsIndex({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No products found."
                     toolbar={

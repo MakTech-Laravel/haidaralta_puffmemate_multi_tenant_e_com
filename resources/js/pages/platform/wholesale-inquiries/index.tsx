@@ -225,6 +225,7 @@ export default function PlatformWholesaleInquiriesIndex({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No wholesale inquiries yet."
                 />
