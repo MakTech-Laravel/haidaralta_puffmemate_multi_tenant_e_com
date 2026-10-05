@@ -275,6 +275,33 @@ test('order assign history skips default today when fulfillment filter is set', 
             ->where('table.filterOptions.selected_fulfillment.id', $fulfillment->id));
 });
 
+test('order assign history shows System for platform actors without a link', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $fulfillment = orderAssignHistoryFulfillment($this->branch);
+
+    OrderDriverAssignmentHistory::query()->create([
+        'order_id' => $fulfillment->order_id,
+        'fulfillment_id' => $fulfillment->id,
+        'from_driver_id' => null,
+        'to_driver_id' => $this->driver->id,
+        'reason' => null,
+        'changed_by' => $admin->id,
+    ]);
+
+    $this->actingAs($this->staff, 'branch')
+        ->get(route('branch.reports.order-assign-history', [
+            'branch' => $this->branch,
+            'filter' => [
+                'order_id' => $fulfillment->fulfillment_number,
+            ],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('table.data', 1)
+            ->where('table.data.0.changed_by_name', 'System')
+            ->where('table.data.0.changed_by_url', null));
+});
+
 test('guests cannot export order assign history', function () {
     $this->get(route('branch.reports.order-assign-history.export', [
         $this->branch,

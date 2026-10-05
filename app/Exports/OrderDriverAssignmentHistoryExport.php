@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Enums\UserType;
 use App\Models\OrderDriverAssignmentHistory;
 use App\Support\DateTimeFormat;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +20,7 @@ class OrderDriverAssignmentHistoryExport implements FromQuery, WithHeadings, Wit
      */
     public function __construct(
         private Builder $query,
+        private bool $includeBranch = false,
     ) {}
 
     /**
@@ -34,8 +36,14 @@ class OrderDriverAssignmentHistoryExport implements FromQuery, WithHeadings, Wit
      */
     public function headings(): array
     {
+        $headings = ['Order ID'];
+
+        if ($this->includeBranch) {
+            $headings[] = 'Branch';
+        }
+
         return [
-            'Order ID',
+            ...$headings,
             'Previous driver',
             'Previous phone',
             'Assigned driver',
@@ -52,15 +60,38 @@ class OrderDriverAssignmentHistoryExport implements FromQuery, WithHeadings, Wit
      */
     public function map(mixed $row): array
     {
-        return [
+        $values = [
             $row->fulfillment?->fulfillment_number,
+        ];
+
+        if ($this->includeBranch) {
+            $values[] = $row->fulfillment?->branch?->name;
+        }
+
+        return [
+            ...$values,
             $row->fromDriver?->name,
             $row->fromDriver?->phone,
             $row->toDriver?->name,
             $row->toDriver?->phone,
             $row->reason,
             DateTimeFormat::dateTime($row->created_at),
-            $row->changer?->name,
+            $this->changedByLabel($row),
         ];
+    }
+
+    private function changedByLabel(OrderDriverAssignmentHistory $row): ?string
+    {
+        $changer = $row->changer;
+
+        if ($changer === null) {
+            return null;
+        }
+
+        if ($changer->user_type === UserType::PLATFORM) {
+            return 'System';
+        }
+
+        return $changer->name;
     }
 }
