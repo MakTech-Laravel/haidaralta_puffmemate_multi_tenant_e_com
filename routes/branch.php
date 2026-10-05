@@ -10,6 +10,7 @@ use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\DriverProductAssignController as BranchDriverProductAssignController;
 use App\Http\Controllers\Branch\GeneralSettingsController as BranchGeneralSettingsController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
+use App\Http\Controllers\Branch\OrderAssignController as BranchOrderAssignController;
 use App\Http\Controllers\Branch\OrderController as BranchOrderController;
 use App\Http\Controllers\Branch\PacksSavesController as BranchPacksSavesController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
@@ -123,8 +124,12 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.orders.status');
         Route::post('orders/{fulfillment}/paid', [BranchOrderController::class, 'markPaid'])
             ->name('branch.orders.paid');
-        Route::post('orders/{fulfillment}/assign-driver', [BranchOrderController::class, 'assignDriver'])
+        Route::post('orders/{fulfillment}/assign-driver', [BranchOrderAssignController::class, 'store'])
             ->name('branch.orders.assign-driver');
+        Route::get('orders/{fulfillment}/assign-candidates', [BranchOrderAssignController::class, 'candidates'])
+            ->name('branch.orders.assign-candidates');
+        Route::get('orders/{fulfillment}/driver-assignment-history', [BranchOrderAssignController::class, 'history'])
+            ->name('branch.orders.driver-assignment-history');
         Route::post('orders/{fulfillment}/cancel', [BranchOrderController::class, 'cancel'])
             ->name('branch.orders.cancel');
         Route::post('orders/{fulfillment}/retry-delivery', [BranchOrderController::class, 'retryDelivery'])

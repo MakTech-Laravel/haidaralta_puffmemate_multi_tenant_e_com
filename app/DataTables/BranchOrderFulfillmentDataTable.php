@@ -5,6 +5,7 @@ namespace App\DataTables;
 use App\Enums\FulfillmentStatus;
 use App\Models\Branch;
 use App\Models\OrderFulfillment;
+use App\Services\Order\OrderAssignService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -19,8 +20,11 @@ use Spatie\QueryBuilder\AllowedSort;
  */
 class BranchOrderFulfillmentDataTable extends AbstractDataTable
 {
-    public function __construct(Request $request, protected int $branchId)
-    {
+    public function __construct(
+        Request $request,
+        protected int $branchId,
+        protected OrderAssignService $orderAssign,
+    ) {
         parent::__construct($request);
     }
 
@@ -29,7 +33,11 @@ class BranchOrderFulfillmentDataTable extends AbstractDataTable
      */
     public static function makeForBranch(Request $request, Branch $branch): array
     {
-        return (new static($request, $branch->id))->toArray();
+        return (new static(
+            $request,
+            $branch->id,
+            app(OrderAssignService::class),
+        ))->toArray();
     }
 
     /**
@@ -47,7 +55,12 @@ class BranchOrderFulfillmentDataTable extends AbstractDataTable
     {
         return OrderFulfillment::query()
             ->where('branch_id', $this->branchId)
-            ->with(['order:id,order_number,customer_id,payment_status', 'order.customer:id,name', 'items']);
+            ->with([
+                'order:id,order_number,customer_id,payment_status',
+                'order.customer:id,name',
+                'items',
+                'driver:id,name',
+            ]);
     }
 
     /**
@@ -110,6 +123,8 @@ class BranchOrderFulfillmentDataTable extends AbstractDataTable
             'is_paid' => $model->isPaid(),
             'order_payment_status' => $model->order->payment_status->value,
             'created_at' => $model->created_at?->toIso8601String(),
+            'can_assign' => $this->orderAssign->canAssign($model),
+            ...$this->orderAssign->assignStatusPayload($model),
         ];
     }
 }
