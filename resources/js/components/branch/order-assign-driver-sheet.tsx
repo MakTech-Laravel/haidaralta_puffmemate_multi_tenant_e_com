@@ -40,10 +40,13 @@ type CandidatesResponse = {
 type OrderAssignDriverSheetProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    branchSlug: string;
     fulfillmentId: number | null;
     fulfillmentNumber?: string | null;
     mode?: 'assign' | 'change';
+    /** Branch portal: branch slug + fulfillment for Wayfinder defaults */
+    branchSlug?: string;
+    candidatesUrl?: string | null;
+    storeUrl?: string | null;
 };
 
 const PAGE_SIZE = 20;
@@ -89,6 +92,8 @@ export function OrderAssignDriverSheet({
     fulfillmentId,
     fulfillmentNumber = null,
     mode = 'assign',
+    candidatesUrl = null,
+    storeUrl = null,
 }: OrderAssignDriverSheetProps) {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -152,18 +157,34 @@ export function OrderAssignDriverSheet({
         }
 
         try {
-            const url = OrderAssignController.candidates.url(
-                [branchSlug, fulfillmentId],
-                {
-                    query: {
-                        'filter[search]': nextSearch || undefined,
-                        page: nextPage,
-                        per_page: PAGE_SIZE,
-                    },
-                },
-            );
+            const url =
+                candidatesUrl ??
+                (branchSlug
+                    ? OrderAssignController.candidates.url(
+                          [branchSlug, fulfillmentId],
+                          {
+                              query: {
+                                  'filter[search]': nextSearch || undefined,
+                                  page: nextPage,
+                                  per_page: PAGE_SIZE,
+                              },
+                          },
+                      )
+                    : null);
 
-            const response = await fetch(url, {
+            if (!url) {
+                throw new Error('Unable to load drivers.');
+            }
+
+            const response = await fetch(
+                candidatesUrl
+                    ? `${url}${url.includes('?') ? '&' : '?'}${new URLSearchParams({
+                          ...(nextSearch ? { 'filter[search]': nextSearch } : {}),
+                          page: String(nextPage),
+                          per_page: String(PAGE_SIZE),
+                      }).toString()}`
+                    : url,
+                {
                 headers: {
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
@@ -236,9 +257,8 @@ export function OrderAssignDriverSheet({
         void loadPage(1, debouncedSearch, true, controller.signal);
 
         return () => controller.abort();
-        // loadPage closes over fulfillmentId / branchSlug; effect keys cover them.
         // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional page-1 reload on search/open
-    }, [open, branchSlug, fulfillmentId, debouncedSearch]);
+    }, [open, branchSlug, fulfillmentId, debouncedSearch, candidatesUrl]);
 
     const handleScroll = (
         event: React.UIEvent<HTMLDivElement>,
@@ -268,7 +288,7 @@ export function OrderAssignDriverSheet({
     const isReassign = currentDriverId !== null;
     const sheetMode = mode === 'change' || isReassign ? 'change' : 'assign';
     const sheetTitle =
-        sheetMode === 'change' ? 'Change order driver' : 'Assign driver';
+        sheetMode === 'change' ? 'Change driver' : 'Assign driver';
     const sheetDescription = fulfillmentNumber
         ? sheetMode === 'change'
             ? `Choose a different driver for ${fulfillmentNumber}.`
@@ -277,7 +297,7 @@ export function OrderAssignDriverSheet({
           ? 'Choose a different active driver from this branch.'
           : 'Choose an active driver from this branch.';
     const submitLabel =
-        sheetMode === 'change' ? 'Change order driver' : 'Assign driver';
+        sheetMode === 'change' ? 'Change driver' : 'Assign driver';
 
     const submit = (): void => {
         if (fulfillmentId === null || selectedId === null) {
@@ -290,8 +310,20 @@ export function OrderAssignDriverSheet({
 
         setAssigning(true);
 
+        const actionUrl =
+            storeUrl ??
+            (branchSlug
+                ? OrderAssignController.store.url([branchSlug, fulfillmentId])
+                : null);
+
+        if (!actionUrl) {
+            setAssigning(false);
+
+            return;
+        }
+
         router.post(
-            OrderAssignController.store.url([branchSlug, fulfillmentId]),
+            actionUrl,
             {
                 driver_id: selectedId,
                 ...(isReassign ? { reason: reason.trim() } : {}),
