@@ -329,6 +329,7 @@ export default function PlatformProductsIndex({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     toolbar={
                         <DataTableToolbar

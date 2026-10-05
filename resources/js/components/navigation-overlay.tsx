@@ -146,6 +146,7 @@ type VisitFlags = {
     id: string;
     async?: boolean;
     prefetch?: boolean;
+    showProgress?: boolean;
     only?: string[];
     except?: string[];
 };
@@ -154,6 +155,7 @@ function isPageVisit(visit: VisitFlags): boolean {
     return (
         visit.async !== true &&
         visit.prefetch !== true &&
+        visit.showProgress !== false &&
         (visit.only?.length ?? 0) === 0 &&
         (visit.except?.length ?? 0) === 0
     );

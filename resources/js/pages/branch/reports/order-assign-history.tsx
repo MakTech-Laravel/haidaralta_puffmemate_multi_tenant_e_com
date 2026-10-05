@@ -260,6 +260,7 @@ export default function BranchOrderAssignHistory({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No driver assignment history found."
                     toolbar={

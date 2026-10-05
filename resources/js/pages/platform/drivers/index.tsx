@@ -248,6 +248,7 @@ export default function PlatformDriversIndex({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No drivers match this filter."
                     toolbar={

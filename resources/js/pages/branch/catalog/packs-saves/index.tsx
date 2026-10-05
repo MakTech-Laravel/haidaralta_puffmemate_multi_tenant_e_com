@@ -271,6 +271,7 @@ export default function BranchPacksSavesIndex({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No packs yet. Create a pack to get started."
                     toolbar={
