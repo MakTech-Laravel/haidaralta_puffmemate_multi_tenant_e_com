@@ -394,6 +394,12 @@ export function buildPlatformNav(
                         permissions: ['manage-reports'],
                     }),
                     navLink({
+                        title: 'Order Assign History',
+                        href: '/platform/reports/order-assign-history',
+                        icon: History,
+                        permissions: ['manage-reports'],
+                    }),
+                    navLink({
                         title: 'Stock transactions',
                         href: '/platform/reports/stock-transactions',
                         icon: ScrollText,

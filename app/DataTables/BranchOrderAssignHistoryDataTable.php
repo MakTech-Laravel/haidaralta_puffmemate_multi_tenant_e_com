@@ -2,10 +2,10 @@
 
 namespace App\DataTables;
 
-use App\Enums\UserType;
 use App\Models\OrderDriverAssignmentHistory;
 use App\Models\OrderFulfillment;
 use App\Models\User;
+use App\Support\Order\AssignmentHistoryActor;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -203,6 +203,11 @@ class BranchOrderAssignHistoryDataTable extends AbstractDataTable
     protected function mapRow(Model $model): array
     {
         $fulfillment = $model->fulfillment;
+        $changedBy = AssignmentHistoryActor::changedBy(
+            $model->changer,
+            $this->branchId,
+            $this->branchSlug,
+        );
 
         return [
             'id' => $model->id,
@@ -223,26 +228,10 @@ class BranchOrderAssignHistoryDataTable extends AbstractDataTable
             'to_driver_url' => $model->to_driver_id !== null
                 ? route('branch.drivers.show', [$this->branchSlug, $model->to_driver_id])
                 : null,
-            'changed_by_name' => $model->changer?->name,
-            'changed_by_url' => $this->changerUrl($model->changer),
+            'changed_by_name' => $changedBy['name'],
+            'changed_by_url' => $changedBy['url'],
             'reason' => $model->reason,
             'created_at' => $model->created_at?->toIso8601String(),
         ];
-    }
-
-    private function changerUrl(?User $changer): ?string
-    {
-        if (
-            $changer === null
-            || $changer->user_type !== UserType::BRANCH
-            || $changer->branch_id !== $this->branchId
-        ) {
-            return null;
-        }
-
-        return route('branch.staff.show', [
-            'branch' => $this->branchSlug,
-            'user' => $changer,
-        ]);
     }
 }

@@ -224,7 +224,7 @@ export default function BranchOrderShow({
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        {/* <Card>
                             <CardHeader>
                                 <CardTitle>History</CardTitle>
                             </CardHeader>
@@ -243,7 +243,7 @@ export default function BranchOrderShow({
                                     </div>
                                 ))}
                             </CardContent>
-                        </Card>
+                        </Card> */}
 
                         {fulfillment.transfers.length > 0 ? (
                             <Card>
@@ -407,7 +407,7 @@ export default function BranchOrderShow({
                                 <CardHeader>
                                     <CardTitle>
                                         {isReassign
-                                            ? 'Change order driver'
+                                            ? 'Change driver'
                                             : 'Assign driver'}
                                     </CardTitle>
                                 </CardHeader>
@@ -498,7 +498,7 @@ export default function BranchOrderShow({
                                         }}
                                     >
                                         {isReassign
-                                            ? 'Change order driver'
+                                            ? 'Change driver'
                                             : 'Assign driver'}
                                     </Button>
                                 </CardContent>
