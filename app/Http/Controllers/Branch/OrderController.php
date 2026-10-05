@@ -10,10 +10,9 @@ use App\Http\Requests\Order\UpdateFulfillmentStatusRequest;
 use App\Models\Branch;
 use App\Models\OrderFulfillment;
 use App\Models\StockTransfer;
-use App\Models\User;
-use App\Services\Order\DriverAssignmentService;
 use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\FulfillmentStatusService;
+use App\Services\Order\OrderAssignService;
 use App\Services\Order\PaymentMarkingService;
 use App\Support\MediaUrl;
 use App\Support\Toast;
@@ -27,7 +26,7 @@ class OrderController extends Controller
     public function __construct(
         private FulfillmentStatusService $statusService,
         private PaymentMarkingService $payments,
-        private DriverAssignmentService $drivers,
+        private OrderAssignService $orderAssign,
         private DriverDeliveryService $deliveries,
     ) {}
 
@@ -98,22 +97,6 @@ class OrderController extends Controller
         $this->payments->markFulfillmentPaid($fulfillment);
 
         Toast::success('Fulfillment marked as paid.');
-
-        return redirect()->route('branch.orders.show', [$branch, $fulfillment]);
-    }
-
-    public function assignDriver(Request $request, string $branch, OrderFulfillment $fulfillment): RedirectResponse
-    {
-        $branch = $this->currentBranch();
-        $fulfillment = $this->resolveForBranch($fulfillment, $branch);
-
-        $driver = User::query()->findOrFail($request->validate([
-            'driver_id' => ['required', 'integer'],
-        ])['driver_id']);
-
-        $this->drivers->assign($fulfillment, $driver, $request->user());
-
-        Toast::success('Driver assigned.');
 
         return redirect()->route('branch.orders.show', [$branch, $fulfillment]);
     }
@@ -189,11 +172,8 @@ class OrderController extends Controller
                 ])
                 ->values()
                 ->all(),
-            'drivers' => $this->drivers->candidates($fulfillment)->map(fn (User $driver): array => [
-                'id' => $driver->id,
-                'name' => $driver->name,
-            ])->all(),
-            'canAssign' => in_array($fulfillment->status, [FulfillmentStatus::Ready, FulfillmentStatus::Assigned], true),
+            'drivers' => $this->orderAssign->candidatesPayload($fulfillment),
+            'canAssign' => $this->orderAssign->canAssign($fulfillment),
             'canCancel' => $fulfillment->status->allowsStaffCancel(),
             'canRetry' => $fulfillment->status === FulfillmentStatus::DeliveryFailed,
             'canReschedule' => $fulfillment->status === FulfillmentStatus::DeliveryFailed,

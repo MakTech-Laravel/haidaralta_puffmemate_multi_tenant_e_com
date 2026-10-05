@@ -46,3 +46,24 @@ it('clears a single-file collection when remove is true', function () {
 
     expect($user->fresh()->getMedia('avatar'))->toHaveCount(0);
 });
+
+it('replaces existing single-file media and deletes the previous file', function () {
+    $user = User::factory()->create();
+    $service = app(MediaUploadService::class);
+
+    $old = $service->syncSingle($user, 'avatar', UploadedFile::fake()->image('old.png', 120, 120));
+    $oldId = $old->id;
+    $oldRelativePath = $old->id.'/'.$old->file_name;
+
+    Storage::disk('public')->assertExists($oldRelativePath);
+
+    $new = $service->syncSingle($user, 'avatar', UploadedFile::fake()->image('new.png', 120, 120));
+
+    expect(Media::query()->whereKey($oldId)->exists())->toBeFalse()
+        ->and($user->fresh()->getMedia('avatar'))->toHaveCount(1)
+        ->and($new->id)->not->toBe($oldId)
+        ->and($new->file_name)->toBe('new.webp');
+
+    Storage::disk('public')->assertMissing($oldRelativePath);
+    Storage::disk('public')->assertExists($new->id.'/'.$new->file_name);
+});
