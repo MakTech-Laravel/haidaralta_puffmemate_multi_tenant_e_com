@@ -56,7 +56,7 @@ class BranchOrderFulfillmentDataTable extends AbstractDataTable
         return OrderFulfillment::query()
             ->where('branch_id', $this->branchId)
             ->with([
-                'order:id,order_number,customer_id,payment_status',
+                'order:id,order_number,customer_id,payment_status,source',
                 'order.customer:id,name',
                 'items',
                 'driver:id,name',
@@ -117,6 +117,8 @@ class BranchOrderFulfillmentDataTable extends AbstractDataTable
             'order_id' => $model->order_id,
             'order_number' => $model->order->order_number,
             'customer_name' => $model->order->customer?->name ?? 'Customer',
+            'source' => $model->order->source->value,
+            'source_label' => $model->order->source->label(),
             'items_count' => $model->items->count(),
             'status' => $model->status->value,
             'shipping_cost' => (float) $model->shipping_cost,

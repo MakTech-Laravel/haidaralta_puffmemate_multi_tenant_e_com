@@ -73,6 +73,8 @@ type OrderDetail = {
     statusLabel: string;
     paymentStatus: string;
     paymentStatusLabel: string;
+    sourceLabel: string;
+    placedByName: string | null;
     paymentStatusOptions: { value: string; label: string }[];
     paymentMethod: string | null;
     customerName: string;
@@ -576,6 +578,9 @@ export default function PlatformOrderShow({
                                 {order.placedAt ? (
                                     <span>Placed {order.placedAt}</span>
                                 ) : null}
+                                {order.placedByName ? (
+                                    <span>by {order.placedByName}</span>
+                                ) : null}
                                 <span className="text-foreground font-semibold tabular-nums">
                                     {order.totalLabel}
                                 </span>
@@ -584,6 +589,9 @@ export default function PlatformOrderShow({
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge className="px-2.5 py-1 text-sm">
                                 {order.statusLabel}
+                            </Badge>
+                            <Badge variant="outline" className="px-2.5 py-1 text-sm">
+                                {order.sourceLabel}
                             </Badge>
                             <Badge
                                 variant={

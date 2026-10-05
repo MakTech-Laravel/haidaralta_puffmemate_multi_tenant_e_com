@@ -5,6 +5,7 @@ namespace App\Actions\Order;
 use App\Enums\CartStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\NotificationType;
+use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Address;
@@ -108,6 +109,8 @@ class PlaceOrderAction
             $order = Order::query()->create([
                 'order_number' => $this->nextOrderNumber(),
                 'customer_id' => $user->id,
+                'placed_by' => null,
+                'source' => OrderSource::CustomerCheckout,
                 'address_id' => $address->id,
                 'coupon_id' => $coupon?->id,
                 'coupon_code' => $coupon?->code,

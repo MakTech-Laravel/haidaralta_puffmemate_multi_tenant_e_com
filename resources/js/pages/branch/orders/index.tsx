@@ -29,6 +29,7 @@ type FulfillmentRow = {
     order_id: number;
     order_number: string;
     customer_name: string;
+    source_label: string;
     items_count: number;
     status: string;
     shipping_cost: number;
@@ -100,6 +101,13 @@ export default function BranchOrdersIndex({
             {
                 accessorKey: 'customer_name',
                 header: 'Customer',
+            },
+            {
+                accessorKey: 'source_label',
+                header: 'Source',
+                cell: ({ row }) => (
+                    <Badge variant="outline">{row.original.source_label}</Badge>
+                ),
             },
             {
                 accessorKey: 'items_count',

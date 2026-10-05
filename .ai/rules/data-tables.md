@@ -10,6 +10,7 @@ paths:
   - app/DataTables/BranchStaffDataTable.php
   - app/DataTables/BranchRoleDataTable.php
   - app/DataTables/AbstractDataTable.php
+  - app/DataTables/OrderDataTable.php
 ---
 
 # Data Tables
@@ -85,3 +86,6 @@ BranchRoleDataTable uses makeForBranch(Request, Branch), not make — child sign
 
 ## Scout empty results fall back to SQL
 DataTable Scout search runs only when scout.driver is meilisearch. If Meilisearch throws or returns no keys (empty index, phone substrings), applySqlSearchConstraint runs LIKE on modelSearchableColumns instead of whereRaw 1=0. Tests use collection → SQL only.
+
+## Order source filter is platform-only
+Platform order lists show an OrderSource badge and filter (Customer, Driver Sale, Wholesale). Branch fulfillment lists show the badge only. Driver and customer order lists do not show source.

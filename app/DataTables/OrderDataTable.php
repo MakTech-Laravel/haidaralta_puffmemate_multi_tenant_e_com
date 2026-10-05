@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
@@ -30,7 +31,7 @@ class OrderDataTable extends AbstractDataTable
      */
     protected function baseQuery(): Builder
     {
-        return Order::query()->with(['customer:id,name', 'fulfillment.branch:id,name']);
+        return Order::query()->with(['customer:id,name', 'placedBy:id,name', 'fulfillment.branch:id,name']);
     }
 
     /**
@@ -41,6 +42,7 @@ class OrderDataTable extends AbstractDataTable
         return [
             AllowedFilter::exact('status'),
             AllowedFilter::exact('payment_status'),
+            AllowedFilter::exact('source'),
             $this->searchFilter(),
         ];
     }
@@ -74,6 +76,7 @@ class OrderDataTable extends AbstractDataTable
         return [
             'status' => OrderStatus::options(),
             'payment_status' => PaymentStatus::options(),
+            'source' => OrderSource::options(),
         ];
     }
 
@@ -93,6 +96,8 @@ class OrderDataTable extends AbstractDataTable
             'status_label' => $model->status->label(),
             'payment_status' => $model->payment_status->value,
             'payment_status_label' => $model->payment_status->label(),
+            'source' => $model->source->value,
+            'source_label' => $model->source->label(),
             'created_at' => $model->created_at?->toIso8601String(),
         ];
     }

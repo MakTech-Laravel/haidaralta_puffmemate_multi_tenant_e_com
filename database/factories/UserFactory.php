@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\CustomerRegistrationStatus;
 use App\Enums\UserType;
 use App\Models\User;
 use App\Support\Phone;
@@ -38,6 +39,7 @@ class UserFactory extends Factory
             'email_verified_at' => null,
             'password' => static::$password ??= 'password',
             'user_type' => UserType::CUSTOMER,
+            'registration_status' => CustomerRegistrationStatus::Registered,
             'branch_id' => null,
             'is_active' => true,
             'remember_token' => Str::random(10),
@@ -50,6 +52,17 @@ class UserFactory extends Factory
     /**
      * Indicate that the model's phone is unverified.
      */
+    public function provisional(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'user_type' => UserType::CUSTOMER,
+            'registration_status' => CustomerRegistrationStatus::Provisional,
+            'password' => null,
+            'phone_verified_at' => null,
+            'email' => null,
+        ]);
+    }
+
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => [
