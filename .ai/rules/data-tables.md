@@ -89,3 +89,6 @@ DataTable Scout search runs only when scout.driver is meilisearch. If Meilisearc
 
 ## Order source filter is platform-only
 Platform order lists show an OrderSource badge and filter (Customer, Driver Sale, Wholesale). Branch fulfillment lists show the badge only. Driver and customer order lists do not show source.
+
+## List filters stay background visits
+useDataTableQuery visits are background: async true (Inertia then sets showProgress false) plus replace, preserveState, and preserveScroll. Pagination Links use the same async/preserve flags. Pass isLoading={query.processing} to DataTable so rows dim without NavigationOverlay.
