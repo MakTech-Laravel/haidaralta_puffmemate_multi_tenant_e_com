@@ -251,7 +251,7 @@ test('branch staff must provide a reason when reassigning a driver', function ()
         ->and($history->reason)->toBe('Original driver unavailable');
 });
 
-test('branch order show links to driver assignment history page', function () {
+test('branch order show links to driver assign history report', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
@@ -276,16 +276,26 @@ test('branch order show links to driver assignment history page', function () {
 
     $this->actingAs($admin, 'branch')
         ->get(route('branch.orders.driver-assignment-history', [$sydney, $fulfillment]))
+        ->assertRedirect(route('branch.reports.order-assign-history', [
+            'branch' => $sydney,
+            'filter' => ['order_id' => $fulfillment->fulfillment_number],
+        ]));
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.reports.order-assign-history', [
+            'branch' => $sydney,
+            'filter' => ['order_id' => $fulfillment->fulfillment_number],
+        ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('branch/orders/driver-assignment-history')
-            ->has('history', 1)
-            ->where('history.0.to_driver_name', $driver->name)
-            ->where('history.0.to_driver_phone', $driver->phone)
-            ->where('history.0.to_driver_id', $driver->id)
-            ->where('history.0.changed_by_name', $admin->name)
-            ->where('history.0.from_driver_name', null)
-            ->where('history.0.from_driver_id', null));
+            ->component('branch/reports/order-assign-history')
+            ->has('table.data', 1)
+            ->where('table.data.0.to_driver_name', $driver->name)
+            ->where('table.data.0.to_driver_phone', $driver->phone)
+            ->where('table.data.0.to_driver_id', $driver->id)
+            ->where('table.data.0.changed_by_name', $admin->name)
+            ->where('table.data.0.from_driver_name', null)
+            ->where('table.data.0.from_driver_id', null));
 });
 
 test('branch staff cannot reassign with a reason longer than 255 characters', function () {

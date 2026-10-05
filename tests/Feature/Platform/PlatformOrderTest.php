@@ -45,8 +45,12 @@ test('platform admin sees orders across every branch', function () {
             ->has('table.data', 2)
             ->where('table.data.0.payment_status', PaymentStatus::PendingCollection->value)
             ->where('table.data.0.payment_status_label', 'Pending collection')
-            ->where('table.data.0.source_label', 'Customer')
-            ->has('table.data.0.status_label'));
+            ->where('table.data.0.source_label', 'Customer')         
+            ->has('table.data.0.status_label')
+            ->where('table.data.0.can_assign', true)
+            ->where('table.data.0.assign_status', 'not_assign')
+            ->where('table.data.1.can_assign', true)
+            ->where('table.data.1.assign_status', 'not_assign'));
 });
 
 test('platform order detail exposes the single fulfillment', function () {
@@ -62,7 +66,7 @@ test('platform order detail exposes the single fulfillment', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('platform/orders/show')
             ->has('order.fulfillments', 1)
-            ->has('order.drivers')
+            ->where('order.fulfillments.0.canAssign', true)
             ->has('order.statusLabel')
             ->has('order.paymentStatusLabel')
             ->has('order.sourceLabel')

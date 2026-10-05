@@ -13,10 +13,9 @@ use App\Http\Requests\Order\UpdateFulfillmentStatusRequest;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Models\StockTransfer;
-use App\Models\User;
-use App\Services\Order\DriverAssignmentService;
 use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\FulfillmentStatusService;
+use App\Services\Order\OrderAssignService;
 use App\Services\Order\PaymentMarkingService;
 use App\Support\MediaUrl;
 use App\Support\Toast;
@@ -30,7 +29,7 @@ class OrderController extends Controller
     public function __construct(
         private FulfillmentStatusService $statusService,
         private PaymentMarkingService $payments,
-        private DriverAssignmentService $drivers,
+        private OrderAssignService $orderAssign,
         private DriverDeliveryService $deliveries,
     ) {}
 
@@ -54,6 +53,7 @@ class OrderController extends Controller
             'placedBy:id,name',
             'items',
             'fulfillments.branch',
+            'fulfillments.driver:id,name',
             'fulfillments.items',
             'fulfillments.stockTransfers.items.product:id,name',
             'fulfillments.stockTransfers.sourceBranch:id,name',
@@ -78,20 +78,6 @@ class OrderController extends Controller
         $this->statusService->transition($fulfillment, $status, $request->user());
 
         Toast::success('Fulfillment status updated.');
-
-        return redirect()->route('platform.orders.show', $order);
-    }
-
-    public function assignDriver(Request $request, Order $order): RedirectResponse
-    {
-        $fulfillment = $this->requireFulfillment($order);
-        $driver = User::query()->findOrFail($request->validate([
-            'driver_id' => ['required', 'integer'],
-        ])['driver_id']);
-
-        $this->drivers->assign($fulfillment, $driver, $request->user());
-
-        Toast::success('Driver assigned.');
 
         return redirect()->route('platform.orders.show', $order);
     }
@@ -153,8 +139,6 @@ class OrderController extends Controller
      */
     private function detail(Order $order): array
     {
-        $fulfillment = $order->fulfillment;
-
         $paymentOptions = collect(PaymentStatus::actionableOptions());
 
         if ($paymentOptions->doesntContain(fn (array $option): bool => $option['value'] === $order->payment_status->value)) {
@@ -186,12 +170,7 @@ class OrderController extends Controller
             'couponCode' => $order->coupon_code,
             'deliveryFeeLabel' => '$'.number_format((float) $order->delivery_fee, 2),
             'shippingAddress' => $order->shipping_address_snapshot,
-            'drivers' => $fulfillment === null
-                ? []
-                : $this->drivers->candidates($fulfillment)->map(fn (User $driver): array => [
-                    'id' => $driver->id,
-                    'name' => $driver->name,
-                ])->all(),
+            'drivers' => [],
             'fulfillments' => $order->fulfillments->map(fn (OrderFulfillment $row): array => [
                 'id' => $row->id,
                 'fulfillmentNumber' => $row->fulfillment_number,
@@ -209,7 +188,8 @@ class OrderController extends Controller
                 'shippingCostLabel' => '$'.number_format((float) $row->shipping_cost, 2),
                 'isPaid' => $row->isPaid(),
                 'driverId' => $row->driver_id,
-                'canAssign' => in_array($row->status, [FulfillmentStatus::Ready, FulfillmentStatus::Assigned], true),
+                'driverName' => $row->driver?->name,
+                'canAssign' => $this->orderAssign->canAssign($row),
                 'canCancel' => $row->status->allowsStaffCancel(),
                 'canRetry' => $row->status === FulfillmentStatus::DeliveryFailed,
                 'canReschedule' => $row->status === FulfillmentStatus::DeliveryFailed,

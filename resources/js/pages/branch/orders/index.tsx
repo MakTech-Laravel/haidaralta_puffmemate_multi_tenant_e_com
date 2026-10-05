@@ -213,7 +213,7 @@ export default function BranchOrdersIndex({
                             {
                                 label:
                                     row.original.assign_status === 'assign'
-                                        ? 'Change order driver'
+                                        ? 'Change driver'
                                         : 'Assign driver',
                                 icon: UserRound,
                                 disabled: !row.original.can_assign,

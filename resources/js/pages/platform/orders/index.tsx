@@ -1,8 +1,10 @@
 import { Head, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye } from 'lucide-react';
-import { useMemo } from 'react';
+import { Eye, UserRound } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import OrderAssignController from '@/actions/App/Http/Controllers/Platform/OrderAssignController';
 import OrderController from '@/actions/App/Http/Controllers/Platform/OrderController';
+import { OrderAssignDriverSheet } from '@/components/branch/order-assign-driver-sheet';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -26,6 +28,8 @@ type OrderRow = {
     order_number: string;
     customer_name: string;
     fulfillment_branch: string;
+    fulfillment_id: number | null;
+    fulfillment_number: string | null;
     total_label: string;
     status: string;
     status_label: string;
@@ -33,6 +37,10 @@ type OrderRow = {
     payment_status_label: string;
     source: string;
     source_label: string;
+    assign_status: 'not_assign' | 'assign';
+    driver_id: number | null;
+    driver_name: string | null;
+    can_assign: boolean;
 };
 
 export default function PlatformOrdersIndex({
@@ -46,6 +54,14 @@ export default function PlatformOrdersIndex({
             { title: 'Orders', href: '/platform/orders' },
         ],
     });
+
+    const [assignOpen, setAssignOpen] = useState(false);
+    const [assignOrder, setAssignOrder] = useState<{
+        order_id: number;
+        fulfillment_id: number | null;
+        fulfillment_number: string | null;
+        is_change: boolean;
+    } | null>(null);
 
     const query = useDataTableQuery({
         indexUrl: OrderController.index.url(),
@@ -159,6 +175,27 @@ export default function PlatformOrdersIndex({
                                 href: OrderController.show.url(
                                     row.original.id,
                                 ),
+                            },
+                            {
+                                label:
+                                    row.original.assign_status === 'assign'
+                                        ? 'Change driver'
+                                        : 'Assign driver',
+                                icon: UserRound,
+                                disabled: !row.original.can_assign,
+                                onSelect: () => {
+                                    setAssignOrder({
+                                        order_id: row.original.id,
+                                        fulfillment_id:
+                                            row.original.fulfillment_id,
+                                        fulfillment_number:
+                                            row.original.fulfillment_number,
+                                        is_change:
+                                            row.original.assign_status ===
+                                            'assign',
+                                    });
+                                    setAssignOpen(true);
+                                },
                             },
                         ]}
                     />
@@ -291,6 +328,32 @@ export default function PlatformOrdersIndex({
                     }
                 />
             </div>
+
+            <OrderAssignDriverSheet
+                open={assignOpen}
+                onOpenChange={(open) => {
+                    setAssignOpen(open);
+
+                    if (!open) {
+                        setAssignOrder(null);
+                    }
+                }}
+                fulfillmentId={assignOrder?.fulfillment_id ?? null}
+                fulfillmentNumber={assignOrder?.fulfillment_number ?? null}
+                mode={assignOrder?.is_change ? 'change' : 'assign'}
+                candidatesUrl={
+                    assignOrder
+                        ? OrderAssignController.candidates.url(
+                              assignOrder.order_id,
+                          )
+                        : null
+                }
+                storeUrl={
+                    assignOrder
+                        ? OrderAssignController.store.url(assignOrder.order_id)
+                        : null
+                }
+            />
         </>
     );
 }

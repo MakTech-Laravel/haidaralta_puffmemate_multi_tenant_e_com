@@ -29,6 +29,7 @@ use App\Http\Controllers\Platform\GeneralSettingsController as PlatformGeneralSe
 use App\Http\Controllers\Platform\HomeBannerController as PlatformHomeBannerController;
 use App\Http\Controllers\Platform\NotificationController as PlatformNotificationController;
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
+use App\Http\Controllers\Platform\OrderAssignController as PlatformOrderAssignController;
 use App\Http\Controllers\Platform\OrderController as PlatformOrderController;
 use App\Http\Controllers\Platform\PacksSavesController as PlatformPacksSavesController;
 use App\Http\Controllers\Platform\PaymentGatewaySettingsController as PlatformPaymentGatewaySettingsController;
@@ -37,6 +38,7 @@ use App\Http\Controllers\Platform\PriceRangeController as PlatformPriceRangeCont
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
+use App\Http\Controllers\Platform\Reports\OrderAssignHistoryController as PlatformOrderAssignHistoryController;
 use App\Http\Controllers\Platform\Reports\OrderOperationsController as PlatformOrderOperationsController;
 use App\Http\Controllers\Platform\Reports\PriceHistoryController as PlatformPriceHistoryController;
 use App\Http\Controllers\Platform\Reports\ProductAssignTransactionController as PlatformProductAssignTransactionController;
@@ -319,6 +321,14 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.stock.price');
         Route::get('reports/order-operations', [PlatformOrderOperationsController::class, 'index'])
             ->name('platform.reports.order-operations');
+        Route::get('reports/order-assign-history', [PlatformOrderAssignHistoryController::class, 'index'])
+            ->name('platform.reports.order-assign-history');
+        Route::get('reports/order-assign-history/export', [PlatformOrderAssignHistoryController::class, 'export'])
+            ->name('platform.reports.order-assign-history.export');
+        Route::get('reports/order-assign-history/driver-options', [PlatformOrderAssignHistoryController::class, 'driverOptions'])
+            ->name('platform.reports.order-assign-history.driver-options');
+        Route::get('reports/order-assign-history/branch-options', [PlatformOrderAssignHistoryController::class, 'branchOptions'])
+            ->name('platform.reports.order-assign-history.branch-options');
         Route::get('reports/stock-transactions', [PlatformStockTransactionController::class, 'index'])
             ->name('platform.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [PlatformStockTransactionController::class, 'export'])
@@ -450,7 +460,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::get('orders/{order}', [PlatformOrderController::class, 'show'])->name('platform.orders.show');
         Route::put('orders/{order}/fulfillments/{fulfillment}/status', [PlatformOrderController::class, 'updateStatus'])
             ->name('platform.orders.fulfillments.status');
-        Route::post('orders/{order}/assign-driver', [PlatformOrderController::class, 'assignDriver'])
+        Route::get('orders/{order}/assign-candidates', [PlatformOrderAssignController::class, 'candidates'])
+            ->name('platform.orders.assign-candidates');
+        Route::post('orders/{order}/assign-driver', [PlatformOrderAssignController::class, 'store'])
             ->name('platform.orders.assign-driver');
         Route::post('orders/{order}/cancel', [PlatformOrderController::class, 'cancel'])
             ->name('platform.orders.cancel');

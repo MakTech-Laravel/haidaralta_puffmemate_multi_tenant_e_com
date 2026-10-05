@@ -6,8 +6,10 @@ use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
+use App\Services\Order\OrderAssignService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 
@@ -18,6 +20,21 @@ use Spatie\QueryBuilder\AllowedSort;
  */
 class OrderDataTable extends AbstractDataTable
 {
+    public function __construct(
+        Request $request,
+        protected OrderAssignService $orderAssign,
+    ) {
+        parent::__construct($request);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function make(Request $request): array
+    {
+        return (new static($request, app(OrderAssignService::class)))->toArray();
+    }
+
     /**
      * @return class-string<Order>
      */
@@ -31,7 +48,7 @@ class OrderDataTable extends AbstractDataTable
      */
     protected function baseQuery(): Builder
     {
-        return Order::query()->with(['customer:id,name', 'placedBy:id,name', 'fulfillment.branch:id,name']);
+        return Order::query()->with(['customer:id,name', 'placedBy:id,name', 'fulfillment.branch:id,name', 'fulfillment.driver:id,name']);
     }
 
     /**
@@ -86,12 +103,30 @@ class OrderDataTable extends AbstractDataTable
      */
     protected function mapRow(Model $model): array
     {
+        $fulfillment = $model->fulfillment;
+
+        $assign = $fulfillment === null
+            ? [
+                'fulfillment_id' => null,
+                'fulfillment_number' => null,
+                'can_assign' => false,
+                'assign_status' => 'not_assign',
+                'driver_id' => null,
+                'driver_name' => null,
+            ]
+            : [
+                'fulfillment_id' => $fulfillment->id,
+                'fulfillment_number' => $fulfillment->fulfillment_number,
+                'can_assign' => $this->orderAssign->canAssign($fulfillment),
+                ...$this->orderAssign->assignStatusPayload($fulfillment),
+            ];
+
         return [
             'id' => $model->id,
             'order_number' => $model->order_number,
             'customer_name' => $model->customer?->name ?? 'Customer',
-            'fulfillment_branch' => $model->fulfillment?->branch?->name ?? '—',
-            'total_label' => '$'.number_format((float) $model->total_amount, 2),
+            'fulfillment_branch' => $fulfillment?->branch?->name ?? '—',
+            'total_label' => '$' . number_format((float) $model->total_amount, 2),
             'status' => $model->status->value,
             'status_label' => $model->status->label(),
             'payment_status' => $model->payment_status->value,
@@ -99,6 +134,7 @@ class OrderDataTable extends AbstractDataTable
             'source' => $model->source->value,
             'source_label' => $model->source->label(),
             'created_at' => $model->created_at?->toIso8601String(),
+            ...$assign,
         ];
     }
 }

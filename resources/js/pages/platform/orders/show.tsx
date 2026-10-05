@@ -1,4 +1,4 @@
-import { Head, router, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import {
     ArrowRight,
     Check,
@@ -8,8 +8,11 @@ import {
     UserRound,
 } from 'lucide-react';
 import { useState } from 'react';
+import OrderAssignController from '@/actions/App/Http/Controllers/Platform/OrderAssignController';
+import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/OrderAssignHistoryController';
 import OrderController from '@/actions/App/Http/Controllers/Platform/OrderController';
 import StockTransferController from '@/actions/App/Http/Controllers/Platform/StockTransferController';
+import { OrderAssignDriverSheet } from '@/components/branch/order-assign-driver-sheet';
 import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,6 +42,7 @@ type FulfillmentSummary = {
     shippingCostLabel: string;
     isPaid: boolean;
     driverId: number | null;
+    driverName: string | null;
     canAssign: boolean;
     canCancel: boolean;
     canRetry: boolean;
@@ -91,7 +95,6 @@ type OrderDetail = {
         postal_code?: string;
         phone?: string;
     } | null;
-    drivers: { id: number; name: string }[];
     fulfillments: FulfillmentSummary[];
     timeline: { label: string; detail: string; comment: string | null }[];
 };
@@ -99,17 +102,13 @@ type OrderDetail = {
 function FulfillmentCard({
     orderId,
     fulfillment,
-    drivers,
 }: {
     orderId: number;
     fulfillment: FulfillmentSummary;
-    drivers: { id: number; name: string }[];
 }) {
     const [status, setStatus] = useState(fulfillment.status);
-    const [driverId, setDriverId] = useState(
-        fulfillment.driverId ? String(fulfillment.driverId) : '',
-    );
     const [processing, setProcessing] = useState(false);
+    const [assignOpen, setAssignOpen] = useState(false);
 
     const run = (action: () => void) => {
         setProcessing(true);
@@ -135,6 +134,20 @@ function FulfillmentCard({
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                            <Link
+                                href={OrderAssignHistoryController.index.url({
+                                    query: {
+                                        filter: {
+                                            order_id:
+                                                fulfillment.fulfillmentNumber,
+                                        },
+                                    },
+                                })}
+                            >
+                                Driver assign history
+                            </Link>
+                        </Button>
                         <Badge variant="secondary">
                             {fulfillment.statusLabel}
                         </Badge>
@@ -376,47 +389,47 @@ function FulfillmentCard({
                         </Button>
                     </div>
 
-                    {fulfillment.canAssign ? (
+                    {/* {fulfillment.canAssign ? (
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                            <Select
-                                value={driverId}
-                                onValueChange={setDriverId}
-                            >
-                                <SelectTrigger className="sm:flex-1">
-                                    <SelectValue placeholder="Choose a driver" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {drivers.map((driver) => (
-                                        <SelectItem
-                                            key={driver.id}
-                                            value={String(driver.id)}
-                                        >
-                                            {driver.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            {fulfillment.driverName ? (
+                                <p className="text-muted-foreground text-sm sm:flex-1">
+                                    Current driver:{' '}
+                                    <span className="text-foreground font-medium">
+                                        {fulfillment.driverName}
+                                    </span>
+                                </p>
+                            ) : (
+                                <p className="text-muted-foreground text-sm sm:flex-1">
+                                    No driver assigned
+                                </p>
+                            )}
                             <Button
-                                disabled={processing || driverId === ''}
-                                onClick={() =>
-                                    run(() =>
-                                        router.post(
-                                            OrderController.assignDriver.url(
-                                                orderId,
-                                            ),
-                                            { driver_id: Number(driverId) },
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
-                                        ),
-                                    )
-                                }
+                                disabled={processing}
+                                onClick={() => setAssignOpen(true)}
                             >
-                                Assign driver
+                                {fulfillment.driverId
+                                    ? 'Change driver'
+                                    : 'Assign driver'}
                             </Button>
+                            <OrderAssignDriverSheet
+                                open={assignOpen}
+                                onOpenChange={setAssignOpen}
+                                fulfillmentId={fulfillment.id}
+                                fulfillmentNumber={
+                                    fulfillment.fulfillmentNumber
+                                }
+                                mode={
+                                    fulfillment.driverId ? 'change' : 'assign'
+                                }
+                                candidatesUrl={OrderAssignController.candidates.url(
+                                    orderId,
+                                )}
+                                storeUrl={OrderAssignController.store.url(
+                                    orderId,
+                                )}
+                            />
                         </div>
-                    ) : null}
+                    ) : null} */}
 
                     <div className="flex flex-wrap gap-2">
                         {fulfillment.canCancel ? (
@@ -615,7 +628,6 @@ export default function PlatformOrderShow({
                                 key={fulfillment.id}
                                 orderId={order.id}
                                 fulfillment={fulfillment}
-                                drivers={order.drivers}
                             />
                         ))}
                     </div>

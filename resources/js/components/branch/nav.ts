@@ -270,6 +270,12 @@ export function buildBranchNav(
                         permissions: ['manage-branch-orders'],
                     }),
                     navLink({
+                        title: 'Order Assign History',
+                        href: `/branch/${slug}/reports/order-assign-history`,
+                        icon: History,
+                        permissions: ['manage-branch-orders'],
+                    }),
+                    navLink({
                         title: 'Stock transactions',
                         href: `/branch/${slug}/reports/stock-transactions`,
                         icon: ScrollText,
