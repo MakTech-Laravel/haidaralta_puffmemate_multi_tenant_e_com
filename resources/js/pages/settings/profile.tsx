@@ -1,25 +1,25 @@
-import { Head, Link, setLayoutProps, useForm, usePage } from '@inertiajs/react';
-import { useEffect, useState, type FormEvent } from 'react';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/delete-user';
-import FileUpload, { type ExistingFile } from '@/components/file-upload';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
-import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys';
-import ManagePasskeys from '@/components/manage-passkeys';
-import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
-import ManageTwoFactor from '@/components/manage-two-factor';
-import ChangePasswordCard from '@/components/settings/change-password-card';
-import BranchAccountPage from '@/layouts/settings/branch-account-page';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
-import { edit } from '@/routes/profile';
-import { notice } from '@/routes/phone/verification';
-import type { Auth } from '@/types';
+import { Head, Link, setLayoutProps, useForm, usePage } from "@inertiajs/react";
+import { useEffect, useState, type FormEvent } from "react";
+import ProfileController from "@/actions/App/Http/Controllers/Settings/ProfileController";
+import DeleteUser from "@/components/delete-user";
+import FileUpload, { type ExistingFile } from "@/components/file-upload";
+import Heading from "@/components/heading";
+import InputError from "@/components/input-error";
+import type { Props as ManagePasskeysProps } from "@/components/manage-passkeys";
+import ManagePasskeys from "@/components/manage-passkeys";
+import type { Props as ManageTwoFactorProps } from "@/components/manage-two-factor";
+import ManageTwoFactor from "@/components/manage-two-factor";
+import ChangePasswordCard from "@/components/settings/change-password-card";
+import BranchAccountPage from "@/layouts/settings/branch-account-page";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
+import { edit } from "@/routes/profile";
+import { notice } from "@/routes/phone/verification";
+import type { Auth } from "@/types";
 
-const AVATAR_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
+const AVATAR_ACCEPT = "image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp";
 
 type ProfilePayload = {
     name: string;
@@ -40,21 +40,21 @@ type PageProps = {
 };
 
 function profileBreadcrumbs(portal: string | null, branchSlug?: string) {
-    if (portal === 'platform') {
+    if (portal === "platform") {
         return [
-            { title: 'Dashboard', href: '/platform/dashboard' },
-            { title: 'Profile', href: edit() },
+            { title: "Dashboard", href: "/platform/dashboard" },
+            { title: "Profile", href: edit() },
         ];
     }
 
-    if (portal === 'branch' && branchSlug) {
+    if (portal === "branch" && branchSlug) {
         return [
-            { title: 'Dashboard', href: `/branch/${branchSlug}/dashboard` },
-            { title: 'Profile', href: edit() },
+            { title: "Dashboard", href: `/branch/${branchSlug}/dashboard` },
+            { title: "Profile", href: edit() },
         ];
     }
 
-    return [{ title: 'Profile', href: edit() }];
+    return [{ title: "Profile", href: edit() }];
 }
 
 export default function Profile({
@@ -87,11 +87,11 @@ export default function Profile({
         profile?.avatar && profile?.avatar_url
             ? [
                   {
-                      id: 'avatar',
+                      id: "avatar",
                       path: profile.avatar,
                       url: profile.avatar_url,
-                      mime_type: 'image/jpeg',
-                      name: profile.avatar.split('/').pop() ?? 'avatar',
+                      mime_type: "image/jpeg",
+                      name: profile.avatar.split("/").pop() ?? "avatar",
                   },
               ]
             : [],
@@ -109,13 +109,13 @@ export default function Profile({
         validate,
         setValidationTimeout,
         cancel,
-    } = useForm('post', action.action, {
-        name: profile?.name ?? user?.name ?? '',
-        phone: profile?.phone ?? user?.phone ?? '',
-        email: profile?.email ?? user?.email ?? '',
+    } = useForm("post", action.action, {
+        name: profile?.name ?? user?.name ?? "",
+        phone: profile?.phone ?? user?.phone ?? "",
+        email: profile?.email ?? user?.email ?? "",
         avatar: null as File | null,
         remove_avatar: false,
-        _method: 'patch',
+        _method: "patch",
     });
 
     useEffect(() => {
@@ -145,10 +145,10 @@ export default function Profile({
         });
     };
 
-    const isStaffPortal = portal === 'branch' || portal === 'platform';
+    const isStaffPortal = portal === "branch" || portal === "platform";
     const page = (
         <>
-            <Head title={isStaffPortal ? 'Profile' : 'Profile settings'} />
+            <Head title={isStaffPortal ? "Profile" : "Profile settings"} />
 
             {!isStaffPortal && <h1 className="sr-only">Profile settings</h1>}
 
@@ -162,20 +162,8 @@ export default function Profile({
                 )}
 
                 <form onSubmit={submit} className="space-y-6">
-                    <div
-                        className={
-                            isStaffPortal
-                                ? 'block space-y-4'
-                                : 'flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-4'
-                        }
-                    >
-                        <div
-                            className={
-                                isStaffPortal
-                                    ? 'block w-28 space-y-1.5'
-                                    : 'flex w-40 shrink-0 flex-col gap-1.5 sm:w-44'
-                            }
-                        >
+                    <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-10">
+                        <div className="shrink-0 space-y-1.5">
                             <Label>Avatar</Label>
                             <FileUpload
                                 variant="avatar"
@@ -219,13 +207,7 @@ export default function Profile({
                             />
                         </div>
 
-                        <div
-                            className={
-                                isStaffPortal
-                                    ? 'block space-y-3'
-                                    : 'flex min-w-0 flex-1 flex-col gap-3'
-                            }
-                        >
+                        <div className="min-w-0 flex-1 space-y-4">
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="name">Name</Label>
                                 <Input
@@ -233,7 +215,7 @@ export default function Profile({
                                     className="mt-1 block w-full"
                                     value={data.name}
                                     onChange={(event) =>
-                                        setData('name', event.target.value)
+                                        setData("name", event.target.value)
                                     }
                                     required
                                     autoComplete="name"
@@ -251,15 +233,12 @@ export default function Profile({
                                         className="mt-1 block w-full"
                                         value={data.phone}
                                         onChange={(event) =>
-                                            setData(
-                                                'phone',
-                                                event.target.value,
-                                            )
+                                            setData("phone", event.target.value)
                                         }
                                         required
                                         autoComplete="tel"
                                         placeholder="04XX XXX XXX"
-                                        onBlur={() => validate('phone')}
+                                        onBlur={() => validate("phone")}
                                     />
                                     <InputError message={errors.phone} />
                                 </div>
@@ -272,56 +251,54 @@ export default function Profile({
                                         id="email"
                                         type="email"
                                         className="mt-1 block w-full"
-                                        value={data.email ?? ''}
+                                        value={data.email ?? ""}
                                         onChange={(event) =>
-                                            setData(
-                                                'email',
-                                                event.target.value,
-                                            )
+                                            setData("email", event.target.value)
                                         }
                                         autoComplete="email"
                                         placeholder="Email address"
                                         onBlur={(e) => {
-                                            if (e.target.value.trim() !== '') {
-                                                validate('email');
+                                            if (e.target.value.trim() !== "") {
+                                                validate("email");
                                             }
                                         }}
                                     />
                                     <InputError message={errors.email} />
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    {mustVerifyPhone && user.phone_verified_at === null && (
-                        <div>
-                            <p className="text-muted-foreground text-sm">
-                                Your phone number is unverified.{' '}
-                                <Link
-                                    href={notice()}
-                                    className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
+                            {mustVerifyPhone &&
+                                user.phone_verified_at === null && (
+                                    <div>
+                                        <p className="text-muted-foreground text-sm">
+                                            Your phone number is unverified.{" "}
+                                            <Link
+                                                href={notice()}
+                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
+                                            >
+                                                Verify your phone
+                                            </Link>
+                                        </p>
+
+                                        {status && (
+                                            <div className="mt-2 text-sm font-medium text-green-600">
+                                                {status}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                            <div className="mt-4">
+                                <Button
+                                    type="submit"
+                                    disabled={processing}
+                                    data-test="update-profile-button"
                                 >
-                                    Verify your phone
-                                </Link>
-                            </p>
-
-                            {status && (
-                                <div className="mt-2 text-sm font-medium text-green-600">
-                                    {status}
-                                </div>
-                            )}
+                                    {processing ? <Spinner /> : null}
+                                    Save
+                                </Button>
+                            </div>
                         </div>
-                    )}
-
-                    <div className="flex items-center gap-4">
-                        <Button
-                            type="submit"
-                            disabled={processing}
-                            data-test="update-profile-button"
-                        >
-                            {processing ? <Spinner /> : null}
-                            Save
-                        </Button>
                     </div>
                 </form>
             </section>

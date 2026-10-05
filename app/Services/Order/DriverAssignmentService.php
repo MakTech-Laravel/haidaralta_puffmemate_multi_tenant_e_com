@@ -7,6 +7,7 @@ use App\Enums\DriverAssignmentStatus;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\UserType;
+use App\Models\OrderDriverAssignmentHistory;
 use App\Models\OrderFulfillment;
 use App\Models\User;
 use App\Services\Conversation\ConversationService;
@@ -47,7 +48,7 @@ class DriverAssignmentService
                         $dates->whereNull('ended_at')->orWhereDate('ended_at', '>=', now()->toDateString());
                     });
             })
-            ->with('driverProfile')
+            ->with(['driverProfile', 'media'])
             ->get()
             ->sortBy(function (User $driver) use ($fulfillment, $workload): array {
                 $available = $driver->driverProfile?->availability_status === DriverAvailabilityStatus::Available ? 0 : 1;
@@ -56,6 +57,14 @@ class DriverAssignmentService
                 return [$available, $load, $this->distanceFromBranch($fulfillment, $driver), $driver->id];
             })
             ->values();
+    }
+
+    /**
+     * Whether staff may assign or reassign a driver for this fulfillment.
+     */
+    public function canAssign(OrderFulfillment $fulfillment): bool
+    {
+        return $fulfillment->status !== FulfillmentStatus::Delivered;
     }
 
     /**
@@ -79,16 +88,26 @@ class DriverAssignmentService
         );
     }
 
-    public function assign(OrderFulfillment $fulfillment, User $driver, User $actor): OrderFulfillment
+    public function assign(OrderFulfillment $fulfillment, User $driver, User $actor, ?string $reason = null): OrderFulfillment
     {
-        if (! in_array($fulfillment->status, [FulfillmentStatus::Ready, FulfillmentStatus::Assigned], true)) {
+        if ($fulfillment->status === FulfillmentStatus::Delivered) {
             throw ValidationException::withMessages([
-                'driver_id' => 'Assign a driver after the order is packed.',
+                'driver_id' => 'Cannot assign a driver after the order is delivered.',
             ]);
         }
 
-        if ($fulfillment->status === FulfillmentStatus::Assigned && $fulfillment->driver_id === $driver->id) {
+        if ($fulfillment->driver_id === $driver->id) {
             return $fulfillment;
+        }
+
+        $fromDriverId = $fulfillment->driver_id;
+        $reason = $reason !== null ? trim($reason) : null;
+        $reason = $reason === '' ? null : $reason;
+
+        if ($fromDriverId !== null && $reason === null) {
+            throw ValidationException::withMessages([
+                'reason' => 'Provide a reason when changing the assigned driver.',
+            ]);
         }
 
         $allowed = $this->candidates($fulfillment)->pluck('id');
@@ -101,7 +120,20 @@ class DriverAssignmentService
 
         $fulfillment->forceFill(['driver_id' => $driver->id])->save();
 
-        if ($fulfillment->status === FulfillmentStatus::Ready) {
+        OrderDriverAssignmentHistory::query()->create([
+            'order_id' => $fulfillment->order_id,
+            'fulfillment_id' => $fulfillment->id,
+            'from_driver_id' => $fromDriverId,
+            'to_driver_id' => $driver->id,
+            'reason' => $reason,
+            'changed_by' => $actor->id,
+        ]);
+
+        if (in_array($fulfillment->status, [
+            FulfillmentStatus::Pending,
+            FulfillmentStatus::Processing,
+            FulfillmentStatus::Ready,
+        ], true)) {
             $this->statuses->apply($fulfillment, FulfillmentStatus::Assigned, $actor, 'Driver assigned');
         }
 
