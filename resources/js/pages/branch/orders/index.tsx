@@ -251,6 +251,7 @@ export default function BranchOrdersIndex({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No orders found."
                     toolbar={

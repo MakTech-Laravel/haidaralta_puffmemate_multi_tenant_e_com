@@ -119,6 +119,8 @@ export function ShiftAssignedPeoplePage({
                 preserveState: true,
                 preserveScroll: true,
                 replace: true,
+                async: true,
+                showProgress: false,
             },
         );
     };
@@ -235,6 +237,7 @@ export function ShiftAssignedPeoplePage({
                         columns={columns}
                         payload={tablePayload}
                         perPage={query.perPage}
+                        isLoading={query.processing}
                         onPerPageChange={query.changePerPage}
                         emptyMessage="Nobody has duty days in this month."
                         toolbar={

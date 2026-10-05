@@ -440,6 +440,7 @@ export default function PlatformDatabaseBackupsIndex({
                         columns={archiveColumns}
                         payload={archives}
                         perPage={archivesQuery.perPage}
+                        isLoading={archivesQuery.processing}
                         onPerPageChange={archivesQuery.changePerPage}
                         emptyMessage="No backup zips yet. Run a backup to create one."
                         toolbar={
@@ -461,6 +462,7 @@ export default function PlatformDatabaseBackupsIndex({
                         columns={historyColumns}
                         payload={historyTable}
                         perPage={historyQuery.perPage}
+                        isLoading={historyQuery.processing}
                         onPerPageChange={historyQuery.changePerPage}
                         emptyMessage="No operator history yet."
                         toolbar={
