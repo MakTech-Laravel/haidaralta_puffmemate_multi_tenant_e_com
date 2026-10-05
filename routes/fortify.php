@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\ClaimCustomerAccountController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -79,6 +80,15 @@ Route::group(['middleware' => config('fortify.middleware', ['web'])], function (
         Route::post(RoutePath::for('register', '/register'), [RegisterController::class, 'store'])
             ->middleware('precognitive')
             ->name('register.store');
+
+        if ($enableViews) {
+            Route::get('/register/claim', [ClaimCustomerAccountController::class, 'create'])
+                ->name('register.claim');
+        }
+
+        Route::post('/register/claim', [ClaimCustomerAccountController::class, 'store'])
+            ->middleware('throttle:'.$verificationLimiter)
+            ->name('register.claim.store');
     }
 
     // Phone Verification...

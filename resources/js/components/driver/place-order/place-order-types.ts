@@ -1,11 +1,3 @@
-export type DriverPlaceOrderCustomer = {
-    id: string;
-    name: string;
-    phone: string;
-    address: string;
-    locationLabel: string;
-};
-
 export type DriverPlaceOrderProduct = {
     id: string;
     name: string;
@@ -20,10 +12,18 @@ export type DriverPlaceOrderProduct = {
 export type DriverPlaceOrderPaymentMethod = {
     id: string;
     label: string;
+    description?: string | null;
 };
 
 export type DriverPlaceOrderCatalog = {
-    customers: DriverPlaceOrderCustomer[];
     products: DriverPlaceOrderProduct[];
     paymentMethods: DriverPlaceOrderPaymentMethod[];
+    canSell: boolean;
+};
+
+export type ResolvedPlaceOrderCustomer = {
+    id: number;
+    name: string;
+    phone: string;
+    registration_status: string;
 };

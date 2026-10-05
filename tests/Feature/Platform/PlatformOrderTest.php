@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderSource;
 use App\Enums\PaymentStatus;
 use App\Enums\UserType;
 use App\Models\Branch;
@@ -44,6 +45,7 @@ test('platform admin sees orders across every branch', function () {
             ->has('table.data', 2)
             ->where('table.data.0.payment_status', PaymentStatus::PendingCollection->value)
             ->where('table.data.0.payment_status_label', 'Pending collection')
+            ->where('table.data.0.source_label', 'Customer')         
             ->has('table.data.0.status_label')
             ->where('table.data.0.can_assign', true)
             ->where('table.data.0.assign_status', 'not_assign')
@@ -67,6 +69,8 @@ test('platform order detail exposes the single fulfillment', function () {
             ->where('order.fulfillments.0.canAssign', true)
             ->has('order.statusLabel')
             ->has('order.paymentStatusLabel')
+            ->has('order.sourceLabel')
+            ->where('order.sourceLabel', 'Customer')
             ->where('order.paymentStatusLabel', $order->payment_status->label()));
 });
 
@@ -160,4 +164,21 @@ test('platform admin can retry reschedule and confirm a returned delivery for an
         ->assertRedirect(route('platform.orders.show', $order));
 
     expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Cancelled);
+});
+
+test('platform orders can be filtered by source', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    Order::factory()->create(['source' => OrderSource::CustomerCheckout]);
+    $driverSale = Order::factory()->create(['source' => OrderSource::DriverSale]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.orders.index', [
+            'filter' => ['source' => OrderSource::DriverSale->value],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('table.data', 1)
+            ->where('table.data.0.id', $driverSale->id)
+            ->where('table.data.0.source_label', 'Driver Sale'));
 });

@@ -2,11 +2,15 @@
 
 namespace App\Support\Driver;
 
+use App\Enums\DriverAssignmentStatus;
+use App\Models\Branch;
+use App\Models\DriverBranchAssignment;
 use App\Models\DriverInventory;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\Application\PaymentGatewaySettingsService;
+use App\Services\Driver\DriverInventorySaleService;
 use App\Support\BranchProductPriceDisplay;
-use App\Support\Storefront\DemoCatalog;
 use Illuminate\Support\Collection;
 
 class DriverPlaceOrderCatalog
@@ -24,18 +28,37 @@ class DriverPlaceOrderCatalog
      *         stock: int,
      *         image: string
      *     }>,
-     *     paymentMethods: list<array{id: string, label: string}>
+     *     paymentMethods: list<array{id: string, label: string, description?: string|null, badge?: string, title?: string}>,
+     *     canSell: bool
      * }
      */
     public static function forDriver(User $driver): array
     {
-        $demo = DemoCatalog::driverPlaceOrder();
+        $branchId = self::activeBranchId($driver);
+        $payments = app(PaymentGatewaySettingsService::class);
+        $payments->ensureDefaults();
 
         return [
-            'customers' => $demo['customers'],
-            'products' => self::productsForDriver($driver),
-            'paymentMethods' => $demo['paymentMethods'],
+            'products' => $branchId === null ? [] : self::productsForDriver($driver, $branchId),
+            'paymentMethods' => $payments->enabledMethods(),
+            'canSell' => $branchId !== null,
         ];
+    }
+
+    public static function activeBranchId(User $driver): ?int
+    {
+        $ids = DriverBranchAssignment::query()
+            ->where('driver_id', $driver->id)
+            ->where('status', DriverAssignmentStatus::Active)
+            ->pluck('branch_id')
+            ->unique()
+            ->values();
+
+        if ($ids->count() !== 1) {
+            return null;
+        }
+
+        return (int) $ids->first();
     }
 
     /**
@@ -50,11 +73,24 @@ class DriverPlaceOrderCatalog
      *     image: string
      * }>
      */
-    public static function productsForDriver(User $driver): array
+    public static function productsForDriver(User $driver, ?int $branchId = null): array
     {
+        $branchId ??= self::activeBranchId($driver);
+
+        if ($branchId === null) {
+            return [];
+        }
+
+        $branch = Branch::query()->find($branchId);
+
+        if ($branch === null) {
+            return [];
+        }
+
         /** @var Collection<int, DriverInventory> $rows */
         $rows = DriverInventory::query()
             ->where('user_id', $driver->id)
+            ->where('branch_id', $branchId)
             ->where('quantity', '>', 0)
             ->with([
                 'product.categories:id,name',
@@ -95,13 +131,10 @@ class DriverPlaceOrderCatalog
         }
 
         return $aggregated
-            ->map(function (array $item, string $id): array {
+            ->map(function (array $item, string $id) use ($branch): array {
                 /** @var Product $product */
                 $product = $item['product'];
-                $display = BranchProductPriceDisplay::forCatalogProduct($product);
-                $price = $display['effective']
-                    ?? $display['selling']
-                    ?? (float) ($product->selling_price ?? 0);
+                $price = app(DriverInventorySaleService::class)->unitPrice($branch, $product) ?? 0.0;
                 $name = $product->name;
 
                 if (is_string($item['variantName']) && $item['variantName'] !== '') {

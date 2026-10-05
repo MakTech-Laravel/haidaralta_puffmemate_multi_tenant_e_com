@@ -2,6 +2,7 @@
 
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
+use App\Enums\OrderSource;
 use App\Enums\PaymentStatus;
 use App\Enums\UserType;
 use App\Models\AllocationDecisionLog;
@@ -364,6 +365,8 @@ test('place order writes order payment and redemption then clears ordered lines'
         ->and($order->items)->toHaveCount(1)
         ->and((float) $order->discount)->toBe(10.0)
         ->and($order->payment_method)->toBe(PaymentGatewaySetting::KEY_COD)
+        ->and($order->source)->toBe(OrderSource::CustomerCheckout)
+        ->and($order->placed_by)->toBeNull()
         ->and($order->fulfillments)->toHaveCount(1)
         ->and($order->shipping_address_snapshot['name'])->toBe('Ada Lovelace')
         ->and($order->address->receiver_name)->toBe('Ada Lovelace');

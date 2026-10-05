@@ -2,6 +2,7 @@
 
 namespace App\Actions\Fortify;
 
+use App\Enums\CustomerRegistrationStatus;
 use App\Enums\UserType;
 use App\Models\User;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
@@ -21,6 +22,7 @@ class CreateNewUser implements CreatesNewUsers
             'email' => null,
             'password' => $input['password'],
             'user_type' => UserType::CUSTOMER,
+            'registration_status' => CustomerRegistrationStatus::Registered,
             'branch_id' => null,
             'is_active' => true,
             'phone_verified_at' => null,

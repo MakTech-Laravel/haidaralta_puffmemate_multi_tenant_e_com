@@ -35,6 +35,8 @@ type OrderRow = {
     status_label: string;
     payment_status: string;
     payment_status_label: string;
+    source: string;
+    source_label: string;
     assign_status: 'not_assign' | 'assign';
     driver_id: number | null;
     driver_name: string | null;
@@ -68,6 +70,7 @@ export default function PlatformOrdersIndex({
                 search: tablePayload.filters.search ?? '',
                 status: tablePayload.filters.status ?? 'all',
                 payment_status: tablePayload.filters.payment_status ?? 'all',
+                source: tablePayload.filters.source ?? 'all',
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,
@@ -80,6 +83,10 @@ export default function PlatformOrdersIndex({
     }>;
     const paymentStatusOptions = (tablePayload.filterOptions
         ?.payment_status ?? []) as Array<{ value: string; label: string }>;
+    const sourceOptions = (tablePayload.filterOptions?.source ?? []) as Array<{
+        value: string;
+        label: string;
+    }>;
 
     const columns = useMemo<ColumnDef<OrderRow>[]>(
         () => [
@@ -94,6 +101,13 @@ export default function PlatformOrdersIndex({
                         currentSort={query.sort}
                         onSort={query.toggleSort}
                     />
+                ),
+            },
+            {
+                accessorKey: 'source_label',
+                header: 'Source',
+                cell: ({ row }) => (
+                    <Badge variant="outline">{row.original.source_label}</Badge>
                 ),
             },
             {
@@ -276,6 +290,36 @@ export default function PlatformOrdersIndex({
                                                     </SelectItem>
                                                 ),
                                             )}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select
+                                        value={String(
+                                            query.filters.source ?? 'all',
+                                        )}
+                                        onValueChange={(value) =>
+                                            query.setFilter(
+                                                'source',
+                                                value === 'all'
+                                                    ? null
+                                                    : value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger className="w-[10rem]">
+                                            <SelectValue placeholder="Source" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All sources
+                                            </SelectItem>
+                                            {sourceOptions.map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>

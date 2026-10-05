@@ -50,6 +50,7 @@ class OrderController extends Controller
     {
         $order->load([
             'customer',
+            'placedBy:id,name',
             'items',
             'fulfillments.branch',
             'fulfillments.driver:id,name',
@@ -154,6 +155,9 @@ class OrderController extends Controller
             'statusLabel' => $order->status->label(),
             'paymentStatus' => $order->payment_status->value,
             'paymentStatusLabel' => $order->payment_status->label(),
+            'source' => $order->source->value,
+            'sourceLabel' => $order->source->label(),
+            'placedByName' => $order->placedBy?->name,
             'paymentStatusOptions' => $paymentOptions->values()->all(),
             'paymentMethod' => $order->payment_method,
             'customerName' => $order->customer?->name ?? 'Customer',
