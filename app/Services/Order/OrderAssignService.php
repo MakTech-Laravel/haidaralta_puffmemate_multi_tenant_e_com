@@ -125,44 +125,4 @@ class OrderAssignService
             'driver_name' => $driverName,
         ];
     }
-
-    /**
-     * @return list<array{
-     *     id: int,
-     *     from_driver_id: int|null,
-     *     from_driver_name: string|null,
-     *     from_driver_phone: string|null,
-     *     to_driver_id: int,
-     *     to_driver_name: string,
-     *     to_driver_phone: string|null,
-     *     changed_by_name: string|null,
-     *     reason: string|null,
-     *     created_at: string
-     * }>
-     */
-    public function assignmentHistoryPayload(OrderFulfillment $fulfillment): array
-    {
-        $histories = $fulfillment->relationLoaded('driverAssignmentHistories')
-            ? $fulfillment->driverAssignmentHistories
-            : $fulfillment->driverAssignmentHistories()
-                ->with(['fromDriver:id,name,phone', 'toDriver:id,name,phone', 'changer:id,name'])
-                ->orderByDesc('created_at')
-                ->get();
-
-        return $histories
-            ->map(fn ($row): array => [
-                'id' => $row->id,
-                'from_driver_id' => $row->from_driver_id,
-                'from_driver_name' => $row->fromDriver?->name,
-                'from_driver_phone' => $row->fromDriver?->phone,
-                'to_driver_id' => (int) $row->to_driver_id,
-                'to_driver_name' => $row->toDriver?->name ?? 'Driver',
-                'to_driver_phone' => $row->toDriver?->phone,
-                'changed_by_name' => $row->changer?->name,
-                'reason' => $row->reason,
-                'created_at' => $row->created_at?->format('d M Y, h:i A') ?? '',
-            ])
-            ->values()
-            ->all();
-    }
 }

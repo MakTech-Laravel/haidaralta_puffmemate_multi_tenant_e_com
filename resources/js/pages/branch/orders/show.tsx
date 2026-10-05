@@ -1,6 +1,7 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
 import OrderAssignController from '@/actions/App/Http/Controllers/Branch/OrderAssignController';
+import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Branch/Reports/OrderAssignHistoryController';
 import OrderController from '@/actions/App/Http/Controllers/Branch/OrderController';
 import StockTransferController from '@/actions/App/Http/Controllers/Branch/StockTransferController';
 import { Badge } from '@/components/ui/badge';
@@ -130,9 +131,28 @@ export default function BranchOrderShow({
                             {fulfillment.order.customerName}
                         </p>
                     </div>
-                    <Badge className="capitalize">
-                        {status.replaceAll('_', ' ')}
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                            <Link
+                                href={OrderAssignHistoryController.index.url(
+                                    branch.slug,
+                                    {
+                                        query: {
+                                            filter: {
+                                                order_id:
+                                                    fulfillment.fulfillmentNumber,
+                                            },
+                                        },
+                                    },
+                                )}
+                            >
+                                Driver assign history
+                            </Link>
+                        </Button>
+                        <Badge className="capitalize">
+                            {status.replaceAll('_', ' ')}
+                        </Badge>
+                    </div>
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -224,17 +244,6 @@ export default function BranchOrderShow({
                                 ))}
                             </CardContent>
                         </Card>
-
-                        <Button variant="outline" className="w-full" asChild>
-                            <Link
-                                href={OrderAssignController.history.url([
-                                    branch.slug,
-                                    fulfillment.id,
-                                ])}
-                            >
-                                Driver assignment history
-                            </Link>
-                        </Button>
 
                         {fulfillment.transfers.length > 0 ? (
                             <Card>

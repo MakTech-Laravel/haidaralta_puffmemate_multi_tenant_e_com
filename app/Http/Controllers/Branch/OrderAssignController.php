@@ -12,35 +12,12 @@ use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 
 class OrderAssignController extends Controller
 {
     public function __construct(
         private OrderAssignService $orderAssign,
     ) {}
-
-    public function history(string $branch, OrderFulfillment $fulfillment): Response
-    {
-        $branch = $this->currentBranch();
-        $fulfillment = $this->resolveForBranch($fulfillment, $branch);
-
-        $fulfillment->load([
-            'driverAssignmentHistories' => fn ($query) => $query
-                ->with(['fromDriver:id,name,phone', 'toDriver:id,name,phone', 'changer:id,name'])
-                ->orderByDesc('created_at'),
-        ]);
-
-        return Inertia::render('branch/orders/driver-assignment-history', [
-            'branch' => $branch->toPortalContext(),
-            'fulfillment' => [
-                'id' => $fulfillment->id,
-                'fulfillmentNumber' => $fulfillment->fulfillment_number,
-            ],
-            'history' => $this->orderAssign->assignmentHistoryPayload($fulfillment),
-        ]);
-    }
 
     public function candidates(Request $request, string $branch, OrderFulfillment $fulfillment): JsonResponse
     {
