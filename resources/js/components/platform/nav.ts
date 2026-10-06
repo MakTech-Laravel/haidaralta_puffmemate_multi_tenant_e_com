@@ -388,8 +388,8 @@ export function buildPlatformNav(
                 ],
                 items: [
                     navLink({
-                        title: 'Order Records',
-                        href: '/platform/reports/order-operations',
+                        title: 'Order Reports',
+                        href: '/platform/reports/order-reports',
                         icon: Banknote,
                         permissions: ['manage-reports'],
                     }),
