@@ -267,7 +267,7 @@ export default function PlatformReviewsShow({
                                         variant="tinted"
                                         className="max-w-full"
                                     >
-                                        <BubbleContent className="max-w-prose sm:max-w-2xl">
+                                        <BubbleContent className="max-w-prose sm:max-w-full">
                                             <p className="wrap-break-word whitespace-pre-wrap">
                                                 {displayValue(review.body)}
                                             </p>
