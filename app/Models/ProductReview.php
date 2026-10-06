@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property int $product_id
  * @property int $rating
  * @property string $body
+ * @property Carbon|null $hidden_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
@@ -35,6 +36,7 @@ class ProductReview extends Model
         'product_id',
         'rating',
         'body',
+        'hidden_at',
     ];
 
     /**
@@ -44,7 +46,13 @@ class ProductReview extends Model
     {
         return [
             'rating' => 'integer',
+            'hidden_at' => 'datetime',
         ];
+    }
+
+    public function isHidden(): bool
+    {
+        return $this->hidden_at !== null;
     }
 
     /**

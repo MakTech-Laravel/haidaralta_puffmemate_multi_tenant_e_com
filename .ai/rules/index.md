@@ -38,6 +38,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx,resources/js/components/driver/driver-deliver-otp-form.tsx | .ai/rules/components-driver-js-components-driver.md |
 | resources/js/components/driver/nav.ts, resources/js/components/driver/{nav.ts,driver-sidebar.tsx,driver-mobile-nav.tsx,driver-header.tsx}, resources/js/components/driver/**, resources/js/components/driver/driver-account-sheet.tsx | .ai/rules/components-driver.md |
 | resources/js/components/notifications/** | .ai/rules/components-notifications.md |
+| app/Http/Controllers/Platform/ProductReviewController.php, app/DataTables/ProductReviewDataTable.php, resources/js/pages/platform/reviews/**, resources/js/components/platform/nav.ts | .ai/rules/components-platform.md |
 | resources/js/app.tsx, resources/js/components/pwa/** | .ai/rules/components-pwa.md |
 | resources/js/components/stock/**, resources/js/components/stock/manage-stock-page.tsx | .ai/rules/components-stock.md |
 | resources/js/components/storefront/checkout/** | .ai/rules/components-storefront-checkout.md |
@@ -159,6 +160,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Requests/{Platform,Branch}/*Product*Request.php | .ai/rules/requests-platform-branch.md |
 | app/Http/Requests/Platform/*Category*Request.php | .ai/rules/requests-platform.md |
 | resources/js/components/storefront/wholesale/**,resources/js/lib/nominatim.ts,app/Http/Requests/Storefront/StoreWholesaleInquiryRequest.php | .ai/rules/requests-storefront.md |
+| app/Http/Controllers/Platform/ProductReviewController.php, resources/js/pages/platform/reviews/** | .ai/rules/reviews.md |
 | resources/js/components/admin/role-*.tsx, resources/js/pages/{platform,branch}/roles/** | .ai/rules/roles.md |
 | app/Http/Controllers/Driver/RouteController.php,resources/js/pages/driver/route/**,resources/js/components/driver/nav.ts | .ai/rules/route-js-components-driver.md |
 | app/Http/Controllers/Driver/RouteController.php,resources/js/pages/driver/route/** | .ai/rules/route.md |

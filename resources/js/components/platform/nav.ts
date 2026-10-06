@@ -117,8 +117,9 @@ export function buildPlatformNav(
                         icon: Users,
                         permissions: ['manage-users'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Reviews',
+                        href: '/platform/reviews',
                         icon: Star,
                         permissions: ['manage-users'],
                     }),

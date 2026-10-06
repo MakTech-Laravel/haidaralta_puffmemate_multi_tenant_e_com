@@ -364,6 +364,7 @@ class StorefrontCatalog
         $displayPrice = $price['label'] ?? 'Price unavailable';
         $reviews = ProductReview::query()
             ->where('product_id', $product->id)
+            ->whereNull('hidden_at')
             ->with(['user:id,name'])
             ->latest()
             ->get();

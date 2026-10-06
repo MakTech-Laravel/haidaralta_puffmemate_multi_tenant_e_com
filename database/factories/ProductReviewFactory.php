@@ -24,6 +24,14 @@ class ProductReviewFactory extends Factory
             'product_id' => Product::factory(),
             'rating' => fake()->numberBetween(1, 5),
             'body' => 'Consistent pack quality and fast local delivery.',
+            'hidden_at' => null,
         ];
+    }
+
+    public function hidden(): static
+    {
+        return $this->state(fn (): array => [
+            'hidden_at' => now(),
+        ]);
     }
 }
