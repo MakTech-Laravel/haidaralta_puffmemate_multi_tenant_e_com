@@ -61,6 +61,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | {app/Support/ConversationInbox.php,app/Http/Controllers/*/ConversationController.php,resources/js/components/conversation/**,resources/js/pages/*/conversations/**} | .ai/rules/conversations.md |
 | resources/css/app.css | .ai/rules/css.md |
 | resources/js/layouts/customer/** | .ai/rules/customer.md |
+| app/Http/Controllers/Platform/CustomerController.php,app/Services/Platform/PlatformCustomerService.php,app/DataTables/PlatformCustomerDataTable.php,resources/js/pages/platform/customers/**,resources/js/components/platform/nav.ts | .ai/rules/customers-js-components-platform.md |
 | app/DataTables/**, resources/js/components/data-table/** | .ai/rules/data-table.md |
 | resources/js/components/admin/shift-*.tsx,app/DataTables/ShiftAssignmentDataTable.php,app/Http/Controllers/{Platform,Branch}/*ShiftAssignment*.php | .ai/rules/data-tables-http-controllers-platform-branch.md |
 | app/DataTables/**, resources/js/components/data-table/**, resources/js/pages/**/index.tsx, app/DataTables/DatabaseBackupZipDataTable.php, app/DataTables/BranchProductListingDataTable.php, app/DataTables/BranchCategoryDataTable.php, app/DataTables/ProductBranchInventoryDataTable.php, app/DataTables/BranchStaffDataTable.php, app/DataTables/BranchRoleDataTable.php, app/DataTables/AbstractDataTable.php, app/DataTables/OrderDataTable.php | .ai/rules/data-tables.md |
@@ -97,6 +98,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/branch/**, resources/js/components/branch/product-inventory-panel.tsx | .ai/rules/js-components-branch.md |
 | resources/js/components/customer/product-to-review-*.tsx, resources/js/components/customer/write-product-review-form.tsx, resources/js/components/customer/order-list.tsx | .ai/rules/js-components-customer.md |
 | app/Http/Controllers/Driver/OrderController.php,resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/js-components-driver.md |
+| app/Http/Controllers/Platform/CustomerController.php, app/DataTables/PlatformCustomerDataTable.php, resources/js/pages/platform/customers/**, resources/js/components/platform/nav.ts | .ai/rules/js-components-platform.md |
 | resources/js/pages/storefront/checkout*.tsx,resources/js/components/storefront/checkout/** | .ai/rules/js-components-storefront-checkout.md |
 | resources/js/components/manage-two-factor.tsx,resources/js/components/manage-passkeys.tsx | .ai/rules/js-components.md |
 | app/Http/Controllers/{Platform,Branch}/Reports/**, resources/js/pages/{platform,branch}/reports/**, resources/js/components/{platform,branch}/nav.ts | .ai/rules/js-componentsplatformbranch.md |

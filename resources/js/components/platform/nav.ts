@@ -112,8 +112,9 @@ export function buildPlatformNav(
                 icon: Users,
                 permissions: ['manage-users'],
                 items: [
-                    navSoon({
+                    navLink({
                         title: 'Customers',
+                        href: '/platform/customers',
                         icon: Users,
                         permissions: ['manage-users'],
                     }),
