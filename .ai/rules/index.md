@@ -98,6 +98,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/Driver/OrderController.php,resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/js-components-driver.md |
 | resources/js/pages/storefront/checkout*.tsx,resources/js/components/storefront/checkout/** | .ai/rules/js-components-storefront-checkout.md |
 | resources/js/components/manage-two-factor.tsx,resources/js/components/manage-passkeys.tsx | .ai/rules/js-components.md |
+| app/Http/Controllers/{Platform,Branch}/Reports/**, resources/js/pages/{platform,branch}/reports/**, resources/js/components/{platform,branch}/nav.ts | .ai/rules/js-componentsplatformbranch.md |
 | app/Services/Conversation/**,app/Events/Conversation*,resources/js/components/conversation/**,resources/js/hooks/use-chat-scroll.ts | .ai/rules/js-hooks.md |
 | resources/js/lib/pwa.ts, resources/js/lib/fcm.ts | .ai/rules/js-lib.md |
 | resources/js/components/driver/nav.ts,app/Http/Controllers/Driver/OrderController.php,resources/js/pages/driver/history.tsx | .ai/rules/js-pages-driver.md |

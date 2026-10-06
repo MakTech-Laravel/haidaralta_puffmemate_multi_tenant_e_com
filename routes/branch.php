@@ -16,7 +16,7 @@ use App\Http\Controllers\Branch\PacksSavesController as BranchPacksSavesControll
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\Reports\OrderAssignHistoryController as BranchOrderAssignHistoryController;
-use App\Http\Controllers\Branch\Reports\OrderOperationsController as BranchOrderOperationsController;
+use App\Http\Controllers\Branch\Reports\OrderReportController as BranchOrderReportController;
 use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
 use App\Http\Controllers\Branch\Reports\ProductAssignTransactionController as BranchProductAssignTransactionController;
 use App\Http\Controllers\Branch\Reports\StockTransactionController as BranchStockTransactionController;
@@ -105,8 +105,11 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('stock/import', [BranchStockController::class, 'storeImport'])->name('branch.stock.import.store');
         Route::get('stock/price', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
             ->name('branch.stock.price');
-        Route::get('reports/order-operations', [BranchOrderOperationsController::class, 'index'])
-            ->name('branch.reports.order-operations');
+        Route::get('reports/order-reports', [BranchOrderReportController::class, 'index'])
+            ->name('branch.reports.order-reports');
+        Route::get('reports/order-operations', function (string $branch) {
+            return redirect()->route('branch.reports.order-reports', ['branch' => $branch], 301);
+        });
         Route::get('reports/stock-transactions', [BranchStockTransactionController::class, 'index'])
             ->name('branch.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [BranchStockTransactionController::class, 'export'])
