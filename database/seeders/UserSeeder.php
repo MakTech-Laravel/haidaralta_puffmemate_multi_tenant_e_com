@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\AustralianState;
 use App\Enums\CustomerAddressType;
+use App\Enums\CustomerRegistrationStatus;
 use App\Enums\DriverAssignmentStatus;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\DriverVehicleType;
@@ -464,6 +465,9 @@ class UserSeeder extends Seeder
                 'email' => $email,
                 'password' => self::DEFAULT_PASSWORD,
                 'user_type' => $userType,
+                'registration_status' => $userType === UserType::CUSTOMER
+                    ? CustomerRegistrationStatus::Registered
+                    : null,
                 'branch_id' => $branchId,
                 'is_active' => true,
                 'phone_verified_at' => now(),
