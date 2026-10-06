@@ -39,7 +39,7 @@ use App\Http\Controllers\Platform\ProductController as PlatformProductController
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
 use App\Http\Controllers\Platform\Reports\OrderAssignHistoryController as PlatformOrderAssignHistoryController;
-use App\Http\Controllers\Platform\Reports\OrderOperationsController as PlatformOrderOperationsController;
+use App\Http\Controllers\Platform\Reports\OrderReportController as PlatformOrderReportController;
 use App\Http\Controllers\Platform\Reports\PriceHistoryController as PlatformPriceHistoryController;
 use App\Http\Controllers\Platform\Reports\ProductAssignTransactionController as PlatformProductAssignTransactionController;
 use App\Http\Controllers\Platform\Reports\StockTransactionController as PlatformStockTransactionController;
@@ -319,8 +319,12 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('stock/import', [PlatformStockController::class, 'storeImport'])->name('platform.stock.import.store');
         Route::get('stock/price', fn (Request $request) => ProductManageRedirect::platform($request))
             ->name('platform.stock.price');
-        Route::get('reports/order-operations', [PlatformOrderOperationsController::class, 'index'])
-            ->name('platform.reports.order-operations');
+        Route::get('reports/order-reports', [PlatformOrderReportController::class, 'index'])
+            ->name('platform.reports.order-reports');
+        Route::get('reports/order-reports/export', [PlatformOrderReportController::class, 'export'])
+            ->name('platform.reports.order-reports.export');
+        Route::redirect('reports/order-operations', '/platform/reports/order-reports', 301);
+        Route::redirect('reports/order-operations/export', '/platform/reports/order-reports/export', 301);
         Route::get('reports/order-assign-history', [PlatformOrderAssignHistoryController::class, 'index'])
             ->name('platform.reports.order-assign-history');
         Route::get('reports/order-assign-history/export', [PlatformOrderAssignHistoryController::class, 'export'])

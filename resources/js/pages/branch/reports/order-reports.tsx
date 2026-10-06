@@ -10,7 +10,7 @@ type DriverReportRow = {
     collectedPos: number;
 };
 
-type BranchOrderOperationsProps = {
+type BranchOrderReportsProps = {
     branch: { slug: string; name: string };
     report: {
         fulfillments: number;
@@ -24,16 +24,16 @@ type BranchOrderOperationsProps = {
     drivers: DriverReportRow[];
 };
 
-export default function BranchOrderOperations({
+export default function BranchOrderReports({
     branch,
     report,
     drivers,
-}: BranchOrderOperationsProps) {
+}: BranchOrderReportsProps) {
     return (
         <>
-            <Head title="Order operations" />
+            <Head title="Order Reports" />
             <div className="space-y-4 p-6">
-                <h1 className="text-2xl font-semibold">Order operations</h1>
+                <h1 className="text-2xl font-semibold">Order Reports</h1>
                 <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="border-border rounded-lg border p-4">
                         <dt className="text-muted-foreground text-sm">Fulfillments</dt>
@@ -127,16 +127,16 @@ export default function BranchOrderOperations({
     );
 }
 
-BranchOrderOperations.layout = (props: BranchOrderOperationsProps) => ({
+BranchOrderReports.layout = (props: BranchOrderReportsProps) => ({
     breadcrumbs: [
         { title: 'Dashboard', href: `/branch/${props.branch.slug}/dashboard` },
         {
             title: 'Reports',
-            href: `/branch/${props.branch.slug}/reports/order-operations`,
+            href: `/branch/${props.branch.slug}/reports/order-reports`,
         },
         {
-            title: 'Order operations',
-            href: `/branch/${props.branch.slug}/reports/order-operations`,
+            title: 'Order Reports',
+            href: `/branch/${props.branch.slug}/reports/order-reports`,
         },
     ],
 });

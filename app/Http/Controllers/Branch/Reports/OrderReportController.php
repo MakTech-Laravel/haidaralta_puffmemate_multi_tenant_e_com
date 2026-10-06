@@ -6,13 +6,13 @@ use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\User;
-use App\Services\Order\OrderOperationsReportService;
+use App\Services\Order\OrderReportService;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class OrderOperationsController extends Controller
+class OrderReportController extends Controller
 {
-    public function index(OrderOperationsReportService $reports): Response
+    public function index(OrderReportService $reports): Response
     {
         /** @var Branch $branch */
         $branch = app('currentBranch');
@@ -29,7 +29,7 @@ class OrderOperationsController extends Controller
             ->values()
             ->all();
 
-        return Inertia::render('branch/reports/order-operations', [
+        return Inertia::render('branch/reports/order-reports', [
             'branch' => $branch->toPortalContext(),
             'report' => $reports->branch($branch),
             'drivers' => $drivers,
