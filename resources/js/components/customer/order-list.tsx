@@ -1,4 +1,6 @@
 import { Link } from '@inertiajs/react';
+import { ClipboardList } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
     Pagination,
     PaginationContent,
@@ -8,17 +10,27 @@ import {
     PaginationPrevious,
 } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
+import { shop } from '@/routes';
 import { show as orderShow } from '@/routes/customer/orders';
 
 export type CustomerOrderStatus =
     | 'pending'
-    | 'confirmed'
     | 'processing'
-    | 'partially_delivered'
+    | 'ready'
+    | 'assigned'
+    | 'picked_up'
+    | 'out_for_delivery'
+    | 'delivery_failed'
+    | 'returning'
     | 'delivered'
     | 'cancelled';
 
-export type CustomerPaymentStatus = 'unpaid' | 'paid' | 'refunded';
+export type CustomerPaymentStatus =
+    | 'pending_collection'
+    | 'collected'
+    | 'verified'
+    | 'failed'
+    | 'refunded';
 
 export type CustomerOrder = {
     orderNumber: string;
@@ -31,20 +43,28 @@ export type CustomerOrder = {
 
 const VISIBLE_PRODUCT_COUNT = 2;
 
-const statusLabel: Record<CustomerOrderStatus, string> = {
-    pending: 'Pending',
-    confirmed: 'Confirmed',
-    processing: 'Processing',
-    partially_delivered: 'Partially delivered',
+const statusLabel: Record<string, string> = {
+    pending: 'Order Placed',
+    processing: 'Preparing Your Order',
+    ready: 'Ready For Delivery',
+    assigned: 'Driver Assigned',
+    picked_up: 'Order Picked Up',
+    out_for_delivery: 'On The Way',
+    delivery_failed: 'Delivery unsuccessful',
+    returning: 'Returning your order',
     delivered: 'Delivered',
     cancelled: 'Cancelled',
 };
 
-const activeStatuses: CustomerOrderStatus[] = [
+const activeStatuses = [
     'pending',
-    'confirmed',
     'processing',
-    'partially_delivered',
+    'ready',
+    'assigned',
+    'picked_up',
+    'out_for_delivery',
+    'delivery_failed',
+    'returning',
 ];
 
 type OrderListProps = {
@@ -63,6 +83,35 @@ export function OrderList({
     className,
 }: OrderListProps) {
     const showPagination = lastPage > 1;
+
+    if (orders.length === 0) {
+        return (
+            <div
+                className={cn(
+                    'border-border bg-background flex flex-col items-center justify-center rounded-xl border px-6 py-16 text-center',
+                    className,
+                )}
+            >
+                <ClipboardList
+                    className="text-muted-foreground mb-4 size-10"
+                    strokeWidth={1.5}
+                    aria-hidden
+                />
+                <h2 className="text-foreground text-lg font-semibold tracking-tight">
+                    No orders yet
+                </h2>
+                <p className="text-muted-foreground mt-2 max-w-sm text-sm leading-relaxed">
+                    When you place an order, it will show up here so you can
+                    track delivery and review past purchases.
+                </p>
+                <Button asChild className="mt-6">
+                    <Link href={shop.url()} prefetch>
+                        Browse the shop
+                    </Link>
+                </Button>
+            </div>
+        );
+    }
 
     return (
         <div className={cn('flex flex-col gap-6', className)}>

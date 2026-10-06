@@ -1,24 +1,33 @@
 <?php
 
 use App\Http\Controllers\Branch\ActivityLogController as BranchActivityLogController;
+use App\Http\Controllers\Branch\AreaController as BranchAreaController;
 use App\Http\Controllers\Branch\CatalogPricingController as BranchCatalogPricingController;
 use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\ConversationController as BranchConversationController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
+use App\Http\Controllers\Branch\DriverProductAssignController as BranchDriverProductAssignController;
 use App\Http\Controllers\Branch\GeneralSettingsController as BranchGeneralSettingsController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
+use App\Http\Controllers\Branch\OrderAssignController as BranchOrderAssignController;
 use App\Http\Controllers\Branch\OrderController as BranchOrderController;
+use App\Http\Controllers\Branch\PacksSavesController as BranchPacksSavesController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
+use App\Http\Controllers\Branch\Reports\OrderAssignHistoryController as BranchOrderAssignHistoryController;
+use App\Http\Controllers\Branch\Reports\OrderReportController as BranchOrderReportController;
 use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
+use App\Http\Controllers\Branch\Reports\ProductAssignTransactionController as BranchProductAssignTransactionController;
 use App\Http\Controllers\Branch\Reports\StockTransactionController as BranchStockTransactionController;
 use App\Http\Controllers\Branch\RoleController as BranchRoleController;
 use App\Http\Controllers\Branch\ShiftAssignmentController as BranchShiftAssignmentController;
 use App\Http\Controllers\Branch\ShiftTemplateController as BranchShiftTemplateController;
 use App\Http\Controllers\Branch\StaffController as BranchStaffController;
 use App\Http\Controllers\Branch\StockController as BranchStockController;
+use App\Http\Controllers\Branch\StockTransferController as BranchStockTransferController;
 use App\Models\Branch;
+use App\Models\OrderFulfillment;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +67,13 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.products.suggestions');
         Route::get('products', [BranchProductController::class, 'index'])->name('branch.products.index');
         Route::get('products/create', [BranchProductController::class, 'create'])->name('branch.products.create');
+        Route::get('packs-saves', [BranchPacksSavesController::class, 'index'])->name('branch.packs-saves.index');
+        Route::get('packs-saves/create', [BranchPacksSavesController::class, 'create'])->name('branch.packs-saves.create');
+        Route::post('packs-saves', [BranchPacksSavesController::class, 'store'])->name('branch.packs-saves.store');
+        Route::get('packs-saves/{pack}', [BranchPacksSavesController::class, 'show'])->name('branch.packs-saves.show');
+        Route::get('packs-saves/{pack}/edit', [BranchPacksSavesController::class, 'edit'])->name('branch.packs-saves.edit');
+        Route::put('packs-saves/{pack}', [BranchPacksSavesController::class, 'update'])->name('branch.packs-saves.update');
+        Route::delete('packs-saves/{pack}', [BranchPacksSavesController::class, 'destroy'])->name('branch.packs-saves.destroy');
         Route::post('products', [BranchProductController::class, 'store'])
             ->middleware('precognitive')
             ->name('branch.products.store');
@@ -89,6 +105,11 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('stock/import', [BranchStockController::class, 'storeImport'])->name('branch.stock.import.store');
         Route::get('stock/price', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
             ->name('branch.stock.price');
+        Route::get('reports/order-reports', [BranchOrderReportController::class, 'index'])
+            ->name('branch.reports.order-reports');
+        Route::get('reports/order-operations', function (string $branch) {
+            return redirect()->route('branch.reports.order-reports', ['branch' => $branch], 301);
+        });
         Route::get('reports/stock-transactions', [BranchStockTransactionController::class, 'index'])
             ->name('branch.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [BranchStockTransactionController::class, 'export'])
@@ -108,6 +129,42 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.orders.status');
         Route::post('orders/{fulfillment}/paid', [BranchOrderController::class, 'markPaid'])
             ->name('branch.orders.paid');
+        Route::post('orders/{fulfillment}/assign-driver', [BranchOrderAssignController::class, 'store'])
+            ->name('branch.orders.assign-driver');
+        Route::get('orders/{fulfillment}/assign-candidates', [BranchOrderAssignController::class, 'candidates'])
+            ->name('branch.orders.assign-candidates');
+        Route::get('orders/{fulfillment}/driver-assignment-history', function (string $branch, OrderFulfillment $fulfillment) {
+            return redirect()->route('branch.reports.order-assign-history', [
+                'branch' => $branch,
+                'filter' => ['order_id' => $fulfillment->fulfillment_number],
+            ]);
+        })->name('branch.orders.driver-assignment-history');
+        Route::get('reports/order-assign-history', [BranchOrderAssignHistoryController::class, 'index'])
+            ->name('branch.reports.order-assign-history');
+        Route::get('reports/order-assign-history/export', [BranchOrderAssignHistoryController::class, 'export'])
+            ->name('branch.reports.order-assign-history.export');
+        Route::get('reports/order-assign-history/driver-options', [BranchOrderAssignHistoryController::class, 'driverOptions'])
+            ->name('branch.reports.order-assign-history.driver-options');
+        Route::post('orders/{fulfillment}/cancel', [BranchOrderController::class, 'cancel'])
+            ->name('branch.orders.cancel');
+        Route::post('orders/{fulfillment}/retry-delivery', [BranchOrderController::class, 'retryDelivery'])
+            ->name('branch.orders.retry-delivery');
+        Route::post('orders/{fulfillment}/reschedule-delivery', [BranchOrderController::class, 'rescheduleDelivery'])
+            ->name('branch.orders.reschedule-delivery');
+        Route::post('orders/{fulfillment}/return-delivery', [BranchOrderController::class, 'returnDelivery'])
+            ->name('branch.orders.return-delivery');
+        Route::post('orders/{fulfillment}/confirm-return', [BranchOrderController::class, 'confirmReturn'])
+            ->name('branch.orders.confirm-return');
+        Route::get('stock-transfers', [BranchStockTransferController::class, 'index'])
+            ->name('branch.stock-transfers.index');
+        Route::post('stock-transfers/{stockTransfer}/approve', [BranchStockTransferController::class, 'approve'])
+            ->name('branch.stock-transfers.approve');
+        Route::post('stock-transfers/{stockTransfer}/pick', [BranchStockTransferController::class, 'pick'])
+            ->name('branch.stock-transfers.pick');
+        Route::post('stock-transfers/{stockTransfer}/dispatch', [BranchStockTransferController::class, 'dispatch'])
+            ->name('branch.stock-transfers.dispatch');
+        Route::post('stock-transfers/{stockTransfer}/receive', [BranchStockTransferController::class, 'receive'])
+            ->name('branch.stock-transfers.receive');
     });
 
     Route::middleware(['permission:manage-branch-conversations'])->group(function () {
@@ -152,6 +209,18 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::put('settings/general', [BranchGeneralSettingsController::class, 'update'])
             ->middleware('precognitive')
             ->name('branch.settings.general.update');
+
+        Route::get('areas', [BranchAreaController::class, 'index'])->name('branch.areas.index');
+        Route::get('areas/create', [BranchAreaController::class, 'create'])->name('branch.areas.create');
+        Route::post('areas', [BranchAreaController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('branch.areas.store');
+        Route::get('areas/{area}', [BranchAreaController::class, 'show'])->name('branch.areas.show');
+        Route::get('areas/{area}/edit', [BranchAreaController::class, 'edit'])->name('branch.areas.edit');
+        Route::put('areas/{area}', [BranchAreaController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('branch.areas.update');
+        Route::delete('areas/{area}', [BranchAreaController::class, 'destroy'])->name('branch.areas.destroy');
     });
 
     Route::middleware(['permission:manage-branch-roles'])->group(function () {
@@ -176,11 +245,43 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('drivers', [BranchDriverController::class, 'store'])
             ->middleware('precognitive')
             ->name('branch.drivers.store');
-        Route::get('drivers/{user}', [BranchDriverController::class, 'show'])->name('branch.drivers.show');
-        Route::get('drivers/{user}/edit', [BranchDriverController::class, 'edit'])->name('branch.drivers.edit');
+
+        // Legacy nested URLs (before drivers/{user} so they never bind as a user id).
+        Route::get('drivers/assign-products', function (Branch $branch) {
+            return redirect()->route('branch.assign-products.create', $branch);
+        });
+        Route::get('drivers/assign-products/driver-options', function (Branch $branch) {
+            return redirect()->route('branch.assign-products.driver-options', $branch);
+        });
+        Route::post('drivers/assign-products', function (Branch $branch) {
+            return redirect()->route('branch.assign-products.store', $branch, 308);
+        });
+
+        Route::get('drivers/{user}', [BranchDriverController::class, 'show'])
+            ->whereNumber('user')
+            ->name('branch.drivers.show');
+        Route::get('drivers/{user}/edit', [BranchDriverController::class, 'edit'])
+            ->whereNumber('user')
+            ->name('branch.drivers.edit');
         Route::put('drivers/{user}', [BranchDriverController::class, 'update'])
             ->middleware('precognitive')
+            ->whereNumber('user')
             ->name('branch.drivers.update');
+
+        // Sibling of /drivers (not nested) so Drivers nav is not prefix-active on this page.
+        Route::get('assign-products', [BranchDriverProductAssignController::class, 'create'])
+            ->name('branch.assign-products.create');
+        Route::get('assign-products/driver-options', [BranchDriverProductAssignController::class, 'driverOptions'])
+            ->name('branch.assign-products.driver-options');
+        Route::post('assign-products', [BranchDriverProductAssignController::class, 'store'])
+            ->name('branch.assign-products.store');
+
+        Route::get('reports/product-assign-transactions', [BranchProductAssignTransactionController::class, 'index'])
+            ->name('branch.reports.product-assign-transactions');
+        Route::get('reports/product-assign-transactions/product-options', [BranchProductAssignTransactionController::class, 'productOptions'])
+            ->name('branch.reports.product-assign-transactions.product-options');
+        Route::get('reports/product-assign-transactions/export', [BranchProductAssignTransactionController::class, 'export'])
+            ->name('branch.reports.product-assign-transactions.export');
     });
 
     Route::middleware(['permission:manage-branch-shifts'])->group(function () {

@@ -19,6 +19,8 @@ class CartService
 {
     public const SESSION_KEY = 'storefront.cart_session';
 
+    public const MAX_LINE_QUANTITY = 99;
+
     public function sessionId(Request $request): string
     {
         $existing = $request->session()->get(self::SESSION_KEY);
@@ -84,7 +86,7 @@ class CartService
             'variant_id' => $variantId,
         ]);
 
-        $item->quantity = ($item->exists ? $item->quantity : 0) + $quantity;
+        $item->quantity = $this->clampLineQuantity(($item->exists ? $item->quantity : 0) + $quantity);
         $item->price_snapshot = $price;
         $item->save();
 
@@ -105,7 +107,7 @@ class CartService
             return $cart->refresh();
         }
 
-        $item->forceFill(['quantity' => $quantity])->save();
+        $item->forceFill(['quantity' => $this->clampLineQuantity($quantity)])->save();
 
         return $cart->refresh();
     }
@@ -148,7 +150,9 @@ class CartService
                     'variant_id' => $guestItem->variant_id,
                 ]);
 
-                $existing->quantity = ($existing->exists ? $existing->quantity : 0) + $guestItem->quantity;
+                $existing->quantity = $this->clampLineQuantity(
+                    ($existing->exists ? $existing->quantity : 0) + $guestItem->quantity,
+                );
                 $existing->price_snapshot = $guestItem->price_snapshot;
                 $existing->save();
                 $guestItem->delete();
@@ -186,7 +190,7 @@ class CartService
     private function buildPayload(Request $request): array
     {
         $cart = $this->activeCart($request);
-        $cart->load(['items.product.categories:id,name,slug']);
+        $cart->load(['items.product.categories:id,name,slug', 'items.product.media']);
 
         $items = [];
         $subtotal = 0.0;
@@ -199,6 +203,8 @@ class CartService
             }
 
             $unit = BranchProductPriceDisplay::catalogEffectiveAmount($product);
+            $compareAt = BranchProductPriceDisplay::forCatalogProduct($product)['compare_at'];
+            $compareAt = $compareAt !== null && $compareAt > $unit ? $compareAt : null;
             $line = $unit * $item->quantity;
             $subtotal += $line;
             $category = $product->categories->first();
@@ -210,10 +216,13 @@ class CartService
                 'name' => $product->name,
                 'category' => $category?->name ?? 'Catalog',
                 'description' => $product->packSummary() ?? '',
-                'image' => MediaUrl::resolve($product->image) ?? '/images/storefront/logo.png',
+                'image' => $product->imageUrl(MediaUrl::DEFAULT_FALLBACK),
                 'unitPrice' => $unit,
                 'formattedUnitPrice' => '$'.number_format($unit, 2),
+                'compareAtUnitPrice' => $compareAt,
+                'formattedCompareAtUnitPrice' => $compareAt === null ? null : '$'.number_format($compareAt, 2),
                 'quantity' => $item->quantity,
+                'maxQuantity' => self::MAX_LINE_QUANTITY,
                 'lineTotal' => $line,
                 'formattedLineTotal' => '$'.number_format($line, 2),
             ];
@@ -225,5 +234,10 @@ class CartService
             'subtotal' => $subtotal,
             'formattedSubtotal' => '$'.number_format($subtotal, 2),
         ];
+    }
+
+    private function clampLineQuantity(int $quantity): int
+    {
+        return min(self::MAX_LINE_QUANTITY, $quantity);
     }
 }

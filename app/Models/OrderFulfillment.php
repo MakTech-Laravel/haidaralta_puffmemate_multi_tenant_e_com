@@ -85,7 +85,7 @@ class OrderFulfillment extends Model implements DataTableConfigurable
     }
 
     /**
-     * Nullable and unused this phase — reserved for a future driver-assignment phase.
+     * Nullable until a same-branch driver is assigned.
      *
      * @return BelongsTo<User, $this>
      */
@@ -108,6 +108,30 @@ class OrderFulfillment extends Model implements DataTableConfigurable
     public function statusHistories(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class, 'fulfillment_id');
+    }
+
+    /**
+     * @return HasMany<OrderDriverAssignmentHistory, $this>
+     */
+    public function driverAssignmentHistories(): HasMany
+    {
+        return $this->hasMany(OrderDriverAssignmentHistory::class, 'fulfillment_id');
+    }
+
+    /**
+     * @return HasMany<StockTransfer, $this>
+     */
+    public function stockTransfers(): HasMany
+    {
+        return $this->hasMany(StockTransfer::class, 'fulfillment_id');
+    }
+
+    /**
+     * @return HasMany<DeliveryAttempt, $this>
+     */
+    public function deliveryAttempts(): HasMany
+    {
+        return $this->hasMany(DeliveryAttempt::class, 'fulfillment_id');
     }
 
     public function isPaid(): bool

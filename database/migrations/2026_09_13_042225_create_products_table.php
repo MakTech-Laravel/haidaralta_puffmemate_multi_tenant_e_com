@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('pack_label')->nullable();
             $table->unsignedInteger('pieces_per_pack')->nullable();
             $table->string('pack_unit', 40)->nullable();
-            $table->string('image')->nullable();
             $table->json('tags')->nullable();
             $table->json('specifications')->nullable();
             $table->json('color_code')->nullable();

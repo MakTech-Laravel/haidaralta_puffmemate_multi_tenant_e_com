@@ -28,6 +28,36 @@ export type StorefrontProduct = {
     views: string;
 };
 
+export type StorefrontPack = {
+    id: string;
+    slug: string;
+    branchSlug: string;
+    name: string;
+    eyebrow: string;
+    description: string;
+    image: string;
+    price: string;
+    currency?: string;
+    savings?: string | null;
+    stockLeft?: number | null;
+};
+
+export type StorefrontFeaturedPack = StorefrontPack & {
+    regularPrice: string;
+    discountPercent: number;
+    branchName: string;
+    items: { name: string; quantity: number }[];
+};
+
+export type StorefrontPackDetail = Omit<StorefrontFeaturedPack, 'items'> & {
+    items: { name: string; quantity: number; image: string }[];
+    images: string[];
+    productCount: number;
+    totalUnits: number;
+    startsAt: string | null;
+    endsAt: string | null;
+};
+
 export type StorefrontFeature = {
     title: string;
     description: string;
@@ -43,7 +73,10 @@ export type StorefrontCartItem = {
     image: string;
     unitPrice: number;
     formattedUnitPrice: string;
+    compareAtUnitPrice: number | null;
+    formattedCompareAtUnitPrice: string | null;
     quantity: number;
+    maxQuantity: number;
     lineTotal: number;
     formattedLineTotal: string;
 };
@@ -68,16 +101,17 @@ export type StorefrontAddress = {
     is_default: boolean;
 };
 
+export type StorefrontTimeSlot = {
+    id: string;
+    label: string;
+};
+
 export type StorefrontDeliveryMethod = {
     id: string;
     label: string;
     description: string;
     requiresSlot: boolean;
-};
-
-export type StorefrontTimeSlot = {
-    id: string;
-    label: string;
+    timeSlots: StorefrontTimeSlot[];
 };
 
 export type StorefrontPaymentMethod = {
@@ -89,5 +123,12 @@ export type StorefrontPaymentMethod = {
 };
 
 export function formatStorefrontMoney(amount: number): string {
-    return `$${amount.toFixed(2)}`;
+    return `$${amount.toLocaleString('en-AU', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}`;
+}
+
+export function formatStorefrontAud(amount: string): string {
+    return `A$${amount}`;
 }

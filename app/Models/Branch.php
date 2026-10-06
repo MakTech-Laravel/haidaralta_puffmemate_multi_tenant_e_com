@@ -6,6 +6,7 @@ use App\Contracts\DataTableConfigurable;
 use App\Contracts\ScoutSearchable;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasDataTableConfig;
+use App\Models\Concerns\InteractsWithAppMedia;
 use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
 use Database\Factories\BranchFactory;
@@ -16,19 +17,23 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Laravel\Scout\Searchable;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * @property int $id
  * @property string $name
  * @property string $slug
  * @property string $code
- * @property string|null $logo
  * @property string|null $phone
  * @property string|null $email
  * @property string|null $address
  * @property string|null $latitude
  * @property string|null $longitude
  * @property string|null $delivery_radius_km
+ * @property int|null $max_active_fulfillments
+ * @property int $fulfillment_priority
+ * @property string|null $transfer_handling_fee
+ * @property string|null $transfer_cost_per_km
  * @property Carbon|null $opening_time
  * @property Carbon|null $closing_time
  * @property bool $status
@@ -39,12 +44,23 @@ use Laravel\Scout\Searchable;
  * @property-read Collection<int, DriverRoster> $driverRosters
  * @property-read Collection<int, Conversation> $conversations
  * @property-read Collection<int, OrderFulfillment> $fulfillments
+ * @property-read Collection<int, BranchArea> $areas
  * @property-read BranchShippingRule|null $shippingRule
  */
-class Branch extends Model implements DataTableConfigurable, ScoutSearchable
+class Branch extends Model implements DataTableConfigurable, HasMedia, ScoutSearchable
 {
     /** @use HasFactory<BranchFactory> */
-    use AuditsChanges, HasDataTableConfig, HasFactory, Searchable;
+    use AuditsChanges, HasDataTableConfig, HasFactory, InteractsWithAppMedia, Searchable;
+
+    public function registerMediaCollections(): void
+    {
+        $this->registerSingleFileCollection('logo');
+    }
+
+    public function logoUrl(?string $fallback = null): ?string
+    {
+        return MediaUrl::fromCollection($this, 'logo', $fallback);
+    }
 
     /**
      * @var list<string>
@@ -68,13 +84,16 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
         'name',
         'slug',
         'code',
-        'logo',
         'phone',
         'email',
         'address',
         'latitude',
         'longitude',
         'delivery_radius_km',
+        'max_active_fulfillments',
+        'fulfillment_priority',
+        'transfer_handling_fee',
+        'transfer_cost_per_km',
         'opening_time',
         'closing_time',
         'status',
@@ -94,6 +113,14 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
     public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class);
+    }
+
+    /**
+     * @return HasMany<Pack, $this>
+     */
+    public function packs(): HasMany
+    {
+        return $this->hasMany(Pack::class);
     }
 
     /**
@@ -137,6 +164,14 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
     }
 
     /**
+     * @return HasMany<BranchArea, $this>
+     */
+    public function areas(): HasMany
+    {
+        return $this->hasMany(BranchArea::class);
+    }
+
+    /**
      * @return HasOne<BranchShippingRule, $this>
      */
     public function shippingRule(): HasOne
@@ -176,7 +211,7 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
-            'logo_url' => MediaUrl::resolve($this->logo, fallback: null),
+            'logo_url' => $this->logoUrl(),
         ];
     }
 
@@ -189,6 +224,10 @@ class Branch extends Model implements DataTableConfigurable, ScoutSearchable
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
             'delivery_radius_km' => 'decimal:2',
+            'max_active_fulfillments' => 'integer',
+            'fulfillment_priority' => 'integer',
+            'transfer_handling_fee' => 'decimal:2',
+            'transfer_cost_per_km' => 'decimal:2',
             'opening_time' => 'datetime:H:i',
             'closing_time' => 'datetime:H:i',
             'status' => 'boolean',

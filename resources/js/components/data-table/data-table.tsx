@@ -10,6 +10,7 @@ import type { ReactNode } from 'react';
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { DataTableTruncated } from '@/components/data-table/data-table-truncated';
 import type { DataTablePayload } from '@/components/data-table/types';
+import { cn } from '@/lib/utils';
 import {
     Table,
     TableBody,
@@ -34,6 +35,8 @@ type DataTableProps<TData> = {
     emptyMessage?: string;
     /** Hide footer when rendering an in-memory / nested page list. */
     showPagination?: boolean;
+    /** Background list reload; dims rows without a full-page overlay. */
+    isLoading?: boolean;
 };
 
 function isActionsColumn(columnId: string): boolean {
@@ -74,6 +77,7 @@ export function DataTable<TData>({
     onPerPageChange,
     emptyMessage = 'No results found.',
     showPagination = true,
+    isLoading = false,
 }: DataTableProps<TData>) {
     const table = useReactTable({
         data: payload.data,
@@ -89,7 +93,13 @@ export function DataTable<TData>({
     return (
         <div className="space-y-4">
             {toolbar}
-            <div className="overflow-hidden rounded-xl border">
+            <div
+                className={cn(
+                    'overflow-hidden rounded-xl border transition-opacity',
+                    isLoading && 'pointer-events-none opacity-60',
+                )}
+                aria-busy={isLoading || undefined}
+            >
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (

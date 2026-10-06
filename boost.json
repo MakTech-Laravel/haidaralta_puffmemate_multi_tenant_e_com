@@ -1,5 +1,8 @@
 {
-    "agents": ["codex", "cursor"],
+    "agents": [
+        "codex",
+        "cursor"
+    ],
     "cloud": true,
     "guidelines": true,
     "mcp": true,

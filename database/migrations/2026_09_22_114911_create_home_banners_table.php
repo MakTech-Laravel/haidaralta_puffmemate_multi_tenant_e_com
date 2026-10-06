@@ -15,7 +15,6 @@ return new class extends Migration
             $table->string('eyebrow');
             $table->string('title');
             $table->string('description', 500);
-            $table->string('image_path')->nullable();
             $table->string('primary_cta_label');
             $table->string('primary_cta_href');
             $table->string('secondary_cta_label');

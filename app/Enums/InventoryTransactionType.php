@@ -10,6 +10,9 @@ enum InventoryTransactionType: string
     case Reserve = 'reserve';
     case Release = 'release';
     case Sale = 'sale';
+    case TransferOut = 'transfer_out';
+    case TransferIn = 'transfer_in';
+    case DriverAssign = 'driver_assign';
 
     public function label(): string
     {
@@ -20,6 +23,9 @@ enum InventoryTransactionType: string
             self::Reserve => 'Reserve',
             self::Release => 'Release',
             self::Sale => 'Sale',
+            self::TransferOut => 'Transfer out',
+            self::TransferIn => 'Transfer in',
+            self::DriverAssign => 'Driver assign',
         };
     }
 
@@ -47,5 +53,18 @@ enum InventoryTransactionType: string
             ],
             self::manualCases(),
         );
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    public static function driverAssignOptions(): array
+    {
+        return [
+            [
+                'value' => self::DriverAssign->value,
+                'label' => self::DriverAssign->label(),
+            ],
+        ];
     }
 }

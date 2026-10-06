@@ -4,14 +4,15 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\User;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Database\Seeders\Concerns\SeedsCatalogMedia;
 use Illuminate\Database\Seeder;
 
 class ProductSeeder extends Seeder
 {
+    use ReportsSeedProgress;
     use SeedsCatalogMedia;
 
     /**
@@ -737,6 +738,19 @@ class ProductSeeder extends Seeder
             'variants' => [],
         ]);
 
+        $this->runQueuedSeedSteps(
+            'Products',
+            fn (int $total): string => sprintf('%d core products ready.', $total),
+        );
+    }
+
+    /**
+     * @param  list<Category>  $categories
+     * @param  array<string, mixed>  $data
+     */
+    private function product(array $categories, ?User $creator, array $data): void
+    {
+        $this->queueSeedStep(fn () => $this->createProduct($categories, $creator, $data));
     }
 
     /**
@@ -761,7 +775,7 @@ class ProductSeeder extends Seeder
      *     gallery_urls?: list<string>
      * }  $data
      */
-    private function product(array $categories, ?User $creator, array $data): Product
+    private function createProduct(array $categories, ?User $creator, array $data): Product
     {
         $imagePath = $this->resolveImagePath(
             publicRelative: $data['image'] ?? null,
@@ -784,7 +798,6 @@ class ProductSeeder extends Seeder
                 'pack_unit' => $data['pack_unit'] ?? null,
                 'tags' => $data['tags'] ?? [],
                 'specifications' => $data['specifications'] ?? [],
-                'image' => $imagePath,
                 'color_code' => $data['color_code'] ?? null,
                 'selling_price' => $prices['selling_price'],
                 'regular_price' => $prices['regular_price'],
@@ -800,6 +813,8 @@ class ProductSeeder extends Seeder
             'pieces_per_pack' => $data['pieces_per_pack'] ?? null,
             'pack_unit' => $data['pack_unit'] ?? null,
         ])->save();
+
+        $this->attachSeedMedia($product, 'image', $imagePath);
 
         $product->categories()->syncWithoutDetaching(
             collect($categories)->map(fn (Category $category): int => $category->id)->all(),
@@ -828,15 +843,7 @@ class ProductSeeder extends Seeder
                 continue;
             }
 
-            ProductImage::query()->firstOrCreate(
-                [
-                    'product_id' => $product->id,
-                    'path' => $path,
-                ],
-                [
-                    'sort_order' => $index + 1,
-                ],
-            );
+            $this->attachSeedMedia($product, 'gallery', $path);
         }
 
         return $product;

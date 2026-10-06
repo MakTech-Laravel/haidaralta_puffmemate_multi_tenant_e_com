@@ -3,6 +3,7 @@
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\Product;
@@ -22,19 +23,23 @@ function customerOrderWithItem(User $customer, array $overrides = []): Order
         'subtotal' => 60,
         'delivery_fee' => 10,
         'total_amount' => 70,
-        'payment_status' => PaymentStatus::Unpaid,
+        'payment_status' => PaymentStatus::PendingCollection,
     ], $overrides));
 
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create();
     $product = Product::factory()->create(['name' => 'Test Product']);
 
     OrderItem::query()->create([
         'order_id' => $order->id,
-        'fulfillment_id' => null,
+        'fulfillment_id' => $fulfillment->id,
         'product_id' => $product->id,
         'variant_id' => null,
         'product_name_snapshot' => $product->name,
         'sku_snapshot' => $product->sku,
-        'product_snapshot' => ['name' => $product->name, 'image' => null],
+        'product_snapshot' => [
+            'name' => $product->name,
+            'image' => '/images/storefront/logo.png',
+        ],
         'quantity' => 2,
         'unit_price' => 30,
         'subtotal' => 60,
@@ -78,10 +83,17 @@ test('customer order detail never leaks branch or fulfillment data', function ()
         ->assertInertia(fn (Assert $page) => $page
             ->component('customer/orders/show')
             ->where('order.orderNumber', $order->order_number)
+            ->where('order.products.0.name', 'Test Product')
+            ->where('order.products.0.image', '/images/storefront/logo.png')
+            ->where('order.products.0.quantityLabel', 'Quantity x 2')
+            ->where('order.subtotalLabel', '$60.00')
+            ->where('order.deliveryFeeLabel', '$10.00')
+            ->where('order.totalLabel', '$70.00')
             ->missing('order.id')
             ->missing('order.branch')
             ->missing('order.fulfillments')
-            ->missing('order.branchName'));
+            ->missing('order.branchName')
+            ->missing('order.transfers'));
 });
 
 test('customer order detail uses the order number not the database id', function () {
@@ -114,4 +126,17 @@ test('a customer cannot view another customers order', function () {
     $this->actingAs($customer, 'customer')
         ->get(route('customer.orders.show', $order))
         ->assertNotFound();
+});
+
+test('a customer can cancel a pending order', function () {
+    $customer = User::factory()->create();
+    $order = customerOrderWithItem($customer);
+
+    $this->actingAs($customer, 'customer')
+        ->from(route('customer.orders.show', $order))
+        ->post(route('customer.orders.cancel', $order))
+        ->assertRedirect();
+
+    expect($order->refresh()->status)->toBe(OrderStatus::Cancelled)
+        ->and($order->fulfillment->refresh()->status->value)->toBe('cancelled');
 });

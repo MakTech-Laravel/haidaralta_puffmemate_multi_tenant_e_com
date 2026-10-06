@@ -1,5 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import { MessageCircle, Package, Phone } from 'lucide-react';
+import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
 import { DriverDeliverOtpForm } from '@/components/driver/driver-deliver-otp-form';
 import {
     driverMapsQuery,
@@ -31,7 +32,7 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
     const isDelivered = order.status === 'delivered';
     const paymentLabel = usePaymentGatewayLabel(
         order.paymentMethod,
-        order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Paid',
+        order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Card / POS',
     );
 
     return (
@@ -206,10 +207,90 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                     </div>
                 </section>
 
-                <DriverDeliverOtpForm
-                    orderId={order.id}
-                    disabled={isDelivered}
-                />
+                {order.canPickUp ? (
+                    <Form {...OrderController.pickUp.form(order.id)}>
+                        {({ processing }) => (
+                            <Button
+                                type="submit"
+                                size="lg"
+                                className="h-12 w-full"
+                                disabled={processing}
+                            >
+                                Pick up order
+                            </Button>
+                        )}
+                    </Form>
+                ) : null}
+
+                {order.canStart ? (
+                    <Form {...OrderController.start.form(order.id)}>
+                        {({ processing }) => (
+                            <Button
+                                type="submit"
+                                size="lg"
+                                className="h-12 w-full"
+                                disabled={processing}
+                            >
+                                Start delivery
+                            </Button>
+                        )}
+                    </Form>
+                ) : null}
+
+                {order.canDeliver ? (
+                    <DriverDeliverOtpForm
+                        orderId={order.id}
+                        disabled={isDelivered}
+                    />
+                ) : null}
+
+                {order.canFail ? (
+                    <Form
+                        {...OrderController.fail.form(order.id)}
+                        className="border-border space-y-3 rounded-xl border p-4"
+                    >
+                        {({ processing, errors }) => (
+                            <>
+                                <h2 className="text-foreground text-lg font-semibold">
+                                    Delivery unsuccessful
+                                </h2>
+                                <select
+                                    name="reason"
+                                    className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+                                    defaultValue={
+                                        order.failureReasons?.[0]?.value ??
+                                        'customer_unavailable'
+                                    }
+                                >
+                                    {(order.failureReasons ?? []).map(
+                                        (reason) => (
+                                            <option
+                                                key={reason.value}
+                                                value={reason.value}
+                                            >
+                                                {reason.label}
+                                            </option>
+                                        ),
+                                    )}
+                                </select>
+                                {errors.reason ? (
+                                    <p className="text-destructive text-sm">
+                                        {errors.reason}
+                                    </p>
+                                ) : null}
+                                <Button
+                                    type="submit"
+                                    variant="outline"
+                                    size="lg"
+                                    className="h-12 w-full"
+                                    disabled={processing}
+                                >
+                                    Mark unsuccessful
+                                </Button>
+                            </>
+                        )}
+                    </Form>
+                ) : null}
 
                 <Button
                     variant="outline"

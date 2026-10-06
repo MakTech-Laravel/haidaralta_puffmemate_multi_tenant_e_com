@@ -2,12 +2,16 @@
 
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
+use App\Enums\OrderSource;
 use App\Enums\PaymentStatus;
+use App\Enums\UserType;
+use App\Models\AllocationDecisionLog;
 use App\Models\Branch;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
+use App\Models\DeliveryMethod;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\Payment;
@@ -18,6 +22,7 @@ use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
 use Database\Seeders\ApplicationSettingsSeeder;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -65,7 +70,7 @@ function checkoutPayload(array $overrides = []): array
         'postal_code' => '2000',
         'latitude' => -33.8688,
         'longitude' => 151.2093,
-        'delivery_method' => 'australia-wide',
+        'delivery_method' => 'regular',
         'payment_method' => PaymentGatewaySetting::KEY_COD,
         'terms' => true,
     ], $overrides);
@@ -94,8 +99,18 @@ test('checkout props omit branch keys', function () {
                 ->missing('branchId')
                 ->missing('branchName')
                 ->etc())
-            ->has('paymentMethods')
+            ->has('paymentMethods', 2)
+            ->where('paymentMethods.0.id', PaymentGatewaySetting::KEY_COD)
+            ->where('paymentMethods.1.id', PaymentGatewaySetting::KEY_POS)
             ->has('deliveryMethods', 2)
+            ->where('deliveryMethods.0.id', 'regular')
+            ->where('deliveryMethods.0.label', 'Regular delivery')
+            ->where('deliveryMethods.0.requiresSlot', false)
+            ->where('deliveryMethods.1.id', 'express')
+            ->where('deliveryMethods.1.label', 'Express delivery')
+            ->where('deliveryMethods.1.requiresSlot', true)
+            ->has('deliveryMethods.1.timeSlots', 4)
+            ->missing('timeSlots')
             ->missing('deliveryMethods.0.formattedFee')
             ->missing('deliveryMethods.1.formattedFee')
             ->where('shippingQuote', null));
@@ -128,9 +143,64 @@ test('checkout shares the application settings name', function () {
             ->where('application.name', 'Harbour Smoke'));
 });
 
-test('same-day checkout without a delivery date is rejected', function () {
+test('platform branch and driver staff cannot open storefront checkout', function (string $guard, UserType $type) {
+    $user = User::factory()->create([
+        'user_type' => $type,
+        'branch_id' => $type === UserType::BRANCH
+            ? Branch::factory()->create()->id
+            : null,
+    ]);
+
+    $this->actingAs($user, $guard)
+        ->get(route('checkout'))
+        ->assertRedirect(match ($type) {
+            UserType::PLATFORM => '/platform/dashboard',
+            UserType::BRANCH => '/branch/'.$user->branch->slug.'/dashboard',
+            UserType::DRIVER => '/driver/dashboard',
+            default => route('login'),
+        });
+})->with([
+    'platform' => ['platform', UserType::PLATFORM],
+    'branch' => ['branch', UserType::BRANCH],
+    'driver' => ['driver', UserType::DRIVER],
+]);
+
+test('platform branch and driver staff cannot place a storefront order', function (string $guard, UserType $type) {
+    $product = storefrontCheckoutProduct(['slug' => "staff-blocked-{$guard}"]);
+    storefrontCheckoutBranchWithStock($product);
+
+    $user = User::factory()->create([
+        'user_type' => $type,
+        'branch_id' => $type === UserType::BRANCH
+            ? Branch::factory()->create()->id
+            : null,
+    ]);
+
+    $this->actingAs($user, $guard)
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, $guard)
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect(match ($type) {
+            UserType::PLATFORM => '/platform/dashboard',
+            UserType::BRANCH => '/branch/'.$user->branch->slug.'/dashboard',
+            UserType::DRIVER => '/driver/dashboard',
+            default => route('login'),
+        });
+
+    expect(Order::query()->count())->toBe(0);
+})->with([
+    'platform' => ['platform', UserType::PLATFORM],
+    'branch' => ['branch', UserType::BRANCH],
+    'driver' => ['driver', UserType::DRIVER],
+]);
+
+test('express checkout without a time slot is rejected', function () {
     $user = User::factory()->create();
-    $product = storefrontCheckoutProduct(['slug' => 'same-day-needs-date']);
+    $product = storefrontCheckoutProduct(['slug' => 'express-needs-slot']);
     storefrontCheckoutBranchWithStock($product);
 
     $this->actingAs($user, 'customer')
@@ -142,14 +212,72 @@ test('same-day checkout without a delivery date is rejected', function () {
     $this->actingAs($user, 'customer')
         ->from(route('checkout'))
         ->post(route('checkout.store'), checkoutPayload([
-            'delivery_method' => 'same-day',
-            'delivery_date' => '',
-            'time_slot_id' => '1',
+            'delivery_method' => 'express',
+            'time_slot_id' => '',
         ]))
         ->assertRedirect(route('checkout'))
-        ->assertSessionHasErrors('delivery_date');
+        ->assertSessionHasErrors('time_slot_id');
 
     expect(Order::query()->count())->toBe(0);
+});
+
+test('regular checkout does not require a delivery date or time slot', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'regular-no-slot']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'regular',
+            'delivery_date' => null,
+            'time_slot_id' => null,
+        ]))
+        ->assertRedirect();
+
+    $order = Order::query()->firstOrFail();
+
+    expect($order->delivery_method)->toBe('regular')
+        ->and($order->delivery_date)->toBeNull()
+        ->and($order->time_slot)->toBeNull();
+});
+
+test('express checkout stores today and the chosen slot without a customer date', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'express-with-slot']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $slot = DeliveryMethod::query()
+        ->where('key', 'express')
+        ->firstOrFail()
+        ->timeSlots()
+        ->orderBy('sort')
+        ->firstOrFail();
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'express',
+            'delivery_date' => now()->addWeek()->toDateString(),
+            'time_slot_id' => (string) $slot->id,
+        ]))
+        ->assertRedirect();
+
+    $order = Order::query()->firstOrFail();
+
+    expect($order->delivery_method)->toBe('express')
+        ->and($order->delivery_date?->toDateString())->toBe(now()->toDateString())
+        ->and($order->time_slot)->toBe($slot->label);
 });
 
 test('pinning a location quotes the distance-based shipping fee', function () {
@@ -237,13 +365,15 @@ test('place order writes order payment and redemption then clears ordered lines'
         ->and($order->items)->toHaveCount(1)
         ->and((float) $order->discount)->toBe(10.0)
         ->and($order->payment_method)->toBe(PaymentGatewaySetting::KEY_COD)
+        ->and($order->source)->toBe(OrderSource::CustomerCheckout)
+        ->and($order->placed_by)->toBeNull()
         ->and($order->fulfillments)->toHaveCount(1)
         ->and($order->shipping_address_snapshot['name'])->toBe('Ada Lovelace')
         ->and($order->address->receiver_name)->toBe('Ada Lovelace');
 
     $payment = Payment::query()->where('order_id', $order->id)->firstOrFail();
 
-    expect($payment->status)->toBe(PaymentStatus::Unpaid)
+    expect($payment->status)->toBe(PaymentStatus::PendingCollection)
         ->and($payment->gateway)->toBe(PaymentGatewaySetting::KEY_COD);
 
     expect(CouponRedemption::query()->where('order_id', $order->id)->count())->toBe(1);
@@ -419,7 +549,7 @@ test('a disabled payment method is rejected', function () {
         ->and(CartItem::query()->count())->toBe(1);
 });
 
-test('a cart that spans branches splits into multiple fulfillments without leaking them to the customer', function () {
+test('a cart that needs another branch stays on one fulfillment without leaking branches to the customer', function () {
     $user = User::factory()->create();
     $product = storefrontCheckoutProduct(['slug' => 'split-branch-item']);
 
@@ -463,12 +593,8 @@ test('a cart that spans branches splits into multiple fulfillments without leaki
 
     $order = Order::query()->firstOrFail();
 
-    expect($order->fulfillments)->toHaveCount(2);
-
-    $quantities = $order->fulfillments->map(fn ($fulfillment) => $fulfillment->items->sum('quantity'))->all();
-    sort($quantities);
-
-    expect($quantities)->toBe([2, 3]);
+    expect($order->fulfillments)->toHaveCount(1)
+        ->and((int) $order->items->sum('quantity'))->toBe(5);
 
     $this->actingAs($user, 'customer')
         ->get(route('checkout.confirmation', $order))
@@ -478,7 +604,97 @@ test('a cart that spans branches splits into multiple fulfillments without leaki
             ->missing('order.id')
             ->missing('order.branch')
             ->missing('order.fulfillments')
-            ->missing('order.branchName'));
+            ->missing('order.branchName')
+            ->missing('order.transfers'));
+});
+
+test('placing a multi-line order with a transfer issues a flat number of inventory queries, not one per line item', function () {
+    $user = User::factory()->create();
+    $local1 = storefrontCheckoutProduct(['slug' => 'inv-flat-local-1']);
+    $local2 = storefrontCheckoutProduct(['slug' => 'inv-flat-local-2']);
+    $transferred = storefrontCheckoutProduct(['slug' => 'inv-flat-transfer']);
+
+    $destination = Branch::factory()->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'delivery_radius_km' => 3000,
+        'status' => true,
+    ]);
+    $source = Branch::factory()->create([
+        'latitude' => -33.9,
+        'longitude' => 151.2,
+        'delivery_radius_km' => 3000,
+        'status' => true,
+    ]);
+
+    Inventory::factory()->create(['branch_id' => $destination->id, 'product_id' => $local1->id, 'quantity' => 5, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $destination->id, 'product_id' => $local2->id, 'quantity' => 5, 'status' => true]);
+    Inventory::factory()->create(['branch_id' => $source->id, 'product_id' => $transferred->id, 'quantity' => 5, 'status' => true]);
+
+    foreach ([$local1, $local2, $transferred] as $product) {
+        $this->actingAs($user, 'customer')
+            ->post(route('cart.store'), [
+                'product' => $product->slug,
+                'quantity' => 1,
+            ]);
+    }
+
+    $queries = [];
+    DB::listen(function ($query) use (&$queries): void {
+        if (str_contains($query->sql, 'inventories')) {
+            $queries[] = $query->sql;
+        }
+    });
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect();
+
+    // 3 base queries (allocator's sellableByBranch SELECT, the batched inventory map
+    // SELECT, the lockOrdered SELECT ... FOR UPDATE) + 2 queries per distinct inventory
+    // row actually reserved (the UPDATE plus AuditsChanges' post-save re-fetch) = 3 + 3*2 = 9.
+    // Before the N+1 fix, lockPlan()/reservePlan() each ran one extra findInventory() SELECT
+    // per line/leg item on top of this — i.e. 2 more queries per row (14 total here).
+    // This count must stay flat as line/leg items grow for the same number of distinct rows.
+    expect($queries)->toHaveCount(9, implode("\n", $queries));
+
+    $order = Order::query()->firstOrFail();
+    expect($order->items)->toHaveCount(3)
+        ->and($order->fulfillments)->toHaveCount(1);
+});
+
+test('placing an order writes an allocation decision log explaining the winner and any rejected branches', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'decision-log-item']);
+    $winner = storefrontCheckoutBranchWithStock($product);
+
+    // Out of radius, so it should show up as a rejected candidate on the log.
+    Branch::factory()->create([
+        'latitude' => -37.8136,
+        'longitude' => 144.9631,
+        'delivery_radius_km' => 1,
+        'status' => true,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect();
+
+    $order = Order::query()->firstOrFail();
+
+    $log = AllocationDecisionLog::query()->where('order_id', $order->id)->firstOrFail();
+
+    expect($log->winning_branch_id)->toBe($winner->id)
+        ->and($log->considered_branches)->not->toBeEmpty()
+        ->and($log->considered_branches[0]['branch_id'])->toBe($winner->id)
+        ->and($log->rejected_branches)->toHaveCount(1)
+        ->and($log->rejected_branches[0]['reason'])->toBe('out_of_radius');
 });
 
 test('order line items snapshot product details so a later catalog change does not affect the order', function () {

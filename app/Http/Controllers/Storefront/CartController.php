@@ -8,6 +8,7 @@ use App\Http\Requests\Storefront\UpdateCartItemRequest;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Services\Storefront\CartService;
+use App\Services\Storefront\ProductViewService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,6 +18,7 @@ class CartController extends Controller
 {
     public function __construct(
         private readonly CartService $carts,
+        private readonly ProductViewService $views,
     ) {}
 
     public function index(): Response
@@ -39,6 +41,10 @@ class CartController extends Controller
             );
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['product' => $exception->getMessage()]);
+        }
+
+        if ($request->boolean('count_view')) {
+            Inertia::flash('view_counted', $this->views->record($request, $product));
         }
 
         return back();

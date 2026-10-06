@@ -282,8 +282,8 @@ test('platform super admin can create and update branch staff with an avatar', f
 
     $clerk = User::query()->where('email', 'avatar-clerk@test.com')->firstOrFail();
 
-    expect($clerk->avatar)->not->toBeNull();
-    Storage::disk('public')->assertExists($clerk->avatar);
+    expect($clerk->hasMedia('avatar'))->toBeTrue()
+        ->and($clerk->getFirstMedia('avatar')->mime_type)->toBe('image/webp');
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.branch-staff.show', $clerk))
@@ -309,6 +309,6 @@ test('platform super admin can create and update branch staff with an avatar', f
     $clerk->refresh();
 
     expect($clerk->name)->toBe('Avatar Clerk Updated')
-        ->and($clerk->avatar)->not->toBeNull();
-    Storage::disk('public')->assertExists($clerk->avatar);
+        ->and($clerk->hasMedia('avatar'))->toBeTrue()
+        ->and($clerk->getFirstMedia('avatar')->mime_type)->toBe('image/webp');
 });

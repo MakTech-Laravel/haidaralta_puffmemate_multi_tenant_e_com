@@ -5,6 +5,7 @@ use App\Http\Controllers\Driver\DashboardController as DriverDashboardController
 use App\Http\Controllers\Driver\EarningsController as DriverEarningsController;
 use App\Http\Controllers\Driver\NotificationController as DriverNotificationController;
 use App\Http\Controllers\Driver\OrderController as DriverOrderController;
+use App\Http\Controllers\Driver\PlaceOrderController as DriverPlaceOrderController;
 use App\Http\Controllers\Driver\ProfileController as DriverProfileController;
 use App\Http\Controllers\Driver\RouteController as DriverRouteController;
 use App\Http\Controllers\Driver\SecurityController as DriverSecurityController;
@@ -16,9 +17,15 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::get('orders', [DriverOrderController::class, 'index'])->name('driver.orders.index');
     Route::get('history', [DriverOrderController::class, 'history'])->name('driver.history.index');
     Route::get('earnings', [DriverEarningsController::class, 'index'])->name('driver.earnings.index');
-    Route::get('orders/{order}/chat', [DriverOrderController::class, 'chat'])->name('driver.orders.chat');
-    Route::post('orders/{order}/deliver', [DriverOrderController::class, 'deliver'])->name('driver.orders.deliver');
-    Route::get('orders/{order}', [DriverOrderController::class, 'show'])->name('driver.orders.show');
+    Route::get('place-order', [DriverPlaceOrderController::class, 'index'])->name('driver.place-order.index');
+    Route::post('place-order/customers', [DriverPlaceOrderController::class, 'lookup'])->name('driver.place-order.customers.lookup');
+    Route::post('place-order', [DriverPlaceOrderController::class, 'store'])->name('driver.place-order.store');
+    Route::get('orders/{order:order_number}/chat', [DriverOrderController::class, 'chat'])->name('driver.orders.chat');
+    Route::post('orders/{order:order_number}/pick-up', [DriverOrderController::class, 'pickUp'])->name('driver.orders.pick-up');
+    Route::post('orders/{order:order_number}/start', [DriverOrderController::class, 'start'])->name('driver.orders.start');
+    Route::post('orders/{order:order_number}/deliver', [DriverOrderController::class, 'deliver'])->name('driver.orders.deliver');
+    Route::post('orders/{order:order_number}/fail', [DriverOrderController::class, 'fail'])->name('driver.orders.fail');
+    Route::get('orders/{order:order_number}', [DriverOrderController::class, 'show'])->name('driver.orders.show');
     Route::get('notifications', [DriverNotificationController::class, 'index'])->name('driver.notifications.index');
     Route::get('notifications/{userNotification}', [DriverNotificationController::class, 'show'])->name('driver.notifications.show');
     Route::post('notifications/{userNotification}/read', [DriverNotificationController::class, 'read'])->name('driver.notifications.read');

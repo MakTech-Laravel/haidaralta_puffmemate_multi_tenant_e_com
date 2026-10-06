@@ -17,11 +17,13 @@ export function ActivityLogTable({
     perPage,
     onPerPageChange,
     showUrl,
+    isLoading = false,
 }: {
     payload: DataTablePayload<ActivityRow>;
     perPage: number;
     onPerPageChange: (value: number) => void;
     showUrl: (id: number) => string;
+    isLoading?: boolean;
 }) {
     const columns = useMemo<ColumnDef<ActivityRow>[]>(
         () => [
@@ -120,6 +122,7 @@ export function ActivityLogTable({
             payload={payload}
             perPage={perPage}
             onPerPageChange={onPerPageChange}
+            isLoading={isLoading}
             emptyMessage="No activity found."
         />
     );

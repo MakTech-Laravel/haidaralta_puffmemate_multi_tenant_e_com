@@ -59,7 +59,10 @@ class UpdateBranchProductRequest extends FormRequest
             'remove_gallery_ids' => ['nullable', 'array'],
             'remove_gallery_ids.*' => [
                 'integer',
-                Rule::exists('product_images', 'id')->where('product_id', $product->id),
+                Rule::exists('media', 'id')
+                    ->where('model_type', $product->getMorphClass())
+                    ->where('model_id', $product->id)
+                    ->where('collection_name', 'gallery'),
             ],
             'status' => ['sometimes', 'boolean'],
             'selling_price' => ['nullable', 'numeric', 'min:0'],

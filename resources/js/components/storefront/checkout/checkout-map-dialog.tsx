@@ -12,11 +12,15 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { reverseGeocodeDetails } from '@/lib/nominatim';
 
 type Pin = {
     latitude: string;
     longitude: string;
     address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
 };
 
 type CheckoutMapDialogProps = {
@@ -34,24 +38,6 @@ function toNumber(value: string, fallback: number): number {
     return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-async function reverseGeocode(
-    lat: number,
-    lng: number,
-): Promise<string | undefined> {
-    const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-        { headers: { Accept: 'application/json' } },
-    );
-
-    if (!response.ok) {
-        return undefined;
-    }
-
-    const payload = (await response.json()) as { display_name?: string };
-
-    return payload.display_name;
-}
-
 export function CheckoutMapDialog({
     latitude,
     longitude,
@@ -61,6 +47,9 @@ export function CheckoutMapDialog({
     const [lat, setLat] = useState(latitude || String(DEFAULT_LAT));
     const [lng, setLng] = useState(longitude || String(DEFAULT_LNG));
     const [address, setAddress] = useState<string | undefined>();
+    const [city, setCity] = useState<string | undefined>();
+    const [state, setState] = useState<string | undefined>();
+    const [postalCode, setPostalCode] = useState<string | undefined>();
     const mapElement = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<{
         remove: () => void;
@@ -109,10 +98,15 @@ export function CheckoutMapDialog({
                 setLng(String(nextLng));
                 marker.setLatLng([nextLat, nextLng]);
                 map.setView([nextLat, nextLng], map.getZoom());
-                void reverseGeocode(nextLat, nextLng).then((line) => {
-                    if (line) {
-                        setAddress(line);
+                void reverseGeocodeDetails(nextLat, nextLng).then((result) => {
+                    if (!result) {
+                        return;
                     }
+
+                    setAddress(result.address);
+                    setCity(result.city);
+                    setState(result.state);
+                    setPostalCode(result.postalCode);
                 });
             };
 
@@ -218,6 +212,9 @@ export function CheckoutMapDialog({
                                 latitude: String(nextLat),
                                 longitude: String(nextLng),
                                 address,
+                                city,
+                                state,
+                                postalCode,
                             });
                             setOpen(false);
                         }}

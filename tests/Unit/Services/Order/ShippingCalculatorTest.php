@@ -31,8 +31,8 @@ test('beyond the free radius the fee is base plus per km, floored by the minimum
         'minimum_delivery_charge' => 5,
     ]));
 
-    // 5 + 2 * 10 = 25, above the 5 minimum.
-    expect(app(ShippingCalculator::class)->cost($branch, 10.0))->toBe(25.0);
+    // 5 + 2 * (10 - 3) = 19, above the 5 minimum.
+    expect(app(ShippingCalculator::class)->cost($branch, 10.0))->toBe(19.0);
 });
 
 test('the minimum delivery charge is respected when the formula result is lower', function () {

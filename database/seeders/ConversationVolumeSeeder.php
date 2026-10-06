@@ -13,6 +13,7 @@ use App\Models\ConversationParticipant;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Models\User;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -30,6 +31,8 @@ use Illuminate\Support\Str;
  */
 class ConversationVolumeSeeder extends Seeder
 {
+    use ReportsSeedProgress;
+
     /** Threads created per branch. */
     private const THREADS_PER_BRANCH = 48;
 
@@ -131,10 +134,14 @@ class ConversationVolumeSeeder extends Seeder
         $branches = Branch::query()->orderBy('id')->get();
         $sequence = 2000;
 
+        $this->startSeedProgress('Threads', ($branches->count() * self::THREADS_PER_BRANCH) + 2);
+
         foreach ($branches as $branch) {
             $operator = $this->operatorFor($branch);
 
             if ($operator === null) {
+                $this->advanceSeedProgress(self::THREADS_PER_BRANCH);
+
                 continue;
             }
 
@@ -149,6 +156,8 @@ class ConversationVolumeSeeder extends Seeder
                     ageInHours: 3 + ($index * 7),
                     closed: $index % 5 === 4,
                 );
+
+                $this->advanceSeedProgress();
             }
         }
 
@@ -171,7 +180,11 @@ class ConversationVolumeSeeder extends Seeder
             }
         }
 
+        $this->advanceSeedProgress();
+
         $this->seedSpareOrders($branches->all(), $customer, ++$sequence);
+
+        $this->finishSeedProgress(fn (): string => sprintf('%d conversations on file.', Conversation::query()->count()));
     }
 
     /**
@@ -194,15 +207,16 @@ class ConversationVolumeSeeder extends Seeder
                 ['order_number' => 'PMM-2026-'.($sequence + $index)],
                 [
                     'customer_id' => $customer->id,
-                    'status' => $index % 2 === 0 ? OrderStatus::Pending : OrderStatus::Confirmed,
+                    'status' => $index % 2 === 0 ? OrderStatus::Pending : OrderStatus::Processing,
                 ],
             );
 
             OrderFulfillment::query()->updateOrCreate(
-                ['order_id' => $order->id, 'branch_id' => $branch->id],
+                ['order_id' => $order->id],
                 [
+                    'branch_id' => $branch->id,
                     'driver_id' => null,
-                    'fulfillment_number' => $order->order_number.'-A',
+                    'fulfillment_number' => $order->order_number,
                     'status' => FulfillmentStatus::Pending,
                 ],
             );
@@ -228,10 +242,11 @@ class ConversationVolumeSeeder extends Seeder
         );
 
         OrderFulfillment::query()->updateOrCreate(
-            ['order_id' => $order->id, 'branch_id' => $branch->id],
+            ['order_id' => $order->id],
             [
+                'branch_id' => $branch->id,
                 'driver_id' => $driver->id,
-                'fulfillment_number' => $order->order_number.'-A',
+                'fulfillment_number' => $order->order_number,
                 'status' => $closed ? FulfillmentStatus::Delivered : FulfillmentStatus::Processing,
             ],
         );

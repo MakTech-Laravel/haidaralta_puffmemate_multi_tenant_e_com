@@ -16,13 +16,16 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->string('code')->unique();
-            $table->string('logo')->nullable();
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
             $table->text('address')->nullable();
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
             $table->decimal('delivery_radius_km', 8, 2)->nullable();
+            $table->unsignedInteger('max_active_fulfillments')->nullable();
+            $table->unsignedInteger('fulfillment_priority')->default(100);
+            $table->decimal('transfer_handling_fee', 12, 2)->nullable();
+            $table->decimal('transfer_cost_per_km', 12, 2)->nullable();
             $table->time('opening_time')->nullable();
             $table->time('closing_time')->nullable();
             $table->boolean('status')->default(true);

@@ -56,17 +56,18 @@ type CmsPayloadFieldsProps = {
 type FieldDef = { key: string; label: string };
 
 const CONTACT_LABEL_FIELDS: FieldDef[] = [
-    { key: 'firstName', label: 'First name' },
-    { key: 'lastName', label: 'Last name' },
+    { key: 'fullName', label: 'Full name' },
     { key: 'email', label: 'Email' },
     { key: 'phone', label: 'Phone' },
+    { key: 'type', label: 'Type' },
     { key: 'message', label: 'Message' },
     { key: 'submitLabel', label: 'Submit button' },
 ];
 
 const CONTACT_PLACEHOLDER_FIELDS: FieldDef[] = [
-    { key: 'lastNamePlaceholder', label: 'Last name placeholder' },
+    { key: 'fullNamePlaceholder', label: 'Full name placeholder' },
     { key: 'phonePlaceholder', label: 'Phone placeholder' },
+    { key: 'typePlaceholder', label: 'Type placeholder' },
     { key: 'messagePlaceholder', label: 'Message placeholder' },
 ];
 
@@ -76,7 +77,7 @@ const WHOLESALE_LABEL_FIELDS: FieldDef[] = [
     { key: 'phone', label: 'Phone' },
     { key: 'email', label: 'Email' },
     { key: 'company', label: 'Company' },
-    { key: 'askQuestion', label: 'Ask question' },
+    { key: 'address', label: 'Address' },
     { key: 'message', label: 'Message' },
     { key: 'submitLabel', label: 'Submit button' },
 ];
@@ -87,7 +88,7 @@ const WHOLESALE_PLACEHOLDER_FIELDS: FieldDef[] = [
     { key: 'phonePlaceholder', label: 'Phone placeholder' },
     { key: 'emailPlaceholder', label: 'Email placeholder' },
     { key: 'companyPlaceholder', label: 'Company placeholder' },
-    { key: 'askQuestionPlaceholder', label: 'Ask question placeholder' },
+    { key: 'addressPlaceholder', label: 'Address placeholder' },
     { key: 'messagePlaceholder', label: 'Message placeholder' },
 ];
 
@@ -462,7 +463,7 @@ function ContactFields({
                     />
                     <CmsImageField
                         label="Hero image"
-                        path={hero.image}
+                        path={hero.image ?? hero.image_url}
                         url={hero.image_url}
                         value={media.heroImage}
                         onChange={(file) => {
@@ -939,8 +940,7 @@ function FaqFields({
                                                                     question:
                                                                         '',
                                                                     answer: '',
-                                                                    defaultOpen:
-                                                                        false,
+                                                                    defaultOpen: false,
                                                                 },
                                                             ],
                                                         },
@@ -1062,10 +1062,7 @@ function FaqFields({
                                 </CollapsibleContent>
                             </Collapsible>
                         ))}
-                        <FieldError
-                            errors={errors}
-                            name="payload.categories"
-                        />
+                        <FieldError errors={errors} name="payload.categories" />
                     </div>
                 </section>
             ) : null}
@@ -1079,8 +1076,7 @@ function AboutFields({
     errors,
     media,
 }: Omit<CmsPayloadFieldsProps, 'slug'>) {
-    const [tab, setTab] =
-        useState<(typeof ABOUT_TABS)[number]['id']>('hero');
+    const [tab, setTab] = useState<(typeof ABOUT_TABS)[number]['id']>('hero');
 
     const hero = payload.hero ?? {};
     const who = payload.who_we_are ?? {};
@@ -1132,7 +1128,7 @@ function AboutFields({
                         />
                         <CmsImageField
                             label="Hero image"
-                            path={hero.image}
+                            path={hero.image ?? hero.image_url}
                             url={hero.image_url}
                             value={media.heroImage}
                             onChange={(file) => {
@@ -1206,7 +1202,7 @@ function AboutFields({
                         </div>
                         <CmsImageField
                             label="Media image"
-                            path={who.mediaImage}
+                            path={who.mediaImage ?? who.mediaImage_url}
                             url={who.mediaImage_url}
                             value={media.mediaImage}
                             onChange={(file) => {
@@ -1801,8 +1797,7 @@ function AboutFields({
                                                 paragraphs: paragraphs.map(
                                                     (item, i) =>
                                                         i === index
-                                                            ? event.target
-                                                                  .value
+                                                            ? event.target.value
                                                             : item,
                                                 ),
                                             },

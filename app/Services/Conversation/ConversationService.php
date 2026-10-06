@@ -44,8 +44,8 @@ class ConversationService
         }
 
         return DB::transaction(function () use ($order): Conversation {
-            $order->loadMissing('primaryFulfillment');
-            $fulfillment = $order->primaryFulfillment;
+            $order->loadMissing(['fulfillment', 'primaryFulfillment']);
+            $fulfillment = $order->fulfillment ?? $order->primaryFulfillment;
 
             if ($fulfillment === null) {
                 throw new RuntimeException('Cannot open a conversation for an order with no fulfillment.');
@@ -89,6 +89,19 @@ class ConversationService
         );
     }
 
+    public function ensureDriver(Order $order, User $driver): void
+    {
+        $conversation = Conversation::query()->where('order_id', $order->id)->first();
+
+        if ($conversation === null) {
+            $this->openForOrder($order->loadMissing('primaryFulfillment', 'fulfillment'));
+
+            return;
+        }
+
+        $this->addParticipant($conversation, $driver->id, ConversationParticipantRole::Driver);
+    }
+
     /**
      * Persist a participant message and broadcast it to the thread.
      *
@@ -124,7 +137,7 @@ class ConversationService
             return $message;
         });
 
-        $message->load(['sender:id,name,avatar', 'attachments']);
+        $message->load(['sender:id,name', 'sender.media', 'attachments']);
 
         broadcast(new MessageCreated($message))->toOthers();
         $this->notifyInbox($conversation, $message);
@@ -176,7 +189,7 @@ class ConversationService
         $conversation->refresh();
 
         if ($systemMessage instanceof Message) {
-            $systemMessage->load(['sender:id,name,avatar', 'attachments']);
+            $systemMessage->load(['sender:id,name', 'sender.media', 'attachments']);
 
             broadcast(new MessageCreated($systemMessage));
             broadcast(new ConversationClosed($conversation));

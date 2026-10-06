@@ -1,8 +1,10 @@
-import { Head, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Eye } from 'lucide-react';
-import { useMemo } from 'react';
+import { Eye, UserRound } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import DriverController from '@/actions/App/Http/Controllers/Branch/DriverController';
 import OrderController from '@/actions/App/Http/Controllers/Branch/OrderController';
+import { OrderAssignDriverSheet } from '@/components/branch/order-assign-driver-sheet';
 import {
     DataTable,
     DataTableColumnHeader,
@@ -27,11 +29,16 @@ type FulfillmentRow = {
     order_id: number;
     order_number: string;
     customer_name: string;
+    source_label: string;
     items_count: number;
     status: string;
     shipping_cost: number;
     is_paid: boolean;
     order_payment_status: string;
+    assign_status: 'not_assign' | 'assign';
+    driver_id: number | null;
+    driver_name: string | null;
+    can_assign: boolean;
 };
 
 type Branch = { id: number; name: string; slug: string };
@@ -52,6 +59,13 @@ export default function BranchOrdersIndex({
             { title: 'Orders', href: `/branch/${branch.slug}/orders` },
         ],
     });
+
+    const [assignOpen, setAssignOpen] = useState(false);
+    const [assignFulfillment, setAssignFulfillment] = useState<{
+        id: number;
+        fulfillment_number: string;
+        is_change: boolean;
+    } | null>(null);
 
     const query = useDataTableQuery({
         indexUrl: OrderController.index.url(branch.slug),
@@ -89,6 +103,13 @@ export default function BranchOrdersIndex({
                 header: 'Customer',
             },
             {
+                accessorKey: 'source_label',
+                header: 'Source',
+                cell: ({ row }) => (
+                    <Badge variant="outline">{row.original.source_label}</Badge>
+                ),
+            },
+            {
                 accessorKey: 'items_count',
                 header: 'Items',
             },
@@ -109,6 +130,41 @@ export default function BranchOrdersIndex({
                         {row.original.status.replaceAll('_', ' ')}
                     </Badge>
                 ),
+            },
+            {
+                id: 'assign_status',
+                header: 'Assign status',
+                cell: ({ row }) => {
+                    const { assign_status, driver_id, driver_name } =
+                        row.original;
+
+                    if (
+                        assign_status !== 'assign' ||
+                        driver_id === null ||
+                        !driver_name
+                    ) {
+                        return (
+                            <span className="text-muted-foreground text-sm">
+                                Not assign
+                            </span>
+                        );
+                    }
+
+                    return (
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-medium">Assign</span>
+                            <Link
+                                href={DriverController.show.url([
+                                    branch.slug,
+                                    driver_id,
+                                ])}
+                                className="text-primary text-sm underline-offset-4 hover:underline"
+                            >
+                                {driver_name}
+                            </Link>
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: 'shipping_cost',
@@ -134,7 +190,9 @@ export default function BranchOrdersIndex({
                             row.original.is_paid ? 'default' : 'secondary'
                         }
                     >
-                        {row.original.is_paid ? 'Paid' : 'Unpaid'}
+                        {row.original.is_paid
+                            ? 'Collected'
+                            : 'Pending collection'}
                     </Badge>
                 ),
             },
@@ -151,6 +209,25 @@ export default function BranchOrdersIndex({
                                     branch.slug,
                                     row.original.id,
                                 ]),
+                            },
+                            {
+                                label:
+                                    row.original.assign_status === 'assign'
+                                        ? 'Change driver'
+                                        : 'Assign driver',
+                                icon: UserRound,
+                                disabled: !row.original.can_assign,
+                                onSelect: () => {
+                                    setAssignFulfillment({
+                                        id: row.original.id,
+                                        fulfillment_number:
+                                            row.original.fulfillment_number,
+                                        is_change:
+                                            row.original.assign_status ===
+                                            'assign',
+                                    });
+                                    setAssignOpen(true);
+                                },
                             },
                         ]}
                     />
@@ -174,6 +251,7 @@ export default function BranchOrdersIndex({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No orders found."
                     toolbar={
@@ -222,6 +300,25 @@ export default function BranchOrdersIndex({
                     }
                 />
             </div>
+
+            <OrderAssignDriverSheet
+                open={assignOpen}
+                onOpenChange={(open) => {
+                    setAssignOpen(open);
+
+                    if (!open) {
+                        setAssignFulfillment(null);
+                    }
+                }}
+                branchSlug={branch.slug}
+                fulfillmentId={assignFulfillment?.id ?? null}
+                fulfillmentNumber={
+                    assignFulfillment?.fulfillment_number ?? null
+                }
+                mode={
+                    assignFulfillment?.is_change ? 'change' : 'assign'
+                }
+            />
         </>
     );
 }

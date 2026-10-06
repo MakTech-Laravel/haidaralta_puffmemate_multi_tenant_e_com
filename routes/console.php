@@ -12,3 +12,4 @@ Schedule::command('backup:run')->dailyAt('02:00');
 Schedule::command('backup:clean')->dailyAt('03:00');
 Schedule::command('backup:monitor')->dailyAt('04:00');
 Schedule::command('horizon:snapshot')->everyFiveMinutes();
+Schedule::command('product-views:prune')->dailyAt('05:00');

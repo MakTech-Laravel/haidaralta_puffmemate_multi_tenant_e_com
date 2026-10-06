@@ -190,4 +190,38 @@ return [
 
     'default_shipping_minimum_charge' => env('DEFAULT_SHIPPING_MINIMUM_CHARGE', 0),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Internal stock transfer
+    |--------------------------------------------------------------------------
+    |
+    | Used when a fulfillment branch is short and another branch can send
+    | the missing units. Null branch rates fall back to these defaults.
+    | Customer delivery fees do not use these values.
+    |
+    */
+
+    'default_transfer_handling_fee' => env('DEFAULT_TRANSFER_HANDLING_FEE', 0),
+
+    'default_transfer_cost_per_km' => env('DEFAULT_TRANSFER_COST_PER_KM', 0),
+
+    'transfer_hours_per_km' => env('TRANSFER_HOURS_PER_KM', 0.02),
+
+    'transfer_handling_buffer_hours' => env('TRANSFER_HANDLING_BUFFER_HOURS', 1),
+
+    'express_max_transfer_hours' => env(
+        'EXPRESS_MAX_TRANSFER_HOURS',
+        env('SAME_DAY_MAX_TRANSFER_HOURS', 4),
+    ),
+
+    'regular_max_transfer_hours' => env(
+        'REGULAR_MAX_TRANSFER_HOURS',
+        env('AUSTRALIA_WIDE_MAX_TRANSFER_HOURS', 72),
+    ),
+
+    // Legacy aliases — prefer express_* / regular_* above.
+    'same_day_max_transfer_hours' => env('SAME_DAY_MAX_TRANSFER_HOURS', 4),
+
+    'australia_wide_max_transfer_hours' => env('AUSTRALIA_WIDE_MAX_TRANSFER_HOURS', 72),
+
 ];

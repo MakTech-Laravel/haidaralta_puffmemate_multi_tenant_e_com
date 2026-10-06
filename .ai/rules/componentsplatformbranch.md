@@ -6,4 +6,4 @@ paths:
 # Componentsplatformbranch
 
 ## Platform and Branch share one Profile page
-Platform and Branch use one Profile page: avatar is a smaller block on the left, then name/phone/email, Change Password, Fortify 2FA/passkeys. No Settings tabs. GET /settings/security redirects both before password.confirm. Sidebar has top-level Profile after Dashboard. User menu hides Security. No account delete. Customer and driver stay unchanged.
+Platform and Branch use one Profile page: avatar is a smaller block on the left, then name/phone/email, Change Password, Fortify 2FA/passkeys. No Settings tabs. GET /settings/security redirects both before password.confirm. Profile is only in the user menu (not a sidebar item). User menu hides Security. No account delete. Customer and driver stay unchanged.

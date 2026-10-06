@@ -48,3 +48,6 @@ PostgreSQL products indexes: partial indexes on active rows (name, created_at, s
 
 ## GIN tags index needs jsonb
 Laravel $table->json() creates PostgreSQL json, and jsonb_path_ops rejects json. On pgsql, alter products.tags to jsonb (using tags::jsonb) before create index products_tags_gin using gin (tags jsonb_path_ops). pgvector/pg18 is unrelated.
+
+## Pre-handover: drop image path columns on create migrations
+Image path columns (users.avatar, branches.logo, categories/products/packs.image, driver_profiles.vehicle_image_path, home_banners.image_path, application_settings *_path, product_images/pack_images tables) were removed from original create_* migrations under pre-handover rules. Do not add Schema::table drop/backfill migrations for these. Data attachment uses Media Library + artisan media:migrate-legacy-paths / seeders. Prefer migrate:fresh --seed locally.

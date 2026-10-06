@@ -80,7 +80,7 @@ export function CheckoutOrderSummary({
                 </span>
             </div>
 
-            <ul className="mt-5 space-y-4">
+            <ul className="border-border mt-5 max-h-56 space-y-4 overflow-y-auto overscroll-contain border-y py-4 pr-1">
                 {items.map((item) => (
                     <li key={item.id} className="flex items-center gap-3">
                         <div className="bg-muted size-12 shrink-0 overflow-hidden rounded-md">
@@ -228,8 +228,8 @@ export function CheckoutOrderSummary({
             </Button>
             {!canPlaceOrder && !processing ? (
                 <p className="text-muted-foreground mt-2 text-xs">
-                    Fill every required field, including a delivery date for
-                    same-day, then place your order.
+                    Fill every required field, including an Express time
+                    slot when Express is selected, then place your order.
                 </p>
             ) : null}
 

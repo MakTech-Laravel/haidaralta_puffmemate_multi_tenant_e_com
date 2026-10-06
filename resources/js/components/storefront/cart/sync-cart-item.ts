@@ -119,28 +119,70 @@ const visitOptions = {
     only: [...CART_PROPS] as string[],
 } as const;
 
+type AddToCartSuccessPage = {
+    flash?: {
+        view_counted?: boolean;
+    };
+};
+
+type AddToCartOptions = {
+    countView?: boolean;
+    onSuccess?: (page: AddToCartSuccessPage) => void;
+};
+
 export function addToCart(
     productSlug: string,
     quantity = 1,
     onFinish?: () => void,
+    options: AddToCartOptions = {},
 ): void {
     router.post(
         store.url(),
-        { product: productSlug, quantity },
+        {
+            product: productSlug,
+            quantity,
+            ...(options.countView ? { count_view: true } : {}),
+        },
         {
             ...visitOptions,
-            onSuccess: notifyAddedToCart,
+            onSuccess: (page) => {
+                notifyAddedToCart();
+                options.onSuccess?.(page as AddToCartSuccessPage);
+            },
             onFinish,
         },
     );
 }
 
-export function syncCartQuantity(itemId: number, quantity: number): void {
+export function syncCartQuantity(
+    item: Pick<StorefrontCartItem, 'id' | 'maxQuantity'>,
+    quantity: number,
+): void {
+    if (quantity > item.maxQuantity) {
+        toast.info(`You can add up to ${item.maxQuantity} of this item.`, {
+            id: `cart-max-${item.id}`,
+        });
+
+        return;
+    }
+
     router
         .optimistic((props: CartPageProps) =>
-            optimisticCart(props, itemId, quantity),
+            optimisticCart(props, item.id, quantity),
         )
-        .patch(update.url(itemId), { quantity }, visitOptions);
+        .patch(
+            update.url(item.id),
+            { quantity },
+            {
+                ...visitOptions,
+                onError: (errors) => {
+                    toast.error(
+                        errors.quantity ?? 'We could not update your cart.',
+                        { id: `cart-error-${item.id}` },
+                    );
+                },
+            },
+        );
 }
 
 export function removeCartItem(itemId: number): void {

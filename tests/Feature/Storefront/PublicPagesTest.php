@@ -6,6 +6,7 @@ use App\Models\CmsPage;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\Cms\CmsPageService;
+use App\Support\MediaUrl;
 use App\Support\Storefront\StorefrontCatalog;
 use Database\Seeders\ApplicationSettingsSeeder;
 use Database\Seeders\BranchSeeder;
@@ -14,6 +15,7 @@ use Database\Seeders\CmsPageSeeder;
 use Database\Seeders\HomeBannerSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -71,23 +73,26 @@ test('storefront home shares featured categories and tagged products', function 
 });
 
 test('storefront home featured categories come from the catalog database', function () {
+    Storage::fake('public');
+
     Category::query()->update(['featured' => false]);
 
-    Category::factory()->create([
+    $alpha = Category::factory()->create([
         'name' => 'Featured Alpha',
         'slug' => 'featured-alpha',
         'status' => true,
         'featured' => true,
         'slogan' => 'Alpha slogan',
-        'image' => '/images/storefront/category-cigarettes.png',
     ]);
+    $alpha->addMedia(public_path('images/storefront/category-cigarettes.png'))
+        ->preservingOriginal()
+        ->toMediaCollection('image');
     Category::factory()->create([
         'name' => 'Featured Beta',
         'slug' => 'featured-beta',
         'status' => true,
         'featured' => true,
         'slogan' => 'Beta slogan',
-        'image' => '/images/storefront/category-vapes.png',
     ]);
     Category::factory()->create([
         'name' => 'Not Featured',
@@ -105,6 +110,8 @@ test('storefront home featured categories come from the catalog database', funct
             ->where('featuredCategories.0.name', 'Featured Alpha')
             ->where('featuredCategories.0.description', 'Alpha slogan')
             ->where('featuredCategories.0.href', '/shop/featured-alpha')
+            ->where('featuredCategories.0.image', $alpha->fresh()->getFirstMediaUrl('image'))
+            ->where('featuredCategories.1.image', MediaUrl::DEFAULT_FALLBACK)
             ->where('featuredCategories.0.wide', false)
             ->where('featuredCategories.1.id', 'featured-beta')
             ->where('featuredCategories.1.wide', false));
@@ -149,12 +156,12 @@ test('storefront home best selling and new arrival products come from catalog ta
             ->where('bestSellingProducts.0.id', 'tagged-best-seller')
             ->where('bestSellingProducts.0.name', 'Tagged Best Seller')
             ->where('bestSellingProducts.0.description', 'Gold Pack • 20 Cigarettes')
-            ->where('bestSellingProducts.0.price', '$14.00')
+            ->where('bestSellingProducts.0.price', 'A$14.00')
             ->where('bestSellingProducts.0', fn ($card): bool => ! array_key_exists('stock', collect($card)->all()))
             ->has('newArrivalProducts', 1)
             ->where('newArrivalProducts.0.id', 'tagged-new-arrival')
             ->where('newArrivalProducts.0.description', 'Cool Mint • 15 pcs')
-            ->where('newArrivalProducts.0.price', '$9.90')
+            ->where('newArrivalProducts.0.price', 'A$9.90')
             ->where('newArrivalProducts.0', fn ($card): bool => ! array_key_exists('stock', collect($card)->all())));
 });
 
@@ -221,8 +228,8 @@ test('storefront product cards omit stock and use catalog price without a branch
     expect($card)->not->toHaveKey('stock')
         ->and($card['id'])->toBe('card-mapper-pack')
         ->and($card['description'])->toBe('Menthol Pack • 20 Cigarettes')
-        ->and($card['price'])->toBe('$12.50')
-        ->and($card['compareAtPrice'])->toBe('$15.00')
+        ->and($card['price'])->toBe('A$12.50')
+        ->and($card['compareAtPrice'])->toBe('A$15.00')
         ->and($card['views'])->toBe('0');
 });
 

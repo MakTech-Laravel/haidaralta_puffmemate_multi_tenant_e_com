@@ -18,6 +18,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
     const hasOffer = Boolean(product.compareAtPrice);
     const imageSrc = product.image || FALLBACK_IMAGE;
     const [adding, setAdding] = useState(false);
+    const [addedViews, setAddedViews] = useState(0);
+    const displayViews = /^\d+$/.test(product.views)
+        ? String(Number(product.views) + addedViews)
+        : product.views;
 
     return (
         <article
@@ -30,7 +34,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 href={productShow(product.id)}
                 className="flex min-w-0 flex-1 flex-col"
             >
-                <div className="bg-muted relative aspect-[3/2] overflow-hidden">
+                <div className="bg-muted relative aspect-3/2 overflow-hidden">
                     {hasOffer ? (
                         <span className="absolute top-2 right-2 z-10 rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm sm:top-3 sm:right-3 sm:px-2.5 sm:py-1">
                             Offer Product
@@ -47,22 +51,18 @@ export function ProductCard({ product, className }: ProductCardProps) {
                             event.currentTarget.src = FALLBACK_IMAGE;
                         }}
                     />
+                    <div
+                        className="absolute right-2 bottom-2 z-10 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm sm:right-3 sm:bottom-3 sm:px-2.5 sm:py-1"
+                        aria-label={`${displayViews} views`}
+                    >
+                        <EyeIcon className="size-3.5 sm:size-4" />
+                        <span>{displayViews}</span>
+                    </div>
                 </div>
                 <div className="flex flex-1 flex-col gap-1 p-4 pb-2">
-                    <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-foreground min-w-0 truncate text-base font-semibold sm:text-lg">
-                            {product.name}
-                        </h3>
-                        <div
-                            className="bg-muted-foreground/20 flex shrink-0 items-center gap-1 rounded-full px-2 py-1"
-                            aria-label={`${product.views} views`}
-                        >
-                            <EyeIcon className="size-5" />
-                            <span className="text-sm font-medium">
-                                {product.views}
-                            </span>
-                        </div>
-                    </div>
+                    <h3 className="text-foreground min-w-0 truncate text-base font-semibold sm:text-lg">
+                        {product.name}
+                    </h3>
                     <p className="text-muted-foreground truncate text-sm font-normal">
                         {product.description}
                     </p>
@@ -86,7 +86,14 @@ export function ProductCard({ product, className }: ProductCardProps) {
                     disabled={adding}
                     onClick={() => {
                         setAdding(true);
-                        addToCart(product.id, 1, () => setAdding(false));
+                        addToCart(product.id, 1, () => setAdding(false), {
+                            countView: true,
+                            onSuccess: (page) => {
+                                if (page.flash?.view_counted === true) {
+                                    setAddedViews((count) => count + 1);
+                                }
+                            },
+                        });
                     }}
                 >
                     <ShoppingCart className="size-3.5" />

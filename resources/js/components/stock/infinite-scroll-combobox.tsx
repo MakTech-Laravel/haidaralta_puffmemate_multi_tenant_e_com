@@ -75,10 +75,11 @@ export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
         'staticOptions' in props && props.staticOptions
             ? props.staticOptions
             : null;
-    const descriptionKey =
-        optionsUrl && 'descriptionKey' in props
+    const descriptionKey = optionsUrl
+        ? 'descriptionKey' in props
             ? (props.descriptionKey ?? 'sku')
-            : null;
+            : 'sku'
+        : null;
 
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');

@@ -24,6 +24,7 @@ class QuoteShippingRequest extends FormRequest
         return [
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'delivery_method' => ['nullable', 'string', 'max:64'],
         ];
     }
 }

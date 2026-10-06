@@ -22,7 +22,6 @@ class CategoryFactory extends Factory
             'parent_id' => null,
             'name' => Str::title($name),
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
-            'image' => null,
             'slogan' => null,
             'color_code' => null,
             'status' => true,

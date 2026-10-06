@@ -347,9 +347,8 @@ test('platform can store driver with address and avatar and sync branches', func
     $profile = $driver->driverProfile;
 
     expect($profile?->address)->toBe('12 Delivery Lane, Sydney')
-        ->and($driver->avatar)->not->toBeNull();
-
-    Storage::disk('public')->assertExists($driver->avatar);
+        ->and($driver->hasMedia('avatar'))->toBeTrue()
+        ->and($driver->getFirstMedia('avatar')->mime_type)->toBe('image/webp');
 
     $this->actingAs($admin, 'platform')
         ->put(route('platform.drivers.branches.sync', $driver), [
@@ -396,8 +395,8 @@ test('platform can update a driver avatar onto users.avatar', function () {
 
     $driver->refresh();
 
-    expect($driver->avatar)->not->toBeNull();
-    Storage::disk('public')->assertExists($driver->avatar);
+    expect($driver->hasMedia('avatar'))->toBeTrue()
+        ->and($driver->getFirstMedia('avatar')->mime_type)->toBe('image/webp');
 });
 
 test('busy override wins over a scheduled shift assignment for effective availability', function () {
@@ -621,7 +620,7 @@ test('branch cannot assign an existing driver via the removed assign endpoint', 
             'driver_id' => $driver->id,
             'status' => DriverAssignmentStatus::Active->value,
         ])
-        ->assertStatus(405);
+        ->assertNotFound();
 
     expect(DriverBranchAssignment::query()
         ->where('driver_id', $driver->id)

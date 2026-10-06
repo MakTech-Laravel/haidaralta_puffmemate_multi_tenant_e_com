@@ -5,9 +5,12 @@ namespace App\Models;
 use App\Contracts\ScoutSearchable;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\CustomerAddressType;
+use App\Enums\CustomerRegistrationStatus;
 use App\Enums\UserType;
 use App\Models\Concerns\AuditsChanges;
 use App\Models\Concerns\HasFcmDeviceTokens;
+use App\Models\Concerns\InteractsWithAppMedia;
+use App\Support\MediaUrl;
 use App\Support\SearchableTimestamp;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -23,6 +26,7 @@ use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Scout\Searchable;
+use Spatie\MediaLibrary\HasMedia;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -32,11 +36,11 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $phone_verified_at
  * @property string|null $email
  * @property Carbon|null $email_verified_at
- * @property string $password
+ * @property string|null $password
  * @property UserType $user_type
+ * @property CustomerRegistrationStatus|null $registration_status
  * @property int|null $branch_id
  * @property bool $is_active
- * @property string|null $avatar
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -47,12 +51,22 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read CustomerAddress|null $shippingAddress
  * @property-read CustomerAddress|null $billingAddress
  */
-#[Fillable(['name', 'phone', 'email', 'password', 'user_type', 'branch_id', 'is_active', 'avatar', 'phone_verified_at', 'email_verified_at'])]
+#[Fillable(['name', 'phone', 'email', 'password', 'user_type', 'registration_status', 'branch_id', 'is_active', 'phone_verified_at', 'email_verified_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
-class User extends Authenticatable implements PasskeyUser, ScoutSearchable
+class User extends Authenticatable implements HasMedia, PasskeyUser, ScoutSearchable
 {
     /** @use HasFactory<UserFactory> */
-    use AuditsChanges, HasFactory, HasFcmDeviceTokens, HasRoles, Notifiable, PasskeyAuthenticatable, Searchable, TwoFactorAuthenticatable;
+    use AuditsChanges, HasFactory, HasFcmDeviceTokens, HasRoles, InteractsWithAppMedia, Notifiable, PasskeyAuthenticatable, Searchable, TwoFactorAuthenticatable;
+
+    public function registerMediaCollections(): void
+    {
+        $this->registerSingleFileCollection('avatar');
+    }
+
+    public function avatarUrl(?string $fallback = null): ?string
+    {
+        return MediaUrl::fromCollection($this, 'avatar', $fallback);
+    }
 
     /**
      * @return BelongsTo<Branch, $this>
@@ -187,6 +201,12 @@ class User extends Authenticatable implements PasskeyUser, ScoutSearchable
         return $this->user_type === UserType::CUSTOMER;
     }
 
+    public function isRegisteredCustomer(): bool
+    {
+        return $this->isCustomer()
+            && $this->registration_status === CustomerRegistrationStatus::Registered;
+    }
+
     public function guardName(): string
     {
         return $this->user_type->guard();
@@ -215,6 +235,7 @@ class User extends Authenticatable implements PasskeyUser, ScoutSearchable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'user_type' => UserType::class,
+            'registration_status' => CustomerRegistrationStatus::class,
             'is_active' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
         ];

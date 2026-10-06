@@ -1,8 +1,6 @@
-import { format, isValid, parse } from 'date-fns';
 import AlertError from '@/components/alert-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -13,7 +11,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { CheckoutMapDialog } from '@/components/storefront/checkout/checkout-map-dialog';
-import { formatAppDate } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
 import type {
     StorefrontAddress,
@@ -33,7 +30,6 @@ export type CheckoutDetails = {
     addressId: string;
     saveAsDefault: boolean;
     deliveryMethodId: string;
-    deliveryDate: string;
     timeSlotId: string;
     paymentMethodId: string;
 };
@@ -43,7 +39,6 @@ type CheckoutFormProps = {
     addresses: StorefrontAddress[];
     deliveryMethods: StorefrontDeliveryMethod[];
     paymentMethods: StorefrontPaymentMethod[];
-    timeSlots: StorefrontTimeSlot[];
     errors?: Record<string, string>;
     onChange: <K extends keyof CheckoutDetails>(
         key: K,
@@ -69,9 +64,6 @@ const sectionCardClass =
     'bg-accent gap-3 rounded-none border-none p-3 shadow-none sm:gap-4 sm:p-5';
 
 const fieldClass = 'bg-background h-11 rounded-none border-none shadow-none';
-
-const datePickerClass =
-    '[&_button]:bg-background [&_button]:h-11 [&_button]:rounded-none [&_button]:border-none [&_button]:shadow-none';
 
 function RequiredMark() {
     return <span className="text-primary">*</span>;
@@ -101,18 +93,12 @@ function slotHours(slots: StorefrontTimeSlot[]): string | null {
     return `${first} – ${last}`;
 }
 
-function deliveryWindowLabel(
-    date: string,
-    slots: StorefrontTimeSlot[],
-): string {
+function deliveryWindowLabel(slots: StorefrontTimeSlot[]): string {
     const hours = slotHours(slots);
-    const parsed = date ? parse(date, 'yyyy-MM-dd', new Date()) : null;
-    const datePart =
-        parsed && isValid(parsed)
-            ? `${format(parsed, 'EEEE')} ${formatAppDate(date)}`
-            : 'Select a delivery date';
 
-    return hours ? `${datePart} · Delivery hours ${hours}` : datePart;
+    return hours
+        ? `Preferred window ${hours}`
+        : 'Choose a preferred time window';
 }
 
 export function CheckoutForm({
@@ -120,7 +106,6 @@ export function CheckoutForm({
     addresses,
     deliveryMethods,
     paymentMethods,
-    timeSlots,
     errors = {},
     onChange,
     onPinSelect,
@@ -129,8 +114,17 @@ export function CheckoutForm({
     const selectedMethod = deliveryMethods.find(
         (method) => method.id === details.deliveryMethodId,
     );
+    const timeSlots = selectedMethod?.timeSlots ?? [];
     const showTimeSlots = selectedMethod?.requiresSlot ?? false;
-    const today = format(new Date(), 'yyyy-MM-dd');
+    const paymentHint = paymentMethods.some(
+        (method) => method.id === 'payment_link',
+    )
+        ? null
+        : paymentMethods.every(
+                (method) => method.id === 'cod' || method.id === 'pos',
+            )
+          ? 'Pay on delivery'
+          : null;
 
     const loadAddress = (id: string) => {
         const address = addresses.find((row) => String(row.id) === id);
@@ -354,7 +348,10 @@ export function CheckoutForm({
                                     key={method.id}
                                     type="button"
                                     onClick={() =>
-                                        onChange('deliveryMethodId', method.id)
+                                        onChange(
+                                            'deliveryMethodId',
+                                            method.id,
+                                        )
                                     }
                                     className={cn(
                                         'bg-background flex items-start gap-3 rounded-none border p-4 text-left',
@@ -391,41 +388,21 @@ export function CheckoutForm({
                     {showTimeSlots ? (
                         <div className="space-y-4">
                             <p className="text-muted-foreground text-sm">
-                                Local delivery: Same-day service is available
-                                within selected delivery zones around
-                                participating branches.
+                                Express is the faster option. Choose a
+                                preferred time window. We only accept Express
+                                when stock, including a short transfer, can be
+                                ready quickly. If that is not possible, choose
+                                Regular delivery.
                             </p>
                             <div className="space-y-2">
                                 <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">
                                     Available time slots
                                 </p>
                                 <p className="text-muted-foreground text-sm">
-                                    {deliveryWindowLabel(
-                                        details.deliveryDate,
-                                        timeSlots,
-                                    )}
+                                    {deliveryWindowLabel(timeSlots)}
                                 </p>
                             </div>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="checkout-delivery-date">
-                                        Delivery date <RequiredMark />
-                                    </Label>
-                                    <DatePicker
-                                        id="checkout-delivery-date"
-                                        value={details.deliveryDate || null}
-                                        onChange={(value) =>
-                                            onChange('deliveryDate', value)
-                                        }
-                                        placeholder="Select a date"
-                                        min={today}
-                                        className={datePickerClass}
-                                        aria-invalid={Boolean(
-                                            errors.delivery_date,
-                                        )}
-                                    />
-                                    <FieldError message={errors.delivery_date} />
-                                </div>
+                            <div className="max-w-sm space-y-1.5">
                                 <div className="space-y-1.5">
                                     <Label>
                                         Time slot <RequiredMark />
@@ -454,23 +431,18 @@ export function CheckoutForm({
                                 </div>
                             </div>
                         </div>
-                    ) : (
-                        <Alert>
-                            <AlertDescription>
-                                Australia-wide shipping does not need a time
-                                slot.
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                    ) : null}
                 </CardContent>
             </Card>
 
             <Card className={sectionCardClass}>
                 <CardHeader className="flex flex-row items-start justify-between gap-3">
                     <CardTitle className="text-foreground text-lg font-extrabold">
-                        4. Payment at delivery
+                        4. Payment method
                     </CardTitle>
-                    <SectionHint>No online card entry</SectionHint>
+                    {paymentHint ? (
+                        <SectionHint>{paymentHint}</SectionHint>
+                    ) : null}
                 </CardHeader>
                 <CardContent className="space-y-4 px-0">
                     <div className="grid gap-3 sm:grid-cols-2">

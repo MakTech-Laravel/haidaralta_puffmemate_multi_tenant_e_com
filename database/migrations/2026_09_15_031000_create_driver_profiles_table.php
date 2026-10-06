@@ -16,7 +16,8 @@ return new class extends Migration
             $table->string('availability_status')->default('offline');
             $table->text('notes')->nullable();
             $table->text('address')->nullable();
-            $table->string('vehicle_image_path')->nullable();
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
             $table->timestamps();
         });
     }

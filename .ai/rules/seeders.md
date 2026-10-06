@@ -50,10 +50,16 @@ Daniel Foster (UserSeeder::DRIVER) is user_type=driver with branch_id null, a dr
 WorkforceShiftSeeder uses personal date ranges only. Do not seed global roster periods or names like September 2026 / Spring 2026.
 
 ## Seeders are massive handwritten AU retail data
-All seeders use handwritten real-world AU retail copy — never Faker or fake(). Branches: 9 stores (3 flagships + Perth, Adelaide, Surfers, Canberra, Newcastle, Parramatta). Users expand beyond constants. Catalog ~48 products. TransferHistorySeeder archives only. ConversationVolume is high-volume phrase banks.
+All seeders use handwritten real-world AU retail copy — never Faker or fake(). Core branches: 9 stores (3 flagships + Perth, Adelaide, Surfers, Canberra, Newcastle, Parramatta), plus 73 nationwide stores from NationwideBranchSeeder. Users expand beyond constants. Core catalog ~45 products + ~600 from ExtendedProductSeeder. TransferHistorySeeder archives only. ConversationVolume is high-volume phrase banks (not run by DatabaseSeeder).
 
 ## CatalogSeeder featured category set
 Featured homepage set is cigarettes, vapes, tobacco, nicotine-pouches, accessories (slogans match marketing cards). Disposables/pod-systems are vapes children with images, not in nav. Packs & Saves / Wholesale stay fixed pages. CategorySeeder `category()` uses updateOrCreate so re-seed refreshes images/flags.
 
 ## Catalog seeders are split
 Catalog seeding is CategorySeeder then ProductSeeder. CatalogSeeder is a thin wrapper for both. Shared image helpers live in Concerns/SeedsCatalogMedia.
+
+## Nationwide seeders layer on top of the core seeders
+Keep BranchSeeder (9 core stores, null radius = deliver anywhere) and ProductSeeder (~45 hand-written products) unchanged; tests seed them directly and assert on their fixed sets. Scale data lives in separate seeders called only by DatabaseSeeder: NationwideBranchSeeder (73 real AU stores with metro/regional/remote radii), ExtendedCategorySeeder (non-featured, non-nav children), ExtendedProductSeeder (~600 deterministic products from handwritten brand/flavour/size lists, no Faker), NationwideInventorySeeder (bulk-insert stock, stock_in ledger, and branch prices; skips existing rows). DatabaseSeeder no longer runs OrderConversationSeeder/ConversationVolumeSeeder; their files stay because conversation tests use them. Long seeders report live counts via Concerns/ReportsSeedProgress.
+
+## Every seeder reports live progress
+All seeders use Concerns/ReportsSeedProgress so db:seed shows `Label  n/total [bar] % elapsed` plus a one-line summary. Loops use withSeedProgress($label, $items, $callback, $summary); hand-written seeders built from inline helper calls queue work with queueSeedStep() and run it with runQueuedSeedSteps() so the total is known up front (queued steps must set their own Spatie team context). Summary closures receive the step total. The trait no-ops when no console command is attached (e.g. app()-resolved seeders).

@@ -1,14 +1,17 @@
 <?php
 
 use App\Enums\CartStatus;
+use App\Enums\DiscountType;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
+use App\Services\Storefront\CartService;
 use App\Support\MediaUrl;
 use Database\Seeders\ApplicationSettingsSeeder;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -49,6 +52,75 @@ test('guests can add update and remove cart items', function () {
     expect(CartItem::query()->count())->toBe(0);
 });
 
+test('repeated adds never push a cart line past the max quantity', function () {
+    $product = storefrontCartProduct(['slug' => 'capped-add-item']);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 90]);
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 20]);
+
+    expect(CartItem::query()->sole()->quantity)->toBe(CartService::MAX_LINE_QUANTITY);
+});
+
+test('updating a cart line above the max quantity is rejected and keeps the saved quantity', function () {
+    $product = storefrontCartProduct(['slug' => 'capped-update-item']);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 99]);
+    $item = CartItem::query()->sole();
+
+    $this->patch(route('cart.update', $item), ['quantity' => 100])
+        ->assertSessionHasErrors('quantity');
+
+    expect($item->fresh()->quantity)->toBe(99);
+});
+
+test('cart lines expose the unit price, the original price and the max quantity', function () {
+    $discounted = storefrontCartProduct([
+        'slug' => 'discounted-cart-item',
+        'selling_price' => 50,
+        'regular_price' => 55,
+        'discount_type' => DiscountType::Percent,
+        'discount_price' => 10,
+    ]);
+    $regular = storefrontCartProduct(['slug' => 'regular-cart-item', 'selling_price' => 20, 'regular_price' => null]);
+
+    $this->post(route('cart.store'), ['product' => $discounted->slug, 'quantity' => 3]);
+    $this->post(route('cart.store'), ['product' => $regular->slug, 'quantity' => 1]);
+
+    $this->get(route('cart'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('items.0.formattedUnitPrice', '$45.00')
+            ->where('items.0.formattedCompareAtUnitPrice', '$50.00')
+            ->where('items.0.formattedLineTotal', '$135.00')
+            ->where('items.0.maxQuantity', CartService::MAX_LINE_QUANTITY)
+            ->where('items.1.formattedUnitPrice', '$20.00')
+            ->where('items.1.compareAtUnitPrice', null)
+            ->where('items.1.formattedCompareAtUnitPrice', null));
+});
+
+test('adding to cart from a product card counts a view', function () {
+    $product = storefrontCartProduct(['slug' => 'card-view-item']);
+
+    $this->post(route('cart.store'), [
+        'product' => $product->slug,
+        'quantity' => 1,
+        'count_view' => true,
+    ])->assertRedirect();
+
+    expect($product->fresh()->views)->toBe(1);
+});
+
+test('adding to cart without count_view leaves views unchanged', function () {
+    $product = storefrontCartProduct(['slug' => 'pdp-add-item']);
+
+    $this->post(route('cart.store'), [
+        'product' => $product->slug,
+        'quantity' => 1,
+    ])->assertRedirect();
+
+    expect($product->fresh()->views)->toBe(0);
+});
+
 test('guest cart survives refresh and a rejected checkout', function () {
     $product = storefrontCartProduct(['slug' => 'persist-cart-item']);
 
@@ -82,52 +154,30 @@ test('guest cart survives refresh and a rejected checkout', function () {
             ->has('items', 1));
 });
 
-test('cart line images use a public product photo or the logo fallback', function () {
-    $photo = storefrontCartProduct([
-        'slug' => 'photo-cart-item',
-        'image' => '/images/storefront/logo.png',
-    ]);
-    $stubPath = public_path('images/storefront/cart-stub-image.jpg');
-    file_put_contents($stubPath, 'fake-image-bytes');
+test('cart line images use the product media or the logo fallback', function () {
+    Storage::fake('public');
 
-    try {
-        $broken = storefrontCartProduct([
-            'slug' => 'stub-cart-item',
-            'image' => '/images/storefront/cart-stub-image.jpg',
-        ]);
-
-        $this->post(route('cart.store'), [
-            'product' => $photo->slug,
-            'quantity' => 1,
-        ]);
-        $this->post(route('cart.store'), [
-            'product' => $broken->slug,
-            'quantity' => 1,
-        ]);
-
-        $this->get(route('cart'))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('storefront/cart')
-                ->where('items.0.image', '/images/storefront/logo.png')
-                ->where('items.1.image', MediaUrl::DEFAULT_FALLBACK));
-    } finally {
-        if (is_file($stubPath)) {
-            unlink($stubPath);
-        }
-    }
-});
-
-test('adding to cart does not flash a server toast', function () {
-    $product = storefrontCartProduct(['slug' => 'no-flash-cart-item']);
+    $photo = storefrontCartProduct(['slug' => 'photo-cart-item']);
+    $media = $photo->addMedia(public_path('images/storefront/logo.png'))
+        ->preservingOriginal()
+        ->toMediaCollection('image');
+    $bare = storefrontCartProduct(['slug' => 'bare-cart-item']);
 
     $this->post(route('cart.store'), [
-        'product' => $product->slug,
+        'product' => $photo->slug,
         'quantity' => 1,
-    ])->assertRedirect();
+    ]);
+    $this->post(route('cart.store'), [
+        'product' => $bare->slug,
+        'quantity' => 1,
+    ]);
 
-    expect(session('inertia.flash_data.toast'))->toBeNull()
-        ->and(CartItem::query()->sum('quantity'))->toBe(1);
+    $this->get(route('cart'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/cart')
+            ->where('items.0.image', $media->getUrl())
+            ->where('items.1.image', MediaUrl::DEFAULT_FALLBACK));
 });
 
 test('guest checkout redirects to login', function () {

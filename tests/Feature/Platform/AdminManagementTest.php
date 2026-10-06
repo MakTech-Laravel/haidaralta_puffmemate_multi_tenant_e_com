@@ -89,8 +89,8 @@ test('platform super admin can create an admin with an avatar', function () {
 
     $created = User::query()->where('phone', '+61412987655')->firstOrFail();
 
-    expect($created->avatar)->not->toBeNull();
-    Storage::disk('public')->assertExists($created->avatar);
+    expect($created->hasMedia('avatar'))->toBeTrue()
+        ->and($created->getFirstMedia('avatar')->mime_type)->toBe('image/webp');
 });
 
 test('platform super admin can update an admin avatar', function () {
@@ -120,8 +120,8 @@ test('platform super admin can update an admin avatar', function () {
 
     $clerk->refresh();
 
-    expect($clerk->avatar)->not->toBeNull();
-    Storage::disk('public')->assertExists($clerk->avatar);
+    expect($clerk->hasMedia('avatar'))->toBeTrue()
+        ->and($clerk->getFirstMedia('avatar')->mime_type)->toBe('image/webp');
 });
 
 test('cannot delete the last platform super admin', function () {

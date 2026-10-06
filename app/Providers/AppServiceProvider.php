@@ -39,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
         Fortify::ignoreRoutes();
 
         // Provider-independent by design — swap for a Google/Mapbox-backed
-        // implementation later without touching BranchAllocationService or
+        // implementation later without touching OrderAllocationEngine or
         // ShippingCalculator.
         $this->app->bind(DistanceCalculator::class, HaversineDistanceCalculator::class);
 

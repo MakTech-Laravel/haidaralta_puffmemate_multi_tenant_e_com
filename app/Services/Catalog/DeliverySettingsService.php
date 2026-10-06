@@ -70,41 +70,39 @@ class DeliverySettingsService
 
     public function ensureDefaults(): void
     {
-        $sameDay = DeliveryMethod::query()->firstOrCreate(
-            ['key' => 'same-day'],
+        DeliveryMethod::query()->firstOrCreate(
+            ['key' => 'regular'],
             [
-                'label' => 'Same-day local delivery',
-                'description' => 'Fast local delivery in selected areas.',
+                'label' => 'Regular delivery',
+                'description' => 'Standard delivery for eligible orders.',
                 'fee' => 0,
-                'requires_slot' => true,
+                'requires_slot' => false,
                 'status' => true,
                 'sort' => 0,
             ],
         );
 
-        $shipping = DeliveryMethod::query()->firstOrCreate(
-            ['key' => 'australia-wide'],
+        $express = DeliveryMethod::query()->firstOrCreate(
+            ['key' => 'express'],
             [
-                'label' => 'Australia-wide shipping',
-                'description' => 'Shipping available for eligible orders.',
+                'label' => 'Express delivery',
+                'description' => 'Priority delivery in selected areas with a chosen time slot.',
                 'fee' => 0,
-                'requires_slot' => false,
+                'requires_slot' => true,
                 'status' => true,
                 'sort' => 1,
             ],
         );
 
-        if ($sameDay->timeSlots()->doesntExist()) {
+        if ($express->timeSlots()->doesntExist()) {
             foreach (['9:00 AM – 12:00 PM', '12:00 PM – 3:00 PM', '3:00 PM – 6:00 PM', '6:00 PM – 9:00 PM'] as $index => $label) {
-                $sameDay->timeSlots()->create([
+                $express->timeSlots()->create([
                     'label' => $label,
                     'status' => true,
                     'sort' => $index,
                 ]);
             }
         }
-
-        unset($shipping);
     }
 
     /**

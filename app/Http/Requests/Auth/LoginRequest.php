@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Enums\CustomerRegistrationStatus;
 use App\Enums\UserType;
 use App\Models\User;
 use App\Support\Phone;
@@ -88,6 +89,14 @@ class LoginRequest extends FormRequest
         }
 
         if ($user->user_type === UserType::BRANCH && $user->branch === null) {
+            return true;
+        }
+
+        if ($user->password === null) {
+            return true;
+        }
+
+        if ($user->isCustomer() && $user->registration_status !== CustomerRegistrationStatus::Registered) {
             return true;
         }
 

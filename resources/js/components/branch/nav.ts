@@ -25,7 +25,6 @@ import {
     Tags,
     Truck,
     UserPlus,
-    UserRound,
     Users,
 } from 'lucide-react';
 import {
@@ -35,7 +34,6 @@ import {
     navSoon,
 } from '@/components/navigation/nav-builders';
 import type { NavSection } from '@/components/navigation/types';
-import { edit as profileEdit } from '@/routes/profile';
 
 export function buildBranchNav(
     slug: string,
@@ -59,6 +57,12 @@ export function buildBranchNav(
             title: 'Products',
             href: `/branch/${slug}/products`,
             icon: Package,
+            permissions: ['manage-branch-products'],
+        }),
+        navLink({
+            title: 'Packs & Saves',
+            href: `/branch/${slug}/packs-saves`,
+            icon: Package2,
             permissions: ['manage-branch-products'],
         }),
         ...(!showBranchPricing && branchCanManageCatalogPricing
@@ -96,11 +100,6 @@ export function buildBranchNav(
                 href: `/branch/${slug}/dashboard`,
                 icon: LayoutGrid,
                 permissions: ['view-branch-dashboard'],
-            }),
-            navLink({
-                title: 'Profile',
-                href: profileEdit.url(),
-                icon: UserRound,
             }),
             navGroup({
                 title: 'Staff management',
@@ -172,6 +171,12 @@ export function buildBranchNav(
                         icon: Truck,
                         permissions: ['manage-branch-drivers'],
                     }),
+                    navLink({
+                        title: 'Assign Products',
+                        href: `/branch/${slug}/assign-products`,
+                        icon: PackagePlus,
+                        permissions: ['manage-branch-drivers'],
+                    }),
                     navSoon({
                         title: 'Live tracking',
                         icon: MapPinned,
@@ -203,6 +208,12 @@ export function buildBranchNav(
                         icon: ShoppingBag,
                         permissions: ['manage-branch-orders'],
                     }),
+                    navLink({
+                        title: 'Stock transfers',
+                        href: `/branch/${slug}/stock-transfers`,
+                        icon: Package2,
+                        permissions: ['manage-branch-orders'],
+                    }),
                     navSoon({
                         title: 'Pickup',
                         icon: Store,
@@ -214,6 +225,12 @@ export function buildBranchNav(
                         permissions: ['manage-branch-orders'],
                     }),
                 ],
+            }),
+            navLink({
+                title: 'Areas',
+                href: `/branch/${slug}/areas`,
+                icon: MapPinned,
+                permissions: ['manage-branch-settings'],
             }),
             navGroup({
                 title: 'Conversations',
@@ -240,11 +257,22 @@ export function buildBranchNav(
             navGroup({
                 title: 'Reports and history',
                 icon: ChartColumn,
-                permissions: ['manage-branch-orders', 'manage-branch-products'],
+                permissions: [
+                    'manage-branch-orders',
+                    'manage-branch-products',
+                    'manage-branch-drivers',
+                ],
                 items: [
-                    navSoon({
-                        title: 'Sales',
+                    navLink({
+                        title: 'Order Reports',
+                        href: `/branch/${slug}/reports/order-reports`,
                         icon: ChartColumn,
+                        permissions: ['manage-branch-orders'],
+                    }),
+                    navLink({
+                        title: 'Order Assign History',
+                        href: `/branch/${slug}/reports/order-assign-history`,
+                        icon: History,
                         permissions: ['manage-branch-orders'],
                     }),
                     navLink({
@@ -263,6 +291,12 @@ export function buildBranchNav(
                               }),
                           ]
                         : []),
+                    navLink({
+                        title: 'Product assign transactions',
+                        href: `/branch/${slug}/reports/product-assign-transactions`,
+                        icon: PackagePlus,
+                        permissions: ['manage-branch-drivers'],
+                    }),
                 ],
             }),
             navGroup({

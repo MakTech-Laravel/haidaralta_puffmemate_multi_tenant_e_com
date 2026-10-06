@@ -3,6 +3,8 @@
 use App\Http\Controllers\Platform\ActivityLogController as PlatformActivityLogController;
 use App\Http\Controllers\Platform\AdminController as PlatformAdminController;
 use App\Http\Controllers\Platform\AnnouncementController as PlatformAnnouncementController;
+use App\Http\Controllers\Platform\BranchAreaController as PlatformBranchAreaController;
+use App\Http\Controllers\Platform\BranchAreasController as PlatformBranchAreasController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchDriverController as PlatformBranchDriverController;
 use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInventoryController;
@@ -13,6 +15,7 @@ use App\Http\Controllers\Platform\BranchStaffController as PlatformBranchStaffCo
 use App\Http\Controllers\Platform\CatalogPricingController as PlatformCatalogPricingController;
 use App\Http\Controllers\Platform\CategoryController as PlatformCategoryController;
 use App\Http\Controllers\Platform\CmsPageController as PlatformCmsPageController;
+use App\Http\Controllers\Platform\ContactInquiryController as PlatformContactInquiryController;
 use App\Http\Controllers\Platform\ContactSettingsController as PlatformContactSettingsController;
 use App\Http\Controllers\Platform\ConversationController as PlatformConversationController;
 use App\Http\Controllers\Platform\CouponController as PlatformCouponController;
@@ -20,26 +23,34 @@ use App\Http\Controllers\Platform\DashboardController as PlatformDashboardContro
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\DeliverySettingsController as PlatformDeliverySettingsController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
+use App\Http\Controllers\Platform\DriverProductAssignController as PlatformDriverProductAssignController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\GeneralSettingsController as PlatformGeneralSettingsController;
 use App\Http\Controllers\Platform\HomeBannerController as PlatformHomeBannerController;
 use App\Http\Controllers\Platform\NotificationController as PlatformNotificationController;
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
+use App\Http\Controllers\Platform\OrderAssignController as PlatformOrderAssignController;
 use App\Http\Controllers\Platform\OrderController as PlatformOrderController;
+use App\Http\Controllers\Platform\PacksSavesController as PlatformPacksSavesController;
 use App\Http\Controllers\Platform\PaymentGatewaySettingsController as PlatformPaymentGatewaySettingsController;
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\PriceRangeController as PlatformPriceRangeController;
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
+use App\Http\Controllers\Platform\Reports\OrderAssignHistoryController as PlatformOrderAssignHistoryController;
+use App\Http\Controllers\Platform\Reports\OrderReportController as PlatformOrderReportController;
 use App\Http\Controllers\Platform\Reports\PriceHistoryController as PlatformPriceHistoryController;
+use App\Http\Controllers\Platform\Reports\ProductAssignTransactionController as PlatformProductAssignTransactionController;
 use App\Http\Controllers\Platform\Reports\StockTransactionController as PlatformStockTransactionController;
 use App\Http\Controllers\Platform\RoleController as PlatformRoleController;
 use App\Http\Controllers\Platform\ShiftAssignmentController as PlatformShiftAssignmentController;
 use App\Http\Controllers\Platform\ShiftTemplateController as PlatformShiftTemplateController;
 use App\Http\Controllers\Platform\SmtpSettingsController as PlatformSmtpSettingsController;
 use App\Http\Controllers\Platform\StockController as PlatformStockController;
+use App\Http\Controllers\Platform\StockTransferController as PlatformStockTransferController;
 use App\Http\Controllers\Platform\TransferController as PlatformTransferController;
+use App\Http\Controllers\Platform\WholesaleInquiryController as PlatformWholesaleInquiryController;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -78,6 +89,22 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->parameters(['admins' => 'user'])
             ->names('platform.admins')
             ->middlewareFor(['store', 'update'], 'precognitive');
+
+        Route::get('wholesale-inquiries', [PlatformWholesaleInquiryController::class, 'index'])
+            ->name('platform.wholesale-inquiries.index');
+        Route::get('wholesale-inquiries/branch-options', [PlatformWholesaleInquiryController::class, 'branchOptions'])
+            ->name('platform.wholesale-inquiries.branch-options');
+        Route::get('wholesale-inquiries/place-order', [PlatformWholesaleInquiryController::class, 'createPlaceOrder'])
+            ->name('platform.wholesale-inquiries.place-order.create');
+        Route::get('wholesale-inquiries/{wholesaleInquiry}/place-order', [PlatformWholesaleInquiryController::class, 'placeOrder'])
+            ->name('platform.wholesale-inquiries.place-order');
+        Route::get('wholesale-inquiries/{wholesaleInquiry}', [PlatformWholesaleInquiryController::class, 'show'])
+            ->name('platform.wholesale-inquiries.show');
+
+        Route::get('contact-inquiries', [PlatformContactInquiryController::class, 'index'])
+            ->name('platform.contact-inquiries.index');
+        Route::get('contact-inquiries/{contactInquiry}', [PlatformContactInquiryController::class, 'show'])
+            ->name('platform.contact-inquiries.show');
     });
 
     Route::permanentRedirect('staff', '/platform/admins');
@@ -134,6 +161,24 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::put('branches/{branch}/drivers/{user}', [PlatformBranchDriverController::class, 'update'])
             ->middleware('precognitive')
             ->name('platform.branches.drivers.update');
+
+        Route::get('assign-products', [PlatformDriverProductAssignController::class, 'create'])
+            ->name('platform.assign-products.create');
+        Route::get('assign-products/driver-options', [PlatformDriverProductAssignController::class, 'driverOptions'])
+            ->name('platform.assign-products.driver-options');
+        Route::post('assign-products', [PlatformDriverProductAssignController::class, 'store'])
+            ->name('platform.assign-products.store');
+
+        Route::get('reports/product-assign-transactions', [PlatformProductAssignTransactionController::class, 'index'])
+            ->name('platform.reports.product-assign-transactions');
+        Route::get('reports/product-assign-transactions/product-options', [PlatformProductAssignTransactionController::class, 'productOptions'])
+            ->name('platform.reports.product-assign-transactions.product-options');
+        Route::get('reports/product-assign-transactions/branch-options', [PlatformProductAssignTransactionController::class, 'branchOptions'])
+            ->name('platform.reports.product-assign-transactions.branch-options');
+        Route::get('reports/product-assign-transactions/driver-options', [PlatformProductAssignTransactionController::class, 'driverOptions'])
+            ->name('platform.reports.product-assign-transactions.driver-options');
+        Route::get('reports/product-assign-transactions/export', [PlatformProductAssignTransactionController::class, 'export'])
+            ->name('platform.reports.product-assign-transactions.export');
     });
 
     Route::middleware(['permission:view-transfers'])->group(function () {
@@ -197,6 +242,12 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     Route::middleware(['permission:view-branches'])->group(function () {
         Route::get('branches', [PlatformBranchController::class, 'index'])->name('platform.branches.index');
         Route::get('branches/{branch}', [PlatformBranchController::class, 'show'])->name('platform.branches.show');
+        Route::get('branch-areas', [PlatformBranchAreasController::class, 'index'])
+            ->name('platform.branch-areas.index');
+        Route::get('branch-areas-branch-options', [PlatformBranchAreasController::class, 'branchOptions'])
+            ->name('platform.branch-areas.branch-options');
+        Route::get('branches/{branch}/areas', [PlatformBranchAreaController::class, 'index'])
+            ->name('platform.branches.areas.index');
     });
 
     Route::middleware(['permission:edit-branches'])->group(function () {
@@ -204,6 +255,40 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::put('branches/{branch}', [PlatformBranchController::class, 'update'])
             ->middleware('precognitive')
             ->name('platform.branches.update');
+        Route::get('branch-areas/create', [PlatformBranchAreasController::class, 'create'])
+            ->name('platform.branch-areas.create');
+        Route::post('branch-areas', [PlatformBranchAreasController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.branch-areas.store');
+        Route::get('branch-areas/{area}/edit', [PlatformBranchAreasController::class, 'edit'])
+            ->name('platform.branch-areas.edit');
+        Route::put('branch-areas/{area}', [PlatformBranchAreasController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.branch-areas.update');
+        Route::delete('branch-areas/{area}', [PlatformBranchAreasController::class, 'destroy'])
+            ->name('platform.branch-areas.destroy');
+        Route::post('branch-areas/{area}/transfer', [PlatformBranchAreasController::class, 'transfer'])
+            ->middleware('precognitive')
+            ->name('platform.branch-areas.transfer');
+        Route::get('branches/{branch}/areas/create', [PlatformBranchAreaController::class, 'create'])
+            ->name('platform.branches.areas.create');
+        Route::post('branches/{branch}/areas', [PlatformBranchAreaController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.branches.areas.store');
+        Route::get('branches/{branch}/areas/{area}/edit', [PlatformBranchAreaController::class, 'edit'])
+            ->name('platform.branches.areas.edit');
+        Route::put('branches/{branch}/areas/{area}', [PlatformBranchAreaController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.branches.areas.update');
+        Route::delete('branches/{branch}/areas/{area}', [PlatformBranchAreaController::class, 'destroy'])
+            ->name('platform.branches.areas.destroy');
+    });
+
+    Route::middleware(['permission:view-branches'])->group(function () {
+        Route::get('branch-areas/{area}', [PlatformBranchAreasController::class, 'show'])
+            ->name('platform.branch-areas.show');
+        Route::get('branches/{branch}/areas/{area}', [PlatformBranchAreaController::class, 'show'])
+            ->name('platform.branches.areas.show');
     });
 
     Route::middleware(['permission:delete-branches'])->group(function () {
@@ -234,6 +319,20 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('stock/import', [PlatformStockController::class, 'storeImport'])->name('platform.stock.import.store');
         Route::get('stock/price', fn (Request $request) => ProductManageRedirect::platform($request))
             ->name('platform.stock.price');
+        Route::get('reports/order-reports', [PlatformOrderReportController::class, 'index'])
+            ->name('platform.reports.order-reports');
+        Route::get('reports/order-reports/export', [PlatformOrderReportController::class, 'export'])
+            ->name('platform.reports.order-reports.export');
+        Route::redirect('reports/order-operations', '/platform/reports/order-reports', 301);
+        Route::redirect('reports/order-operations/export', '/platform/reports/order-reports/export', 301);
+        Route::get('reports/order-assign-history', [PlatformOrderAssignHistoryController::class, 'index'])
+            ->name('platform.reports.order-assign-history');
+        Route::get('reports/order-assign-history/export', [PlatformOrderAssignHistoryController::class, 'export'])
+            ->name('platform.reports.order-assign-history.export');
+        Route::get('reports/order-assign-history/driver-options', [PlatformOrderAssignHistoryController::class, 'driverOptions'])
+            ->name('platform.reports.order-assign-history.driver-options');
+        Route::get('reports/order-assign-history/branch-options', [PlatformOrderAssignHistoryController::class, 'branchOptions'])
+            ->name('platform.reports.order-assign-history.branch-options');
         Route::get('reports/stock-transactions', [PlatformStockTransactionController::class, 'index'])
             ->name('platform.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [PlatformStockTransactionController::class, 'export'])
@@ -279,6 +378,30 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('products/{product}/restore', [PlatformProductController::class, 'restore'])
             ->name('platform.products.restore')
             ->withTrashed();
+
+        Route::get('packs-saves/branch-options', [PlatformPacksSavesController::class, 'branchOptions'])
+            ->name('platform.packs-saves.branch-options');
+        Route::get('packs-saves', [PlatformPacksSavesController::class, 'index'])
+            ->name('platform.packs-saves.index');
+        Route::get('packs-saves/create', [PlatformPacksSavesController::class, 'create'])
+            ->name('platform.packs-saves.create');
+        Route::post('packs-saves', [PlatformPacksSavesController::class, 'store'])
+            ->name('platform.packs-saves.store');
+        Route::get('packs-saves/{pack:id}', [PlatformPacksSavesController::class, 'show'])
+            ->whereNumber('pack')
+            ->name('platform.packs-saves.show');
+        Route::get('packs-saves/{pack:id}/edit', [PlatformPacksSavesController::class, 'edit'])
+            ->whereNumber('pack')
+            ->name('platform.packs-saves.edit');
+        Route::put('packs-saves/{pack:id}', [PlatformPacksSavesController::class, 'update'])
+            ->whereNumber('pack')
+            ->name('platform.packs-saves.update');
+        Route::put('packs-saves/{pack:id}/highlight', [PlatformPacksSavesController::class, 'highlight'])
+            ->whereNumber('pack')
+            ->name('platform.packs-saves.highlight');
+        Route::delete('packs-saves/{pack:id}', [PlatformPacksSavesController::class, 'destroy'])
+            ->whereNumber('pack')
+            ->name('platform.packs-saves.destroy');
 
         Route::get('catalog/pricing/manage', [PlatformCatalogPricingController::class, 'manage'])
             ->name('platform.catalog.pricing.manage');
@@ -341,8 +464,32 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::get('orders/{order}', [PlatformOrderController::class, 'show'])->name('platform.orders.show');
         Route::put('orders/{order}/fulfillments/{fulfillment}/status', [PlatformOrderController::class, 'updateStatus'])
             ->name('platform.orders.fulfillments.status');
+        Route::get('orders/{order}/assign-candidates', [PlatformOrderAssignController::class, 'candidates'])
+            ->name('platform.orders.assign-candidates');
+        Route::post('orders/{order}/assign-driver', [PlatformOrderAssignController::class, 'store'])
+            ->name('platform.orders.assign-driver');
+        Route::post('orders/{order}/cancel', [PlatformOrderController::class, 'cancel'])
+            ->name('platform.orders.cancel');
+        Route::post('orders/{order}/retry-delivery', [PlatformOrderController::class, 'retryDelivery'])
+            ->name('platform.orders.retry-delivery');
+        Route::post('orders/{order}/reschedule-delivery', [PlatformOrderController::class, 'rescheduleDelivery'])
+            ->name('platform.orders.reschedule-delivery');
+        Route::post('orders/{order}/return-delivery', [PlatformOrderController::class, 'returnDelivery'])
+            ->name('platform.orders.return-delivery');
+        Route::post('orders/{order}/confirm-return', [PlatformOrderController::class, 'confirmReturn'])
+            ->name('platform.orders.confirm-return');
         Route::put('orders/{order}/payment-status', [PlatformOrderController::class, 'markPaid'])
             ->name('platform.orders.payment-status');
+        Route::get('stock-transfers', [PlatformStockTransferController::class, 'index'])
+            ->name('platform.stock-transfers.index');
+        Route::post('stock-transfers/{stockTransfer}/approve', [PlatformStockTransferController::class, 'approve'])
+            ->name('platform.stock-transfers.approve');
+        Route::post('stock-transfers/{stockTransfer}/pick', [PlatformStockTransferController::class, 'pick'])
+            ->name('platform.stock-transfers.pick');
+        Route::post('stock-transfers/{stockTransfer}/dispatch', [PlatformStockTransferController::class, 'dispatch'])
+            ->name('platform.stock-transfers.dispatch');
+        Route::post('stock-transfers/{stockTransfer}/receive', [PlatformStockTransferController::class, 'receive'])
+            ->name('platform.stock-transfers.receive');
     });
 
     Route::middleware(['permission:manage-conversations'])->group(function () {

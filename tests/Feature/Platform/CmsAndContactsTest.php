@@ -2,8 +2,8 @@
 
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
-use App\Models\ContactSetting;
 use App\Models\CmsPage;
+use App\Models\ContactSetting;
 use App\Models\User;
 use App\Support\PlatformTeamResolver;
 use Database\Seeders\ApplicationSettingsSeeder;
@@ -140,8 +140,59 @@ test('platform admin can update privacy date and about hero image', function () 
         ->assertRedirect(route('platform.pages.edit', 'about'));
 
     $aboutFresh = CmsPage::query()->where('slug', 'about')->firstOrFail();
-    expect($aboutFresh->payload['hero']['image'])->toBeString()
-        ->and($aboutFresh->payload['hero']['image'])->toContain('cms/about/hero');
+    expect($aboutFresh->hasMedia('hero'))->toBeTrue()
+        ->and($aboutFresh->payload['hero']['image'])->toBeNull()
+        ->and($aboutFresh->payload['hero'])->not->toHaveKey('image_url');
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.pages.edit', 'about'))
+        ->assertInertia(fn ($page) => $page
+            ->where('page.payload.hero.image_url', $aboutFresh->getFirstMediaUrl('hero')));
+
+    $this->get(route('about'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('cmsPage.payload.hero.image', $aboutFresh->getFirstMediaUrl('hero')));
+});
+
+test('cms pages fall back to the static seed image and can clear uploaded media', function () {
+    Storage::fake('public');
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_ADMIN)->firstOrFail();
+    $about = CmsPage::query()->where('slug', 'about')->firstOrFail();
+
+    expect($about->hasMedia('hero'))->toBeFalse()
+        ->and($about->payload['hero']['image'])->toBe('/images/storefront/hero-1.jpg');
+
+    $fields = [
+        '_method' => 'PUT',
+        'title' => $about->title,
+        'meta_title' => $about->meta_title,
+        'meta_description' => $about->meta_description,
+        'is_published' => true,
+        'payload' => $about->payload,
+    ];
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.pages.update', 'about'), [
+            ...$fields,
+            'media_image' => UploadedFile::fake()->image('who.png', 600, 400),
+        ])
+        ->assertRedirect(route('platform.pages.edit', 'about'));
+
+    $saved = CmsPage::query()->where('slug', 'about')->firstOrFail();
+    expect($saved->hasMedia('media'))->toBeTrue()
+        ->and($saved->payload['who_we_are']['mediaImage'])->toBeNull()
+        ->and($saved->payload['hero']['image'])->toBe('/images/storefront/hero-1.jpg');
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.pages.update', 'about'), [
+            ...$fields,
+            'payload' => $saved->payload,
+            'remove_media_image' => true,
+        ])
+        ->assertRedirect(route('platform.pages.edit', 'about'));
+
+    expect(CmsPage::query()->where('slug', 'about')->firstOrFail()->hasMedia('media'))->toBeFalse();
 });
 
 test('cms edit payload includes image_url for file upload preview', function () {

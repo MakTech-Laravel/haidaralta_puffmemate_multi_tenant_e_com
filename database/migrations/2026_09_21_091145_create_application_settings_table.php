@@ -16,12 +16,6 @@ return new class extends Migration
             $table->string('app_name');
             $table->string('app_short_name');
             $table->text('short_description')->nullable();
-            $table->string('logo_path')->nullable();
-            $table->string('favicon_path')->nullable();
-            $table->string('pwa_icon_192_path')->nullable();
-            $table->string('pwa_icon_512_path')->nullable();
-            $table->string('pwa_maskable_path')->nullable();
-            $table->string('apple_touch_icon_path')->nullable();
             $table->string('theme_color', 32)->default('#C4472F');
             $table->string('background_color', 32)->default('#FFFFFF');
             $table->string('date_format', 32)->default('Y-m-d');

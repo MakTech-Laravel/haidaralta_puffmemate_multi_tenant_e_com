@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/select';
 import { usePermission } from '@/hooks/use-permissions';
 import {
+    filteredBranchAreasUrl,
     filteredBranchDriversUrl,
     filteredBranchStaffUrl,
 } from '@/lib/branch-people-query';
@@ -367,6 +368,13 @@ export default function PlatformBranchesShow({
                                 </Link>
                             </Button>
                         ) : null}
+                        {can('view-branches') ? (
+                            <Button variant="outline" asChild>
+                                <Link href={filteredBranchAreasUrl(branch.id)}>
+                                    Areas
+                                </Link>
+                            </Button>
+                        ) : null}
                     </div>
                 </div>
 
@@ -546,6 +554,7 @@ export default function PlatformBranchesShow({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No staff match this filter."
                     toolbar={

@@ -190,6 +190,8 @@ export function useDataTableQuery({
     const [filters, setFilters] = useState(initial.filter);
     const [sort, setSort] = useState<string | null>(initial.sort);
     const [perPage, setPerPage] = useState(initial.per_page);
+    const [processing, setProcessing] = useState(false);
+    const pendingVisits = useRef(0);
     const committedSearch = useRef(String(initial.filter[searchKey] ?? ''));
     const extraQueryRef = useRef(extraQuery);
     const buildQueryRef = useRef(buildQuery);
@@ -218,6 +220,16 @@ export function useDataTableQuery({
                 preserveState: true,
                 preserveScroll: true,
                 replace: true,
+                async: true,
+                showProgress: false,
+                onStart: () => {
+                    pendingVisits.current += 1;
+                    setProcessing(true);
+                },
+                onFinish: () => {
+                    pendingVisits.current = Math.max(0, pendingVisits.current - 1);
+                    setProcessing(pendingVisits.current > 0);
+                },
             });
         },
         [indexUrl, searchKey],
@@ -312,5 +324,6 @@ export function useDataTableQuery({
         changePerPage,
         clearFilters,
         visit,
+        processing,
     };
 }

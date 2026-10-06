@@ -27,7 +27,12 @@ export default function ProductToReviewIndex({
                     router.get(
                         productToReview.url(),
                         { page },
-                        { preserveState: true, preserveScroll: true },
+                        {
+                            preserveState: true,
+                            preserveScroll: true,
+                            async: true,
+                            showProgress: false,
+                        },
                     )
                 }
             />

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\AustralianState;
 use App\Enums\CustomerAddressType;
+use App\Enums\CustomerRegistrationStatus;
 use App\Enums\DriverAssignmentStatus;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\DriverVehicleType;
@@ -14,11 +15,14 @@ use App\Models\CustomerAddress;
 use App\Models\DriverProfile;
 use App\Models\User;
 use App\Services\Driver\DriverService;
+use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
 
 class UserSeeder extends Seeder
 {
+    use ReportsSeedProgress;
+
     public const PLATFORM_SUPER_ADMIN_PHONE = '+61411111111';
 
     public const PLATFORM_ADMIN_PHONE = '+61422222222';
@@ -300,13 +304,16 @@ class UserSeeder extends Seeder
             ['phone' => '+61450101020', 'email' => 'chloe.green@example.com', 'name' => 'Chloe Green'],
         ]);
 
+        $this->runQueuedSeedSteps(
+            'Users',
+            fn (int $total): string => sprintf('%d platform, branch, driver and customer accounts ready.', $total),
+        );
+
         app(PermissionRegistrar::class)->setPermissionsTeamId(null);
     }
 
     private function seedPlatformUsers(): void
     {
-        app(PermissionRegistrar::class)->setPermissionsTeamId(null);
-
         foreach ([
             ['phone' => self::PLATFORM_SUPER_ADMIN_PHONE, 'email' => self::PLATFORM_SUPER_ADMIN, 'name' => 'Ava Mitchell', 'role' => RoleEnum::SUPER_ADMIN],
             ['phone' => self::PLATFORM_ADMIN_PHONE, 'email' => self::PLATFORM_ADMIN, 'name' => 'Noah Patel', 'role' => RoleEnum::ADMIN],
@@ -315,14 +322,18 @@ class UserSeeder extends Seeder
             ['phone' => '+61460101002', 'email' => 'owen.hart@puffmemate.dev', 'name' => 'Owen Hart', 'role' => RoleEnum::MANAGER],
             ['phone' => '+61460101003', 'email' => 'priya.desai@puffmemate.dev', 'name' => 'Priya Desai', 'role' => RoleEnum::MANAGER],
         ] as $account) {
-            $user = $this->seedPortalUser(
-                phone: $account['phone'],
-                email: $account['email'],
-                name: $account['name'],
-                userType: UserType::PLATFORM,
-            );
+            $this->queueSeedStep(function () use ($account): void {
+                app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
-            $user->syncRoles([$account['role']->value]);
+                $user = $this->seedPortalUser(
+                    phone: $account['phone'],
+                    email: $account['email'],
+                    name: $account['name'],
+                    userType: UserType::PLATFORM,
+                );
+
+                $user->syncRoles([$account['role']->value]);
+            });
         }
     }
 
@@ -331,18 +342,20 @@ class UserSeeder extends Seeder
      */
     private function seedBranchUsers(Branch $branch, array $accounts): void
     {
-        app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
-
         foreach ($accounts as $account) {
-            $user = $this->seedPortalUser(
-                phone: $account['phone'],
-                email: $account['email'],
-                name: $account['name'],
-                userType: UserType::BRANCH,
-                branchId: $branch->id,
-            );
+            $this->queueSeedStep(function () use ($branch, $account): void {
+                app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
 
-            $user->syncRoles([$account['role']->value]);
+                $user = $this->seedPortalUser(
+                    phone: $account['phone'],
+                    email: $account['email'],
+                    name: $account['name'],
+                    userType: UserType::BRANCH,
+                    branchId: $branch->id,
+                );
+
+                $user->syncRoles([$account['role']->value]);
+            });
         }
     }
 
@@ -354,29 +367,31 @@ class UserSeeder extends Seeder
         $driverService = app(DriverService::class);
 
         foreach ($drivers as $row) {
-            $driver = $this->seedPortalUser(
-                phone: $row['phone'],
-                email: $row['email'],
-                name: $row['name'],
-                userType: UserType::DRIVER,
-            );
+            $this->queueSeedStep(function () use ($row, $driverService): void {
+                $driver = $this->seedPortalUser(
+                    phone: $row['phone'],
+                    email: $row['email'],
+                    name: $row['name'],
+                    userType: UserType::DRIVER,
+                );
 
-            DriverProfile::query()->updateOrCreate(
-                ['user_id' => $driver->id],
-                [
-                    'license_number' => $row['license'],
-                    'vehicle_type' => $row['vehicle'],
-                    'availability_status' => DriverAvailabilityStatus::Available,
-                    'address' => $row['branch']->address,
-                    'notes' => 'Seeded courier for '.$row['branch']->name.'.',
-                ],
-            );
+                DriverProfile::query()->updateOrCreate(
+                    ['user_id' => $driver->id],
+                    [
+                        'license_number' => $row['license'],
+                        'vehicle_type' => $row['vehicle'],
+                        'availability_status' => DriverAvailabilityStatus::Available,
+                        'address' => $row['branch']->address,
+                        'notes' => 'Seeded courier for '.$row['branch']->name.'.',
+                    ],
+                );
 
-            $driverService->assignToBranch($driver, $row['branch'], status: DriverAssignmentStatus::Active);
+                $driverService->assignToBranch($driver, $row['branch'], status: DriverAssignmentStatus::Active);
 
-            if (isset($row['alt_branch']) && ! (bool) config('drivers.single_active_branch')) {
-                $driverService->assignToBranch($driver, $row['alt_branch'], status: DriverAssignmentStatus::Active);
-            }
+                if (isset($row['alt_branch']) && ! (bool) config('drivers.single_active_branch')) {
+                    $driverService->assignToBranch($driver, $row['alt_branch'], status: DriverAssignmentStatus::Active);
+                }
+            });
         }
     }
 
@@ -386,46 +401,54 @@ class UserSeeder extends Seeder
     private function seedCustomers(array $customers): void
     {
         foreach ($customers as $customer) {
-            $user = $this->seedPortalUser(
-                phone: $customer['phone'],
-                email: $customer['email'],
-                name: $customer['name'],
-                userType: UserType::CUSTOMER,
-            );
-
-            if ($customer['phone'] !== self::CUSTOMER_PHONE) {
-                continue;
-            }
-
-            CustomerAddress::query()->updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'type' => CustomerAddressType::Shipping,
-                ],
-                [
-                    'address' => '3 Boucaut Street',
-                    'region' => AustralianState::NewSouthWales,
-                    'city' => 'Sydney',
-                    'zip' => '2000',
-                ],
-            );
-
-            CustomerAddress::query()->updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'type' => CustomerAddressType::Billing,
-                ],
-                [
-                    'name' => 'Emma Walker',
-                    'address' => '3 Boucaut Street',
-                    'region' => AustralianState::NewSouthWales,
-                    'city' => 'Sydney',
-                    'zip' => '2000',
-                    'email' => self::CUSTOMER,
-                    'phone' => self::CUSTOMER_PHONE,
-                ],
-            );
+            $this->queueSeedStep(fn () => $this->seedCustomer($customer));
         }
+    }
+
+    /**
+     * @param  array{phone: string, email: string, name: string}  $customer
+     */
+    private function seedCustomer(array $customer): void
+    {
+        $user = $this->seedPortalUser(
+            phone: $customer['phone'],
+            email: $customer['email'],
+            name: $customer['name'],
+            userType: UserType::CUSTOMER,
+        );
+
+        if ($customer['phone'] !== self::CUSTOMER_PHONE) {
+            return;
+        }
+
+        CustomerAddress::query()->updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'type' => CustomerAddressType::Shipping,
+            ],
+            [
+                'address' => '3 Boucaut Street',
+                'region' => AustralianState::NewSouthWales,
+                'city' => 'Sydney',
+                'zip' => '2000',
+            ],
+        );
+
+        CustomerAddress::query()->updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'type' => CustomerAddressType::Billing,
+            ],
+            [
+                'name' => 'Emma Walker',
+                'address' => '3 Boucaut Street',
+                'region' => AustralianState::NewSouthWales,
+                'city' => 'Sydney',
+                'zip' => '2000',
+                'email' => self::CUSTOMER,
+                'phone' => self::CUSTOMER_PHONE,
+            ],
+        );
     }
 
     private function seedPortalUser(
@@ -442,6 +465,9 @@ class UserSeeder extends Seeder
                 'email' => $email,
                 'password' => self::DEFAULT_PASSWORD,
                 'user_type' => $userType,
+                'registration_status' => $userType === UserType::CUSTOMER
+                    ? CustomerRegistrationStatus::Registered
+                    : null,
                 'branch_id' => $branchId,
                 'is_active' => true,
                 'phone_verified_at' => now(),

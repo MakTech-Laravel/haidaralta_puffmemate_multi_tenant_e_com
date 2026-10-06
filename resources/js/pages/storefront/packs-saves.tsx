@@ -1,49 +1,115 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
 import { FeaturesBar } from '@/components/storefront/features-bar';
-import { ProductCard } from '@/components/storefront/product-card';
+import { FeaturedPack } from '@/components/storefront/packs-saves/featured-pack';
+import { PacksGrid } from '@/components/storefront/packs-saves/packs-grid';
+import { PacksSavesHero } from '@/components/storefront/packs-saves/packs-saves-hero';
+import { PacksToolbar } from '@/components/storefront/packs-saves/packs-toolbar';
 import { storefrontFeatures } from '@/lib/storefront-features';
-import type { StorefrontProduct } from '@/types/storefront';
+import { packsSaves } from '@/routes';
+import type {
+    StorefrontFeaturedPack,
+    StorefrontPack,
+} from '@/types/storefront';
+
+type PacksSavesPageProps = {
+    packs: StorefrontPack[];
+    featuredPack: StorefrontFeaturedPack | null;
+    filters: {
+        search: string;
+        sort: string | null;
+    };
+};
+
+type VisitOptions = {
+    search?: string;
+    sort?: string | null;
+};
 
 export default function StorefrontPacksSaves({
-    products,
-}: {
-    products: StorefrontProduct[];
-}) {
+    packs,
+    featuredPack,
+    filters,
+}: PacksSavesPageProps) {
+    const [search, setSearch] = useState(filters.search);
+    const [sort, setSort] = useState(filters.sort);
+    const [updating, setUpdating] = useState(false);
+    const debounceRef = useRef<number>(undefined);
+    const visitId = useRef(0);
+
+    useEffect(() => {
+        window.clearTimeout(debounceRef.current);
+        setSearch(filters.search);
+        setSort(filters.sort);
+    }, [filters.search, filters.sort]);
+
+    const visit = (next: VisitOptions = {}) => {
+        const nextSearch = next.search ?? search;
+        const nextSort = next.sort !== undefined ? next.sort : sort;
+
+        const id = visitId.current + 1;
+        visitId.current = id;
+        setUpdating(true);
+        router.cancelAll();
+        router.get(
+            packsSaves.url(),
+            {
+                ...(nextSearch ? { search: nextSearch } : {}),
+                ...(nextSort ? { sort: nextSort } : {}),
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                async: true,
+                showProgress: false,
+                only: ['packs', 'filters'],
+                onFinish: () => {
+                    if (visitId.current === id) {
+                        setUpdating(false);
+                    }
+                },
+            },
+        );
+    };
+
+    const updateSearch = (next: string) => {
+        setSearch(next);
+        window.clearTimeout(debounceRef.current);
+        debounceRef.current = window.setTimeout(() => {
+            visit({ search: next });
+        }, 300);
+    };
+
     return (
         <>
             <Head title="Packs & Saves" />
 
-            <section className="border-border bg-muted/40 border-b">
-                <div className="container mx-auto px-4 py-10 sm:px-6 sm:py-12">
-                    <p className="text-muted-foreground text-xs font-semibold tracking-[0.2em] uppercase">
-                        Bundles & multipacks
-                    </p>
-                    <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-                        Packs & Saves
-                    </h1>
-                    <p className="text-muted-foreground mt-3 max-w-2xl text-base">
-                        Carton deals and multipack offers from nearby branches —
-                        better value when you stock up.
-                    </p>
-                </div>
-            </section>
+            <div className="container mx-auto flex flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
+                <PacksSavesHero maxSavings={featuredPack?.savings} />
+
+                {featuredPack ? (
+                    <FeaturedPack key={featuredPack.id} pack={featuredPack} />
+                ) : null}
+
+                <PacksToolbar
+                    search={search}
+                    sort={sort}
+                    onSearchChange={updateSearch}
+                    onSearchSubmit={() => {
+                        window.clearTimeout(debounceRef.current);
+                        visit({ search });
+                    }}
+                    onSortChange={(nextSort) => {
+                        setSort(nextSort);
+                        visit({ sort: nextSort });
+                    }}
+                />
+
+                <PacksGrid packs={packs} updating={updating} />
+            </div>
 
             <FeaturesBar features={storefrontFeatures} />
-
-            <section className="container mx-auto px-4 py-10 sm:px-6 sm:py-12">
-                {products.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">
-                        No packs or multipack offers right now. Check back soon
-                        or browse the full shop.
-                    </p>
-                ) : (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-6">
-                        {products.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
-                )}
-            </section>
         </>
     );
 }
