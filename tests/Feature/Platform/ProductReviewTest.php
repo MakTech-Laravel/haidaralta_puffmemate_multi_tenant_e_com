@@ -250,3 +250,68 @@ test('storefront product details omit hidden reviews', function () {
             ->has('product.reviews', 1)
             ->where('product.reviews.0.body', 'Visible review body'));
 });
+
+test('platform admin with manage-users can open review details', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_ADMIN)->firstOrFail();
+    $fixture = platformReviewFixture([
+        'body' => 'Detail page review body',
+        'customer_name' => 'Detail Customer',
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reviews.show', $fixture['review']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('platform/reviews/show')
+            ->where('review.id', $fixture['review']->id)
+            ->where('review.rating', 5)
+            ->where('review.body', 'Detail page review body')
+            ->where('review.hidden', false)
+            ->where('review.customer.name', 'Detail Customer')
+            ->where('review.product.name', 'Review Product')
+            ->where('review.order.order_number', 'ORD-REVIEW-001')
+            ->where('review.branch.name', $fixture['branch']->name));
+});
+
+test('guest cannot open review details', function () {
+    $fixture = platformReviewFixture();
+
+    $this->get(route('platform.reviews.show', $fixture['review']))
+        ->assertRedirect();
+});
+
+test('platform user without manage-users cannot open review details', function () {
+    $user = User::factory()->create([
+        'user_type' => UserType::PLATFORM,
+        'email_verified_at' => now(),
+        'is_active' => true,
+    ]);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
+    $user->assignRole(RoleEnum::STAFF->value);
+
+    $fixture = platformReviewFixture();
+
+    $this->actingAs($user, 'platform')
+        ->get(route('platform.reviews.show', $fixture['review']))
+        ->assertForbidden();
+});
+
+test('platform admin can hide a review from the details page', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_ADMIN)->firstOrFail();
+    $fixture = platformReviewFixture();
+    $review = $fixture['review'];
+
+    $this->actingAs($admin, 'platform')
+        ->from(route('platform.reviews.show', $review))
+        ->post(route('platform.reviews.hide', $review))
+        ->assertRedirect(route('platform.reviews.show', $review));
+
+    expect($review->fresh()->isHidden())->toBeTrue();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reviews.show', $review))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('review.hidden', true));
+});

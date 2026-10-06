@@ -115,6 +115,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.reviews.product-options');
         Route::get('reviews/branch-options', [PlatformProductReviewController::class, 'branchOptions'])
             ->name('platform.reviews.branch-options');
+        Route::get('reviews/{productReview}', [PlatformProductReviewController::class, 'show'])
+            ->name('platform.reviews.show')
+            ->whereNumber('productReview');
         Route::post('reviews/{productReview}/hide', [PlatformProductReviewController::class, 'hide'])
             ->name('platform.reviews.hide');
         Route::post('reviews/{productReview}/unhide', [PlatformProductReviewController::class, 'unhide'])

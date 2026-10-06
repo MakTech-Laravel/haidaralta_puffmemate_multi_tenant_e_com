@@ -26,6 +26,21 @@ class ProductReviewController extends Controller
         ]);
     }
 
+    public function show(ProductReview $productReview): Response
+    {
+        $productReview->load([
+            'user:id,name,phone,email',
+            'product:id,name,sku,slug',
+            'order:id,order_number',
+            'order.fulfillment:id,order_id,branch_id',
+            'order.fulfillment.branch:id,name,slug',
+        ]);
+
+        return Inertia::render('platform/reviews/show', [
+            'review' => $this->reviewPayload($productReview),
+        ]);
+    }
+
     public function hide(ProductReview $productReview): RedirectResponse
     {
         if ($productReview->hidden_at === null) {
@@ -42,6 +57,62 @@ class ProductReviewController extends Controller
         }
 
         return back();
+    }
+
+    /**
+     * @return array{
+     *     id: int,
+     *     rating: int,
+     *     body: string,
+     *     hidden: bool,
+     *     created_at: ?string,
+     *     customer: array{id: ?int, name: ?string, phone: ?string, email: ?string},
+     *     product: array{id: ?int, name: ?string, sku: ?string, slug: ?string, url: ?string},
+     *     order: array{id: ?int, order_number: ?string, url: ?string},
+     *     branch: ?array{id: int, name: string, slug: string}
+     * }
+     */
+    private function reviewPayload(ProductReview $review): array
+    {
+        $branch = $review->order?->fulfillment?->branch;
+        $product = $review->product;
+        $order = $review->order;
+        $customer = $review->user;
+
+        return [
+            'id' => $review->id,
+            'rating' => $review->rating,
+            'body' => $review->body,
+            'hidden' => $review->isHidden(),
+            'created_at' => $review->created_at?->toIso8601String(),
+            'customer' => [
+                'id' => $customer?->id,
+                'name' => $customer?->name,
+                'phone' => $customer?->phone,
+                'email' => $customer?->email,
+            ],
+            'product' => [
+                'id' => $product?->id,
+                'name' => $product?->name,
+                'sku' => $product?->sku,
+                'slug' => $product?->slug,
+                'url' => $product !== null
+                    ? route('platform.products.show', $product)
+                    : null,
+            ],
+            'order' => [
+                'id' => $order?->id,
+                'order_number' => $order?->order_number,
+                'url' => $order !== null
+                    ? route('platform.orders.show', $order)
+                    : null,
+            ],
+            'branch' => $branch === null ? null : [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'slug' => $branch->slug,
+            ],
+        ];
     }
 
     public function customerOptions(Request $request): JsonResponse

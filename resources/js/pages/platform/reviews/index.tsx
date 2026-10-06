@@ -213,7 +213,9 @@ export default function PlatformReviewsIndex({
                                 {
                                     label: 'Details',
                                     icon: Eye,
-                                    disabled: true,
+                                    href: ProductReviewController.show.url(
+                                        review.id,
+                                    ),
                                 },
                             ]}
                         />
