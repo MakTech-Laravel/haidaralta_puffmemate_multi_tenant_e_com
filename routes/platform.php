@@ -19,6 +19,7 @@ use App\Http\Controllers\Platform\ContactInquiryController as PlatformContactInq
 use App\Http\Controllers\Platform\ContactSettingsController as PlatformContactSettingsController;
 use App\Http\Controllers\Platform\ConversationController as PlatformConversationController;
 use App\Http\Controllers\Platform\CouponController as PlatformCouponController;
+use App\Http\Controllers\Platform\CustomerController as PlatformCustomerController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\DeliverySettingsController as PlatformDeliverySettingsController;
@@ -106,6 +107,23 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.contact-inquiries.index');
         Route::get('contact-inquiries/{contactInquiry}', [PlatformContactInquiryController::class, 'show'])
             ->name('platform.contact-inquiries.show');
+
+        Route::get('customers', [PlatformCustomerController::class, 'index'])
+            ->name('platform.customers.index');
+        Route::get('customers/create', [PlatformCustomerController::class, 'create'])
+            ->name('platform.customers.create');
+        Route::post('customers', [PlatformCustomerController::class, 'store'])
+            ->name('platform.customers.store')
+            ->middleware('precognitive');
+        Route::get('customers/{user}', [PlatformCustomerController::class, 'show'])
+            ->name('platform.customers.show');
+        Route::get('customers/{user}/edit', [PlatformCustomerController::class, 'edit'])
+            ->name('platform.customers.edit');
+        Route::match(['put', 'patch'], 'customers/{user}', [PlatformCustomerController::class, 'update'])
+            ->name('platform.customers.update')
+            ->middleware('precognitive');
+        Route::post('customers/{user}/toggle-status', [PlatformCustomerController::class, 'toggleStatus'])
+            ->name('platform.customers.toggle-status');
 
         Route::get('reviews', [PlatformProductReviewController::class, 'index'])
             ->name('platform.reviews.index');
