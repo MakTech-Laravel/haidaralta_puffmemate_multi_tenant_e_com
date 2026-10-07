@@ -1,14 +1,14 @@
 import { useHttp } from '@inertiajs/react';
 import { Search } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { ResolvedPlaceOrderCustomer } from '@/components/driver/place-order/place-order-types';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { lookup } from '@/routes/driver/place-order/customers';
 
-const SEARCH_DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
 
 type PlaceOrderCustomerSectionProps = {
@@ -28,14 +28,48 @@ type LookupResponse = {
     customers: ResolvedPlaceOrderCustomer[];
 };
 
+/** Digits / + / leading 0 → treat as phone, never dump into Name. */
 function looksLikePhone(value: string): boolean {
-    const digits = value.replace(/\D/g, '');
+    const trimmed = value.trim();
 
-    return digits.length >= 6 && /^[\d\s+()-]+$/.test(value.trim());
+    if (trimmed === '') {
+        return false;
+    }
+
+    if (!/^[\d\s+()-]+$/.test(trimmed)) {
+        return false;
+    }
+
+    const digits = trimmed.replace(/\D/g, '');
+
+    return digits.length >= 2 && (/^[+0]/.test(trimmed) || /^\d/.test(trimmed));
 }
 
 function looksLikeEmail(value: string): boolean {
     return value.includes('@');
+}
+
+function prefillAddForm(
+    query: string,
+    onPhoneChange: (phone: string) => void,
+    onNameChange: (name: string) => void,
+): void {
+    if (looksLikePhone(query)) {
+        onPhoneChange(query);
+        onNameChange('');
+
+        return;
+    }
+
+    if (looksLikeEmail(query)) {
+        onPhoneChange('');
+        onNameChange('');
+
+        return;
+    }
+
+    onNameChange(query);
+    onPhoneChange('');
 }
 
 export function PlaceOrderCustomerSection({
@@ -48,73 +82,51 @@ export function PlaceOrderCustomerSection({
     onResolved,
 }: PlaceOrderCustomerSectionProps) {
     const [query, setQuery] = useState('');
-    const [debouncedQuery, setDebouncedQuery] = useState('');
     const [matches, setMatches] = useState<ResolvedPlaceOrderCustomer[]>([]);
-    const requestId = useRef(0);
+    const [error, setError] = useState<string | null>(null);
     const http = useHttp<{ q: string }, LookupResponse>({ q: '' });
 
-    useEffect(() => {
-        const timer = window.setTimeout(() => {
-            setDebouncedQuery(query.trim());
-        }, SEARCH_DEBOUNCE_MS);
+    const lookupCustomer = (): void => {
+        const trimmed = query.trim();
+        setError(null);
+        setMatches([]);
+        onResolved(null, false);
+        onNameChange('');
+        onPhoneChange('');
 
-        return () => window.clearTimeout(timer);
-    }, [query]);
-
-    useEffect(() => {
-        if (customer !== null) {
-            return;
-        }
-
-        if (debouncedQuery.length < MIN_QUERY_LENGTH) {
-            setMatches([]);
-            onResolved(null, false);
+        if (trimmed.length < MIN_QUERY_LENGTH) {
+            setError('Enter at least 2 characters to look up.');
 
             return;
         }
 
-        const currentRequest = ++requestId.current;
-
-        http.transform(() => ({ q: debouncedQuery }));
+        http.transform(() => ({ q: trimmed }));
 
         void http.post(lookup.url(), {
             onSuccess: (response) => {
-                if (currentRequest !== requestId.current) {
-                    return;
-                }
-
                 const found = response?.customers ?? [];
                 setMatches(found);
-                onResolved(null, found.length === 0);
 
                 if (found.length === 0) {
-                    if (looksLikePhone(debouncedQuery)) {
-                        onPhoneChange(debouncedQuery);
-                        onNameChange('');
-                    } else if (looksLikeEmail(debouncedQuery)) {
-                        onPhoneChange('');
-                        onNameChange('');
-                    } else {
-                        onNameChange(debouncedQuery);
-                        onPhoneChange('');
-                    }
-                }
-            },
-            onError: () => {
-                if (currentRequest !== requestId.current) {
+                    prefillAddForm(trimmed, onPhoneChange, onNameChange);
+                    onResolved(null, true);
+
                     return;
                 }
 
+                onResolved(null, false);
+            },
+            onError: () => {
                 setMatches([]);
+                setError('Lookup failed. Try again.');
                 onResolved(null, false);
             },
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- search only when debounced query changes
-    }, [debouncedQuery, customer]);
+    };
 
     const selectCustomer = (match: ResolvedPlaceOrderCustomer): void => {
-        requestId.current += 1;
         setMatches([]);
+        setError(null);
         setQuery(match.name);
         onNameChange(match.name);
         onPhoneChange(match.phone);
@@ -122,10 +134,9 @@ export function PlaceOrderCustomerSection({
     };
 
     const clearSelection = (): void => {
-        requestId.current += 1;
         setMatches([]);
+        setError(null);
         setQuery('');
-        setDebouncedQuery('');
         onNameChange('');
         onPhoneChange('');
         onResolved(null, false);
@@ -135,28 +146,47 @@ export function PlaceOrderCustomerSection({
         <div className="space-y-3">
             <div className="grid gap-2">
                 <Label htmlFor="customer-search">Search</Label>
-                <div className="relative">
-                    <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-                    <Input
-                        id="customer-search"
-                        value={query}
-                        autoComplete="off"
-                        inputMode="search"
-                        className="pr-10 pl-9"
-                        placeholder="Name, email, or phone"
-                        onChange={(event) => {
-                            const next = event.target.value;
-                            setQuery(next);
+                <div className="flex gap-2">
+                    <div className="relative min-w-0 flex-1">
+                        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                        <Input
+                            id="customer-search"
+                            value={query}
+                            autoComplete="off"
+                            inputMode="search"
+                            aria-busy={http.processing}
+                            className="pl-9"
+                            placeholder="Name, email, or phone"
+                            onChange={(event) => {
+                                setQuery(event.target.value);
+                                setError(null);
 
-                            if (customer !== null) {
-                                onResolved(null, false);
-                            }
-                        }}
-                    />
-                    {http.processing ? (
-                        <Spinner className="text-muted-foreground absolute top-1/2 right-3 size-4 -translate-y-1/2" />
-                    ) : null}
+                                if (customer !== null || needsAdd) {
+                                    setMatches([]);
+                                    onResolved(null, false);
+                                }
+                            }}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    lookupCustomer();
+                                }
+                            }}
+                        />
+                    </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        disabled={http.processing || query.trim() === ''}
+                        onClick={lookupCustomer}
+                    >
+                        {http.processing ? <Spinner /> : null}
+                        Look up
+                    </Button>
                 </div>
+                {error ? (
+                    <p className="text-destructive text-xs">{error}</p>
+                ) : null}
             </div>
 
             {customer ? (

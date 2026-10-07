@@ -19,3 +19,6 @@ Place Order products default to the driver’s assigned inventory with a ~3-row 
 
 ## Place Order products are dense single list
 Place Order products use one dense divided list (thumb + name/price + inline +/-). Do not render a second In this order product list — selected lines stay in the same list (sorted up, highlighted) and an In order (n) filter chip scopes to qty>0. Sticky footer already shows item count/total.
+
+## Place Order customer uses Look up button
+Place Order customer search uses an explicit Look up button (Enter also submits). Query accepts name/email/phone via q. On empty matches, Add prefills Phone when the query looks phone-like (+/0/digits) — never dump a phone-like query into Name. Do not restore type-as-you-search auto lookup for customers.

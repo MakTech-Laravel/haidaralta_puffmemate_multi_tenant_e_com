@@ -162,7 +162,7 @@ export default function DriverPlaceOrderIndex({
                 <SectionShell
                     icon={UserRound}
                     title="Customer"
-                    description="Auto-search by name, email, or phone. Add details only when nothing matches."
+                    description="Look up by name, email, or phone. Add details only when nothing matches."
                 >
                     <PlaceOrderCustomerSection
                         phone={phone}

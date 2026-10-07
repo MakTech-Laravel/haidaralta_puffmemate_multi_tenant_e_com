@@ -3,10 +3,12 @@ import { Minus, Plus, Search } from 'lucide-react';
 import type { DriverPlaceOrderProduct } from '@/components/driver/place-order/place-order-types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 
 const FALLBACK_IMAGE = '/images/storefront/logo.png';
 const PAGE_SIZE = 12;
+const FILTER_DEBOUNCE_MS = 200;
 const RESULTS_VIEWPORT_CLASS = 'max-h-[min(28rem,55vh)]';
 const SELECTED_FILTER = '__selected__';
 
@@ -143,9 +145,20 @@ export function PlaceOrderProductsSection({
     onQuantityChange,
 }: PlaceOrderProductsSectionProps) {
     const [query, setQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
     const [category, setCategory] = useState('All');
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            setDebouncedQuery(query.trim());
+        }, FILTER_DEBOUNCE_MS);
+
+        return () => window.clearTimeout(timer);
+    }, [query]);
+
+    const isFiltering = query.trim() !== debouncedQuery;
 
     const selectedCount = useMemo(
         () =>
@@ -166,7 +179,7 @@ export function PlaceOrderProductsSection({
     }, [products]);
 
     const filtered = useMemo(() => {
-        const q = query.trim().toLowerCase();
+        const q = debouncedQuery.toLowerCase();
         const selectedOnly = category === SELECTED_FILTER;
         const categoryActive = category !== 'All' && !selectedOnly;
 
@@ -192,11 +205,11 @@ export function PlaceOrderProductsSection({
 
             return a.name.localeCompare(b.name);
         });
-    }, [products, query, category, quantities]);
+    }, [products, debouncedQuery, category, quantities]);
 
     useEffect(() => {
         setVisibleCount(PAGE_SIZE);
-    }, [query, category]);
+    }, [debouncedQuery, category]);
 
     useEffect(() => {
         const sentinel = sentinelRef.current;
@@ -241,27 +254,38 @@ export function PlaceOrderProductsSection({
         loadMoreIfNeeded();
 
         return () => observer.disconnect();
-    }, [filtered.length, query, category, visibleCount]);
+    }, [filtered.length, debouncedQuery, category, visibleCount]);
 
     const visibleResults = filtered.slice(0, visibleCount);
     const hasMoreResults = visibleCount < filtered.length;
 
     return (
         <div className="space-y-3">
-            <div className="relative">
-                <Search
-                    className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-                    aria-hidden
-                />
-                <Input
-                    id="place-order-product-search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Filter name, SKU…"
-                    autoComplete="off"
-                    aria-label="Filter products"
-                    className="h-10 rounded-xl pl-9"
-                />
+            <div className="space-y-1">
+                <div className="relative">
+                    <Search
+                        className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+                        aria-hidden
+                    />
+                    <Input
+                        id="place-order-product-search"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Filter name, SKU…"
+                        autoComplete="off"
+                        aria-label="Filter products"
+                        aria-busy={isFiltering}
+                        className="h-10 rounded-xl pr-9 pl-9"
+                    />
+                    {isFiltering ? (
+                        <Spinner className="text-primary absolute top-1/2 right-3 size-4 -translate-y-1/2" />
+                    ) : null}
+                </div>
+                {isFiltering ? (
+                    <p className="text-muted-foreground text-[11px]">
+                        Filtering…
+                    </p>
+                ) : null}
             </div>
 
             <div
