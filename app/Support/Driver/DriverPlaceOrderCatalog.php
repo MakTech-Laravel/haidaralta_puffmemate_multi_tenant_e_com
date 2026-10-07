@@ -22,6 +22,7 @@ class DriverPlaceOrderCatalog
      *         id: string,
      *         name: string,
      *         description: string,
+     *         sku: string,
      *         category: string,
      *         priceLabel: string,
      *         price: float,
@@ -66,6 +67,7 @@ class DriverPlaceOrderCatalog
      *     id: string,
      *     name: string,
      *     description: string,
+     *     sku: string,
      *     category: string,
      *     priceLabel: string,
      *     price: float,
@@ -141,20 +143,18 @@ class DriverPlaceOrderCatalog
                     $name .= ' · '.$item['variantName'];
                 }
 
-                $description = $item['variantSku']
-                    ?? $product->sku
-                    ?? '';
-
-                if ($description === '' && filled($product->description)) {
-                    $description = str(strip_tags((string) $product->description))->limit(120)->toString();
-                }
+                $sku = (string) ($item['variantSku'] ?? $product->sku ?? '');
+                $description = filled($product->description)
+                    ? str(strip_tags((string) $product->description))->limit(120)->toString()
+                    : '';
 
                 $category = $product->categories->first()?->name ?? 'Uncategorized';
 
                 return [
                     'id' => $id,
                     'name' => $name,
-                    'description' => (string) $description,
+                    'description' => $description,
+                    'sku' => $sku,
                     'category' => $category,
                     'priceLabel' => BranchProductPriceDisplay::formatAud($price),
                     'price' => $price,

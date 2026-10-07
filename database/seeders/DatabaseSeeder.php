@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             CheckoutSettingsSeeder::class,
             BranchInventorySeeder::class,
             NationwideInventorySeeder::class,
+            DriverStockAssignmentSeeder::class,
             WorkforceShiftSeeder::class,
             TransferHistorySeeder::class,
         ]);

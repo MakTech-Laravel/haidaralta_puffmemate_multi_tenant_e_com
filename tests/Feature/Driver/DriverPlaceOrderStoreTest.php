@@ -52,21 +52,57 @@ function placeOrderDriver(): array
     return [$driver, $branch, $product];
 }
 
-test('phone lookup reuses an existing customer and normalizes e164', function () {
+test('customer search matches name email and phone', function () {
     $customer = User::factory()->create([
+        'name' => 'Searchable Buyer',
         'user_type' => UserType::CUSTOMER,
         'phone' => Phone::toE164('0499000001'),
+        'email' => 'searchable.buyer@example.com',
+        'registration_status' => CustomerRegistrationStatus::Registered,
+    ]);
+    User::factory()->create([
+        'name' => 'Other Buyer',
+        'user_type' => UserType::CUSTOMER,
+        'phone' => Phone::toE164('0499000099'),
     ]);
     [$driver] = placeOrderDriver();
 
     $this->actingAs($driver, 'driver')
         ->postJson(route('driver.place-order.customers.lookup'), [
-            'phone' => '0499 000 001',
+            'q' => '0499 000 001',
         ])
         ->assertOk()
-        ->assertJsonPath('customer.id', $customer->id)
-        ->assertJsonPath('customer.registration_status', CustomerRegistrationStatus::Registered->value)
-        ->assertJsonMissingPath('customer.email');
+        ->assertJsonCount(1, 'customers')
+        ->assertJsonPath('customers.0.id', $customer->id)
+        ->assertJsonPath('customers.0.registration_status', CustomerRegistrationStatus::Registered->value)
+        ->assertJsonPath('customers.0.email', 'searchable.buyer@example.com');
+
+    $this->actingAs($driver, 'driver')
+        ->postJson(route('driver.place-order.customers.lookup'), [
+            'q' => 'Searchable Buyer',
+        ])
+        ->assertOk()
+        ->assertJsonCount(1, 'customers')
+        ->assertJsonPath('customers.0.id', $customer->id);
+
+    $this->actingAs($driver, 'driver')
+        ->postJson(route('driver.place-order.customers.lookup'), [
+            'q' => 'searchable.buyer@example.com',
+        ])
+        ->assertOk()
+        ->assertJsonCount(1, 'customers')
+        ->assertJsonPath('customers.0.id', $customer->id);
+});
+
+test('customer search returns empty list when nothing matches', function () {
+    [$driver] = placeOrderDriver();
+
+    $this->actingAs($driver, 'driver')
+        ->postJson(route('driver.place-order.customers.lookup'), [
+            'q' => 'zz-no-such-customer',
+        ])
+        ->assertOk()
+        ->assertJsonPath('customers', []);
 });
 
 test('a new phone creates one provisional customer and cannot log in', function () {

@@ -88,7 +88,7 @@ test('drivers see assigned inventory products on place order', function () {
             ->has('products', 1)
             ->where('products.0.id', (string) $product->id)
             ->where('products.0.name', 'Assigned Menthol Pack')
-            ->where('products.0.description', 'AMP-100')
+            ->where('products.0.sku', 'AMP-100')
             ->where('products.0.category', 'Menthol')
             ->where('products.0.stock', 7)
             ->where('products.0.price', 14.5)
