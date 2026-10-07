@@ -13,7 +13,7 @@ RUN apt-get update \
         libzip-dev \
         unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j"$(nproc)" bcmath gd intl mbstring pcntl pdo_mysql pdo_pgsql zip \
+    && docker-php-ext-install -j"$(nproc)" bcmath exif gd intl mbstring pcntl pdo_mysql pdo_pgsql zip \
     && pecl install redis \
     && docker-php-ext-enable opcache redis \
     && rm -rf /var/lib/apt/lists/* /tmp/pear
