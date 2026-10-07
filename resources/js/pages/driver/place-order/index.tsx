@@ -143,13 +143,12 @@ export default function DriverPlaceOrderIndex({
             <Head title="Place order" />
 
             <div className="flex flex-col gap-5 pb-4">
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                     <h1 className="text-foreground text-2xl font-bold tracking-tight">
                         Place order
                     </h1>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                        Search a customer by name, email, or phone and sell
-                        stock from your active branch.
+                    <p className="text-muted-foreground text-sm">
+                        Sell assigned stock from your active branch.
                     </p>
                 </div>
 
@@ -159,11 +158,7 @@ export default function DriverPlaceOrderIndex({
                     </p>
                 ) : null}
 
-                <SectionShell
-                    icon={UserRound}
-                    title="Customer"
-                    description="Look up by name, email, or phone. Add details only when nothing matches."
-                >
+                <SectionShell icon={UserRound} title="Customer">
                     <PlaceOrderCustomerSection
                         phone={phone}
                         name={name}
