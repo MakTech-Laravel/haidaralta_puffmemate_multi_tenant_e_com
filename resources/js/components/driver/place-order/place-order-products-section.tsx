@@ -17,6 +17,27 @@ type PlaceOrderProductsSectionProps = {
     onQuantityChange: (productId: string, quantity: number) => void;
 };
 
+function productMatchesQuery(
+    product: DriverPlaceOrderProduct,
+    query: string,
+): boolean {
+    if (query === '') {
+        return true;
+    }
+
+    const haystack = [
+        product.name,
+        product.sku,
+        product.description,
+        product.category,
+        product.priceLabel,
+    ]
+        .join(' ')
+        .toLowerCase();
+
+    return haystack.includes(query);
+}
+
 function ProductRow({
     product,
     quantity,
@@ -30,6 +51,7 @@ function ProductRow({
 }) {
     const outOfStock = product.stock < 1;
     const selected = quantity > 0;
+    const subtitle = product.sku || product.description;
 
     return (
         <li
@@ -72,14 +94,18 @@ function ProductRow({
                         >
                             {product.name}
                         </p>
-                        <p
-                            className={cn(
-                                'text-muted-foreground line-clamp-1',
-                                compact ? 'text-[10px]' : 'text-xs',
-                            )}
-                        >
-                            {product.description}
-                        </p>
+                        {subtitle ? (
+                            <p
+                                className={cn(
+                                    'text-muted-foreground line-clamp-1',
+                                    compact ? 'text-[10px]' : 'text-xs',
+                                )}
+                            >
+                                {product.sku
+                                    ? `SKU ${product.sku}`
+                                    : product.description}
+                            </p>
+                        ) : null}
                         <div className="flex flex-wrap items-center gap-1">
                             <span
                                 className={cn(
@@ -219,23 +245,12 @@ export function PlaceOrderProductsSection({
         const q = query.trim().toLowerCase();
         const categoryActive = category !== 'All';
 
-        if (q === '' && !categoryActive) {
-            return [];
-        }
-
         return products.filter((product) => {
             if (categoryActive && product.category !== category) {
                 return false;
             }
 
-            if (q === '') {
-                return true;
-            }
-
-            return (
-                product.name.toLowerCase().includes(q) ||
-                product.description.toLowerCase().includes(q)
-            );
+            return productMatchesQuery(product, q);
         });
     }, [products, query, category]);
 
@@ -290,7 +305,6 @@ export function PlaceOrderProductsSection({
 
     const visibleResults = filtered.slice(0, visibleCount);
     const hasMoreResults = visibleCount < filtered.length;
-    const showHint = query.trim() === '' && category === 'All';
 
     return (
         <div className="space-y-4">
@@ -305,7 +319,7 @@ export function PlaceOrderProductsSection({
                         id="place-order-product-search"
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Type a product name"
+                        placeholder="Filter by name, SKU, or category"
                         autoComplete="off"
                         className="h-12 rounded-2xl pl-10"
                     />
@@ -340,15 +354,9 @@ export function PlaceOrderProductsSection({
                 })}
             </div>
 
-            {showHint ? (
-                <div className="border-border/70 text-muted-foreground flex flex-col items-center gap-2 rounded-2xl border border-dashed px-4 py-8 text-center">
-                    <Search className="size-5 opacity-60" aria-hidden />
-                    <p className="text-sm font-medium">
-                        Type a product name to search assigned stock
-                    </p>
-                    <p className="text-xs">
-                        Or pick a category chip to browse that group.
-                    </p>
+            {products.length === 0 ? (
+                <div className="border-border/70 text-muted-foreground rounded-2xl border border-dashed px-4 py-6 text-center text-sm">
+                    No assigned stock to sell.
                 </div>
             ) : filtered.length === 0 ? (
                 <div className="border-border/70 text-muted-foreground rounded-2xl border border-dashed px-4 py-6 text-center text-sm">

@@ -63,7 +63,7 @@ export default function DriverPlaceOrderIndex({
     const [customer, setCustomer] = useState<ResolvedPlaceOrderCustomer | null>(
         null,
     );
-    const [needsName, setNeedsName] = useState(false);
+    const [needsAdd, setNeedsAdd] = useState(false);
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [paymentMethodId, setPaymentMethodId] = useState<string | null>(
         paymentMethods[0]?.id ?? null,
@@ -94,7 +94,8 @@ export default function DriverPlaceOrderIndex({
     const total = lineItems.reduce((sum, item) => sum + item.lineTotal, 0);
     const itemCount = lineItems.reduce((sum, item) => sum + item.quantity, 0);
     const customerReady =
-        customer !== null || (needsName && name.trim() !== '' && phone.trim() !== '');
+        customer !== null ||
+        (needsAdd && name.trim() !== '' && phone.trim() !== '');
 
     const canPlace =
         canSell &&
@@ -147,8 +148,8 @@ export default function DriverPlaceOrderIndex({
                         Place order
                     </h1>
                     <p className="text-muted-foreground text-sm leading-relaxed">
-                        Look up a customer by phone and sell stock from your
-                        active branch.
+                        Search a customer by name, email, or phone and sell
+                        stock from your active branch.
                     </p>
                 </div>
 
@@ -161,18 +162,18 @@ export default function DriverPlaceOrderIndex({
                 <SectionShell
                     icon={UserRound}
                     title="Customer"
-                    description="Look up an exact phone number. Add a name only when the number is new."
+                    description="Auto-search by name, email, or phone. Add details only when nothing matches."
                 >
                     <PlaceOrderCustomerSection
                         phone={phone}
                         name={name}
                         customer={customer}
-                        needsName={needsName}
+                        needsAdd={needsAdd}
                         onPhoneChange={setPhone}
                         onNameChange={setName}
-                        onResolved={(resolved, askForName) => {
+                        onResolved={(resolved, askToAdd) => {
                             setCustomer(resolved);
-                            setNeedsName(askForName);
+                            setNeedsAdd(askToAdd);
                         }}
                     />
                 </SectionShell>
@@ -180,7 +181,7 @@ export default function DriverPlaceOrderIndex({
                 <SectionShell
                     icon={Package}
                     title="Products"
-                    description="Search assigned stock. Selected items stay in your order."
+                    description="Browse your assigned stock. Search and category chips filter the list."
                 >
                     <PlaceOrderProductsSection
                         products={products}
