@@ -37,17 +37,11 @@ type Settings = {
     background_color: string;
     date_format: string;
     time_format: string;
-    logo_path: string | null;
     logo_url: string | null;
-    favicon_path: string | null;
     favicon_url: string | null;
-    pwa_icon_192_path: string | null;
     pwa_icon_192_url: string | null;
-    pwa_icon_512_path: string | null;
     pwa_icon_512_url: string | null;
-    pwa_maskable_path: string | null;
     pwa_maskable_url: string | null;
-    apple_touch_icon_path: string | null;
     apple_touch_icon_url: string | null;
 };
 
@@ -84,21 +78,20 @@ type RemoveKey =
 
 function toExistingFiles(
     id: string,
-    path: string | null | undefined,
     url: string | null | undefined,
     fallbackName: string,
 ): ExistingFile[] {
-    if (!path || !url) {
+    if (!url) {
         return [];
     }
 
     return [
         {
             id,
-            path,
+            path: url,
             url,
             mime_type: 'image/png',
-            name: path.split('/').pop() ?? fallbackName,
+            name: url.split('/').pop() ?? fallbackName,
         },
     ];
 }
@@ -133,38 +126,21 @@ export default function PlatformGeneralSettings({
     });
 
     const [existingLogo, setExistingLogo] = useState<ExistingFile[]>(() =>
-        toExistingFiles('logo', settings.logo_path, settings.logo_url, 'logo'),
+        toExistingFiles('logo', settings.logo_url, 'logo'),
     );
-    const [existingFavicon, setExistingFavicon] = useState<ExistingFile[]>(
-        () =>
-            toExistingFiles(
-                'favicon',
-                settings.favicon_path,
-                settings.favicon_url,
-                'favicon',
-            ),
+    const [existingFavicon, setExistingFavicon] = useState<ExistingFile[]>(() =>
+        toExistingFiles('favicon', settings.favicon_url, 'favicon'),
     );
     const [existingPwa192, setExistingPwa192] = useState<ExistingFile[]>(() =>
-        toExistingFiles(
-            'pwa_icon_192',
-            settings.pwa_icon_192_path,
-            settings.pwa_icon_192_url,
-            'pwa-192',
-        ),
+        toExistingFiles('pwa_icon_192', settings.pwa_icon_192_url, 'pwa-192'),
     );
     const [existingPwa512, setExistingPwa512] = useState<ExistingFile[]>(() =>
-        toExistingFiles(
-            'pwa_icon_512',
-            settings.pwa_icon_512_path,
-            settings.pwa_icon_512_url,
-            'pwa-512',
-        ),
+        toExistingFiles('pwa_icon_512', settings.pwa_icon_512_url, 'pwa-512'),
     );
     const [existingMaskable, setExistingMaskable] = useState<ExistingFile[]>(
         () =>
             toExistingFiles(
                 'pwa_maskable',
-                settings.pwa_maskable_path,
                 settings.pwa_maskable_url,
                 'pwa-maskable',
             ),
@@ -174,7 +150,6 @@ export default function PlatformGeneralSettings({
     >(() =>
         toExistingFiles(
             'apple_touch_icon',
-            settings.apple_touch_icon_path,
             settings.apple_touch_icon_url,
             'apple-touch-icon',
         ),
@@ -409,9 +384,7 @@ export default function PlatformGeneralSettings({
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <InputError
-                                    message={form.errors.date_format}
-                                />
+                                <InputError message={form.errors.date_format} />
                             </div>
                             <div className="flex flex-col gap-2">
                                 <Label>Time format</Label>
@@ -435,9 +408,7 @@ export default function PlatformGeneralSettings({
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <InputError
-                                    message={form.errors.time_format}
-                                />
+                                <InputError message={form.errors.time_format} />
                             </div>
                         </div>
                     </section>
@@ -774,8 +745,7 @@ function SettingsAssetUpload({
                             'flex h-full min-h-40 w-full flex-1 border-dashed border-border/60 bg-muted/30 px-3 py-4',
                         dropzoneContent: 'gap-1.5',
                         card: 'flex h-full w-full flex-col overflow-hidden border-0 bg-transparent shadow-none hover:shadow-none',
-                        cardMedia:
-                            'aspect-auto min-h-40 flex-1 bg-transparent',
+                        cardMedia: 'aspect-auto min-h-40 flex-1 bg-transparent',
                         cardImage: 'size-full object-contain object-center',
                     }}
                 />

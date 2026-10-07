@@ -1,5 +1,7 @@
-import { Head, router, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
+import OrderAssignController from '@/actions/App/Http/Controllers/Branch/OrderAssignController';
+import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Branch/Reports/OrderAssignHistoryController';
 import OrderController from '@/actions/App/Http/Controllers/Branch/OrderController';
 import StockTransferController from '@/actions/App/Http/Controllers/Branch/StockTransferController';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +12,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -25,6 +28,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+
+const REASON_MAX = 255;
 
 type FulfillmentDetail = {
     id: number;
@@ -48,6 +54,7 @@ type FulfillmentDetail = {
         customerName: string;
         paymentMethod: string;
         paymentStatus: string;
+        paymentStatusLabel: string;
         shippingAddress: {
             name?: string;
             address?: string;
@@ -89,7 +96,9 @@ export default function BranchOrderShow({
     const [driverId, setDriverId] = useState(
         fulfillment.driverId ? String(fulfillment.driverId) : '',
     );
+    const [assignReason, setAssignReason] = useState('');
     const [processing, setProcessing] = useState(false);
+    const isReassign = fulfillment.driverId !== null;
 
     setLayoutProps({
         breadcrumbs: [
@@ -122,9 +131,28 @@ export default function BranchOrderShow({
                             {fulfillment.order.customerName}
                         </p>
                     </div>
-                    <Badge className="capitalize">
-                        {status.replaceAll('_', ' ')}
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                            <Link
+                                href={OrderAssignHistoryController.index.url(
+                                    branch.slug,
+                                    {
+                                        query: {
+                                            filter: {
+                                                order_id:
+                                                    fulfillment.fulfillmentNumber,
+                                            },
+                                        },
+                                    },
+                                )}
+                            >
+                                Driver assign history
+                            </Link>
+                        </Button>
+                        <Badge className="capitalize">
+                            {status.replaceAll('_', ' ')}
+                        </Badge>
+                    </div>
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -196,7 +224,7 @@ export default function BranchOrderShow({
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        {/* <Card>
                             <CardHeader>
                                 <CardTitle>History</CardTitle>
                             </CardHeader>
@@ -215,7 +243,7 @@ export default function BranchOrderShow({
                                     </div>
                                 ))}
                             </CardContent>
-                        </Card>
+                        </Card> */}
 
                         {fulfillment.transfers.length > 0 ? (
                             <Card>
@@ -343,8 +371,8 @@ export default function BranchOrderShow({
                                 </p>
                                 <p className="text-sm">
                                     Order payment status:{' '}
-                                    <span className="font-medium capitalize">
-                                        {fulfillment.order.paymentStatus}
+                                    <span className="font-medium">
+                                        {fulfillment.order.paymentStatusLabel}
                                     </span>
                                 </p>
                                 {fulfillment.isPaid ? (
@@ -377,7 +405,11 @@ export default function BranchOrderShow({
                         {fulfillment.canAssign ? (
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Assign driver</CardTitle>
+                                    <CardTitle>
+                                        {isReassign
+                                            ? 'Change driver'
+                                            : 'Assign driver'}
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     <Select
@@ -402,19 +434,62 @@ export default function BranchOrderShow({
                                             )}
                                         </SelectContent>
                                     </Select>
+                                    {isReassign ? (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="assign-reason">
+                                                Reason for change{' '}
+                                                <span className="text-destructive">
+                                                    *
+                                                </span>
+                                            </Label>
+                                            <Textarea
+                                                id="assign-reason"
+                                                value={assignReason}
+                                                onChange={(event) =>
+                                                    setAssignReason(
+                                                        event.target.value.slice(
+                                                            0,
+                                                            REASON_MAX,
+                                                        ),
+                                                    )
+                                                }
+                                                placeholder="Why are you changing the driver?"
+                                                rows={3}
+                                                maxLength={REASON_MAX}
+                                                required
+                                                aria-required
+                                            />
+                                            <p className="text-muted-foreground text-xs">
+                                                Required · {assignReason.length}
+                                                /{REASON_MAX}
+                                            </p>
+                                        </div>
+                                    ) : null}
                                     <Button
                                         className="w-full"
-                                        disabled={processing || driverId === ''}
+                                        disabled={
+                                            processing ||
+                                            driverId === '' ||
+                                            (isReassign &&
+                                                assignReason.trim() === '')
+                                        }
                                         onClick={() => {
                                             setProcessing(true);
                                             router.post(
-                                                OrderController.assignDriver.url(
+                                                OrderAssignController.store.url(
                                                     [
                                                         branch.slug,
                                                         fulfillment.id,
                                                     ],
                                                 ),
-                                                { driver_id: Number(driverId) },
+                                                {
+                                                    driver_id: Number(driverId),
+                                                    ...(isReassign
+                                                        ? {
+                                                              reason: assignReason.trim(),
+                                                          }
+                                                        : {}),
+                                                },
                                                 {
                                                     onFinish: () =>
                                                         setProcessing(false),
@@ -422,7 +497,9 @@ export default function BranchOrderShow({
                                             );
                                         }}
                                     >
-                                        Assign driver
+                                        {isReassign
+                                            ? 'Change driver'
+                                            : 'Assign driver'}
                                     </Button>
                                 </CardContent>
                             </Card>

@@ -8,16 +8,15 @@ use App\Models\Branch;
 use App\Models\BranchProductPrice;
 use App\Models\Inventory;
 use App\Models\Pack;
-use App\Models\PackImage;
 use App\Models\PackItem;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\Inventory\InventoryService;
+use App\Services\Media\MediaUploadService;
 use App\Support\BranchProductPriceDisplay;
 use App\Support\PackAvailability;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
@@ -27,6 +26,7 @@ class PackService
     public function __construct(
         private InventoryService $inventory,
         private PackAvailability $availability,
+        private MediaUploadService $media,
     ) {}
 
     /**
@@ -68,7 +68,6 @@ class PackService
                 'name' => $data['name'],
                 'slug' => $this->uniqueSlug($branch, $data['name']),
                 'description' => $data['description'] ?? null,
-                'image' => $image?->store('packs', 'public'),
                 'offer_type' => $offerType,
                 'offer_value' => $offerValue,
                 'subtotal' => $subtotal,
@@ -87,7 +86,8 @@ class PackService
                 ]);
             }
 
-            $this->appendGallery($pack, $gallery);
+            $this->media->syncSingle($pack, 'image', $image);
+            $this->media->syncMany($pack, 'gallery', $gallery);
             $this->allocate($branch, $pack->fresh(['items.product']) ?? $pack, $quantity, $actor);
             $this->persistStatus($pack, $wantsActive && $quantity > 0);
 
@@ -95,7 +95,7 @@ class PackService
                 $this->setHighlighted($pack, (bool) $data['is_highlighted']);
             }
 
-            return $pack->refresh()->load(['items.product', 'images']);
+            return $pack->refresh()->load(['items.product', 'media']);
         });
     }
 
@@ -123,7 +123,7 @@ class PackService
         ?User $actor,
     ): Pack {
         return DB::transaction(function () use ($pack, $data, $image, $gallery, $actor): Pack {
-            $pack->load(['items.product', 'images', 'branch']);
+            $pack->load(['items.product', 'media', 'branch']);
             $branch = $pack->branch;
             $quantity = (int) $data['quantity'];
             $delta = $quantity - $pack->quantity;
@@ -138,20 +138,14 @@ class PackService
             $offerValue = $this->normalizedMoney($data['offer_value']);
             [$subtotal, $packPrice] = $this->pricedTotals($this->itemsFromPack($pack), $offerType, $offerValue);
 
-            if (($data['remove_image'] ?? false) === true && $pack->image) {
-                Storage::disk('public')->delete($pack->image);
-                $pack->image = null;
-            }
-
-            if ($image !== null) {
-                if ($pack->image) {
-                    Storage::disk('public')->delete($pack->image);
-                }
-                $pack->image = $image->store('packs', 'public');
-            }
-
-            $this->deleteGallery($pack, $data['remove_gallery_ids'] ?? []);
-            $this->appendGallery($pack, $gallery);
+            $this->media->syncSingle(
+                $pack,
+                'image',
+                $image,
+                (bool) ($data['remove_image'] ?? false) && $image === null,
+            );
+            $this->media->deleteFromCollection($pack, 'gallery', $data['remove_gallery_ids'] ?? []);
+            $this->media->syncMany($pack, 'gallery', $gallery);
 
             if ($delta > 0) {
                 $this->allocate($branch, $pack, $delta, $actor);
@@ -193,7 +187,7 @@ class PackService
                 $this->setHighlighted($pack, (bool) $data['is_highlighted']);
             }
 
-            return $pack->refresh()->load(['items.product', 'images']);
+            return $pack->refresh()->load(['items.product', 'media']);
         });
     }
 
@@ -225,18 +219,10 @@ class PackService
     public function delete(Pack $pack, ?User $actor): void
     {
         DB::transaction(function () use ($pack, $actor): void {
-            $pack->load(['items.product', 'images', 'branch']);
+            $pack->load(['items.product', 'branch']);
 
             if ($pack->quantity > 0) {
                 $this->release($pack->branch, $pack, $pack->quantity, $actor);
-            }
-
-            if ($pack->image) {
-                Storage::disk('public')->delete($pack->image);
-            }
-
-            foreach ($pack->images as $image) {
-                Storage::disk('public')->delete($image->path);
             }
 
             $pack->delete();
@@ -424,43 +410,6 @@ class PackService
             throw ValidationException::withMessages([
                 "items.{$index}.quantity" => $exception->getMessage(),
             ]);
-        }
-    }
-
-    /**
-     * @param  list<UploadedFile>  $gallery
-     */
-    private function appendGallery(Pack $pack, array $gallery): void
-    {
-        $nextSort = (int) $pack->images()->max('sort_order');
-
-        foreach ($gallery as $file) {
-            $nextSort++;
-            PackImage::query()->create([
-                'pack_id' => $pack->id,
-                'path' => $file->store('packs/gallery', 'public'),
-                'sort_order' => $nextSort,
-            ]);
-        }
-    }
-
-    /**
-     * @param  list<int>  $imageIds
-     */
-    private function deleteGallery(Pack $pack, array $imageIds): void
-    {
-        if ($imageIds === []) {
-            return;
-        }
-
-        $images = PackImage::query()
-            ->where('pack_id', $pack->id)
-            ->whereIn('id', $imageIds)
-            ->get();
-
-        foreach ($images as $image) {
-            Storage::disk('public')->delete($image->path);
-            $image->delete();
         }
     }
 

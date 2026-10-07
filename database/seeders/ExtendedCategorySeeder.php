@@ -93,12 +93,10 @@ class ExtendedCategorySeeder extends Seeder
             'nav_sort' => null,
         ];
 
-        $imagePath = $this->publicWebPath($row['image']);
+        $category = Category::query()->updateOrCreate(['slug' => $row['slug']], $attributes);
 
-        if ($imagePath !== null) {
-            $attributes['image'] = $imagePath;
-        }
+        $this->attachSeedMedia($category, 'image', $this->publicWebPath($row['image']));
 
-        return Category::query()->updateOrCreate(['slug' => $row['slug']], $attributes);
+        return $category;
     }
 }

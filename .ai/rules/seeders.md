@@ -63,3 +63,6 @@ Keep BranchSeeder (9 core stores, null radius = deliver anywhere) and ProductSee
 
 ## Every seeder reports live progress
 All seeders use Concerns/ReportsSeedProgress so db:seed shows `Label  n/total [bar] % elapsed` plus a one-line summary. Loops use withSeedProgress($label, $items, $callback, $summary); hand-written seeders built from inline helper calls queue work with queueSeedStep() and run it with runQueuedSeedSteps() so the total is known up front (queued steps must set their own Spatie team context). Summary closures receive the step total. The trait no-ops when no console command is attached (e.g. app()-resolved seeders).
+
+## DriverStockAssignmentSeeder after inventory
+DatabaseSeeder runs DriverStockAssignmentSeeder after BranchInventorySeeder + NationwideInventorySeeder. It calls DriverStockAssignmentService (Multiple mode) with a fixed starter-bag slug map for every branch that has active drivers. Re-runs skip branches that already have DriverStockAssignment or driver_inventories rows. Prefer the service over raw inserts so branch stock, driver_inventories, and both ledgers stay consistent.

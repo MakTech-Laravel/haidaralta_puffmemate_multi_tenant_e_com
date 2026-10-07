@@ -10,7 +10,6 @@ use App\Services\Application\ContactSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Notifications\InboxService;
 use App\Services\Storefront\CartService;
-use App\Support\MediaUrl;
 use App\Support\PortalAuth;
 use App\Support\Storefront\DemoCatalog;
 use App\Support\Storefront\StorefrontCatalog;
@@ -126,7 +125,7 @@ class HandleInertiaRequests extends Middleware
                     'roles' => $user->getRoleNames()->values()->all(),
                     'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
                     'is_super_admin' => $user->hasRole(RoleEnum::SUPER_ADMIN->value),
-                    'avatar' => MediaUrl::resolve($user->avatar, fallback: null),
+                    'avatar' => $user->avatarUrl(),
                 ]),
                 'dashboardUrl' => PortalAuth::dashboardPath($user),
             ],

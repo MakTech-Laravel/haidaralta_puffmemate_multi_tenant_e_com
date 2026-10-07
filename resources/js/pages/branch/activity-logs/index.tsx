@@ -92,6 +92,7 @@ export default function BranchActivityLogsIndex({
                 <ActivityLogTable
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     showUrl={(id) =>
                         ActivityLogController.show.url([branch.slug, id])

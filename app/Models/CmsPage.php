@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\InteractsWithAppMedia;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * @property int $id
@@ -18,8 +20,14 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class CmsPage extends Model
+class CmsPage extends Model implements HasMedia
 {
+    use InteractsWithAppMedia;
+
+    public const HERO_COLLECTION = 'hero';
+
+    public const MEDIA_COLLECTION = 'media';
+
     /**
      * @var list<string>
      */
@@ -32,6 +40,12 @@ class CmsPage extends Model
         'payload',
         'updated_by',
     ];
+
+    public function registerMediaCollections(): void
+    {
+        $this->registerSingleFileCollection(self::HERO_COLLECTION);
+        $this->registerSingleFileCollection(self::MEDIA_COLLECTION);
+    }
 
     /**
      * @return array<string, string>

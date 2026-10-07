@@ -84,6 +84,7 @@ export default function CustomerActivityIndex({
                 <ActivityLogTable
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     showUrl={(id) => ActivityLogController.show.url(id)}
                 />

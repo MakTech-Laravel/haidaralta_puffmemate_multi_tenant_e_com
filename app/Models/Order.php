@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\DataTableConfigurable;
+use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\AuditsChanges;
@@ -23,6 +24,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $id
  * @property string $order_number
  * @property int $customer_id
+ * @property int|null $placed_by
+ * @property OrderSource $source
+ * @property string|null $idempotency_key
  * @property OrderStatus $status
  * @property PaymentStatus $payment_status
  */
@@ -37,6 +41,9 @@ class Order extends Model implements DataTableConfigurable
     protected $fillable = [
         'order_number',
         'customer_id',
+        'placed_by',
+        'source',
+        'idempotency_key',
         'address_id',
         'coupon_id',
         'coupon_code',
@@ -70,7 +77,7 @@ class Order extends Model implements DataTableConfigurable
     /**
      * @var list<string>
      */
-    public static array $dataTableFilterable = ['status', 'payment_status'];
+    public static array $dataTableFilterable = ['status', 'payment_status', 'source'];
 
     /**
      * @return BelongsTo<User, $this>
@@ -78,6 +85,16 @@ class Order extends Model implements DataTableConfigurable
     public function customer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'customer_id');
+    }
+
+    /**
+     * Ops actor who created the order. Null for storefront checkout.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function placedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'placed_by');
     }
 
     /**
@@ -177,6 +194,7 @@ class Order extends Model implements DataTableConfigurable
     {
         return [
             'status' => OrderStatus::class,
+            'source' => OrderSource::class,
             'payment_status' => PaymentStatus::class,
             'shipping_address_snapshot' => 'array',
             'latitude' => 'decimal:7',

@@ -2,6 +2,7 @@
 
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
+use App\Enums\OrderSource;
 use App\Enums\PaymentStatus;
 use App\Enums\UserType;
 use App\Models\AllocationDecisionLog;
@@ -197,9 +198,9 @@ test('platform branch and driver staff cannot place a storefront order', functio
     'driver' => ['driver', UserType::DRIVER],
 ]);
 
-test('express checkout without a delivery date is rejected', function () {
+test('express checkout without a time slot is rejected', function () {
     $user = User::factory()->create();
-    $product = storefrontCheckoutProduct(['slug' => 'express-needs-date']);
+    $product = storefrontCheckoutProduct(['slug' => 'express-needs-slot']);
     storefrontCheckoutBranchWithStock($product);
 
     $this->actingAs($user, 'customer')
@@ -212,11 +213,10 @@ test('express checkout without a delivery date is rejected', function () {
         ->from(route('checkout'))
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'express',
-            'delivery_date' => '',
-            'time_slot_id' => '1',
+            'time_slot_id' => '',
         ]))
         ->assertRedirect(route('checkout'))
-        ->assertSessionHasErrors('delivery_date');
+        ->assertSessionHasErrors('time_slot_id');
 
     expect(Order::query()->count())->toBe(0);
 });
@@ -247,17 +247,17 @@ test('regular checkout does not require a delivery date or time slot', function 
         ->and($order->time_slot)->toBeNull();
 });
 
-test('express checkout accepts a recommended date and time slot', function () {
+test('express checkout stores today and the chosen slot without a customer date', function () {
     $user = User::factory()->create();
     $product = storefrontCheckoutProduct(['slug' => 'express-with-slot']);
     storefrontCheckoutBranchWithStock($product);
 
-    $slotId = (string) DeliveryMethod::query()
+    $slot = DeliveryMethod::query()
         ->where('key', 'express')
         ->firstOrFail()
         ->timeSlots()
         ->orderBy('sort')
-        ->value('id');
+        ->firstOrFail();
 
     $this->actingAs($user, 'customer')
         ->post(route('cart.store'), [
@@ -268,8 +268,8 @@ test('express checkout accepts a recommended date and time slot', function () {
     $this->actingAs($user, 'customer')
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'express',
-            'delivery_date' => now()->toDateString(),
-            'time_slot_id' => $slotId,
+            'delivery_date' => now()->addWeek()->toDateString(),
+            'time_slot_id' => (string) $slot->id,
         ]))
         ->assertRedirect();
 
@@ -277,7 +277,7 @@ test('express checkout accepts a recommended date and time slot', function () {
 
     expect($order->delivery_method)->toBe('express')
         ->and($order->delivery_date?->toDateString())->toBe(now()->toDateString())
-        ->and($order->time_slot)->not->toBeNull();
+        ->and($order->time_slot)->toBe($slot->label);
 });
 
 test('pinning a location quotes the distance-based shipping fee', function () {
@@ -365,6 +365,8 @@ test('place order writes order payment and redemption then clears ordered lines'
         ->and($order->items)->toHaveCount(1)
         ->and((float) $order->discount)->toBe(10.0)
         ->and($order->payment_method)->toBe(PaymentGatewaySetting::KEY_COD)
+        ->and($order->source)->toBe(OrderSource::CustomerCheckout)
+        ->and($order->placed_by)->toBeNull()
         ->and($order->fulfillments)->toHaveCount(1)
         ->and($order->shipping_address_snapshot['name'])->toBe('Ada Lovelace')
         ->and($order->address->receiver_name)->toBe('Ada Lovelace');

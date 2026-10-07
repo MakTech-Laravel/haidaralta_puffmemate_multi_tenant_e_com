@@ -10,11 +10,13 @@ use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\DriverProductAssignController as BranchDriverProductAssignController;
 use App\Http\Controllers\Branch\GeneralSettingsController as BranchGeneralSettingsController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
+use App\Http\Controllers\Branch\OrderAssignController as BranchOrderAssignController;
 use App\Http\Controllers\Branch\OrderController as BranchOrderController;
 use App\Http\Controllers\Branch\PacksSavesController as BranchPacksSavesController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
-use App\Http\Controllers\Branch\Reports\OrderOperationsController as BranchOrderOperationsController;
+use App\Http\Controllers\Branch\Reports\OrderAssignHistoryController as BranchOrderAssignHistoryController;
+use App\Http\Controllers\Branch\Reports\OrderReportController as BranchOrderReportController;
 use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
 use App\Http\Controllers\Branch\Reports\ProductAssignTransactionController as BranchProductAssignTransactionController;
 use App\Http\Controllers\Branch\Reports\StockTransactionController as BranchStockTransactionController;
@@ -25,6 +27,7 @@ use App\Http\Controllers\Branch\StaffController as BranchStaffController;
 use App\Http\Controllers\Branch\StockController as BranchStockController;
 use App\Http\Controllers\Branch\StockTransferController as BranchStockTransferController;
 use App\Models\Branch;
+use App\Models\OrderFulfillment;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -102,8 +105,11 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('stock/import', [BranchStockController::class, 'storeImport'])->name('branch.stock.import.store');
         Route::get('stock/price', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
             ->name('branch.stock.price');
-        Route::get('reports/order-operations', [BranchOrderOperationsController::class, 'index'])
-            ->name('branch.reports.order-operations');
+        Route::get('reports/order-reports', [BranchOrderReportController::class, 'index'])
+            ->name('branch.reports.order-reports');
+        Route::get('reports/order-operations', function (string $branch) {
+            return redirect()->route('branch.reports.order-reports', ['branch' => $branch], 301);
+        });
         Route::get('reports/stock-transactions', [BranchStockTransactionController::class, 'index'])
             ->name('branch.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [BranchStockTransactionController::class, 'export'])
@@ -123,8 +129,22 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.orders.status');
         Route::post('orders/{fulfillment}/paid', [BranchOrderController::class, 'markPaid'])
             ->name('branch.orders.paid');
-        Route::post('orders/{fulfillment}/assign-driver', [BranchOrderController::class, 'assignDriver'])
+        Route::post('orders/{fulfillment}/assign-driver', [BranchOrderAssignController::class, 'store'])
             ->name('branch.orders.assign-driver');
+        Route::get('orders/{fulfillment}/assign-candidates', [BranchOrderAssignController::class, 'candidates'])
+            ->name('branch.orders.assign-candidates');
+        Route::get('orders/{fulfillment}/driver-assignment-history', function (string $branch, OrderFulfillment $fulfillment) {
+            return redirect()->route('branch.reports.order-assign-history', [
+                'branch' => $branch,
+                'filter' => ['order_id' => $fulfillment->fulfillment_number],
+            ]);
+        })->name('branch.orders.driver-assignment-history');
+        Route::get('reports/order-assign-history', [BranchOrderAssignHistoryController::class, 'index'])
+            ->name('branch.reports.order-assign-history');
+        Route::get('reports/order-assign-history/export', [BranchOrderAssignHistoryController::class, 'export'])
+            ->name('branch.reports.order-assign-history.export');
+        Route::get('reports/order-assign-history/driver-options', [BranchOrderAssignHistoryController::class, 'driverOptions'])
+            ->name('branch.reports.order-assign-history.driver-options');
         Route::post('orders/{fulfillment}/cancel', [BranchOrderController::class, 'cancel'])
             ->name('branch.orders.cancel');
         Route::post('orders/{fulfillment}/retry-delivery', [BranchOrderController::class, 'retryDelivery'])

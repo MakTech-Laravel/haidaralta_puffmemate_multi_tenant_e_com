@@ -32,7 +32,7 @@ class DriverProductAssignController extends Controller
             ->where('branch_id', $branch->id)
             ->where('status', true)
             ->where('quantity', '>', 0)
-            ->with(['product:id,name,sku,image,selling_price,status'])
+            ->with(['product:id,name,sku,selling_price,status', 'product.media'])
             ->whereHas('product', fn ($query) => $query->where('status', true))
             ->orderBy('product_id')
             ->get()
@@ -55,7 +55,7 @@ class DriverProductAssignController extends Controller
                     'variantId' => $inventory->variant_id,
                     'name' => $product->name,
                     'sku' => $product->sku,
-                    'image' => MediaUrl::resolve($product->image),
+                    'image' => $product->imageUrl(MediaUrl::DEFAULT_FALLBACK),
                     'available' => $available,
                     'priceLabel' => '$'.number_format((float) $product->selling_price, 2),
                 ];

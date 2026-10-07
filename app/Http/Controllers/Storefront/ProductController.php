@@ -27,7 +27,7 @@ class ProductController extends Controller
         $model = Product::query()
             ->where('status', true)
             ->where('slug', $product)
-            ->with(['categories:id,name,slug', 'images', 'variants'])
+            ->with(['categories:id,name,slug', 'media', 'variants'])
             ->first();
 
         if ($model === null) {

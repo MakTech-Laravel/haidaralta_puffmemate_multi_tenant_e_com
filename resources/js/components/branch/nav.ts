@@ -25,7 +25,6 @@ import {
     Tags,
     Truck,
     UserPlus,
-    UserRound,
     Users,
 } from 'lucide-react';
 import {
@@ -35,7 +34,6 @@ import {
     navSoon,
 } from '@/components/navigation/nav-builders';
 import type { NavSection } from '@/components/navigation/types';
-import { edit as profileEdit } from '@/routes/profile';
 
 export function buildBranchNav(
     slug: string,
@@ -102,11 +100,6 @@ export function buildBranchNav(
                 href: `/branch/${slug}/dashboard`,
                 icon: LayoutGrid,
                 permissions: ['view-branch-dashboard'],
-            }),
-            navLink({
-                title: 'Profile',
-                href: profileEdit.url(),
-                icon: UserRound,
             }),
             navGroup({
                 title: 'Staff management',
@@ -271,9 +264,15 @@ export function buildBranchNav(
                 ],
                 items: [
                     navLink({
-                        title: 'Order operations',
-                        href: `/branch/${slug}/reports/order-operations`,
+                        title: 'Order Reports',
+                        href: `/branch/${slug}/reports/order-reports`,
                         icon: ChartColumn,
+                        permissions: ['manage-branch-orders'],
+                    }),
+                    navLink({
+                        title: 'Order Assign History',
+                        href: `/branch/${slug}/reports/order-assign-history`,
+                        icon: History,
                         permissions: ['manage-branch-orders'],
                     }),
                     navLink({

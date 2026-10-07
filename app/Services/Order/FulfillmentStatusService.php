@@ -10,6 +10,7 @@ use App\Models\OrderFulfillment;
 use App\Models\OrderStatusHistory;
 use App\Models\User;
 use App\Services\Conversation\OrderConversationCloser;
+use App\Services\Driver\DriverInventorySaleService;
 use App\Services\Inventory\InventoryReservationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -20,6 +21,7 @@ class FulfillmentStatusService
         private InventoryReservationService $reservations,
         private StockTransferService $transfers,
         private OrderConversationCloser $conversations,
+        private DriverInventorySaleService $driverSales,
     ) {}
 
     public function transition(
@@ -85,6 +87,12 @@ class FulfillmentStatusService
             }
 
             $this->releaseReservations($fulfillment, $actor);
+
+            $order = $fulfillment->order()->first();
+
+            if ($order !== null) {
+                $this->driverSales->reverse($order, $actor);
+            }
 
             if ($fulfillment->driver_id !== null) {
                 $fulfillment->forceFill(['driver_id' => null])->save();

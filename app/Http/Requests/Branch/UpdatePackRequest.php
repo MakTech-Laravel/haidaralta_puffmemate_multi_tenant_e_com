@@ -39,7 +39,10 @@ class UpdatePackRequest extends FormRequest
             'remove_gallery_ids' => ['nullable', 'array'],
             'remove_gallery_ids.*' => [
                 'integer',
-                Rule::exists('pack_images', 'id')->where('pack_id', $pack->id),
+                Rule::exists('media', 'id')
+                    ->where('model_type', $pack->getMorphClass())
+                    ->where('model_id', $pack->id)
+                    ->where('collection_name', 'gallery'),
             ],
         ];
     }
@@ -65,8 +68,8 @@ class UpdatePackRequest extends FormRequest
                     ->map(fn ($id): int => (int) $id)
                     ->all();
 
-                $existing = $pack->images()
-                    ->when($removeIds !== [], fn ($query) => $query->whereNotIn('id', $removeIds))
+                $existing = $pack->getMedia('gallery')
+                    ->whereNotIn('id', $removeIds)
                     ->count();
 
                 if ($existing + count($this->galleryFiles()) > 12) {

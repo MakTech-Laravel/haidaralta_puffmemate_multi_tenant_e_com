@@ -4,12 +4,14 @@ namespace App\Services\Platform;
 
 use App\Enums\UserType;
 use App\Models\User;
-use App\Support\PublicDiskMedia;
+use App\Services\Media\MediaUploadService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 class PlatformAdminService
 {
+    public function __construct(private MediaUploadService $media) {}
+
     /**
      * @param  array{name: string, phone: string, email?: string|null, password: string, roles?: list<string>, is_active?: bool}  $data
      */
@@ -25,9 +27,9 @@ class PlatformAdminService
                 'branch_id' => null,
                 'is_active' => $data['is_active'] ?? true,
                 'phone_verified_at' => now(),
-                'avatar' => PublicDiskMedia::store($avatar, PublicDiskMedia::USER_AVATARS),
             ]);
 
+            $this->media->syncSingle($user, 'avatar', $avatar);
             $user->syncRoles($data['roles'] ?? []);
 
             return $user;
@@ -47,12 +49,6 @@ class PlatformAdminService
                 'is_active' => $data['is_active'],
                 'user_type' => UserType::PLATFORM,
                 'branch_id' => null,
-                'avatar' => PublicDiskMedia::replace(
-                    $user->avatar,
-                    $avatar,
-                    PublicDiskMedia::USER_AVATARS,
-                    (bool) ($data['remove_avatar'] ?? false),
-                ),
             ];
 
             if (filled($data['password'] ?? null)) {
@@ -60,6 +56,12 @@ class PlatformAdminService
             }
 
             $user->update($payload);
+            $this->media->syncSingle(
+                $user,
+                'avatar',
+                $avatar,
+                (bool) ($data['remove_avatar'] ?? false),
+            );
             $user->unsetRelation('roles');
             $user->syncRoles($data['roles']);
 
@@ -69,7 +71,6 @@ class PlatformAdminService
 
     public function delete(User $user): void
     {
-        PublicDiskMedia::delete($user->avatar);
         $user->delete();
     }
 }

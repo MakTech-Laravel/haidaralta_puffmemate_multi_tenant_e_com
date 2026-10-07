@@ -3,9 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Branch;
+use App\Services\Media\MediaUploadService;
 use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class NationwideBranchSeeder extends Seeder
 {
@@ -64,7 +66,6 @@ class NationwideBranchSeeder extends Seeder
                 [
                     'name' => 'PuffMeMate '.$branchData['name'],
                     'code' => $branchData['code'],
-                    'logo' => $logo,
                     'phone' => $this->phoneFor($branchData['state'], $index),
                     'email' => str_replace('-', '.', $branchData['slug']).'@puffmemate.dev',
                     'address' => $branchData['address'],
@@ -80,6 +81,7 @@ class NationwideBranchSeeder extends Seeder
                 ],
             );
 
+            $this->attachLogo($branch, $logo);
             $rolesSeeder->seedBranchRolesForBranch($branch);
             $this->advanceSeedProgress();
         }
@@ -94,6 +96,29 @@ class NationwideBranchSeeder extends Seeder
     private function phoneFor(string $state, int $index): string
     {
         return sprintf('+61%s8%03d%04d', self::STATE_AREA_CODES[$state], 100 + $index, 2000 + ($index * 37));
+    }
+
+    private function attachLogo(Branch $branch, ?string $logo): void
+    {
+        if ($logo === null) {
+            return;
+        }
+
+        $absolute = public_path(ltrim($logo, '/'));
+
+        if (! is_file($absolute)) {
+            return;
+        }
+
+        $alreadyAttached = $branch->getMedia('logo')
+            ->contains(fn (Media $media): bool => $media->getCustomProperty('seed_source') === $logo);
+
+        if ($alreadyAttached) {
+            return;
+        }
+
+        $media = app(MediaUploadService::class)->attachFromPath($branch, 'logo', $absolute);
+        $media?->setCustomProperty('seed_source', $logo)->save();
     }
 
     /**

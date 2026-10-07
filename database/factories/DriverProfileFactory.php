@@ -28,7 +28,6 @@ class DriverProfileFactory extends Factory
             'address' => null,
             'latitude' => null,
             'longitude' => null,
-            'vehicle_image_path' => null,
         ];
     }
 

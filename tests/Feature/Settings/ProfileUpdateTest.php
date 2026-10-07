@@ -3,6 +3,7 @@
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\User;
+use App\Services\Media\MediaUploadService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -29,7 +30,6 @@ test('profile avatar can be uploaded', function () {
     $user = User::factory()->create([
         'phone' => '+61412345678',
         'phone_verified_at' => now(),
-        'avatar' => null,
     ]);
 
     $avatar = UploadedFile::fake()->image('avatar.png', 120, 120);
@@ -47,19 +47,23 @@ test('profile avatar can be uploaded', function () {
 
     $user->refresh();
 
-    expect($user->avatar)->not->toBeNull();
-    Storage::disk('public')->assertExists($user->avatar);
+    expect($user->hasMedia('avatar'))->toBeTrue()
+        ->and($user->getFirstMedia('avatar')->mime_type)->toBe('image/webp');
 });
 
 test('profile avatar can be removed', function () {
     Storage::fake('public');
 
-    $path = UploadedFile::fake()->image('old.png')->store('users/avatars', 'public');
     $user = User::factory()->create([
         'phone' => '+61412345678',
         'phone_verified_at' => now(),
-        'avatar' => $path,
     ]);
+
+    app(MediaUploadService::class)->syncSingle(
+        $user,
+        'avatar',
+        UploadedFile::fake()->image('old.png'),
+    );
 
     $this->actingAs($user, 'customer')
         ->from(route('profile.edit'))
@@ -72,8 +76,7 @@ test('profile avatar can be removed', function () {
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('profile.edit'));
 
-    expect($user->refresh()->avatar)->toBeNull();
-    Storage::disk('public')->assertMissing($path);
+    expect($user->refresh()->hasMedia('avatar'))->toBeFalse();
 });
 
 test('profile information can be updated', function () {
@@ -191,7 +194,6 @@ test('branch profile information can be updated', function () {
         'branch_id' => $branch->id,
         'phone' => '+61412345679',
         'phone_verified_at' => now(),
-        'avatar' => null,
     ]);
     $avatar = UploadedFile::fake()->image('avatar.png', 120, 120);
 
@@ -211,9 +213,8 @@ test('branch profile information can be updated', function () {
     expect($user->name)->toBe('Branch Staff')
         ->and($user->phone)->toBe('+61412987655')
         ->and($user->email)->toBe('branch.staff@example.com')
-        ->and($user->avatar)->not->toBeNull();
-
-    Storage::disk('public')->assertExists($user->avatar);
+        ->and($user->hasMedia('avatar'))->toBeTrue()
+        ->and($user->getFirstMedia('avatar')->mime_type)->toBe('image/webp');
 });
 
 test('branch user cannot delete their account', function () {

@@ -5,6 +5,7 @@ namespace App\Actions\Order;
 use App\Enums\CartStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\NotificationType;
+use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Address;
@@ -65,7 +66,7 @@ class PlaceOrderAction
      */
     public function handle(User $user, Cart $cart, array $data): Order
     {
-        $cart->load('items.product');
+        $cart->load(['items.product.media']);
 
         if ($cart->items->isEmpty()) {
             throw ValidationException::withMessages([
@@ -108,6 +109,8 @@ class PlaceOrderAction
             $order = Order::query()->create([
                 'order_number' => $this->nextOrderNumber(),
                 'customer_id' => $user->id,
+                'placed_by' => null,
+                'source' => OrderSource::CustomerCheckout,
                 'address_id' => $address->id,
                 'coupon_id' => $coupon?->id,
                 'coupon_code' => $coupon?->code,
@@ -357,7 +360,7 @@ class PlaceOrderAction
             'name' => $product->name,
             'slug' => $product->slug,
             'sku' => $product->sku,
-            'image' => MediaUrl::resolve($product->image),
+            'image' => $product->imageUrl(MediaUrl::DEFAULT_FALLBACK),
             'description' => $product->packSummary(),
             'brand' => $product->brand,
             'pack_label' => $product->pack_label,

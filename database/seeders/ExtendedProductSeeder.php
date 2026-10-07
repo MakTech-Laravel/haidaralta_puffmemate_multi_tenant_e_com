@@ -153,13 +153,14 @@ class ExtendedProductSeeder extends Seeder
                 'pack_unit' => $item['pack_unit'],
                 'tags' => $this->tagsFor($item['slug']),
                 'specifications' => $item['specifications'],
-                'image' => $this->image($item['image']),
                 'selling_price' => $item['selling_price'],
                 'regular_price' => number_format(round((float) $item['selling_price'] * 1.15, 2), 2, '.', ''),
                 'status' => true,
                 'created_by' => $creator?->id,
             ],
         );
+
+        $this->attachSeedMedia($product, 'image', $this->image($item['image']));
 
         $product->categories()->syncWithoutDetaching(
             collect($item['categories'])

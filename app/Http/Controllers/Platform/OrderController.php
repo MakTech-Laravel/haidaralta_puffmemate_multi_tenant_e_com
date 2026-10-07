@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Platform;
 
 use App\DataTables\OrderDataTable;
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StockTransferStatus;
 use App\Http\Controllers\Controller;
@@ -12,10 +13,9 @@ use App\Http\Requests\Order\UpdateFulfillmentStatusRequest;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Models\StockTransfer;
-use App\Models\User;
-use App\Services\Order\DriverAssignmentService;
 use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\FulfillmentStatusService;
+use App\Services\Order\OrderAssignService;
 use App\Services\Order\PaymentMarkingService;
 use App\Support\MediaUrl;
 use App\Support\Toast;
@@ -29,7 +29,7 @@ class OrderController extends Controller
     public function __construct(
         private FulfillmentStatusService $statusService,
         private PaymentMarkingService $payments,
-        private DriverAssignmentService $drivers,
+        private OrderAssignService $orderAssign,
         private DriverDeliveryService $deliveries,
     ) {}
 
@@ -50,8 +50,10 @@ class OrderController extends Controller
     {
         $order->load([
             'customer',
+            'placedBy:id,name',
             'items',
             'fulfillments.branch',
+            'fulfillments.driver:id,name',
             'fulfillments.items',
             'fulfillments.stockTransfers.items.product:id,name',
             'fulfillments.stockTransfers.sourceBranch:id,name',
@@ -76,20 +78,6 @@ class OrderController extends Controller
         $this->statusService->transition($fulfillment, $status, $request->user());
 
         Toast::success('Fulfillment status updated.');
-
-        return redirect()->route('platform.orders.show', $order);
-    }
-
-    public function assignDriver(Request $request, Order $order): RedirectResponse
-    {
-        $fulfillment = $this->requireFulfillment($order);
-        $driver = User::query()->findOrFail($request->validate([
-            'driver_id' => ['required', 'integer'],
-        ])['driver_id']);
-
-        $this->drivers->assign($fulfillment, $driver, $request->user());
-
-        Toast::success('Driver assigned.');
 
         return redirect()->route('platform.orders.show', $order);
     }
@@ -151,30 +139,44 @@ class OrderController extends Controller
      */
     private function detail(Order $order): array
     {
-        $fulfillment = $order->fulfillment;
+        $paymentOptions = collect(PaymentStatus::actionableOptions());
+
+        if ($paymentOptions->doesntContain(fn (array $option): bool => $option['value'] === $order->payment_status->value)) {
+            $paymentOptions->prepend([
+                'value' => $order->payment_status->value,
+                'label' => $order->payment_status->label(),
+            ]);
+        }
 
         return [
             'id' => $order->id,
             'orderNumber' => $order->order_number,
             'status' => $order->status->value,
+            'statusLabel' => $order->status->label(),
             'paymentStatus' => $order->payment_status->value,
-            'paymentStatusOptions' => PaymentStatus::actionableOptions(),
+            'paymentStatusLabel' => $order->payment_status->label(),
+            'source' => $order->source->value,
+            'sourceLabel' => $order->source->label(),
+            'placedByName' => $order->placedBy?->name,
+            'paymentStatusOptions' => $paymentOptions->values()->all(),
+            'paymentMethod' => $order->payment_method,
             'customerName' => $order->customer?->name ?? 'Customer',
+            'placedAt' => $order->created_at?->format('d M Y, h:i A'),
             'totalLabel' => '$'.number_format((float) $order->total_amount, 2),
             'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
+            'discountLabel' => (float) $order->discount > 0
+                ? '$'.number_format((float) $order->discount, 2)
+                : null,
+            'couponCode' => $order->coupon_code,
             'deliveryFeeLabel' => '$'.number_format((float) $order->delivery_fee, 2),
             'shippingAddress' => $order->shipping_address_snapshot,
-            'drivers' => $fulfillment === null
-                ? []
-                : $this->drivers->candidates($fulfillment)->map(fn (User $driver): array => [
-                    'id' => $driver->id,
-                    'name' => $driver->name,
-                ])->all(),
+            'drivers' => [],
             'fulfillments' => $order->fulfillments->map(fn (OrderFulfillment $row): array => [
                 'id' => $row->id,
                 'fulfillmentNumber' => $row->fulfillment_number,
                 'branchName' => $row->branch->name,
                 'status' => $row->status->value,
+                'statusLabel' => $row->status->label(),
                 'statusOptions' => collect([$row->status, ...$row->status->staffNext()])
                     ->unique(fn (FulfillmentStatus $status): string => $status->value)
                     ->map(fn (FulfillmentStatus $status): array => [
@@ -186,18 +188,23 @@ class OrderController extends Controller
                 'shippingCostLabel' => '$'.number_format((float) $row->shipping_cost, 2),
                 'isPaid' => $row->isPaid(),
                 'driverId' => $row->driver_id,
-                'canAssign' => in_array($row->status, [FulfillmentStatus::Ready, FulfillmentStatus::Assigned], true),
+                'driverName' => $row->driver?->name,
+                'canAssign' => $this->orderAssign->canAssign($row),
                 'canCancel' => $row->status->allowsStaffCancel(),
                 'canRetry' => $row->status === FulfillmentStatus::DeliveryFailed,
                 'canReschedule' => $row->status === FulfillmentStatus::DeliveryFailed,
                 'canReturn' => $row->status === FulfillmentStatus::DeliveryFailed,
                 'canConfirmReturn' => $row->status === FulfillmentStatus::Returning,
-                'items' => $row->items->map(fn ($item): array => [
-                    'name' => $item->product_name_snapshot,
-                    'image' => MediaUrl::resolve($item->product_snapshot['image'] ?? null),
-                    'quantity' => $item->quantity,
-                    'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),
-                ])->all(),
+                'items' => $row->items->map(function ($item): array {
+                    $snapshot = is_array($item->product_snapshot) ? $item->product_snapshot : [];
+
+                    return [
+                        'name' => $item->product_name_snapshot,
+                        'image' => MediaUrl::resolve($snapshot['image'] ?? null),
+                        'quantity' => $item->quantity,
+                        'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),
+                    ];
+                })->all(),
                 'transfers' => $row->stockTransfers->map(fn (StockTransfer $transfer): array => [
                     'id' => $transfer->id,
                     'status' => $transfer->status->value,
@@ -216,7 +223,9 @@ class OrderController extends Controller
                 ])->all(),
             ])->all(),
             'timeline' => $order->statusHistories->map(fn ($row): array => [
-                'label' => $row->new_status,
+                'label' => OrderStatus::tryFrom((string) $row->new_status)?->label()
+                    ?? FulfillmentStatus::tryFrom((string) $row->new_status)?->label()
+                    ?? (string) $row->new_status,
                 'detail' => $row->created_at->format('d M Y, h:i A'),
                 'comment' => $row->comment,
             ])->all(),

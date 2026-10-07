@@ -188,6 +188,7 @@ export default function BranchRolesIndex({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No roles match the current filters."
                     toolbar={

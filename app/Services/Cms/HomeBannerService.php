@@ -3,15 +3,17 @@
 namespace App\Services\Cms;
 
 use App\Models\HomeBanner;
+use App\Services\Media\MediaUploadService;
 use App\Support\MediaUrl;
-use App\Support\PublicDiskMedia;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class HomeBannerService
 {
-    public const MEDIA_DIRECTORY = 'cms/home-banners';
+    public function __construct(
+        private readonly MediaUploadService $media,
+    ) {}
 
     /**
      * @return Collection<int, HomeBanner>
@@ -19,6 +21,7 @@ class HomeBannerService
     public function all(): Collection
     {
         return HomeBanner::query()
+            ->with('media')
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
@@ -40,9 +43,9 @@ class HomeBannerService
     public function publishedForStorefront(): array
     {
         return HomeBanner::query()
+            ->with('media')
             ->where('is_active', true)
-            ->whereNotNull('image_path')
-            ->where('image_path', '!=', '')
+            ->whereHas('media', fn ($query) => $query->where('collection_name', HomeBanner::IMAGE_COLLECTION))
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
@@ -59,7 +62,6 @@ class HomeBannerService
      *     eyebrow: string,
      *     title: string,
      *     description: string,
-     *     image_path: string|null,
      *     image_url: string|null,
      *     primary_cta_label: string,
      *     primary_cta_href: string,
@@ -77,8 +79,7 @@ class HomeBannerService
             'eyebrow' => $banner->eyebrow,
             'title' => $banner->title,
             'description' => $banner->description,
-            'image_path' => $banner->image_path,
-            'image_url' => MediaUrl::resolve($banner->image_path, fallback: null),
+            'image_url' => $banner->imageUrl(),
             'primary_cta_label' => $banner->primary_cta_label,
             'primary_cta_href' => $banner->primary_cta_href,
             'secondary_cta_label' => $banner->secondary_cta_label,
@@ -107,7 +108,7 @@ class HomeBannerService
                 'is_active' => $banner->is_active,
                 'title' => $banner->title,
                 'eyebrow' => $banner->eyebrow,
-                'image_url' => MediaUrl::resolve($banner->image_path, fallback: null),
+                'image_url' => $banner->imageUrl(),
                 'updated_at' => $banner->updated_at?->toIso8601String(),
             ])
             ->values()
@@ -133,14 +134,13 @@ class HomeBannerService
         $banner = new HomeBanner([
             ...$data,
             'sort_order' => $maxOrder + 1,
-            'image_path' => null,
         ]);
 
-        if ($image !== null) {
-            $banner->image_path = PublicDiskMedia::store($image, self::MEDIA_DIRECTORY);
-        }
-
         $banner->save();
+
+        if ($image !== null) {
+            $this->media->syncSingle($banner, HomeBanner::IMAGE_COLLECTION, $image);
+        }
 
         return $banner;
     }
@@ -164,22 +164,15 @@ class HomeBannerService
         bool $removeImage = false,
     ): HomeBanner {
         $banner->fill($data);
-
-        $banner->image_path = PublicDiskMedia::replace(
-            $banner->image_path,
-            $image,
-            self::MEDIA_DIRECTORY,
-            $removeImage,
-        );
-
         $banner->save();
+
+        $this->media->syncSingle($banner, HomeBanner::IMAGE_COLLECTION, $image, $removeImage);
 
         return $banner;
     }
 
     public function delete(HomeBanner $banner): void
     {
-        PublicDiskMedia::delete($banner->image_path);
         $banner->delete();
     }
 
@@ -245,7 +238,7 @@ class HomeBannerService
                 'eyebrow' => 'PUFFMEMATE AUSTRALIA',
                 'title' => 'Your Life. Your Choice.',
                 'description' => 'A cleaner, premium shopping experience for cigarettes, vapes, tobacco, nicotine products and accessories.',
-                'image_path' => '/images/storefront/hero-1.jpg',
+                'image_file' => 'hero-1.jpg',
                 'primary_cta_label' => 'Shop',
                 'primary_cta_href' => '/shop',
                 'secondary_cta_label' => 'Explore Deals',
@@ -257,7 +250,7 @@ class HomeBannerService
                 'eyebrow' => 'PUFFMEMATE AUSTRALIA',
                 'title' => 'Premium picks. Local stock.',
                 'description' => 'Browse featured packs and new arrivals from nearby branches — ready when you are.',
-                'image_path' => '/images/storefront/hero2.jpg',
+                'image_file' => 'hero2.jpg',
                 'primary_cta_label' => 'Shop',
                 'primary_cta_href' => '/shop',
                 'secondary_cta_label' => 'Explore Deals',
@@ -266,7 +259,16 @@ class HomeBannerService
         ];
 
         foreach ($defaults as $row) {
-            HomeBanner::query()->create($row);
+            $imageFile = $row['image_file'];
+            unset($row['image_file']);
+
+            $banner = HomeBanner::query()->create($row);
+
+            $this->media->attachFromPath(
+                $banner,
+                HomeBanner::IMAGE_COLLECTION,
+                public_path('images/storefront/'.$imageFile),
+            );
         }
     }
 
@@ -288,7 +290,7 @@ class HomeBannerService
             'eyebrow' => $banner->eyebrow,
             'title' => $banner->title,
             'description' => $banner->description,
-            'image' => MediaUrl::resolve($banner->image_path) ?? MediaUrl::DEFAULT_FALLBACK,
+            'image' => $banner->imageUrl(MediaUrl::DEFAULT_FALLBACK) ?? MediaUrl::DEFAULT_FALLBACK,
             'primaryCta' => [
                 'label' => $banner->primary_cta_label,
                 'href' => $banner->primary_cta_href,

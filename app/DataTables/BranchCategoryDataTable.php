@@ -4,6 +4,7 @@ namespace App\DataTables;
 
 use App\DataTables\Filters\StatusBooleanFilter;
 use App\Models\Category;
+use App\Support\CatalogMediaPayload;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -30,7 +31,7 @@ class BranchCategoryDataTable extends AbstractDataTable
     protected function baseQuery(): Builder
     {
         return Category::query()
-            ->with('parent:id,name,slug')
+            ->with(['parent:id,name,slug', 'media'])
             ->withCount('products');
     }
 
@@ -106,7 +107,7 @@ class BranchCategoryDataTable extends AbstractDataTable
             'slug' => $model->slug,
             'parent_id' => $model->parent_id,
             'parent_name' => $model->parent?->name,
-            'image' => $model->image,
+            'image' => CatalogMediaPayload::fileName($model),
             'image_url' => $model->imageUrl(),
             'slogan' => $model->slogan,
             'color_code' => $model->color_code,

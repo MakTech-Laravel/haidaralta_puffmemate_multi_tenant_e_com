@@ -1,9 +1,9 @@
 import {
+    ClipboardPen,
     LayoutDashboard,
     LogOut,
     Navigation,
     Package,
-    ShoppingBag,
     Wallet,
     type LucideIcon,
 } from 'lucide-react';
@@ -74,8 +74,7 @@ export const driverNavItems: DriverNavItem[] = [
     {
         id: 'place-order',
         label: 'Place order',
-        tabLabel: 'Order',
-        icon: ShoppingBag,
+        icon: ClipboardPen,
         href: placeOrderIndex.url(),
         tab: true,
         match: (url) => matchesPath(url, placeOrderIndex.url(), true),

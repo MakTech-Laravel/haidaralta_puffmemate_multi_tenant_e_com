@@ -8,7 +8,6 @@ use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\User;
 use App\Support\DriverAvailability;
-use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -152,7 +151,7 @@ class DriverDataTable extends AbstractDataTable
             'phone' => $model->phone,
             'email' => $model->email,
             'is_active' => (bool) $model->is_active,
-            'avatar_url' => MediaUrl::resolve($model->avatar, fallback: null),
+            'avatar_url' => $model->avatarUrl(),
             'vehicle_type' => $profile?->vehicle_type?->value,
             'vehicle_type_label' => $profile?->vehicle_type?->label(),
             'availability_status' => $profile?->availability_status?->value,

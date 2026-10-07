@@ -47,7 +47,7 @@ class MessageCreated implements ShouldBroadcastNow, ShouldDispatchAfterCommit
      */
     public function broadcastWith(): array
     {
-        $this->message->loadMissing(['sender:id,name,avatar', 'attachments']);
+        $this->message->loadMissing(['sender:id,name', 'sender.media', 'attachments']);
 
         return [
             'message' => ConversationPayload::message($this->message),

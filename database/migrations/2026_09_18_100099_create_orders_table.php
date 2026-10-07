@@ -12,6 +12,9 @@ return new class extends Migration
             $table->id();
             $table->string('order_number', 32)->unique();
             $table->foreignId('customer_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('placed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('source', 32)->default('customer_checkout')->index();
+            $table->string('idempotency_key', 64)->nullable()->unique();
             $table->foreignId('address_id')->nullable()->constrained('addresses')->nullOnDelete();
             $table->foreignId('coupon_id')->nullable()->constrained()->nullOnDelete();
             $table->string('coupon_code')->nullable();

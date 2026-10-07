@@ -5,6 +5,7 @@ namespace App\DataTables;
 use App\DataTables\Filters\StatusBooleanFilter;
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\CatalogMediaPayload;
 use App\Support\CategoryOptions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -30,7 +31,7 @@ class ProductDataTable extends AbstractDataTable
     protected function baseQuery(): Builder
     {
         return Product::query()
-            ->with('categories:id,name,slug')
+            ->with(['categories:id,name,slug', 'media'])
             ->withCount('variants');
     }
 
@@ -124,7 +125,7 @@ class ProductDataTable extends AbstractDataTable
             'name' => $model->name,
             'slug' => $model->slug,
             'sku' => $model->sku,
-            'image' => $model->image,
+            'image' => CatalogMediaPayload::fileName($model),
             'image_url' => $model->imageUrl(),
             'color_code' => $model->color_code,
             'status' => (bool) $model->status,

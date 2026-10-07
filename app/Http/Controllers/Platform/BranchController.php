@@ -179,8 +179,8 @@ class BranchController extends Controller
             'name' => $branch->name,
             'slug' => $branch->slug,
             'code' => $branch->code,
-            'logo' => $branch->logo,
-            'logo_url' => $this->branches->logoUrl($branch->logo),
+            'logo' => $branch->hasMedia('logo') ? 'logo' : null,
+            'logo_url' => $this->branches->logoUrl($branch),
             'status' => $branch->status,
             'users_count' => (int) ($branch->users_count ?? $branch->users()->count()),
         ];

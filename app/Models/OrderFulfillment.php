@@ -111,6 +111,14 @@ class OrderFulfillment extends Model implements DataTableConfigurable
     }
 
     /**
+     * @return HasMany<OrderDriverAssignmentHistory, $this>
+     */
+    public function driverAssignmentHistories(): HasMany
+    {
+        return $this->hasMany(OrderDriverAssignmentHistory::class, 'fulfillment_id');
+    }
+
+    /**
      * @return HasMany<StockTransfer, $this>
      */
     public function stockTransfers(): HasMany

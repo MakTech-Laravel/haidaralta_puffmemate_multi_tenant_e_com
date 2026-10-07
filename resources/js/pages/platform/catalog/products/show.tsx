@@ -847,6 +847,7 @@ export default function PlatformProductsShow({
                             columns={branchColumns}
                             payload={table}
                             perPage={branchQuery.perPage}
+                            isLoading={branchQuery.processing}
                             onPerPageChange={branchQuery.changePerPage}
                             emptyMessage="No branches match this filter."
                             toolbar={

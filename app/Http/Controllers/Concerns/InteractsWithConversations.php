@@ -109,11 +109,12 @@ trait InteractsWithConversations
         $conversation->load([
             'order:id,order_number,status',
             'branch:id,name,slug',
-            'participants.user:id,name,avatar',
+            'participants.user:id,name',
+            'participants.user.media',
         ]);
 
         $messages = $conversation->messages()
-            ->with(['sender:id,name,avatar', 'attachments'])
+            ->with(['sender:id,name', 'sender.media', 'attachments'])
             ->orderByDesc('id')
             ->limit(self::THREAD_PAGE_SIZE + 1)
             ->get();
@@ -139,7 +140,7 @@ trait InteractsWithConversations
         $before = (int) $request->integer('before');
 
         $messages = $conversation->messages()
-            ->with(['sender:id,name,avatar', 'attachments'])
+            ->with(['sender:id,name', 'sender.media', 'attachments'])
             ->when($before > 0, fn (Builder $query) => $query->where('id', '<', $before))
             ->orderByDesc('id')
             ->limit(self::THREAD_PAGE_SIZE + 1)
@@ -159,7 +160,7 @@ trait InteractsWithConversations
      */
     protected function sentMessageResponse(Message $message): array
     {
-        $message->load(['sender:id,name,avatar', 'attachments']);
+        $message->load(['sender:id,name', 'sender.media', 'attachments']);
 
         return ['message' => ConversationPayload::message($message)];
     }

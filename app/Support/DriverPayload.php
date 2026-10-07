@@ -89,10 +89,10 @@ final class DriverPayload
             'effective_availability_label' => $effective['label'],
             'notes' => $profile?->notes,
             'address' => $profile?->address,
-            'avatar' => $driver->avatar,
-            'avatar_url' => MediaUrl::resolve($driver->avatar, fallback: null),
-            'vehicle_image_path' => $profile?->vehicle_image_path,
-            'vehicle_image_url' => MediaUrl::resolve($profile?->vehicle_image_path, fallback: null),
+            'avatar' => $driver->hasMedia('avatar') ? 'avatar' : null,
+            'avatar_url' => $driver->avatarUrl(),
+            'vehicle_image_path' => $profile?->hasMedia('vehicle') ? 'vehicle' : null,
+            'vehicle_image_url' => $profile?->vehicleImageUrl(),
             'assignments' => $assignments,
             'branch_ids' => $driver->driverBranchAssignments
                 ->filter(fn ($assignment): bool => $assignment->status === DriverAssignmentStatus::Active)

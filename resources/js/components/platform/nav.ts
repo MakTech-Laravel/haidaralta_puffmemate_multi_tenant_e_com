@@ -40,7 +40,6 @@ import {
     Truck,
     UserCog,
     UserPlus,
-    UserRound,
     Users,
     Warehouse,
 } from 'lucide-react';
@@ -51,7 +50,6 @@ import {
     navSoon,
 } from '@/components/navigation/nav-builders';
 import type { NavSection } from '@/components/navigation/types';
-import { edit as profileEdit } from '@/routes/profile';
 
 export function buildPlatformNav(
     showBulkImport = false,
@@ -65,11 +63,6 @@ export function buildPlatformNav(
                 href: '/platform/dashboard',
                 icon: LayoutGrid,
                 permissions: ['view-dashboard'],
-            }),
-            navLink({
-                title: 'Profile',
-                href: profileEdit.url(),
-                icon: UserRound,
             }),
             navGroup({
                 title: 'Administrator',
@@ -119,13 +112,15 @@ export function buildPlatformNav(
                 icon: Users,
                 permissions: ['manage-users'],
                 items: [
-                    navSoon({
+                    navLink({
                         title: 'Customers',
+                        href: '/platform/customers',
                         icon: Users,
                         permissions: ['manage-users'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Reviews',
+                        href: '/platform/reviews',
                         icon: Star,
                         permissions: ['manage-users'],
                     }),
@@ -395,9 +390,15 @@ export function buildPlatformNav(
                 ],
                 items: [
                     navLink({
-                        title: 'Order operations',
-                        href: '/platform/reports/order-operations',
+                        title: 'Order Reports',
+                        href: '/platform/reports/order-reports',
                         icon: Banknote,
+                        permissions: ['manage-reports'],
+                    }),
+                    navLink({
+                        title: 'Order Assign History',
+                        href: '/platform/reports/order-assign-history',
+                        icon: History,
                         permissions: ['manage-reports'],
                     }),
                     navLink({

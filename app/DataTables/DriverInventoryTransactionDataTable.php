@@ -8,7 +8,6 @@ use App\Models\Branch;
 use App\Models\DriverInventoryTransaction;
 use App\Models\Product;
 use App\Models\User;
-use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -67,8 +66,10 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
         $query = DriverInventoryTransaction::query()
             ->with([
                 'branch:id,name,slug',
-                'driver:id,name,phone,avatar',
-                'product:id,name,slug,sku,image',
+                'driver:id,name,phone',
+                'driver.media',
+                'product:id,name,slug,sku',
+                'product.media',
                 'creator:id,name,user_type,branch_id',
             ]);
 
@@ -221,7 +222,7 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
             'driver_id' => $model->user_id,
             'driver_name' => $model->driver?->name,
             'driver_phone' => $model->driver?->phone,
-            'driver_avatar_url' => MediaUrl::resolve($model->driver?->avatar, fallback: null),
+            'driver_avatar_url' => $model->driver?->avatarUrl(),
             'driver_url' => $this->driverUrl($model->driver),
             'product_id' => $model->product_id,
             'product_name' => $model->product?->name,
