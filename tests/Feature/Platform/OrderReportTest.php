@@ -9,10 +9,12 @@ use App\Models\Branch;
 use App\Models\DriverBranchAssignment;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
+use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\StockTransfer;
 use App\Models\User;
-use App\Services\Order\OrderOperationsReportService;
+use App\Services\Order\OrderReportService;
 use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -48,7 +50,7 @@ test('sydney delivered sales are absent from melbourne branch reports', function
         'estimated_cost' => 17.5,
     ]);
 
-    $reports = app(OrderOperationsReportService::class);
+    $reports = app(OrderReportService::class);
 
     expect($reports->branch($sydney)['sales'])->toBe(80.0)
         ->and($reports->branch($melbourne)['sales'])->toBe(0.0)
@@ -72,7 +74,7 @@ test('a failed attempt increments the driver failure count and a cancellation do
         'status' => FulfillmentStatus::Cancelled,
     ]);
 
-    $reports = app(OrderOperationsReportService::class);
+    $reports = app(OrderReportService::class);
 
     expect($reports->driver($driver)['delivered'])->toBe(1)
         ->and($reports->driver($driver)['failedAttempts'])->toBe(0);
@@ -101,19 +103,24 @@ test('driver collections split by cod and pos', function () {
         'collected_by' => $driver->id,
     ]);
 
-    $report = app(OrderOperationsReportService::class)->driver($driver);
+    $report = app(OrderReportService::class)->driver($driver);
 
     expect($report['collectedCod'])->toBe(40.0)
         ->and($report['collectedPos'])->toBe(25.0)
         ->and($report['collected'])->toBe(65.0);
 });
 
-test('platform admins can open the order operations report', function () {
+test('platform admins can open the order reports page', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $driver = User::factory()->create(['user_type' => UserType::DRIVER]);
-    $order = Order::factory()->create();
+    $order = Order::factory()->create([
+        'status' => OrderStatus::Delivered,
+        'total_amount' => 40,
+    ]);
     OrderFulfillment::factory()->forOrder($order)->create([
+        'branch_id' => $sydney->id,
         'driver_id' => $driver->id,
         'status' => FulfillmentStatus::Delivered,
     ]);
@@ -125,24 +132,107 @@ test('platform admins can open the order operations report', function () {
         'collected_by' => $driver->id,
     ]);
 
-    $response = $this->actingAs($admin, 'platform')
-        ->get(route('platform.reports.order-operations'))
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('platform/reports/order-operations')
-            ->has('report.orders')
-            ->has('report.transferCost')
-            ->has('drivers'));
-
-    $drivers = collect($response->viewData('page')['props']['drivers']);
-    $row = $drivers->firstWhere('id', $driver->id);
-
-    expect($row)->not->toBeNull()
-        ->and($row['delivered'])->toBe(1)
-        ->and($row['collectedCod'])->toBe(40.0);
+            ->component('platform/reports/order-reports')
+            ->where('dashboard.period', '30d')
+            ->where('dashboard.summary.orders', 1)
+            ->where('dashboard.summary.delivered', 1)
+            ->where('dashboard.summary.cod_collected', 40)
+            ->has('dashboard.products')
+            ->has('dashboard.branches')
+            ->has('dashboard.drivers'));
 });
 
-test('branch staff can open the branch order operations report with their drivers', function () {
+test('order reports dashboard respects the selected period', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $recent = Order::factory()->create(['status' => OrderStatus::Delivered, 'total_amount' => 50]);
+    OrderFulfillment::factory()->forOrder($recent)->create([
+        'branch_id' => $sydney->id,
+        'status' => FulfillmentStatus::Delivered,
+    ]);
+
+    $old = Order::factory()->create(['status' => OrderStatus::Delivered, 'total_amount' => 80]);
+    $oldFulfillment = OrderFulfillment::factory()->forOrder($old)->create([
+        'branch_id' => $sydney->id,
+        'status' => FulfillmentStatus::Delivered,
+    ]);
+    $old->forceFill(['created_at' => now()->subDays(45)])->saveQuietly();
+    $oldFulfillment->forceFill(['created_at' => now()->subDays(45)])->saveQuietly();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', [
+            'filter' => ['period' => '7d'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.period', '7d')
+            ->where('dashboard.summary.orders', 1)
+            ->where('dashboard.summary.delivered', 1));
+});
+
+test('guests cannot export order reports', function () {
+    $this->get(route('platform.reports.order-reports.export', [
+        'format' => 'csv',
+        'scope' => 'all',
+    ]))->assertRedirect(route('login'));
+});
+
+test('platform admin can export order reports as csv', function () {
+    $this->travelTo('2026-10-05 12:00:00');
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'name' => 'Export Driver',
+    ]);
+
+    $order = Order::factory()->create([
+        'status' => OrderStatus::Delivered,
+        'total_amount' => 99,
+    ]);
+    OrderFulfillment::factory()->forOrder($order)->create([
+        'branch_id' => $sydney->id,
+        'driver_id' => $driver->id,
+        'status' => FulfillmentStatus::Delivered,
+    ]);
+    $product = Product::factory()->create(['name' => 'Mint Ice']);
+
+    OrderItem::query()->create([
+        'order_id' => $order->id,
+        'fulfillment_id' => $order->fulfillment->id,
+        'product_id' => $product->id,
+        'variant_id' => null,
+        'product_name_snapshot' => 'Mint Ice',
+        'sku_snapshot' => 'MINT-1',
+        'product_snapshot' => [],
+        'quantity' => 3,
+        'unit_price' => 10,
+        'subtotal' => 30,
+    ]);
+
+    $response = $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports.export', [
+            'format' => 'csv',
+            'scope' => 'filters',
+            'filter' => ['period' => '30d'],
+        ]));
+
+    $response->assertOk()->assertDownload('order-reports-filters-2026-10-05.csv');
+
+    expect(file_get_contents($response->baseResponse->getFile()->getPathname()))
+        ->toContain('Order Reports')
+        ->toContain('Mint Ice')
+        ->toContain('Export Driver')
+        ->toContain($sydney->name);
+});
+
+test('branch staff can open the branch order reports page with their drivers', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
@@ -162,10 +252,10 @@ test('branch staff can open the branch order operations report with their driver
     ]);
 
     $response = $this->actingAs($admin, 'branch')
-        ->get(route('branch.reports.order-operations', $sydney))
+        ->get(route('branch.reports.order-reports', $sydney))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('branch/reports/order-operations')
+            ->component('branch/reports/order-reports')
             ->has('drivers'));
 
     $driverIds = collect($response->viewData('page')['props']['drivers'])->pluck('id');
