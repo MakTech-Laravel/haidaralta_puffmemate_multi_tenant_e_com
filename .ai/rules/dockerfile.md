@@ -27,3 +27,6 @@ Install procps in the production image so Pulse pulse:check can sample CPU with 
 
 ## Generate PWA assets in the image build
 Run pnpm generate:pwa-assets before pnpm run build. No new VITE_* PWA args. PWA_SW_ENABLED is runtime (default true), same pattern as FCM_SW_SHOW_NOTIFICATION.
+
+## PHP build image needs ext-exif
+Build-stage docker-php-ext-install must include exif. Spatie image/medialibrary require ext-exif; without it composer install --no-dev fails in Coolify. Production already copies PHP extensions from build.
