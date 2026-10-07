@@ -181,7 +181,7 @@ export default function DriverPlaceOrderIndex({
                 <SectionShell
                     icon={Package}
                     title="Products"
-                    description="Browse your assigned stock. Search and category chips filter the list."
+                    description="Tap +/− on a line. Use In order to review selected stock only."
                 >
                     <PlaceOrderProductsSection
                         products={products}

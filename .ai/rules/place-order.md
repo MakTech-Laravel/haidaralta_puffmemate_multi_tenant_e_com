@@ -16,3 +16,6 @@ Place Order customer lookup is a single debounced search input (name/email/phone
 
 ## Place Order products list-first with filter search
 Place Order products default to the driver’s assigned inventory with a ~3-row infinite-scroll viewport. Search and category chips only filter that list (name, SKU, description, category). Do not restore the empty search-first hint that hid the catalog until typing.
+
+## Place Order products are dense single list
+Place Order products use one dense divided list (thumb + name/price + inline +/-). Do not render a second In this order product list — selected lines stay in the same list (sorted up, highlighted) and an In order (n) filter chip scopes to qty>0. Sticky footer already shows item count/total.

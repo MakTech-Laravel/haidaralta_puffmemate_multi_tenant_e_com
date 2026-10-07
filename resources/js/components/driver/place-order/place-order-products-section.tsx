@@ -3,13 +3,12 @@ import { Minus, Plus, Search } from 'lucide-react';
 import type { DriverPlaceOrderProduct } from '@/components/driver/place-order/place-order-types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 const FALLBACK_IMAGE = '/images/storefront/logo.png';
-const PAGE_SIZE = 3;
-/** ~3 full ProductRow heights (padding + image + qty controls + gaps). */
-const RESULTS_VIEWPORT_CLASS = 'max-h-[26rem]';
+const PAGE_SIZE = 12;
+const RESULTS_VIEWPORT_CLASS = 'max-h-[min(28rem,55vh)]';
+const SELECTED_FILTER = '__selected__';
 
 type PlaceOrderProductsSectionProps = {
     products: DriverPlaceOrderProduct[];
@@ -38,36 +37,33 @@ function productMatchesQuery(
     return haystack.includes(query);
 }
 
-function ProductRow({
+function ProductLine({
     product,
     quantity,
     onQuantityChange,
-    compact = false,
 }: {
     product: DriverPlaceOrderProduct;
     quantity: number;
     onQuantityChange: (productId: string, quantity: number) => void;
-    compact?: boolean;
 }) {
     const outOfStock = product.stock < 1;
     const selected = quantity > 0;
-    const subtitle = product.sku || product.description;
+    const meta = [
+        product.sku ? product.sku : null,
+        outOfStock ? 'Out of stock' : `${product.stock} left`,
+    ]
+        .filter(Boolean)
+        .join(' · ');
 
     return (
         <li
             className={cn(
-                'border-border flex gap-2 rounded-2xl border transition-colors',
-                compact ? 'p-2' : 'gap-3 p-3',
-                outOfStock && 'opacity-55',
-                selected && !outOfStock && 'border-primary bg-primary/5',
+                'flex items-center gap-2.5 px-2 py-2 transition-colors',
+                selected && !outOfStock && 'bg-primary/5',
+                outOfStock && 'opacity-50',
             )}
         >
-            <div
-                className={cn(
-                    'bg-muted relative shrink-0 overflow-hidden rounded-xl',
-                    compact ? 'size-12' : 'size-16 sm:size-18',
-                )}
-            >
+            <div className="bg-muted relative size-10 shrink-0 overflow-hidden rounded-lg">
                 <img
                     src={product.image || FALLBACK_IMAGE}
                     alt=""
@@ -78,141 +74,65 @@ function ProductRow({
                 />
             </div>
 
-            <div
-                className={cn(
-                    'min-w-0 flex-1',
-                    compact ? 'space-y-1.5' : 'space-y-2.5',
-                )}
-            >
-                <div className="flex items-start justify-between gap-1.5">
-                    <div className="min-w-0 space-y-0.5">
-                        <p
-                            className={cn(
-                                'text-foreground truncate font-semibold',
-                                compact ? 'text-xs leading-tight' : 'text-sm',
-                            )}
-                        >
-                            {product.name}
-                        </p>
-                        {subtitle ? (
-                            <p
-                                className={cn(
-                                    'text-muted-foreground line-clamp-1',
-                                    compact ? 'text-[10px]' : 'text-xs',
-                                )}
-                            >
-                                {product.sku
-                                    ? `SKU ${product.sku}`
-                                    : product.description}
-                            </p>
-                        ) : null}
-                        <div className="flex flex-wrap items-center gap-1">
-                            <span
-                                className={cn(
-                                    'bg-muted text-muted-foreground inline-flex rounded-full font-bold tracking-wide uppercase',
-                                    compact
-                                        ? 'px-1.5 py-0.5 text-[9px]'
-                                        : 'px-2 py-0.5 text-[10px]',
-                                )}
-                            >
-                                {product.category}
-                            </span>
-                            <span
-                                className={cn(
-                                    'inline-flex rounded-full font-bold tracking-wide uppercase',
-                                    compact
-                                        ? 'px-1.5 py-0.5 text-[9px]'
-                                        : 'px-2 py-0.5 text-[10px]',
-                                    outOfStock
-                                        ? 'bg-destructive/10 text-destructive'
-                                        : 'bg-muted text-muted-foreground',
-                                )}
-                            >
-                                {outOfStock
-                                    ? 'Out of stock'
-                                    : `${product.stock} left`}
-                            </span>
-                        </div>
-                    </div>
-                    <p
-                        className={cn(
-                            'text-foreground shrink-0 font-bold tabular-nums',
-                            compact ? 'text-xs' : 'text-sm',
-                        )}
-                    >
+            <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-foreground truncate text-sm font-semibold leading-tight">
+                        {product.name}
+                    </p>
+                    <p className="text-foreground shrink-0 text-sm font-bold tabular-nums">
                         {product.priceLabel}
                     </p>
                 </div>
-
-                {outOfStock ? (
-                    <p
-                        className={cn(
-                            'text-muted-foreground font-semibold',
-                            compact ? 'text-[10px]' : 'text-xs',
-                        )}
-                    >
-                        Unavailable
+                {meta ? (
+                    <p className="text-muted-foreground truncate text-[11px] leading-tight">
+                        {meta}
                     </p>
-                ) : (
-                    <div
-                        className={cn(
-                            'bg-muted/70 inline-flex items-center rounded-full',
-                            compact ? 'gap-0.5 p-0.5' : 'gap-1 p-1',
-                        )}
-                    >
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            className={cn(
-                                'bg-background rounded-full shadow-sm',
-                                compact ? 'size-7' : 'size-8',
-                            )}
-                            disabled={quantity < 1}
-                            aria-label={`Decrease ${product.name}`}
-                            onClick={() =>
-                                onQuantityChange(
-                                    product.id,
-                                    Math.max(0, quantity - 1),
-                                )
-                            }
-                        >
-                            <Minus
-                                className={compact ? 'size-3' : 'size-3.5'}
-                            />
-                        </Button>
-                        <span
-                            className={cn(
-                                'text-foreground text-center font-bold tabular-nums',
-                                compact ? 'w-5 text-xs' : 'w-7 text-sm',
-                            )}
-                        >
-                            {quantity}
-                        </span>
-                        <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            className={cn(
-                                'bg-background rounded-full shadow-sm',
-                                compact ? 'size-7' : 'size-8',
-                            )}
-                            disabled={quantity >= product.stock}
-                            aria-label={`Increase ${product.name}`}
-                            onClick={() =>
-                                onQuantityChange(
-                                    product.id,
-                                    Math.min(product.stock, quantity + 1),
-                                )
-                            }
-                        >
-                            <Plus
-                                className={compact ? 'size-3' : 'size-3.5'}
-                            />
-                        </Button>
-                    </div>
-                )}
+                ) : null}
             </div>
+
+            {outOfStock ? (
+                <span className="text-muted-foreground shrink-0 text-[11px] font-semibold">
+                    —
+                </span>
+            ) : (
+                <div className="bg-muted/80 inline-flex shrink-0 items-center rounded-full p-0.5">
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="bg-background size-7 rounded-full shadow-sm"
+                        disabled={quantity < 1}
+                        aria-label={`Decrease ${product.name}`}
+                        onClick={() =>
+                            onQuantityChange(
+                                product.id,
+                                Math.max(0, quantity - 1),
+                            )
+                        }
+                    >
+                        <Minus className="size-3" />
+                    </Button>
+                    <span className="text-foreground w-6 text-center text-sm font-bold tabular-nums">
+                        {quantity}
+                    </span>
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="bg-background size-7 rounded-full shadow-sm"
+                        disabled={quantity >= product.stock}
+                        aria-label={`Increase ${product.name}`}
+                        onClick={() =>
+                            onQuantityChange(
+                                product.id,
+                                Math.min(product.stock, quantity + 1),
+                            )
+                        }
+                    >
+                        <Plus className="size-3" />
+                    </Button>
+                </div>
+            )}
         </li>
     );
 }
@@ -227,6 +147,16 @@ export function PlaceOrderProductsSection({
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+    const selectedCount = useMemo(
+        () =>
+            products.reduce(
+                (count, product) =>
+                    count + ((quantities[product.id] ?? 0) > 0 ? 1 : 0),
+                0,
+            ),
+        [products, quantities],
+    );
+
     const categories = useMemo(() => {
         const unique = Array.from(
             new Set(products.map((product) => product.category)),
@@ -235,24 +165,34 @@ export function PlaceOrderProductsSection({
         return ['All', ...unique];
     }, [products]);
 
-    const selectedProducts = useMemo(
-        () =>
-            products.filter((product) => (quantities[product.id] ?? 0) > 0),
-        [products, quantities],
-    );
-
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
-        const categoryActive = category !== 'All';
+        const selectedOnly = category === SELECTED_FILTER;
+        const categoryActive = category !== 'All' && !selectedOnly;
 
-        return products.filter((product) => {
+        const rows = products.filter((product) => {
+            if (selectedOnly && (quantities[product.id] ?? 0) < 1) {
+                return false;
+            }
+
             if (categoryActive && product.category !== category) {
                 return false;
             }
 
             return productMatchesQuery(product, q);
         });
-    }, [products, query, category]);
+
+        return rows.sort((a, b) => {
+            const aSelected = (quantities[a.id] ?? 0) > 0 ? 0 : 1;
+            const bSelected = (quantities[b.id] ?? 0) > 0 ? 0 : 1;
+
+            if (aSelected !== bSelected) {
+                return aSelected - bSelected;
+            }
+
+            return a.name.localeCompare(b.name);
+        });
+    }, [products, query, category, quantities]);
 
     useEffect(() => {
         setVisibleCount(PAGE_SIZE);
@@ -307,29 +247,27 @@ export function PlaceOrderProductsSection({
     const hasMoreResults = visibleCount < filtered.length;
 
     return (
-        <div className="space-y-4">
-            <div className="space-y-1.5">
-                <Label htmlFor="place-order-product-search">Find product</Label>
-                <div className="relative">
-                    <Search
-                        className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2"
-                        aria-hidden
-                    />
-                    <Input
-                        id="place-order-product-search"
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Filter by name, SKU, or category"
-                        autoComplete="off"
-                        className="h-12 rounded-2xl pl-10"
-                    />
-                </div>
+        <div className="space-y-3">
+            <div className="relative">
+                <Search
+                    className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+                    aria-hidden
+                />
+                <Input
+                    id="place-order-product-search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Filter name, SKU…"
+                    autoComplete="off"
+                    aria-label="Filter products"
+                    className="h-10 rounded-xl pl-9"
+                />
             </div>
 
             <div
-                className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
+                className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5"
                 role="tablist"
-                aria-label="Product category"
+                aria-label="Product filters"
             >
                 {categories.map((item) => {
                     const active = category === item;
@@ -341,7 +279,7 @@ export function PlaceOrderProductsSection({
                             role="tab"
                             aria-selected={active}
                             className={cn(
-                                'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                                'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors',
                                 active
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-muted text-muted-foreground hover:text-foreground',
@@ -352,26 +290,42 @@ export function PlaceOrderProductsSection({
                         </button>
                     );
                 })}
+                {selectedCount > 0 ? (
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={category === SELECTED_FILTER}
+                        className={cn(
+                            'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                            category === SELECTED_FILTER
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:text-foreground',
+                        )}
+                        onClick={() => setCategory(SELECTED_FILTER)}
+                    >
+                        In order ({selectedCount})
+                    </button>
+                ) : null}
             </div>
 
             {products.length === 0 ? (
-                <div className="border-border/70 text-muted-foreground rounded-2xl border border-dashed px-4 py-6 text-center text-sm">
+                <div className="border-border/70 text-muted-foreground rounded-xl border border-dashed px-3 py-5 text-center text-sm">
                     No assigned stock to sell.
                 </div>
             ) : filtered.length === 0 ? (
-                <div className="border-border/70 text-muted-foreground rounded-2xl border border-dashed px-4 py-6 text-center text-sm">
-                    No assigned products match.
+                <div className="border-border/70 text-muted-foreground rounded-xl border border-dashed px-3 py-5 text-center text-sm">
+                    No products match.
                 </div>
             ) : (
                 <div
                     className={cn(
-                        'overflow-y-auto overscroll-contain',
+                        'border-border/80 overflow-y-auto overscroll-contain rounded-xl border',
                         RESULTS_VIEWPORT_CLASS,
                     )}
                 >
-                    <ul className="space-y-2.5">
+                    <ul className="divide-border/70 divide-y">
                         {visibleResults.map((product) => (
-                            <ProductRow
+                            <ProductLine
                                 key={product.id}
                                 product={product}
                                 quantity={quantities[product.id] ?? 0}
@@ -382,31 +336,17 @@ export function PlaceOrderProductsSection({
                     {hasMoreResults ? (
                         <div
                             ref={sentinelRef}
-                            className="h-4 w-full"
+                            className="h-3 w-full"
                             aria-hidden
                         />
-                    ) : null}
+                    ) : (
+                        <p className="text-muted-foreground px-2 py-1.5 text-center text-[10px]">
+                            {filtered.length} product
+                            {filtered.length === 1 ? '' : 's'}
+                        </p>
+                    )}
                 </div>
             )}
-
-            {selectedProducts.length > 0 ? (
-                <div className="space-y-2">
-                    <p className="text-foreground text-xs font-bold tracking-wide uppercase">
-                        In this order
-                    </p>
-                    <ul className="space-y-2">
-                        {selectedProducts.map((product) => (
-                            <ProductRow
-                                key={`selected-${product.id}`}
-                                product={product}
-                                quantity={quantities[product.id] ?? 0}
-                                onQuantityChange={onQuantityChange}
-                                compact
-                            />
-                        ))}
-                    </ul>
-                </div>
-            ) : null}
         </div>
     );
 }
