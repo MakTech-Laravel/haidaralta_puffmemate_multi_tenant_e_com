@@ -13,8 +13,11 @@
 /resources/js/routes
 /resources/js/wayfinder
 /vendor
+temp_auto_push.bat
 .DS_Store
+.env
 .env.backup
+.env.production
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
@@ -26,5 +29,5 @@ yarn-error.log
 /.idea
 /.nova
 /.zed
-blake_lms_tenant/.gitignore
-config.bat
+.gitignore
+branch_structure.json
