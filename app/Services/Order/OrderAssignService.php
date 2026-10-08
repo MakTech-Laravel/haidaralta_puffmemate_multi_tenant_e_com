@@ -6,6 +6,7 @@ use App\Enums\DriverAssignmentStatus;
 use App\Enums\UserType;
 use App\Models\OrderFulfillment;
 use App\Models\User;
+use App\Support\Phone;
 
 class OrderAssignService
 {
@@ -73,8 +74,8 @@ class OrderAssignService
 
         if ($search !== '') {
             $query->where(function ($filters) use ($search): void {
-                $filters->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
+                $filters->where('name', 'like', "%{$search}%");
+                Phone::constrainLike($filters, 'phone', $search);
             });
         }
 

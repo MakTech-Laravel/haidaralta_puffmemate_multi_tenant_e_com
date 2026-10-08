@@ -92,6 +92,22 @@ test('customer search matches name email and phone', function () {
         ->assertOk()
         ->assertJsonCount(1, 'customers')
         ->assertJsonPath('customers.0.id', $customer->id);
+
+    $this->actingAs($driver, 'driver')
+        ->postJson(route('driver.place-order.customers.lookup'), [
+            'q' => '0499000001',
+        ])
+        ->assertOk()
+        ->assertJsonCount(1, 'customers')
+        ->assertJsonPath('customers.0.id', $customer->id);
+
+    $this->actingAs($driver, 'driver')
+        ->postJson(route('driver.place-order.customers.lookup'), [
+            'q' => '61499000001',
+        ])
+        ->assertOk()
+        ->assertJsonCount(1, 'customers')
+        ->assertJsonPath('customers.0.id', $customer->id);
 });
 
 test('customer search returns empty list when nothing matches', function () {

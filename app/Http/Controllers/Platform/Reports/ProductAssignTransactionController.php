@@ -11,6 +11,7 @@ use App\Http\Requests\ExportSpreadsheetRequest;
 use App\Models\Branch;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\Phone;
 use App\Support\StockPageContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -53,8 +54,8 @@ class ProductAssignTransactionController extends Controller
 
         if ($search !== '') {
             $query->where(function ($q) use ($search): void {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%");
+                Phone::constrainLike($q, 'phone', $search);
             });
         }
 

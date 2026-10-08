@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\Product;
 use App\Models\ProductReview;
 use App\Models\User;
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -68,10 +69,11 @@ class ProductReviewDataTable extends AbstractDataTable
                     $builder->where('body', 'like', '%'.$term.'%')
                         ->orWhereHas(
                             'user',
-                            fn (Builder $users): Builder => $users
-                                ->where('name', 'like', '%'.$term.'%')
-                                ->orWhere('phone', 'like', '%'.$term.'%')
-                                ->orWhere('email', 'like', '%'.$term.'%'),
+                            fn (Builder $users): Builder => $users->where(function (Builder $people) use ($term): void {
+                                $people->where('name', 'like', '%'.$term.'%')
+                                    ->orWhere('email', 'like', '%'.$term.'%');
+                                Phone::constrainLike($people, 'phone', $term);
+                            }),
                         )
                         ->orWhereHas(
                             'product',

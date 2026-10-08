@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Throwable;
 
 class CustomerResolutionService
 {
@@ -36,26 +35,16 @@ class CustomerResolutionService
         }
 
         $like = '%'.$term.'%';
-        $digits = preg_replace('/\D+/', '', $term) ?? '';
 
         return User::query()
             ->where('user_type', UserType::CUSTOMER)
             ->where('is_active', true)
-            ->where(function ($builder) use ($like, $digits, $term): void {
+            ->where(function ($builder) use ($like, $term): void {
                 $builder
                     ->where('name', 'like', $like)
-                    ->orWhere('email', 'like', $like)
-                    ->orWhere('phone', 'like', $like);
+                    ->orWhere('email', 'like', $like);
 
-                if (strlen($digits) >= 3) {
-                    $builder->orWhere('phone', 'like', '%'.$digits.'%');
-                }
-
-                try {
-                    $builder->orWhere('phone', Phone::toE164($term));
-                } catch (Throwable) {
-                    // Query is not a parseable phone — name/email LIKE is enough.
-                }
+                Phone::constrainLike($builder, 'phone', $term);
             })
             ->orderBy('name')
             ->limit($limit)
