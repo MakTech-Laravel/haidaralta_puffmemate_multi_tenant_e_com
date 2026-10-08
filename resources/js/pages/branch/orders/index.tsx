@@ -16,6 +16,12 @@ import {
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import {
+    orderSourceBadgeClass,
+    orderStatusBadgeClass,
+    paymentStatusBadgeClass,
+    paymentStatusLabel,
+} from '@/lib/order-badges';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -29,6 +35,7 @@ type FulfillmentRow = {
     order_id: number;
     order_number: string;
     customer_name: string;
+    source: string;
     source_label: string;
     items_count: number;
     status: string;
@@ -106,7 +113,12 @@ export default function BranchOrdersIndex({
                 accessorKey: 'source_label',
                 header: 'Source',
                 cell: ({ row }) => (
-                    <Badge variant="outline">{row.original.source_label}</Badge>
+                    <Badge
+                        variant="outline"
+                        className={orderSourceBadgeClass(row.original.source)}
+                    >
+                        {row.original.source_label}
+                    </Badge>
                 ),
             },
             {
@@ -126,7 +138,10 @@ export default function BranchOrdersIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <Badge variant="secondary" className="capitalize">
+                    <Badge
+                        variant="outline"
+                        className={`capitalize ${orderStatusBadgeClass(row.original.status)}`}
+                    >
                         {row.original.status.replaceAll('_', ' ')}
                     </Badge>
                 ),
@@ -186,13 +201,12 @@ export default function BranchOrdersIndex({
                 header: 'Payment',
                 cell: ({ row }) => (
                     <Badge
-                        variant={
-                            row.original.is_paid ? 'default' : 'secondary'
-                        }
+                        variant="outline"
+                        className={paymentStatusBadgeClass(
+                            row.original.order_payment_status,
+                        )}
                     >
-                        {row.original.is_paid
-                            ? 'Collected'
-                            : 'Pending collection'}
+                        {paymentStatusLabel(row.original.order_payment_status)}
                     </Badge>
                 ),
             },
