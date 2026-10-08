@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Driver;
 
 use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderSource;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
@@ -123,8 +124,11 @@ class OrderController extends Controller
     private function owned(Request $request, Order $order): OrderFulfillment
     {
         $fulfillment = $order->fulfillment;
+        $driverId = (int) $request->user()->id;
+        $assigned = $fulfillment !== null && (int) $fulfillment->driver_id === $driverId;
+        $ownSale = $order->source === OrderSource::DriverSale && (int) $order->placed_by === $driverId;
 
-        abort_if($fulfillment === null || $fulfillment->driver_id !== $request->user()->id, 404);
+        abort_unless($fulfillment !== null && ($assigned || $ownSale), 404);
 
         $fulfillment->loadMissing('order.items');
 

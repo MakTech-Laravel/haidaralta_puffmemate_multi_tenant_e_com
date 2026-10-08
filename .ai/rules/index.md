@@ -50,7 +50,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Controllers/**/ContactInquiryController.php,app/Http/Requests/Storefront/StoreContactInquiryRequest.php,resources/js/components/storefront/contact/**,resources/js/pages/platform/contact-inquiries/**,routes/public.php,routes/platform.php | .ai/rules/contact-inquiries.md |
 | app/Models/Branch.php,app/Http/Controllers/Branch/** | .ai/rules/controllers-branch.md |
 | app/Http/Controllers/Customer/**, app/Http/Controllers/Customer/ProductToReviewController.php | .ai/rules/controllers-customer.md |
-| app/Http/Controllers/Driver/**, app/Http/Controllers/Driver/PlaceOrderController.php | .ai/rules/controllers-driver.md |
+| app/Http/Controllers/Driver/**, app/Http/Controllers/Driver/PlaceOrderController.php, app/Http/Controllers/Driver/OrderController.php | .ai/rules/controllers-driver.md |
 | app/Services/Workforce/**,app/Http/Controllers/{Platform,Branch}/** | .ai/rules/controllers-platform-branch.md |
 | app/Http/Controllers/Platform/AdminController.php, app/Http/Controllers/Platform/BranchStaffController.php, app/Http/Controllers/Platform/*Shift*.php, app/Http/Controllers/Platform/AnnouncementController.php, app/Http/Controllers/Platform/PacksSavesController.php | .ai/rules/controllers-platform.md |
 | resources/js/pages/settings/**,app/Http/Controllers/Settings/ProfileController.php,resources/js/components/branch/nav.ts | .ai/rules/controllers-settings-js-components-branch.md |

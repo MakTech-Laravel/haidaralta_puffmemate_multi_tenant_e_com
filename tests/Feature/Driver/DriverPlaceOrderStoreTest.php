@@ -21,6 +21,7 @@ use App\Services\Order\FulfillmentStatusService;
 use App\Services\Sms\FakeSmsSender;
 use App\Support\Phone;
 use Illuminate\Validation\ValidationException;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     app(PaymentGatewaySettingsService::class)->ensureDefaults();
@@ -160,6 +161,40 @@ test('a new phone creates one provisional customer and cannot log in', function 
 
     expect(DriverInventory::query()->where('product_id', $product->id)->value('quantity'))->toBe(3);
     expect(DriverInventoryTransaction::query()->where('type', InventoryTransactionType::Sale)->where('reference_id', $order->id)->count())->toBe(1);
+});
+
+test('the selling driver can open the placed sale and another driver cannot', function () {
+    [$driver, , $product] = placeOrderDriver();
+    $other = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'branch_id' => null,
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('driver.place-order.store'), [
+            'phone' => '0499000011',
+            'name' => 'Shown Sale',
+            'payment_method' => 'cod',
+            'idempotency_key' => (string) str()->uuid(),
+            'items' => [
+                ['id' => (string) $product->id, 'quantity' => 1],
+            ],
+        ])
+        ->assertRedirect(route('driver.orders.show', Order::query()->firstOrFail()));
+
+    $order = Order::query()->firstOrFail();
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.orders.show', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('driver/orders/show')
+            ->where('order.orderNumber', $order->order_number)
+            ->where('order.status', 'delivered'));
+
+    $this->actingAs($other, 'driver')
+        ->get(route('driver.orders.show', $order))
+        ->assertNotFound();
 });
 
 test('selling the same phone again reuses the provisional customer', function () {
