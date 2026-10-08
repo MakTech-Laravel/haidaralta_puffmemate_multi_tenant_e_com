@@ -16,6 +16,11 @@ import {
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import {
+    orderSourceBadgeClass,
+    orderStatusBadgeClass,
+    paymentStatusBadgeClass,
+} from '@/lib/order-badges';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -107,7 +112,12 @@ export default function PlatformOrdersIndex({
                 accessorKey: 'source_label',
                 header: 'Source',
                 cell: ({ row }) => (
-                    <Badge variant="outline">{row.original.source_label}</Badge>
+                    <Badge
+                        variant="outline"
+                        className={orderSourceBadgeClass(row.original.source)}
+                    >
+                        {row.original.source_label}
+                    </Badge>
                 ),
             },
             {
@@ -144,7 +154,12 @@ export default function PlatformOrdersIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <Badge variant="secondary">{row.original.status_label}</Badge>
+                    <Badge
+                        variant="outline"
+                        className={orderStatusBadgeClass(row.original.status)}
+                    >
+                        {row.original.status_label}
+                    </Badge>
                 ),
             },
             {
@@ -152,12 +167,10 @@ export default function PlatformOrdersIndex({
                 header: 'Payment',
                 cell: ({ row }) => (
                     <Badge
-                        variant={
-                            row.original.payment_status === 'collected' ||
-                            row.original.payment_status === 'verified'
-                                ? 'default'
-                                : 'secondary'
-                        }
+                        variant="outline"
+                        className={paymentStatusBadgeClass(
+                            row.original.payment_status,
+                        )}
                     >
                         {row.original.payment_status_label}
                     </Badge>
