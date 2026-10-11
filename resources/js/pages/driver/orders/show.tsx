@@ -2,6 +2,7 @@ import { Form, Head, Link } from '@inertiajs/react';
 import { MessageCircle, Package, Phone } from 'lucide-react';
 import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
 import { DriverDeliverOtpForm } from '@/components/driver/driver-deliver-otp-form';
+import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import {
     driverMapsQuery,
     driverOrderStatusLabel,
@@ -80,21 +81,23 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                                 </a>
                             </Button>
                         ) : null}
-                        <Button
-                            type="button"
-                            size="lg"
-                            className="h-12"
-                            asChild
-                        >
-                            <Link
-                                href={orderChat.url(order.id)}
-                                prefetch
-                                data-test="driver-order-chat"
+                        {order.canChat ? (
+                            <Button
+                                type="button"
+                                size="lg"
+                                className="h-12"
+                                asChild
                             >
-                                <MessageCircle data-icon="inline-start" />
-                                Chat
-                            </Link>
-                        </Button>
+                                <Link
+                                    href={orderChat.url(order.id)}
+                                    prefetch
+                                    data-test="driver-order-chat"
+                                >
+                                    <MessageCircle data-icon="inline-start" />
+                                    Chat
+                                </Link>
+                            </Button>
+                        ) : null}
                     </div>
                 </div>
 
@@ -237,6 +240,21 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                     </Form>
                 ) : null}
 
+                {order.canArrive ? (
+                    <Form {...OrderController.arrive.form(order.id)}>
+                        {({ processing }) => (
+                            <Button
+                                type="submit"
+                                size="lg"
+                                className="h-12 w-full"
+                                disabled={processing}
+                            >
+                                Arrived
+                            </Button>
+                        )}
+                    </Form>
+                ) : null}
+
                 {order.canDeliver ? (
                     <DriverDeliverOtpForm
                         orderId={order.id}
@@ -252,7 +270,7 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                         {({ processing, errors }) => (
                             <>
                                 <h2 className="text-foreground text-lg font-semibold">
-                                    Delivery unsuccessful
+                                    Customer unavailable
                                 </h2>
                                 <select
                                     name="reason"
@@ -278,6 +296,18 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                                         {errors.reason}
                                     </p>
                                 ) : null}
+                                <textarea
+                                    name="note"
+                                    required
+                                    rows={3}
+                                    placeholder="What happened at the door"
+                                    className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                                />
+                                {errors.note ? (
+                                    <p className="text-destructive text-sm">
+                                        {errors.note}
+                                    </p>
+                                ) : null}
                                 <Button
                                     type="submit"
                                     variant="outline"
@@ -285,9 +315,31 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                                     className="h-12 w-full"
                                     disabled={processing}
                                 >
-                                    Mark unsuccessful
+                                    Customer unavailable
                                 </Button>
                             </>
+                        )}
+                    </Form>
+                ) : null}
+
+                <OrderReturnRequest
+                    canRequest={order.canRequestReturn ?? false}
+                    request={order.returnRequest ?? null}
+                    form={OrderController.storeReturn.form(order.id)}
+                />
+
+                {order.canReturn ? (
+                    <Form {...OrderController.beginReturn.form(order.id)}>
+                        {({ processing }) => (
+                            <Button
+                                type="submit"
+                                size="lg"
+                                variant="outline"
+                                className="h-12 w-full"
+                                disabled={processing}
+                            >
+                                Returning to branch
+                            </Button>
                         )}
                     </Form>
                 ) : null}

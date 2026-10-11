@@ -26,6 +26,17 @@ class OtpService
      */
     public function issue(string $phoneE164, OtpPurpose $purpose, ?Model $subject = null, ?int $ttlMinutes = null): OtpRecord
     {
+        return $this->issueCode($phoneE164, $purpose, $subject, $ttlMinutes)[0];
+    }
+
+    /**
+     * Issue a code and send the SMS. The plaintext is returned once so other
+     * channels (email, in-app) can carry the same code.
+     *
+     * @return array{0: OtpRecord, 1: string}
+     */
+    public function issueCode(string $phoneE164, OtpPurpose $purpose, ?Model $subject = null, ?int $ttlMinutes = null): array
+    {
         $this->activeQuery($phoneE164, $purpose, $subject)->delete();
 
         $code = $this->generateCode();
@@ -49,7 +60,7 @@ class OtpService
             ]),
         );
 
-        return $otp;
+        return [$otp, $code];
     }
 
     /**

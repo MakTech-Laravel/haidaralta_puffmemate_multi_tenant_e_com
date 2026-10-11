@@ -67,6 +67,7 @@ test('candidates payload maps ranked branch drivers for the show page', function
         'branch_id' => $branch->id,
         'status' => DriverAssignmentStatus::Active,
     ]);
+    scheduleDriverOnDuty($driver, $branch);
 
     $payload = app(OrderAssignService::class)->candidatesPayload($fulfillment);
 
@@ -79,7 +80,7 @@ test('candidates payload maps ranked branch drivers for the show page', function
         ->and($payload[0])->toHaveKey('avatar_url');
 });
 
-test('can assign allows any status except delivered', function () {
+test('can assign only before pickup and again after a return', function () {
     $branch = Branch::factory()->create();
     $service = app(OrderAssignService::class);
 
@@ -96,7 +97,7 @@ test('can assign allows any status except delivered', function () {
         'status' => FulfillmentStatus::Delivered,
     ]);
 
-    expect($service->canAssign($pending))->toBeTrue()
+    expect($service->canAssign($pending))->toBeFalse()
         ->and($service->canAssign($ready))->toBeTrue()
         ->and($service->canAssign($delivered))->toBeFalse();
 });

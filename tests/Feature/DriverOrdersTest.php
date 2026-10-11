@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserType;
 use App\Models\Order;
@@ -9,6 +10,8 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\Conversation\ConversationService;
+use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Sms\FakeSmsSender;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -114,12 +117,13 @@ test('guests are redirected from driver order chat', function () {
         ->assertRedirect(route('login'));
 });
 
-test('drivers can open chat for an assigned order', function () {
+test('drivers can open chat once the order is on the way', function () {
     $driver = User::factory()->create([
         'user_type' => UserType::DRIVER,
         'email_verified_at' => now(),
     ]);
-    $order = driverPortalOrder($driver);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::OutForDelivery]);
+    app(ConversationService::class)->openForOrder($order->fresh('fulfillment'));
 
     $this->actingAs($driver, 'driver')
         ->get(route('driver.orders.chat', $order))
@@ -129,7 +133,7 @@ test('drivers can open chat for an assigned order', function () {
             ->where('order.orderNumber', $order->order_number)
             ->where('order.customerName', 'Elena Vargas')
             ->where('viewerId', $driver->id)
-            ->where('canSend', false)
+            ->where('canSend', true)
             ->has('messages'));
 });
 
@@ -253,9 +257,15 @@ test('deliver accepts a valid otp and flashes success', function () {
         'email_verified_at' => now(),
     ]);
     $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::PickedUp]);
+    $order->forceFill(['status' => OrderStatus::PickedUp])->save();
+    app(OrderPlacementNotifier::class)->issue($order->refresh());
 
     $this->actingAs($driver, 'driver')
         ->post(route('driver.orders.start', $order))
+        ->assertRedirect();
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('driver.orders.arrive', $order))
         ->assertRedirect();
 
     /** @var FakeSmsSender $sms */

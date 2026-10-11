@@ -9,6 +9,7 @@ use App\Http\Requests\Platform\AnnouncementRecipientSearchRequest;
 use App\Http\Requests\Platform\StoreAnnouncementRequest;
 use App\Models\User;
 use App\Services\Announcements\AnnouncementService;
+use App\Support\Phone;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -74,8 +75,8 @@ class AnnouncementController extends Controller
             ->where('user_type', $audience->userType())
             ->when($term !== '', function ($query) use ($term): void {
                 $query->where(function ($search) use ($term): void {
-                    $search->where('name', 'like', '%'.$term.'%')
-                        ->orWhere('phone', 'like', '%'.$term.'%');
+                    $search->where('name', 'like', '%'.$term.'%');
+                    Phone::constrainLike($search, 'phone', $term);
                 });
             })
             ->orderBy('name')

@@ -1,7 +1,9 @@
-import { Head, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, UserRound } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
+import CustomerController from '@/actions/App/Http/Controllers/Platform/CustomerController';
 import OrderAssignController from '@/actions/App/Http/Controllers/Platform/OrderAssignController';
 import OrderController from '@/actions/App/Http/Controllers/Platform/OrderController';
 import { OrderAssignDriverSheet } from '@/components/branch/order-assign-driver-sheet';
@@ -14,7 +16,15 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { OrderListCustomer } from '@/components/orders/order-list-customer';
+import { OrderPlacedDateFilters } from '@/components/orders/order-placed-date-filters';
 import { Badge } from '@/components/ui/badge';
+import {
+    orderSourceBadgeClass,
+    orderStatusBadgeClass,
+    paymentStatusBadgeClass,
+} from '@/lib/order-badges';
+import { formatAppDateTime } from '@/lib/datetime';
 import {
     Select,
     SelectContent,
@@ -26,8 +36,11 @@ import {
 type OrderRow = {
     id: number;
     order_number: string;
+    customer_id: number | null;
     customer_name: string;
+    customer_phone: string | null;
     fulfillment_branch: string;
+    branch_slug: string | null;
     fulfillment_id: number | null;
     fulfillment_number: string | null;
     total_label: string;
@@ -37,6 +50,7 @@ type OrderRow = {
     payment_status_label: string;
     source: string;
     source_label: string;
+    created_at: string | null;
     assign_status: 'not_assign' | 'assign';
     driver_id: number | null;
     driver_name: string | null;
@@ -71,6 +85,8 @@ export default function PlatformOrdersIndex({
                 status: tablePayload.filters.status ?? 'all',
                 payment_status: tablePayload.filters.payment_status ?? 'all',
                 source: tablePayload.filters.source ?? 'all',
+                from: tablePayload.filters.from ?? null,
+                to: tablePayload.filters.to ?? null,
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,
@@ -92,6 +108,7 @@ export default function PlatformOrdersIndex({
         () => [
             {
                 accessorKey: 'order_number',
+                meta: { label: 'Order #' },
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
@@ -106,20 +123,55 @@ export default function PlatformOrdersIndex({
             {
                 accessorKey: 'source_label',
                 header: 'Source',
+                meta: { label: 'Source' },
                 cell: ({ row }) => (
-                    <Badge variant="outline">{row.original.source_label}</Badge>
+                    <Badge
+                        variant="outline"
+                        className={orderSourceBadgeClass(row.original.source)}
+                    >
+                        {row.original.source_label}
+                    </Badge>
                 ),
             },
             {
                 accessorKey: 'customer_name',
                 header: 'Customer',
+                meta: { label: 'Customer', truncate: false },
+                cell: ({ row }) => (
+                    <OrderListCustomer
+                        name={row.original.customer_name}
+                        phone={row.original.customer_phone}
+                        href={
+                            row.original.customer_id
+                                ? CustomerController.show.url(
+                                      row.original.customer_id,
+                                  )
+                                : null
+                        }
+                    />
+                ),
             },
             {
                 accessorKey: 'fulfillment_branch',
                 header: 'Branch',
+                meta: { label: 'Branch', truncate: false },
+                cell: ({ row }) =>
+                    row.original.branch_slug ? (
+                        <Link
+                            href={BranchController.show.url(
+                                row.original.branch_slug,
+                            )}
+                            className="hover:text-primary font-medium"
+                        >
+                            {row.original.fulfillment_branch}
+                        </Link>
+                    ) : (
+                        row.original.fulfillment_branch
+                    ),
             },
             {
                 accessorKey: 'total_label',
+                meta: { label: 'Total' },
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
@@ -133,6 +185,7 @@ export default function PlatformOrdersIndex({
             },
             {
                 accessorKey: 'status',
+                meta: { label: 'Status' },
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
@@ -144,28 +197,49 @@ export default function PlatformOrdersIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <Badge variant="secondary">{row.original.status_label}</Badge>
+                    <Badge
+                        variant="outline"
+                        className={orderStatusBadgeClass(row.original.status)}
+                    >
+                        {row.original.status_label}
+                    </Badge>
                 ),
             },
             {
                 accessorKey: 'payment_status',
                 header: 'Payment',
+                meta: { label: 'Payment' },
                 cell: ({ row }) => (
                     <Badge
-                        variant={
-                            row.original.payment_status === 'collected' ||
-                            row.original.payment_status === 'verified'
-                                ? 'default'
-                                : 'secondary'
-                        }
+                        variant="outline"
+                        className={paymentStatusBadgeClass(
+                            row.original.payment_status,
+                        )}
                     >
                         {row.original.payment_status_label}
                     </Badge>
                 ),
             },
             {
+                accessorKey: 'created_at',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Placed"
+                        sortable
+                        sortKey="created_at"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                meta: { label: 'Placed' },
+                cell: ({ row }) =>
+                    formatAppDateTime(row.original.created_at) || '—',
+            },
+            {
                 id: 'actions',
                 header: 'Actions',
+                enableHiding: false,
                 cell: ({ row }) => (
                     <DataTableRowActions
                         items={[
@@ -222,14 +296,16 @@ export default function PlatformOrdersIndex({
                     isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No orders found."
+                    columnVisibilityKey="platform-orders"
                     toolbar={
                         <DataTableToolbar
                             search={query.search}
                             onSearchChange={query.setSearch}
-                            searchPlaceholder="Search order #…"
+                            searchPlaceholder="Order #, customer, or branch"
+                            layout="stacked"
                             onClear={query.clearFilters}
                             filters={
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap items-end gap-2">
                                     <Select
                                         value={String(
                                             query.filters.status ?? 'all',
@@ -323,6 +399,22 @@ export default function PlatformOrdersIndex({
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    <OrderPlacedDateFilters
+                                        from={
+                                            typeof query.filters.from ===
+                                            'string'
+                                                ? query.filters.from
+                                                : null
+                                        }
+                                        to={
+                                            typeof query.filters.to === 'string'
+                                                ? query.filters.to
+                                                : null
+                                        }
+                                        onChange={(key, value) =>
+                                            query.setFilter(key, value)
+                                        }
+                                    />
                                 </div>
                             }
                         />

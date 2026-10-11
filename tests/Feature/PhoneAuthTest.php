@@ -9,6 +9,13 @@ test('local au and e164 phones normalize to the same value', function () {
         ->and(Phone::toE164('+61412345678'))->toBe('+61412345678');
 });
 
+test('phone search variants cover local trunk and international forms', function () {
+    expect(Phone::searchVariants('04999'))->toContain('04999', '4999')
+        ->and(Phone::searchVariants('071234'))->toContain('071234', '71234')
+        ->and(Phone::searchVariants('+61412345678'))->toContain('+61412345678', '61412345678')
+        ->and(Phone::searchVariants('0412345678'))->toContain('+61412345678', '412345678');
+});
+
 test('users can authenticate with a local au phone number', function () {
     $user = User::factory()->create([
         'phone' => '+61412345678',

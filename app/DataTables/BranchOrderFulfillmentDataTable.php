@@ -2,8 +2,10 @@
 
 namespace App\DataTables;
 
+use App\DataTables\Concerns\FiltersOrderLists;
 use App\Enums\FulfillmentStatus;
 use App\Models\Branch;
+use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Services\Order\OrderAssignService;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,6 +22,8 @@ use Spatie\QueryBuilder\AllowedSort;
  */
 class BranchOrderFulfillmentDataTable extends AbstractDataTable
 {
+    use FiltersOrderLists;
+
     public function __construct(
         Request $request,
         protected int $branchId,
@@ -56,8 +60,8 @@ class BranchOrderFulfillmentDataTable extends AbstractDataTable
         return OrderFulfillment::query()
             ->where('branch_id', $this->branchId)
             ->with([
-                'order:id,order_number,customer_id,payment_status,source',
-                'order.customer:id,name',
+                'order:id,order_number,customer_id,payment_status,source,created_at',
+                'order.customer:id,name,phone',
                 'items',
                 'driver:id,name',
             ]);
@@ -70,7 +74,8 @@ class BranchOrderFulfillmentDataTable extends AbstractDataTable
     {
         return [
             AllowedFilter::exact('status'),
-            $this->searchFilter(),
+            $this->orderSearchFilter(includeBranch: false, fulfillment: true),
+            ...$this->placedDateFilters(throughOrder: true),
         ];
     }
 
@@ -87,7 +92,21 @@ class BranchOrderFulfillmentDataTable extends AbstractDataTable
      */
     protected function allowedSorts(): array
     {
-        return ['fulfillment_number', 'status', 'shipping_cost', 'created_at'];
+        return [
+            'fulfillment_number',
+            'status',
+            'shipping_cost',
+            'created_at',
+            AllowedSort::callback('placed_at', function (Builder $query, bool $descending): void {
+                $query->orderBy(
+                    Order::query()
+                        ->select('created_at')
+                        ->whereColumn('orders.id', 'order_fulfillments.order_id')
+                        ->limit(1),
+                    $descending ? 'desc' : 'asc',
+                );
+            }),
+        ];
     }
 
     protected function defaultSort(): string
@@ -117,6 +136,8 @@ class BranchOrderFulfillmentDataTable extends AbstractDataTable
             'order_id' => $model->order_id,
             'order_number' => $model->order->order_number,
             'customer_name' => $model->order->customer?->name ?? 'Customer',
+            'customer_phone' => $model->order->customer?->phone,
+            'placed_at' => $model->order->created_at?->toIso8601String(),
             'source' => $model->order->source->value,
             'source_label' => $model->order->source->label(),
             'items_count' => $model->items->count(),

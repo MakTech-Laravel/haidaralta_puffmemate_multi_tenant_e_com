@@ -2,6 +2,7 @@
 paths:
   - 'app/Http/Controllers/Driver/**'
   - app/Http/Controllers/Driver/PlaceOrderController.php
+  - app/Http/Controllers/Driver/OrderController.php
 ---
 
 # Controllers Driver
@@ -20,3 +21,6 @@ Driver password changes go through Driver\SecurityController::updatePassword, Dr
 
 ## Driver Place Order products use driver_inventories
 GET /driver/place-order builds products via DriverPlaceOrderCatalog from the signed-in driver’s driver_inventories. Customers and paymentMethods stay DemoCatalog. No POST/create yet; Place order button is a demo toast until live order create exists.
+
+## Selling driver can open a driver sale
+Driver order show allows the selling driver to open a driver sale even when order_fulfillments.driver_id is null. Another driver still gets 404. Do not set driver_id on a driver sale just to make the show page load.
