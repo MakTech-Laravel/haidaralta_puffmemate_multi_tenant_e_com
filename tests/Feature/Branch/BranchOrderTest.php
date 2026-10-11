@@ -11,6 +11,7 @@ use App\Models\OrderDriverAssignmentHistory;
 use App\Models\OrderFulfillment;
 use App\Models\Payment;
 use App\Models\User;
+use App\Support\Phone;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -20,6 +21,13 @@ beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(BranchSeeder::class);
     $this->seed(UserSeeder::class);
+
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->first();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->first();
+
+    if ($sydney !== null && $driver !== null) {
+        scheduleDriverOnDuty($driver, $sydney);
+    }
 });
 
 function branchOrderFulfillment(Branch $branch, array $overrides = []): OrderFulfillment
@@ -57,6 +65,93 @@ test('branch staff only see fulfillments for their own branch', function () {
             ->has('table.data', 1));
 });
 
+test('branch orders show the customer phone and the order placed time', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $customer = User::factory()->create([
+        'user_type' => UserType::CUSTOMER,
+        'branch_id' => null,
+        'phone' => Phone::toE164('0499777888'),
+    ]);
+    $placed = now()->subDay()->startOfDay()->addHours(12);
+    $order = Order::factory()->create([
+        'customer_id' => $customer->id,
+        'created_at' => $placed,
+    ]);
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create([
+        'branch_id' => $sydney->id,
+    ]);
+    Payment::factory()->create(['order_id' => $order->id]);
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.orders.index', $sydney))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('table.data.0.id', $fulfillment->id)
+            ->where('table.data.0.customer_phone', $customer->phone)
+            ->where('table.data.0.placed_at', $placed->toIso8601String()));
+});
+
+test('branch orders can be searched by order number and customer phone', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $customer = User::factory()->create([
+        'user_type' => UserType::CUSTOMER,
+        'branch_id' => null,
+        'name' => 'Branch Buyer',
+        'email' => 'branch.buyer@example.com',
+        'phone' => Phone::toE164('0499666777'),
+    ]);
+    $order = Order::factory()->create([
+        'customer_id' => $customer->id,
+        'order_number' => 'PMM-BRANCH-1001',
+    ]);
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create([
+        'branch_id' => $sydney->id,
+    ]);
+    Payment::factory()->create(['order_id' => $order->id]);
+    branchOrderFulfillment($sydney);
+
+    foreach (['PMM-BRANCH-1001', 'Branch Buyer', 'branch.buyer@example.com', '0499666777'] as $term) {
+        $this->actingAs($admin, 'branch')
+            ->get(route('branch.orders.index', $sydney).'?'.http_build_query([
+                'filter' => ['search' => $term],
+            ]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('table.data', 1)
+                ->where('table.data.0.id', $fulfillment->id));
+    }
+});
+
+test('branch orders filter by the day the order was placed', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $yesterday = now()->subDay()->startOfDay()->addHours(12);
+    $today = now()->startOfDay()->addHours(12);
+
+    $olderOrder = Order::factory()->create(['created_at' => $yesterday]);
+    $older = OrderFulfillment::factory()->forOrder($olderOrder)->create(['branch_id' => $sydney->id]);
+    $todayOrder = Order::factory()->create(['created_at' => $today]);
+    OrderFulfillment::factory()->forOrder($todayOrder)->create(['branch_id' => $sydney->id]);
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.orders.index', $sydney).'?'.http_build_query([
+            'filter' => ['from' => $yesterday->toDateString()],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('table.data', 1)
+            ->where('table.data.0.id', $older->id));
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.orders.index', $sydney).'?'.http_build_query([
+            'filter' => ['from' => now()->addDay()->toDateString()],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('table.data', 2));
+});
+
 test('branch staff cannot view another branchs fulfillment', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -77,15 +172,15 @@ test('branch staff can update fulfillment status and it rolls up to the master o
 
     $this->actingAs($admin, 'branch')
         ->put(route('branch.orders.status', [$sydney, $fulfillment]), [
-            'status' => FulfillmentStatus::Processing->value,
+            'status' => FulfillmentStatus::Placed->value,
         ])
         ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
 
-    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Processing)
-        ->and($fulfillment->order->refresh()->status->value)->toBe('processing');
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Placed)
+        ->and($fulfillment->order->refresh()->status->value)->toBe('placed');
 });
 
-test('branch staff can mark their fulfillment as collected', function () {
+test('branch staff cannot mark a fulfillment collected outside handover', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
@@ -93,10 +188,10 @@ test('branch staff can mark their fulfillment as collected', function () {
 
     $this->actingAs($admin, 'branch')
         ->post(route('branch.orders.paid', [$sydney, $fulfillment]))
-        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
+        ->assertSessionHasErrors('payment_status');
 
-    expect($fulfillment->refresh()->isPaid())->toBeTrue()
-        ->and($fulfillment->order->refresh()->payment_status)->toBe(PaymentStatus::Collected);
+    expect($fulfillment->refresh()->isPaid())->toBeFalse()
+        ->and($fulfillment->order->refresh()->payment_status)->not->toBe(PaymentStatus::Collected);
 });
 
 test('a second branchs staff cannot mark another branchs fulfillment as paid', function () {
@@ -113,7 +208,7 @@ test('a second branchs staff cannot mark another branchs fulfillment as paid', f
     expect($fulfillment->refresh()->isPaid())->toBeFalse();
 });
 
-test('branch staff can retry reschedule and confirm a returned delivery', function () {
+test('branch staff receive goods back instead of retrying a failed delivery', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $driver = User::factory()->create(['user_type' => UserType::DRIVER, 'branch_id' => null]);
@@ -125,20 +220,14 @@ test('branch staff can retry reschedule and confirm a returned delivery', functi
 
     $this->actingAs($admin, 'branch')
         ->post(route('branch.orders.retry-delivery', [$sydney, $fulfillment]))
-        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
-
-    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::OutForDelivery);
-
-    $fulfillment->forceFill(['status' => FulfillmentStatus::DeliveryFailed])->save();
+        ->assertSessionHasErrors('status');
 
     $this->actingAs($admin, 'branch')
         ->post(route('branch.orders.reschedule-delivery', [$sydney, $fulfillment]))
-        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
+        ->assertSessionHasErrors('status');
 
-    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Ready)
-        ->and($fulfillment->driver_id)->toBeNull();
-
-    $fulfillment->forceFill(['status' => FulfillmentStatus::DeliveryFailed, 'driver_id' => $driver->id])->save();
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::DeliveryFailed)
+        ->and($fulfillment->driver_id)->toBe($driver->id);
 
     $this->actingAs($admin, 'branch')
         ->post(route('branch.orders.return-delivery', [$sydney, $fulfillment]))
@@ -150,7 +239,8 @@ test('branch staff can retry reschedule and confirm a returned delivery', functi
         ->post(route('branch.orders.confirm-return', [$sydney, $fulfillment]))
         ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
 
-    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Cancelled);
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Returned)
+        ->and($fulfillment->driver_id)->toBeNull();
 });
 
 test('a branch cannot retry another branchs failed delivery', function () {
@@ -222,13 +312,21 @@ test('branch staff must provide a reason when reassigning a driver', function ()
         'driver_id' => $driver->id,
     ]);
 
+    scheduleDriverOnDuty($replacement, $sydney);
+
     $this->actingAs($admin, 'branch')
         ->post(route('branch.orders.assign-driver', [$sydney, $fulfillment]), [
             'driver_id' => $replacement->id,
+            'reason' => 'Original driver unavailable',
         ])
-        ->assertSessionHasErrors('reason');
+        ->assertSessionHasErrors('driver_id');
 
     expect($fulfillment->refresh()->driver_id)->toBe($driver->id);
+
+    $fulfillment->forceFill([
+        'status' => FulfillmentStatus::Returned,
+        'driver_id' => null,
+    ])->save();
 
     $this->actingAs($admin, 'branch')
         ->post(route('branch.orders.assign-driver', [$sydney, $fulfillment]), [
@@ -245,7 +343,7 @@ test('branch staff must provide a reason when reassigning a driver', function ()
         ->first();
 
     expect($history)->not->toBeNull()
-        ->and($history->from_driver_id)->toBe($driver->id)
+        ->and($history->from_driver_id)->toBeNull()
         ->and($history->to_driver_id)->toBe($replacement->id)
         ->and($history->changed_by)->toBe($admin->id)
         ->and($history->reason)->toBe('Original driver unavailable');
@@ -331,7 +429,7 @@ test('branch staff cannot reassign with a reason longer than 255 characters', fu
     expect($fulfillment->refresh()->driver_id)->toBe($driver->id);
 });
 
-test('branch staff can assign a pending fulfillment to a branch driver', function () {
+test('branch staff cannot assign a driver before the order is placed', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
@@ -345,10 +443,10 @@ test('branch staff can assign a pending fulfillment to a branch driver', functio
         ->post(route('branch.orders.assign-driver', [$sydney, $fulfillment]), [
             'driver_id' => $driver->id,
         ])
-        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
+        ->assertSessionHasErrors('driver_id');
 
-    expect($fulfillment->refresh()->driver_id)->toBe($driver->id)
-        ->and($fulfillment->status)->toBe(FulfillmentStatus::Assigned);
+    expect($fulfillment->refresh()->driver_id)->toBeNull()
+        ->and($fulfillment->status)->toBe(FulfillmentStatus::Pending);
 });
 
 test('branch staff cannot assign a driver after the fulfillment is delivered', function () {
@@ -406,7 +504,7 @@ test('branch orders index includes assign status for unassigned and assigned row
                     && $taken['assign_status'] === 'assign'
                     && $taken['driver_id'] === $driver->id
                     && $taken['driver_name'] === $driver->name
-                    && $taken['can_assign'] === true;
+                    && $taken['can_assign'] === false;
             }));
 });
 
@@ -492,6 +590,7 @@ test('branch staff can paginate assign candidates', function () {
             'branch_id' => $sydney->id,
             'status' => DriverAssignmentStatus::Active,
         ]);
+        scheduleDriverOnDuty($extra, $sydney);
     }
 
     $fulfillment = branchOrderFulfillment($sydney, [
@@ -515,7 +614,7 @@ test('branch staff can paginate assign candidates', function () {
         ->and($response->json('meta.total'))->toBeGreaterThanOrEqual(11);
 });
 
-test('branch staff can load assign candidates for a pending fulfillment', function () {
+test('branch staff cannot load assign candidates before the order is placed', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
@@ -526,14 +625,7 @@ test('branch staff can load assign candidates for a pending fulfillment', functi
 
     $this->actingAs($admin, 'branch')
         ->getJson(route('branch.orders.assign-candidates', [$sydney, $fulfillment]))
-        ->assertOk()
-        ->assertJsonStructure([
-            'data' => [
-                '*' => ['id', 'name', 'phone', 'avatar_url'],
-            ],
-            'meta' => ['current_page', 'last_page', 'per_page', 'total'],
-            'current_driver_id',
-        ]);
+        ->assertStatus(422);
 });
 
 test('branch staff cannot load assign candidates after the fulfillment is delivered', function () {
@@ -550,12 +642,12 @@ test('branch staff cannot load assign candidates after the fulfillment is delive
         ->assertStatus(422);
 });
 
-test('branch orders index marks pending rows as assignable and delivered as not', function () {
+test('branch orders index marks ready rows as assignable and delivered as not', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
     $pending = branchOrderFulfillment($sydney, [
-        'status' => FulfillmentStatus::Pending,
+        'status' => FulfillmentStatus::Ready,
         'driver_id' => null,
     ]);
     $delivered = branchOrderFulfillment($sydney, [

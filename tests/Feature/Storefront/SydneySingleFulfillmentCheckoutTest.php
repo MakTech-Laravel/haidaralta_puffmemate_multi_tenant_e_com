@@ -101,7 +101,7 @@ test('a sydney customer with mixed sydney and melbourne stock gets one fulfillme
         ->and($order->items)->toHaveCount(4)
         ->and($order->payments)->toHaveCount(1)
         ->and($order->payment->status)->toBe(PaymentStatus::PendingCollection)
-        ->and(Conversation::query()->where('order_id', $order->id)->count())->toBe(1);
+        ->and(Conversation::query()->where('order_id', $order->id)->count())->toBe(0);
 
     $transfer = StockTransfer::query()->where('order_id', $order->id)->firstOrFail();
 
@@ -139,6 +139,7 @@ test('a sydney customer with mixed sydney and melbourne stock gets one fulfillme
         'branch_id' => $sydney->id,
         'status' => DriverAssignmentStatus::Active,
     ]);
+    scheduleDriverOnDuty($driver, $sydney);
 
     $transfers = app(StockTransferService::class);
     $transfers->approve($transfer, $melbourneStaff);
@@ -148,13 +149,15 @@ test('a sydney customer with mixed sydney and melbourne stock gets one fulfillme
 
     $fulfillment = $order->fulfillment->refresh();
     $statuses = app(FulfillmentStatusService::class);
-    $statuses->transition($fulfillment, FulfillmentStatus::Processing, $sydneyStaff);
+    $statuses->transition($fulfillment, FulfillmentStatus::Placed, $sydneyStaff);
+    $statuses->transition($fulfillment->refresh(), FulfillmentStatus::Processing, $sydneyStaff);
     $statuses->transition($fulfillment->refresh(), FulfillmentStatus::Ready, $sydneyStaff);
     app(DriverAssignmentService::class)->assign($fulfillment->refresh(), $driver, $sydneyStaff);
 
     $deliveries = app(DriverDeliveryService::class);
     $deliveries->pickUp($fulfillment->refresh(), $driver);
     $deliveries->startDelivery($fulfillment->refresh(), $driver);
+    $deliveries->arrive($fulfillment->refresh(), $driver);
     $deliveries->complete($fulfillment->refresh(), $driver, app(FakeSmsSender::class)->lastCode());
 
     expect($order->refresh()->fulfillments)->toHaveCount(1)

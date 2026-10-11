@@ -10,7 +10,6 @@ const FALLBACK_IMAGE = '/images/storefront/logo.png';
 const PAGE_SIZE = 12;
 const FILTER_DEBOUNCE_MS = 200;
 const RESULTS_VIEWPORT_CLASS = 'max-h-[min(28rem,55vh)]';
-const SELECTED_FILTER = '__selected__';
 
 type PlaceOrderProductsSectionProps = {
     products: DriverPlaceOrderProduct[];
@@ -146,7 +145,7 @@ export function PlaceOrderProductsSection({
 }: PlaceOrderProductsSectionProps) {
     const [query, setQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
-    const [category, setCategory] = useState('All');
+    const [selectedOnly, setSelectedOnly] = useState(false);
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -170,25 +169,11 @@ export function PlaceOrderProductsSection({
         [products, quantities],
     );
 
-    const categories = useMemo(() => {
-        const unique = Array.from(
-            new Set(products.map((product) => product.category)),
-        ).sort((a, b) => a.localeCompare(b));
-
-        return ['All', ...unique];
-    }, [products]);
-
     const filtered = useMemo(() => {
         const q = debouncedQuery.toLowerCase();
-        const selectedOnly = category === SELECTED_FILTER;
-        const categoryActive = category !== 'All' && !selectedOnly;
 
         const rows = products.filter((product) => {
             if (selectedOnly && (quantities[product.id] ?? 0) < 1) {
-                return false;
-            }
-
-            if (categoryActive && product.category !== category) {
                 return false;
             }
 
@@ -205,11 +190,17 @@ export function PlaceOrderProductsSection({
 
             return a.name.localeCompare(b.name);
         });
-    }, [products, debouncedQuery, category, quantities]);
+    }, [products, debouncedQuery, selectedOnly, quantities]);
+
+    useEffect(() => {
+        if (selectedCount === 0) {
+            setSelectedOnly(false);
+        }
+    }, [selectedCount]);
 
     useEffect(() => {
         setVisibleCount(PAGE_SIZE);
-    }, [debouncedQuery, category]);
+    }, [debouncedQuery, selectedOnly]);
 
     useEffect(() => {
         const sentinel = sentinelRef.current;
@@ -254,7 +245,7 @@ export function PlaceOrderProductsSection({
         loadMoreIfNeeded();
 
         return () => observer.disconnect();
-    }, [filtered.length, debouncedQuery, category, visibleCount]);
+    }, [filtered.length, debouncedQuery, selectedOnly, visibleCount]);
 
     const visibleResults = filtered.slice(0, visibleCount);
     const hasMoreResults = visibleCount < filtered.length;
@@ -288,49 +279,23 @@ export function PlaceOrderProductsSection({
                 ) : null}
             </div>
 
-            <div
-                className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5"
-                role="tablist"
-                aria-label="Product filters"
-            >
-                {categories.map((item) => {
-                    const active = category === item;
-
-                    return (
-                        <button
-                            key={item}
-                            type="button"
-                            role="tab"
-                            aria-selected={active}
-                            className={cn(
-                                'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors',
-                                active
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted text-muted-foreground hover:text-foreground',
-                            )}
-                            onClick={() => setCategory(item)}
-                        >
-                            {item}
-                        </button>
-                    );
-                })}
-                {selectedCount > 0 ? (
+            {selectedCount > 0 ? (
+                <div className="flex">
                     <button
                         type="button"
-                        role="tab"
-                        aria-selected={category === SELECTED_FILTER}
+                        aria-pressed={selectedOnly}
                         className={cn(
                             'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors',
-                            category === SELECTED_FILTER
+                            selectedOnly
                                 ? 'bg-primary text-primary-foreground'
                                 : 'bg-muted text-muted-foreground hover:text-foreground',
                         )}
-                        onClick={() => setCategory(SELECTED_FILTER)}
+                        onClick={() => setSelectedOnly((current) => !current)}
                     >
                         In order ({selectedCount})
                     </button>
-                ) : null}
-            </div>
+                </div>
+            ) : null}
 
             {products.length === 0 ? (
                 <div className="border-border/70 text-muted-foreground rounded-xl border border-dashed px-3 py-5 text-center text-sm">

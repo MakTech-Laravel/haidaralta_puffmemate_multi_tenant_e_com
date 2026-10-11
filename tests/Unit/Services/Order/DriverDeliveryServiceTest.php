@@ -11,7 +11,6 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\Inventory\InventoryReservationService;
 use App\Services\Order\DriverDeliveryService;
-use App\Services\Sms\FakeSmsSender;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -28,7 +27,7 @@ test('a failed delivery keeps reserved stock instead of releasing it', function 
     ]);
     $fulfillment = OrderFulfillment::factory()->forOrder($order)->create([
         'driver_id' => $driver->id,
-        'status' => FulfillmentStatus::OutForDelivery,
+        'status' => FulfillmentStatus::Arrived,
     ]);
     OrderItem::query()->create([
         'order_id' => $order->id,
@@ -59,6 +58,7 @@ test('a failed delivery keeps reserved stock instead of releasing it', function 
         $fulfillment,
         $driver,
         DeliveryFailureReason::CustomerUnavailable,
+        'No answer at the door',
     );
 
     expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::DeliveryFailed)
@@ -86,15 +86,12 @@ function failedDeliveryFulfillment(): array
     return [$fulfillment, $driver];
 }
 
-test('retry sends the same driver back out with a new handover otp', function () {
-    [$fulfillment, $driver] = failedDeliveryFulfillment();
+test('retry is closed until the goods are back at the branch', function () {
+    [$fulfillment] = failedDeliveryFulfillment();
     $staff = User::factory()->create(['user_type' => UserType::BRANCH]);
 
-    $result = app(DriverDeliveryService::class)->retry($fulfillment, $staff);
-
-    expect($result->status)->toBe(FulfillmentStatus::OutForDelivery)
-        ->and($result->driver_id)->toBe($driver->id)
-        ->and(app(FakeSmsSender::class)->lastCode())->not->toBeNull();
+    expect(fn () => app(DriverDeliveryService::class)->retry($fulfillment, $staff))
+        ->toThrow(ValidationException::class);
 });
 
 test('retry without an assigned driver is rejected', function () {
@@ -106,14 +103,12 @@ test('retry without an assigned driver is rejected', function () {
         ->toThrow(ValidationException::class);
 });
 
-test('reschedule clears the driver and returns the fulfillment to ready', function () {
+test('reschedule is closed until the goods are back at the branch', function () {
     [$fulfillment] = failedDeliveryFulfillment();
     $staff = User::factory()->create(['user_type' => UserType::BRANCH]);
 
-    $result = app(DriverDeliveryService::class)->reschedule($fulfillment, $staff);
-
-    expect($result->status)->toBe(FulfillmentStatus::Ready)
-        ->and($result->driver_id)->toBeNull();
+    expect(fn () => app(DriverDeliveryService::class)->reschedule($fulfillment, $staff))
+        ->toThrow(ValidationException::class);
 });
 
 test('begin return moves a failed delivery to returning', function () {
@@ -157,9 +152,9 @@ test('confirming a return cancels the fulfillment and releases stock', function 
     app(DriverDeliveryService::class)->beginReturn($fulfillment, $staff);
     $result = app(DriverDeliveryService::class)->confirmReturn($fulfillment->refresh(), $staff);
 
-    expect($result->status)->toBe(FulfillmentStatus::Cancelled)
+    expect($result->status)->toBe(FulfillmentStatus::Returned)
         ->and($result->driver_id)->toBeNull()
-        ->and($inventory->refresh()->reserved_quantity)->toBe(0);
+        ->and($inventory->refresh()->reserved_quantity)->toBe(2);
 });
 
 test('confirming a return before the driver reports it back is rejected', function () {

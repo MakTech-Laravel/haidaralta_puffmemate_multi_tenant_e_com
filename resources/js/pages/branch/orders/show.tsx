@@ -4,6 +4,9 @@ import OrderAssignController from '@/actions/App/Http/Controllers/Branch/OrderAs
 import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Branch/Reports/OrderAssignHistoryController';
 import OrderController from '@/actions/App/Http/Controllers/Branch/OrderController';
 import StockTransferController from '@/actions/App/Http/Controllers/Branch/StockTransferController';
+import { OrderHandoverActions } from '@/components/orders/order-handover-actions';
+import { OrderStatusTrack } from '@/components/orders/order-status-track';
+import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,18 +39,22 @@ type FulfillmentDetail = {
     id: number;
     fulfillmentNumber: string;
     status: string;
-    statusOptions: { value: string; label: string }[];
+    actions: { key: string; label: string; status: string }[];
     shippingCostLabel: string;
     distanceKmLabel: string;
     isPaid: boolean;
     drivers: { id: number; name: string }[];
     driverId: number | null;
     canAssign: boolean;
+    canResendCode: boolean;
     canCancel: boolean;
     canRetry: boolean;
     canReschedule: boolean;
     canReturn: boolean;
-    canConfirmReturn: boolean;
+        canConfirmReturn: boolean;
+        canComplete?: boolean;
+        canReportUnavailable?: boolean;
+        failureReasons?: { value: string; label: string }[];
     order: {
         id: number;
         orderNumber: string;
@@ -55,6 +62,15 @@ type FulfillmentDetail = {
         paymentMethod: string;
         paymentStatus: string;
         paymentStatusLabel: string;
+        returnRequest?: {
+            id: number;
+            type: string;
+            typeLabel: string;
+            reason: string;
+            note: string | null;
+            status: string;
+            statusLabel: string;
+        } | null;
         shippingAddress: {
             name?: string;
             address?: string;
@@ -70,7 +86,14 @@ type FulfillmentDetail = {
         unitPriceLabel: string;
         subtotalLabel: string;
     }[];
-    timeline: { label: string; detail: string; comment: string | null }[];
+    timeline: {
+        key: string;
+        label: string;
+        state: 'completed' | 'current' | 'upcoming';
+        actorName: string | null;
+        detail: string | null;
+        comment: string | null;
+    }[];
     transfers: {
         id: number;
         status: string;
@@ -92,13 +115,14 @@ export default function BranchOrderShow({
     branch: Branch;
     fulfillment: FulfillmentDetail;
 }) {
-    const [status, setStatus] = useState(fulfillment.status);
     const [driverId, setDriverId] = useState(
         fulfillment.driverId ? String(fulfillment.driverId) : '',
     );
     const [assignReason, setAssignReason] = useState('');
     const [processing, setProcessing] = useState(false);
     const isReassign = fulfillment.driverId !== null;
+    const needsAssignReason =
+        isReassign || fulfillment.status === 'returned';
 
     setLayoutProps({
         breadcrumbs: [
@@ -155,7 +179,7 @@ export default function BranchOrderShow({
                     </div>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+                <div className="grid items-start gap-4 lg:grid-cols-2">
                     <div className="space-y-4">
                         <Card>
                             <CardHeader>
@@ -224,27 +248,6 @@ export default function BranchOrderShow({
                             </CardContent>
                         </Card>
 
-                        {/* <Card>
-                            <CardHeader>
-                                <CardTitle>History</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {fulfillment.timeline.map((step, index) => (
-                                    <div
-                                        key={`${step.label}-${index}`}
-                                        className="text-sm"
-                                    >
-                                        <p className="font-medium">
-                                            {step.label}
-                                        </p>
-                                        <p className="text-muted-foreground text-xs">
-                                            {step.detail}
-                                        </p>
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card> */}
-
                         {fulfillment.transfers.length > 0 ? (
                             <Card>
                                 <CardHeader>
@@ -312,49 +315,65 @@ export default function BranchOrderShow({
                                 <CardTitle>Update status</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
-                                <Select
-                                    value={status}
-                                    onValueChange={setStatus}
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {fulfillment.statusOptions.map(
-                                            (option) => (
-                                                <SelectItem
-                                                    key={option.value}
-                                                    value={option.value}
-                                                >
-                                                    {option.label}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                <Button
-                                    className="w-full"
-                                    disabled={
-                                        processing ||
-                                        status === fulfillment.status
-                                    }
-                                    onClick={() => {
-                                        setProcessing(true);
-                                        router.put(
-                                            OrderController.updateStatus.url([
-                                                branch.slug,
-                                                fulfillment.id,
-                                            ]),
-                                            { status },
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
-                                        );
-                                    }}
-                                >
-                                    Save status
-                                </Button>
+                                {fulfillment.actions.length > 0 ? (
+                                    fulfillment.actions.map((action) => (
+                                        <Button
+                                            key={action.key}
+                                            className="w-full"
+                                            disabled={processing}
+                                            onClick={() => {
+                                                setProcessing(true);
+                                                router.put(
+                                                    OrderController.updateStatus.url(
+                                                        [
+                                                            branch.slug,
+                                                            fulfillment.id,
+                                                        ],
+                                                    ),
+                                                    { status: action.status },
+                                                    {
+                                                        onFinish: () =>
+                                                            setProcessing(
+                                                                false,
+                                                            ),
+                                                    },
+                                                );
+                                            }}
+                                        >
+                                            {action.label}
+                                        </Button>
+                                    ))
+                                ) : (
+                                    <p className="text-muted-foreground text-sm">
+                                        No status change is available from
+                                        here.
+                                    </p>
+                                )}
+                                {fulfillment.canResendCode ? (
+                                    <Button
+                                        variant="outline"
+                                        className="w-full"
+                                        disabled={processing}
+                                        onClick={() => {
+                                            setProcessing(true);
+                                            router.post(
+                                                OrderController.resendPlacementCode.url(
+                                                    [
+                                                        branch.slug,
+                                                        fulfillment.id,
+                                                    ],
+                                                ),
+                                                {},
+                                                {
+                                                    onFinish: () =>
+                                                        setProcessing(false),
+                                                },
+                                            );
+                                        }}
+                                    >
+                                        Resend delivery code
+                                    </Button>
+                                ) : null}
                             </CardContent>
                         </Card>
 
@@ -378,27 +397,60 @@ export default function BranchOrderShow({
                                 {fulfillment.isPaid ? (
                                     <Badge>Collected</Badge>
                                 ) : (
-                                    <Button
-                                        className="w-full"
-                                        disabled={processing}
-                                        onClick={() => {
-                                            setProcessing(true);
-                                            router.post(
-                                                OrderController.markPaid.url([
-                                                    branch.slug,
-                                                    fulfillment.id,
-                                                ]),
-                                                {},
-                                                {
-                                                    onFinish: () =>
-                                                        setProcessing(false),
-                                                },
-                                            );
-                                        }}
-                                    >
-                                        Mark collected
-                                    </Button>
+                                    <p className="text-muted-foreground text-sm">
+                                        Payment is collected when the delivery
+                                        code is confirmed.
+                                    </p>
                                 )}
+                                <OrderReturnRequest
+                                    canRequest={false}
+                                    request={
+                                        fulfillment.order.returnRequest ?? null
+                                    }
+                                    approveUrl={
+                                        fulfillment.order.returnRequest
+                                            ? OrderController.approveReturn.url(
+                                                  [
+                                                      branch.slug,
+                                                      fulfillment.id,
+                                                      fulfillment.order
+                                                          .returnRequest.id,
+                                                  ],
+                                              )
+                                            : undefined
+                                    }
+                                    rejectUrl={
+                                        fulfillment.order.returnRequest
+                                            ? OrderController.rejectReturn.url([
+                                                  branch.slug,
+                                                  fulfillment.id,
+                                                  fulfillment.order
+                                                      .returnRequest.id,
+                                              ])
+                                            : undefined
+                                    }
+                                />
+                                <OrderHandoverActions
+                                    orderId={fulfillment.id}
+                                    deliverForm={OrderController.deliver.form([
+                                        branch.slug,
+                                        fulfillment.id,
+                                    ])}
+                                    failForm={OrderController.fail.form([
+                                        branch.slug,
+                                        fulfillment.id,
+                                    ])}
+                                    canComplete={
+                                        fulfillment.canComplete ?? false
+                                    }
+                                    canReportUnavailable={
+                                        fulfillment.canReportUnavailable ??
+                                        false
+                                    }
+                                    failureReasons={
+                                        fulfillment.failureReasons ?? []
+                                    }
+                                />
                             </CardContent>
                         </Card>
 
@@ -434,7 +486,7 @@ export default function BranchOrderShow({
                                             )}
                                         </SelectContent>
                                     </Select>
-                                    {isReassign ? (
+                                    {needsAssignReason ? (
                                         <div className="space-y-2">
                                             <Label htmlFor="assign-reason">
                                                 Reason for change{' '}
@@ -465,42 +517,73 @@ export default function BranchOrderShow({
                                             </p>
                                         </div>
                                     ) : null}
-                                    <Button
-                                        className="w-full"
-                                        disabled={
-                                            processing ||
-                                            driverId === '' ||
-                                            (isReassign &&
-                                                assignReason.trim() === '')
-                                        }
-                                        onClick={() => {
-                                            setProcessing(true);
-                                            router.post(
-                                                OrderAssignController.store.url(
-                                                    [
-                                                        branch.slug,
-                                                        fulfillment.id,
-                                                    ],
-                                                ),
-                                                {
-                                                    driver_id: Number(driverId),
-                                                    ...(isReassign
-                                                        ? {
-                                                              reason: assignReason.trim(),
-                                                          }
-                                                        : {}),
-                                                },
-                                                {
-                                                    onFinish: () =>
-                                                        setProcessing(false),
-                                                },
-                                            );
-                                        }}
-                                    >
-                                        {isReassign
-                                            ? 'Change driver'
-                                            : 'Assign driver'}
-                                    </Button>
+                                    {(
+                                        [
+                                            {
+                                                label: 'Assign',
+                                                advance: undefined,
+                                            },
+                                            {
+                                                label: 'Assign and picked up',
+                                                advance: 'picked_up',
+                                            },
+                                            {
+                                                label: 'Assign, picked up, and on the way',
+                                                advance: 'out_for_delivery',
+                                            },
+                                        ] as const
+                                    ).map((action) => (
+                                        <Button
+                                            key={action.label}
+                                            className="w-full"
+                                            variant={
+                                                action.advance
+                                                    ? 'outline'
+                                                    : 'default'
+                                            }
+                                            disabled={
+                                                processing ||
+                                                driverId === '' ||
+                                                (needsAssignReason &&
+                                                    assignReason.trim() ===
+                                                        '')
+                                            }
+                                            onClick={() => {
+                                                setProcessing(true);
+                                                router.post(
+                                                    OrderAssignController.store.url(
+                                                        [
+                                                            branch.slug,
+                                                            fulfillment.id,
+                                                        ],
+                                                    ),
+                                                    {
+                                                        driver_id:
+                                                            Number(driverId),
+                                                        ...(needsAssignReason
+                                                            ? {
+                                                                  reason: assignReason.trim(),
+                                                              }
+                                                            : {}),
+                                                        ...(action.advance
+                                                            ? {
+                                                                  advance:
+                                                                      action.advance,
+                                                              }
+                                                            : {}),
+                                                    },
+                                                    {
+                                                        onFinish: () =>
+                                                            setProcessing(
+                                                                false,
+                                                            ),
+                                                    },
+                                                );
+                                            }}
+                                        >
+                                            {action.label}
+                                        </Button>
+                                    ))}
                                 </CardContent>
                             </Card>
                         ) : null}
@@ -635,6 +718,15 @@ export default function BranchOrderShow({
                         </Card>
                     </div>
                 </div>
+
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>History</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <OrderStatusTrack steps={fulfillment.timeline} />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

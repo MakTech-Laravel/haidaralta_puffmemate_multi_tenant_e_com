@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\DriverInventoryTransaction;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -123,9 +124,10 @@ class DriverInventoryTransactionDataTable extends AbstractDataTable
                         )
                         ->orWhereHas(
                             'driver',
-                            fn (Builder $drivers): Builder => $drivers
-                                ->where('name', 'like', '%'.$term.'%')
-                                ->orWhere('phone', 'like', '%'.$term.'%'),
+                            fn (Builder $drivers): Builder => $drivers->where(function (Builder $people) use ($term): void {
+                                $people->where('name', 'like', '%'.$term.'%');
+                                Phone::constrainLike($people, 'phone', $term);
+                            }),
                         );
 
                     if ($this->scopedBranchId === null) {

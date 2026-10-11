@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Branch;
 
+use App\DataTables\StockTransferDataTable;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\StockTransfer;
@@ -16,23 +17,13 @@ class StockTransferController extends Controller
 {
     public function __construct(private StockTransferService $transfers) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $branch = $this->currentBranch();
 
-        $transfers = StockTransfer::query()
-            ->where(function ($query) use ($branch): void {
-                $query->where('source_branch_id', $branch->id)
-                    ->orWhere('destination_branch_id', $branch->id);
-            })
-            ->with(['items.product:id,name', 'sourceBranch:id,name', 'destinationBranch:id,name', 'order:id,order_number'])
-            ->latest('id')
-            ->limit(100)
-            ->get();
-
         return Inertia::render('branch/stock-transfers/index', [
             'branch' => $branch->toPortalContext(),
-            'transfers' => $transfers->map(fn (StockTransfer $transfer): array => $this->payload($transfer, $branch))->all(),
+            'table' => StockTransferDataTable::makeForBranch($request, $branch),
         ]);
     }
 
@@ -70,30 +61,6 @@ class StockTransferController extends Controller
         Toast::success('Stock transfer received.');
 
         return back();
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function payload(StockTransfer $transfer, Branch $branch): array
-    {
-        return [
-            'id' => $transfer->id,
-            'orderNumber' => $transfer->order?->order_number,
-            'status' => $transfer->status->value,
-            'statusLabel' => $transfer->status->label(),
-            'sourceName' => $transfer->sourceBranch?->name,
-            'destinationName' => $transfer->destinationBranch?->name,
-            'estimatedCostLabel' => '$'.number_format((float) $transfer->estimated_cost, 2),
-            'items' => $transfer->items->map(fn ($item): array => [
-                'name' => $item->product?->name ?? 'Product',
-                'quantity' => $item->quantity,
-            ])->all(),
-            'canApprove' => $transfer->source_branch_id === $branch->id && $transfer->status->sourceAction() === 'approve',
-            'canPick' => $transfer->source_branch_id === $branch->id && $transfer->status->sourceAction() === 'pick',
-            'canDispatch' => $transfer->source_branch_id === $branch->id && $transfer->status->sourceAction() === 'dispatch',
-            'canReceive' => $transfer->destination_branch_id === $branch->id && $transfer->status->destinationAction() === 'receive',
-        ];
     }
 
     private function assertSource(StockTransfer $transfer): void

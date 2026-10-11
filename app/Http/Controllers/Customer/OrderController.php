@@ -2,21 +2,29 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Enums\FulfillmentStatus;
+use App\Enums\OrderReturnType;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\OrderStatusHistory;
 use App\Services\Order\FulfillmentStatusService;
+use App\Services\Order\OrderPlacementNotifier;
+use App\Services\Order\OrderReturnService;
 use App\Support\MediaUrl;
+use App\Support\OrderStatusTimeline;
+use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class OrderController extends Controller
 {
-    public function __construct(private FulfillmentStatusService $statuses) {}
+    public function __construct(
+        private FulfillmentStatusService $statuses,
+        private OrderPlacementNotifier $placements,
+        private OrderReturnService $returns,
+    ) {}
 
     /**
      * Display the customer's own order list.
@@ -49,7 +57,10 @@ class OrderController extends Controller
     {
         abort_unless($order->customer_id === $request->user()->id, 404);
 
-        $order->load(['items', 'statusHistories' => fn ($query) => $query->orderBy('created_at')]);
+        $order->load([
+            'items',
+            'statusHistories' => fn ($query) => $query->with('changer:id,name')->orderBy('id'),
+        ]);
 
         return Inertia::render('customer/orders/show', [
             'order' => $this->detail($order),
@@ -62,6 +73,38 @@ class OrderController extends Controller
         abort_if($order->fulfillment === null, 404);
 
         $this->statuses->cancel($order->fulfillment, $request->user());
+
+        return back();
+    }
+
+    public function resendPlacementCode(Request $request, Order $order): RedirectResponse
+    {
+        abort_unless($order->customer_id === $request->user()->id, 404);
+
+        $this->placements->issue($order);
+        Toast::success('Delivery code sent.');
+
+        return back();
+    }
+
+    public function storeReturn(Request $request, Order $order): RedirectResponse
+    {
+        abort_unless($order->customer_id === $request->user()->id, 404);
+
+        $data = $request->validate([
+            'type' => ['required', 'in:return,refund'],
+            'reason' => ['required', 'string', 'max:255'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $this->returns->request(
+            $order,
+            $request->user(),
+            OrderReturnType::from($data['type']),
+            $data['reason'],
+            $data['note'] ?? null,
+        );
+        Toast::success('Return request sent.');
 
         return back();
     }
@@ -92,10 +135,14 @@ class OrderController extends Controller
             'statusLabel' => $order->status->customerLabel(),
             'paymentStatus' => $order->payment_status->value,
             'paymentStatusLabel' => $order->payment_status->customerLabel(),
-            'handoverNotice' => $order->status === OrderStatus::OutForDelivery
-                ? 'A delivery code was sent to your phone. Give it to the driver to complete the order.'
+            'handoverNotice' => $order->status->allowsPlacementCode()
+                ? 'A delivery code was sent to your phone, email, and notifications. Give it to the driver only after you have paid.'
                 : null,
+            'canResendCode' => $order->status->allowsPlacementCode(),
             'canCancel' => $order->status->allowsCustomerCancel(),
+            'canRequestReturn' => in_array($order->status, [OrderStatus::Arrived, OrderStatus::Delivered], true)
+                && $order->returns()->where('status', 'requested')->doesntExist(),
+            'returnRequest' => $this->returns->payload($order),
             'date' => $order->created_at->format('d M Y'),
             'products' => $order->items->map(function ($item): array {
                 $snapshot = is_array($item->product_snapshot) ? $item->product_snapshot : [];
@@ -122,33 +169,7 @@ class OrderController extends Controller
                 ])),
                 'mobile' => $order->shipping_address_snapshot['phone'] ?? '',
             ],
-            'timeline' => $this->timeline($order),
+            'timeline' => OrderStatusTimeline::steps(FulfillmentStatus::from($order->status->value), $order->statusHistories, true),
         ];
-    }
-
-    /**
-     * @return list<array{key: string, label: string, state: string, detail: string}>
-     */
-    private function timeline(Order $order): array
-    {
-        /** @var Collection<int, OrderStatusHistory> $history */
-        $history = $order->statusHistories;
-
-        return $history
-            ->map(fn ($row): array => [
-                'key' => (string) $row->id,
-                'label' => OrderStatus::from($row->new_status)->customerLabel(),
-                'state' => 'completed',
-                'detail' => $row->created_at->format('d M Y, h:i A'),
-            ])
-            ->push([
-                'key' => 'current',
-                'label' => $order->status->customerLabel(),
-                'state' => $order->status->isTerminal() ? 'completed' : 'current',
-                'detail' => $order->status->isTerminal() ? 'Completed' : 'In progress',
-            ])
-            ->unique('label')
-            ->values()
-            ->all();
     }
 }

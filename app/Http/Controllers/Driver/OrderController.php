@@ -4,10 +4,17 @@ namespace App\Http\Controllers\Driver;
 
 use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderReturnType;
+use App\Enums\OrderSource;
 use App\Http\Controllers\Controller;
+use App\Models\Conversation;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
+use App\Services\Conversation\ConversationService;
 use App\Services\Order\DriverDeliveryService;
+use App\Services\Order\OrderReturnService;
+use App\Support\ConversationPayload;
+use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -16,7 +23,11 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
-    public function __construct(private DriverDeliveryService $deliveries) {}
+    public function __construct(
+        private DriverDeliveryService $deliveries,
+        private ConversationService $conversations,
+        private OrderReturnService $returns,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -57,13 +68,37 @@ class OrderController extends Controller
     public function chat(Request $request, Order $order): Response
     {
         $fulfillment = $this->owned($request, $order);
+        abort_unless($fulfillment->status->allowsOrderChat(), 404);
+
+        $conversation = $order->conversation;
 
         return Inertia::render('driver/orders/chat', [
             'order' => $this->detail($fulfillment),
-            'messages' => [],
+            'messages' => $conversation === null
+                ? []
+                : ConversationPayload::messages(
+                    $conversation->messages()->with(['sender:id,name', 'sender.media', 'attachments'])->orderBy('id')->get(),
+                ),
             'viewerId' => (int) $request->user()->id,
-            'canSend' => false,
+            'canSend' => $conversation !== null
+                && ! $conversation->isClosed()
+                && ! $fulfillment->status->isTerminal(),
         ]);
+    }
+
+    public function storeMessage(Request $request, Order $order): RedirectResponse
+    {
+        $fulfillment = $this->owned($request, $order);
+        abort_unless($fulfillment->status->allowsOrderChat() && ! $fulfillment->status->isTerminal(), 404);
+
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $this->conversations->sendMessage($this->thread($order), $request->user(), $validated['body']);
+        Toast::success('Message sent.');
+
+        return back();
     }
 
     public function pickUp(Request $request, Order $order): RedirectResponse
@@ -77,7 +112,14 @@ class OrderController extends Controller
     {
         $this->deliveries->startDelivery($this->owned($request, $order), $request->user());
 
-        return back()->with('success', 'Delivery started. Ask the customer for their code.');
+        return back()->with('success', 'Delivery started.');
+    }
+
+    public function arrive(Request $request, Order $order): RedirectResponse
+    {
+        $this->deliveries->arrive($this->owned($request, $order), $request->user());
+
+        return back()->with('success', 'Marked as arrived.');
     }
 
     public function deliver(Request $request, Order $order): RedirectResponse
@@ -95,7 +137,7 @@ class OrderController extends Controller
     {
         $data = $request->validate([
             'reason' => ['required', 'string'],
-            'note' => ['nullable', 'string', 'max:500'],
+            'note' => ['required', 'string', 'max:500'],
         ]);
 
         $this->deliveries->fail(
@@ -105,7 +147,34 @@ class OrderController extends Controller
             $data['note'] ?? null,
         );
 
-        return back()->with('success', 'Delivery marked unsuccessful.');
+        return back()->with('success', 'Customer marked unavailable.');
+    }
+
+    public function beginReturn(Request $request, Order $order): RedirectResponse
+    {
+        $this->deliveries->beginReturn($this->owned($request, $order), $request->user());
+
+        return back()->with('success', 'Goods marked as returning to the branch.');
+    }
+
+    public function storeReturn(Request $request, Order $order): RedirectResponse
+    {
+        $this->owned($request, $order);
+        $data = $request->validate([
+            'type' => ['required', 'in:return,refund'],
+            'reason' => ['required', 'string', 'max:255'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $this->returns->request(
+            $order,
+            $request->user(),
+            OrderReturnType::from($data['type']),
+            $data['reason'],
+            $data['note'] ?? null,
+        );
+
+        return back()->with('success', 'Return request sent.');
     }
 
     /**
@@ -123,8 +192,11 @@ class OrderController extends Controller
     private function owned(Request $request, Order $order): OrderFulfillment
     {
         $fulfillment = $order->fulfillment;
+        $driverId = (int) $request->user()->id;
+        $assigned = $fulfillment !== null && (int) $fulfillment->driver_id === $driverId;
+        $ownSale = $order->source === OrderSource::DriverSale && (int) $order->placed_by === $driverId;
 
-        abort_if($fulfillment === null || $fulfillment->driver_id !== $request->user()->id, 404);
+        abort_unless($fulfillment !== null && ($assigned || $ownSale), 404);
 
         $fulfillment->loadMissing('order.items');
 
@@ -175,10 +247,16 @@ class OrderController extends Controller
             ...$card,
             'statusLabel' => $fulfillment->status->label(),
             'demoOtpHint' => '',
+            'canChat' => $fulfillment->status->allowsOrderChat(),
             'canPickUp' => $fulfillment->status === FulfillmentStatus::Assigned,
-            'canStart' => in_array($fulfillment->status, [FulfillmentStatus::PickedUp, FulfillmentStatus::DeliveryFailed], true),
-            'canDeliver' => $fulfillment->status === FulfillmentStatus::OutForDelivery,
-            'canFail' => $fulfillment->status === FulfillmentStatus::OutForDelivery,
+            'canStart' => $fulfillment->status === FulfillmentStatus::PickedUp,
+            'canArrive' => $fulfillment->status === FulfillmentStatus::OutForDelivery,
+            'canDeliver' => $fulfillment->status === FulfillmentStatus::Arrived,
+            'canFail' => $fulfillment->status === FulfillmentStatus::Arrived,
+            'canReturn' => $fulfillment->status === FulfillmentStatus::DeliveryFailed,
+            'canRequestReturn' => in_array($fulfillment->status, [FulfillmentStatus::Arrived, FulfillmentStatus::Delivered], true)
+                && $order->returns()->where('status', 'requested')->doesntExist(),
+            'returnRequest' => $this->returns->payload($order),
             'failureReasons' => array_map(
                 fn (DeliveryFailureReason $reason): array => [
                     'value' => $reason->value,
@@ -200,6 +278,15 @@ class OrderController extends Controller
                 'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
             ])->all(),
         ];
+    }
+
+    private function thread(Order $order): Conversation
+    {
+        $conversation = $order->conversation;
+
+        abort_if($conversation === null, 404);
+
+        return $conversation;
     }
 
     private function driverStatus(FulfillmentStatus $status): string

@@ -152,6 +152,15 @@ test('customers index search matches name phone and email', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->has('table.data', 1)
             ->where('table.data.0.name', 'Searchable Shopper'));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.customers.index', [
+            'filter' => ['search' => '0488880001'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('table.data', 1)
+            ->where('table.data.0.name', 'Searchable Shopper'));
 });
 
 test('customers index filters by registration status phone verified and active status', function () {

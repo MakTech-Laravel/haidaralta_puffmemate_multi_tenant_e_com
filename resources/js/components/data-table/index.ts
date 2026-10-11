@@ -11,6 +11,7 @@ export type {
     DataTableActionItem,
 } from '@/components/data-table/data-table-row-actions';
 export { DataTableToolbar } from '@/components/data-table/data-table-toolbar';
+export { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
 export {
     buildArchivesDataTableQuery,
     buildDataTableQuery,

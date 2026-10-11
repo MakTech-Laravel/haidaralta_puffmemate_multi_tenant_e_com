@@ -140,9 +140,9 @@ class PaymentMarkingService
             ]);
         }
 
-        if ($order->fulfillment?->status !== FulfillmentStatus::Delivered) {
+        if (! in_array($order->fulfillment?->status, [FulfillmentStatus::Arrived, FulfillmentStatus::Delivered], true)) {
             throw ValidationException::withMessages([
-                'payment_status' => 'Refund is only available after the order is delivered.',
+                'payment_status' => 'Refund is only available after the order has arrived.',
             ]);
         }
 
