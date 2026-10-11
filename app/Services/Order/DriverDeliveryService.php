@@ -42,94 +42,108 @@ class DriverDeliveryService
     {
         $this->assertAssignedDriver($fulfillment, $driver);
 
-        if ($fulfillment->status !== FulfillmentStatus::PickedUp && $fulfillment->status !== FulfillmentStatus::DeliveryFailed) {
+        if ($fulfillment->status !== FulfillmentStatus::PickedUp) {
             throw ValidationException::withMessages([
                 'status' => 'This order cannot start delivery.',
             ]);
         }
 
-        $phone = $this->phone($fulfillment);
-        $this->otp->issue($phone, OtpPurpose::DeliveryHandover, $fulfillment, self::HANDOVER_TTL_MINUTES);
-
         return $this->statuses->apply($fulfillment, FulfillmentStatus::OutForDelivery, $driver, 'Out for delivery');
     }
 
-    public function complete(OrderFulfillment $fulfillment, User $driver, string $code): OrderFulfillment
+    public function arrive(OrderFulfillment $fulfillment, User $actor): OrderFulfillment
     {
-        $this->assertAssignedDriver($fulfillment, $driver);
+        $this->assertHandoverActor($fulfillment, $actor);
 
         if ($fulfillment->status !== FulfillmentStatus::OutForDelivery) {
             throw ValidationException::withMessages([
-                'otp' => 'This order is not out for delivery.',
+                'status' => 'Mark arrived only while the order is on the way.',
             ]);
         }
 
-        $this->otp->verify($this->phone($fulfillment), OtpPurpose::DeliveryHandover, $code, $fulfillment);
+        return $this->statuses->apply($fulfillment, FulfillmentStatus::Arrived, $actor, 'Arrived');
+    }
 
-        return DB::transaction(function () use ($fulfillment, $driver): OrderFulfillment {
-            $this->payments->collect($fulfillment->order, $driver);
+    public function complete(OrderFulfillment $fulfillment, User $actor, string $code): OrderFulfillment
+    {
+        $this->assertHandoverActor($fulfillment, $actor);
+
+        if ($fulfillment->status !== FulfillmentStatus::Arrived) {
+            throw ValidationException::withMessages([
+                'otp' => 'Confirm the code after the order is marked arrived.',
+            ]);
+        }
+
+        $order = $fulfillment->order;
+
+        if ($order === null) {
+            throw ValidationException::withMessages([
+                'otp' => 'This order has no delivery phone number.',
+            ]);
+        }
+
+        $phone = app(OrderPlacementNotifier::class)->phone($order);
+
+        if ($phone === null) {
+            throw ValidationException::withMessages([
+                'otp' => 'This order has no delivery phone number.',
+            ]);
+        }
+
+        $this->otp->verify($phone, OtpPurpose::OrderPlaced, $code, $order);
+
+        return DB::transaction(function () use ($fulfillment, $actor): OrderFulfillment {
+            $this->payments->collect($fulfillment->order, $actor);
             $fulfillment->forceFill(['paid_at' => now()])->save();
-            $this->saleReserved($fulfillment, $driver);
+            $this->saleReserved($fulfillment, $actor);
 
-            return $this->statuses->apply($fulfillment->refresh(), FulfillmentStatus::Delivered, $driver, 'Delivered');
+            return $this->statuses->apply($fulfillment->refresh(), FulfillmentStatus::Delivered, $actor, 'Delivered');
         });
     }
 
     public function fail(
         OrderFulfillment $fulfillment,
-        User $driver,
+        User $actor,
         DeliveryFailureReason $reason,
         ?string $note = null,
     ): OrderFulfillment {
-        $this->assertAssignedDriver($fulfillment, $driver);
+        $this->assertHandoverActor($fulfillment, $actor);
 
-        if ($fulfillment->status !== FulfillmentStatus::OutForDelivery) {
+        if ($fulfillment->status !== FulfillmentStatus::Arrived) {
             throw ValidationException::withMessages([
-                'status' => 'Only an active delivery can be marked unsuccessful.',
+                'status' => 'Customer unavailable is only available after arrival.',
+            ]);
+        }
+
+        if (trim((string) $note) === '') {
+            throw ValidationException::withMessages([
+                'note' => 'A note is required when the customer is unavailable.',
             ]);
         }
 
         DeliveryAttempt::query()->create([
             'fulfillment_id' => $fulfillment->id,
-            'driver_id' => $driver->id,
+            'driver_id' => $fulfillment->driver_id,
             'reason' => $reason,
             'note' => $note,
             'attempted_at' => now(),
         ]);
 
-        return $this->statuses->apply($fulfillment, FulfillmentStatus::DeliveryFailed, $driver, 'Delivery unsuccessful');
+        return $this->statuses->apply($fulfillment, FulfillmentStatus::DeliveryFailed, $actor, 'Customer unavailable');
     }
 
     public function retry(OrderFulfillment $fulfillment, User $actor): OrderFulfillment
     {
-        if ($fulfillment->status !== FulfillmentStatus::DeliveryFailed) {
-            throw ValidationException::withMessages([
-                'status' => 'Retry is only available after a failed delivery.',
-            ]);
-        }
-
-        $driver = $fulfillment->driver;
-
-        if ($driver === null) {
-            throw ValidationException::withMessages([
-                'status' => 'Assign a driver before retrying delivery.',
-            ]);
-        }
-
-        return $this->startDelivery($fulfillment, $driver);
+        throw ValidationException::withMessages([
+            'status' => 'Send the goods back to the branch before assigning a new driver.',
+        ]);
     }
 
     public function reschedule(OrderFulfillment $fulfillment, User $actor): OrderFulfillment
     {
-        if ($fulfillment->status !== FulfillmentStatus::DeliveryFailed) {
-            throw ValidationException::withMessages([
-                'status' => 'Reschedule is only available after a failed delivery.',
-            ]);
-        }
-
-        $fulfillment->forceFill(['driver_id' => null])->save();
-
-        return $this->statuses->apply($fulfillment, FulfillmentStatus::Ready, $actor, 'Delivery rescheduled');
+        throw ValidationException::withMessages([
+            'status' => 'Send the goods back to the branch before assigning a new driver.',
+        ]);
     }
 
     public function beginReturn(OrderFulfillment $fulfillment, User $actor): OrderFulfillment
@@ -151,7 +165,7 @@ class DriverDeliveryService
             ]);
         }
 
-        return $this->statuses->cancel($fulfillment, $actor, 'Returned to branch');
+        return $this->statuses->apply($fulfillment, FulfillmentStatus::Returned, $actor, 'Goods received');
     }
 
     private function saleReserved(OrderFulfillment $fulfillment, User $actor): void
@@ -200,16 +214,20 @@ class DriverDeliveryService
         }
     }
 
-    private function phone(OrderFulfillment $fulfillment): string
+    private function assertHandoverActor(OrderFulfillment $fulfillment, User $actor): void
     {
-        $phone = $fulfillment->order?->shipping_address_snapshot['phone'] ?? null;
-
-        if (! is_string($phone) || $phone === '') {
+        if ($fulfillment->driver_id === null) {
             throw ValidationException::withMessages([
-                'otp' => 'This order has no delivery phone number.',
+                'status' => 'Assign a driver before handover.',
             ]);
         }
 
-        return $phone;
+        if ($actor->isDriver() && $fulfillment->driver_id !== $actor->id) {
+            abort(404);
+        }
+
+        if (! $actor->isDriver() && ! $actor->isPlatform() && ! $actor->isBranch()) {
+            abort(403);
+        }
     }
 }

@@ -503,6 +503,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.orders.assign-candidates');
         Route::post('orders/{order}/assign-driver', [PlatformOrderAssignController::class, 'store'])
             ->name('platform.orders.assign-driver');
+        Route::post('orders/{order}/placement-code', [PlatformOrderController::class, 'resendPlacementCode'])
+            ->name('platform.orders.placement-code');
         Route::post('orders/{order}/cancel', [PlatformOrderController::class, 'cancel'])
             ->name('platform.orders.cancel');
         Route::post('orders/{order}/retry-delivery', [PlatformOrderController::class, 'retryDelivery'])
@@ -511,6 +513,14 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.orders.reschedule-delivery');
         Route::post('orders/{order}/return-delivery', [PlatformOrderController::class, 'returnDelivery'])
             ->name('platform.orders.return-delivery');
+        Route::post('orders/{order}/deliver', [PlatformOrderController::class, 'deliver'])
+            ->name('platform.orders.deliver');
+        Route::post('orders/{order}/fail', [PlatformOrderController::class, 'fail'])
+            ->name('platform.orders.fail');
+        Route::post('orders/{order}/returns/{orderReturn}/approve', [PlatformOrderController::class, 'approveReturn'])
+            ->name('platform.orders.returns.approve');
+        Route::post('orders/{order}/returns/{orderReturn}/reject', [PlatformOrderController::class, 'rejectReturn'])
+            ->name('platform.orders.returns.reject');
         Route::post('orders/{order}/confirm-return', [PlatformOrderController::class, 'confirmReturn'])
             ->name('platform.orders.confirm-return');
         Route::put('orders/{order}/payment-status', [PlatformOrderController::class, 'markPaid'])

@@ -3,6 +3,7 @@
 namespace App\Services\Order;
 
 use App\Enums\DriverAssignmentStatus;
+use App\Enums\FulfillmentStatus;
 use App\Enums\UserType;
 use App\Models\OrderFulfillment;
 use App\Models\User;
@@ -19,9 +20,14 @@ class OrderAssignService
         return $this->drivers->canAssign($fulfillment);
     }
 
-    public function assign(OrderFulfillment $fulfillment, User $driver, User $actor, ?string $reason = null): OrderFulfillment
-    {
-        return $this->drivers->assign($fulfillment, $driver, $actor, $reason);
+    public function assign(
+        OrderFulfillment $fulfillment,
+        User $driver,
+        User $actor,
+        ?string $reason = null,
+        ?FulfillmentStatus $advance = null,
+    ): OrderFulfillment {
+        return $this->drivers->assign($fulfillment, $driver, $actor, $reason, $advance);
     }
 
     /**
@@ -59,7 +65,10 @@ class OrderAssignService
         $page = max(1, $page);
         $search = trim((string) $search);
 
+        $onDutyIds = $this->drivers->candidates($fulfillment)->pluck('id')->all();
+
         $query = User::query()
+            ->whereIn('id', $onDutyIds === [] ? [0] : $onDutyIds)
             ->where('user_type', UserType::DRIVER)
             ->where('is_active', true)
             ->whereHas('driverBranchAssignments', function ($assignments) use ($fulfillment): void {

@@ -1,24 +1,35 @@
 import { Form, Head } from '@inertiajs/react';
 import OrderController from '@/actions/App/Http/Controllers/Customer/OrderController';
-import { OrderDeliveryTimeline } from '@/components/customer/order-delivery-timeline';
+import { OrderStatusTrack } from '@/components/orders/order-status-track';
+import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { OrderTrackAddress } from '@/components/customer/order-track-address';
 import { OrderTrackDriverCard } from '@/components/customer/order-track-driver';
 import { OrderTrackProducts } from '@/components/customer/order-track-products';
 import type { CustomerOrderDetail } from '@/components/customer/order-track-types';
 import { Badge } from '@/components/ui/badge';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { index as ordersIndex } from '@/routes/customer/orders';
 
 const statusLabel: Record<string, string> = {
-    pending: 'Order Placed',
+    pending: 'Awaiting confirmation',
+    placed: 'Order placed',
+    hold: 'On hold',
     processing: 'Preparing Your Order',
     ready: 'Ready For Delivery',
     assigned: 'Driver Assigned',
     picked_up: 'Order Picked Up',
     out_for_delivery: 'On The Way',
-    delivery_failed: 'Delivery unsuccessful',
+    arrived: 'Driver arrived',
+    delivery_failed: 'Customer unavailable',
     returning: 'Returning your order',
+    returned: 'Returned to the branch',
     delivered: 'Delivered',
     cancelled: 'Cancelled',
 };
@@ -66,6 +77,24 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                             >
                                 {order.statusLabel ?? statusLabel[order.status]}
                             </Badge>
+                            {order.canResendCode ? (
+                                <Form
+                                    {...OrderController.resendPlacementCode.form(
+                                        order.orderNumber,
+                                    )}
+                                >
+                                    {({ processing }) => (
+                                        <Button
+                                            type="submit"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={processing}
+                                        >
+                                            Resend code
+                                        </Button>
+                                    )}
+                                </Form>
+                            ) : null}
                             {order.canCancel ? (
                                 <Form
                                     {...OrderController.cancel.form(
@@ -87,6 +116,12 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                         </div>
                     </div>
 
+                    <OrderReturnRequest
+                        canRequest={order.canRequestReturn ?? false}
+                        request={order.returnRequest ?? null}
+                        form={OrderController.storeReturn.form(order.orderNumber)}
+                    />
+
                     {order.handoverNotice ? (
                         <p className="bg-primary/10 text-foreground rounded-md p-3 text-sm">
                             {order.handoverNotice}
@@ -94,7 +129,13 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                     ) : null}
                 </div>
 
-                <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+                <div
+                    className={cn(
+                        'grid items-start gap-5',
+                        order.driver &&
+                            'lg:grid-cols-[minmax(0,1fr)_20rem]',
+                    )}
+                >
                     <div className="flex min-w-0 flex-col gap-5">
                         <OrderTrackProducts
                             products={order.products}
@@ -107,13 +148,21 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                         <OrderTrackAddress address={order.shippingAddress} />
                     </div>
 
-                    <aside className="flex h-fit flex-col gap-5 lg:sticky lg:top-28">
+                    <aside className="flex h-fit flex-col gap-5">
                         {order.driver ? (
                             <OrderTrackDriverCard driver={order.driver} />
                         ) : null}
-                        <OrderDeliveryTimeline steps={order.timeline} />
                     </aside>
                 </div>
+
+                <Card className="border-border/70 shadow-sm">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base">History</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <OrderStatusTrack steps={order.timeline} />
+                    </CardContent>
+                </Card>
             </div>
         </>
     );

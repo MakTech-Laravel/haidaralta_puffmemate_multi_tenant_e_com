@@ -130,6 +130,14 @@ class Order extends Model implements DataTableConfigurable
     }
 
     /**
+     * @return HasMany<OrderReturn, $this>
+     */
+    public function returns(): HasMany
+    {
+        return $this->hasMany(OrderReturn::class);
+    }
+
+    /**
      * The single fulfillment for this order.
      *
      * @return HasOne<OrderFulfillment, $this>
@@ -164,14 +172,13 @@ class Order extends Model implements DataTableConfigurable
     }
 
     /**
-     * Master-level status trail only (`fulfillment_id` is null). Fulfillment
-     * transitions are tracked on {@see OrderFulfillment::statusHistories()}.
+     * Every status change for this order, including fulfillment transitions.
      *
      * @return HasMany<OrderStatusHistory, $this>
      */
     public function statusHistories(): HasMany
     {
-        return $this->hasMany(OrderStatusHistory::class)->whereNull('fulfillment_id');
+        return $this->hasMany(OrderStatusHistory::class);
     }
 
     /**

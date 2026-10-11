@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Order;
 
+use App\Enums\FulfillmentStatus;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
 use Illuminate\Foundation\Http\FormRequest;
@@ -20,16 +21,22 @@ class AssignFulfillmentDriverRequest extends FormRequest
     public function rules(): array
     {
         $fulfillment = $this->resolveFulfillment();
-        $isReassign = $fulfillment !== null && $fulfillment->driver_id !== null;
+        $needsReason = $fulfillment !== null && (
+            $fulfillment->driver_id !== null || $fulfillment->status === FulfillmentStatus::Returned
+        );
 
         return [
             'driver_id' => ['required', 'integer', 'exists:users,id'],
             'reason' => [
-                Rule::requiredIf($isReassign),
+                Rule::requiredIf($needsReason),
                 'nullable',
                 'string',
                 'max:255',
             ],
+            'advance' => ['nullable', 'string', Rule::in([
+                FulfillmentStatus::PickedUp->value,
+                FulfillmentStatus::OutForDelivery->value,
+            ])],
         ];
     }
 

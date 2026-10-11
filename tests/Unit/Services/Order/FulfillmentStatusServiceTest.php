@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderStatus;
 use App\Enums\UserType;
 use App\Models\Inventory;
 use App\Models\Order;
@@ -88,6 +89,34 @@ test('cancel is rejected once an order is delivered', function () {
         ->toThrow(ValidationException::class);
 
     expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Delivered);
+});
+
+test('pending confirmation cannot skip straight to packaging', function () {
+    $staff = User::factory()->create(['user_type' => UserType::BRANCH]);
+    $order = Order::factory()->create();
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create(['status' => FulfillmentStatus::Pending]);
+
+    expect(fn () => app(FulfillmentStatusService::class)->transition($fulfillment, FulfillmentStatus::Processing, $staff))
+        ->toThrow(ValidationException::class);
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Pending);
+});
+
+test('confirming a pending order records who placed it', function () {
+    $staff = User::factory()->create(['user_type' => UserType::BRANCH, 'name' => 'Branch Clerk']);
+    $order = Order::factory()->create(['status' => OrderStatus::Pending]);
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create(['status' => FulfillmentStatus::Pending]);
+
+    app(FulfillmentStatusService::class)->transition($fulfillment, FulfillmentStatus::Placed, $staff, 'Confirmed by phone');
+
+    $history = $fulfillment->statusHistories()->first();
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Placed)
+        ->and($order->refresh()->status->value)->toBe('placed')
+        ->and($history->changed_by)->toBe($staff->id)
+        ->and($history->old_status)->toBe('pending')
+        ->and($history->new_status)->toBe('placed')
+        ->and($history->comment)->toBe('Confirmed by phone');
 });
 
 test('a status jump outside the graph is rejected', function () {

@@ -1,11 +1,11 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import {
     ChevronLeft,
     MapPin,
     Package,
     Phone,
 } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ConversationComposer } from '@/components/conversation/conversation-composer';
 import { ConversationMessageRow } from '@/components/conversation/conversation-message-row';
 import { daySeparatorLabel } from '@/components/conversation/format';
@@ -42,11 +42,11 @@ type DriverOrderChatPanelProps = {
     viewerId: number;
     viewerName: string;
     canSend: boolean;
+    messageUrl: string;
 };
 
 /**
- * Field messenger for one stop. Reuses conversation bubbles/composer; demo
- * sends stay local until real order conversations are wired for drivers.
+ * Field messenger for one stop. Sends land on the order conversation.
  */
 export function DriverOrderChatPanel({
     order,
@@ -54,11 +54,16 @@ export function DriverOrderChatPanel({
     viewerId,
     viewerName,
     canSend,
+    messageUrl,
 }: DriverOrderChatPanelProps) {
     const [messages, setMessages] = useState(initialMessages);
     const viewportRef = useRef<HTMLDivElement>(null);
     const isDelivered = order.status === 'delivered';
     const conversationId = initialMessages[0]?.conversation_id ?? 0;
+
+    useEffect(() => {
+        setMessages(initialMessages);
+    }, [initialMessages]);
 
     const scrollToBottom = useCallback(() => {
         const viewport = viewportRef.current;
@@ -99,25 +104,34 @@ export function DriverOrderChatPanel({
                 },
             ]);
 
-            window.setTimeout(() => {
-                setMessages((current) =>
-                    current.map((one) =>
-                        one.id === clientId
-                            ? {
-                                  ...one,
-                                  id: Math.abs(clientId) + 10_000,
-                                  pending: undefined,
-                              }
-                            : one,
-                    ),
-                );
-            }, 450);
+            router.post(
+                messageUrl,
+                { body },
+                {
+                    preserveScroll: true,
+                    onError: () => {
+                        setMessages((current) =>
+                            current.map((one) =>
+                                one.id === clientId && one.pending
+                                    ? {
+                                          ...one,
+                                          pending: {
+                                              ...one.pending,
+                                              state: 'failed',
+                                          },
+                                      }
+                                    : one,
+                            ),
+                        );
+                    },
+                },
+            );
 
             requestAnimationFrame(scrollToBottom);
 
             return true;
         },
-        [canSend, conversationId, scrollToBottom, viewerId, viewerName],
+        [canSend, conversationId, messageUrl, scrollToBottom, viewerId, viewerName],
     );
 
     const discard = useCallback((clientId: number) => {

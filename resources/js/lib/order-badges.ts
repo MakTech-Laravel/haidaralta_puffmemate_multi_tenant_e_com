@@ -16,7 +16,10 @@ const tint = {
 export function orderStatusBadgeClass(status: string): string {
     switch (status) {
         case 'pending':
+        case 'hold':
             return tint.amber;
+        case 'placed':
+            return tint.teal;
         case 'processing':
             return tint.sky;
         case 'ready':
@@ -27,9 +30,12 @@ export function orderStatusBadgeClass(status: string): string {
             return tint.violet;
         case 'out_for_delivery':
             return tint.blue;
+        case 'arrived':
+            return tint.emerald;
         case 'delivery_failed':
             return tint.rose;
         case 'returning':
+        case 'returned':
             return tint.orange;
         case 'delivered':
             return tint.emerald;
