@@ -7,6 +7,7 @@ use App\Models\OrderDriverAssignmentHistory;
 use App\Models\OrderFulfillment;
 use App\Models\User;
 use App\Support\Order\AssignmentHistoryActor;
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -95,14 +96,16 @@ class OrderAssignHistoryDataTable extends AbstractDataTable
                             ->where('name', 'like', '%'.$term.'%'),
                     )->orWhereHas(
                         'fromDriver',
-                        fn (Builder $drivers): Builder => $drivers
-                            ->where('name', 'like', '%'.$term.'%')
-                            ->orWhere('phone', 'like', '%'.$term.'%'),
+                        fn (Builder $drivers): Builder => $drivers->where(function (Builder $people) use ($term): void {
+                            $people->where('name', 'like', '%'.$term.'%');
+                            Phone::constrainLike($people, 'phone', $term);
+                        }),
                     )->orWhereHas(
                         'toDriver',
-                        fn (Builder $drivers): Builder => $drivers
-                            ->where('name', 'like', '%'.$term.'%')
-                            ->orWhere('phone', 'like', '%'.$term.'%'),
+                        fn (Builder $drivers): Builder => $drivers->where(function (Builder $people) use ($term): void {
+                            $people->where('name', 'like', '%'.$term.'%');
+                            Phone::constrainLike($people, 'phone', $term);
+                        }),
                     );
                 });
             }),

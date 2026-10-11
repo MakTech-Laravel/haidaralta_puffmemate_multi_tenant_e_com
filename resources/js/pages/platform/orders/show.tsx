@@ -1,7 +1,6 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import {
     ArrowRight,
-    Check,
     MapPin,
     Package,
     Truck,
@@ -13,6 +12,9 @@ import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Platfor
 import OrderController from '@/actions/App/Http/Controllers/Platform/OrderController';
 import StockTransferController from '@/actions/App/Http/Controllers/Platform/StockTransferController';
 import { OrderAssignDriverSheet } from '@/components/branch/order-assign-driver-sheet';
+import { OrderHandoverActions } from '@/components/orders/order-handover-actions';
+import { OrderStatusTrack } from '@/components/orders/order-status-track';
+import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,15 +24,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 
 type FulfillmentSummary = {
     id: number;
@@ -38,7 +32,7 @@ type FulfillmentSummary = {
     branchName: string;
     status: string;
     statusLabel: string;
-    statusOptions: { value: string; label: string }[];
+    actions: { key: string; label: string; status: string }[];
     shippingCostLabel: string;
     isPaid: boolean;
     driverId: number | null;
@@ -80,6 +74,19 @@ type OrderDetail = {
     sourceLabel: string;
     placedByName: string | null;
     paymentStatusOptions: { value: string; label: string }[];
+    canComplete?: boolean;
+    returnRequest?: {
+        id: number;
+        type: string;
+        typeLabel: string;
+        reason: string;
+        note: string | null;
+        status: string;
+        statusLabel: string;
+    } | null;
+    canReportUnavailable?: boolean;
+    failureReasons?: { value: string; label: string }[];
+    canResendCode: boolean;
     paymentMethod: string | null;
     customerName: string;
     placedAt: string | null;
@@ -96,17 +103,25 @@ type OrderDetail = {
         phone?: string;
     } | null;
     fulfillments: FulfillmentSummary[];
-    timeline: { label: string; detail: string; comment: string | null }[];
+    timeline: {
+        key: string;
+        label: string;
+        state: 'completed' | 'current' | 'upcoming';
+        actorName: string | null;
+        detail: string | null;
+        comment: string | null;
+    }[];
 };
 
 function FulfillmentCard({
     orderId,
     fulfillment,
+    canResendCode,
 }: {
     orderId: number;
     fulfillment: FulfillmentSummary;
+    canResendCode: boolean;
 }) {
-    const [status, setStatus] = useState(fulfillment.status);
     const [processing, setProcessing] = useState(false);
     const [assignOpen, setAssignOpen] = useState(false);
 
@@ -175,7 +190,7 @@ function FulfillmentCard({
                             {fulfillment.items.length === 1 ? '' : 's'}
                         </span>
                     </div>
-                    <ul className="border-border max-h-80 space-y-3 overflow-y-auto overscroll-contain border-y py-3 pr-1">
+                    <ul className="border-border space-y-3 border-y py-3">
                         {fulfillment.items.map((item, index) => (
                             <li
                                 key={`${item.name}-${index}`}
@@ -342,41 +357,74 @@ function FulfillmentCard({
                         ))}
                     </div>
                 ) : null}
+            </CardContent>
+        </Card>
+    );
+}
 
-                <Separator />
+function FulfillmentActions({
+    orderId,
+    fulfillment,
+    canResendCode,
+}: {
+    orderId: number;
+    fulfillment: FulfillmentSummary;
+    canResendCode: boolean;
+}) {
+    const [processing, setProcessing] = useState(false);
 
-                <div className="space-y-3">
-                    <h3 className="text-sm font-semibold tracking-tight">
-                        Fulfillment actions
-                    </h3>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                        <Select value={status} onValueChange={setStatus}>
-                            <SelectTrigger className="sm:flex-1">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {fulfillment.statusOptions.map((option) => (
-                                    <SelectItem
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+    const run = (action: () => void) => {
+        setProcessing(true);
+        action();
+    };
+
+    return (
+        <Card className="border-border/70 shadow-sm">
+            <CardHeader className="pb-3">
+                <CardTitle className="text-base">Fulfillment actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                    {fulfillment.actions.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                            {fulfillment.actions.map((action) => (
+                                <Button
+                                    key={action.key}
+                                    disabled={processing}
+                                    onClick={() =>
+                                        run(() =>
+                                            router.put(
+                                                OrderController.updateStatus.url(
+                                                    [orderId, fulfillment.id],
+                                                ),
+                                                { status: action.status },
+                                                {
+                                                    onFinish: () =>
+                                                        setProcessing(false),
+                                                },
+                                            ),
+                                        )
+                                    }
+                                >
+                                    {action.label}
+                                </Button>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">
+                            No status change is available from here.
+                        </p>
+                    )}
+                    {canResendCode ? (
                         <Button
-                            disabled={
-                                processing || status === fulfillment.status
-                            }
+                            variant="outline"
+                            disabled={processing}
                             onClick={() =>
                                 run(() =>
-                                    router.put(
-                                        OrderController.updateStatus.url([
+                                    router.post(
+                                        OrderController.resendPlacementCode.url(
                                             orderId,
-                                            fulfillment.id,
-                                        ]),
-                                        { status },
+                                        ),
+                                        {},
                                         {
                                             onFinish: () =>
                                                 setProcessing(false),
@@ -385,9 +433,9 @@ function FulfillmentCard({
                                 )
                             }
                         >
-                            Save status
+                            Resend delivery code
                         </Button>
-                    </div>
+                    ) : null}
 
                     {/* {fulfillment.canAssign ? (
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -539,7 +587,6 @@ function FulfillmentCard({
                             </Button>
                         ) : null}
                     </div>
-                </div>
             </CardContent>
         </Card>
     );
@@ -550,9 +597,6 @@ export default function PlatformOrderShow({
 }: {
     order: OrderDetail;
 }) {
-    const [paymentStatus, setPaymentStatus] = useState(order.paymentStatus);
-    const [processing, setProcessing] = useState(false);
-
     setLayoutProps({
         breadcrumbs: [
             { title: 'Dashboard', href: '/platform/dashboard' },
@@ -621,18 +665,29 @@ export default function PlatformOrderShow({
                     </div>
                 </div>
 
-                <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
+                <div className="grid items-start gap-5 lg:grid-cols-2">
                     <div className="space-y-5">
                         {order.fulfillments.map((fulfillment) => (
                             <FulfillmentCard
+                                canResendCode={order.canResendCode}
                                 key={fulfillment.id}
                                 orderId={order.id}
                                 fulfillment={fulfillment}
                             />
                         ))}
+                        <OrderHandoverActions
+                            orderId={order.id}
+                            deliverForm={OrderController.deliver.form(order.id)}
+                            failForm={OrderController.fail.form(order.id)}
+                            canComplete={order.canComplete ?? false}
+                            canReportUnavailable={
+                                order.canReportUnavailable ?? false
+                            }
+                            failureReasons={order.failureReasons ?? []}
+                        />
                     </div>
 
-                    <aside className="space-y-4 lg:sticky lg:top-24">
+                    <aside className="space-y-4">
                         <Card className="border-border/70 shadow-sm">
                             <CardHeader className="pb-3">
                                 <CardTitle className="flex items-center gap-2 text-base">
@@ -734,115 +789,58 @@ export default function PlatformOrderShow({
                                         </div>
                                     ) : null}
                                 </div>
-                                <Select
-                                    value={paymentStatus}
-                                    onValueChange={setPaymentStatus}
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {order.paymentStatusOptions.map(
-                                            (option) => (
-                                                <SelectItem
-                                                    key={option.value}
-                                                    value={option.value}
-                                                >
-                                                    {option.label}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                <Button
-                                    className="w-full"
-                                    disabled={
-                                        processing ||
-                                        paymentStatus === order.paymentStatus
+                                <OrderReturnRequest
+                                    canRequest={false}
+                                    request={order.returnRequest ?? null}
+                                    approveUrl={
+                                        order.returnRequest
+                                            ? OrderController.approveReturn.url(
+                                                  {
+                                                      order: order.id,
+                                                      orderReturn:
+                                                          order.returnRequest
+                                                              .id,
+                                                  },
+                                              )
+                                            : undefined
                                     }
-                                    onClick={() => {
-                                        setProcessing(true);
-                                        router.put(
-                                            OrderController.markPaid.url(
-                                                order.id,
-                                            ),
-                                            { payment_status: paymentStatus },
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
-                                        );
-                                    }}
-                                >
-                                    Update payment status
-                                </Button>
+                                    rejectUrl={
+                                        order.returnRequest
+                                            ? OrderController.rejectReturn.url({
+                                                  order: order.id,
+                                                  orderReturn:
+                                                      order.returnRequest.id,
+                                              })
+                                            : undefined
+                                    }
+                                />
                             </CardContent>
                         </Card>
 
-                        <Card className="border-border/70 shadow-sm">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="flex items-center gap-2 text-base">
-                                    <Truck
-                                        className="text-muted-foreground size-4"
-                                        aria-hidden
-                                    />
-                                    History
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {order.timeline.length === 0 ? (
-                                    <p className="text-muted-foreground text-sm">
-                                        No status history yet.
-                                    </p>
-                                ) : (
-                                    <ol className="flex flex-col">
-                                        {order.timeline.map((step, index) => {
-                                            const isLast =
-                                                index ===
-                                                order.timeline.length - 1;
-
-                                            return (
-                                                <li
-                                                    key={`${step.label}-${index}`}
-                                                    className="relative flex gap-3 pb-5 last:pb-0"
-                                                >
-                                                    {!isLast ? (
-                                                        <span
-                                                            aria-hidden
-                                                            className="bg-border absolute top-6 bottom-0 left-2.25 w-px"
-                                                        />
-                                                    ) : null}
-                                                    <span
-                                                        className={cn(
-                                                            'bg-foreground text-background relative z-10 mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full',
-                                                            isLast &&
-                                                                'bg-primary text-primary-foreground',
-                                                        )}
-                                                        aria-hidden
-                                                    >
-                                                        <Check className="size-3 stroke-3" />
-                                                    </span>
-                                                    <div className="min-w-0 pt-0.5">
-                                                        <p className="text-sm font-semibold">
-                                                            {step.label}
-                                                        </p>
-                                                        <p className="text-muted-foreground text-xs">
-                                                            {step.detail}
-                                                        </p>
-                                                        {step.comment ? (
-                                                            <p className="text-muted-foreground mt-1 text-xs">
-                                                                {step.comment}
-                                                            </p>
-                                                        ) : null}
-                                                    </div>
-                                                </li>
-                                            );
-                                        })}
-                                    </ol>
-                                )}
-                            </CardContent>
-                        </Card>
+                        {order.fulfillments.map((fulfillment) => (
+                            <FulfillmentActions
+                                key={fulfillment.id}
+                                orderId={order.id}
+                                fulfillment={fulfillment}
+                                canResendCode={order.canResendCode}
+                            />
+                        ))}
                     </aside>
+
+                    <Card className="border-border/70 shadow-sm lg:col-span-2">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Truck
+                                className="text-muted-foreground size-4"
+                                aria-hidden
+                            />
+                            History
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <OrderStatusTrack steps={order.timeline} />
+                    </CardContent>
+                    </Card>
                 </div>
             </div>
         </>

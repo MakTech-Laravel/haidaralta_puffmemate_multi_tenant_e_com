@@ -10,6 +10,7 @@ paths:
   - app/Support/BranchProductPriceDisplay.php
   - routes/platform.php
   - 'routes/*.php'
+  - app/Support/Phone.php
 ---
 
 # Discounts
@@ -43,3 +44,6 @@ Platform-owned: /platform/shifts and /platform/shift-assignments (edit at /platf
 
 ## Catalog discounts use product discount columns
 When show_branch_pricing is false, listDisplayFromProduct / forCatalogProduct apply products.discount_* with the same live-window and fixed/percent math as branch prices. Lists strikethrough selling when discounted; otherwise compare-at regular when regular > selling. When the flag is true, discounts still come only from branch_product_prices.
+
+## Phone search uses international variants
+Phone search must use Phone::searchVariants and Phone::constrainLike. Never raw LIKE on E.164 users.phone. Do not hard-code one country calling code; strip a national trunk 0 and include parsed E.164 forms.

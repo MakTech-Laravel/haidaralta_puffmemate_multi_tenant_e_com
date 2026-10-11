@@ -7,6 +7,7 @@ use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Models\ProductReview;
 use App\Models\User;
+use App\Support\Phone;
 use App\Support\StockPageContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -128,8 +129,8 @@ class ProductReviewController extends Controller
         if ($search !== '') {
             $query->where(function ($filters) use ($search): void {
                 $filters->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
+                Phone::constrainLike($filters, 'phone', $search);
             });
         }
 
