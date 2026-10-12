@@ -39,10 +39,23 @@ export type DriverOrderDetail = DriverAssignedOrder & {
     phone: string;
     notes: string | null;
     demoOtpHint: string;
+    canChat?: boolean;
     canPickUp?: boolean;
     canStart?: boolean;
+    canArrive?: boolean;
     canDeliver?: boolean;
     canFail?: boolean;
+    canReturn?: boolean;
+    canRequestReturn?: boolean;
+    returnRequest?: {
+        id: number;
+        type: string;
+        typeLabel: string;
+        reason: string;
+        note: string | null;
+        status: string;
+        statusLabel: string;
+    } | null;
     failureReasons?: Array<{ value: string; label: string }>;
     shippingAddress: {
         line1: string;
@@ -61,13 +74,17 @@ export type DriverOrderDetail = DriverAssignedOrder & {
 
 export const driverOrderStatusLabel: Record<string, string> = {
     pending: 'Pending',
+    placed: 'Placed',
+    hold: 'On hold',
     processing: 'Processing',
     ready: 'Ready',
     assigned: 'Assigned',
     picked_up: 'Picked up',
-    out_for_delivery: 'Out for delivery',
-    delivery_failed: 'Delivery failed',
+    out_for_delivery: 'On the way',
+    arrived: 'Arrived',
+    delivery_failed: 'Customer unavailable',
     returning: 'Returning',
+    returned: 'Returned',
     delivered: 'Delivered',
     cancelled: 'Cancelled',
 };

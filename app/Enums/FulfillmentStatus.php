@@ -5,13 +5,17 @@ namespace App\Enums;
 enum FulfillmentStatus: string
 {
     case Pending = 'pending';
+    case Placed = 'placed';
+    case Hold = 'hold';
     case Processing = 'processing';
     case Ready = 'ready';
     case Assigned = 'assigned';
     case PickedUp = 'picked_up';
     case OutForDelivery = 'out_for_delivery';
+    case Arrived = 'arrived';
     case DeliveryFailed = 'delivery_failed';
     case Returning = 'returning';
+    case Returned = 'returned';
     case Delivered = 'delivered';
     case Cancelled = 'cancelled';
 
@@ -19,13 +23,17 @@ enum FulfillmentStatus: string
     {
         return match ($this) {
             self::Pending => 'Pending',
+            self::Placed => 'Placed',
+            self::Hold => 'On hold',
             self::Processing => 'Processing',
             self::Ready => 'Ready',
             self::Assigned => 'Assigned',
             self::PickedUp => 'Picked up',
-            self::OutForDelivery => 'Out for delivery',
-            self::DeliveryFailed => 'Delivery failed',
+            self::OutForDelivery => 'On the way',
+            self::Arrived => 'Arrived',
+            self::DeliveryFailed => 'Customer unavailable',
             self::Returning => 'Returning',
+            self::Returned => 'Returned',
             self::Delivered => 'Delivered',
             self::Cancelled => 'Cancelled',
         };
@@ -34,14 +42,18 @@ enum FulfillmentStatus: string
     public function customerLabel(): string
     {
         return match ($this) {
-            self::Pending => 'Order Placed',
-            self::Processing => 'Preparing Your Order',
-            self::Ready => 'Ready For Delivery',
-            self::Assigned => 'Driver Assigned',
-            self::PickedUp => 'Order Picked Up',
-            self::OutForDelivery => 'On The Way',
-            self::DeliveryFailed => 'Delivery unsuccessful',
+            self::Pending => 'Awaiting confirmation',
+            self::Placed => 'Order placed',
+            self::Hold => 'On hold',
+            self::Processing => 'Preparing your order',
+            self::Ready => 'Packed',
+            self::Assigned => 'Driver assigned',
+            self::PickedUp => 'Order picked up',
+            self::OutForDelivery => 'On the way',
+            self::Arrived => 'Driver arrived',
+            self::DeliveryFailed => 'Customer unavailable',
             self::Returning => 'Returning your order',
+            self::Returned => 'Returned to the branch',
             self::Delivered => 'Delivered',
             self::Cancelled => 'Cancelled',
         };
@@ -58,7 +70,7 @@ enum FulfillmentStatus: string
     public function holdsDriverWorkload(): bool
     {
         return match ($this) {
-            self::Assigned, self::PickedUp, self::OutForDelivery, self::DeliveryFailed, self::Returning => true,
+            self::Assigned, self::PickedUp, self::OutForDelivery, self::Arrived, self::DeliveryFailed, self::Returning => true,
             default => false,
         };
     }
@@ -66,7 +78,23 @@ enum FulfillmentStatus: string
     public function allowsCustomerCancel(): bool
     {
         return match ($this) {
-            self::Pending, self::Processing => true,
+            self::Pending, self::Hold, self::Placed, self::Processing => true,
+            default => false,
+        };
+    }
+
+    public function allowsOrderChat(): bool
+    {
+        return match ($this) {
+            self::OutForDelivery, self::Arrived, self::DeliveryFailed, self::Returning, self::Delivered => true,
+            default => false,
+        };
+    }
+
+    public function allowsPlacementCode(): bool
+    {
+        return match ($this) {
+            self::Placed, self::Processing, self::Ready, self::Assigned, self::PickedUp, self::OutForDelivery, self::Arrived => true,
             default => false,
         };
     }
@@ -74,25 +102,58 @@ enum FulfillmentStatus: string
     public function allowsStaffCancel(): bool
     {
         return match ($this) {
-            self::Pending, self::Processing, self::Ready, self::Assigned => true,
+            self::Pending, self::Hold, self::Placed, self::Processing, self::Ready, self::Assigned, self::Returned => true,
             default => false,
         };
     }
 
     /**
-     * Packing-desk transitions that staff may post. Assignment, pickup, and
-     * delivery completion use dedicated services.
+     * Statuses staff may set through the generic transition endpoint.
+     * Assignment, handover OTP, and defect returns use dedicated services.
      *
      * @return list<self>
      */
     public function staffNext(): array
     {
         return match ($this) {
-            self::Pending => [self::Processing, self::Cancelled],
+            self::Pending, self::Hold => [self::Placed, self::Cancelled],
+            self::Placed => [self::Processing, self::Cancelled],
             self::Processing => [self::Ready, self::Cancelled],
-            self::Ready, self::Assigned => [self::Cancelled],
+            self::Ready, self::Assigned, self::Returned => [self::Cancelled],
+            self::PickedUp => [self::OutForDelivery],
+            self::OutForDelivery => [self::Arrived],
+            self::DeliveryFailed => [self::Returning],
+            self::Returning => [self::Returned],
             default => [],
         };
+    }
+
+    /**
+     * @return list<array{key: string, label: string, status: string}>
+     */
+    public function staffActions(): array
+    {
+        return array_map(
+            fn (self $status): array => [
+                'key' => $status->value,
+                'label' => match ($status) {
+                    self::Placed => 'Confirm order',
+                    self::Processing => 'Start packaging',
+                    self::Ready => 'Packaging complete',
+                    self::OutForDelivery => 'On the way',
+                    self::Arrived => 'Mark arrived',
+                    self::Returning => 'Start return',
+                    self::Returned => 'Goods received',
+                    self::Cancelled => 'Cancel order',
+                    default => $status->label(),
+                },
+                'status' => $status->value,
+            ],
+            array_values(array_filter(
+                $this->staffNext(),
+                fn (self $status): bool => $status !== self::Cancelled,
+            )),
+        );
     }
 
     /**

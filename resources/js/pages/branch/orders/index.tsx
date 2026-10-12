@@ -14,7 +14,16 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
+import { OrderListCustomer } from '@/components/orders/order-list-customer';
+import { OrderPlacedDateFilters } from '@/components/orders/order-placed-date-filters';
 import { Badge } from '@/components/ui/badge';
+import {
+    orderSourceBadgeClass,
+    orderStatusBadgeClass,
+    paymentStatusBadgeClass,
+    paymentStatusLabel,
+} from '@/lib/order-badges';
+import { formatAppDateTime } from '@/lib/datetime';
 import {
     Select,
     SelectContent,
@@ -29,6 +38,9 @@ type FulfillmentRow = {
     order_id: number;
     order_number: string;
     customer_name: string;
+    customer_phone: string | null;
+    placed_at: string | null;
+    source: string;
     source_label: string;
     items_count: number;
     status: string;
@@ -73,6 +85,8 @@ export default function BranchOrdersIndex({
             filter: {
                 search: tablePayload.filters.search ?? '',
                 status: tablePayload.filters.status ?? 'all',
+                from: tablePayload.filters.from ?? null,
+                to: tablePayload.filters.to ?? null,
             },
             sort: tablePayload.sort,
             per_page: tablePayload.per_page,
@@ -83,6 +97,7 @@ export default function BranchOrdersIndex({
         () => [
             {
                 accessorKey: 'fulfillment_number',
+                meta: { label: 'Fulfillment #' },
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
@@ -97,24 +112,40 @@ export default function BranchOrdersIndex({
             {
                 accessorKey: 'order_number',
                 header: 'Order #',
+                meta: { label: 'Order #' },
             },
             {
                 accessorKey: 'customer_name',
                 header: 'Customer',
+                meta: { label: 'Customer', truncate: false },
+                cell: ({ row }) => (
+                    <OrderListCustomer
+                        name={row.original.customer_name}
+                        phone={row.original.customer_phone}
+                    />
+                ),
             },
             {
                 accessorKey: 'source_label',
                 header: 'Source',
+                meta: { label: 'Source' },
                 cell: ({ row }) => (
-                    <Badge variant="outline">{row.original.source_label}</Badge>
+                    <Badge
+                        variant="outline"
+                        className={orderSourceBadgeClass(row.original.source)}
+                    >
+                        {row.original.source_label}
+                    </Badge>
                 ),
             },
             {
                 accessorKey: 'items_count',
                 header: 'Items',
+                meta: { label: 'Items' },
             },
             {
                 accessorKey: 'status',
+                meta: { label: 'Status' },
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
@@ -126,7 +157,10 @@ export default function BranchOrdersIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <Badge variant="secondary" className="capitalize">
+                    <Badge
+                        variant="outline"
+                        className={`capitalize ${orderStatusBadgeClass(row.original.status)}`}
+                    >
                         {row.original.status.replaceAll('_', ' ')}
                     </Badge>
                 ),
@@ -134,6 +168,7 @@ export default function BranchOrdersIndex({
             {
                 id: 'assign_status',
                 header: 'Assign status',
+                meta: { label: 'Assign status', truncate: false },
                 cell: ({ row }) => {
                     const { assign_status, driver_id, driver_name } =
                         row.original;
@@ -168,6 +203,7 @@ export default function BranchOrdersIndex({
             },
             {
                 accessorKey: 'shipping_cost',
+                meta: { label: 'Shipping' },
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
@@ -184,21 +220,38 @@ export default function BranchOrdersIndex({
             {
                 id: 'payment',
                 header: 'Payment',
+                meta: { label: 'Payment' },
                 cell: ({ row }) => (
                     <Badge
-                        variant={
-                            row.original.is_paid ? 'default' : 'secondary'
-                        }
+                        variant="outline"
+                        className={paymentStatusBadgeClass(
+                            row.original.order_payment_status,
+                        )}
                     >
-                        {row.original.is_paid
-                            ? 'Collected'
-                            : 'Pending collection'}
+                        {paymentStatusLabel(row.original.order_payment_status)}
                     </Badge>
                 ),
             },
             {
+                accessorKey: 'placed_at',
+                header: ({ column }) => (
+                    <DataTableColumnHeader
+                        column={column}
+                        title="Placed"
+                        sortable
+                        sortKey="placed_at"
+                        currentSort={query.sort}
+                        onSort={query.toggleSort}
+                    />
+                ),
+                meta: { label: 'Placed' },
+                cell: ({ row }) =>
+                    formatAppDateTime(row.original.placed_at) || '—',
+            },
+            {
                 id: 'actions',
                 header: 'Actions',
+                enableHiding: false,
                 cell: ({ row }) => (
                     <DataTableRowActions
                         items={[
@@ -254,13 +307,16 @@ export default function BranchOrdersIndex({
                     isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No orders found."
+                    columnVisibilityKey="branch-orders"
                     toolbar={
                         <DataTableToolbar
                             search={query.search}
                             onSearchChange={query.setSearch}
-                            searchPlaceholder="Search fulfillment #…"
+                            searchPlaceholder="Order #, fulfillment #, or customer"
+                            layout="stacked"
                             onClear={query.clearFilters}
                             filters={
+                                <div className="flex flex-wrap items-end gap-2">
                                 <Select
                                     value={String(
                                         query.filters.status ?? 'all',
@@ -295,6 +351,22 @@ export default function BranchOrdersIndex({
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <OrderPlacedDateFilters
+                                    from={
+                                        typeof query.filters.from === 'string'
+                                            ? query.filters.from
+                                            : null
+                                    }
+                                    to={
+                                        typeof query.filters.to === 'string'
+                                            ? query.filters.to
+                                            : null
+                                    }
+                                    onChange={(key, value) =>
+                                        query.setFilter(key, value)
+                                    }
+                                />
+                                </div>
                             }
                         />
                     }

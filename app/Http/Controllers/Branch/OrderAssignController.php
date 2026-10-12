@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Branch;
 
+use App\Enums\FulfillmentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\AssignFulfillmentDriverRequest;
 use App\Models\Branch;
@@ -43,12 +44,14 @@ class OrderAssignController extends Controller
 
         $driver = User::query()->findOrFail($request->validated('driver_id'));
         $reason = $request->validated('reason');
+        $advance = $request->validated('advance');
 
         $this->orderAssign->assign(
             $fulfillment,
             $driver,
             $request->user(),
             is_string($reason) ? $reason : null,
+            is_string($advance) ? FulfillmentStatus::from($advance) : null,
         );
 
         Toast::success('Driver assigned.');

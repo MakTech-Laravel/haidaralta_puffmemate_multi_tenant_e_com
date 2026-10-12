@@ -1,4 +1,5 @@
 import { Head, usePage } from '@inertiajs/react';
+import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
 import type { ConversationMessage } from '@/components/conversation/types';
 import { DriverOrderChatPanel } from '@/components/driver/driver-order-chat-panel';
 import type { DriverOrderDetail } from '@/components/driver/driver-order-types';
@@ -35,6 +36,7 @@ export default function DriverOrderChat({
                 viewerId={viewerId}
                 viewerName={viewerName}
                 canSend={canSend}
+                messageUrl={OrderController.storeMessage.url(order.id)}
             />
         </>
     );

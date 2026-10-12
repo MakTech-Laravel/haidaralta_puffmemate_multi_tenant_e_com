@@ -1,5 +1,10 @@
 <?php
 
+use App\Enums\ShiftAssignmentStatus;
+use App\Models\Branch;
+use App\Models\ShiftTemplate;
+use App\Models\User;
+use App\Models\UserShiftAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -35,6 +40,23 @@ pest()->extend(TestCase::class)
 | to assert different things. Of course, you may extend the Expectation API at any time.
 |
 */
+
+function scheduleDriverOnDuty(User $driver, Branch $branch): void
+{
+    $template = ShiftTemplate::factory()->create([
+        'start_time' => '00:00',
+        'end_time' => '23:59',
+    ]);
+
+    UserShiftAssignment::factory()->create([
+        'user_id' => $driver->id,
+        'branch_id' => $branch->id,
+        'shift_template_id' => $template->id,
+        'start_date' => now()->toDateString(),
+        'end_date' => now()->toDateString(),
+        'status' => ShiftAssignmentStatus::Scheduled,
+    ]);
+}
 
 expect()->extend('toBeOne', function () {
     return $this->toBe(1);

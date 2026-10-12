@@ -23,7 +23,9 @@ export type OrderTimelineStep = {
     key: string;
     label: string;
     state: OrderTimelineState;
-    detail: string;
+    actorName: string | null;
+    detail: string | null;
+    comment: string | null;
 };
 
 export type CustomerOrderStatus =
@@ -52,7 +54,18 @@ export type CustomerOrderDetail = {
     paymentStatus: CustomerPaymentStatus;
     paymentStatusLabel?: string;
     handoverNotice?: string | null;
+    canResendCode?: boolean;
     canCancel?: boolean;
+    canRequestReturn?: boolean;
+    returnRequest?: {
+        id: number;
+        type: string;
+        typeLabel: string;
+        reason: string;
+        note: string | null;
+        status: string;
+        statusLabel: string;
+    } | null;
     date: string;
     products: OrderTrackProduct[];
     subtotalLabel: string;

@@ -5,6 +5,7 @@ namespace App\DataTables;
 use App\Contracts\DataTableConfigurable;
 use App\Contracts\ScoutSearchable;
 use App\Enums\ExportScope;
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -197,6 +198,12 @@ abstract class AbstractDataTable
             return;
         }
 
+        if ($this->searchIncludesPhone() && Phone::looksLikePhoneSearch($term)) {
+            $this->applySqlSearchConstraint($query, $term);
+
+            return;
+        }
+
         $modelClass = $this->modelClass();
 
         if (! is_a($modelClass, ScoutSearchable::class, true)) {
@@ -244,13 +251,14 @@ abstract class AbstractDataTable
 
         $query->where(function (Builder $builder) use ($columns, $term): void {
             foreach ($columns as $index => $column) {
-                if ($index === 0) {
-                    $builder->where($column, 'like', '%'.$term.'%');
+                if ($this->isPhoneSearchColumn($column)) {
+                    Phone::constrainLike($builder, $column, $term);
 
                     continue;
                 }
 
-                $builder->orWhere($column, 'like', '%'.$term.'%');
+                $operator = $index === 0 ? 'where' : 'orWhere';
+                $builder->{$operator}($column, 'like', '%'.$term.'%');
             }
         });
     }
@@ -392,6 +400,22 @@ abstract class AbstractDataTable
         }
 
         return is_a($this->modelClass(), ScoutSearchable::class, true);
+    }
+
+    protected function searchIncludesPhone(): bool
+    {
+        foreach ($this->modelSearchableColumns() as $column) {
+            if ($this->isPhoneSearchColumn($column)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function isPhoneSearchColumn(string $column): bool
+    {
+        return $column === 'phone' || str_ends_with($column, '.phone');
     }
 
     protected function modelUsesSoftDeletes(): bool

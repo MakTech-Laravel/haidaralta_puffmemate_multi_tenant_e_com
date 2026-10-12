@@ -299,7 +299,7 @@ export function OrderAssignDriverSheet({
     const submitLabel =
         sheetMode === 'change' ? 'Change driver' : 'Assign driver';
 
-    const submit = (): void => {
+    const submit = (advance?: 'picked_up' | 'out_for_delivery'): void => {
         if (fulfillmentId === null || selectedId === null) {
             return;
         }
@@ -327,6 +327,7 @@ export function OrderAssignDriverSheet({
             {
                 driver_id: selectedId,
                 ...(isReassign ? { reason: reason.trim() } : {}),
+                ...(advance ? { advance } : {}),
             },
             {
                 preserveScroll: true,
@@ -484,22 +485,40 @@ export function OrderAssignDriverSheet({
                     >
                         Cancel
                     </Button>
-                    <Button
-                        type="button"
-                        disabled={
-                            assigning ||
-                            loading ||
-                            selectedId === null ||
-                            Boolean(error) ||
-                            (isReassign && reason.trim() === '')
-                        }
-                        onClick={submit}
-                    >
-                        {assigning ? (
-                            <Loader2 className="size-4 animate-spin" />
-                        ) : null}
-                        {submitLabel}
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                        {(
+                            [
+                                { label: submitLabel, advance: undefined },
+                                {
+                                    label: 'Assign and picked up',
+                                    advance: 'picked_up' as const,
+                                },
+                                {
+                                    label: 'Assign, picked up, and on the way',
+                                    advance: 'out_for_delivery' as const,
+                                },
+                            ] as const
+                        ).map((action) => (
+                            <Button
+                                key={action.label}
+                                type="button"
+                                variant={action.advance ? 'outline' : 'default'}
+                                disabled={
+                                    assigning ||
+                                    loading ||
+                                    selectedId === null ||
+                                    Boolean(error) ||
+                                    (isReassign && reason.trim() === '')
+                                }
+                                onClick={() => submit(action.advance)}
+                            >
+                                {assigning ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : null}
+                                {action.label}
+                            </Button>
+                        ))}
+                    </div>
                 </SheetFooter>
             </SheetContent>
         </Sheet>

@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\DataTables\Concerns\FiltersOrderLists;
 use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
@@ -20,6 +21,8 @@ use Spatie\QueryBuilder\AllowedSort;
  */
 class OrderDataTable extends AbstractDataTable
 {
+    use FiltersOrderLists;
+
     public function __construct(
         Request $request,
         protected OrderAssignService $orderAssign,
@@ -48,7 +51,12 @@ class OrderDataTable extends AbstractDataTable
      */
     protected function baseQuery(): Builder
     {
-        return Order::query()->with(['customer:id,name', 'placedBy:id,name', 'fulfillment.branch:id,name', 'fulfillment.driver:id,name']);
+        return Order::query()->with([
+            'customer:id,name,phone',
+            'placedBy:id,name',
+            'fulfillment.branch:id,name,slug',
+            'fulfillment.driver:id,name',
+        ]);
     }
 
     /**
@@ -60,7 +68,8 @@ class OrderDataTable extends AbstractDataTable
             AllowedFilter::exact('status'),
             AllowedFilter::exact('payment_status'),
             AllowedFilter::exact('source'),
-            $this->searchFilter(),
+            $this->orderSearchFilter(includeBranch: true),
+            ...$this->placedDateFilters(throughOrder: false),
         ];
     }
 
@@ -124,9 +133,12 @@ class OrderDataTable extends AbstractDataTable
         return [
             'id' => $model->id,
             'order_number' => $model->order_number,
+            'customer_id' => $model->customer_id,
             'customer_name' => $model->customer?->name ?? 'Customer',
+            'customer_phone' => $model->customer?->phone,
             'fulfillment_branch' => $fulfillment?->branch?->name ?? '—',
-            'total_label' => '$' . number_format((float) $model->total_amount, 2),
+            'branch_slug' => $fulfillment?->branch?->slug,
+            'total_label' => '$'.number_format((float) $model->total_amount, 2),
             'status' => $model->status->value,
             'status_label' => $model->status->label(),
             'payment_status' => $model->payment_status->value,

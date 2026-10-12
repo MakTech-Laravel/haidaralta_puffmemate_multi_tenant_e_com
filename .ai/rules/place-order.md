@@ -22,3 +22,6 @@ Place Order products use one dense divided list (thumb + name/price + inline +/-
 
 ## Place Order customer uses Look up button
 Place Order customer search uses an explicit Look up button (Enter also submits). Query accepts name/email/phone via q. On empty matches, Add prefills Phone when the query looks phone-like (+/0/digits) — never dump a phone-like query into Name. Do not restore type-as-you-search auto lookup for customers.
+
+## No category chips on Place Order
+Place Order does not show category chips (All, Cigarettes, and so on). Those were every assigned category, not a recommended set. Keep search plus the In order chip only when something is selected.
