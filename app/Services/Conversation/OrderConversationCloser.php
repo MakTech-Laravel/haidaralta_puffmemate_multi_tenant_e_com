@@ -20,6 +20,10 @@ class OrderConversationCloser
     {
         $order->forceFill(['status' => $status])->save();
 
+        if ($status === OrderStatus::OutForDelivery) {
+            $this->conversations->openForOrder($order->loadMissing('fulfillment'));
+        }
+
         if ($status->isTerminal()) {
             $this->conversations->closeForOrder($order->refresh());
         }

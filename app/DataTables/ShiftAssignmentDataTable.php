@@ -10,6 +10,7 @@ use App\Models\ShiftTemplate;
 use App\Models\User;
 use App\Models\UserShiftDay;
 use App\Support\DateTimeFormat;
+use App\Support\Phone;
 use App\Support\WorkforcePayload;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -143,12 +144,9 @@ class ShiftAssignmentDataTable extends AbstractDataTable
                 return;
             }
 
-            $like = '%'.$term.'%';
-
-            $query->where(function (Builder $builder) use ($like): void {
-                $builder
-                    ->where('name', 'like', $like)
-                    ->orWhere('phone', 'like', $like);
+            $query->where(function (Builder $builder) use ($term): void {
+                $builder->where('name', 'like', '%'.$term.'%');
+                Phone::constrainLike($builder, 'phone', $term);
             });
         });
     }

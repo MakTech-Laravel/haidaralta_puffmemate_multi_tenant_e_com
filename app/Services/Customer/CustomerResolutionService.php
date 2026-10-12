@@ -6,6 +6,7 @@ use App\Enums\CustomerRegistrationStatus;
 use App\Enums\UserType;
 use App\Models\User;
 use App\Support\Phone;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -18,6 +19,36 @@ class CustomerResolutionService
             ->where('phone', Phone::toE164($phone))
             ->where('user_type', UserType::CUSTOMER)
             ->first();
+    }
+
+    /**
+     * Soft search customers by name, email, or phone for Place Order lookup.
+     *
+     * @return Collection<int, User>
+     */
+    public function search(string $query, int $limit = 8): Collection
+    {
+        $term = trim($query);
+
+        if ($term === '' || $limit < 1) {
+            return new Collection;
+        }
+
+        $like = '%'.$term.'%';
+
+        return User::query()
+            ->where('user_type', UserType::CUSTOMER)
+            ->where('is_active', true)
+            ->where(function ($builder) use ($like, $term): void {
+                $builder
+                    ->where('name', 'like', $like)
+                    ->orWhere('email', 'like', $like);
+
+                Phone::constrainLike($builder, 'phone', $term);
+            })
+            ->orderBy('name')
+            ->limit($limit)
+            ->get(['id', 'name', 'phone', 'email', 'registration_status']);
     }
 
     /**

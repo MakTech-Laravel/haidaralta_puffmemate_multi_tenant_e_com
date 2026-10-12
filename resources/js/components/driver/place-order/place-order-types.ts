@@ -2,6 +2,7 @@ export type DriverPlaceOrderProduct = {
     id: string;
     name: string;
     description: string;
+    sku: string;
     category: string;
     priceLabel: string;
     price: number;
@@ -25,5 +26,6 @@ export type ResolvedPlaceOrderCustomer = {
     id: number;
     name: string;
     phone: string;
+    email?: string | null;
     registration_status: string;
 };

@@ -31,19 +31,17 @@ class PlaceOrderController extends Controller
 
     public function lookup(LookupPlaceOrderCustomerRequest $request, CustomerResolutionService $customers): JsonResponse
     {
-        $customer = $customers->findByPhone($request->string('phone')->value());
-
-        if ($customer === null) {
-            return response()->json(['customer' => null]);
-        }
+        $matches = $customers->search($request->string('q')->value());
 
         return response()->json([
-            'customer' => [
+            'customers' => $matches->map(fn (User $customer): array => [
                 'id' => $customer->id,
                 'name' => $customer->name,
                 'phone' => $customer->phone,
-                'registration_status' => $customer->registration_status?->value ?? CustomerRegistrationStatus::Provisional->value,
-            ],
+                'email' => $customer->email,
+                'registration_status' => $customer->registration_status?->value
+                    ?? CustomerRegistrationStatus::Provisional->value,
+            ])->values()->all(),
         ]);
     }
 

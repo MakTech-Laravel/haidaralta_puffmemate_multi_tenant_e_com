@@ -145,6 +145,8 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.reports.order-assign-history.export');
         Route::get('reports/order-assign-history/driver-options', [BranchOrderAssignHistoryController::class, 'driverOptions'])
             ->name('branch.reports.order-assign-history.driver-options');
+        Route::post('orders/{fulfillment}/placement-code', [BranchOrderController::class, 'resendPlacementCode'])
+            ->name('branch.orders.placement-code');
         Route::post('orders/{fulfillment}/cancel', [BranchOrderController::class, 'cancel'])
             ->name('branch.orders.cancel');
         Route::post('orders/{fulfillment}/retry-delivery', [BranchOrderController::class, 'retryDelivery'])
@@ -153,6 +155,14 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.orders.reschedule-delivery');
         Route::post('orders/{fulfillment}/return-delivery', [BranchOrderController::class, 'returnDelivery'])
             ->name('branch.orders.return-delivery');
+        Route::post('orders/{fulfillment}/deliver', [BranchOrderController::class, 'deliver'])
+            ->name('branch.orders.deliver');
+        Route::post('orders/{fulfillment}/fail', [BranchOrderController::class, 'fail'])
+            ->name('branch.orders.fail');
+        Route::post('orders/{fulfillment}/returns/{orderReturn}/approve', [BranchOrderController::class, 'approveReturn'])
+            ->name('branch.orders.returns.approve');
+        Route::post('orders/{fulfillment}/returns/{orderReturn}/reject', [BranchOrderController::class, 'rejectReturn'])
+            ->name('branch.orders.returns.reject');
         Route::post('orders/{fulfillment}/confirm-return', [BranchOrderController::class, 'confirmReturn'])
             ->name('branch.orders.confirm-return');
         Route::get('stock-transfers', [BranchStockTransferController::class, 'index'])

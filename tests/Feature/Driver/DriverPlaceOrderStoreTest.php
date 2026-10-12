@@ -21,6 +21,7 @@ use App\Services\Order\FulfillmentStatusService;
 use App\Services\Sms\FakeSmsSender;
 use App\Support\Phone;
 use Illuminate\Validation\ValidationException;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     app(PaymentGatewaySettingsService::class)->ensureDefaults();
@@ -52,21 +53,73 @@ function placeOrderDriver(): array
     return [$driver, $branch, $product];
 }
 
-test('phone lookup reuses an existing customer and normalizes e164', function () {
+test('customer search matches name email and phone', function () {
     $customer = User::factory()->create([
+        'name' => 'Searchable Buyer',
         'user_type' => UserType::CUSTOMER,
         'phone' => Phone::toE164('0499000001'),
+        'email' => 'searchable.buyer@example.com',
+        'registration_status' => CustomerRegistrationStatus::Registered,
+    ]);
+    User::factory()->create([
+        'name' => 'Other Buyer',
+        'user_type' => UserType::CUSTOMER,
+        'phone' => Phone::toE164('0499000099'),
     ]);
     [$driver] = placeOrderDriver();
 
     $this->actingAs($driver, 'driver')
         ->postJson(route('driver.place-order.customers.lookup'), [
-            'phone' => '0499 000 001',
+            'q' => '0499 000 001',
         ])
         ->assertOk()
-        ->assertJsonPath('customer.id', $customer->id)
-        ->assertJsonPath('customer.registration_status', CustomerRegistrationStatus::Registered->value)
-        ->assertJsonMissingPath('customer.email');
+        ->assertJsonCount(1, 'customers')
+        ->assertJsonPath('customers.0.id', $customer->id)
+        ->assertJsonPath('customers.0.registration_status', CustomerRegistrationStatus::Registered->value)
+        ->assertJsonPath('customers.0.email', 'searchable.buyer@example.com');
+
+    $this->actingAs($driver, 'driver')
+        ->postJson(route('driver.place-order.customers.lookup'), [
+            'q' => 'Searchable Buyer',
+        ])
+        ->assertOk()
+        ->assertJsonCount(1, 'customers')
+        ->assertJsonPath('customers.0.id', $customer->id);
+
+    $this->actingAs($driver, 'driver')
+        ->postJson(route('driver.place-order.customers.lookup'), [
+            'q' => 'searchable.buyer@example.com',
+        ])
+        ->assertOk()
+        ->assertJsonCount(1, 'customers')
+        ->assertJsonPath('customers.0.id', $customer->id);
+
+    $this->actingAs($driver, 'driver')
+        ->postJson(route('driver.place-order.customers.lookup'), [
+            'q' => '0499000001',
+        ])
+        ->assertOk()
+        ->assertJsonCount(1, 'customers')
+        ->assertJsonPath('customers.0.id', $customer->id);
+
+    $this->actingAs($driver, 'driver')
+        ->postJson(route('driver.place-order.customers.lookup'), [
+            'q' => '61499000001',
+        ])
+        ->assertOk()
+        ->assertJsonCount(1, 'customers')
+        ->assertJsonPath('customers.0.id', $customer->id);
+});
+
+test('customer search returns empty list when nothing matches', function () {
+    [$driver] = placeOrderDriver();
+
+    $this->actingAs($driver, 'driver')
+        ->postJson(route('driver.place-order.customers.lookup'), [
+            'q' => 'zz-no-such-customer',
+        ])
+        ->assertOk()
+        ->assertJsonPath('customers', []);
 });
 
 test('a new phone creates one provisional customer and cannot log in', function () {
@@ -108,6 +161,40 @@ test('a new phone creates one provisional customer and cannot log in', function 
 
     expect(DriverInventory::query()->where('product_id', $product->id)->value('quantity'))->toBe(3);
     expect(DriverInventoryTransaction::query()->where('type', InventoryTransactionType::Sale)->where('reference_id', $order->id)->count())->toBe(1);
+});
+
+test('the selling driver can open the placed sale and another driver cannot', function () {
+    [$driver, , $product] = placeOrderDriver();
+    $other = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'branch_id' => null,
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('driver.place-order.store'), [
+            'phone' => '0499000011',
+            'name' => 'Shown Sale',
+            'payment_method' => 'cod',
+            'idempotency_key' => (string) str()->uuid(),
+            'items' => [
+                ['id' => (string) $product->id, 'quantity' => 1],
+            ],
+        ])
+        ->assertRedirect(route('driver.orders.show', Order::query()->firstOrFail()));
+
+    $order = Order::query()->firstOrFail();
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.orders.show', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('driver/orders/show')
+            ->where('order.orderNumber', $order->order_number)
+            ->where('order.status', 'delivered'));
+
+    $this->actingAs($other, 'driver')
+        ->get(route('driver.orders.show', $order))
+        ->assertNotFound();
 });
 
 test('selling the same phone again reuses the provisional customer', function () {

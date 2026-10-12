@@ -53,6 +53,8 @@ test('a melbourne driver cannot be assigned to a sydney fulfillment', function (
         'status' => DriverAssignmentStatus::Active,
     ]);
 
+    scheduleDriverOnDuty($sydneyDriver, $sydney);
+
     $service = app(DriverAssignmentService::class);
 
     expect($service->candidates($fulfillment)->pluck('id')->all())
@@ -116,6 +118,8 @@ test('an inactive or off branch driver is absent from the candidate list', funct
         'ended_at' => now()->subDay(),
     ]);
 
+    scheduleDriverOnDuty($activeSydneyDriver, $sydney);
+
     $service = app(DriverAssignmentService::class);
 
     expect($service->candidates($fulfillment)->pluck('id')->all())
@@ -163,6 +167,9 @@ test('the available driver with the least workload is ranked first', function ()
         'branch_id' => $sydney->id,
         'status' => DriverAssignmentStatus::Active,
     ]);
+
+    scheduleDriverOnDuty($busyDriver, $sydney);
+    scheduleDriverOnDuty($freeDriver, $sydney);
 
     $service = app(DriverAssignmentService::class);
     $candidates = $service->candidates($fulfillment)->pluck('id')->all();
@@ -224,6 +231,10 @@ test('the closer available driver with equal workload is ranked first', function
         'status' => DriverAssignmentStatus::Active,
     ]);
 
+    scheduleDriverOnDuty($farDriver, $sydney);
+    scheduleDriverOnDuty($nearDriver, $sydney);
+    scheduleDriverOnDuty($missingCoordinatesDriver, $sydney);
+
     $service = app(DriverAssignmentService::class);
     $candidates = $service->candidates($fulfillment)->pluck('id')->all();
 
@@ -233,4 +244,33 @@ test('the closer available driver with equal workload is ranked first', function
         ->and(array_search($missingCoordinatesDriver->id, $candidates, true))->toBeGreaterThan(
             array_search($farDriver->id, $candidates, true)
         );
+});
+
+test('an assigned driver cannot be replaced until the goods are returned', function () {
+    $branch = Branch::factory()->create();
+    $actor = User::factory()->create(['user_type' => UserType::PLATFORM]);
+    $order = Order::factory()->create();
+    $current = User::factory()->create(['user_type' => UserType::DRIVER, 'is_active' => true, 'branch_id' => null]);
+    $next = User::factory()->create(['user_type' => UserType::DRIVER, 'is_active' => true, 'branch_id' => null]);
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $next->id,
+        'branch_id' => $branch->id,
+        'status' => DriverAssignmentStatus::Active,
+    ]);
+    scheduleDriverOnDuty($next, $branch);
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create([
+        'branch_id' => $branch->id,
+        'driver_id' => $current->id,
+        'status' => FulfillmentStatus::Assigned,
+    ]);
+
+    expect(fn () => app(DriverAssignmentService::class)->assign($fulfillment, $next, $actor, 'Swap'))
+        ->toThrow(ValidationException::class);
+
+    $fulfillment->forceFill(['status' => FulfillmentStatus::Returned, 'driver_id' => null])->save();
+
+    $result = app(DriverAssignmentService::class)->assign($fulfillment->refresh(), $next, $actor, 'Goods are back');
+
+    expect($result->driver_id)->toBe($next->id)
+        ->and($result->status)->toBe(FulfillmentStatus::Assigned);
 });

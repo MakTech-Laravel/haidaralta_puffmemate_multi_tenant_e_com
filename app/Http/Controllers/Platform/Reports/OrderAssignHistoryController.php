@@ -9,6 +9,7 @@ use App\Exports\OrderDriverAssignmentHistoryExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ExportSpreadsheetRequest;
 use App\Models\User;
+use App\Support\Phone;
 use App\Support\StockPageContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -75,8 +76,8 @@ class OrderAssignHistoryController extends Controller
 
         if ($search !== '') {
             $query->where(function ($filters) use ($search): void {
-                $filters->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
+                $filters->where('name', 'like', "%{$search}%");
+                Phone::constrainLike($filters, 'phone', $search);
             });
         }
 

@@ -61,8 +61,9 @@ test('source branch staff can approve pick and dispatch a transfer', function ()
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('branch/stock-transfers/index')
-            ->has('transfers', 1)
-            ->where('transfers.0.canApprove', true));
+            ->has('table.data', 1)
+            ->where('table.data.0.can_approve', true)
+            ->where('table.meta.per_page', 15));
 
     $this->actingAs($admin, 'branch')
         ->post(route('branch.stock-transfers.approve', [$melbourne, $transfer]))
