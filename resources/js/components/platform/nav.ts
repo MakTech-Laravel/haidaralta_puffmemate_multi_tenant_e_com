@@ -112,13 +112,15 @@ export function buildPlatformNav(
                 icon: Users,
                 permissions: ['manage-users'],
                 items: [
-                    navSoon({
+                    navLink({
                         title: 'Customers',
+                        href: '/platform/customers',
                         icon: Users,
                         permissions: ['manage-users'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Reviews',
+                        href: '/platform/reviews',
                         icon: Star,
                         permissions: ['manage-users'],
                     }),
@@ -388,8 +390,8 @@ export function buildPlatformNav(
                 ],
                 items: [
                     navLink({
-                        title: 'Order operations',
-                        href: '/platform/reports/order-operations',
+                        title: 'Order Reports',
+                        href: '/platform/reports/order-reports',
                         icon: Banknote,
                         permissions: ['manage-reports'],
                     }),

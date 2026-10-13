@@ -13,8 +13,12 @@ function methodIcon(id: string) {
         return CreditCard;
     }
 
-    if (id === 'cash') {
+    if (id === 'cod') {
         return Banknote;
+    }
+
+    if (id === 'payment_link') {
+        return Wallet;
     }
 
     return Wallet;

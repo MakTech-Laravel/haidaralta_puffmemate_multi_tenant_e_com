@@ -12,6 +12,7 @@ use App\Models\Inventory;
 use App\Models\User;
 use App\Services\Driver\DriverStockAssignmentService;
 use App\Support\MediaUrl;
+use App\Support\Phone;
 use App\Support\StockPageContext;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
@@ -61,8 +62,8 @@ class DriverProductAssignController extends Controller
 
         if ($search !== '') {
             $query->where(function ($q) use ($search): void {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%");
+                Phone::constrainLike($q, 'phone', $search);
             });
         }
 

@@ -10,6 +10,7 @@ use App\Models\OrderFulfillment;
 use App\Models\OrderStatusHistory;
 use App\Models\User;
 use App\Services\Conversation\OrderConversationCloser;
+use App\Services\Driver\DriverInventorySaleService;
 use App\Services\Inventory\InventoryReservationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -20,6 +21,8 @@ class FulfillmentStatusService
         private InventoryReservationService $reservations,
         private StockTransferService $transfers,
         private OrderConversationCloser $conversations,
+        private DriverInventorySaleService $driverSales,
+        private OrderPlacementNotifier $placements,
     ) {}
 
     public function transition(
@@ -34,9 +37,9 @@ class FulfillmentStatusService
 
         $this->assertStaffTransition($fulfillment, $status);
 
-        if ($status === FulfillmentStatus::Ready && ! $this->transfers->fulfillmentTransfersReceived($fulfillment)) {
+        if ($status === FulfillmentStatus::Processing && ! $this->transfers->fulfillmentTransfersReceived($fulfillment)) {
             throw ValidationException::withMessages([
-                'status' => 'Every stock transfer must be received before packing is complete.',
+                'status' => 'Every stock transfer must be received before packaging can start.',
             ]);
         }
 
@@ -47,17 +50,17 @@ class FulfillmentStatusService
         return $this->apply($fulfillment, $status, $actor, $comment ?? 'Status updated');
     }
 
-    public function cancel(OrderFulfillment $fulfillment, ?User $actor = null, string $comment = 'Order cancelled'): OrderFulfillment
+    public function cancel(OrderFulfillment $fulfillment, ?User $actor = null, string $comment = 'Order cancelled', bool $force = false): OrderFulfillment
     {
         $from = $fulfillment->status;
 
-        if ($actor?->isCustomer()) {
+        if (! $force && $actor?->isCustomer()) {
             if (! $from->allowsCustomerCancel()) {
                 throw ValidationException::withMessages([
                     'status' => 'This order can no longer be cancelled.',
                 ]);
             }
-        } elseif (! $from->allowsStaffCancel() && $from !== FulfillmentStatus::Returning) {
+        } elseif (! $force && ! $from->allowsStaffCancel() && $from !== FulfillmentStatus::Returning) {
             throw ValidationException::withMessages([
                 'status' => 'This order can no longer be cancelled.',
             ]);
@@ -86,6 +89,12 @@ class FulfillmentStatusService
 
             $this->releaseReservations($fulfillment, $actor);
 
+            $order = $fulfillment->order()->first();
+
+            if ($order !== null) {
+                $this->driverSales->reverse($order, $actor);
+            }
+
             if ($fulfillment->driver_id !== null) {
                 $fulfillment->forceFill(['driver_id' => null])->save();
             }
@@ -94,6 +103,28 @@ class FulfillmentStatusService
 
             return $fulfillment->refresh();
         });
+    }
+
+    public function canStartProcessing(OrderFulfillment $fulfillment): bool
+    {
+        return $this->transfers->fulfillmentTransfersReceived($fulfillment);
+    }
+
+    /**
+     * @return list<array{key: string, label: string, status: string}>
+     */
+    public function staffActions(OrderFulfillment $fulfillment): array
+    {
+        $actions = $fulfillment->status->staffActions();
+
+        if (! $this->canStartProcessing($fulfillment)) {
+            $actions = array_values(array_filter(
+                $actions,
+                fn (array $action): bool => $action['status'] !== FulfillmentStatus::Processing->value,
+            ));
+        }
+
+        return $actions;
     }
 
     public function markReady(OrderFulfillment $fulfillment, User $actor): OrderFulfillment
@@ -108,7 +139,13 @@ class FulfillmentStatusService
         ?string $comment = null,
     ): OrderFulfillment {
         $old = $fulfillment->status;
-        $fulfillment->forceFill(['status' => $status])->save();
+        $attributes = ['status' => $status];
+
+        if ($status === FulfillmentStatus::Returned) {
+            $attributes['driver_id'] = null;
+        }
+
+        $fulfillment->forceFill($attributes)->save();
 
         OrderStatusHistory::query()->create([
             'order_id' => $fulfillment->order_id,
@@ -122,10 +159,15 @@ class FulfillmentStatusService
         $order = $fulfillment->order()->first();
 
         if ($order !== null) {
-            // The master order copies the single fulfillment's status directly;
-            // there is nothing to aggregate across branches in this design.
             $order->forceFill(['status' => OrderStatus::from($status->value)])->save();
             $this->conversations->transition($order->refresh(), OrderStatus::from($status->value));
+
+            if ($status === FulfillmentStatus::Placed && $old !== FulfillmentStatus::Placed) {
+                $placed = $order->refresh();
+                DB::afterCommit(function () use ($placed): void {
+                    $this->placements->issue($placed);
+                });
+            }
         }
 
         return $fulfillment->refresh();

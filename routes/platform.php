@@ -19,6 +19,7 @@ use App\Http\Controllers\Platform\ContactInquiryController as PlatformContactInq
 use App\Http\Controllers\Platform\ContactSettingsController as PlatformContactSettingsController;
 use App\Http\Controllers\Platform\ConversationController as PlatformConversationController;
 use App\Http\Controllers\Platform\CouponController as PlatformCouponController;
+use App\Http\Controllers\Platform\CustomerController as PlatformCustomerController;
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\DeliverySettingsController as PlatformDeliverySettingsController;
@@ -36,10 +37,11 @@ use App\Http\Controllers\Platform\PaymentGatewaySettingsController as PlatformPa
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\PriceRangeController as PlatformPriceRangeController;
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
+use App\Http\Controllers\Platform\ProductReviewController as PlatformProductReviewController;
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
 use App\Http\Controllers\Platform\Reports\OrderAssignHistoryController as PlatformOrderAssignHistoryController;
-use App\Http\Controllers\Platform\Reports\OrderOperationsController as PlatformOrderOperationsController;
+use App\Http\Controllers\Platform\Reports\OrderReportController as PlatformOrderReportController;
 use App\Http\Controllers\Platform\Reports\PriceHistoryController as PlatformPriceHistoryController;
 use App\Http\Controllers\Platform\Reports\ProductAssignTransactionController as PlatformProductAssignTransactionController;
 use App\Http\Controllers\Platform\Reports\StockTransactionController as PlatformStockTransactionController;
@@ -105,6 +107,39 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.contact-inquiries.index');
         Route::get('contact-inquiries/{contactInquiry}', [PlatformContactInquiryController::class, 'show'])
             ->name('platform.contact-inquiries.show');
+
+        Route::get('customers', [PlatformCustomerController::class, 'index'])
+            ->name('platform.customers.index');
+        Route::get('customers/create', [PlatformCustomerController::class, 'create'])
+            ->name('platform.customers.create');
+        Route::post('customers', [PlatformCustomerController::class, 'store'])
+            ->name('platform.customers.store')
+            ->middleware('precognitive');
+        Route::get('customers/{user}', [PlatformCustomerController::class, 'show'])
+            ->name('platform.customers.show');
+        Route::get('customers/{user}/edit', [PlatformCustomerController::class, 'edit'])
+            ->name('platform.customers.edit');
+        Route::match(['put', 'patch'], 'customers/{user}', [PlatformCustomerController::class, 'update'])
+            ->name('platform.customers.update')
+            ->middleware('precognitive');
+        Route::post('customers/{user}/toggle-status', [PlatformCustomerController::class, 'toggleStatus'])
+            ->name('platform.customers.toggle-status');
+
+        Route::get('reviews', [PlatformProductReviewController::class, 'index'])
+            ->name('platform.reviews.index');
+        Route::get('reviews/customer-options', [PlatformProductReviewController::class, 'customerOptions'])
+            ->name('platform.reviews.customer-options');
+        Route::get('reviews/product-options', [PlatformProductReviewController::class, 'productOptions'])
+            ->name('platform.reviews.product-options');
+        Route::get('reviews/branch-options', [PlatformProductReviewController::class, 'branchOptions'])
+            ->name('platform.reviews.branch-options');
+        Route::get('reviews/{productReview}', [PlatformProductReviewController::class, 'show'])
+            ->name('platform.reviews.show')
+            ->whereNumber('productReview');
+        Route::post('reviews/{productReview}/hide', [PlatformProductReviewController::class, 'hide'])
+            ->name('platform.reviews.hide');
+        Route::post('reviews/{productReview}/unhide', [PlatformProductReviewController::class, 'unhide'])
+            ->name('platform.reviews.unhide');
     });
 
     Route::permanentRedirect('staff', '/platform/admins');
@@ -319,8 +354,12 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('stock/import', [PlatformStockController::class, 'storeImport'])->name('platform.stock.import.store');
         Route::get('stock/price', fn (Request $request) => ProductManageRedirect::platform($request))
             ->name('platform.stock.price');
-        Route::get('reports/order-operations', [PlatformOrderOperationsController::class, 'index'])
-            ->name('platform.reports.order-operations');
+        Route::get('reports/order-reports', [PlatformOrderReportController::class, 'index'])
+            ->name('platform.reports.order-reports');
+        Route::get('reports/order-reports/export', [PlatformOrderReportController::class, 'export'])
+            ->name('platform.reports.order-reports.export');
+        Route::redirect('reports/order-operations', '/platform/reports/order-reports', 301);
+        Route::redirect('reports/order-operations/export', '/platform/reports/order-reports/export', 301);
         Route::get('reports/order-assign-history', [PlatformOrderAssignHistoryController::class, 'index'])
             ->name('platform.reports.order-assign-history');
         Route::get('reports/order-assign-history/export', [PlatformOrderAssignHistoryController::class, 'export'])
@@ -464,6 +503,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.orders.assign-candidates');
         Route::post('orders/{order}/assign-driver', [PlatformOrderAssignController::class, 'store'])
             ->name('platform.orders.assign-driver');
+        Route::post('orders/{order}/placement-code', [PlatformOrderController::class, 'resendPlacementCode'])
+            ->name('platform.orders.placement-code');
         Route::post('orders/{order}/cancel', [PlatformOrderController::class, 'cancel'])
             ->name('platform.orders.cancel');
         Route::post('orders/{order}/retry-delivery', [PlatformOrderController::class, 'retryDelivery'])
@@ -472,6 +513,14 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.orders.reschedule-delivery');
         Route::post('orders/{order}/return-delivery', [PlatformOrderController::class, 'returnDelivery'])
             ->name('platform.orders.return-delivery');
+        Route::post('orders/{order}/deliver', [PlatformOrderController::class, 'deliver'])
+            ->name('platform.orders.deliver');
+        Route::post('orders/{order}/fail', [PlatformOrderController::class, 'fail'])
+            ->name('platform.orders.fail');
+        Route::post('orders/{order}/returns/{orderReturn}/approve', [PlatformOrderController::class, 'approveReturn'])
+            ->name('platform.orders.returns.approve');
+        Route::post('orders/{order}/returns/{orderReturn}/reject', [PlatformOrderController::class, 'rejectReturn'])
+            ->name('platform.orders.returns.reject');
         Route::post('orders/{order}/confirm-return', [PlatformOrderController::class, 'confirmReturn'])
             ->name('platform.orders.confirm-return');
         Route::put('orders/{order}/payment-status', [PlatformOrderController::class, 'markPaid'])

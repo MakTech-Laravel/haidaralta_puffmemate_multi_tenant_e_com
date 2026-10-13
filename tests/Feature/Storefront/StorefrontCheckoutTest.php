@@ -2,6 +2,9 @@
 
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
+use App\Enums\FulfillmentStatus;
+use App\Enums\OrderSource;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserType;
 use App\Models\AllocationDecisionLog;
@@ -364,6 +367,8 @@ test('place order writes order payment and redemption then clears ordered lines'
         ->and($order->items)->toHaveCount(1)
         ->and((float) $order->discount)->toBe(10.0)
         ->and($order->payment_method)->toBe(PaymentGatewaySetting::KEY_COD)
+        ->and($order->source)->toBe(OrderSource::CustomerCheckout)
+        ->and($order->placed_by)->toBeNull()
         ->and($order->fulfillments)->toHaveCount(1)
         ->and($order->shipping_address_snapshot['name'])->toBe('Ada Lovelace')
         ->and($order->address->receiver_name)->toBe('Ada Lovelace');
@@ -727,4 +732,44 @@ test('order line items snapshot product details so a later catalog change does n
     expect($item->product_name_snapshot)->toBe('Original Product Name')
         ->and((float) $item->unit_price)->toBe(60.0)
         ->and((float) $order->total_amount)->not->toBe(999.0);
+});
+
+test('a first order waits for confirmation and a returning customer is placed immediately', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'first-order-pending']);
+    storefrontCheckoutBranchWithStock($product, 20);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect();
+
+    $first = Order::query()->where('customer_id', $user->id)->firstOrFail();
+    $history = $first->statusHistories()->first();
+
+    expect($first->status)->toBe(OrderStatus::Pending)
+        ->and($history->changed_by)->toBe($user->id)
+        ->and($history->new_status)->toBe('pending');
+
+    $first->forceFill(['status' => OrderStatus::Delivered])->save();
+    $first->fulfillment->forceFill(['status' => FulfillmentStatus::Delivered])->save();
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect();
+
+    $second = Order::query()->where('customer_id', $user->id)->whereKeyNot($first->id)->firstOrFail();
+
+    expect($second->status)->toBe(OrderStatus::Placed);
 });

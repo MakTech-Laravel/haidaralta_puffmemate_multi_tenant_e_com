@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Platform;
 
 use App\DataTables\OrderDataTable;
+use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
-use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StockTransferStatus;
 use App\Http\Controllers\Controller;
@@ -12,15 +12,20 @@ use App\Http\Requests\Order\MarkOrderPaymentRequest;
 use App\Http\Requests\Order\UpdateFulfillmentStatusRequest;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
+use App\Models\OrderReturn;
 use App\Models\StockTransfer;
 use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\FulfillmentStatusService;
 use App\Services\Order\OrderAssignService;
+use App\Services\Order\OrderPlacementNotifier;
+use App\Services\Order\OrderReturnService;
 use App\Services\Order\PaymentMarkingService;
 use App\Support\MediaUrl;
+use App\Support\OrderStatusTimeline;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,6 +36,8 @@ class OrderController extends Controller
         private PaymentMarkingService $payments,
         private OrderAssignService $orderAssign,
         private DriverDeliveryService $deliveries,
+        private OrderPlacementNotifier $placements,
+        private OrderReturnService $returns,
     ) {}
 
     /**
@@ -50,6 +57,7 @@ class OrderController extends Controller
     {
         $order->load([
             'customer',
+            'placedBy:id,name',
             'items',
             'fulfillments.branch',
             'fulfillments.driver:id,name',
@@ -57,7 +65,7 @@ class OrderController extends Controller
             'fulfillments.stockTransfers.items.product:id,name',
             'fulfillments.stockTransfers.sourceBranch:id,name',
             'fulfillments.stockTransfers.destinationBranch:id,name',
-            'statusHistories' => fn ($query) => $query->orderBy('created_at'),
+            'statusHistories' => fn ($query) => $query->with('changer:id,name')->orderBy('id'),
         ]);
 
         return Inertia::render('platform/orders/show', [
@@ -77,6 +85,14 @@ class OrderController extends Controller
         $this->statusService->transition($fulfillment, $status, $request->user());
 
         Toast::success('Fulfillment status updated.');
+
+        return redirect()->route('platform.orders.show', $order);
+    }
+
+    public function resendPlacementCode(Request $request, Order $order): RedirectResponse
+    {
+        $this->placements->issue($order);
+        Toast::success('Delivery code sent.');
 
         return redirect()->route('platform.orders.show', $order);
     }
@@ -124,11 +140,55 @@ class OrderController extends Controller
 
     public function markPaid(MarkOrderPaymentRequest $request, Order $order): RedirectResponse
     {
-        $status = PaymentStatus::from($request->validated('payment_status'));
+        throw ValidationException::withMessages([
+            'payment_status' => 'Payment is collected when the delivery code is confirmed.',
+        ]);
+    }
 
-        $this->payments->overrideOrderPaymentStatus($order, $status);
+    public function deliver(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'otp' => ['required', 'string', 'regex:/^\d{4,}$/'],
+        ]);
 
-        Toast::success('Order payment status updated.');
+        $this->deliveries->complete($this->requireFulfillment($order), $request->user(), $data['otp']);
+        Toast::success('Order delivered and payment collected.');
+
+        return redirect()->route('platform.orders.show', $order);
+    }
+
+    public function fail(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'reason' => ['required', 'string'],
+            'note' => ['required', 'string', 'max:500'],
+        ]);
+
+        $this->deliveries->fail(
+            $this->requireFulfillment($order),
+            $request->user(),
+            DeliveryFailureReason::from($data['reason']),
+            $data['note'],
+        );
+        Toast::success('Customer marked unavailable.');
+
+        return redirect()->route('platform.orders.show', $order);
+    }
+
+    public function approveReturn(Request $request, Order $order, OrderReturn $orderReturn): RedirectResponse
+    {
+        abort_unless($orderReturn->order_id === $order->id, 404);
+        $this->returns->approve($orderReturn, $request->user());
+        Toast::success('Return request approved.');
+
+        return redirect()->route('platform.orders.show', $order);
+    }
+
+    public function rejectReturn(Request $request, Order $order, OrderReturn $orderReturn): RedirectResponse
+    {
+        abort_unless($orderReturn->order_id === $order->id, 404);
+        $this->returns->reject($orderReturn, $request->user());
+        Toast::success('Return request rejected.');
 
         return redirect()->route('platform.orders.show', $order);
     }
@@ -154,7 +214,21 @@ class OrderController extends Controller
             'statusLabel' => $order->status->label(),
             'paymentStatus' => $order->payment_status->value,
             'paymentStatusLabel' => $order->payment_status->label(),
+            'source' => $order->source->value,
+            'sourceLabel' => $order->source->label(),
+            'placedByName' => $order->placedBy?->name,
             'paymentStatusOptions' => $paymentOptions->values()->all(),
+            'canResendCode' => $order->status->allowsPlacementCode(),
+            'returnRequest' => $this->returns->payload($order),
+            'canComplete' => $order->fulfillment?->status === FulfillmentStatus::Arrived,
+            'canReportUnavailable' => $order->fulfillment?->status === FulfillmentStatus::Arrived,
+            'failureReasons' => array_map(
+                fn (DeliveryFailureReason $reason): array => [
+                    'value' => $reason->value,
+                    'label' => $reason->label(),
+                ],
+                DeliveryFailureReason::cases(),
+            ),
             'paymentMethod' => $order->payment_method,
             'customerName' => $order->customer?->name ?? 'Customer',
             'placedAt' => $order->created_at?->format('d M Y, h:i A'),
@@ -173,22 +247,15 @@ class OrderController extends Controller
                 'branchName' => $row->branch->name,
                 'status' => $row->status->value,
                 'statusLabel' => $row->status->label(),
-                'statusOptions' => collect([$row->status, ...$row->status->staffNext()])
-                    ->unique(fn (FulfillmentStatus $status): string => $status->value)
-                    ->map(fn (FulfillmentStatus $status): array => [
-                        'value' => $status->value,
-                        'label' => $status->label(),
-                    ])
-                    ->values()
-                    ->all(),
+                'actions' => $this->statusService->staffActions($row),
                 'shippingCostLabel' => '$'.number_format((float) $row->shipping_cost, 2),
                 'isPaid' => $row->isPaid(),
                 'driverId' => $row->driver_id,
                 'driverName' => $row->driver?->name,
                 'canAssign' => $this->orderAssign->canAssign($row),
                 'canCancel' => $row->status->allowsStaffCancel(),
-                'canRetry' => $row->status === FulfillmentStatus::DeliveryFailed,
-                'canReschedule' => $row->status === FulfillmentStatus::DeliveryFailed,
+                'canRetry' => false,
+                'canReschedule' => false,
                 'canReturn' => $row->status === FulfillmentStatus::DeliveryFailed,
                 'canConfirmReturn' => $row->status === FulfillmentStatus::Returning,
                 'items' => $row->items->map(function ($item): array {
@@ -218,13 +285,7 @@ class OrderController extends Controller
                     'canReceive' => $transfer->status === StockTransferStatus::InTransit,
                 ])->all(),
             ])->all(),
-            'timeline' => $order->statusHistories->map(fn ($row): array => [
-                'label' => OrderStatus::tryFrom((string) $row->new_status)?->label()
-                    ?? FulfillmentStatus::tryFrom((string) $row->new_status)?->label()
-                    ?? (string) $row->new_status,
-                'detail' => $row->created_at->format('d M Y, h:i A'),
-                'comment' => $row->comment,
-            ])->all(),
+            'timeline' => OrderStatusTimeline::steps(FulfillmentStatus::from($order->status->value), $order->statusHistories),
         ];
     }
 

@@ -10,6 +10,7 @@
     "sail": false,
     "skills": [
         "infer-conventions",
+        "deploying-to-cloud",
         "fortify-development",
         "laravel-best-practices",
         "testing-best-practices",
@@ -17,6 +18,7 @@
         "pulse-development",
         "scout-development",
         "wayfinder-development",
+        "telescope-debugging",
         "inertia-react-development",
         "echo-development",
         "tailwindcss-development",

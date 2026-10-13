@@ -14,6 +14,12 @@ import {
 
 const PER_PAGE_OPTIONS = [15, 25, 50, 100];
 
+const pageLinkProps = {
+    preserveState: true,
+    preserveScroll: true,
+    async: true,
+} as const;
+
 export function DataTablePagination({
     meta,
     links,
@@ -68,7 +74,7 @@ export function DataTablePagination({
                         asChild={Boolean(previous?.url)}
                     >
                         {previous?.url ? (
-                            <Link href={previous.url} preserveScroll>
+                            <Link href={previous.url} {...pageLinkProps}>
                                 Previous
                             </Link>
                         ) : (
@@ -102,7 +108,7 @@ export function DataTablePagination({
                                 size="sm"
                                 asChild
                             >
-                                <Link href={link.url} preserveScroll>
+                                <Link href={link.url} {...pageLinkProps}>
                                     {label}
                                 </Link>
                             </Button>
@@ -115,7 +121,7 @@ export function DataTablePagination({
                         asChild={Boolean(next?.url)}
                     >
                         {next?.url ? (
-                            <Link href={next.url} preserveScroll>
+                            <Link href={next.url} {...pageLinkProps}>
                                 Next
                             </Link>
                         ) : (

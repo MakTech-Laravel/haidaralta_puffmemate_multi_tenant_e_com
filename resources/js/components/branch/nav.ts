@@ -264,8 +264,8 @@ export function buildBranchNav(
                 ],
                 items: [
                     navLink({
-                        title: 'Order operations',
-                        href: `/branch/${slug}/reports/order-operations`,
+                        title: 'Order Reports',
+                        href: `/branch/${slug}/reports/order-reports`,
                         icon: ChartColumn,
                         permissions: ['manage-branch-orders'],
                     }),

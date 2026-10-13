@@ -3,6 +3,7 @@
 use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\DriverBranchAssignment;
 use App\Models\DriverInventory;
 use App\Models\Product;
 use App\Models\User;
@@ -24,11 +25,11 @@ test('drivers see empty products when they have no inventory', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('driver/place-order/index')
-            ->has('customers')
             ->has('products', 0)
+            ->where('canSell', false)
             ->has('paymentMethods')
-            ->where('customers.0.name', 'James Okonkwo')
-            ->where('paymentMethods.0.id', 'cod'));
+            ->where('paymentMethods.0.id', 'cod')
+            ->missing('customers'));
 });
 
 test('drivers see assigned inventory products on place order', function () {
@@ -38,6 +39,10 @@ test('drivers see assigned inventory products on place order', function () {
         'branch_id' => null,
     ]);
     $branch = Branch::factory()->create();
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $driver->id,
+        'branch_id' => $branch->id,
+    ]);
     $category = Category::factory()->create(['name' => 'Menthol']);
     $product = Product::factory()->create([
         'status' => true,
@@ -83,10 +88,10 @@ test('drivers see assigned inventory products on place order', function () {
             ->has('products', 1)
             ->where('products.0.id', (string) $product->id)
             ->where('products.0.name', 'Assigned Menthol Pack')
-            ->where('products.0.description', 'AMP-100')
+            ->where('products.0.sku', 'AMP-100')
             ->where('products.0.category', 'Menthol')
-            ->where('products.0.stock', 10)
+            ->where('products.0.stock', 7)
             ->where('products.0.price', 14.5)
-            ->where('customers.0.name', 'James Okonkwo')
+            ->where('canSell', true)
             ->where('paymentMethods.0.id', 'cod'));
 });

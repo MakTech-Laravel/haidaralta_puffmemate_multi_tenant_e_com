@@ -5,13 +5,17 @@ namespace App\Enums;
 enum OrderStatus: string
 {
     case Pending = 'pending';
+    case Placed = 'placed';
+    case Hold = 'hold';
     case Processing = 'processing';
     case Ready = 'ready';
     case Assigned = 'assigned';
     case PickedUp = 'picked_up';
     case OutForDelivery = 'out_for_delivery';
+    case Arrived = 'arrived';
     case DeliveryFailed = 'delivery_failed';
     case Returning = 'returning';
+    case Returned = 'returned';
     case Delivered = 'delivered';
     case Cancelled = 'cancelled';
 
@@ -28,6 +32,11 @@ enum OrderStatus: string
     public function allowsCustomerCancel(): bool
     {
         return FulfillmentStatus::from($this->value)->allowsCustomerCancel();
+    }
+
+    public function allowsPlacementCode(): bool
+    {
+        return FulfillmentStatus::from($this->value)->allowsPlacementCode();
     }
 
     public function isTerminal(): bool

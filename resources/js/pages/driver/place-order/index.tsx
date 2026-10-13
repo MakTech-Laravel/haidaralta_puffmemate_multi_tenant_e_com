@@ -1,25 +1,18 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Package, UserRound, Wallet } from 'lucide-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
-import {
-    PlaceOrderCustomerSection,
-    looksLikePhone,
-    type CustomerFormValues,
-} from '@/components/driver/place-order/place-order-customer-section';
+import { PlaceOrderCustomerSection } from '@/components/driver/place-order/place-order-customer-section';
 import { PlaceOrderPaymentSection } from '@/components/driver/place-order/place-order-payment-section';
 import { PlaceOrderProductsSection } from '@/components/driver/place-order/place-order-products-section';
 import type {
     DriverPlaceOrderCatalog,
-    DriverPlaceOrderCustomer,
+    ResolvedPlaceOrderCustomer,
 } from '@/components/driver/place-order/place-order-types';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { store } from '@/actions/App/Http/Controllers/Driver/PlaceOrderController';
 import { index as placeOrderIndex } from '@/routes/driver/place-order';
-
-const emptyCustomer: CustomerFormValues = {
-    name: '',
-    phone: '',
-};
 
 type DriverPlaceOrderIndexProps = DriverPlaceOrderCatalog;
 
@@ -61,20 +54,22 @@ function SectionShell({
 }
 
 export default function DriverPlaceOrderIndex({
-    customers,
     products,
     paymentMethods,
+    canSell,
 }: DriverPlaceOrderIndexProps) {
-    const [customerQuery, setCustomerQuery] = useState('');
-    const [isAddingNew, setIsAddingNew] = useState(false);
-    const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    const [phone, setPhone] = useState('');
+    const [name, setName] = useState('');
+    const [customer, setCustomer] = useState<ResolvedPlaceOrderCustomer | null>(
         null,
     );
-    const [customer, setCustomer] = useState<CustomerFormValues>(emptyCustomer);
+    const [needsAdd, setNeedsAdd] = useState(false);
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [paymentMethodId, setPaymentMethodId] = useState<string | null>(
         paymentMethods[0]?.id ?? null,
     );
+    const [processing, setProcessing] = useState(false);
+    const idempotencyKey = useRef(crypto.randomUUID());
 
     const lineItems = useMemo(
         () =>
@@ -98,52 +93,49 @@ export default function DriverPlaceOrderIndex({
 
     const total = lineItems.reduce((sum, item) => sum + item.lineTotal, 0);
     const itemCount = lineItems.reduce((sum, item) => sum + item.quantity, 0);
+    const customerReady =
+        customer !== null ||
+        (needsAdd && name.trim() !== '' && phone.trim() !== '');
 
     const canPlace =
-        customer.name.trim() !== '' &&
-        customer.phone.trim() !== '' &&
+        canSell &&
+        customerReady &&
         paymentMethodId !== null &&
-        itemCount > 0;
-
-    const resetCustomerSearch = (): void => {
-        setSelectedCustomerId(null);
-        setIsAddingNew(false);
-        setCustomer(emptyCustomer);
-        setCustomerQuery('');
-    };
-
-    const handleSelectCustomer = (selected: DriverPlaceOrderCustomer): void => {
-        setSelectedCustomerId(selected.id);
-        setIsAddingNew(false);
-        setCustomer({
-            name: selected.name,
-            phone: selected.phone,
-        });
-    };
-
-    const handleStartAdd = (query: string): void => {
-        setSelectedCustomerId(null);
-        setIsAddingNew(true);
-
-        if (looksLikePhone(query)) {
-            setCustomer({ name: '', phone: query });
-        } else {
-            setCustomer({ name: query, phone: '' });
-        }
-    };
+        itemCount > 0 &&
+        !processing;
 
     const handlePlaceOrder = (): void => {
-        if (!canPlace) {
-            toast.message('Complete customer, products, and payment first', {
-                description: 'Placeholder — this control is not live yet.',
-            });
-
+        if (!canPlace || paymentMethodId === null) {
             return;
         }
 
-        toast.message('Order placed for this demo', {
-            description: 'Placeholder — this control is not live yet.',
-        });
+        router.post(
+            store.url(),
+            {
+                customer_id: customer?.id ?? null,
+                phone: customer?.phone ?? phone,
+                name: customer?.name ?? name,
+                payment_method: paymentMethodId,
+                idempotency_key: idempotencyKey.current,
+                items: lineItems.map((item) => ({
+                    id: item.product.id,
+                    quantity: item.quantity,
+                })),
+            },
+            {
+                preserveScroll: true,
+                onStart: () => setProcessing(true),
+                onFinish: () => setProcessing(false),
+                onError: (errors) => {
+                    const message = Object.values(errors)[0];
+                    toast.error(
+                        typeof message === 'string'
+                            ? message
+                            : 'The sale could not be placed.',
+                    );
+                },
+            },
+        );
     };
 
     return (
@@ -151,45 +143,40 @@ export default function DriverPlaceOrderIndex({
             <Head title="Place order" />
 
             <div className="flex flex-col gap-5 pb-4">
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                     <h1 className="text-foreground text-2xl font-bold tracking-tight">
                         Place order
                     </h1>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                        Sell branch-assigned stock to a customer. Search first,
-                        or add them if they are not listed.
+                    <p className="text-muted-foreground text-sm">
+                        Sell assigned stock from your active branch.
                     </p>
                 </div>
 
-                <SectionShell
-                    icon={UserRound}
-                    title="Customer"
-                    description="Search a customer, or add one if they are not listed."
-                >
+                {!canSell ? (
+                    <p className="text-destructive text-sm">
+                        You need one active branch assignment before selling.
+                    </p>
+                ) : null}
+
+                <SectionShell icon={UserRound} title="Customer">
                     <PlaceOrderCustomerSection
-                        customers={customers}
-                        selectedCustomerId={selectedCustomerId}
-                        isAddingNew={isAddingNew}
-                        onSelectCustomer={handleSelectCustomer}
-                        onClearSelection={resetCustomerSearch}
-                        onStartAdd={handleStartAdd}
-                        onCancelAdd={resetCustomerSearch}
-                        values={customer}
-                        onChange={(field, value) =>
-                            setCustomer((current) => ({
-                                ...current,
-                                [field]: value,
-                            }))
-                        }
-                        customerQuery={customerQuery}
-                        onCustomerQueryChange={setCustomerQuery}
+                        phone={phone}
+                        name={name}
+                        customer={customer}
+                        needsAdd={needsAdd}
+                        onPhoneChange={setPhone}
+                        onNameChange={setName}
+                        onResolved={(resolved, askToAdd) => {
+                            setCustomer(resolved);
+                            setNeedsAdd(askToAdd);
+                        }}
                     />
                 </SectionShell>
 
                 <SectionShell
                     icon={Package}
                     title="Products"
-                    description="Search assigned stock. Selected items stay in your order."
+                    description="Tap +/− on a line."
                 >
                     <PlaceOrderProductsSection
                         products={products}
@@ -206,7 +193,7 @@ export default function DriverPlaceOrderIndex({
                 <SectionShell
                     icon={Wallet}
                     title="Payment"
-                    description="How this drop will be collected."
+                    description="How this sale will be collected."
                 >
                     <PlaceOrderPaymentSection
                         methods={paymentMethods}
@@ -231,6 +218,7 @@ export default function DriverPlaceOrderIndex({
                         disabled={!canPlace}
                         onClick={handlePlaceOrder}
                     >
+                        {processing ? <Spinner /> : null}
                         Place order
                     </Button>
                 </div>

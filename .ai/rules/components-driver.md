@@ -31,3 +31,6 @@ DriverAccountSheet Security links to GET /driver/security (password update + For
 
 ## Place order is a field tab and sheet quick action
 The fifth field tab is Place order at GET /driver/place-order (ShoppingBag icon). DriverAccountSheet Quick actions may also link Place order. Do not add it as a sixth footer tab.
+
+## Place order tab uses ClipboardPen
+The fifth driver field tab is Place order (GET /driver/place-order) with Lucide ClipboardPen — not ShoppingBag. Do not set tabLabel to Order; the mobile tooltip should show the full Place order label (tabLabel is only for short tips when needed). Orders tab keeps Package.

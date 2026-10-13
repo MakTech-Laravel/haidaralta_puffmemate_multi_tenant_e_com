@@ -5,6 +5,7 @@ namespace App\Actions\Order;
 use App\Enums\CartStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\NotificationType;
+use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Address;
@@ -20,11 +21,11 @@ use App\Models\Payment;
 use App\Models\PaymentTransaction;
 use App\Models\Product;
 use App\Models\User;
-use App\Services\Conversation\ConversationService;
 use App\Services\Inventory\InventoryReservationService;
 use App\Services\Notifications\NotificationService;
 use App\Services\Order\AllocationDecisionRecorder;
 use App\Services\Order\OrderAllocationEngine;
+use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\StockTransferService;
 use App\Support\BranchProductPriceDisplay;
 use App\Support\MediaUrl;
@@ -38,9 +39,9 @@ class PlaceOrderAction
         private OrderAllocationEngine $allocator,
         private InventoryReservationService $reservations,
         private StockTransferService $transfers,
-        private ConversationService $conversations,
         private NotificationService $notifications,
         private AllocationDecisionRecorder $decisions,
+        private OrderPlacementNotifier $placements,
     ) {}
 
     /**
@@ -104,14 +105,17 @@ class PlaceOrderAction
             $address = $this->persistAddress($user, $data);
             $deliveryFee = $plan['shipping_cost'];
             $total = round(max($subtotal - $discount + $deliveryFee, 0), 2);
+            $opening = $this->openingStatus($user);
 
             $order = Order::query()->create([
                 'order_number' => $this->nextOrderNumber(),
                 'customer_id' => $user->id,
+                'placed_by' => null,
+                'source' => OrderSource::CustomerCheckout,
                 'address_id' => $address->id,
                 'coupon_id' => $coupon?->id,
                 'coupon_code' => $coupon?->code,
-                'status' => OrderStatus::Pending,
+                'status' => OrderStatus::from($opening->value),
                 'shipping_address_snapshot' => [
                     'name' => trim($data['name']),
                     'phone' => $data['mobile'],
@@ -140,7 +144,7 @@ class PlaceOrderAction
                 'order_id' => $order->id,
                 'branch_id' => $plan['branch']->id,
                 'fulfillment_number' => $order->order_number,
-                'status' => FulfillmentStatus::Pending,
+                'status' => $opening,
                 'distance_km' => $plan['distance_km'],
                 'shipping_cost' => $plan['shipping_cost'],
             ]);
@@ -182,17 +186,8 @@ class PlaceOrderAction
                 'order_id' => $order->id,
                 'fulfillment_id' => $fulfillment->id,
                 'old_status' => null,
-                'new_status' => FulfillmentStatus::Pending->value,
-                'comment' => 'Fulfillment created',
-                'changed_by' => $user->id,
-            ]);
-
-            OrderStatusHistory::query()->create([
-                'order_id' => $order->id,
-                'fulfillment_id' => null,
-                'old_status' => null,
-                'new_status' => OrderStatus::Pending->value,
-                'comment' => 'Order placed',
+                'new_status' => $opening->value,
+                'comment' => $opening === FulfillmentStatus::Placed ? 'Order placed' : 'Awaiting confirmation',
                 'changed_by' => $user->id,
             ]);
 
@@ -225,13 +220,19 @@ class PlaceOrderAction
             return $order->refresh();
         });
 
-        $this->conversations->openForOrder($order->load('fulfillment'));
+        $placed = $order->status === OrderStatus::Placed;
+
+        if ($placed) {
+            $this->placements->issue($order);
+        }
 
         $this->notifications->send(
             [$user->id],
             NotificationType::Order,
-            'Order placed',
-            'Your order '.$order->order_number.' has been placed.',
+            $placed ? 'Order placed' : 'Order received',
+            $placed
+                ? 'Your order '.$order->order_number.' has been placed.'
+                : 'Your order '.$order->order_number.' is awaiting confirmation.',
             ['order_number' => $order->order_number],
             $user,
         );
@@ -341,6 +342,20 @@ class PlaceOrderAction
         }
 
         return $inventory;
+    }
+
+    /**
+     * A customer with a completed order is already confirmed. Everyone else
+     * waits for a phone confirmation before the order is placed.
+     */
+    private function openingStatus(User $user): FulfillmentStatus
+    {
+        $trusted = Order::query()
+            ->where('customer_id', $user->id)
+            ->where('status', OrderStatus::Delivered)
+            ->exists();
+
+        return $trusted ? FulfillmentStatus::Placed : FulfillmentStatus::Pending;
     }
 
     private function inventoryKey(int $branchId, int $productId, ?int $variantId): string

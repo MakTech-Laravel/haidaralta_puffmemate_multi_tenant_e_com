@@ -16,7 +16,7 @@ use App\Http\Controllers\Branch\PacksSavesController as BranchPacksSavesControll
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\Reports\OrderAssignHistoryController as BranchOrderAssignHistoryController;
-use App\Http\Controllers\Branch\Reports\OrderOperationsController as BranchOrderOperationsController;
+use App\Http\Controllers\Branch\Reports\OrderReportController as BranchOrderReportController;
 use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
 use App\Http\Controllers\Branch\Reports\ProductAssignTransactionController as BranchProductAssignTransactionController;
 use App\Http\Controllers\Branch\Reports\StockTransactionController as BranchStockTransactionController;
@@ -105,8 +105,11 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('stock/import', [BranchStockController::class, 'storeImport'])->name('branch.stock.import.store');
         Route::get('stock/price', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
             ->name('branch.stock.price');
-        Route::get('reports/order-operations', [BranchOrderOperationsController::class, 'index'])
-            ->name('branch.reports.order-operations');
+        Route::get('reports/order-reports', [BranchOrderReportController::class, 'index'])
+            ->name('branch.reports.order-reports');
+        Route::get('reports/order-operations', function (string $branch) {
+            return redirect()->route('branch.reports.order-reports', ['branch' => $branch], 301);
+        });
         Route::get('reports/stock-transactions', [BranchStockTransactionController::class, 'index'])
             ->name('branch.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [BranchStockTransactionController::class, 'export'])
@@ -142,6 +145,8 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.reports.order-assign-history.export');
         Route::get('reports/order-assign-history/driver-options', [BranchOrderAssignHistoryController::class, 'driverOptions'])
             ->name('branch.reports.order-assign-history.driver-options');
+        Route::post('orders/{fulfillment}/placement-code', [BranchOrderController::class, 'resendPlacementCode'])
+            ->name('branch.orders.placement-code');
         Route::post('orders/{fulfillment}/cancel', [BranchOrderController::class, 'cancel'])
             ->name('branch.orders.cancel');
         Route::post('orders/{fulfillment}/retry-delivery', [BranchOrderController::class, 'retryDelivery'])
@@ -150,6 +155,14 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.orders.reschedule-delivery');
         Route::post('orders/{fulfillment}/return-delivery', [BranchOrderController::class, 'returnDelivery'])
             ->name('branch.orders.return-delivery');
+        Route::post('orders/{fulfillment}/deliver', [BranchOrderController::class, 'deliver'])
+            ->name('branch.orders.deliver');
+        Route::post('orders/{fulfillment}/fail', [BranchOrderController::class, 'fail'])
+            ->name('branch.orders.fail');
+        Route::post('orders/{fulfillment}/returns/{orderReturn}/approve', [BranchOrderController::class, 'approveReturn'])
+            ->name('branch.orders.returns.approve');
+        Route::post('orders/{fulfillment}/returns/{orderReturn}/reject', [BranchOrderController::class, 'rejectReturn'])
+            ->name('branch.orders.returns.reject');
         Route::post('orders/{fulfillment}/confirm-return', [BranchOrderController::class, 'confirmReturn'])
             ->name('branch.orders.confirm-return');
         Route::get('stock-transfers', [BranchStockTransferController::class, 'index'])

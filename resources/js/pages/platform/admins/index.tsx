@@ -189,6 +189,7 @@ export default function PlatformAdminsIndex({
                     columns={columns}
                     payload={tablePayload}
                     perPage={query.perPage}
+                    isLoading={query.processing}
                     onPerPageChange={query.changePerPage}
                     emptyMessage="No admins found."
                     toolbar={
