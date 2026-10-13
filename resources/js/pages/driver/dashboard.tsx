@@ -4,8 +4,11 @@ import type {
     DriverDashboardHub as DriverDashboardHubData,
     DriverDashboardSummary,
 } from '@/components/driver/driver-order-types';
+import { useDriverOrdersRealtime } from '@/hooks/use-driver-orders-realtime';
 import { dashboard } from '@/routes/driver';
 import type { Auth } from '@/types';
+
+const realtimeProps = ['summary', 'hub'];
 
 type DriverDashboardProps = {
     summary: DriverDashboardSummary;
@@ -17,6 +20,7 @@ export default function DriverDashboard({
     hub,
 }: DriverDashboardProps) {
     const { auth } = usePage<{ auth: Auth }>().props;
+    useDriverOrdersRealtime(realtimeProps);
 
     return (
         <>
