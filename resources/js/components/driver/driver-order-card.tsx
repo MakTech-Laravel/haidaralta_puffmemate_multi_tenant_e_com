@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { MapPin, MessageCircle } from 'lucide-react';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,22 +66,27 @@ export function DriverOrderCard({
                     >
                         {driverOrderStatusLabel[order.status]}
                     </Badge>
+                    {order.source === 'wholesale' && order.sourceLabel ? (
+                        <OrderSourceBadge
+                            source={order.source}
+                            label={order.sourceLabel}
+                            className="shrink-0 rounded-sm px-1.5 py-0 text-[11px]"
+                        />
+                    ) : null}
                 </div>
+                {order.company ? (
+                    <p className="text-foreground truncate text-xs font-medium">
+                        {order.company}
+                    </p>
+                ) : null}
                 <p className="text-muted-foreground truncate text-sm">
                     {addressLine}
                 </p>
-                <p className="text-muted-foreground truncate text-xs">
-                    {meta}
-                </p>
+                <p className="text-muted-foreground truncate text-xs">{meta}</p>
             </Link>
 
             <div className="flex shrink-0 items-center gap-0.5">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    asChild
-                >
+                <Button type="button" variant="ghost" size="icon-sm" asChild>
                     <Link
                         href={orderChat.url(order.id)}
                         prefetch

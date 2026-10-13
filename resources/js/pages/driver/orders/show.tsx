@@ -3,6 +3,7 @@ import { MessageCircle, Package, Phone } from 'lucide-react';
 import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
 import { DriverDeliverOtpForm } from '@/components/driver/driver-deliver-otp-form';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import {
     driverMapsQuery,
     driverOrderStatusLabel,
@@ -49,8 +50,19 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                         <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
                             {order.customerName}
                         </h1>
+                        {order.company ? (
+                            <p className="text-foreground text-sm font-medium">
+                                {order.company}
+                            </p>
+                        ) : null}
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline">{order.areaLabel}</Badge>
+                            {order.source && order.sourceLabel ? (
+                                <OrderSourceBadge
+                                    source={order.source}
+                                    label={order.sourceLabel}
+                                />
+                            ) : null}
                             <Badge
                                 className={cn(
                                     'rounded-sm px-2.5 py-0.5 text-base font-medium',

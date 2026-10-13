@@ -39,4 +39,14 @@ class WholesaleInquiryFactory extends Factory
             'read_at' => now(),
         ]);
     }
+
+    public function rejected(string $reason = 'Not able to supply this request.'): static
+    {
+        return $this->state(fn (): array => [
+            'status' => WholesaleInquiryStatus::Rejected,
+            'read_at' => now(),
+            'rejection_reason' => $reason,
+            'reviewed_at' => now(),
+        ]);
+    }
 }

@@ -48,6 +48,8 @@ instead, keeping Spatie's original composite-primary-key migration schema untouc
   files go.
 - **[shared-infrastructure.md](shared-infrastructure.md)** — error boundary, Lucide icon picker,
   file upload components, and Telescope (local/staging only).
+- **[wholesale-handoff.md](wholesale-handoff.md)** — wholesale plan, what shipped per phase, plan
+  deviations, deploy steps, verification baseline and open items.
 
 For the phase-by-phase build plan itself (including exact master prompts to run in Cursor for
 each phase), see [`multi-tenant-auth-phases.md`](../multi-tenant-auth-phases.md) at the project

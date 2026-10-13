@@ -4,6 +4,7 @@ namespace App\DataTables;
 
 use App\DataTables\Concerns\FiltersOrderLists;
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderSource;
 use App\Models\Branch;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
@@ -74,6 +75,15 @@ class BranchOrderFulfillmentDataTable extends AbstractDataTable
     {
         return [
             AllowedFilter::exact('status'),
+            AllowedFilter::callback('source', function (Builder $query, mixed $value): void {
+                $source = OrderSource::tryFrom((string) $value);
+
+                if ($source === null) {
+                    return;
+                }
+
+                $query->whereHas('order', fn (Builder $order) => $order->where('source', $source->value));
+            }),
             $this->orderSearchFilter(includeBranch: false, fulfillment: true),
             ...$this->placedDateFilters(throughOrder: true),
         ];
@@ -121,6 +131,7 @@ class BranchOrderFulfillmentDataTable extends AbstractDataTable
     {
         return [
             'status' => FulfillmentStatus::options(),
+            'source' => OrderSource::options(),
         ];
     }
 

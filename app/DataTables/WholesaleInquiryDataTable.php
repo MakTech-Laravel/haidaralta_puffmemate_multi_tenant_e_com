@@ -26,7 +26,9 @@ class WholesaleInquiryDataTable extends AbstractDataTable
      */
     protected function baseQuery(): Builder
     {
-        return WholesaleInquiry::query();
+        return WholesaleInquiry::query()
+            ->withCount('items')
+            ->with('order:id,order_number');
     }
 
     /**
@@ -45,7 +47,7 @@ class WholesaleInquiryDataTable extends AbstractDataTable
      */
     protected function modelSearchableColumns(): array
     {
-        return ['full_name', 'email', 'phone'];
+        return ['full_name', 'company', 'email', 'phone'];
     }
 
     /**
@@ -86,6 +88,10 @@ class WholesaleInquiryDataTable extends AbstractDataTable
             'company' => $model->company,
             'status' => $model->status->value,
             'status_label' => $model->status->label(),
+            'is_open' => $model->status->isOpen(),
+            'items_count' => (int) ($model->items_count ?? 0),
+            'order_id' => $model->order?->id,
+            'order_number' => $model->order?->order_number,
             'created_at' => $model->created_at?->toIso8601String(),
         ];
     }

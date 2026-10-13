@@ -19,6 +19,9 @@ export type DriverAssignedOrder = {
     orderNumber: string;
     status: DriverOrderStatus;
     customerName: string;
+    company?: string | null;
+    source?: string;
+    sourceLabel?: string;
     areaId: string;
     areaLabel: string;
     addressSummary: string;

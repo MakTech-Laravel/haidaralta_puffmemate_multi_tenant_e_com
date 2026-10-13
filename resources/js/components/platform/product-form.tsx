@@ -95,6 +95,8 @@ interface ProductFormDefaults {
     color_code?: ColorPickerValue | null;
     selling_price?: string | null;
     regular_price?: string | null;
+    wholesale_price?: string | null;
+    min_wholesale_qty?: number | null;
     status?: boolean;
 }
 
@@ -122,6 +124,8 @@ interface ProductFormProps {
     excludeProductId?: number | null;
     /** Branch create: include initial selling_price / quantity. */
     branchOpsFields?: boolean;
+    /** Platform catalog: edit the default wholesale price and minimum quantity. */
+    wholesaleFields?: boolean;
     /** Hide gallery when backend ignores it (branch create). Default true. */
     showGallery?: boolean;
     returnTo?: string | null;
@@ -170,6 +174,7 @@ export function ProductForm({
     suggestionShowHref,
     excludeProductId = null,
     branchOpsFields = false,
+    wholesaleFields = false,
     showGallery = true,
     returnTo = null,
     cancelHref,
@@ -270,6 +275,16 @@ export function ProductForm({
               }
             : {}),
         ...(showBranchQuantityOnly ? { quantity: 0 } : {}),
+        ...(wholesaleFields
+            ? {
+                  wholesale_price: defaults?.wholesale_price ?? '',
+                  min_wholesale_qty:
+                      defaults?.min_wholesale_qty !== null &&
+                      defaults?.min_wholesale_qty !== undefined
+                          ? String(defaults.min_wholesale_qty)
+                          : '',
+              }
+            : {}),
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
@@ -416,12 +431,16 @@ export function ProductForm({
                 buying_price,
                 regular_price,
                 quantity,
+                wholesale_price,
+                min_wholesale_qty,
                 ...rest
             } = form as typeof form & {
                 selling_price?: string;
                 buying_price?: string;
                 regular_price?: string;
                 quantity?: number;
+                wholesale_price?: string;
+                min_wholesale_qty?: string;
             };
 
             const filteredSpecifications = specifications.filter(
@@ -476,8 +495,20 @@ export function ProductForm({
                           quantity: quantity ?? 0,
                       }
                     : {}),
-                ...(showBranchQuantityOnly
-                    ? { quantity: quantity ?? 0 }
+                ...(showBranchQuantityOnly ? { quantity: quantity ?? 0 } : {}),
+                ...(wholesaleFields
+                    ? {
+                          wholesale_price:
+                              wholesale_price === undefined ||
+                              wholesale_price.trim() === ''
+                                  ? null
+                                  : wholesale_price,
+                          min_wholesale_qty:
+                              min_wholesale_qty === undefined ||
+                              min_wholesale_qty.trim() === ''
+                                  ? null
+                                  : min_wholesale_qty,
+                      }
                     : {}),
             };
         });
@@ -859,7 +890,9 @@ export function ProductForm({
                                         setData('pack_unit', event.target.value)
                                     }
                                     placeholder="e.g. Cigarettes, pcs"
-                                    disabled={data.pieces_per_pack.trim() === ''}
+                                    disabled={
+                                        data.pieces_per_pack.trim() === ''
+                                    }
                                 />
                                 <p className="text-muted-foreground text-xs">
                                     Shown with the piece count (defaults to
@@ -940,6 +973,90 @@ export function ProductForm({
                                     />
                                     <InputError
                                         message={errors.selling_price}
+                                    />
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {wholesaleFields ? (
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="wholesale_price">
+                                        Wholesale price
+                                    </Label>
+                                    <Input
+                                        id="wholesale_price"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={
+                                            (
+                                                data as typeof data & {
+                                                    wholesale_price?: string;
+                                                }
+                                            ).wholesale_price ?? ''
+                                        }
+                                        onChange={(event) =>
+                                            setData(
+                                                'wholesale_price' as never,
+                                                event.target.value as never,
+                                            )
+                                        }
+                                        placeholder="Optional"
+                                    />
+                                    <p className="text-muted-foreground text-xs">
+                                        Default unit price for wholesale orders.
+                                        Falls back to the selling price when
+                                        empty.
+                                    </p>
+                                    <InputError
+                                        message={
+                                            (
+                                                errors as Record<
+                                                    string,
+                                                    string | undefined
+                                                >
+                                            ).wholesale_price
+                                        }
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="min_wholesale_qty">
+                                        Minimum wholesale quantity
+                                    </Label>
+                                    <Input
+                                        id="min_wholesale_qty"
+                                        type="number"
+                                        step="1"
+                                        min="1"
+                                        value={
+                                            (
+                                                data as typeof data & {
+                                                    min_wholesale_qty?: string;
+                                                }
+                                            ).min_wholesale_qty ?? ''
+                                        }
+                                        onChange={(event) =>
+                                            setData(
+                                                'min_wholesale_qty' as never,
+                                                event.target.value as never,
+                                            )
+                                        }
+                                        placeholder="Optional"
+                                    />
+                                    <p className="text-muted-foreground text-xs">
+                                        Smallest quantity customers can request
+                                        on the wholesale form.
+                                    </p>
+                                    <InputError
+                                        message={
+                                            (
+                                                errors as Record<
+                                                    string,
+                                                    string | undefined
+                                                >
+                                            ).min_wholesale_qty
+                                        }
                                     />
                                 </div>
                             </div>

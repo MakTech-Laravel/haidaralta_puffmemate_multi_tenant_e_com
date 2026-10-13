@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     Activity,
     Bell,
+    Boxes,
     LayoutGrid,
     LogOut,
     ShoppingBag,
@@ -15,6 +16,7 @@ import { logout } from '@/routes';
 import { index as accountIndex } from '@/routes/customer/account';
 import { index as notificationsIndex } from '@/routes/customer/notifications';
 import { index as productToReview } from '@/routes/customer/product-to-review';
+import { index as wholesaleRequestsIndex } from '@/routes/customer/wholesale-requests';
 
 export type AccountNavItem = {
     label: string;
@@ -41,6 +43,16 @@ export const accountNavItems: AccountNavItem[] = [
             url === '/orders' ||
             url.startsWith('/orders?') ||
             url.startsWith('/orders/'),
+    },
+    {
+        label: 'Wholesale requests',
+        icon: Boxes,
+        href: wholesaleRequestsIndex.url(),
+        mobile: false,
+        match: (url) =>
+            url === '/wholesale-requests' ||
+            url.startsWith('/wholesale-requests?') ||
+            url.startsWith('/wholesale-requests/'),
     },
     {
         label: 'Product to review',

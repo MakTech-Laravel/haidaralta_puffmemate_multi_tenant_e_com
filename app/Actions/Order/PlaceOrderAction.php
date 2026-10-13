@@ -29,6 +29,7 @@ use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\StockTransferService;
 use App\Support\BranchProductPriceDisplay;
 use App\Support\MediaUrl;
+use App\Support\Order\OrderNumber;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -108,7 +109,7 @@ class PlaceOrderAction
             $opening = $this->openingStatus($user);
 
             $order = Order::query()->create([
-                'order_number' => $this->nextOrderNumber(),
+                'order_number' => OrderNumber::next(),
                 'customer_id' => $user->id,
                 'placed_by' => null,
                 'source' => OrderSource::CustomerCheckout,
@@ -420,22 +421,5 @@ class PlaceOrderAction
             ...$attributes,
             'user_id' => $user->id,
         ]);
-    }
-
-    private function nextOrderNumber(): string
-    {
-        $prefix = 'PMM-'.now()->format('Y');
-        $latest = Order::query()
-            ->where('order_number', 'like', $prefix.'-%')
-            ->orderByDesc('id')
-            ->value('order_number');
-
-        $sequence = 1;
-
-        if (is_string($latest) && preg_match('/(\d+)$/', $latest, $matches) === 1) {
-            $sequence = ((int) $matches[1]) + 1;
-        }
-
-        return $prefix.'-'.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
     }
 }

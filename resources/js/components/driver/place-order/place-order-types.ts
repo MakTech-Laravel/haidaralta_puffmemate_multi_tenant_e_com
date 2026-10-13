@@ -1,3 +1,5 @@
+import type { PaymentMethodOption } from '@/components/orders/payment-method-options';
+
 export type DriverPlaceOrderProduct = {
     id: string;
     name: string;
@@ -10,11 +12,7 @@ export type DriverPlaceOrderProduct = {
     image: string;
 };
 
-export type DriverPlaceOrderPaymentMethod = {
-    id: string;
-    label: string;
-    description?: string | null;
-};
+export type DriverPlaceOrderPaymentMethod = PaymentMethodOption;
 
 export type DriverPlaceOrderCatalog = {
     products: DriverPlaceOrderProduct[];

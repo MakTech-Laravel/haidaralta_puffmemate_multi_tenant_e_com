@@ -26,6 +26,8 @@ class BranchPricingService
         'discount_price',
         'start_date',
         'end_date',
+        'wholesale_price',
+        'min_wholesale_qty',
     ];
 
     /**
@@ -37,7 +39,9 @@ class BranchPricingService
      *     discount_price?: float|string|null,
      *     start_date?: string|null,
      *     end_date?: string|null,
-     *     variant_id?: int|null
+     *     variant_id?: int|null,
+     *     wholesale_price?: float|string|null,
+     *     min_wholesale_qty?: int|string|null
      * }  $data
      */
     public function upsert(
@@ -71,6 +75,12 @@ class BranchPricingService
                 'discount_price' => $hasDiscount ? self::nullableMoney($data['discount_price'] ?? null) : null,
                 'start_date' => $hasDiscount ? ($data['start_date'] ?? null) : null,
                 'end_date' => $hasDiscount ? ($data['end_date'] ?? null) : null,
+                'wholesale_price' => array_key_exists('wholesale_price', $data)
+                    ? self::nullableMoney($data['wholesale_price'])
+                    : $price->wholesale_price,
+                'min_wholesale_qty' => array_key_exists('min_wholesale_qty', $data)
+                    ? self::nullablePositiveInt($data['min_wholesale_qty'])
+                    : $price->min_wholesale_qty,
                 'status' => true,
             ]);
 
@@ -191,7 +201,7 @@ class BranchPricingService
             return $value->format('Y-m-d');
         }
 
-        if (in_array($field, ['buying_price', 'regular_price', 'selling_price', 'discount_price'], true)) {
+        if (in_array($field, ['buying_price', 'regular_price', 'selling_price', 'discount_price', 'wholesale_price'], true)) {
             return self::nullableMoney($value);
         }
 
@@ -224,5 +234,16 @@ class BranchPricingService
         }
 
         return number_format((float) $value, 2, '.', '');
+    }
+
+    private static function nullablePositiveInt(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $int = (int) $value;
+
+        return $int > 0 ? $int : null;
     }
 }

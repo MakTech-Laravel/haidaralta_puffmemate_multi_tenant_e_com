@@ -38,19 +38,22 @@ export const wholesaleInquiry = {
 };
 
 export const wholesaleFormCopy = {
-    firstName: 'First Name',
-    lastName: 'Last Name',
+    fullName: 'Full Name',
     phone: 'Phone',
     email: 'Email',
     company: 'Company (If Applicable)',
     address: 'Address',
+    products: 'Products',
+    productsHelp:
+        'Add the products and quantities you need. Final pricing is confirmed by our team.',
     message: 'Message',
-    firstNamePlaceholder: 'John',
-    lastNamePlaceholder: 'Doe',
+    myRequests: 'My wholesale requests',
+    fullNamePlaceholder: 'John Doe',
     phonePlaceholder: '+1 012 3456 789',
     emailPlaceholder: 'demo@gmail.com',
     companyPlaceholder: 'Company name',
     addressPlaceholder: 'Street, suburb, state',
+    productsPlaceholder: 'Search products',
     messagePlaceholder: 'Write your message..',
     submitLabel: 'Send Message',
 };

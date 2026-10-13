@@ -1,14 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { ClipboardList } from 'lucide-react';
+import { AccountListPagination } from '@/components/customer/account-list-pagination';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Button } from '@/components/ui/button';
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
 import { shop } from '@/routes';
 import { show as orderShow } from '@/routes/customer/orders';
@@ -38,6 +32,8 @@ export type CustomerOrder = {
     priceLabel: string;
     status: CustomerOrderStatus;
     paymentStatus: CustomerPaymentStatus;
+    source?: string;
+    sourceLabel?: string;
     date: string;
 };
 
@@ -82,8 +78,6 @@ export function OrderList({
     onPageChange,
     className,
 }: OrderListProps) {
-    const showPagination = lastPage > 1;
-
     if (orders.length === 0) {
         return (
             <div
@@ -137,9 +131,21 @@ export function OrderList({
                                 <div className="flex min-w-0 flex-1 flex-col gap-3">
                                     <div className="min-w-0 space-y-2">
                                         <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                                            <p className="text-muted-foreground min-w-0 text-xs font-medium">
-                                                Order ID: {order.orderNumber} ·{' '}
-                                                {order.date}
+                                            <p className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-2 text-xs font-medium">
+                                                <span>
+                                                    Order ID:{' '}
+                                                    {order.orderNumber} ·{' '}
+                                                    {order.date}
+                                                </span>
+                                                {order.source === 'wholesale' &&
+                                                order.sourceLabel ? (
+                                                    <OrderSourceBadge
+                                                        source={order.source}
+                                                        label={
+                                                            order.sourceLabel
+                                                        }
+                                                    />
+                                                ) : null}
                                             </p>
                                             <span
                                                 className={cn(
@@ -178,62 +184,11 @@ export function OrderList({
                 })}
             </ul>
 
-            {showPagination ? (
-                <Pagination>
-                    <PaginationContent>
-                        <PaginationItem>
-                            <PaginationPrevious
-                                href="#"
-                                aria-disabled={currentPage <= 1}
-                                className={cn(
-                                    currentPage <= 1 &&
-                                        'pointer-events-none opacity-50',
-                                )}
-                                onClick={(event) => {
-                                    event.preventDefault();
-                                    if (currentPage > 1) {
-                                        onPageChange(currentPage - 1);
-                                    }
-                                }}
-                            />
-                        </PaginationItem>
-                        {Array.from({ length: lastPage }, (_, index) => {
-                            const pageNumber = index + 1;
-
-                            return (
-                                <PaginationItem key={pageNumber}>
-                                    <PaginationLink
-                                        href="#"
-                                        isActive={pageNumber === currentPage}
-                                        onClick={(event) => {
-                                            event.preventDefault();
-                                            onPageChange(pageNumber);
-                                        }}
-                                    >
-                                        {pageNumber}
-                                    </PaginationLink>
-                                </PaginationItem>
-                            );
-                        })}
-                        <PaginationItem>
-                            <PaginationNext
-                                href="#"
-                                aria-disabled={currentPage >= lastPage}
-                                className={cn(
-                                    currentPage >= lastPage &&
-                                        'pointer-events-none opacity-50',
-                                )}
-                                onClick={(event) => {
-                                    event.preventDefault();
-                                    if (currentPage < lastPage) {
-                                        onPageChange(currentPage + 1);
-                                    }
-                                }}
-                            />
-                        </PaginationItem>
-                    </PaginationContent>
-                </Pagination>
-            ) : null}
+            <AccountListPagination
+                currentPage={currentPage}
+                lastPage={lastPage}
+                onPageChange={onPageChange}
+            />
         </div>
     );
 }

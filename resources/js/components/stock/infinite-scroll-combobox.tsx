@@ -20,6 +20,8 @@ export type ComboboxOption = {
     value: string;
     label: string;
     description?: string | null;
+    /** Raw remote row, for callers that need extra fields on select. */
+    data?: Record<string, unknown>;
 };
 
 const PAGE_SIZE = 20;
@@ -204,6 +206,7 @@ export function InfiniteScrollCombobox(props: InfiniteScrollComboboxProps) {
                 label: row.name,
                 description:
                     descriptionKey === 'sku' ? (row.sku ?? null) : null,
+                data: row,
             }));
 
             setOptions((current) => {

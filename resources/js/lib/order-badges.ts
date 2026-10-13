@@ -53,6 +53,21 @@ export function orderSourceBadgeClass(source: string): string {
     }
 }
 
+export function wholesaleInquiryStatusBadgeClass(status: string): string {
+    switch (status) {
+        case 'new':
+            return tint.amber;
+        case 'read':
+            return tint.sky;
+        case 'converted':
+            return tint.emerald;
+        case 'rejected':
+            return tint.rose;
+        default:
+            return tint.zinc;
+    }
+}
+
 export function paymentStatusLabel(status: string): string {
     switch (status) {
         case 'pending_collection':

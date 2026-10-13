@@ -55,6 +55,8 @@ class UpsertBranchProductPriceRequest extends FormRequest
                 ? ['nullable', 'date', 'after_or_equal:start_date']
                 : ['nullable', 'prohibited'],
             'variant_id' => ['nullable', 'integer', Rule::exists('product_variants', 'id')->whereNull('deleted_at')],
+            'wholesale_price' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'min_wholesale_qty' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100000'],
         ];
     }
 
@@ -76,7 +78,7 @@ class UpsertBranchProductPriceRequest extends FormRequest
             ]);
         }
 
-        foreach (['buying_price', 'regular_price'] as $field) {
+        foreach (['buying_price', 'regular_price', 'wholesale_price', 'min_wholesale_qty'] as $field) {
             if ($this->input($field) === '') {
                 $this->merge([$field => null]);
             }

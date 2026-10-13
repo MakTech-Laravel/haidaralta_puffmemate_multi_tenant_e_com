@@ -1,21 +1,18 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import OrderController from '@/actions/App/Http/Controllers/Customer/OrderController';
 import { OrderStatusTrack } from '@/components/orders/order-status-track';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { OrderTrackAddress } from '@/components/customer/order-track-address';
 import { OrderTrackDriverCard } from '@/components/customer/order-track-driver';
 import { OrderTrackProducts } from '@/components/customer/order-track-products';
 import type { CustomerOrderDetail } from '@/components/customer/order-track-types';
 import { Badge } from '@/components/ui/badge';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { index as ordersIndex } from '@/routes/customer/orders';
+import { show as wholesaleRequestShow } from '@/routes/customer/wholesale-requests';
 
 const statusLabel: Record<string, string> = {
     pending: 'Awaiting confirmation',
@@ -64,8 +61,31 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                                     paymentStatusLabel[order.paymentStatus] ??
                                     order.paymentStatus}
                             </p>
+                            {order.wholesaleRequestId ? (
+                                <p className="text-muted-foreground mt-1 text-sm">
+                                    From your{' '}
+                                    <Link
+                                        href={wholesaleRequestShow.url(
+                                            order.wholesaleRequestId,
+                                        )}
+                                        prefetch
+                                        className="text-primary font-medium hover:underline"
+                                    >
+                                        wholesale request #
+                                        {order.wholesaleRequestId}
+                                    </Link>
+                                </p>
+                            ) : null}
                         </div>
                         <div className="flex flex-wrap items-center justify-end gap-2">
+                            {order.source === 'wholesale' &&
+                            order.sourceLabel ? (
+                                <OrderSourceBadge
+                                    source={order.source}
+                                    label={order.sourceLabel}
+                                    className="rounded-sm px-2.5 py-0.5 text-sm"
+                                />
+                            ) : null}
                             <Badge
                                 className={cn(
                                     'rounded-sm px-2.5 py-0.5 text-sm font-medium',
@@ -119,7 +139,9 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                     <OrderReturnRequest
                         canRequest={order.canRequestReturn ?? false}
                         request={order.returnRequest ?? null}
-                        form={OrderController.storeReturn.form(order.orderNumber)}
+                        form={OrderController.storeReturn.form(
+                            order.orderNumber,
+                        )}
                     />
 
                     {order.handoverNotice ? (
@@ -132,8 +154,7 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                 <div
                     className={cn(
                         'grid items-start gap-5',
-                        order.driver &&
-                            'lg:grid-cols-[minmax(0,1fr)_20rem]',
+                        order.driver && 'lg:grid-cols-[minmax(0,1fr)_20rem]',
                     )}
                 >
                     <div className="flex min-w-0 flex-col gap-5">

@@ -1,11 +1,5 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
-import {
-    ArrowRight,
-    MapPin,
-    Package,
-    Truck,
-    UserRound,
-} from 'lucide-react';
+import { ArrowRight, MapPin, Package, Truck, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import OrderAssignController from '@/actions/App/Http/Controllers/Platform/OrderAssignController';
 import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/OrderAssignHistoryController';
@@ -15,15 +9,11 @@ import { OrderAssignDriverSheet } from '@/components/branch/order-assign-driver-
 import { OrderHandoverActions } from '@/components/orders/order-handover-actions';
 import { OrderStatusTrack } from '@/components/orders/order-status-track';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 type FulfillmentSummary = {
@@ -71,7 +61,10 @@ type OrderDetail = {
     statusLabel: string;
     paymentStatus: string;
     paymentStatusLabel: string;
+    source: string;
     sourceLabel: string;
+    wholesaleInquiry: { id: number; url: string | null } | null;
+    notes: string | null;
     placedByName: string | null;
     paymentStatusOptions: { value: string; label: string }[];
     canComplete?: boolean;
@@ -101,6 +94,8 @@ type OrderDetail = {
         city?: string;
         postal_code?: string;
         phone?: string;
+        company?: string | null;
+        email?: string | null;
     } | null;
     fulfillments: FulfillmentSummary[];
     timeline: {
@@ -131,7 +126,7 @@ function FulfillmentCard({
     };
 
     return (
-        <Card className="overflow-hidden border-border/70 shadow-sm">
+        <Card className="border-border/70 overflow-hidden shadow-sm">
             <CardHeader className="bg-muted/30 space-y-3 border-b pb-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 space-y-1">
@@ -384,60 +379,60 @@ function FulfillmentActions({
                 <CardTitle className="text-base">Fulfillment actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-                    {fulfillment.actions.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                            {fulfillment.actions.map((action) => (
-                                <Button
-                                    key={action.key}
-                                    disabled={processing}
-                                    onClick={() =>
-                                        run(() =>
-                                            router.put(
-                                                OrderController.updateStatus.url(
-                                                    [orderId, fulfillment.id],
-                                                ),
-                                                { status: action.status },
-                                                {
-                                                    onFinish: () =>
-                                                        setProcessing(false),
-                                                },
-                                            ),
-                                        )
-                                    }
-                                >
-                                    {action.label}
-                                </Button>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-muted-foreground text-sm">
-                            No status change is available from here.
-                        </p>
-                    )}
-                    {canResendCode ? (
-                        <Button
-                            variant="outline"
-                            disabled={processing}
-                            onClick={() =>
-                                run(() =>
-                                    router.post(
-                                        OrderController.resendPlacementCode.url(
-                                            orderId,
+                {fulfillment.actions.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                        {fulfillment.actions.map((action) => (
+                            <Button
+                                key={action.key}
+                                disabled={processing}
+                                onClick={() =>
+                                    run(() =>
+                                        router.put(
+                                            OrderController.updateStatus.url([
+                                                orderId,
+                                                fulfillment.id,
+                                            ]),
+                                            { status: action.status },
+                                            {
+                                                onFinish: () =>
+                                                    setProcessing(false),
+                                            },
                                         ),
-                                        {},
-                                        {
-                                            onFinish: () =>
-                                                setProcessing(false),
-                                        },
+                                    )
+                                }
+                            >
+                                {action.label}
+                            </Button>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground text-sm">
+                        No status change is available from here.
+                    </p>
+                )}
+                {canResendCode ? (
+                    <Button
+                        variant="outline"
+                        disabled={processing}
+                        onClick={() =>
+                            run(() =>
+                                router.post(
+                                    OrderController.resendPlacementCode.url(
+                                        orderId,
                                     ),
-                                )
-                            }
-                        >
-                            Resend delivery code
-                        </Button>
-                    ) : null}
+                                    {},
+                                    {
+                                        onFinish: () => setProcessing(false),
+                                    },
+                                ),
+                            )
+                        }
+                    >
+                        Resend delivery code
+                    </Button>
+                ) : null}
 
-                    {/* {fulfillment.canAssign ? (
+                {/* {fulfillment.canAssign ? (
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                             {fulfillment.driverName ? (
                                 <p className="text-muted-foreground text-sm sm:flex-1">
@@ -479,124 +474,120 @@ function FulfillmentActions({
                         </div>
                     ) : null} */}
 
-                    <div className="flex flex-wrap gap-2">
-                        {fulfillment.canCancel ? (
-                            <Button
-                                variant="outline"
-                                disabled={processing}
-                                onClick={() =>
-                                    run(() =>
-                                        router.post(
-                                            OrderController.cancel.url(orderId),
-                                            {},
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
+                <div className="flex flex-wrap gap-2">
+                    {fulfillment.canCancel ? (
+                        <Button
+                            variant="outline"
+                            disabled={processing}
+                            onClick={() =>
+                                run(() =>
+                                    router.post(
+                                        OrderController.cancel.url(orderId),
+                                        {},
+                                        {
+                                            onFinish: () =>
+                                                setProcessing(false),
+                                        },
+                                    ),
+                                )
+                            }
+                        >
+                            Cancel order
+                        </Button>
+                    ) : null}
+                    {fulfillment.canRetry ? (
+                        <Button
+                            disabled={processing}
+                            onClick={() =>
+                                run(() =>
+                                    router.post(
+                                        OrderController.retryDelivery.url(
+                                            orderId,
                                         ),
-                                    )
-                                }
-                            >
-                                Cancel order
-                            </Button>
-                        ) : null}
-                        {fulfillment.canRetry ? (
-                            <Button
-                                disabled={processing}
-                                onClick={() =>
-                                    run(() =>
-                                        router.post(
-                                            OrderController.retryDelivery.url(
-                                                orderId,
-                                            ),
-                                            {},
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
+                                        {},
+                                        {
+                                            onFinish: () =>
+                                                setProcessing(false),
+                                        },
+                                    ),
+                                )
+                            }
+                        >
+                            Retry delivery
+                        </Button>
+                    ) : null}
+                    {fulfillment.canReschedule ? (
+                        <Button
+                            variant="outline"
+                            disabled={processing}
+                            onClick={() =>
+                                run(() =>
+                                    router.post(
+                                        OrderController.rescheduleDelivery.url(
+                                            orderId,
                                         ),
-                                    )
-                                }
-                            >
-                                Retry delivery
-                            </Button>
-                        ) : null}
-                        {fulfillment.canReschedule ? (
-                            <Button
-                                variant="outline"
-                                disabled={processing}
-                                onClick={() =>
-                                    run(() =>
-                                        router.post(
-                                            OrderController.rescheduleDelivery.url(
-                                                orderId,
-                                            ),
-                                            {},
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
+                                        {},
+                                        {
+                                            onFinish: () =>
+                                                setProcessing(false),
+                                        },
+                                    ),
+                                )
+                            }
+                        >
+                            Reschedule
+                        </Button>
+                    ) : null}
+                    {fulfillment.canReturn ? (
+                        <Button
+                            variant="outline"
+                            disabled={processing}
+                            onClick={() =>
+                                run(() =>
+                                    router.post(
+                                        OrderController.returnDelivery.url(
+                                            orderId,
                                         ),
-                                    )
-                                }
-                            >
-                                Reschedule
-                            </Button>
-                        ) : null}
-                        {fulfillment.canReturn ? (
-                            <Button
-                                variant="outline"
-                                disabled={processing}
-                                onClick={() =>
-                                    run(() =>
-                                        router.post(
-                                            OrderController.returnDelivery.url(
-                                                orderId,
-                                            ),
-                                            {},
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
+                                        {},
+                                        {
+                                            onFinish: () =>
+                                                setProcessing(false),
+                                        },
+                                    ),
+                                )
+                            }
+                        >
+                            Begin return
+                        </Button>
+                    ) : null}
+                    {fulfillment.canConfirmReturn ? (
+                        <Button
+                            disabled={processing}
+                            onClick={() =>
+                                run(() =>
+                                    router.post(
+                                        OrderController.confirmReturn.url(
+                                            orderId,
                                         ),
-                                    )
-                                }
-                            >
-                                Begin return
-                            </Button>
-                        ) : null}
-                        {fulfillment.canConfirmReturn ? (
-                            <Button
-                                disabled={processing}
-                                onClick={() =>
-                                    run(() =>
-                                        router.post(
-                                            OrderController.confirmReturn.url(
-                                                orderId,
-                                            ),
-                                            {},
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
-                                        ),
-                                    )
-                                }
-                            >
-                                Confirm return
-                            </Button>
-                        ) : null}
-                    </div>
+                                        {},
+                                        {
+                                            onFinish: () =>
+                                                setProcessing(false),
+                                        },
+                                    ),
+                                )
+                            }
+                        >
+                            Confirm return
+                        </Button>
+                    ) : null}
+                </div>
             </CardContent>
         </Card>
     );
 }
 
-export default function PlatformOrderShow({
-    order,
-}: {
-    order: OrderDetail;
-}) {
+export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
     setLayoutProps({
         breadcrumbs: [
             { title: 'Dashboard', href: '/platform/dashboard' },
@@ -642,14 +633,33 @@ export default function PlatformOrderShow({
                                     {order.totalLabel}
                                 </span>
                             </div>
+                            {order.wholesaleInquiry ? (
+                                <p className="text-muted-foreground text-sm">
+                                    From wholesale inquiry{' '}
+                                    {order.wholesaleInquiry.url ? (
+                                        <Link
+                                            href={order.wholesaleInquiry.url}
+                                            className="text-primary font-medium hover:underline"
+                                        >
+                                            #{order.wholesaleInquiry.id}
+                                        </Link>
+                                    ) : (
+                                        <span className="text-foreground font-medium">
+                                            #{order.wholesaleInquiry.id}
+                                        </span>
+                                    )}
+                                </p>
+                            ) : null}
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge className="px-2.5 py-1 text-sm">
                                 {order.statusLabel}
                             </Badge>
-                            <Badge variant="outline" className="px-2.5 py-1 text-sm">
-                                {order.sourceLabel}
-                            </Badge>
+                            <OrderSourceBadge
+                                source={order.source}
+                                label={order.sourceLabel}
+                                className="px-2.5 py-1 text-sm"
+                            />
                             <Badge
                                 variant={
                                     order.paymentStatus === 'collected' ||
@@ -702,6 +712,11 @@ export default function PlatformOrderShow({
                                 <p className="text-foreground font-semibold">
                                     {address?.name}
                                 </p>
+                                {address?.company ? (
+                                    <p className="text-foreground">
+                                        {address.company}
+                                    </p>
+                                ) : null}
                                 <p className="text-muted-foreground">
                                     {address?.address}
                                 </p>
@@ -713,6 +728,16 @@ export default function PlatformOrderShow({
                                 <p className="text-muted-foreground">
                                     {address?.phone}
                                 </p>
+                                {address?.email ? (
+                                    <p className="text-muted-foreground">
+                                        {address.email}
+                                    </p>
+                                ) : null}
+                                {order.notes ? (
+                                    <p className="text-muted-foreground border-border/70 mt-2 border-t pt-2 whitespace-pre-wrap">
+                                        {order.notes}
+                                    </p>
+                                ) : null}
                             </CardContent>
                         </Card>
 
@@ -828,18 +853,18 @@ export default function PlatformOrderShow({
                     </aside>
 
                     <Card className="border-border/70 shadow-sm lg:col-span-2">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Truck
-                                className="text-muted-foreground size-4"
-                                aria-hidden
-                            />
-                            History
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <OrderStatusTrack steps={order.timeline} />
-                    </CardContent>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Truck
+                                    className="text-muted-foreground size-4"
+                                    aria-hidden
+                                />
+                                History
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <OrderStatusTrack steps={order.timeline} />
+                        </CardContent>
                     </Card>
                 </div>
             </div>

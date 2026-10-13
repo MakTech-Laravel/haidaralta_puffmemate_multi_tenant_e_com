@@ -40,6 +40,8 @@ type Product = {
     color_code?: import('@/lib/color-picker').ColorPickerValue | null;
     selling_price?: string | null;
     regular_price?: string | null;
+    wholesale_price?: string | null;
+    min_wholesale_qty?: number | null;
     status: boolean;
 };
 
@@ -75,6 +77,7 @@ export default function PlatformProductsEdit({
                     categoryOptions={categoryOptions}
                     isEdit
                     enableSuggestions
+                    wholesaleFields
                     excludeProductId={product.id}
                     defaults={{
                         category_ids: product.category_ids,
@@ -94,6 +97,8 @@ export default function PlatformProductsEdit({
                         color_code: product.color_code,
                         selling_price: product.selling_price ?? '',
                         regular_price: product.regular_price ?? '',
+                        wholesale_price: product.wholesale_price ?? '',
+                        min_wholesale_qty: product.min_wholesale_qty ?? null,
                         status: product.status,
                     }}
                     cancelHref={ProductController.show.url(product.slug)}
