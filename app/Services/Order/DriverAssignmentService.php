@@ -6,10 +6,13 @@ use App\Contracts\DistanceCalculator;
 use App\Enums\DriverAssignmentStatus;
 use App\Enums\DriverAvailabilityStatus;
 use App\Enums\FulfillmentStatus;
+use App\Enums\NotificationType;
 use App\Enums\UserType;
+use App\Events\DriverOrdersChanged;
 use App\Models\OrderDriverAssignmentHistory;
 use App\Models\OrderFulfillment;
 use App\Models\User;
+use App\Services\Notifications\NotificationService;
 use App\Support\DriverAvailability;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +22,7 @@ class DriverAssignmentService
     public function __construct(
         private FulfillmentStatusService $statuses,
         private DistanceCalculator $distances,
+        private NotificationService $notifications,
     ) {}
 
     /**
@@ -152,7 +156,32 @@ class DriverAssignmentService
 
         $this->advanceAfterAssign($fulfillment->refresh(), $actor, $advance);
 
-        return $fulfillment->refresh();
+        $fulfillment->refresh();
+        $this->notifyDriver($fulfillment, $driver, $actor);
+
+        return $fulfillment;
+    }
+
+    /**
+     * Inbox notification plus a live refresh signal for the driver's open pages.
+     */
+    private function notifyDriver(OrderFulfillment $fulfillment, User $driver, User $actor): void
+    {
+        $orderNumber = (string) $fulfillment->order()->value('order_number');
+
+        $this->notifications->send(
+            [$driver->id],
+            NotificationType::Delivery,
+            'New order assigned',
+            'Order '.$orderNumber.' has been assigned to you.',
+            [
+                'order_number' => $orderNumber,
+                'fulfillment_id' => $fulfillment->id,
+            ],
+            $actor,
+        );
+
+        DriverOrdersChanged::dispatch($driver->id, $orderNumber, DriverOrdersChanged::REASON_ASSIGNED);
     }
 
     private function advanceAfterAssign(OrderFulfillment $fulfillment, User $actor, ?FulfillmentStatus $advance): void
