@@ -16,7 +16,10 @@ import {
     ToggleGroup,
     ToggleGroupItem,
 } from '@/components/ui/toggle-group';
+import { useDriverOrdersRealtime } from '@/hooks/use-driver-orders-realtime';
 import { index as ordersIndex } from '@/routes/driver/orders';
+
+const realtimeProps = ['orders'];
 
 const statusFilters: DriverOrderStatusFilter[] = [
     'active',
@@ -38,6 +41,7 @@ export default function DriverOrdersIndex({
     const [statusFilter, setStatusFilter] =
         useState<DriverOrderStatusFilter>('active');
     const [search, setSearch] = useState('');
+    useDriverOrdersRealtime(realtimeProps);
     const counts = driverOrderFilterCounts(orders);
     const filteredOrders = useMemo(() => {
         return searchDriverAssignedOrders(
