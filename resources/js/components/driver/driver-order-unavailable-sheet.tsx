@@ -49,7 +49,7 @@ export function DriverOrderUnavailableSheet({
             </SheetTrigger>
             <SheetContent
                 side="bottom"
-                className="max-h-[85svh] gap-0 overflow-y-auto rounded-t-3xl"
+                className="max-h-[85svh] gap-0 overflow-y-auto rounded-t-3xl sm:mx-auto sm:max-w-lg"
             >
                 <div className="bg-muted mx-auto mt-2.5 h-1.5 w-10 shrink-0 rounded-full" />
                 <SheetHeader>
