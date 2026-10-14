@@ -47,7 +47,11 @@ export function DriverOrderUnavailableSheet({
                     Can't deliver
                 </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="max-h-[85svh]">
+            <SheetContent
+                side="bottom"
+                className="max-h-[85svh] gap-0 overflow-y-auto rounded-t-3xl"
+            >
+                <div className="bg-muted mx-auto mt-2.5 h-1.5 w-10 shrink-0 rounded-full" />
                 <SheetHeader>
                     <SheetTitle>Can't deliver</SheetTitle>
                     <SheetDescription>
@@ -76,11 +80,11 @@ export function DriverOrderUnavailableSheet({
                                 >
                                     <SelectTrigger
                                         id={`fail-reason-${orderId}`}
-                                        className="h-11 w-full"
+                                        className="h-11 w-full rounded-xl"
                                     >
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="rounded-xl">
                                         {reasons.map((reason) => (
                                             <SelectItem
                                                 key={reason.value}
@@ -103,6 +107,7 @@ export function DriverOrderUnavailableSheet({
                                     required
                                     rows={3}
                                     placeholder="What happened? The branch will read this."
+                                    className="rounded-xl"
                                 />
                                 <InputError message={errors.note} />
                             </div>
@@ -110,7 +115,7 @@ export function DriverOrderUnavailableSheet({
                                 type="submit"
                                 size="lg"
                                 variant="destructive"
-                                className="h-12 w-full"
+                                className="h-12 w-full rounded-full"
                                 disabled={processing}
                             >
                                 Mark as not delivered
