@@ -1,7 +1,7 @@
 import { Form } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { KeyRound } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -20,16 +20,20 @@ import {
 } from '@/components/ui/sheet';
 
 const DELIVERY_CODE_LENGTH = 6;
+const RESEND_COOLDOWN_SECONDS = 60;
+
+type FormAction = {
+    action: string;
+    method: 'post';
+};
 
 type DriverDeliverOtpFormProps = {
     orderId: string;
     disabled?: boolean;
     label?: string;
     icon?: ReactNode;
-    form?: {
-        action: string;
-        method: 'post';
-    };
+    form?: FormAction;
+    resendForm?: FormAction | null;
 };
 
 export function DriverDeliverOtpForm({
@@ -38,10 +42,29 @@ export function DriverDeliverOtpForm({
     label = 'Complete',
     icon = null,
     form,
+    resendForm,
 }: DriverDeliverOtpFormProps) {
     const [open, setOpen] = useState(false);
     const [code, setCode] = useState('');
+    const [cooldown, setCooldown] = useState(0);
     const submit = form ?? OrderController.deliver.form(orderId);
+    const resend =
+        resendForm === undefined
+            ? OrderController.resendDeliveryCode.form(orderId)
+            : resendForm;
+
+    useEffect(() => {
+        if (cooldown <= 0) {
+            return;
+        }
+
+        const timer = window.setTimeout(
+            () => setCooldown((seconds) => seconds - 1),
+            1000,
+        );
+
+        return () => window.clearTimeout(timer);
+    }, [cooldown]);
 
     const changeOpen = (next: boolean) => {
         setOpen(next);
@@ -140,6 +163,37 @@ export function DriverDeliverOtpForm({
                         )}
                     </Form>
                 )}
+                {!disabled && resend ? (
+                    <Form
+                        {...resend}
+                        className="flex flex-col items-center gap-1 px-4 pb-6 text-center"
+                        options={{ preserveScroll: true }}
+                        onSuccess={() => setCooldown(RESEND_COOLDOWN_SECONDS)}
+                    >
+                        {({ errors, processing }) => (
+                            <>
+                                <p className="text-muted-foreground text-sm">
+                                    Customer didn&apos;t get the code?
+                                </p>
+                                <Button
+                                    type="submit"
+                                    variant="link"
+                                    size="sm"
+                                    className="h-auto p-0"
+                                    disabled={processing || cooldown > 0}
+                                    data-test="order-resend-code"
+                                >
+                                    {processing
+                                        ? 'Sending…'
+                                        : cooldown > 0
+                                          ? `Send a new one in ${cooldown}s`
+                                          : 'Send a new one'}
+                                </Button>
+                                <InputError message={errors.code} />
+                            </>
+                        )}
+                    </Form>
+                ) : null}
             </SheetContent>
         </Sheet>
     );

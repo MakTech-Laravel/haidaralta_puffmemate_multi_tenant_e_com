@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Branch;
 use App\DataTables\BranchOrderFulfillmentDataTable;
 use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
+use App\Enums\HandoverVerification;
+use App\Enums\PermissionEnum;
 use App\Enums\StockTransferStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\UpdateFulfillmentStatusRequest;
@@ -55,7 +57,7 @@ class OrderController extends Controller
     /**
      * Show a single fulfillment's detail, scoped to the current branch.
      */
-    public function show(string $branch, OrderFulfillment $fulfillment): Response
+    public function show(Request $request, string $branch, OrderFulfillment $fulfillment): Response
     {
         $branch = $this->currentBranch();
         $fulfillment = $this->resolveForBranch($fulfillment, $branch);
@@ -71,7 +73,10 @@ class OrderController extends Controller
 
         return Inertia::render('branch/orders/show', [
             'branch' => $branch->toPortalContext(),
-            'fulfillment' => $this->detail($fulfillment),
+            'fulfillment' => $this->detail(
+                $fulfillment,
+                $request->user('branch')?->can(PermissionEnum::COMPLETE_BRANCH_ORDERS_WITHOUT_CODE->value) ?? false,
+            ),
         ]);
     }
 
@@ -122,6 +127,26 @@ class OrderController extends Controller
         return redirect()->route('branch.orders.show', [$branch, $fulfillment]);
     }
 
+    public function deliverWithoutCode(Request $request, string $branch, OrderFulfillment $fulfillment): RedirectResponse
+    {
+        $branch = $this->currentBranch();
+        $fulfillment = $this->resolveForBranch($fulfillment, $branch);
+        $data = $request->validate([
+            'method' => ['required', Rule::enum(HandoverVerification::class)],
+            'note' => ['required', 'string', 'max:500'],
+        ]);
+
+        $this->deliveries->completeWithoutCode(
+            $fulfillment,
+            $request->user(),
+            HandoverVerification::from($data['method']),
+            $data['note'],
+        );
+        Toast::success('Order delivered without a code.');
+
+        return redirect()->route('branch.orders.show', [$branch, $fulfillment]);
+    }
+
     public function fail(Request $request, string $branch, OrderFulfillment $fulfillment): RedirectResponse
     {
         $branch = $this->currentBranch();
@@ -168,7 +193,7 @@ class OrderController extends Controller
     {
         $branch = $this->currentBranch();
         $fulfillment = $this->resolveForBranch($fulfillment, $branch);
-        $this->placements->issue($fulfillment->order);
+        $this->placements->resend($fulfillment->order);
         Toast::success('Delivery code sent.');
 
         return redirect()->route('branch.orders.show', [$branch, $fulfillment]);
@@ -229,7 +254,7 @@ class OrderController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function detail(OrderFulfillment $fulfillment): array
+    private function detail(OrderFulfillment $fulfillment, bool $canOverrideCode): array
     {
         $order = $fulfillment->order;
 
@@ -248,12 +273,20 @@ class OrderController extends Controller
             'canConfirmReturn' => $fulfillment->status === FulfillmentStatus::Returning,
             'canComplete' => $fulfillment->status === FulfillmentStatus::Arrived,
             'canReportUnavailable' => $fulfillment->status === FulfillmentStatus::Arrived,
+            'canCompleteWithoutCode' => $canOverrideCode && $fulfillment->status === FulfillmentStatus::Arrived,
             'failureReasons' => array_map(
                 fn (DeliveryFailureReason $reason): array => [
                     'value' => $reason->value,
                     'label' => $reason->label(),
                 ],
                 DeliveryFailureReason::cases(),
+            ),
+            'verificationMethods' => array_map(
+                fn (HandoverVerification $method): array => [
+                    'value' => $method->value,
+                    'label' => $method->label(),
+                ],
+                HandoverVerification::cases(),
             ),
             'driverId' => $fulfillment->driver_id,
             'shippingCostLabel' => '$'.number_format((float) $fulfillment->shipping_cost, 2),

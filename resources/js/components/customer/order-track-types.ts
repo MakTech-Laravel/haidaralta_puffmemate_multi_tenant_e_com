@@ -57,7 +57,7 @@ export type CustomerOrderDetail = {
     statusLabel?: string;
     paymentStatus: CustomerPaymentStatus;
     paymentStatusLabel?: string;
-    handoverNotice?: string | null;
+    deliveryCode?: string | null;
     canResendCode?: boolean;
     canCancel?: boolean;
     canRequestReturn?: boolean;

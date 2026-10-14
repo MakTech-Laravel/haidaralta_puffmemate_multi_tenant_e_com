@@ -1,5 +1,6 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import OrderAssignController from '@/actions/App/Http/Controllers/Branch/OrderAssignController';
 import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Branch/Reports/OrderAssignHistoryController';
 import OrderController from '@/actions/App/Http/Controllers/Branch/OrderController';
@@ -54,7 +55,9 @@ type FulfillmentDetail = {
         canConfirmReturn: boolean;
         canComplete?: boolean;
         canReportUnavailable?: boolean;
+        canCompleteWithoutCode?: boolean;
         failureReasons?: { value: string; label: string }[];
+        verificationMethods?: { value: string; label: string }[];
     order: {
         id: number;
         orderNumber: string;
@@ -365,6 +368,12 @@ export default function BranchOrderShow({
                                                 ),
                                                 {},
                                                 {
+                                                    preserveScroll: true,
+                                                    onError: (errors) =>
+                                                        toast.error(
+                                                            errors.code ??
+                                                                'The delivery code could not be sent.',
+                                                        ),
                                                     onFinish: () =>
                                                         setProcessing(false),
                                                 },
@@ -440,6 +449,16 @@ export default function BranchOrderShow({
                                         branch.slug,
                                         fulfillment.id,
                                     ])}
+                                    resendForm={
+                                        fulfillment.canResendCode
+                                            ? OrderController.resendPlacementCode.form(
+                                                  [branch.slug, fulfillment.id],
+                                              )
+                                            : null
+                                    }
+                                    withoutCodeForm={OrderController.deliverWithoutCode.form(
+                                        [branch.slug, fulfillment.id],
+                                    )}
                                     canComplete={
                                         fulfillment.canComplete ?? false
                                     }
@@ -447,8 +466,15 @@ export default function BranchOrderShow({
                                         fulfillment.canReportUnavailable ??
                                         false
                                     }
+                                    canCompleteWithoutCode={
+                                        fulfillment.canCompleteWithoutCode ??
+                                        false
+                                    }
                                     failureReasons={
                                         fulfillment.failureReasons ?? []
+                                    }
+                                    verificationMethods={
+                                        fulfillment.verificationMethods ?? []
                                     }
                                 />
                             </CardContent>

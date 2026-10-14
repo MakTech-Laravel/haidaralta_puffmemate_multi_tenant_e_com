@@ -12,6 +12,7 @@ use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Services\Conversation\ConversationService;
 use App\Services\Order\DriverDeliveryService;
+use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\OrderReturnService;
 use App\Support\ConversationPayload;
 use App\Support\Toast;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -53,6 +55,7 @@ class OrderController extends Controller
         private DriverDeliveryService $deliveries,
         private ConversationService $conversations,
         private OrderReturnService $returns,
+        private OrderPlacementNotifier $placements,
     ) {}
 
     /**
@@ -229,6 +232,22 @@ class OrderController extends Controller
         Toast::success('Order marked as delivered.');
 
         return to_route('driver.orders.index');
+    }
+
+    public function resendDeliveryCode(Request $request, Order $order): RedirectResponse
+    {
+        $fulfillment = $this->owned($request, $order);
+
+        if ($fulfillment->status !== FulfillmentStatus::Arrived) {
+            throw ValidationException::withMessages([
+                'code' => 'Send a new code only after you mark the order arrived.',
+            ]);
+        }
+
+        $this->placements->resend($order);
+        Toast::success('A new code was sent to the customer.');
+
+        return back();
     }
 
     public function fail(Request $request, Order $order): RedirectResponse

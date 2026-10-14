@@ -393,6 +393,126 @@ test('deliver accepts a valid otp and flashes success', function () {
         ->assertRedirect(route('driver.orders.index'));
 });
 
+test('the delivery code still works days after the order was placed', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::Arrived], ['status' => OrderStatus::Arrived]);
+    app(OrderPlacementNotifier::class)->issue($order);
+    $code = app(FakeSmsSender::class)->lastCode();
+
+    $this->travel(3)->days();
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('driver.orders.deliver', $order), ['otp' => $code])
+        ->assertSessionHasNoErrors();
+
+    expect($order->fulfillment->fresh()->status)->toBe(FulfillmentStatus::Delivered);
+});
+
+test('a wrong delivery code shows an error on the code field and locks after five tries', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::Arrived], ['status' => OrderStatus::Arrived]);
+    app(OrderPlacementNotifier::class)->issue($order);
+    $code = app(FakeSmsSender::class)->lastCode();
+    $wrongCode = $code === '000000' ? '111111' : '000000';
+
+    foreach (range(1, 5) as $ignored) {
+        $this->actingAs($driver, 'driver')
+            ->from(route('driver.orders.show', $order))
+            ->post(route('driver.orders.deliver', $order), ['otp' => $wrongCode])
+            ->assertSessionHasErrors(['otp' => 'This verification code is invalid or has expired.']);
+    }
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('driver.orders.deliver', $order), ['otp' => $code])
+        ->assertSessionHasErrors(['otp' => 'Too many attempts. Please request a new code.']);
+
+    expect($order->fulfillment->fresh()->status)->toBe(FulfillmentStatus::Arrived);
+});
+
+test('driver can send the customer a new delivery code at the door', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::Arrived], ['status' => OrderStatus::Arrived]);
+
+    $this->actingAs($driver, 'driver')
+        ->from(route('driver.orders.show', $order))
+        ->post(route('driver.orders.delivery-code', $order))
+        ->assertSessionHasNoErrors()
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'A new code was sent to the customer.',
+        ])
+        ->assertRedirect(route('driver.orders.show', $order));
+
+    $code = app(FakeSmsSender::class)->lastCode();
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('driver.orders.deliver', $order), ['otp' => $code])
+        ->assertSessionHasNoErrors();
+
+    expect($order->fulfillment->fresh()->status)->toBe(FulfillmentStatus::Delivered);
+});
+
+test('driver can send a new delivery code only after arriving', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::OutForDelivery], ['status' => OrderStatus::OutForDelivery]);
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('driver.orders.delivery-code', $order))
+        ->assertSessionHasErrors('code');
+
+    expect(app(FakeSmsSender::class)->messages)->toBeEmpty();
+});
+
+test('a driver cannot send a delivery code for another drivers order', function () {
+    $owner = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $other = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($owner, ['status' => FulfillmentStatus::Arrived], ['status' => OrderStatus::Arrived]);
+
+    $this->actingAs($other, 'driver')
+        ->post(route('driver.orders.delivery-code', $order))
+        ->assertNotFound();
+
+    expect(app(FakeSmsSender::class)->messages)->toBeEmpty();
+});
+
+test('a fourth delivery code within ten minutes is refused', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::Arrived], ['status' => OrderStatus::Arrived]);
+
+    foreach (range(1, OrderPlacementNotifier::RESEND_LIMIT) as $ignored) {
+        $this->actingAs($driver, 'driver')
+            ->post(route('driver.orders.delivery-code', $order))
+            ->assertSessionHasNoErrors();
+    }
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('driver.orders.delivery-code', $order))
+        ->assertSessionHasErrors('code');
+
+    expect(app(FakeSmsSender::class)->messages)->toHaveCount(OrderPlacementNotifier::RESEND_LIMIT);
+});
+
 test('driver orders index lists the live run first and only todays deliveries', function () {
     $driver = User::factory()->create([
         'user_type' => UserType::DRIVER,

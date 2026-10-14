@@ -3,6 +3,7 @@ import OrderController from '@/actions/App/Http/Controllers/Customer/OrderContro
 import { OrderStatusTrack } from '@/components/orders/order-status-track';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { OrderTrackAddress } from '@/components/customer/order-track-address';
+import { OrderTrackDeliveryCode } from '@/components/customer/order-track-delivery-code';
 import { OrderTrackDriverCard } from '@/components/customer/order-track-driver';
 import { OrderTrackProducts } from '@/components/customer/order-track-products';
 import type { CustomerOrderDetail } from '@/components/customer/order-track-types';
@@ -77,24 +78,6 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                             >
                                 {order.statusLabel ?? statusLabel[order.status]}
                             </Badge>
-                            {order.canResendCode ? (
-                                <Form
-                                    {...OrderController.resendPlacementCode.form(
-                                        order.orderNumber,
-                                    )}
-                                >
-                                    {({ processing }) => (
-                                        <Button
-                                            type="submit"
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={processing}
-                                        >
-                                            Resend code
-                                        </Button>
-                                    )}
-                                </Form>
-                            ) : null}
                             {order.canCancel ? (
                                 <Form
                                     {...OrderController.cancel.form(
@@ -116,17 +99,18 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                         </div>
                     </div>
 
+                    {order.canResendCode ? (
+                        <OrderTrackDeliveryCode
+                            orderNumber={order.orderNumber}
+                            code={order.deliveryCode ?? null}
+                        />
+                    ) : null}
+
                     <OrderReturnRequest
                         canRequest={order.canRequestReturn ?? false}
                         request={order.returnRequest ?? null}
                         form={OrderController.storeReturn.form(order.orderNumber)}
                     />
-
-                    {order.handoverNotice ? (
-                        <p className="bg-primary/10 text-foreground rounded-md p-3 text-sm">
-                            {order.handoverNotice}
-                        </p>
-                    ) : null}
                 </div>
 
                 <div
