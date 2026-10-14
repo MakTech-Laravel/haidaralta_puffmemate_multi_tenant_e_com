@@ -1,4 +1,6 @@
 import {
+    addMonths,
+    clamp,
     differenceInCalendarDays,
     endOfMonth,
     format,
@@ -13,7 +15,13 @@ import {
     subMonths,
     subYears,
 } from 'date-fns';
-import { ArrowRight, CalendarRange, ChevronDown } from 'lucide-react';
+import {
+    ArrowRight,
+    CalendarRange,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+} from 'lucide-react';
 import {
     useCallback,
     useEffect,
@@ -22,7 +30,7 @@ import {
     type ComponentProps,
 } from 'react';
 import type { DateRange, DayButton } from 'react-day-picker';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
     Popover,
@@ -43,27 +51,28 @@ import { cn } from '@/lib/utils';
 
 const DATE_VALUE_FORMAT = 'yyyy-MM-dd';
 
-const RANGE_BAND = 'bg-primary/10 dark:bg-primary/20';
+const RANGE_BAND = 'before:bg-primary/10 dark:before:bg-primary/20';
 
-const navButtonClass = cn(
-    buttonVariants({ variant: 'outline', size: 'icon' }),
-    'size-9 rounded-full shadow-none aria-disabled:pointer-events-none aria-disabled:opacity-40',
+const MONTH_LABELS = Array.from({ length: 12 }, (_, index) =>
+    format(new Date(2000, index, 1), 'MMM'),
 );
 
+type CalendarView = 'days' | 'months' | 'years';
+
 const rangeCalendarClassNames = {
-    month_caption: 'flex h-9 items-center justify-center',
-    caption_label: 'text-foreground text-base font-semibold',
-    nav: 'absolute inset-x-0 top-0 z-10 flex h-9 items-center justify-between',
-    button_previous: navButtonClass,
-    button_next: navButtonClass,
-    weekdays: 'mt-2 flex',
+    month_caption: 'sr-only',
+    weekdays: 'flex',
     weekday:
-        'text-muted-foreground flex-1 pb-1 text-[11px] font-medium tracking-wide uppercase select-none',
+        'text-muted-foreground min-w-11 flex-1 pb-1 text-[11px] font-medium tracking-wide uppercase select-none',
+    root: 'w-full',
+    months: 'relative flex flex-col',
+    month: 'flex w-full flex-col',
+    month_grid: 'w-full border-collapse',
     week: 'mt-1 flex w-full',
-    day: 'relative size-11 p-0 text-center select-none first:rounded-l-full last:rounded-r-full',
-    range_start: cn('rounded-l-full', RANGE_BAND),
-    range_middle: RANGE_BAND,
-    range_end: cn('rounded-r-full', RANGE_BAND),
+    day: 'relative h-11 min-w-11 flex-1 p-0 text-center select-none before:absolute before:inset-y-0 first:before:rounded-l-full last:before:rounded-r-full',
+    range_middle: cn('before:inset-x-0', RANGE_BAND),
+    range_start: cn('before:right-0 before:left-1/2', RANGE_BAND),
+    range_end: cn('before:right-1/2 before:left-0', RANGE_BAND),
     today: '',
     outside: '',
     disabled: '',
@@ -76,8 +85,9 @@ const rangeEdgeModifiers = {
 };
 
 const rangeEdgeClassNames = {
-    monthStart: 'rounded-l-full',
-    monthEnd: 'rounded-r-full',
+    monthStart: 'before:rounded-l-full',
+    monthEnd: 'before:rounded-r-full',
+    singleDay: 'before:hidden',
 };
 
 function RangeDayButton({
@@ -101,7 +111,7 @@ function RangeDayButton({
             data-day={day.date.toLocaleDateString()}
             {...props}
             className={cn(
-                'relative mx-auto flex size-11 items-center justify-center rounded-full text-sm tabular-nums transition-colors outline-none',
+                'relative z-10 mx-auto flex size-11 items-center justify-center rounded-full text-sm tabular-nums transition-colors outline-none',
                 'focus-visible:ring-ring/60 focus-visible:ring-2',
                 !isEdge && 'hover:bg-primary/15',
                 modifiers.range_middle && 'text-foreground font-medium',
@@ -234,6 +244,8 @@ export function DateRangePicker({
     const [open, setOpen] = useState(false);
     const [draft, setDraft] = useState<DateRange | undefined>();
     const [activeField, setActiveField] = useState<RangeField>('from');
+    const [month, setMonth] = useState<Date>();
+    const [view, setView] = useState<CalendarView>('days');
     const [presetRowRef, presetRowEdges] = useDragScroll<HTMLDivElement>();
     const revealActivePreset = useCallback(
         (element: HTMLButtonElement | null) => {
@@ -258,10 +270,36 @@ export function DateRangePicker({
         ? differenceInCalendarDays(draftTo ?? draftFrom, draftFrom) + 1
         : 0;
 
+    const isSingleDay =
+        draftFrom !== undefined &&
+        (draftTo === undefined || isSameDay(draftFrom, draftTo));
+
+    const firstMonth = startOfMonth(subYears(today, 5));
+    const lastMonth = startOfMonth(today);
+    const shownMonth = month ?? lastMonth;
+    const years = Array.from(
+        { length: lastMonth.getFullYear() - firstMonth.getFullYear() + 1 },
+        (_, index) => firstMonth.getFullYear() + index,
+    );
+
+    const showMonth = (date: Date): void => {
+        setMonth(clamp(startOfMonth(date), { start: firstMonth, end: lastMonth }));
+    };
+
+    const toggleView = (target: Exclude<CalendarView, 'days'>): void => {
+        setView((current) => (current === target ? 'days' : target));
+    };
+
+    const showRange = (range: DateRange | undefined): void => {
+        setDraft(range);
+        setActiveField('from');
+        setView('days');
+        showMonth(range?.to ?? range?.from ?? today);
+    };
+
     const openChange = (nextOpen: boolean): void => {
         if (nextOpen) {
-            setDraft({ from: valueFrom, to: valueTo });
-            setActiveField('from');
+            showRange({ from: valueFrom, to: valueTo });
         }
 
         setOpen(nextOpen);
@@ -273,8 +311,7 @@ export function DateRangePicker({
     };
 
     const choosePreset = (preset: DateRangePreset): void => {
-        setDraft(preset.range(today));
-        setActiveField('from');
+        showRange(preset.range(today));
     };
 
     const reset = (): void => {
@@ -286,8 +323,7 @@ export function DateRangePicker({
             : presets.find((preset) => isSameDay(preset.range(today).to, today))
                   ?.range(today);
 
-        setDraft(fallback);
-        setActiveField('from');
+        showRange(fallback);
     };
 
     const pickDay = (day: Date): void => {
@@ -307,20 +343,138 @@ export function DateRangePicker({
             mode="range"
             selected={draft}
             onSelect={(_range, day) => pickDay(day)}
-            defaultMonth={draftTo ?? draftFrom ?? today}
-            startMonth={subYears(today, 5)}
-            endMonth={today}
+            month={shownMonth}
+            onMonthChange={setMonth}
+            startMonth={firstMonth}
+            endMonth={lastMonth}
+            hideNavigation
             disabled={{ after: today }}
             showOutsideDays={false}
-            modifiers={rangeEdgeModifiers}
+            modifiers={{
+                ...rangeEdgeModifiers,
+                singleDay: isSingleDay ? draftFrom : false,
+            }}
             modifiersClassNames={rangeEdgeClassNames}
             classNames={rangeCalendarClassNames}
             components={{ DayButton: RangeDayButton }}
-            className={cn(
-                'bg-transparent [--cell-size:--spacing(11)]',
-                isMobile ? 'mx-auto p-0' : 'p-3',
-            )}
+            className="bg-transparent p-0"
         />
+    );
+
+    const headerToggle = (target: Exclude<CalendarView, 'days'>, label: string) => (
+        <button
+            type="button"
+            onClick={() => toggleView(target)}
+            aria-expanded={view === target}
+            className={cn(
+                'focus-visible:ring-ring/50 inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-base font-semibold transition-colors outline-none focus-visible:ring-[3px]',
+                view === target
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-foreground hover:bg-accent',
+            )}
+            data-test={`date-range-${target}-toggle`}
+        >
+            {label}
+            <ChevronDown
+                className={cn(
+                    'size-4 opacity-60 transition-transform',
+                    view === target && 'rotate-180',
+                )}
+            />
+        </button>
+    );
+
+    const navButton = (direction: 'previous' | 'next') => {
+        const target = addMonths(shownMonth, direction === 'previous' ? -1 : 1);
+        const isOutOfRange = target < firstMonth || target > lastMonth;
+
+        return (
+            <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className={cn(
+                    'size-9 rounded-full shadow-none',
+                    view !== 'days' && 'invisible',
+                )}
+                disabled={isOutOfRange}
+                onClick={() => showMonth(target)}
+                aria-label={
+                    direction === 'previous' ? 'Previous month' : 'Next month'
+                }
+            >
+                {direction === 'previous' ? <ChevronLeft /> : <ChevronRight />}
+            </Button>
+        );
+    };
+
+    const gridOptionClass = (isActive: boolean) =>
+        cn(
+            'focus-visible:ring-ring/50 h-12 rounded-xl text-sm font-medium transition-colors outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-35',
+            isActive
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-muted/50 text-foreground hover:bg-primary/10',
+        );
+
+    const monthGrid = (
+        <div className="grid grid-cols-3 gap-2" data-test="date-range-month-grid">
+            {MONTH_LABELS.map((label, index) => {
+                const option = new Date(shownMonth.getFullYear(), index, 1);
+
+                return (
+                    <button
+                        key={label}
+                        type="button"
+                        disabled={option < firstMonth || option > lastMonth}
+                        className={gridOptionClass(
+                            index === shownMonth.getMonth(),
+                        )}
+                        onClick={() => {
+                            showMonth(option);
+                            setView('days');
+                        }}
+                    >
+                        {label}
+                    </button>
+                );
+            })}
+        </div>
+    );
+
+    const yearGrid = (
+        <div className="grid grid-cols-3 gap-2" data-test="date-range-year-grid">
+            {years.map((year) => (
+                <button
+                    key={year}
+                    type="button"
+                    className={gridOptionClass(year === shownMonth.getFullYear())}
+                    onClick={() => {
+                        showMonth(new Date(year, shownMonth.getMonth(), 1));
+                        setView('months');
+                    }}
+                >
+                    {year}
+                </button>
+            ))}
+        </div>
+    );
+
+    const calendarPanel = (
+        <div className={cn('flex flex-col gap-3', !isMobile && 'w-84 p-3')}>
+            <div className="flex items-center justify-between">
+                {navButton('previous')}
+                <div className="flex items-center gap-1">
+                    {headerToggle('months', format(shownMonth, 'MMMM'))}
+                    {headerToggle('years', format(shownMonth, 'yyyy'))}
+                </div>
+                {navButton('next')}
+            </div>
+            <div className="min-h-[18.5rem]">
+                {view === 'days' && calendar}
+                {view === 'months' && monthGrid}
+                {view === 'years' && yearGrid}
+            </div>
+        </div>
     );
 
     const fieldBox = (field: RangeField, date: Date | undefined) => (
@@ -472,8 +626,8 @@ export function DateRangePicker({
                         {presetButtons('row')}
                     </div>
 
-                    <div className="border-border border-t px-4 pt-3">
-                        {calendar}
+                    <div className="border-border border-t px-4 pt-3 pb-1">
+                        {calendarPanel}
                     </div>
 
                     <div className="bg-background border-border sticky bottom-0 border-t px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
@@ -502,7 +656,7 @@ export function DateRangePicker({
                             <ArrowRight className="text-muted-foreground size-4" />
                             {fieldBox('to', draftTo)}
                         </div>
-                        {calendar}
+                        {calendarPanel}
                         <div className="border-border border-t p-3">
                             {footer}
                         </div>
