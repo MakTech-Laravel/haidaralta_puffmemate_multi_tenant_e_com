@@ -1,12 +1,16 @@
 export type DriverOrderStatus =
     | 'pending'
+    | 'placed'
+    | 'hold'
     | 'processing'
     | 'ready'
     | 'assigned'
     | 'picked_up'
     | 'out_for_delivery'
+    | 'arrived'
     | 'delivery_failed'
     | 'returning'
+    | 'returned'
     | 'delivered'
     | 'cancelled';
 
@@ -96,13 +100,17 @@ export const driverOrderStatusFilterLabel: Record<
     all: 'All',
     active: 'Active',
     pending: 'Pending',
+    placed: 'Placed',
+    hold: 'On hold',
     processing: 'Processing',
     ready: 'Ready',
     assigned: 'Assigned',
     picked_up: 'Picked up',
     out_for_delivery: 'On the way',
-    delivery_failed: 'Failed',
+    arrived: 'Arrived',
+    delivery_failed: 'Customer unavailable',
     returning: 'Returning',
+    returned: 'Returned',
     delivered: 'Delivered',
     cancelled: 'Cancelled',
 };
@@ -132,13 +140,17 @@ export function driverOrderFilterCounts(
         all: orders.length,
         active: orders.filter((order) => order.status !== 'delivered').length,
         pending: count('pending'),
+        placed: count('placed'),
+        hold: count('hold'),
         processing: count('processing'),
         ready: count('ready'),
         assigned: count('assigned'),
         picked_up: count('picked_up'),
         out_for_delivery: count('out_for_delivery'),
+        arrived: count('arrived'),
         delivery_failed: count('delivery_failed'),
         returning: count('returning'),
+        returned: count('returned'),
         delivered: count('delivered'),
         cancelled: count('cancelled'),
     };

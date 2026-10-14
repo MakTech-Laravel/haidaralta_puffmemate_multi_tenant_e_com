@@ -110,7 +110,7 @@ class OrderController extends Controller
     }
 
     /**
-     * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, paymentStatus: string, date: string}
+     * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, statusLabel: string, isActive: bool, paymentStatus: string, date: string}
      */
     private function summarize(Order $order): array
     {
@@ -119,6 +119,8 @@ class OrderController extends Controller
             'products' => $order->items->map(fn ($item): string => $item->product_name_snapshot.' (x'.$item->quantity.')')->all(),
             'priceLabel' => '$'.number_format((float) $order->total_amount, 2),
             'status' => $order->status->value,
+            'statusLabel' => $order->status->customerLabel(),
+            'isActive' => ! $order->status->isTerminal(),
             'paymentStatus' => $order->payment_status->value,
             'date' => $order->created_at->format('d M Y'),
         ];
