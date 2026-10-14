@@ -30,13 +30,17 @@ export type OrderTimelineStep = {
 
 export type CustomerOrderStatus =
     | 'pending'
+    | 'placed'
+    | 'hold'
     | 'processing'
     | 'ready'
     | 'assigned'
     | 'picked_up'
     | 'out_for_delivery'
+    | 'arrived'
     | 'delivery_failed'
     | 'returning'
+    | 'returned'
     | 'delivered'
     | 'cancelled';
 
@@ -53,7 +57,7 @@ export type CustomerOrderDetail = {
     statusLabel?: string;
     paymentStatus: CustomerPaymentStatus;
     paymentStatusLabel?: string;
-    handoverNotice?: string | null;
+    deliveryCode?: string | null;
     canResendCode?: boolean;
     canCancel?: boolean;
     canRequestReturn?: boolean;

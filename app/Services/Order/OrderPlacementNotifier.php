@@ -8,18 +8,26 @@ use App\Mail\OrderPlacementCodeMail;
 use App\Models\Order;
 use App\Services\Notifications\NotificationService;
 use App\Services\OtpService;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 class OrderPlacementNotifier
 {
-    public const TTL_MINUTES = 60 * 24;
+    public const RESEND_LIMIT = 3;
+
+    public const RESEND_WINDOW_SECONDS = 600;
 
     public function __construct(
         private OtpService $otp,
         private NotificationService $notifications,
     ) {}
 
+    /**
+     * Send the delivery code. It stays valid until the order is delivered,
+     * cancelled, or a new code replaces it.
+     */
     public function issue(Order $order): void
     {
         $order->loadMissing('customer');
@@ -38,7 +46,7 @@ class OrderPlacementNotifier
             ]);
         }
 
-        [, $code] = $this->otp->issueCode($phone, OtpPurpose::OrderPlaced, $order, self::TTL_MINUTES);
+        [, $code] = $this->otp->issueCode($phone, OtpPurpose::OrderPlaced, $order, ttlMinutes: null, storeReadable: true);
 
         $customer = $order->customer;
         $email = $customer?->email;
@@ -55,9 +63,58 @@ class OrderPlacementNotifier
             [$order->customer_id],
             NotificationType::Order,
             'Delivery code',
-            'Your code for order '.$order->order_number.' is '.$code.'. It expires in 24 hours.',
+            'Your code for order '.$order->order_number.' is '.$code.'. It stays valid until your order is delivered.',
             ['order_number' => $order->order_number, 'code' => $code],
         );
+    }
+
+    /**
+     * Send a replacement code. Every portal shares one limit per order so the
+     * customer phone cannot be flooded.
+     */
+    public function resend(Order $order): void
+    {
+        $key = 'delivery-code:'.$order->id;
+
+        if (RateLimiter::tooManyAttempts($key, self::RESEND_LIMIT)) {
+            $minutes = (int) ceil(RateLimiter::availableIn($key) / 60);
+
+            throw ValidationException::withMessages([
+                'code' => 'Too many codes sent. Try again in '.$minutes.' '.str('minute')->plural($minutes).'.',
+            ]);
+        }
+
+        $this->issue($order);
+
+        RateLimiter::hit($key, self::RESEND_WINDOW_SECONDS);
+    }
+
+    /**
+     * The code the customer can still give the driver, or null when it has
+     * been used, locked, or was never stored readable.
+     */
+    public function currentCode(Order $order): ?string
+    {
+        $phone = $this->phone($order);
+
+        if ($phone === null) {
+            return null;
+        }
+
+        try {
+            return $this->otp->active($phone, OtpPurpose::OrderPlaced, $order)?->code_encrypted;
+        } catch (DecryptException) {
+            return null;
+        }
+    }
+
+    public function discard(Order $order): void
+    {
+        $phone = $this->phone($order);
+
+        if ($phone !== null) {
+            $this->otp->discard($phone, OtpPurpose::OrderPlaced, $order);
+        }
     }
 
     public function phone(Order $order): ?string

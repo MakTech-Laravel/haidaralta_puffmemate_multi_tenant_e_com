@@ -26,6 +26,7 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::post('orders/{order:order_number}/start', [DriverOrderController::class, 'start'])->name('driver.orders.start');
     Route::post('orders/{order:order_number}/arrive', [DriverOrderController::class, 'arrive'])->name('driver.orders.arrive');
     Route::post('orders/{order:order_number}/deliver', [DriverOrderController::class, 'deliver'])->name('driver.orders.deliver');
+    Route::post('orders/{order:order_number}/delivery-code', [DriverOrderController::class, 'resendDeliveryCode'])->name('driver.orders.delivery-code');
     Route::post('orders/{order:order_number}/fail', [DriverOrderController::class, 'fail'])->name('driver.orders.fail');
     Route::post('orders/{order:order_number}/return', [DriverOrderController::class, 'beginReturn'])->name('driver.orders.return');
     Route::post('orders/{order:order_number}/returns', [DriverOrderController::class, 'storeReturn'])->name('driver.orders.returns.store');

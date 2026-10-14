@@ -1,6 +1,17 @@
 import { Form, router } from '@inertiajs/react';
 import { useState } from 'react';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 export type OrderReturnRequestPayload = {
     id: number;
@@ -56,31 +67,52 @@ export function OrderReturnRequest({
                 <Form {...form} className="space-y-3">
                     {({ processing: submitting, errors }) => (
                         <>
-                            <select
-                                name="type"
-                                defaultValue="refund"
-                                className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
-                            >
-                                <option value="refund">Refund</option>
-                                <option value="return">Return</option>
-                            </select>
-                            <input
-                                name="reason"
-                                required
-                                placeholder="Reason"
-                                className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
-                            />
-                            {errors.reason ? (
-                                <p className="text-destructive text-sm">
-                                    {errors.reason}
-                                </p>
-                            ) : null}
-                            <textarea
-                                name="note"
-                                rows={3}
-                                placeholder="What is wrong with the order"
-                                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                            />
+                            <div className="grid gap-2">
+                                <Label htmlFor="return-request-type">
+                                    Request
+                                </Label>
+                                <Select name="type" defaultValue="refund">
+                                    <SelectTrigger
+                                        id="return-request-type"
+                                        className="w-full"
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="refund">
+                                            Refund
+                                        </SelectItem>
+                                        <SelectItem value="return">
+                                            Return
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.type} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="return-request-reason">
+                                    Reason
+                                </Label>
+                                <Input
+                                    id="return-request-reason"
+                                    name="reason"
+                                    required
+                                    placeholder="Damaged, wrong item, missing item…"
+                                />
+                                <InputError message={errors.reason} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="return-request-note">
+                                    Details
+                                </Label>
+                                <Textarea
+                                    id="return-request-note"
+                                    name="note"
+                                    rows={3}
+                                    placeholder="What is wrong with the order"
+                                />
+                                <InputError message={errors.note} />
+                            </div>
                             <Button type="submit" disabled={submitting}>
                                 Request
                             </Button>

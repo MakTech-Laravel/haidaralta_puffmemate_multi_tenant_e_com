@@ -1,10 +1,15 @@
 import { Form } from '@inertiajs/react';
-import { useState } from 'react';
+import { REGEXP_ONLY_DIGITS } from 'input-otp';
+import { KeyRound } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
 import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+    InputOTP,
+    InputOTPGroup,
+    InputOTPSlot,
+} from '@/components/ui/input-otp';
 import {
     Sheet,
     SheetContent,
@@ -14,25 +19,63 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 
+const DELIVERY_CODE_LENGTH = 6;
+const RESEND_COOLDOWN_SECONDS = 60;
+
+type FormAction = {
+    action: string;
+    method: 'post';
+};
+
 type DriverDeliverOtpFormProps = {
     orderId: string;
     disabled?: boolean;
-    form?: {
-        action: string;
-        method: 'post';
-    };
+    label?: string;
+    icon?: ReactNode;
+    form?: FormAction;
+    resendForm?: FormAction | null;
 };
 
 export function DriverDeliverOtpForm({
     orderId,
     disabled = false,
+    label = 'Complete',
+    icon = null,
     form,
+    resendForm,
 }: DriverDeliverOtpFormProps) {
     const [open, setOpen] = useState(false);
+    const [code, setCode] = useState('');
+    const [cooldown, setCooldown] = useState(0);
     const submit = form ?? OrderController.deliver.form(orderId);
+    const resend =
+        resendForm === undefined
+            ? OrderController.resendDeliveryCode.form(orderId)
+            : resendForm;
+
+    useEffect(() => {
+        if (cooldown <= 0) {
+            return;
+        }
+
+        const timer = window.setTimeout(
+            () => setCooldown((seconds) => seconds - 1),
+            1000,
+        );
+
+        return () => window.clearTimeout(timer);
+    }, [cooldown]);
+
+    const changeOpen = (next: boolean) => {
+        setOpen(next);
+
+        if (!next) {
+            setCode('');
+        }
+    };
 
     return (
-        <Sheet open={open} onOpenChange={setOpen}>
+        <Sheet open={open} onOpenChange={changeOpen}>
             <SheetTrigger asChild>
                 <Button
                     type="button"
@@ -41,49 +84,76 @@ export function DriverDeliverOtpForm({
                     disabled={disabled}
                     data-test="order-complete"
                 >
-                    Complete
+                    {icon}
+                    {label}
                 </Button>
             </SheetTrigger>
-            <SheetContent>
-                <SheetHeader>
+            <SheetContent
+                side="bottom"
+                className="max-h-[85svh] gap-0 overflow-y-auto rounded-t-3xl sm:mx-auto sm:max-w-lg"
+            >
+                <div className="bg-muted mx-auto mt-2.5 h-1.5 w-10 shrink-0 rounded-full" />
+                <SheetHeader className="items-center text-center">
+                    <div className="bg-primary/10 text-primary mb-1 flex size-12 items-center justify-center rounded-full">
+                        <KeyRound className="size-5" />
+                    </div>
                     <SheetTitle>Complete delivery</SheetTitle>
                     <SheetDescription>
-                        Collect the payment before you confirm the code. A
-                        valid code marks the order delivered and the payment
-                        collected.
+                        Collect the payment, then enter the 6-digit code from
+                        the customer.
                     </SheetDescription>
                 </SheetHeader>
                 {disabled ? (
-                    <p className="text-muted-foreground px-4 text-sm">
+                    <p className="text-muted-foreground px-4 pb-6 text-center text-sm">
                         This order is already marked delivered.
                     </p>
                 ) : (
                     <Form
                         {...submit}
-                        className="space-y-4 px-4"
+                        className="space-y-5 px-4 pb-6"
                         options={{ preserveScroll: true }}
                     >
                         {({ errors, processing }) => (
                             <>
-                                <div className="grid gap-2">
-                                    <Label htmlFor={`deliver-otp-${orderId}`}>
-                                        Customer OTP
-                                    </Label>
-                                    <Input
+                                <div className="flex flex-col items-center gap-2">
+                                    <InputOTP
                                         id={`deliver-otp-${orderId}`}
                                         name="otp"
+                                        aria-label="Customer code"
+                                        maxLength={DELIVERY_CODE_LENGTH}
+                                        value={code}
+                                        onChange={setCode}
+                                        pattern={REGEXP_ONLY_DIGITS}
                                         inputMode="numeric"
                                         autoComplete="one-time-code"
-                                        placeholder="Enter 4+ digit code"
-                                        className="font-mono tracking-widest"
-                                    />
+                                        disabled={processing}
+                                        autoFocus
+                                    >
+                                        <InputOTPGroup className="gap-2">
+                                            {Array.from(
+                                                {
+                                                    length: DELIVERY_CODE_LENGTH,
+                                                },
+                                                (_, index) => (
+                                                    <InputOTPSlot
+                                                        key={index}
+                                                        index={index}
+                                                        className="size-12 rounded-xl border text-lg font-semibold shadow-none first:rounded-xl last:rounded-xl"
+                                                    />
+                                                ),
+                                            )}
+                                        </InputOTPGroup>
+                                    </InputOTP>
                                     <InputError message={errors.otp} />
                                 </div>
                                 <Button
                                     type="submit"
                                     size="lg"
-                                    className="h-12 w-full"
-                                    disabled={processing}
+                                    className="h-12 w-full rounded-full"
+                                    disabled={
+                                        processing ||
+                                        code.length < DELIVERY_CODE_LENGTH
+                                    }
                                 >
                                     {processing
                                         ? 'Submitting…'
@@ -93,6 +163,37 @@ export function DriverDeliverOtpForm({
                         )}
                     </Form>
                 )}
+                {!disabled && resend ? (
+                    <Form
+                        {...resend}
+                        className="flex flex-col items-center gap-1 px-4 pb-6 text-center"
+                        options={{ preserveScroll: true }}
+                        onSuccess={() => setCooldown(RESEND_COOLDOWN_SECONDS)}
+                    >
+                        {({ errors, processing }) => (
+                            <>
+                                <p className="text-muted-foreground text-sm">
+                                    Customer didn&apos;t get the code?
+                                </p>
+                                <Button
+                                    type="submit"
+                                    variant="link"
+                                    size="sm"
+                                    className="h-auto p-0"
+                                    disabled={processing || cooldown > 0}
+                                    data-test="order-resend-code"
+                                >
+                                    {processing
+                                        ? 'Sending…'
+                                        : cooldown > 0
+                                          ? `Send a new one in ${cooldown}s`
+                                          : 'Send a new one'}
+                                </Button>
+                                <InputError message={errors.code} />
+                            </>
+                        )}
+                    </Form>
+                ) : null}
             </SheetContent>
         </Sheet>
     );

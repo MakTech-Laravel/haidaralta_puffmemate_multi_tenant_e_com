@@ -157,6 +157,9 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.orders.return-delivery');
         Route::post('orders/{fulfillment}/deliver', [BranchOrderController::class, 'deliver'])
             ->name('branch.orders.deliver');
+        Route::post('orders/{fulfillment}/deliver-without-code', [BranchOrderController::class, 'deliverWithoutCode'])
+            ->middleware('permission:complete-branch-orders-without-code')
+            ->name('branch.orders.deliver-without-code');
         Route::post('orders/{fulfillment}/fail', [BranchOrderController::class, 'fail'])
             ->name('branch.orders.fail');
         Route::post('orders/{fulfillment}/returns/{orderReturn}/approve', [BranchOrderController::class, 'approveReturn'])

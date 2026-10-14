@@ -24,7 +24,7 @@ class OtpService
      * Issue a new OTP for the given phone and purpose. Always sends an SMS
      * (callers decide whether the phone exists for enumeration safety).
      */
-    public function issue(string $phoneE164, OtpPurpose $purpose, ?Model $subject = null, ?int $ttlMinutes = null): OtpRecord
+    public function issue(string $phoneE164, OtpPurpose $purpose, ?Model $subject = null, ?int $ttlMinutes = self::TTL_MINUTES): OtpRecord
     {
         return $this->issueCode($phoneE164, $purpose, $subject, $ttlMinutes)[0];
     }
@@ -33,14 +33,21 @@ class OtpService
      * Issue a code and send the SMS. The plaintext is returned once so other
      * channels (email, in-app) can carry the same code.
      *
+     * A null TTL keeps the code valid until it is used or replaced. A readable
+     * code is stored encrypted so its owner can view it again later.
+     *
      * @return array{0: OtpRecord, 1: string}
      */
-    public function issueCode(string $phoneE164, OtpPurpose $purpose, ?Model $subject = null, ?int $ttlMinutes = null): array
-    {
+    public function issueCode(
+        string $phoneE164,
+        OtpPurpose $purpose,
+        ?Model $subject = null,
+        ?int $ttlMinutes = self::TTL_MINUTES,
+        bool $storeReadable = false,
+    ): array {
         $this->activeQuery($phoneE164, $purpose, $subject)->delete();
 
         $code = $this->generateCode();
-        $minutes = $ttlMinutes ?? self::TTL_MINUTES;
 
         $otp = OtpRecord::query()->create([
             'phone' => $phoneE164,
@@ -48,19 +55,43 @@ class OtpService
             'subject_type' => $subject?->getMorphClass(),
             'subject_id' => $subject?->getKey(),
             'code_hash' => Hash::make($code),
-            'expires_at' => now()->addMinutes($minutes),
+            'code_encrypted' => $storeReadable ? $code : null,
+            'expires_at' => $ttlMinutes === null ? null : now()->addMinutes($ttlMinutes),
             'attempts' => 0,
         ]);
 
         $this->sms->send(
             $phoneE164,
-            __('Your verification code is :code. It expires in :minutes minutes.', [
-                'code' => $code,
-                'minutes' => $minutes,
-            ]),
+            $ttlMinutes === null
+                ? __('Your verification code is :code.', ['code' => $code])
+                : __('Your verification code is :code. It expires in :minutes minutes.', [
+                    'code' => $code,
+                    'minutes' => $ttlMinutes,
+                ]),
         );
 
         return [$otp, $code];
+    }
+
+    /**
+     * The latest unused code that can still be entered, or null.
+     */
+    public function active(string $phoneE164, OtpPurpose $purpose, ?Model $subject = null): ?OtpRecord
+    {
+        $otp = $this->activeQuery($phoneE164, $purpose, $subject)
+            ->latest('id')
+            ->first();
+
+        if ($otp === null || $otp->isExpired() || $otp->attempts >= self::MAX_ATTEMPTS) {
+            return null;
+        }
+
+        return $otp;
+    }
+
+    public function discard(string $phoneE164, OtpPurpose $purpose, ?Model $subject = null): void
+    {
+        $this->activeQuery($phoneE164, $purpose, $subject)->delete();
     }
 
     /**

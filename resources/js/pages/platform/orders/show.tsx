@@ -7,6 +7,7 @@ import {
     UserRound,
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import OrderAssignController from '@/actions/App/Http/Controllers/Platform/OrderAssignController';
 import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/OrderAssignHistoryController';
 import OrderController from '@/actions/App/Http/Controllers/Platform/OrderController';
@@ -85,7 +86,9 @@ type OrderDetail = {
         statusLabel: string;
     } | null;
     canReportUnavailable?: boolean;
+    canCompleteWithoutCode?: boolean;
     failureReasons?: { value: string; label: string }[];
+    verificationMethods?: { value: string; label: string }[];
     canResendCode: boolean;
     paymentMethod: string | null;
     customerName: string;
@@ -426,6 +429,12 @@ function FulfillmentActions({
                                         ),
                                         {},
                                         {
+                                            preserveScroll: true,
+                                            onError: (errors) =>
+                                                toast.error(
+                                                    errors.code ??
+                                                        'The delivery code could not be sent.',
+                                                ),
                                             onFinish: () =>
                                                 setProcessing(false),
                                         },
@@ -679,11 +688,27 @@ export default function PlatformOrderShow({
                             orderId={order.id}
                             deliverForm={OrderController.deliver.form(order.id)}
                             failForm={OrderController.fail.form(order.id)}
+                            resendForm={
+                                order.canResendCode
+                                    ? OrderController.resendPlacementCode.form(
+                                          order.id,
+                                      )
+                                    : null
+                            }
+                            withoutCodeForm={OrderController.deliverWithoutCode.form(
+                                order.id,
+                            )}
                             canComplete={order.canComplete ?? false}
                             canReportUnavailable={
                                 order.canReportUnavailable ?? false
                             }
+                            canCompleteWithoutCode={
+                                order.canCompleteWithoutCode ?? false
+                            }
                             failureReasons={order.failureReasons ?? []}
+                            verificationMethods={
+                                order.verificationMethods ?? []
+                            }
                         />
                     </div>
 

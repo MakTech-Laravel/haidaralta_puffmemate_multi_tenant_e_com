@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { dashboard } from '@/routes/driver';
 import { index as earningsIndex } from '@/routes/driver/earnings';
+import { index as historyIndex } from '@/routes/driver/history';
 import { index as ordersIndex } from '@/routes/driver/orders';
 import { index as placeOrderIndex } from '@/routes/driver/place-order';
 import { index as routeIndex } from '@/routes/driver/route';
@@ -53,7 +54,9 @@ export const driverNavItems: DriverNavItem[] = [
         icon: Package,
         href: ordersIndex.url(),
         tab: true,
-        match: (url) => matchesPath(url, ordersIndex.url(), true),
+        match: (url) =>
+            matchesPath(url, ordersIndex.url(), true) ||
+            matchesPath(url, historyIndex.url(), true),
     },
     {
         id: 'route',
