@@ -1,6 +1,15 @@
 import { Form } from '@inertiajs/react';
 import { DriverDeliverOtpForm } from '@/components/driver/driver-deliver-otp-form';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 type FailureReason = {
     value: string;
@@ -52,40 +61,38 @@ export function OrderHandoverActions({
                             <h2 className="text-foreground text-lg font-semibold">
                                 Customer unavailable
                             </h2>
-                            <select
+                            <Select
                                 name="reason"
-                                className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
                                 defaultValue={
                                     failureReasons[0]?.value ??
                                     'customer_unavailable'
                                 }
                             >
-                                {failureReasons.map((reason) => (
-                                    <option
-                                        key={reason.value}
-                                        value={reason.value}
-                                    >
-                                        {reason.label}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.reason ? (
-                                <p className="text-destructive text-sm">
-                                    {errors.reason}
-                                </p>
-                            ) : null}
-                            <textarea
+                                <SelectTrigger
+                                    className="w-full"
+                                    aria-label="Reason"
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {failureReasons.map((reason) => (
+                                        <SelectItem
+                                            key={reason.value}
+                                            value={reason.value}
+                                        >
+                                            {reason.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <InputError message={errors.reason} />
+                            <Textarea
                                 name="note"
                                 required
                                 rows={3}
                                 placeholder="What happened at the door"
-                                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
                             />
-                            {errors.note ? (
-                                <p className="text-destructive text-sm">
-                                    {errors.note}
-                                </p>
-                            ) : null}
+                            <InputError message={errors.note} />
                             <Button
                                 type="submit"
                                 variant="outline"

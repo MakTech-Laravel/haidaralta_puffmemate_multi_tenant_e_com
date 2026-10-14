@@ -177,9 +177,60 @@ test('drivers can view old orders history', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('driver/history')
-            ->has('orders', 1)
-            ->where('orders.0.customerName', 'Elena Vargas')
-            ->where('orders.0.status', 'delivered'));
+            ->has('orders.data', 1)
+            ->where('orders.data.0.customerName', 'Elena Vargas')
+            ->where('orders.data.0.status', 'delivered')
+            ->where('orders.data.0.completedLabel', 'Today'));
+});
+
+test('order history keeps finished drops only and searches on the server', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    driverPortalOrder($driver, ['status' => FulfillmentStatus::Delivered]);
+    driverPortalOrder($driver, ['status' => FulfillmentStatus::Returned]);
+    driverPortalOrder($driver, ['status' => FulfillmentStatus::Cancelled]);
+    driverPortalOrder($driver, ['status' => FulfillmentStatus::OutForDelivery]);
+    $match = driverPortalOrder($driver, ['status' => FulfillmentStatus::Delivered], [
+        'shipping_address_snapshot' => [
+            'name' => 'Marcus Lee',
+            'phone' => '+61410999888',
+            'address' => '9 Bondi Rd, Bondi',
+            'city' => 'Bondi',
+        ],
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.history.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 4)
+            ->where('search', ''));
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.history.index', ['search' => 'marcus']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 1)
+            ->where('orders.data.0.orderNumber', $match->order_number)
+            ->where('search', 'marcus'));
+});
+
+test('order history pages through older drops', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+
+    foreach (range(1, 16) as $ignored) {
+        driverPortalOrder($driver, ['status' => FulfillmentStatus::Delivered]);
+    }
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.history.index', ['page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('orders.data', 1));
 });
 
 test('guests are redirected from old orders', function () {

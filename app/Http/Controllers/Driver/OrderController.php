@@ -15,10 +15,10 @@ use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\OrderReturnService;
 use App\Support\ConversationPayload;
 use App\Support\Toast;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -36,6 +36,15 @@ class OrderController extends Controller
         FulfillmentStatus::Returning,
         FulfillmentStatus::PickedUp,
         FulfillmentStatus::Assigned,
+    ];
+
+    /**
+     * @var list<FulfillmentStatus>
+     */
+    private const HISTORY_STATUSES = [
+        FulfillmentStatus::Delivered,
+        FulfillmentStatus::Returned,
+        FulfillmentStatus::Cancelled,
     ];
 
     public function __construct(
@@ -79,16 +88,38 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * Finished drops (delivered, returned, cancelled), newest first, paged for infinite scroll.
+     */
     public function history(Request $request): Response
     {
-        $orders = $this->assigned($request)
-            ->filter(fn (OrderFulfillment $fulfillment): bool => $fulfillment->status === FulfillmentStatus::Delivered)
-            ->map(fn (OrderFulfillment $fulfillment): array => $this->card($fulfillment))
-            ->values()
-            ->all();
+        $search = trim($request->string('search')->toString());
+
+        $orders = OrderFulfillment::query()
+            ->where('driver_id', $request->user()->id)
+            ->whereIn('status', array_map(
+                fn (FulfillmentStatus $status): string => $status->value,
+                self::HISTORY_STATUSES,
+            ))
+            ->when($search !== '', fn (Builder $query) => $query->whereHas(
+                'order',
+                fn (Builder $order) => $order->where(fn (Builder $match) => $match
+                    ->whereLike('order_number', '%'.$search.'%')
+                    ->orWhereLike('shipping_address_snapshot->name', '%'.$search.'%')
+                    ->orWhereLike('shipping_address_snapshot->address', '%'.$search.'%')
+                    ->orWhereLike('shipping_address_snapshot->city', '%'.$search.'%')
+                    ->orWhereLike('shipping_address_snapshot->phone', '%'.$search.'%')),
+            ))
+            ->with(['order.items', 'order.customer:id,name'])
+            ->latest('updated_at')
+            ->latest('id')
+            ->paginate(15)
+            ->withQueryString()
+            ->through(fn (OrderFulfillment $fulfillment): array => $this->card($fulfillment));
 
         return Inertia::render('driver/history', [
-            'orders' => $orders,
+            'orders' => Inertia::scroll($orders),
+            'search' => $search,
         ]);
     }
 
@@ -220,18 +251,6 @@ class OrderController extends Controller
         return back();
     }
 
-    /**
-     * @return Collection<int, OrderFulfillment>
-     */
-    private function assigned(Request $request)
-    {
-        return OrderFulfillment::query()
-            ->where('driver_id', $request->user()->id)
-            ->with(['order.items'])
-            ->latest('id')
-            ->get();
-    }
-
     private function owned(Request $request, Order $order): OrderFulfillment
     {
         $fulfillment = $order->fulfillment;
@@ -274,10 +293,20 @@ class OrderController extends Controller
             'productPreview' => $order->items->pluck('product_name_snapshot')->take(3)->all(),
             'paymentMethod' => $order->payment_method === 'pos' ? 'paid' : 'cod',
             'etaLabel' => null,
-            'completedLabel' => $fulfillment->status === FulfillmentStatus::Delivered
-                ? $fulfillment->updated_at?->format('d M Y')
+            'completedLabel' => in_array($fulfillment->status, self::HISTORY_STATUSES, true)
+                ? $this->dayLabel($fulfillment->updated_at)
                 : null,
         ];
+    }
+
+    private function dayLabel(?CarbonInterface $date): ?string
+    {
+        return match (true) {
+            $date === null => null,
+            $date->isToday() => 'Today',
+            $date->isYesterday() => 'Yesterday',
+            default => $date->format('D, d M Y'),
+        };
     }
 
     /**

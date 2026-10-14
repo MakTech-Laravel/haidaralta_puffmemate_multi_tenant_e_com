@@ -6,6 +6,13 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
     Sheet,
     SheetContent,
     SheetDescription,
@@ -13,6 +20,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
 
 type DriverOrderUnavailableSheetProps = {
     orderId: string;
@@ -59,37 +67,42 @@ export function DriverOrderUnavailableSheet({
                                 <Label htmlFor={`fail-reason-${orderId}`}>
                                     Reason
                                 </Label>
-                                <select
-                                    id={`fail-reason-${orderId}`}
+                                <Select
                                     name="reason"
-                                    className="border-input bg-background h-11 w-full rounded-md border px-3 text-base"
                                     defaultValue={
                                         reasons[0]?.value ??
                                         'customer_unavailable'
                                     }
                                 >
-                                    {reasons.map((reason) => (
-                                        <option
-                                            key={reason.value}
-                                            value={reason.value}
-                                        >
-                                            {reason.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger
+                                        id={`fail-reason-${orderId}`}
+                                        className="h-11 w-full"
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {reasons.map((reason) => (
+                                            <SelectItem
+                                                key={reason.value}
+                                                value={reason.value}
+                                            >
+                                                {reason.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                                 <InputError message={errors.reason} />
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor={`fail-note-${orderId}`}>
                                     Note
                                 </Label>
-                                <textarea
+                                <Textarea
                                     id={`fail-note-${orderId}`}
                                     name="note"
                                     required
                                     rows={3}
                                     placeholder="What happened at the door"
-                                    className="border-input bg-background w-full rounded-md border px-3 py-2 text-base"
                                 />
                                 <InputError message={errors.note} />
                             </div>

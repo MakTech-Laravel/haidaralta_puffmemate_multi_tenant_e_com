@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { ChevronRight, CircleCheck, Package } from 'lucide-react';
+import { ChevronRight, CircleCheck, History, Package } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { DriverEmptyState } from '@/components/driver/driver-empty-state';
 import { DriverOrderCard } from '@/components/driver/driver-order-card';
@@ -12,6 +12,7 @@ import {
     type DriverAssignedOrder,
     type DriverOrderListTab,
 } from '@/components/driver/driver-order-types';
+import { Button } from '@/components/ui/button';
 import {
     ToggleGroup,
     ToggleGroupItem,
@@ -50,9 +51,21 @@ export default function DriverOrdersIndex({ orders }: DriverOrdersIndexProps) {
             <Head title="Orders" />
 
             <div className="flex flex-col gap-4">
-                <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
-                    Orders
-                </h1>
+                <div className="flex items-center justify-between gap-3">
+                    <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
+                        Orders
+                    </h1>
+                    <Button variant="outline" size="sm" className="h-9" asChild>
+                        <Link
+                            href={historyIndex.url()}
+                            prefetch
+                            data-test="driver-orders-history"
+                        >
+                            <History data-icon="inline-start" />
+                            History
+                        </Link>
+                    </Button>
+                </div>
 
                 <ToggleGroup
                     type="single"
@@ -124,9 +137,8 @@ export default function DriverOrdersIndex({ orders }: DriverOrdersIndexProps) {
                         href={historyIndex.url()}
                         prefetch
                         className="text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 py-2 text-sm font-medium transition-colors"
-                        data-test="driver-orders-history"
                     >
-                        Earlier deliveries
+                        See full order history
                         <ChevronRight className="size-4" />
                     </Link>
                 ) : null}
