@@ -206,7 +206,8 @@ test('order history keeps finished drops only and searches on the server', funct
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->has('orders.data', 4)
-            ->where('search', ''));
+            ->where('total', 4)
+            ->where('filters.search', ''));
 
     $this->actingAs($driver, 'driver')
         ->get(route('driver.history.index', ['search' => 'marcus']))
@@ -214,7 +215,63 @@ test('order history keeps finished drops only and searches on the server', funct
         ->assertInertia(fn (Assert $page) => $page
             ->has('orders.data', 1)
             ->where('orders.data.0.orderNumber', $match->order_number)
-            ->where('search', 'marcus'));
+            ->where('filters.search', 'marcus'));
+});
+
+test('order history defaults to the running month and filters by a date range', function () {
+    $this->travelTo(now()->setDate(2026, 10, 14)->setTime(12, 0));
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $earlyOctober = driverPortalOrder($driver, ['status' => FulfillmentStatus::Delivered]);
+    driverPortalOrder($driver, ['status' => FulfillmentStatus::Delivered]);
+    $lateSeptember = driverPortalOrder($driver, ['status' => FulfillmentStatus::Delivered]);
+    $earlyOctober->fulfillment->forceFill(['updated_at' => now()->setDate(2026, 10, 3)])->saveQuietly();
+    $lateSeptember->fulfillment->forceFill(['updated_at' => now()->setDate(2026, 9, 28)])->saveQuietly();
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.history.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 2)
+            ->where('total', 2)
+            ->where('filters.from', '2026-10-01')
+            ->where('filters.to', '2026-10-14')
+            ->where('today', '2026-10-14'));
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.history.index', ['from' => '2026-09-25', 'to' => '2026-10-05']))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 2)
+            ->where('orders.data.0.orderNumber', $earlyOctober->order_number)
+            ->where('orders.data.1.orderNumber', $lateSeptember->order_number));
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.history.index', ['from' => '2026-10-03', 'to' => '2026-10-03']))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 1)
+            ->where('orders.data.0.orderNumber', $earlyOctober->order_number));
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.history.index', ['from' => '2026-10-05', 'to' => '2026-09-25']))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.from', '2026-09-25')
+            ->where('filters.to', '2026-10-05')
+            ->has('orders.data', 2));
+});
+
+test('order history rejects future dates', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.history.index', [
+            'from' => now()->format('Y-m-d'),
+            'to' => now()->addDays(3)->format('Y-m-d'),
+        ]))
+        ->assertSessionHasErrors('to');
 });
 
 test('order history pages through older drops', function () {

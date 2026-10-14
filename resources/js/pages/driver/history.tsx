@@ -8,20 +8,38 @@ import {
     groupDriverAssignedOrdersByCompletedLabel,
     type DriverAssignedOrder,
 } from '@/components/driver/driver-order-types';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Spinner } from '@/components/ui/spinner';
 import { index as historyIndex } from '@/routes/driver/history';
 import { index as ordersIndex } from '@/routes/driver/orders';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-type DriverOrderHistoryProps = {
-    orders: { data: DriverAssignedOrder[] };
+type HistoryFilters = {
     search: string;
+    from: string;
+    to: string;
 };
 
-function searchHistory(term: string): void {
-    router.get(historyIndex.url(), term === '' ? {} : { search: term }, {
-        only: ['orders', 'search'],
+type DriverOrderHistoryProps = {
+    orders: { data: DriverAssignedOrder[] };
+    total: number;
+    filters: HistoryFilters;
+    today: string;
+};
+
+function visitHistory(filters: HistoryFilters): void {
+    const query: Record<string, string> = {
+        from: filters.from,
+        to: filters.to,
+    };
+
+    if (filters.search !== '') {
+        query.search = filters.search;
+    }
+
+    router.get(historyIndex.url(), query, {
+        only: ['orders', 'total', 'filters', 'today'],
         reset: ['orders'],
         preserveState: true,
         preserveScroll: true,
@@ -31,29 +49,32 @@ function searchHistory(term: string): void {
 
 export default function DriverOrderHistory({
     orders,
-    search: appliedSearch,
+    total,
+    filters,
+    today,
 }: DriverOrderHistoryProps) {
-    const [search, setSearch] = useState(appliedSearch);
+    const [search, setSearch] = useState(filters.search);
     const groups = groupDriverAssignedOrdersByCompletedLabel(orders.data);
+    const isSearching = filters.search !== '';
 
     useEffect(() => {
         const term = search.trim();
 
-        if (term === appliedSearch) {
+        if (term === filters.search) {
             return;
         }
 
         const timer = window.setTimeout(
-            () => searchHistory(term),
+            () => visitHistory({ ...filters, search: term }),
             SEARCH_DEBOUNCE_MS,
         );
 
         return () => window.clearTimeout(timer);
-    }, [search, appliedSearch]);
+    }, [search, filters]);
 
     const submitSearch = (event: FormEvent<HTMLFormElement>): void => {
         event.preventDefault();
-        searchHistory(search.trim());
+        visitHistory({ ...filters, search: search.trim() });
     };
 
     return (
@@ -79,24 +100,37 @@ export default function DriverOrderHistory({
                     </p>
                 </div>
 
+                <DateRangePicker
+                    value={{ from: filters.from, to: filters.to }}
+                    max={today}
+                    onChange={(range) => visitHistory({ ...filters, ...range })}
+                />
+
                 <DriverOrderSearchField
                     value={search}
                     onChange={setSearch}
                     onSubmit={submitSearch}
                 />
 
+                <p
+                    className="text-muted-foreground text-sm"
+                    data-test="driver-history-total"
+                >
+                    {total} {total === 1 ? 'order' : 'orders'}
+                </p>
+
                 {orders.data.length === 0 ? (
                     <DriverEmptyState
                         icon={History}
                         title={
-                            appliedSearch !== ''
+                            isSearching
                                 ? 'No matching orders'
-                                : 'No finished orders yet'
+                                : 'No finished orders'
                         }
                         description={
-                            appliedSearch !== ''
+                            isSearching
                                 ? 'Try a name, order number, suburb, address, or phone.'
-                                : 'Finished drops will show up here.'
+                                : 'Nothing was delivered, returned, or cancelled in these dates. Try a wider range.'
                         }
                     />
                 ) : (

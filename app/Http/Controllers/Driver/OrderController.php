@@ -15,6 +15,7 @@ use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\OrderReturnService;
 use App\Support\ConversationPayload;
 use App\Support\Toast;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -89,11 +90,29 @@ class OrderController extends Controller
     }
 
     /**
-     * Finished drops (delivered, returned, cancelled), newest first, paged for infinite scroll.
+     * Finished drops (delivered, returned, cancelled) within a date range,
+     * newest first, paged for infinite scroll. Defaults to the running month.
      */
     public function history(Request $request): Response
     {
-        $search = trim($request->string('search')->toString());
+        $validated = $request->validate([
+            'from' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'to' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $search = trim((string) ($validated['search'] ?? ''));
+        $today = CarbonImmutable::today();
+        $from = isset($validated['from'])
+            ? CarbonImmutable::createFromFormat('!Y-m-d', $validated['from'])
+            : $today->startOfMonth();
+        $to = isset($validated['to'])
+            ? CarbonImmutable::createFromFormat('!Y-m-d', $validated['to'])
+            : $today;
+
+        if ($to->lessThan($from)) {
+            [$from, $to] = [$to, $from];
+        }
 
         $orders = OrderFulfillment::query()
             ->where('driver_id', $request->user()->id)
@@ -101,6 +120,7 @@ class OrderController extends Controller
                 fn (FulfillmentStatus $status): string => $status->value,
                 self::HISTORY_STATUSES,
             ))
+            ->whereBetween('updated_at', [$from->startOfDay(), $to->endOfDay()])
             ->when($search !== '', fn (Builder $query) => $query->whereHas(
                 'order',
                 fn (Builder $order) => $order->where(fn (Builder $match) => $match
@@ -119,7 +139,13 @@ class OrderController extends Controller
 
         return Inertia::render('driver/history', [
             'orders' => Inertia::scroll($orders),
-            'search' => $search,
+            'total' => $orders->total(),
+            'filters' => [
+                'search' => $search,
+                'from' => $from->format('Y-m-d'),
+                'to' => $to->format('Y-m-d'),
+            ],
+            'today' => $today->format('Y-m-d'),
         ]);
     }
 
