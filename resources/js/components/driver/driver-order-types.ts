@@ -101,7 +101,7 @@ export const driverOrderStatusLabel: Record<string, string> = {
     picked_up: 'Picked up',
     out_for_delivery: 'On the way',
     arrived: 'Arrived',
-    delivery_failed: 'Customer unavailable',
+    delivery_failed: 'Not delivered',
     returning: 'Returning',
     returned: 'Returned',
     delivered: 'Delivered',

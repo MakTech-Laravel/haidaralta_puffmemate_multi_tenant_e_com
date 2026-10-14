@@ -111,13 +111,13 @@ class DriverDeliveryService
 
         if ($fulfillment->status !== FulfillmentStatus::Arrived) {
             throw ValidationException::withMessages([
-                'status' => 'Customer unavailable is only available after arrival.',
+                'status' => 'Mark an order as not delivered only after arrival.',
             ]);
         }
 
         if (trim((string) $note) === '') {
             throw ValidationException::withMessages([
-                'note' => 'A note is required when the customer is unavailable.',
+                'note' => 'Explain why the order could not be delivered.',
             ]);
         }
 
@@ -129,7 +129,7 @@ class DriverDeliveryService
             'attempted_at' => now(),
         ]);
 
-        return $this->statuses->apply($fulfillment, FulfillmentStatus::DeliveryFailed, $actor, 'Customer unavailable');
+        return $this->statuses->apply($fulfillment, FulfillmentStatus::DeliveryFailed, $actor, $reason->label());
     }
 
     public function retry(OrderFulfillment $fulfillment, User $actor): OrderFulfillment

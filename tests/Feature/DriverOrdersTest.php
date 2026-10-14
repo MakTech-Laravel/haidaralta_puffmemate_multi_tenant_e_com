@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
@@ -456,6 +457,48 @@ test('driver cannot skip a delivery step from the list', function () {
         ->assertSessionHasErrors('status');
 
     expect($order->fulfillment->fresh()->status)->toBe(FulfillmentStatus::Assigned);
+});
+
+test('driver can mark an arrived order as not delivered for another reason', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::Arrived]);
+
+    $this->actingAs($driver, 'driver')
+        ->from(route('driver.orders.show', $order))
+        ->post(route('driver.orders.fail', $order), [
+            'reason' => DeliveryFailureReason::Other->value,
+            'note' => 'Building is locked and the gate code does not work',
+        ])
+        ->assertRedirect(route('driver.orders.show', $order))
+        ->assertSessionHasNoErrors();
+
+    $fulfillment = $order->fulfillment->fresh();
+
+    expect($fulfillment->status)->toBe(FulfillmentStatus::DeliveryFailed)
+        ->and($fulfillment->deliveryAttempts->sole()->reason)->toBe(DeliveryFailureReason::Other)
+        ->and($fulfillment->deliveryAttempts->sole()->note)->toBe('Building is locked and the gate code does not work');
+});
+
+test('driver cannot mark an order as not delivered with an unknown reason', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::Arrived]);
+
+    $this->actingAs($driver, 'driver')
+        ->from(route('driver.orders.show', $order))
+        ->post(route('driver.orders.fail', $order), [
+            'reason' => 'unable_to_complete',
+            'note' => 'Something happened',
+        ])
+        ->assertRedirect(route('driver.orders.show', $order))
+        ->assertSessionHasErrors('reason');
+
+    expect($order->fulfillment->fresh()->status)->toBe(FulfillmentStatus::Arrived);
 });
 
 test('driver dashboard receives assigned order summary', function () {

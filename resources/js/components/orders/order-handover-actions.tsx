@@ -59,7 +59,7 @@ export function OrderHandoverActions({
                     {({ processing, errors }) => (
                         <>
                             <h2 className="text-foreground text-lg font-semibold">
-                                Customer unavailable
+                                Can't deliver
                             </h2>
                             <Select
                                 name="reason"
@@ -90,7 +90,7 @@ export function OrderHandoverActions({
                                 name="note"
                                 required
                                 rows={3}
-                                placeholder="What happened at the door"
+                                placeholder="What happened? The branch will read this."
                             />
                             <InputError message={errors.note} />
                             <Button
@@ -99,7 +99,7 @@ export function OrderHandoverActions({
                                 className="w-full"
                                 disabled={processing}
                             >
-                                Customer unavailable
+                                Mark as not delivered
                             </Button>
                         </>
                     )}

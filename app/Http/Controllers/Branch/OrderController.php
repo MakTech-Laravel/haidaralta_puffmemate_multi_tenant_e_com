@@ -23,6 +23,7 @@ use App\Support\OrderStatusTimeline;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -126,7 +127,7 @@ class OrderController extends Controller
         $branch = $this->currentBranch();
         $fulfillment = $this->resolveForBranch($fulfillment, $branch);
         $data = $request->validate([
-            'reason' => ['required', 'string'],
+            'reason' => ['required', Rule::enum(DeliveryFailureReason::class)],
             'note' => ['required', 'string', 'max:500'],
         ]);
 
@@ -136,7 +137,7 @@ class OrderController extends Controller
             DeliveryFailureReason::from($data['reason']),
             $data['note'],
         );
-        Toast::success('Customer marked unavailable.');
+        Toast::success('Order marked as not delivered.');
 
         return redirect()->route('branch.orders.show', [$branch, $fulfillment]);
     }

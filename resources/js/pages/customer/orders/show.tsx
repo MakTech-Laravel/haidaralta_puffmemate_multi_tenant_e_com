@@ -27,7 +27,7 @@ const statusLabel: Record<string, string> = {
     picked_up: 'Order Picked Up',
     out_for_delivery: 'On The Way',
     arrived: 'Driver arrived',
-    delivery_failed: 'Customer unavailable',
+    delivery_failed: 'Delivery unsuccessful',
     returning: 'Returning your order',
     returned: 'Returned to the branch',
     delivered: 'Delivered',

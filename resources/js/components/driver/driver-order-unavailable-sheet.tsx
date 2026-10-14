@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import { UserX } from 'lucide-react';
+import { PackageX } from 'lucide-react';
 import { useState } from 'react';
 import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
 import InputError from '@/components/input-error';
@@ -43,16 +43,16 @@ export function DriverOrderUnavailableSheet({
                     className="h-12 w-full"
                     data-test="driver-order-unavailable"
                 >
-                    <UserX data-icon="inline-start" />
-                    Unavailable
+                    <PackageX data-icon="inline-start" />
+                    Can't deliver
                 </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="max-h-[85svh]">
                 <SheetHeader>
-                    <SheetTitle>Customer unavailable</SheetTitle>
+                    <SheetTitle>Can't deliver</SheetTitle>
                     <SheetDescription>
-                        Tell the branch what happened at the door. You can
-                        return the goods afterwards.
+                        Tell the branch why this order could not be delivered.
+                        You can return the goods afterwards.
                     </SheetDescription>
                 </SheetHeader>
                 <Form
@@ -102,7 +102,7 @@ export function DriverOrderUnavailableSheet({
                                     name="note"
                                     required
                                     rows={3}
-                                    placeholder="What happened at the door"
+                                    placeholder="What happened? The branch will read this."
                                 />
                                 <InputError message={errors.note} />
                             </div>
@@ -113,7 +113,7 @@ export function DriverOrderUnavailableSheet({
                                 className="h-12 w-full"
                                 disabled={processing}
                             >
-                                Mark customer unavailable
+                                Mark as not delivered
                             </Button>
                         </>
                     )}
