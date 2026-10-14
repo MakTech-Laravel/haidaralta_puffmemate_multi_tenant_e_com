@@ -277,8 +277,77 @@ test('deliver accepts a valid otp and flashes success', function () {
             'otp' => $sms->lastCode(),
         ])
         ->assertSessionHasNoErrors()
-        ->assertSessionHas('success')
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Order marked as delivered.',
+        ])
         ->assertRedirect(route('driver.orders.index'));
+});
+
+test('driver orders index lists the live run first and only todays deliveries', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $assigned = driverPortalOrder($driver, ['status' => FulfillmentStatus::Assigned]);
+    $arrived = driverPortalOrder($driver, ['status' => FulfillmentStatus::Arrived]);
+    $deliveredToday = driverPortalOrder($driver, ['status' => FulfillmentStatus::Delivered]);
+    $deliveredYesterday = driverPortalOrder($driver, ['status' => FulfillmentStatus::Delivered]);
+    $deliveredYesterday->fulfillment->forceFill(['updated_at' => now()->subDay()])->saveQuietly();
+    driverPortalOrder($driver, ['status' => FulfillmentStatus::Cancelled]);
+    driverPortalOrder($driver, ['status' => FulfillmentStatus::Returned]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.orders.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('driver/orders/index')
+            ->has('orders', 3)
+            ->where('orders.0.orderNumber', $arrived->order_number)
+            ->where('orders.0.statusLabel', 'Arrived')
+            ->where('orders.0.canChat', true)
+            ->where('orders.0.nextAction.key', 'complete')
+            ->where('orders.1.orderNumber', $assigned->order_number)
+            ->where('orders.1.canChat', false)
+            ->where('orders.1.nextAction.key', 'pick_up')
+            ->where('orders.2.orderNumber', $deliveredToday->order_number)
+            ->where('orders.2.status', 'delivered')
+            ->where('orders.2.nextAction', null));
+});
+
+test('driver can pick up an order from the list and stays on the list', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::Assigned]);
+
+    $this->actingAs($driver, 'driver')
+        ->from(route('driver.orders.index'))
+        ->post(route('driver.orders.pick-up', $order))
+        ->assertRedirect(route('driver.orders.index'))
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Order picked up.',
+        ]);
+
+    expect($order->fulfillment->fresh()->status)->toBe(FulfillmentStatus::PickedUp);
+});
+
+test('driver cannot skip a delivery step from the list', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::Assigned]);
+
+    $this->actingAs($driver, 'driver')
+        ->from(route('driver.orders.index'))
+        ->post(route('driver.orders.arrive', $order))
+        ->assertRedirect(route('driver.orders.index'))
+        ->assertSessionHasErrors('status');
+
+    expect($order->fulfillment->fresh()->status)->toBe(FulfillmentStatus::Assigned);
 });
 
 test('driver dashboard receives assigned order summary', function () {

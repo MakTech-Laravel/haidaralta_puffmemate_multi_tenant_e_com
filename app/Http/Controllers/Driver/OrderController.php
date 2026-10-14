@@ -15,6 +15,7 @@ use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\OrderReturnService;
 use App\Support\ConversationPayload;
 use App\Support\Toast;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -23,23 +24,58 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
+    /**
+     * Field queue order: the stop at the door first, untouched pickups last.
+     *
+     * @var list<FulfillmentStatus>
+     */
+    private const FIELD_QUEUE = [
+        FulfillmentStatus::Arrived,
+        FulfillmentStatus::OutForDelivery,
+        FulfillmentStatus::DeliveryFailed,
+        FulfillmentStatus::Returning,
+        FulfillmentStatus::PickedUp,
+        FulfillmentStatus::Assigned,
+    ];
+
     public function __construct(
         private DriverDeliveryService $deliveries,
         private ConversationService $conversations,
         private OrderReturnService $returns,
     ) {}
 
+    /**
+     * Today's run: every stop the driver still holds plus drops completed today.
+     */
     public function index(Request $request): Response
     {
-        $orders = $this->assigned($request)
-            ->reject(fn (OrderFulfillment $fulfillment): bool => $fulfillment->status === FulfillmentStatus::Delivered)
+        $fulfillments = OrderFulfillment::query()
+            ->where('driver_id', $request->user()->id)
+            ->where(fn (Builder $query) => $query
+                ->whereIn('status', array_map(
+                    fn (FulfillmentStatus $status): string => $status->value,
+                    FulfillmentStatus::driverWorkload(),
+                ))
+                ->orWhere(fn (Builder $query) => $query
+                    ->where('status', FulfillmentStatus::Delivered->value)
+                    ->where('updated_at', '>=', today())))
+            ->with(['order.items', 'order.customer:id,name'])
+            ->oldest('id')
+            ->get();
+
+        [$active, $delivered] = $fulfillments->partition(
+            fn (OrderFulfillment $fulfillment): bool => $fulfillment->status->holdsDriverWorkload(),
+        );
+
+        $orders = $active
+            ->sortBy(fn (OrderFulfillment $fulfillment): int => (int) array_search($fulfillment->status, self::FIELD_QUEUE, true))
+            ->concat($delivered->sortByDesc('updated_at'))
             ->map(fn (OrderFulfillment $fulfillment): array => $this->card($fulfillment))
             ->values()
             ->all();
 
         return Inertia::render('driver/orders/index', [
             'orders' => $orders,
-            'status' => $request->session()->get('success'),
         ]);
     }
 
@@ -104,22 +140,25 @@ class OrderController extends Controller
     public function pickUp(Request $request, Order $order): RedirectResponse
     {
         $this->deliveries->pickUp($this->owned($request, $order), $request->user());
+        Toast::success('Order picked up.');
 
-        return back()->with('success', 'Order picked up.');
+        return back();
     }
 
     public function start(Request $request, Order $order): RedirectResponse
     {
         $this->deliveries->startDelivery($this->owned($request, $order), $request->user());
+        Toast::success('Delivery started. Chat with the customer is open.');
 
-        return back()->with('success', 'Delivery started.');
+        return back();
     }
 
     public function arrive(Request $request, Order $order): RedirectResponse
     {
         $this->deliveries->arrive($this->owned($request, $order), $request->user());
+        Toast::success('Marked as arrived.');
 
-        return back()->with('success', 'Marked as arrived.');
+        return back();
     }
 
     public function deliver(Request $request, Order $order): RedirectResponse
@@ -129,8 +168,9 @@ class OrderController extends Controller
         ]);
 
         $this->deliveries->complete($this->owned($request, $order), $request->user(), $request->string('otp')->toString());
+        Toast::success('Order marked as delivered.');
 
-        return to_route('driver.orders.index')->with('success', 'Order marked as delivered.');
+        return to_route('driver.orders.index');
     }
 
     public function fail(Request $request, Order $order): RedirectResponse
@@ -146,15 +186,17 @@ class OrderController extends Controller
             DeliveryFailureReason::from($data['reason']),
             $data['note'] ?? null,
         );
+        Toast::success('Customer marked unavailable.');
 
-        return back()->with('success', 'Customer marked unavailable.');
+        return back();
     }
 
     public function beginReturn(Request $request, Order $order): RedirectResponse
     {
         $this->deliveries->beginReturn($this->owned($request, $order), $request->user());
+        Toast::success('Goods marked as returning to the branch.');
 
-        return back()->with('success', 'Goods marked as returning to the branch.');
+        return back();
     }
 
     public function storeReturn(Request $request, Order $order): RedirectResponse
@@ -173,8 +215,9 @@ class OrderController extends Controller
             $data['reason'],
             $data['note'] ?? null,
         );
+        Toast::success('Return request sent.');
 
-        return back()->with('success', 'Return request sent.');
+        return back();
     }
 
     /**
@@ -214,7 +257,10 @@ class OrderController extends Controller
         return [
             'id' => $order->order_number,
             'orderNumber' => $order->order_number,
-            'status' => $this->driverStatus($fulfillment->status),
+            'status' => $fulfillment->status->value,
+            'statusLabel' => $fulfillment->status->label(),
+            'canChat' => $fulfillment->status->allowsOrderChat(),
+            'nextAction' => $fulfillment->status->driverNextAction(),
             'customerName' => $snapshot['name'] ?? ($order->customer?->name ?? 'Customer'),
             'areaId' => '',
             'areaLabel' => $snapshot['city'] ?? 'Delivery',
@@ -245,9 +291,7 @@ class OrderController extends Controller
 
         return [
             ...$card,
-            'statusLabel' => $fulfillment->status->label(),
             'demoOtpHint' => '',
-            'canChat' => $fulfillment->status->allowsOrderChat(),
             'canPickUp' => $fulfillment->status === FulfillmentStatus::Assigned,
             'canStart' => $fulfillment->status === FulfillmentStatus::PickedUp,
             'canArrive' => $fulfillment->status === FulfillmentStatus::OutForDelivery,
@@ -287,14 +331,5 @@ class OrderController extends Controller
         abort_if($conversation === null, 404);
 
         return $conversation;
-    }
-
-    private function driverStatus(FulfillmentStatus $status): string
-    {
-        return match ($status) {
-            FulfillmentStatus::Delivered => 'delivered',
-            FulfillmentStatus::OutForDelivery => 'out_for_delivery',
-            default => $status->value,
-        };
     }
 }

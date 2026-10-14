@@ -75,6 +75,34 @@ enum FulfillmentStatus: string
         };
     }
 
+    /**
+     * @return list<self>
+     */
+    public static function driverWorkload(): array
+    {
+        return array_values(array_filter(
+            self::cases(),
+            fn (self $status): bool => $status->holdsDriverWorkload(),
+        ));
+    }
+
+    /**
+     * The next field step a driver takes from this status.
+     *
+     * @return array{key: string, label: string}|null
+     */
+    public function driverNextAction(): ?array
+    {
+        return match ($this) {
+            self::Assigned => ['key' => 'pick_up', 'label' => 'Pick up order'],
+            self::PickedUp => ['key' => 'start', 'label' => 'Start delivery'],
+            self::OutForDelivery => ['key' => 'arrive', 'label' => 'Mark arrived'],
+            self::Arrived => ['key' => 'complete', 'label' => 'Complete delivery'],
+            self::DeliveryFailed => ['key' => 'return', 'label' => 'Return to branch'],
+            default => null,
+        };
+    }
+
     public function allowsCustomerCancel(): bool
     {
         return match ($this) {

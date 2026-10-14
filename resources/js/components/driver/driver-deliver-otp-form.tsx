@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ import {
 type DriverDeliverOtpFormProps = {
     orderId: string;
     disabled?: boolean;
+    label?: string;
+    icon?: ReactNode;
     form?: {
         action: string;
         method: 'post';
@@ -26,6 +28,8 @@ type DriverDeliverOtpFormProps = {
 export function DriverDeliverOtpForm({
     orderId,
     disabled = false,
+    label = 'Complete',
+    icon = null,
     form,
 }: DriverDeliverOtpFormProps) {
     const [open, setOpen] = useState(false);
@@ -41,7 +45,8 @@ export function DriverDeliverOtpForm({
                     disabled={disabled}
                     data-test="order-complete"
                 >
-                    Complete
+                    {icon}
+                    {label}
                 </Button>
             </SheetTrigger>
             <SheetContent>

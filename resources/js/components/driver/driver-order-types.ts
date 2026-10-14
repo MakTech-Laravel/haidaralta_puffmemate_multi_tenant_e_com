@@ -14,14 +14,29 @@ export type DriverOrderStatus =
     | 'delivered'
     | 'cancelled';
 
-export type DriverOrderStatusFilter = 'all' | 'active' | DriverOrderStatus;
+export type DriverOrderListTab = 'active' | 'delivered';
 
 export type DriverOrderPaymentMethod = 'cod' | 'paid';
+
+export type DriverOrderNextActionKey =
+    | 'pick_up'
+    | 'start'
+    | 'arrive'
+    | 'complete'
+    | 'return';
+
+export type DriverOrderNextAction = {
+    key: DriverOrderNextActionKey;
+    label: string;
+};
 
 export type DriverAssignedOrder = {
     id: string;
     orderNumber: string;
     status: DriverOrderStatus;
+    statusLabel?: string;
+    canChat?: boolean;
+    nextAction?: DriverOrderNextAction | null;
     customerName: string;
     areaId: string;
     areaLabel: string;
@@ -93,66 +108,41 @@ export const driverOrderStatusLabel: Record<string, string> = {
     cancelled: 'Cancelled',
 };
 
-export const driverOrderStatusFilterLabel: Record<
-    DriverOrderStatusFilter,
-    string
-> = {
-    all: 'All',
-    active: 'Active',
-    pending: 'Pending',
-    placed: 'Placed',
-    hold: 'On hold',
-    processing: 'Processing',
-    ready: 'Ready',
-    assigned: 'Assigned',
-    picked_up: 'Picked up',
-    out_for_delivery: 'On the way',
-    arrived: 'Arrived',
-    delivery_failed: 'Customer unavailable',
-    returning: 'Returning',
-    returned: 'Returned',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
+export const driverOrderListTabLabel: Record<DriverOrderListTab, string> = {
+    active: 'To deliver',
+    delivered: 'Delivered today',
 };
 
 export function filterDriverAssignedOrders(
     orders: DriverAssignedOrder[],
-    filter: DriverOrderStatusFilter,
+    tab: DriverOrderListTab,
 ): DriverAssignedOrder[] {
-    if (filter === 'all') {
-        return orders;
-    }
-
-    if (filter === 'active') {
-        return orders.filter((order) => order.status !== 'delivered');
-    }
-
-    return orders.filter((order) => order.status === filter);
+    return orders.filter((order) =>
+        tab === 'active'
+            ? isDriverWorkloadOrder(order)
+            : order.status === 'delivered',
+    );
 }
 
-export function driverOrderFilterCounts(
-    orders: DriverAssignedOrder[],
-): Record<DriverOrderStatusFilter, number> {
-    const count = (status: DriverOrderStatus): number =>
-        orders.filter((order) => order.status === status).length;
+const driverWorkloadStatuses: ReadonlySet<DriverOrderStatus> = new Set([
+    'assigned',
+    'picked_up',
+    'out_for_delivery',
+    'arrived',
+    'delivery_failed',
+    'returning',
+]);
 
+export function isDriverWorkloadOrder(order: DriverAssignedOrder): boolean {
+    return driverWorkloadStatuses.has(order.status);
+}
+
+export function driverOrderTabCounts(
+    orders: DriverAssignedOrder[],
+): Record<DriverOrderListTab, number> {
     return {
-        all: orders.length,
-        active: orders.filter((order) => order.status !== 'delivered').length,
-        pending: count('pending'),
-        placed: count('placed'),
-        hold: count('hold'),
-        processing: count('processing'),
-        ready: count('ready'),
-        assigned: count('assigned'),
-        picked_up: count('picked_up'),
-        out_for_delivery: count('out_for_delivery'),
-        arrived: count('arrived'),
-        delivery_failed: count('delivery_failed'),
-        returning: count('returning'),
-        returned: count('returned'),
-        delivered: count('delivered'),
-        cancelled: count('cancelled'),
+        active: filterDriverAssignedOrders(orders, 'active').length,
+        delivered: filterDriverAssignedOrders(orders, 'delivered').length,
     };
 }
 
