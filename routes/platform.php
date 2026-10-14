@@ -515,6 +515,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.orders.return-delivery');
         Route::post('orders/{order}/deliver', [PlatformOrderController::class, 'deliver'])
             ->name('platform.orders.deliver');
+        Route::post('orders/{order}/deliver-without-code', [PlatformOrderController::class, 'deliverWithoutCode'])
+            ->middleware('permission:complete-orders-without-code')
+            ->name('platform.orders.deliver-without-code');
         Route::post('orders/{order}/fail', [PlatformOrderController::class, 'fail'])
             ->name('platform.orders.fail');
         Route::post('orders/{order}/returns/{orderReturn}/approve', [PlatformOrderController::class, 'approveReturn'])

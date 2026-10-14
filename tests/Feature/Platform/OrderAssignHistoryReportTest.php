@@ -124,6 +124,7 @@ test('platform admin can assign a driver and history records platform actor as S
         'status' => FulfillmentStatus::Ready,
         'driver_id' => null,
     ]);
+    scheduleDriverOnDuty($this->driver, $this->branch);
 
     $this->actingAs($this->admin, 'platform')
         ->post(route('platform.orders.assign-driver', $fulfillment->order), [

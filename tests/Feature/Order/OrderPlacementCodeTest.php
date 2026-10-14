@@ -12,6 +12,7 @@ use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Sms\FakeSmsSender;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
+use Inertia\Testing\AssertableInertia as Assert;
 
 test('placing an order sends one code by sms, email, and notification', function () {
     Mail::fake();
@@ -50,6 +51,52 @@ test('a pending order does not receive a placement code', function () {
         ->toThrow(ValidationException::class);
 
     expect(app(FakeSmsSender::class)->lastCode())->toBeNull();
+});
+
+function placedOrderWithCode(User $customer, FulfillmentStatus $status = FulfillmentStatus::Placed): Order
+{
+    $order = Order::factory()->for($customer, 'customer')->create([
+        'status' => OrderStatus::from($status->value),
+        'shipping_address_snapshot' => ['phone' => '+61410111222', 'name' => 'Ada'],
+    ]);
+    OrderFulfillment::factory()->forOrder($order)->create(['status' => $status]);
+    app(OrderPlacementNotifier::class)->issue($order);
+
+    return $order;
+}
+
+test('the customer sees their delivery code on the order page', function () {
+    $customer = User::factory()->create();
+    $order = placedOrderWithCode($customer);
+
+    $this->actingAs($customer, 'customer')
+        ->get(route('customer.orders.show', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('order.deliveryCode', app(FakeSmsSender::class)->lastCode()));
+});
+
+test('the delivery code is hidden once the order is delivered', function () {
+    $customer = User::factory()->create();
+    $order = placedOrderWithCode($customer);
+    $order->forceFill(['status' => OrderStatus::Delivered])->save();
+
+    $this->actingAs($customer, 'customer')
+        ->get(route('customer.orders.show', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('order.deliveryCode', null));
+});
+
+test('cancelling an order discards its delivery code', function () {
+    $customer = User::factory()->create();
+    $order = placedOrderWithCode($customer);
+
+    $this->actingAs($customer, 'customer')
+        ->post(route('customer.orders.cancel', $order))
+        ->assertRedirect();
+
+    expect($order->refresh()->status)->toBe(OrderStatus::Cancelled)
+        ->and(app(OrderPlacementNotifier::class)->currentCode($order))->toBeNull();
 });
 
 test('the customer can resend the placement code', function () {

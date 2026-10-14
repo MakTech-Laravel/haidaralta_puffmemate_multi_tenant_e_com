@@ -31,7 +31,7 @@ enum FulfillmentStatus: string
             self::PickedUp => 'Picked up',
             self::OutForDelivery => 'On the way',
             self::Arrived => 'Arrived',
-            self::DeliveryFailed => 'Customer unavailable',
+            self::DeliveryFailed => 'Not delivered',
             self::Returning => 'Returning',
             self::Returned => 'Returned',
             self::Delivered => 'Delivered',
@@ -51,7 +51,7 @@ enum FulfillmentStatus: string
             self::PickedUp => 'Order picked up',
             self::OutForDelivery => 'On the way',
             self::Arrived => 'Driver arrived',
-            self::DeliveryFailed => 'Customer unavailable',
+            self::DeliveryFailed => 'Delivery unsuccessful',
             self::Returning => 'Returning your order',
             self::Returned => 'Returned to the branch',
             self::Delivered => 'Delivered',
@@ -72,6 +72,34 @@ enum FulfillmentStatus: string
         return match ($this) {
             self::Assigned, self::PickedUp, self::OutForDelivery, self::Arrived, self::DeliveryFailed, self::Returning => true,
             default => false,
+        };
+    }
+
+    /**
+     * @return list<self>
+     */
+    public static function driverWorkload(): array
+    {
+        return array_values(array_filter(
+            self::cases(),
+            fn (self $status): bool => $status->holdsDriverWorkload(),
+        ));
+    }
+
+    /**
+     * The next field step a driver takes from this status.
+     *
+     * @return array{key: string, label: string}|null
+     */
+    public function driverNextAction(): ?array
+    {
+        return match ($this) {
+            self::Assigned => ['key' => 'pick_up', 'label' => 'Pick up order'],
+            self::PickedUp => ['key' => 'start', 'label' => 'Start delivery'],
+            self::OutForDelivery => ['key' => 'arrive', 'label' => 'Mark arrived'],
+            self::Arrived => ['key' => 'complete', 'label' => 'Complete delivery'],
+            self::DeliveryFailed => ['key' => 'return', 'label' => 'Return to branch'],
+            default => null,
         };
     }
 

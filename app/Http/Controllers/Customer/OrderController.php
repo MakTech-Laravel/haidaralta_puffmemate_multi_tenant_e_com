@@ -81,7 +81,7 @@ class OrderController extends Controller
     {
         abort_unless($order->customer_id === $request->user()->id, 404);
 
-        $this->placements->issue($order);
+        $this->placements->resend($order);
         Toast::success('Delivery code sent.');
 
         return back();
@@ -110,7 +110,7 @@ class OrderController extends Controller
     }
 
     /**
-     * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, paymentStatus: string, date: string}
+     * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, statusLabel: string, isActive: bool, paymentStatus: string, date: string}
      */
     private function summarize(Order $order): array
     {
@@ -119,6 +119,8 @@ class OrderController extends Controller
             'products' => $order->items->map(fn ($item): string => $item->product_name_snapshot.' (x'.$item->quantity.')')->all(),
             'priceLabel' => '$'.number_format((float) $order->total_amount, 2),
             'status' => $order->status->value,
+            'statusLabel' => $order->status->customerLabel(),
+            'isActive' => ! $order->status->isTerminal(),
             'paymentStatus' => $order->payment_status->value,
             'date' => $order->created_at->format('d M Y'),
         ];
@@ -135,8 +137,8 @@ class OrderController extends Controller
             'statusLabel' => $order->status->customerLabel(),
             'paymentStatus' => $order->payment_status->value,
             'paymentStatusLabel' => $order->payment_status->customerLabel(),
-            'handoverNotice' => $order->status->allowsPlacementCode()
-                ? 'A delivery code was sent to your phone, email, and notifications. Give it to the driver only after you have paid.'
+            'deliveryCode' => $order->status->allowsPlacementCode()
+                ? $this->placements->currentCode($order)
                 : null,
             'canResendCode' => $order->status->allowsPlacementCode(),
             'canCancel' => $order->status->allowsCustomerCancel(),

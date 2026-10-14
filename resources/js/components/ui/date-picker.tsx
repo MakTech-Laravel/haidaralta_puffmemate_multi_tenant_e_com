@@ -42,6 +42,28 @@ function toDateValue(date: Date): string {
     return format(date, DATE_VALUE_FORMAT);
 }
 
+function initialMonth(
+    selected: Date | undefined,
+    minDate: Date | undefined,
+    maxDate: Date | undefined,
+): Date | undefined {
+    if (selected) {
+        return selected;
+    }
+
+    const today = new Date();
+
+    if (maxDate && maxDate < today) {
+        return maxDate;
+    }
+
+    if (minDate && minDate > today) {
+        return minDate;
+    }
+
+    return undefined;
+}
+
 export function DatePicker({
     id,
     value,
@@ -96,7 +118,7 @@ export function DatePicker({
                     <Calendar
                         mode="single"
                         selected={selected}
-                        defaultMonth={selected}
+                        defaultMonth={initialMonth(selected, minDate, maxDate)}
                         captionLayout="dropdown"
                         startMonth={new Date(2000, 0)}
                         endMonth={new Date(2100, 11)}
