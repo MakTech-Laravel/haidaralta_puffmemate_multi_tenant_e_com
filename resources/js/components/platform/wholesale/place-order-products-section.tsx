@@ -23,6 +23,8 @@ type PlaceOrderProductsSectionProps = {
     /** Server errors keyed by line key. */
     lineErrors?: Record<string, string | undefined>;
     disabled?: boolean;
+    /** When false (no branch picked yet), line quantities are not capped by stock. */
+    enforceStock?: boolean;
 };
 
 function formatMoney(amount: number): string {
@@ -38,6 +40,7 @@ export function PlaceOrderProductsSection({
     onPriceChange,
     lineErrors = {},
     disabled = false,
+    enforceStock = true,
 }: PlaceOrderProductsSectionProps) {
     const [productQuery, setProductQuery] = useState('');
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -231,7 +234,8 @@ export function PlaceOrderProductsSection({
                         <ul className="max-h-96 space-y-2 overflow-y-auto overscroll-contain">
                             {lines.map((line) => {
                                 const lineTotal = line.price * line.quantity;
-                                const short = line.quantity > line.stock;
+                                const short =
+                                    enforceStock && line.quantity > line.stock;
                                 const belowMinimum =
                                     line.minQuantity != null &&
                                     line.quantity < line.minQuantity;
@@ -257,9 +261,11 @@ export function PlaceOrderProductsSection({
                                                 {line.sku
                                                     ? `${line.sku} · `
                                                     : ''}
-                                                {line.stock > 0
-                                                    ? `${line.stock} available`
-                                                    : 'Not stocked at this branch'}
+                                                {!enforceStock
+                                                    ? 'Select a branch to check stock'
+                                                    : line.stock > 0
+                                                      ? `${line.stock} available`
+                                                      : 'Not stocked at this branch'}
                                             </p>
                                             {belowMinimum ? (
                                                 <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
@@ -313,7 +319,14 @@ export function PlaceOrderProductsSection({
                                                 type="number"
                                                 inputMode="numeric"
                                                 min={1}
-                                                max={Math.max(1, line.stock)}
+                                                max={
+                                                    enforceStock
+                                                        ? Math.max(
+                                                              1,
+                                                              line.stock,
+                                                          )
+                                                        : undefined
+                                                }
                                                 aria-label={`${line.name} quantity`}
                                                 value={line.quantity}
                                                 onChange={(event) =>
@@ -332,6 +345,7 @@ export function PlaceOrderProductsSection({
                                                 variant="ghost"
                                                 className="bg-background size-8 rounded-full shadow-sm"
                                                 disabled={
+                                                    enforceStock &&
                                                     line.quantity >= line.stock
                                                 }
                                                 onClick={() =>

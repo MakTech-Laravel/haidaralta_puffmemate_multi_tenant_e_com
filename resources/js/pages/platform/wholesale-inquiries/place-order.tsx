@@ -83,10 +83,10 @@ function inquiryLines(
         variantId: item.variant_id,
         name: item.name,
         sku: item.sku ?? '',
-        price: 0,
+        price: item.unit_price,
         stock: 0,
         quantity: item.quantity,
-        minQuantity: null,
+        minQuantity: item.min_quantity,
     }));
 }
 
@@ -302,11 +302,14 @@ export default function PlatformWholesalePlaceOrder({
                     return line;
                 }
 
+                const upper =
+                    branch === null ? Infinity : Math.max(line.stock, 1);
+
                 return {
                     ...line,
                     quantity: Math.max(
                         1,
-                        Math.min(Math.max(line.stock, 1), Math.trunc(quantity)),
+                        Math.min(upper, Math.trunc(quantity)),
                     ),
                 };
             }),
@@ -622,6 +625,7 @@ export default function PlatformWholesalePlaceOrder({
                         products={products}
                         lines={lines}
                         disabled={branch === null}
+                        enforceStock={branch !== null}
                         onAdd={addProduct}
                         onQuantityChange={updateLineQuantity}
                         onPriceChange={updateLinePrice}
