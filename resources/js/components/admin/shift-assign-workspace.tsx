@@ -20,9 +20,19 @@ import type {
 } from '@/components/admin/workforce-types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { initials } from '@/lib/shift-format';
 
 type WorkspaceUrlBuilder = (query: ShiftAssignmentWorkspaceQuery) => string;
+
+const WORKSPACE_PROPS = [
+    'selectedBranch',
+    'selectedPeopleKind',
+    'selectedPerson',
+    'templates',
+    'calendar',
+    'assignmentGroups',
+];
 
 export function ShiftAssignWorkspace({
     kicker,
@@ -66,8 +76,10 @@ export function ShiftAssignWorkspace({
         number | null
     >(null);
     const [processing, setProcessing] = useState(false);
+    const [loadingWorkspace, setLoadingWorkspace] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const allowNextNavigationRef = useRef(false);
+    const workspaceVisitRef = useRef(0);
     const pendingActionRef = useRef<(() => void) | null>(null);
     const pending = hasPendingShiftChanges(selection);
     const currentMonth = calendar?.month;
@@ -142,10 +154,22 @@ export function ShiftAssignWorkspace({
 
     const visitWorkspace = (query: ShiftAssignmentWorkspaceQuery): void => {
         allowNextNavigationRef.current = true;
+        const visitId = ++workspaceVisitRef.current;
         router.get(
             createUrl(query),
             {},
-            { preserveScroll: true, replace: true },
+            {
+                only: WORKSPACE_PROPS,
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                onStart: () => setLoadingWorkspace(true),
+                onFinish: () => {
+                    if (visitId === workspaceVisitRef.current) {
+                        setLoadingWorkspace(false);
+                    }
+                },
+            },
         );
     };
 
@@ -277,12 +301,15 @@ export function ShiftAssignWorkspace({
                     personId={selectedPerson?.id ?? null}
                     personName={selectedPerson?.name}
                     peopleOptionsUrl={peopleOptionsUrl}
+                    loading={loadingWorkspace}
                     onBranchChange={handleBranchChange}
                     onPeopleKindChange={handlePeopleKindChange}
                     onPersonChange={handlePersonChange}
                 />
 
-                {selectedPerson && calendar ? (
+                {loadingWorkspace ? (
+                    <ShiftAssignWorkspaceSkeleton />
+                ) : selectedPerson && calendar ? (
                     <>
                         <section className="border-primary/20 bg-primary/5 flex items-center gap-3 rounded-xl border p-4">
                             <Avatar className="size-11">
@@ -391,5 +418,30 @@ export function ShiftAssignWorkspace({
                 onConfirm={confirmDiscard}
             />
         </>
+    );
+}
+
+function ShiftAssignWorkspaceSkeleton() {
+    return (
+        <div aria-busy="true" className="flex flex-col gap-6">
+            <section className="border-border flex items-center gap-3 rounded-xl border p-4">
+                <Skeleton className="size-11 rounded-full" />
+                <div className="flex flex-col gap-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-28" />
+                </div>
+            </section>
+            <section className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-4">
+                <div className="flex items-center justify-between">
+                    <Skeleton className="h-6 w-36" />
+                    <Skeleton className="h-9 w-24" />
+                </div>
+                <div className="grid grid-cols-7 gap-2">
+                    {Array.from({ length: 35 }, (_, index) => (
+                        <Skeleton key={index} className="h-20 sm:h-24" />
+                    ))}
+                </div>
+            </section>
+        </div>
     );
 }
