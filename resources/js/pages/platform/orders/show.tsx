@@ -1,31 +1,41 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import {
     ArrowRight,
+    CalendarClock,
+    CreditCard,
+    History,
     MapPin,
     Package,
+    Phone,
+    ReceiptText,
+    Store,
     Truck,
     UserRound,
 } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import CustomerController from '@/actions/App/Http/Controllers/Platform/CustomerController';
 import OrderAssignController from '@/actions/App/Http/Controllers/Platform/OrderAssignController';
 import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Platform/Reports/OrderAssignHistoryController';
 import OrderController from '@/actions/App/Http/Controllers/Platform/OrderController';
 import StockTransferController from '@/actions/App/Http/Controllers/Platform/StockTransferController';
 import { OrderAssignDriverSheet } from '@/components/branch/order-assign-driver-sheet';
 import { OrderHandoverActions } from '@/components/orders/order-handover-actions';
-import { OrderStatusTrack } from '@/components/orders/order-status-track';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
+import { OrderStatusProgress } from '@/components/orders/order-status-progress';
 import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
+import { formatAppDateTime } from '@/lib/datetime';
+import {
+    orderSourceBadgeClass,
+    orderStatusBadgeClass,
+    paymentStatusBadgeClass,
+} from '@/lib/order-badges';
 
 type FulfillmentSummary = {
     id: number;
@@ -72,6 +82,7 @@ type OrderDetail = {
     statusLabel: string;
     paymentStatus: string;
     paymentStatusLabel: string;
+    source: string;
     sourceLabel: string;
     placedByName: string | null;
     paymentStatusOptions: { value: string; label: string }[];
@@ -91,7 +102,9 @@ type OrderDetail = {
     verificationMethods?: { value: string; label: string }[];
     canResendCode: boolean;
     paymentMethod: string | null;
+    customerId: number | null;
     customerName: string;
+    customerPhone: string | null;
     placedAt: string | null;
     totalLabel: string;
     subtotalLabel: string;
@@ -116,6 +129,97 @@ type OrderDetail = {
     }[];
 };
 
+function paymentMethodLabel(method: string | null): string {
+    switch (method) {
+        case null:
+        case '':
+            return 'Not set';
+        case 'cod':
+            return 'Cash on delivery';
+        case 'pos':
+            return 'Card / POS';
+        default:
+            return method
+                .replaceAll('_', ' ')
+                .replace(/^\w/, (letter) => letter.toUpperCase());
+    }
+}
+
+function SectionCard({
+    icon: Icon,
+    title,
+    action,
+    children,
+    className,
+}: {
+    icon: typeof Package;
+    title: string;
+    action?: ReactNode;
+    children: ReactNode;
+    className?: string;
+}) {
+    return (
+        <Card className={`border-border/70 gap-4 py-5 ${className ?? ''}`}>
+            <CardHeader className="flex flex-row items-center justify-between gap-3 px-5">
+                <CardTitle className="flex items-center gap-2 text-base">
+                    <Icon
+                        className="text-muted-foreground size-4 shrink-0"
+                        aria-hidden
+                    />
+                    {title}
+                </CardTitle>
+                {action}
+            </CardHeader>
+            <CardContent className="px-5">{children}</CardContent>
+        </Card>
+    );
+}
+
+function SummaryRow({
+    label,
+    children,
+}: {
+    label: ReactNode;
+    children: ReactNode;
+}) {
+    return (
+        <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-muted-foreground min-w-0 truncate">
+                {label}
+            </span>
+            <span className="shrink-0 text-right font-medium tabular-nums">
+                {children}
+            </span>
+        </div>
+    );
+}
+
+function HeaderFact({
+    icon: Icon,
+    label,
+    children,
+}: {
+    icon: typeof Package;
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className="flex min-w-0 items-start gap-3">
+            <span className="bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded-lg">
+                <Icon className="size-4" aria-hidden />
+            </span>
+            <div className="min-w-0">
+                <p className="text-muted-foreground text-xs font-medium">
+                    {label}
+                </p>
+                <div className="text-foreground truncate text-sm font-semibold">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function FulfillmentCard({
     orderId,
     fulfillment,
@@ -125,161 +229,226 @@ function FulfillmentCard({
     fulfillment: FulfillmentSummary;
     canResendCode: boolean;
 }) {
-    const [processing, setProcessing] = useState(false);
+    const [pendingAction, setPendingAction] = useState<string | null>(null);
     const [assignOpen, setAssignOpen] = useState(false);
+    const processing = pendingAction !== null;
+    const itemCount = fulfillment.items.length;
 
-    const run = (action: () => void) => {
-        setProcessing(true);
-        action();
+    const spinnerFor = (key: string) =>
+        pendingAction === key ? <Spinner /> : null;
+
+    const post = (key: string, url: string) => {
+        setPendingAction(key);
+        router.post(
+            url,
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setPendingAction(null),
+            },
+        );
     };
 
-    return (
-        <Card className="overflow-hidden border-border/70 shadow-sm">
-            <CardHeader className="bg-muted/30 space-y-3 border-b pb-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                            <Package
-                                className="text-muted-foreground size-4 shrink-0"
-                                aria-hidden
-                            />
-                            <CardTitle className="text-base font-semibold tracking-tight">
-                                {fulfillment.fulfillmentNumber}
-                            </CardTitle>
-                        </div>
-                        <p className="text-muted-foreground text-sm">
-                            {fulfillment.branchName}
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                            <Link
-                                href={OrderAssignHistoryController.index.url({
-                                    query: {
-                                        filter: {
-                                            order_id:
-                                                fulfillment.fulfillmentNumber,
-                                        },
-                                    },
-                                })}
-                            >
-                                Driver assign history
-                            </Link>
-                        </Button>
-                        <Badge variant="secondary">
-                            {fulfillment.statusLabel}
-                        </Badge>
-                        <Badge
-                            variant={
-                                fulfillment.isPaid ? 'default' : 'secondary'
-                            }
-                        >
-                            {fulfillment.isPaid
-                                ? 'Collected'
-                                : 'Pending collection'}
-                        </Badge>
-                    </div>
-                </div>
-            </CardHeader>
+    const updateStatus = (key: string, status: string) => {
+        setPendingAction(key);
+        router.put(
+            OrderController.updateStatus.url([orderId, fulfillment.id]),
+            { status },
+            {
+                preserveScroll: true,
+                onFinish: () => setPendingAction(null),
+            },
+        );
+    };
 
-            <CardContent className="space-y-5 pt-5">
-                <div>
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                        <h3 className="text-sm font-semibold tracking-tight">
-                            Items
-                        </h3>
-                        <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                            {fulfillment.items.length} item
-                            {fulfillment.items.length === 1 ? '' : 's'}
-                        </span>
+    const resendCode = () => {
+        setPendingAction('resend');
+        router.post(
+            OrderController.resendPlacementCode.url(orderId),
+            {},
+            {
+                preserveScroll: true,
+                onError: (errors) =>
+                    toast.error(
+                        errors.code ?? 'The delivery code could not be sent.',
+                    ),
+                onFinish: () => setPendingAction(null),
+            },
+        );
+    };
+
+    const hasOrderActions =
+        fulfillment.canCancel ||
+        fulfillment.canRetry ||
+        fulfillment.canReschedule ||
+        fulfillment.canReturn ||
+        fulfillment.canConfirmReturn ||
+        canResendCode;
+    const hasActions = fulfillment.actions.length > 0 || hasOrderActions;
+
+    return (
+        <Card className="border-border/70 gap-0 overflow-hidden py-0">
+            <div className="bg-muted/30 flex flex-wrap items-start justify-between gap-3 border-b px-5 py-4">
+                <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                        <Package
+                            className="text-muted-foreground size-4 shrink-0"
+                            aria-hidden
+                        />
+                        <h2 className="truncate text-base font-semibold tracking-tight">
+                            {fulfillment.fulfillmentNumber}
+                        </h2>
                     </div>
-                    <ul className="border-border space-y-3 border-y py-3">
-                        {fulfillment.items.map((item, index) => (
-                            <li
-                                key={`${item.name}-${index}`}
-                                className="flex items-center gap-3"
-                            >
-                                <div className="bg-muted size-12 shrink-0 overflow-hidden rounded-md border">
-                                    <StorefrontProductImage
-                                        src={item.image}
-                                        alt={item.name}
-                                    />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-foreground truncate text-sm font-medium">
-                                        {item.name}
-                                    </p>
-                                    <p className="text-muted-foreground text-xs">
-                                        Qty {item.quantity}
-                                    </p>
-                                </div>
-                                <p className="text-foreground shrink-0 text-sm font-semibold tabular-nums">
-                                    {item.subtotalLabel}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
-                    <p className="text-muted-foreground mt-3 text-sm">
-                        Shipping cost{' '}
-                        <span className="text-foreground font-medium">
-                            {fulfillment.shippingCostLabel}
+                    <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
+                        <Store className="size-3.5 shrink-0" aria-hidden />
+                        <span className="truncate">
+                            {fulfillment.branchName}
                         </span>
                     </p>
                 </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Badge
+                        variant="outline"
+                        className={orderStatusBadgeClass(fulfillment.status)}
+                    >
+                        {fulfillment.statusLabel}
+                    </Badge>
+                    <Badge
+                        variant="outline"
+                        className={paymentStatusBadgeClass(
+                            fulfillment.isPaid
+                                ? 'collected'
+                                : 'pending_collection',
+                        )}
+                    >
+                        {fulfillment.isPaid ? 'Collected' : 'Pending collection'}
+                    </Badge>
+                </div>
+            </div>
 
-                {fulfillment.transfers.length > 0 ? (
-                    <div className="space-y-3">
-                        <h3 className="text-sm font-semibold tracking-tight">
-                            Stock transfers
-                        </h3>
-                        {fulfillment.transfers.map((transfer) => (
-                            <div
-                                key={transfer.id}
-                                className="bg-muted/20 space-y-3 rounded-lg border p-3"
-                            >
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <div className="text-foreground flex min-w-0 items-center gap-1.5 text-sm font-medium">
-                                        <span className="truncate">
-                                            {transfer.sourceName ?? 'Source'}
-                                        </span>
-                                        <ArrowRight
-                                            className="text-muted-foreground size-3.5 shrink-0"
-                                            aria-hidden
-                                        />
-                                        <span className="truncate">
-                                            {transfer.destinationName ??
-                                                'Destination'}
-                                        </span>
-                                    </div>
-                                    <Badge variant="outline">
-                                        {transfer.statusLabel}
-                                    </Badge>
-                                </div>
-                                <p className="text-muted-foreground text-xs">
-                                    Est. cost {transfer.estimatedCostLabel}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3">
+                <p className="text-muted-foreground flex min-w-0 items-center gap-2 text-sm">
+                    <Truck className="size-4 shrink-0" aria-hidden />
+                    <span className="truncate">
+                        {fulfillment.driverName ? (
+                            <>
+                                Driver{' '}
+                                <span className="text-foreground font-medium">
+                                    {fulfillment.driverName}
+                                </span>
+                            </>
+                        ) : (
+                            'No driver assigned yet'
+                        )}
+                    </span>
+                </p>
+                <Button variant="ghost" size="sm" asChild>
+                    <Link
+                        href={OrderAssignHistoryController.index.url({
+                            query: {
+                                filter: {
+                                    order_id: fulfillment.fulfillmentNumber,
+                                },
+                            },
+                        })}
+                    >
+                        <History aria-hidden />
+                        Driver assign history
+                    </Link>
+                </Button>
+            </div>
+
+            <div className="px-5 py-4">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold">Items</h3>
+                    <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                        {itemCount} item{itemCount === 1 ? '' : 's'}
+                    </span>
+                </div>
+                <ul className="divide-border max-h-[26rem] divide-y overflow-y-auto">
+                    {fulfillment.items.map((item, index) => (
+                        <li
+                            key={`${item.name}-${index}`}
+                            className="flex items-center gap-3 py-3"
+                        >
+                            <div className="bg-muted size-14 shrink-0 overflow-hidden rounded-lg border">
+                                <StorefrontProductImage
+                                    src={item.image}
+                                    alt={item.name}
+                                />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-foreground line-clamp-2 text-sm font-medium">
+                                    {item.name}
                                 </p>
+                                <p className="text-muted-foreground mt-0.5 text-xs">
+                                    Qty {item.quantity}
+                                </p>
+                            </div>
+                            <p className="text-foreground shrink-0 text-sm font-semibold tabular-nums">
+                                {item.subtotalLabel}
+                            </p>
+                        </li>
+                    ))}
+                </ul>
+                <div className="border-border mt-1 flex items-center justify-between gap-3 border-t pt-3 text-sm">
+                    <span className="text-muted-foreground">Shipping cost</span>
+                    <span className="font-medium tabular-nums">
+                        {fulfillment.shippingCostLabel}
+                    </span>
+                </div>
+            </div>
+
+            {fulfillment.transfers.length > 0 ? (
+                <div className="space-y-3 border-t px-5 py-4">
+                    <h3 className="text-sm font-semibold">Stock transfers</h3>
+                    {fulfillment.transfers.map((transfer) => (
+                        <div
+                            key={transfer.id}
+                            className="bg-muted/20 space-y-3 rounded-lg border p-3"
+                        >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="text-foreground flex min-w-0 items-center gap-1.5 text-sm font-medium">
+                                    <span className="truncate">
+                                        {transfer.sourceName ?? 'Source'}
+                                    </span>
+                                    <ArrowRight
+                                        className="text-muted-foreground size-3.5 shrink-0"
+                                        aria-hidden
+                                    />
+                                    <span className="truncate">
+                                        {transfer.destinationName ??
+                                            'Destination'}
+                                    </span>
+                                </div>
+                                <Badge variant="outline">
+                                    {transfer.statusLabel}
+                                </Badge>
+                            </div>
+                            <p className="text-muted-foreground text-xs">
+                                Est. cost {transfer.estimatedCostLabel}
+                            </p>
+                            {transfer.canApprove ||
+                            transfer.canPick ||
+                            transfer.canDispatch ||
+                            transfer.canReceive ? (
                                 <div className="flex flex-wrap gap-2">
                                     {transfer.canApprove ? (
                                         <Button
                                             size="sm"
                                             disabled={processing}
                                             onClick={() =>
-                                                run(() =>
-                                                    router.post(
-                                                        StockTransferController.approve.url(
-                                                            transfer.id,
-                                                        ),
-                                                        {},
-                                                        {
-                                                            onFinish: () =>
-                                                                setProcessing(
-                                                                    false,
-                                                                ),
-                                                        },
+                                                post(
+                                                    `approve-${transfer.id}`,
+                                                    StockTransferController.approve.url(
+                                                        transfer.id,
                                                     ),
                                                 )
                                             }
                                         >
+                                            {spinnerFor(
+                                                `approve-${transfer.id}`,
+                                            )}
                                             Approve
                                         </Button>
                                     ) : null}
@@ -288,22 +457,15 @@ function FulfillmentCard({
                                             size="sm"
                                             disabled={processing}
                                             onClick={() =>
-                                                run(() =>
-                                                    router.post(
-                                                        StockTransferController.pick.url(
-                                                            transfer.id,
-                                                        ),
-                                                        {},
-                                                        {
-                                                            onFinish: () =>
-                                                                setProcessing(
-                                                                    false,
-                                                                ),
-                                                        },
+                                                post(
+                                                    `pick-${transfer.id}`,
+                                                    StockTransferController.pick.url(
+                                                        transfer.id,
                                                     ),
                                                 )
                                             }
                                         >
+                                            {spinnerFor(`pick-${transfer.id}`)}
                                             Pick
                                         </Button>
                                     ) : null}
@@ -312,22 +474,17 @@ function FulfillmentCard({
                                             size="sm"
                                             disabled={processing}
                                             onClick={() =>
-                                                run(() =>
-                                                    router.post(
-                                                        StockTransferController.dispatch.url(
-                                                            transfer.id,
-                                                        ),
-                                                        {},
-                                                        {
-                                                            onFinish: () =>
-                                                                setProcessing(
-                                                                    false,
-                                                                ),
-                                                        },
+                                                post(
+                                                    `dispatch-${transfer.id}`,
+                                                    StockTransferController.dispatch.url(
+                                                        transfer.id,
                                                     ),
                                                 )
                                             }
                                         >
+                                            {spinnerFor(
+                                                `dispatch-${transfer.id}`,
+                                            )}
                                             Dispatch
                                         </Button>
                                     ) : null}
@@ -336,197 +493,66 @@ function FulfillmentCard({
                                             size="sm"
                                             disabled={processing}
                                             onClick={() =>
-                                                run(() =>
-                                                    router.post(
-                                                        StockTransferController.receive.url(
-                                                            transfer.id,
-                                                        ),
-                                                        {},
-                                                        {
-                                                            onFinish: () =>
-                                                                setProcessing(
-                                                                    false,
-                                                                ),
-                                                        },
+                                                post(
+                                                    `receive-${transfer.id}`,
+                                                    StockTransferController.receive.url(
+                                                        transfer.id,
                                                     ),
                                                 )
                                             }
                                         >
+                                            {spinnerFor(
+                                                `receive-${transfer.id}`,
+                                            )}
                                             Receive
                                         </Button>
                                     ) : null}
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : null}
-            </CardContent>
-        </Card>
-    );
-}
-
-function FulfillmentActions({
-    orderId,
-    fulfillment,
-    canResendCode,
-}: {
-    orderId: number;
-    fulfillment: FulfillmentSummary;
-    canResendCode: boolean;
-}) {
-    const [processing, setProcessing] = useState(false);
-
-    const run = (action: () => void) => {
-        setProcessing(true);
-        action();
-    };
-
-    return (
-        <Card className="border-border/70 shadow-sm">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-base">Fulfillment actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-                    {fulfillment.actions.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                            {fulfillment.actions.map((action) => (
-                                <Button
-                                    key={action.key}
-                                    disabled={processing}
-                                    onClick={() =>
-                                        run(() =>
-                                            router.put(
-                                                OrderController.updateStatus.url(
-                                                    [orderId, fulfillment.id],
-                                                ),
-                                                { status: action.status },
-                                                {
-                                                    onFinish: () =>
-                                                        setProcessing(false),
-                                                },
-                                            ),
-                                        )
-                                    }
-                                >
-                                    {action.label}
-                                </Button>
-                            ))}
+                            ) : null}
                         </div>
-                    ) : (
-                        <p className="text-muted-foreground text-sm">
-                            No status change is available from here.
-                        </p>
-                    )}
-                    {canResendCode ? (
-                        <Button
-                            variant="outline"
-                            disabled={processing}
-                            onClick={() =>
-                                run(() =>
-                                    router.post(
-                                        OrderController.resendPlacementCode.url(
-                                            orderId,
-                                        ),
-                                        {},
-                                        {
-                                            preserveScroll: true,
-                                            onError: (errors) =>
-                                                toast.error(
-                                                    errors.code ??
-                                                        'The delivery code could not be sent.',
-                                                ),
-                                            onFinish: () =>
-                                                setProcessing(false),
-                                        },
-                                    ),
-                                )
-                            }
-                        >
-                            Resend delivery code
-                        </Button>
-                    ) : null}
+                    ))}
+                </div>
+            ) : null}
 
-                    {/* {fulfillment.canAssign ? (
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                            {fulfillment.driverName ? (
-                                <p className="text-muted-foreground text-sm sm:flex-1">
-                                    Current driver:{' '}
-                                    <span className="text-foreground font-medium">
-                                        {fulfillment.driverName}
-                                    </span>
-                                </p>
-                            ) : (
-                                <p className="text-muted-foreground text-sm sm:flex-1">
-                                    No driver assigned
-                                </p>
-                            )}
-                            <Button
-                                disabled={processing}
-                                onClick={() => setAssignOpen(true)}
-                            >
-                                {fulfillment.driverId
-                                    ? 'Change driver'
-                                    : 'Assign driver'}
-                            </Button>
-                            <OrderAssignDriverSheet
-                                open={assignOpen}
-                                onOpenChange={setAssignOpen}
-                                fulfillmentId={fulfillment.id}
-                                fulfillmentNumber={
-                                    fulfillment.fulfillmentNumber
-                                }
-                                mode={
-                                    fulfillment.driverId ? 'change' : 'assign'
-                                }
-                                candidatesUrl={OrderAssignController.candidates.url(
-                                    orderId,
-                                )}
-                                storeUrl={OrderAssignController.store.url(
-                                    orderId,
-                                )}
-                            />
-                        </div>
-                    ) : null} */}
-
+            <div className="bg-muted/30 space-y-3 border-t px-5 py-4">
+                <h3 className="text-sm font-semibold">Fulfillment actions</h3>
+                {hasActions ? (
                     <div className="flex flex-wrap gap-2">
-                        {fulfillment.canCancel ? (
+                        {fulfillment.actions.map((action) => (
+                            <Button
+                                key={action.key}
+                                disabled={processing}
+                                onClick={() =>
+                                    updateStatus(action.key, action.status)
+                                }
+                            >
+                                {spinnerFor(action.key)}
+                                {action.label}
+                            </Button>
+                        ))}
+                        {canResendCode ? (
                             <Button
                                 variant="outline"
                                 disabled={processing}
-                                onClick={() =>
-                                    run(() =>
-                                        router.post(
-                                            OrderController.cancel.url(orderId),
-                                            {},
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
-                                        ),
-                                    )
-                                }
+                                onClick={resendCode}
                             >
-                                Cancel order
+                                {spinnerFor('resend')}
+                                Resend delivery code
                             </Button>
                         ) : null}
                         {fulfillment.canRetry ? (
                             <Button
                                 disabled={processing}
                                 onClick={() =>
-                                    run(() =>
-                                        router.post(
-                                            OrderController.retryDelivery.url(
-                                                orderId,
-                                            ),
-                                            {},
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
+                                    post(
+                                        'retry',
+                                        OrderController.retryDelivery.url(
+                                            orderId,
                                         ),
                                     )
                                 }
                             >
+                                {spinnerFor('retry')}
                                 Retry delivery
                             </Button>
                         ) : null}
@@ -535,20 +561,15 @@ function FulfillmentActions({
                                 variant="outline"
                                 disabled={processing}
                                 onClick={() =>
-                                    run(() =>
-                                        router.post(
-                                            OrderController.rescheduleDelivery.url(
-                                                orderId,
-                                            ),
-                                            {},
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
+                                    post(
+                                        'reschedule',
+                                        OrderController.rescheduleDelivery.url(
+                                            orderId,
                                         ),
                                     )
                                 }
                             >
+                                {spinnerFor('reschedule')}
                                 Reschedule
                             </Button>
                         ) : null}
@@ -557,20 +578,15 @@ function FulfillmentActions({
                                 variant="outline"
                                 disabled={processing}
                                 onClick={() =>
-                                    run(() =>
-                                        router.post(
-                                            OrderController.returnDelivery.url(
-                                                orderId,
-                                            ),
-                                            {},
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
+                                    post(
+                                        'return',
+                                        OrderController.returnDelivery.url(
+                                            orderId,
                                         ),
                                     )
                                 }
                             >
+                                {spinnerFor('return')}
                                 Begin return
                             </Button>
                         ) : null}
@@ -578,34 +594,70 @@ function FulfillmentActions({
                             <Button
                                 disabled={processing}
                                 onClick={() =>
-                                    run(() =>
-                                        router.post(
-                                            OrderController.confirmReturn.url(
-                                                orderId,
-                                            ),
-                                            {},
-                                            {
-                                                onFinish: () =>
-                                                    setProcessing(false),
-                                            },
+                                    post(
+                                        'confirm-return',
+                                        OrderController.confirmReturn.url(
+                                            orderId,
                                         ),
                                     )
                                 }
                             >
+                                {spinnerFor('confirm-return')}
                                 Confirm return
                             </Button>
                         ) : null}
+                        {fulfillment.canCancel ? (
+                            <Button
+                                variant="outline"
+                                className="text-destructive hover:text-destructive"
+                                disabled={processing}
+                                onClick={() =>
+                                    post(
+                                        'cancel',
+                                        OrderController.cancel.url(orderId),
+                                    )
+                                }
+                            >
+                                {spinnerFor('cancel')}
+                                Cancel order
+                            </Button>
+                        ) : null}
                     </div>
-            </CardContent>
+                ) : (
+                    <p className="text-muted-foreground text-sm">
+                        No status change is available from here.
+                    </p>
+                )}
+
+                {/* {fulfillment.canAssign ? (
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <Button
+                            disabled={processing}
+                            onClick={() => setAssignOpen(true)}
+                        >
+                            {fulfillment.driverId
+                                ? 'Change driver'
+                                : 'Assign driver'}
+                        </Button>
+                        <OrderAssignDriverSheet
+                            open={assignOpen}
+                            onOpenChange={setAssignOpen}
+                            fulfillmentId={fulfillment.id}
+                            fulfillmentNumber={fulfillment.fulfillmentNumber}
+                            mode={fulfillment.driverId ? 'change' : 'assign'}
+                            candidatesUrl={OrderAssignController.candidates.url(
+                                orderId,
+                            )}
+                            storeUrl={OrderAssignController.store.url(orderId)}
+                        />
+                    </div>
+                ) : null} */}
+            </div>
         </Card>
     );
 }
 
-export default function PlatformOrderShow({
-    order,
-}: {
-    order: OrderDetail;
-}) {
+export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
     setLayoutProps({
         breadcrumbs: [
             { title: 'Dashboard', href: '/platform/dashboard' },
@@ -618,72 +670,113 @@ export default function PlatformOrderShow({
     const cityLine = [address?.city, address?.postal_code]
         .filter(Boolean)
         .join(' ');
+    const hasStreetAddress = Boolean(address?.address || cityLine);
+    const recipientName = address?.name || order.customerName;
+    const recipientPhone = address?.phone || order.customerPhone;
+    const branchNames = [
+        ...new Set(order.fulfillments.map((row) => row.branchName)),
+    ].join(', ');
+    const itemCount = order.fulfillments.reduce(
+        (total, row) =>
+            total + row.items.reduce((sum, item) => sum + item.quantity, 0),
+        0,
+    );
 
     return (
         <>
             <Head title={`Order ${order.orderNumber}`} />
 
-            <div className="space-y-5 p-2 md:p-4">
-                <div className="border-border/70 from-muted/40 via-background to-background relative overflow-hidden rounded-xl border bg-linear-to-br p-5 shadow-sm sm:p-6">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="mx-auto w-full max-w-7xl space-y-6 p-2 md:p-4">
+                <header className="border-border/70 bg-card overflow-hidden rounded-2xl border shadow-sm">
+                    <div className="from-primary/10 via-background to-background flex flex-wrap items-start justify-between gap-4 bg-linear-to-br px-5 py-5 sm:px-6">
                         <div className="min-w-0 space-y-2">
                             <p className="text-muted-foreground text-xs font-semibold tracking-[0.14em] uppercase">
                                 Platform order
                             </p>
-                            <h1 className="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
+                            <h1 className="text-foreground truncate text-2xl font-bold tracking-tight sm:text-3xl">
                                 {order.orderNumber}
                             </h1>
-                            <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                                <span className="text-foreground inline-flex items-center gap-1.5 font-medium">
-                                    <UserRound
-                                        className="size-3.5"
-                                        aria-hidden
-                                    />
-                                    {order.customerName}
-                                </span>
-                                {order.placedAt ? (
-                                    <span>Placed {order.placedAt}</span>
-                                ) : null}
-                                {order.placedByName ? (
-                                    <span>by {order.placedByName}</span>
-                                ) : null}
-                                <span className="text-foreground font-semibold tabular-nums">
-                                    {order.totalLabel}
-                                </span>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Badge
+                                    variant="outline"
+                                    className={orderStatusBadgeClass(
+                                        order.status,
+                                    )}
+                                >
+                                    {order.statusLabel}
+                                </Badge>
+                                <Badge
+                                    variant="outline"
+                                    className={paymentStatusBadgeClass(
+                                        order.paymentStatus,
+                                    )}
+                                >
+                                    {order.paymentStatusLabel}
+                                </Badge>
+                                <Badge
+                                    variant="outline"
+                                    className={orderSourceBadgeClass(
+                                        order.source,
+                                    )}
+                                >
+                                    {order.sourceLabel}
+                                </Badge>
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Badge className="px-2.5 py-1 text-sm">
-                                {order.statusLabel}
-                            </Badge>
-                            <Badge variant="outline" className="px-2.5 py-1 text-sm">
-                                {order.sourceLabel}
-                            </Badge>
-                            <Badge
-                                variant={
-                                    order.paymentStatus === 'collected' ||
-                                    order.paymentStatus === 'verified'
-                                        ? 'default'
-                                        : 'secondary'
-                                }
-                                className="px-2.5 py-1 text-sm"
-                            >
-                                {order.paymentStatusLabel}
-                            </Badge>
+                        <div className="text-left sm:text-right">
+                            <p className="text-muted-foreground text-xs font-medium">
+                                Order total
+                            </p>
+                            <p className="text-foreground text-3xl font-bold tracking-tight tabular-nums">
+                                {order.totalLabel}
+                            </p>
                         </div>
                     </div>
-                </div>
 
-                <div className="grid items-start gap-5 lg:grid-cols-2">
-                    <div className="space-y-5">
+                    <div className="grid gap-4 border-t px-5 py-4 sm:grid-cols-2 sm:px-6 xl:grid-cols-4">
+                        <HeaderFact icon={UserRound} label="Customer">
+                            {order.customerId ? (
+                                <Link
+                                    href={CustomerController.show.url(
+                                        order.customerId,
+                                    )}
+                                    className="hover:text-primary"
+                                >
+                                    {order.customerName}
+                                </Link>
+                            ) : (
+                                order.customerName
+                            )}
+                        </HeaderFact>
+                        <HeaderFact icon={CalendarClock} label="Placed">
+                            {formatAppDateTime(order.placedAt) || '—'}
+                            {order.placedByName ? (
+                                <span className="text-muted-foreground font-normal">
+                                    {' '}
+                                    · by {order.placedByName}
+                                </span>
+                            ) : null}
+                        </HeaderFact>
+                        <HeaderFact icon={Store} label="Branch">
+                            {branchNames || '—'}
+                        </HeaderFact>
+                        <HeaderFact icon={CreditCard} label="Payment method">
+                            {paymentMethodLabel(order.paymentMethod)}
+                        </HeaderFact>
+                    </div>
+                </header>
+
+                <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
+                    <div className="min-w-0 space-y-6">
                         {order.fulfillments.map((fulfillment) => (
                             <FulfillmentCard
-                                canResendCode={order.canResendCode}
                                 key={fulfillment.id}
                                 orderId={order.id}
                                 fulfillment={fulfillment}
+                                canResendCode={order.canResendCode}
                             />
                         ))}
+
                         <OrderHandoverActions
                             orderId={order.id}
                             deliverForm={OrderController.deliver.form(order.id)}
@@ -710,70 +803,101 @@ export default function PlatformOrderShow({
                                 order.verificationMethods ?? []
                             }
                         />
+
+                        <OrderReturnRequest
+                            canRequest={false}
+                            request={order.returnRequest ?? null}
+                            approveUrl={
+                                order.returnRequest
+                                    ? OrderController.approveReturn.url({
+                                          order: order.id,
+                                          orderReturn: order.returnRequest.id,
+                                      })
+                                    : undefined
+                            }
+                            rejectUrl={
+                                order.returnRequest
+                                    ? OrderController.rejectReturn.url({
+                                          order: order.id,
+                                          orderReturn: order.returnRequest.id,
+                                      })
+                                    : undefined
+                            }
+                        />
+
+                        <SectionCard icon={History} title="Order progress">
+                            <OrderStatusProgress steps={order.timeline} />
+                        </SectionCard>
                     </div>
 
-                    <aside className="space-y-4">
-                        <Card className="border-border/70 shadow-sm">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="flex items-center gap-2 text-base">
-                                    <MapPin
-                                        className="text-muted-foreground size-4"
-                                        aria-hidden
-                                    />
-                                    Delivery address
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-1 text-sm">
-                                <p className="text-foreground font-semibold">
-                                    {address?.name}
-                                </p>
-                                <p className="text-muted-foreground">
-                                    {address?.address}
-                                </p>
-                                {cityLine ? (
-                                    <p className="text-muted-foreground">
-                                        {cityLine}
+                    <aside className="min-w-0 space-y-6 lg:sticky lg:top-6">
+                        <SectionCard icon={MapPin} title="Delivery details">
+                            <div className="space-y-3 text-sm">
+                                <div className="space-y-1">
+                                    <p className="text-foreground font-semibold">
+                                        {recipientName}
                                     </p>
-                                ) : null}
-                                <p className="text-muted-foreground">
-                                    {address?.phone}
-                                </p>
-                            </CardContent>
-                        </Card>
+                                    {recipientPhone ? (
+                                        <p className="text-muted-foreground flex items-center gap-1.5">
+                                            <Phone
+                                                className="size-3.5 shrink-0"
+                                                aria-hidden
+                                            />
+                                            <a
+                                                href={`tel:${recipientPhone}`}
+                                                className="hover:text-foreground"
+                                            >
+                                                {recipientPhone}
+                                            </a>
+                                        </p>
+                                    ) : null}
+                                </div>
+                                <div className="bg-muted/40 rounded-lg p-3">
+                                    {hasStreetAddress ? (
+                                        <>
+                                            {address?.address ? (
+                                                <p className="text-foreground break-words">
+                                                    {address.address}
+                                                </p>
+                                            ) : null}
+                                            {cityLine ? (
+                                                <p className="text-muted-foreground">
+                                                    {cityLine}
+                                                </p>
+                                            ) : null}
+                                        </>
+                                    ) : (
+                                        <p className="text-muted-foreground">
+                                            No delivery address on this order.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </SectionCard>
 
-                        <Card className="border-border/70 shadow-sm">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base">
-                                    Totals
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-2.5 text-sm">
-                                <div className="flex justify-between gap-3">
-                                    <span className="text-muted-foreground">
-                                        Subtotal
-                                    </span>
-                                    <span className="font-medium tabular-nums">
-                                        {order.subtotalLabel}
-                                    </span>
-                                </div>
+                        <SectionCard icon={ReceiptText} title="Order summary">
+                            <div className="space-y-2.5">
+                                <SummaryRow
+                                    label={`Subtotal · ${itemCount} item${itemCount === 1 ? '' : 's'}`}
+                                >
+                                    {order.subtotalLabel}
+                                </SummaryRow>
                                 {order.discountLabel ? (
-                                    <div className="flex justify-between gap-3">
-                                        <span className="text-muted-foreground">
-                                            {order.couponCode ?? 'Discount'}
+                                    <SummaryRow
+                                        label={
+                                            order.couponCode
+                                                ? `Discount (${order.couponCode})`
+                                                : 'Discount'
+                                        }
+                                    >
+                                        <span className="text-emerald-600 dark:text-emerald-400">
+                                            −{order.discountLabel}
                                         </span>
-                                        <span className="font-medium tabular-nums">
-                                            {order.discountLabel}
-                                        </span>
-                                    </div>
+                                    </SummaryRow>
                                 ) : null}
-                                <div className="flex justify-between gap-3">
-                                    <span className="text-muted-foreground">
-                                        Delivery
-                                    </span>
-                                    <span className="font-medium tabular-nums">
-                                        {order.deliveryFeeLabel}
-                                    </span>
-                                </div>
+                                <SummaryRow label="Delivery">
+                                    {order.deliveryFeeLabel}
+                                </SummaryRow>
                                 <Separator />
                                 <div className="flex items-end justify-between gap-3">
                                     <span className="font-semibold">Total</span>
@@ -781,91 +905,23 @@ export default function PlatformOrderShow({
                                         {order.totalLabel}
                                     </span>
                                 </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border-border/70 shadow-sm">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base">
-                                    Payment
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <div className="bg-muted/40 space-y-1 rounded-lg p-3 text-sm">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className="text-muted-foreground">
-                                            Status
-                                        </span>
-                                        <span className="font-medium">
-                                            {order.paymentStatusLabel}
-                                        </span>
-                                    </div>
-                                    {order.paymentMethod ? (
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className="text-muted-foreground">
-                                                Method
-                                            </span>
-                                            <span className="font-medium capitalize">
-                                                {order.paymentMethod.replaceAll(
-                                                    '_',
-                                                    ' ',
-                                                )}
-                                            </span>
-                                        </div>
-                                    ) : null}
-                                </div>
-                                <OrderReturnRequest
-                                    canRequest={false}
-                                    request={order.returnRequest ?? null}
-                                    approveUrl={
-                                        order.returnRequest
-                                            ? OrderController.approveReturn.url(
-                                                  {
-                                                      order: order.id,
-                                                      orderReturn:
-                                                          order.returnRequest
-                                                              .id,
-                                                  },
-                                              )
-                                            : undefined
-                                    }
-                                    rejectUrl={
-                                        order.returnRequest
-                                            ? OrderController.rejectReturn.url({
-                                                  order: order.id,
-                                                  orderReturn:
-                                                      order.returnRequest.id,
-                                              })
-                                            : undefined
-                                    }
-                                />
-                            </CardContent>
-                        </Card>
-
-                        {order.fulfillments.map((fulfillment) => (
-                            <FulfillmentActions
-                                key={fulfillment.id}
-                                orderId={order.id}
-                                fulfillment={fulfillment}
-                                canResendCode={order.canResendCode}
-                            />
-                        ))}
+                                <Separator />
+                                <SummaryRow label="Payment status">
+                                    <Badge
+                                        variant="outline"
+                                        className={paymentStatusBadgeClass(
+                                            order.paymentStatus,
+                                        )}
+                                    >
+                                        {order.paymentStatusLabel}
+                                    </Badge>
+                                </SummaryRow>
+                                <SummaryRow label="Payment method">
+                                    {paymentMethodLabel(order.paymentMethod)}
+                                </SummaryRow>
+                            </div>
+                        </SectionCard>
                     </aside>
-
-                    <Card className="border-border/70 shadow-sm lg:col-span-2">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Truck
-                                className="text-muted-foreground size-4"
-                                aria-hidden
-                            />
-                            History
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <OrderStatusTrack steps={order.timeline} />
-                    </CardContent>
-                    </Card>
                 </div>
             </div>
         </>

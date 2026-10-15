@@ -144,6 +144,7 @@ function endNavigationFor(visitId: string | undefined): void {
 
 type VisitFlags = {
     id: string;
+    method?: string;
     async?: boolean;
     prefetch?: boolean;
     showProgress?: boolean;
@@ -153,6 +154,7 @@ type VisitFlags = {
 
 function isPageVisit(visit: VisitFlags): boolean {
     return (
+        (visit.method ?? 'get').toLowerCase() === 'get' &&
         visit.async !== true &&
         visit.prefetch !== true &&
         visit.showProgress !== false &&

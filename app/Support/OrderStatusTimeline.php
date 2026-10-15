@@ -25,7 +25,7 @@ final class OrderStatusTimeline
                     'label' => $next?->label() ?? (string) $row->new_status,
                     'fromLabel' => $previous?->label(),
                     'actorName' => $row->changer?->name ?? 'System',
-                    'detail' => $row->created_at?->format('d M Y, h:i A') ?? '',
+                    'detail' => DateTimeFormat::dateTime($row->created_at) ?? '',
                     'comment' => $row->comment,
                 ];
             })
@@ -76,7 +76,7 @@ final class OrderStatusTimeline
                 'label' => $customer ? $status->customerLabel() : $status->label(),
                 'state' => $state,
                 'actorName' => $state === 'upcoming' ? null : $row?->changer?->name,
-                'detail' => $state === 'upcoming' ? null : $row?->created_at?->format('d M Y, h:i A'),
+                'detail' => $state === 'upcoming' ? null : DateTimeFormat::dateTime($row?->created_at),
                 'comment' => $state === 'upcoming' ? null : $row?->comment,
             ];
         }

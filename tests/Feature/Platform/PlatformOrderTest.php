@@ -72,7 +72,9 @@ test('platform order detail exposes the single fulfillment', function () {
             ->has('order.paymentStatusLabel')
             ->has('order.sourceLabel')
             ->where('order.sourceLabel', 'Customer')
-            ->where('order.paymentStatusLabel', $order->payment_status->label()));
+            ->where('order.paymentStatusLabel', $order->payment_status->label())
+            ->where('order.customerId', $order->customer_id)
+            ->where('order.customerPhone', $order->customer?->phone));
 });
 
 test('platform admin can update any branchs fulfillment status', function () {

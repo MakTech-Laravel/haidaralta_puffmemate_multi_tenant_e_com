@@ -262,8 +262,10 @@ class OrderController extends Controller
                 HandoverVerification::cases(),
             ),
             'paymentMethod' => $order->payment_method,
+            'customerId' => $order->customer_id,
             'customerName' => $order->customer?->name ?? 'Customer',
-            'placedAt' => $order->created_at?->format('d M Y, h:i A'),
+            'customerPhone' => $order->customer?->phone,
+            'placedAt' => $order->created_at?->toIso8601String(),
             'totalLabel' => '$'.number_format((float) $order->total_amount, 2),
             'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
             'discountLabel' => (float) $order->discount > 0
