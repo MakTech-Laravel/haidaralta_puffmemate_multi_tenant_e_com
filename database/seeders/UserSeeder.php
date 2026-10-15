@@ -47,7 +47,23 @@ class UserSeeder extends Seeder
 
     public const DRIVER_PHONE = '+61488888888';
 
+    public const SECOND_DRIVER_PHONE = '+61488000000';
+
     public const CUSTOMER_PHONE = '+61499999999';
+
+    public const CUSTOMER_WITHOUT_ORDERS_PHONE = '+61499000000';
+
+    /**
+     * Customers that CustomerOrderSeeder gives a full set of orders in every status.
+     *
+     * @var list<string>
+     */
+    public const CUSTOMERS_WITH_ORDERS_PHONES = [
+        self::CUSTOMER_PHONE,
+        '+61499000001',
+        '+61499000002',
+        '+61499000003',
+    ];
 
     /** @deprecated Prefer *_PHONE constants for login. Kept for display/email lookups. */
     public const PLATFORM_SUPER_ADMIN = 'ava.mitchell@puffmemate.dev';
@@ -175,6 +191,38 @@ class UserSeeder extends Seeder
                 'alt_branch' => $melbourne,
             ],
             [
+                'phone' => self::SECOND_DRIVER_PHONE,
+                'email' => 'marcus.reid@puffmemate.dev',
+                'name' => 'Marcus Reid',
+                'license' => 'DL-MR-500',
+                'vehicle' => DriverVehicleType::Car,
+                'branch' => $sydney,
+            ],
+            [
+                'phone' => '+61488000001',
+                'email' => 'priya.sharma@puffmemate.dev',
+                'name' => 'Priya Sharma',
+                'license' => 'DL-PS-501',
+                'vehicle' => DriverVehicleType::Motorcycle,
+                'branch' => $sydney,
+            ],
+            [
+                'phone' => '+61488000002',
+                'email' => 'tom.gallagher@puffmemate.dev',
+                'name' => 'Tom Gallagher',
+                'license' => 'DL-TG-502',
+                'vehicle' => DriverVehicleType::Bicycle,
+                'branch' => $sydney,
+            ],
+            [
+                'phone' => '+61488000003',
+                'email' => 'lena.fischer@puffmemate.dev',
+                'name' => 'Lena Fischer',
+                'license' => 'DL-LF-503',
+                'vehicle' => DriverVehicleType::Motorcycle,
+                'branch' => $sydney,
+            ],
+            [
                 'phone' => '+61420101001',
                 'email' => 'oscar.knight@puffmemate.dev',
                 'name' => 'Oscar Knight',
@@ -282,6 +330,10 @@ class UserSeeder extends Seeder
 
         $this->seedCustomers([
             ['phone' => self::CUSTOMER_PHONE, 'email' => self::CUSTOMER, 'name' => 'Emma Walker'],
+            ['phone' => self::CUSTOMER_WITHOUT_ORDERS_PHONE, 'email' => 'noah.bennett@example.com', 'name' => 'Noah Bennett'],
+            ['phone' => '+61499000001', 'email' => 'isabella.romano@example.com', 'name' => 'Isabella Romano'],
+            ['phone' => '+61499000002', 'email' => 'lachlan.murphy@example.com', 'name' => 'Lachlan Murphy'],
+            ['phone' => '+61499000003', 'email' => 'ruby.thompson@example.com', 'name' => 'Ruby Thompson'],
             ['phone' => '+61450101001', 'email' => 'james.whitfield@example.com', 'name' => 'James Whitfield'],
             ['phone' => '+61450101002', 'email' => 'olivia.chen@example.com', 'name' => 'Olivia Chen'],
             ['phone' => '+61450101003', 'email' => 'lucas.martin@example.com', 'name' => 'Lucas Martin'],

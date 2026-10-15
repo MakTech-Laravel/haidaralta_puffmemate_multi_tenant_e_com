@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             DriverStockAssignmentSeeder::class,
             WorkforceShiftSeeder::class,
             TransferHistorySeeder::class,
+            CustomerOrderSeeder::class,
         ]);
     }
 }
