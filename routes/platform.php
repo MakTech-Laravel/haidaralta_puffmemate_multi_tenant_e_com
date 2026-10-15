@@ -53,6 +53,7 @@ use App\Http\Controllers\Platform\StockController as PlatformStockController;
 use App\Http\Controllers\Platform\StockTransferController as PlatformStockTransferController;
 use App\Http\Controllers\Platform\TransferController as PlatformTransferController;
 use App\Http\Controllers\Platform\WholesaleInquiryController as PlatformWholesaleInquiryController;
+use App\Http\Controllers\Platform\WholesaleOrderController as PlatformWholesaleOrderController;
 use App\Support\ProductManageRedirect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -86,12 +87,7 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::get('permissions', [PlatformPermissionController::class, 'index'])->name('platform.permissions.index');
     });
 
-    Route::middleware(['permission:manage-users'])->group(function () {
-        Route::resource('admins', PlatformAdminController::class)
-            ->parameters(['admins' => 'user'])
-            ->names('platform.admins')
-            ->middlewareFor(['store', 'update'], 'precognitive');
-
+    Route::middleware(['permission:manage-wholesale'])->group(function () {
         Route::get('wholesale-inquiries', [PlatformWholesaleInquiryController::class, 'index'])
             ->name('platform.wholesale-inquiries.index');
         Route::get('wholesale-inquiries/branch-options', [PlatformWholesaleInquiryController::class, 'branchOptions'])
@@ -102,6 +98,22 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.wholesale-inquiries.place-order');
         Route::get('wholesale-inquiries/{wholesaleInquiry}', [PlatformWholesaleInquiryController::class, 'show'])
             ->name('platform.wholesale-inquiries.show');
+        Route::post('wholesale-inquiries/{wholesaleInquiry}/reject', [PlatformWholesaleInquiryController::class, 'reject'])
+            ->name('platform.wholesale-inquiries.reject');
+        Route::patch('wholesale-inquiries/{wholesaleInquiry}/note', [PlatformWholesaleInquiryController::class, 'updateNote'])
+            ->name('platform.wholesale-inquiries.note');
+        Route::get('wholesale-orders/delivery-quote', [PlatformWholesaleOrderController::class, 'deliveryQuote'])
+            ->name('platform.wholesale-orders.delivery-quote');
+        Route::post('wholesale-orders', [PlatformWholesaleOrderController::class, 'store'])
+            ->middleware('throttle:30,1')
+            ->name('platform.wholesale-orders.store');
+    });
+
+    Route::middleware(['permission:manage-users'])->group(function () {
+        Route::resource('admins', PlatformAdminController::class)
+            ->parameters(['admins' => 'user'])
+            ->names('platform.admins')
+            ->middlewareFor(['store', 'update'], 'precognitive');
 
         Route::get('contact-inquiries', [PlatformContactInquiryController::class, 'index'])
             ->name('platform.contact-inquiries.index');

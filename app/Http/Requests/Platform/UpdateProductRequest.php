@@ -67,6 +67,8 @@ class UpdateProductRequest extends FormRequest
             'status' => ['sometimes', 'boolean'],
             'selling_price' => ['nullable', 'numeric', 'min:0'],
             'regular_price' => ['nullable', 'numeric', 'min:0'],
+            'wholesale_price' => ['nullable', 'numeric', 'gt:0'],
+            'min_wholesale_qty' => ['nullable', 'integer', 'min:1', 'max:100000'],
             ...$this->colorCodeRules(),
             ...$this->productCatalogMetaRules(),
         ];

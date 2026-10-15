@@ -227,12 +227,16 @@ final class BranchProductShowPayload
      *     discount_price: mixed,
      *     start_date: ?string,
      *     end_date: ?string,
-     *     status: bool
+     *     status: bool,
+     *     wholesale_price: mixed,
+     *     min_wholesale_qty: ?int
      * }
      */
     private static function mapPrice(BranchProductPrice $price): array
     {
         return [
+            'wholesale_price' => $price->wholesale_price,
+            'min_wholesale_qty' => $price->min_wholesale_qty,
             'buying_price' => $price->buying_price,
             'regular_price' => $price->regular_price,
             'selling_price' => $price->selling_price,

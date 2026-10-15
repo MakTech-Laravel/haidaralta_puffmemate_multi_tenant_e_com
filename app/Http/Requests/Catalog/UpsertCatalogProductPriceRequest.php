@@ -49,6 +49,8 @@ class UpsertCatalogProductPriceRequest extends FormRequest
             'end_date' => $hasDiscount
                 ? ['nullable', 'date', 'after_or_equal:start_date']
                 : ['nullable', 'prohibited'],
+            'wholesale_price' => ['sometimes', 'nullable', 'numeric', 'gt:0'],
+            'min_wholesale_qty' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100000'],
         ];
     }
 
@@ -70,8 +72,10 @@ class UpsertCatalogProductPriceRequest extends FormRequest
             ]);
         }
 
-        if ($this->input('regular_price') === '') {
-            $this->merge(['regular_price' => null]);
+        foreach (['regular_price', 'wholesale_price', 'min_wholesale_qty'] as $field) {
+            if ($this->input($field) === '') {
+                $this->merge([$field => null]);
+            }
         }
     }
 }

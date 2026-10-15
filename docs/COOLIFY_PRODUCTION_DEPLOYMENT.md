@@ -258,6 +258,12 @@ Container startup never runs migrations. Run central migrations once as an expli
 php artisan migrate --force --isolated
 ```
 
+Wholesale release: the migrations add `products.wholesale_price` / `min_wholesale_qty`, the same pair on `branch_product_prices`, review columns plus `customer_id` / `order_id` lookup indexes on `wholesale_inquiries`, and the `wholesale_inquiry_items` table (all additive). After migrating, reseed roles so Admin and Manager receive `manage-wholesale`:
+
+```sh
+php artisan db:seed --class=RolesAndPermissionsSeeder --force
+```
+
 Laravel 13 supports `--isolated`; all deployment instances must share the configured Redis cache so its migration lock is effective. Check migration SQL and take a recoverable database backup before destructive changes. Use expand/contract releases: add backward-compatible structures, deploy compatible code, backfill, then remove old structures in a later release.
 
 The current tenancy model uses one shared database and nullable `branch_id` columns, with Spatie Permission teams scoped by branch. There are no schema-per-tenant, database-per-tenant, or tenant migration paths, so only the central migration command exists today.

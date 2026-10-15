@@ -6,6 +6,7 @@ use App\DataTables\OrderDataTable;
 use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
 use App\Enums\HandoverVerification;
+use App\Enums\OrderSource;
 use App\Enums\PaymentStatus;
 use App\Enums\PermissionEnum;
 use App\Enums\StockTransferStatus;
@@ -16,6 +17,7 @@ use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Models\OrderReturn;
 use App\Models\StockTransfer;
+use App\Models\WholesaleInquiry;
 use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\FulfillmentStatusService;
 use App\Services\Order\OrderAssignService;
@@ -240,6 +242,8 @@ class OrderController extends Controller
             'paymentStatusLabel' => $order->payment_status->label(),
             'source' => $order->source->value,
             'sourceLabel' => $order->source->label(),
+            'wholesaleInquiry' => $this->wholesaleInquiryLink($order),
+            'notes' => $order->notes,
             'placedByName' => $order->placedBy?->name,
             'paymentStatusOptions' => $paymentOptions->values()->all(),
             'canResendCode' => $order->status->allowsPlacementCode(),
@@ -328,5 +332,28 @@ class OrderController extends Controller
         abort_if($order->fulfillment === null, 404);
 
         return $order->fulfillment;
+    }
+
+    /**
+     * @return array{id: int, url: string|null}|null
+     */
+    private function wholesaleInquiryLink(Order $order): ?array
+    {
+        if ($order->source !== OrderSource::Wholesale) {
+            return null;
+        }
+
+        $inquiryId = WholesaleInquiry::query()->where('order_id', $order->id)->value('id');
+
+        if ($inquiryId === null) {
+            return null;
+        }
+
+        $canView = request()->user('platform')?->can(PermissionEnum::MANAGE_WHOLESALE->value) ?? false;
+
+        return [
+            'id' => (int) $inquiryId,
+            'url' => $canView ? route('platform.wholesale-inquiries.show', $inquiryId) : null,
+        ];
     }
 }

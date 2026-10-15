@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\AllowedSort;
 
 /**
  * @extends AbstractDataTable<BranchProductPriceHistory>
@@ -30,6 +29,8 @@ class BranchProductPriceHistoryDataTable extends AbstractDataTable
         'discount_price' => 'Discount value',
         'start_date' => 'Start date',
         'end_date' => 'End date',
+        'wholesale_price' => 'Wholesale',
+        'min_wholesale_qty' => 'Wholesale min qty',
     ];
 
     public function __construct(
@@ -289,7 +290,7 @@ class BranchProductPriceHistoryDataTable extends AbstractDataTable
             return '—';
         }
 
-        if (in_array($field, ['buying_price', 'regular_price', 'selling_price', 'discount_price'], true)) {
+        if (in_array($field, ['buying_price', 'regular_price', 'selling_price', 'discount_price', 'wholesale_price'], true)) {
             return number_format((float) $value, 2, '.', '');
         }
 

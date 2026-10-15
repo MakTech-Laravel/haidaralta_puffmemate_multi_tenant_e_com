@@ -38,6 +38,9 @@ export type DriverAssignedOrder = {
     canChat?: boolean;
     nextAction?: DriverOrderNextAction | null;
     customerName: string;
+    company?: string | null;
+    source?: string;
+    sourceLabel?: string;
     areaId: string;
     areaLabel: string;
     addressSummary: string;

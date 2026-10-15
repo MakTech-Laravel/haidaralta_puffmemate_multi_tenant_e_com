@@ -8,14 +8,10 @@ import StockTransferController from '@/actions/App/Http/Controllers/Branch/Stock
 import { OrderHandoverActions } from '@/components/orders/order-handover-actions';
 import { OrderStatusTrack } from '@/components/orders/order-status-track';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -52,16 +48,22 @@ type FulfillmentDetail = {
     canRetry: boolean;
     canReschedule: boolean;
     canReturn: boolean;
-        canConfirmReturn: boolean;
-        canComplete?: boolean;
-        canReportUnavailable?: boolean;
-        canCompleteWithoutCode?: boolean;
-        failureReasons?: { value: string; label: string }[];
-        verificationMethods?: { value: string; label: string }[];
+    canConfirmReturn: boolean;
+    canComplete?: boolean;
+    canReportUnavailable?: boolean;
+    canCompleteWithoutCode?: boolean;
+    failureReasons?: { value: string; label: string }[];
+    verificationMethods?: { value: string; label: string }[];
     order: {
         id: number;
         orderNumber: string;
         customerName: string;
+        customerPhone: string | null;
+        source: string;
+        sourceLabel: string;
+        notes: string | null;
+        deliveryDate: string | null;
+        timeSlot: string | null;
         paymentMethod: string;
         paymentStatus: string;
         paymentStatusLabel: string;
@@ -80,6 +82,7 @@ type FulfillmentDetail = {
             city?: string;
             postal_code?: string;
             phone?: string;
+            company?: string | null;
         } | null;
     };
     items: {
@@ -124,8 +127,7 @@ export default function BranchOrderShow({
     const [assignReason, setAssignReason] = useState('');
     const [processing, setProcessing] = useState(false);
     const isReassign = fulfillment.driverId !== null;
-    const needsAssignReason =
-        isReassign || fulfillment.status === 'returned';
+    const needsAssignReason = isReassign || fulfillment.status === 'returned';
 
     setLayoutProps({
         breadcrumbs: [
@@ -176,6 +178,10 @@ export default function BranchOrderShow({
                                 Driver assign history
                             </Link>
                         </Button>
+                        <OrderSourceBadge
+                            source={fulfillment.order.source}
+                            label={fulfillment.order.sourceLabel}
+                        />
                         <Badge className="capitalize">
                             {status.replaceAll('_', ' ')}
                         </Badge>
@@ -202,9 +208,7 @@ export default function BranchOrderShow({
                                     </TableHeader>
                                     <TableBody>
                                         {fulfillment.items.map((item) => (
-                                            <TableRow
-                                                key={item.name}
-                                            >
+                                            <TableRow key={item.name}>
                                                 <TableCell>
                                                     {item.name}
                                                 </TableCell>
@@ -241,13 +245,38 @@ export default function BranchOrderShow({
                             </CardHeader>
                             <CardContent className="text-muted-foreground space-y-0.5 text-sm">
                                 <p>{address?.name}</p>
+                                {address?.company ? (
+                                    <p className="text-foreground">
+                                        {address.company}
+                                    </p>
+                                ) : null}
                                 <p>{address?.address}</p>
                                 <p>
                                     {[address?.city, address?.postal_code]
                                         .filter(Boolean)
                                         .join(' ')}
                                 </p>
-                                <p>{address?.phone}</p>
+                                <p>
+                                    {address?.phone ??
+                                        fulfillment.order.customerPhone}
+                                </p>
+                                {fulfillment.order.deliveryDate ||
+                                fulfillment.order.timeSlot ? (
+                                    <p className="pt-1">
+                                        Deliver{' '}
+                                        {[
+                                            fulfillment.order.deliveryDate,
+                                            fulfillment.order.timeSlot,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' · ')}
+                                    </p>
+                                ) : null}
+                                {fulfillment.order.notes ? (
+                                    <p className="border-border/70 mt-2 border-t pt-2 whitespace-pre-wrap">
+                                        {fulfillment.order.notes}
+                                    </p>
+                                ) : null}
                             </CardContent>
                         </Card>
 
@@ -348,8 +377,7 @@ export default function BranchOrderShow({
                                     ))
                                 ) : (
                                     <p className="text-muted-foreground text-sm">
-                                        No status change is available from
-                                        here.
+                                        No status change is available from here.
                                     </p>
                                 )}
                                 {fulfillment.canResendCode ? (
@@ -571,8 +599,7 @@ export default function BranchOrderShow({
                                                 processing ||
                                                 driverId === '' ||
                                                 (needsAssignReason &&
-                                                    assignReason.trim() ===
-                                                        '')
+                                                    assignReason.trim() === '')
                                             }
                                             onClick={() => {
                                                 setProcessing(true);

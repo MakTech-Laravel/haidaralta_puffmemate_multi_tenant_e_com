@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Eye, ShoppingBag } from 'lucide-react';
 import { useMemo } from 'react';
+import OrderController from '@/actions/App/Http/Controllers/Platform/OrderController';
 import WholesaleInquiryController from '@/actions/App/Http/Controllers/Platform/WholesaleInquiryController';
 import {
     DataTable,
@@ -13,7 +14,7 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
+import { WholesaleInquiryStatusBadge } from '@/components/orders/wholesale-inquiry-status-badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -33,6 +34,10 @@ type WholesaleInquiryRow = {
     company: string | null;
     status: string;
     status_label: string;
+    is_open: boolean;
+    items_count: number;
+    order_id: number | null;
+    order_number: string | null;
     created_at: string | null;
 };
 
@@ -40,10 +45,12 @@ type StatusOption = { value: string; label: string };
 
 export default function PlatformWholesaleInquiriesIndex({
     table: tablePayload,
+    canViewOrders,
 }: {
     table: DataTablePayload<WholesaleInquiryRow> & {
         filterOptions?: { status?: StatusOption[] };
     };
+    canViewOrders: boolean;
 }) {
     const query = useDataTableQuery({
         indexUrl: WholesaleInquiryController.index.url(),
@@ -109,16 +116,43 @@ export default function PlatformWholesaleInquiriesIndex({
                     />
                 ),
                 cell: ({ row }) => (
-                    <Badge
-                        variant={
-                            row.original.status === 'new'
-                                ? 'default'
-                                : 'secondary'
-                        }
-                    >
-                        {row.original.status_label}
-                    </Badge>
+                    <WholesaleInquiryStatusBadge
+                        status={row.original.status}
+                        label={row.original.status_label}
+                    />
                 ),
+            },
+            {
+                accessorKey: 'items_count',
+                header: 'Items',
+                cell: ({ row }) => (
+                    <span className="tabular-nums">
+                        {row.original.items_count}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'order_number',
+                header: 'Order',
+                cell: ({ row }) => {
+                    const { order_id: orderId, order_number: orderNumber } =
+                        row.original;
+
+                    if (orderId === null || orderNumber === null) {
+                        return '—';
+                    }
+
+                    return canViewOrders ? (
+                        <Link
+                            href={OrderController.show.url(orderId)}
+                            className="text-primary font-medium hover:underline"
+                        >
+                            {orderNumber}
+                        </Link>
+                    ) : (
+                        orderNumber
+                    );
+                },
             },
             {
                 accessorKey: 'created_at',
@@ -148,19 +182,23 @@ export default function PlatformWholesaleInquiriesIndex({
                                     row.original.id,
                                 ),
                             },
-                            {
-                                label: 'Place order',
-                                icon: ShoppingBag,
-                                href: WholesaleInquiryController.placeOrder.url(
-                                    row.original.id,
-                                ),
-                            },
+                            ...(row.original.is_open
+                                ? [
+                                      {
+                                          label: 'Place order',
+                                          icon: ShoppingBag,
+                                          href: WholesaleInquiryController.placeOrder.url(
+                                              row.original.id,
+                                          ),
+                                      },
+                                  ]
+                                : []),
                         ]}
                     />
                 ),
             },
         ],
-        [query.sort, query.toggleSort],
+        [canViewOrders, query.sort, query.toggleSort],
     );
 
     return (
@@ -186,7 +224,7 @@ export default function PlatformWholesaleInquiriesIndex({
                 <DataTableToolbar
                     search={query.search}
                     onSearchChange={query.setSearch}
-                    searchPlaceholder="Search name, email, or phone…"
+                    searchPlaceholder="Search name, company, email, or phone…"
                     onClear={query.clearFilters}
                     filters={
                         <div className="grid gap-2">

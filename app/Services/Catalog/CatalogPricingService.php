@@ -15,7 +15,9 @@ class CatalogPricingService
      *     discount_type?: string|DiscountType|null,
      *     discount_price?: float|string|null,
      *     start_date?: string|null,
-     *     end_date?: string|null
+     *     end_date?: string|null,
+     *     wholesale_price?: float|string|null,
+     *     min_wholesale_qty?: int|string|null
      * }  $data
      */
     public function upsert(Product $product, array $data): Product
@@ -37,6 +39,16 @@ class CatalogPricingService
                 'discount_start_date' => $hasDiscount ? ($data['start_date'] ?? null) : null,
                 'discount_end_date' => $hasDiscount ? ($data['end_date'] ?? null) : null,
             ]);
+
+            if (array_key_exists('wholesale_price', $data)) {
+                $product->wholesale_price = self::nullableMoney($data['wholesale_price']);
+            }
+
+            if (array_key_exists('min_wholesale_qty', $data)) {
+                $product->min_wholesale_qty = $data['min_wholesale_qty'] === null || $data['min_wholesale_qty'] === ''
+                    ? null
+                    : max(1, (int) $data['min_wholesale_qty']);
+            }
 
             if (! $product->isDirty()) {
                 return $product;

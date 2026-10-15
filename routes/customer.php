@@ -6,6 +6,7 @@ use App\Http\Controllers\Customer\DashboardController as CustomerDashboardContro
 use App\Http\Controllers\Customer\NotificationController as CustomerNotificationController;
 use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Customer\ProductToReviewController as CustomerProductToReviewController;
+use App\Http\Controllers\Customer\WholesaleRequestController as CustomerWholesaleRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:customer', 'phone.verified'])->group(function () {
@@ -23,6 +24,11 @@ Route::middleware(['ensure.guard:customer', 'phone.verified'])->group(function (
     Route::post('orders/{order:order_number}/cancel', [CustomerOrderController::class, 'cancel'])->name('customer.orders.cancel');
     Route::post('orders/{order:order_number}/placement-code', [CustomerOrderController::class, 'resendPlacementCode'])->name('customer.orders.placement-code');
     Route::post('orders/{order:order_number}/returns', [CustomerOrderController::class, 'storeReturn'])->name('customer.orders.returns.store');
+    Route::get('wholesale-requests', [CustomerWholesaleRequestController::class, 'index'])
+        ->name('customer.wholesale-requests.index');
+    Route::get('wholesale-requests/{wholesaleInquiry}', [CustomerWholesaleRequestController::class, 'show'])
+        ->whereNumber('wholesaleInquiry')
+        ->name('customer.wholesale-requests.show');
     Route::get('notifications', [CustomerNotificationController::class, 'index'])
         ->name('customer.notifications.index');
     Route::get('notifications/{notification}', [CustomerNotificationController::class, 'show'])

@@ -123,6 +123,14 @@ class ProductService
                 unset($data['selling_price'], $data['regular_price']);
             }
 
+            if (array_key_exists('wholesale_price', $data)) {
+                $data['wholesale_price'] = $this->nullableMoney($data['wholesale_price']);
+            }
+
+            if (array_key_exists('min_wholesale_qty', $data)) {
+                $data['min_wholesale_qty'] = $this->nullablePositiveInt($data['min_wholesale_qty']);
+            }
+
             $product->fill($data);
             $product->save();
 
@@ -197,6 +205,8 @@ class ProductService
             'color_code' => CatalogBackgroundColor::normalize($data['color_code'] ?? null),
             'selling_price' => $this->nullableCatalogMoney($data['selling_price'] ?? null),
             'regular_price' => $this->nullableCatalogMoney($data['regular_price'] ?? null),
+            'wholesale_price' => $this->nullableMoney($data['wholesale_price'] ?? null),
+            'min_wholesale_qty' => $this->nullablePositiveInt($data['min_wholesale_qty'] ?? null),
             'status' => $data['status'] ?? true,
             'created_by' => $actor?->id,
         ]);
@@ -228,5 +238,25 @@ class ProductService
         }
 
         return null;
+    }
+
+    private function nullableMoney(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return number_format((float) $value, 2, '.', '');
+    }
+
+    private function nullablePositiveInt(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $int = (int) $value;
+
+        return $int > 0 ? $int : null;
     }
 }

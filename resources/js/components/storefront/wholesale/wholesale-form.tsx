@@ -1,15 +1,21 @@
-import { useForm } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import type { FormEvent } from 'react';
 import WholesaleInquiryController from '@/actions/App/Http/Controllers/Storefront/WholesaleInquiryController';
 import InputError from '@/components/input-error';
 import { CheckoutMapDialog } from '@/components/storefront/checkout/checkout-map-dialog';
 import { AddressSuggestInput } from '@/components/storefront/wholesale/address-suggest-input';
+import { WholesaleProductPicker } from '@/components/storefront/wholesale/wholesale-product-picker';
+import type { WholesalePickerLine } from '@/components/storefront/wholesale/wholesale-product-picker';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { wholesaleFormCopy } from '@/lib/storefront-wholesale';
 import { cn } from '@/lib/utils';
+import { index as wholesaleRequestsIndex } from '@/routes/customer/wholesale-requests';
+import type { Auth } from '@/types/auth';
 
 type WholesaleFormCopy = Record<string, string>;
 
@@ -25,23 +31,44 @@ function RequiredMark() {
     return <span className="text-primary">*</span>;
 }
 
-export function WholesaleForm({ className, copy }: WholesaleFormProps) {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        full_name: '',
-        phone: '',
-        email: '',
-        company: '',
-        address: '',
-        latitude: '',
-        longitude: '',
-        message: '',
-    });
+export function WholesaleForm({
+    className,
+    copy: cmsCopy,
+}: WholesaleFormProps) {
+    // Saved CMS payloads are not merged with defaults; keys added later fall back here.
+    const copy: WholesaleFormCopy = { ...wholesaleFormCopy, ...cmsCopy };
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const customer = auth.user?.user_type === 'customer' ? auth.user : null;
+    const [lines, setLines] = useState<WholesalePickerLine[]>([]);
+    const { data, setData, post, processing, errors, reset, transform } =
+        useForm({
+            full_name: customer?.name ?? '',
+            phone: customer?.phone ?? '',
+            email: customer?.email ?? '',
+            company: '',
+            address: '',
+            latitude: '',
+            longitude: '',
+            message: '',
+        });
+    const fieldErrors = errors as Record<string, string | undefined>;
 
     const onSubmit = (event: FormEvent) => {
         event.preventDefault();
+        transform((current) => ({
+            ...current,
+            items: lines.map((line) => ({
+                product_id: line.productId,
+                variant_id: line.variantId,
+                quantity: line.quantity,
+            })),
+        }));
         post(WholesaleInquiryController.store.url(), {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                reset();
+                setLines([]);
+            },
         });
     };
 
@@ -140,7 +167,11 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                                     'Start typing and select an address'
                                 }
                                 className={boxedFieldClass}
-                                onSelect={({ address, latitude, longitude }) => {
+                                onSelect={({
+                                    address,
+                                    latitude,
+                                    longitude,
+                                }) => {
                                     setData((current) => ({
                                         ...current,
                                         address,
@@ -186,8 +217,28 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                 </div>
 
                 <div className="space-y-2">
+                    <Label>{copy.products ?? 'Products'}</Label>
+                    <p className="text-muted-foreground text-xs">
+                        {copy.productsHelp ??
+                            'Add the products and quantities you need. Final pricing is confirmed by our team.'}
+                    </p>
+                    <WholesaleProductPicker
+                        optionsUrl={WholesaleInquiryController.products.url()}
+                        lines={lines}
+                        onChange={setLines}
+                        errors={fieldErrors}
+                        searchPlaceholder={
+                            copy.productsPlaceholder ?? 'Search products'
+                        }
+                        triggerClassName={boxedFieldClass}
+                        disabled={processing}
+                    />
+                </div>
+
+                <div className="space-y-2">
                     <Label htmlFor="wholesale-message">
-                        {copy.message ?? 'Message'} <RequiredMark />
+                        {copy.message ?? 'Message'}{' '}
+                        {lines.length === 0 ? <RequiredMark /> : null}
                     </Label>
                     <Textarea
                         id="wholesale-message"
@@ -203,7 +254,16 @@ export function WholesaleForm({ className, copy }: WholesaleFormProps) {
                     <InputError message={errors.message} />
                 </div>
 
-                <div className="mt-auto flex justify-end pt-4">
+                <div className="mt-auto flex flex-wrap items-center justify-end gap-4 pt-4">
+                    {customer ? (
+                        <Link
+                            href={wholesaleRequestsIndex.url()}
+                            prefetch
+                            className="text-primary text-sm font-medium underline-offset-4 hover:underline"
+                        >
+                            {copy.myRequests ?? 'My wholesale requests'}
+                        </Link>
+                    ) : null}
                     <Button
                         type="submit"
                         disabled={processing}

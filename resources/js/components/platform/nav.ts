@@ -110,7 +110,7 @@ export function buildPlatformNav(
             navGroup({
                 title: 'Customer management',
                 icon: Users,
-                permissions: ['manage-users'],
+                permissions: ['manage-users', 'manage-wholesale'],
                 items: [
                     navLink({
                         title: 'Customers',
@@ -128,7 +128,7 @@ export function buildPlatformNav(
                         title: 'Wholesale',
                         href: '/platform/wholesale-inquiries',
                         icon: Warehouse,
-                        permissions: ['manage-users'],
+                        permissions: ['manage-wholesale'],
                     }),
                     navLink({
                         title: 'Contact',

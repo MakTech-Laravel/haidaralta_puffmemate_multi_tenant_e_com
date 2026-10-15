@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Customer;
 
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderReturnType;
+use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\WholesaleInquiry;
 use App\Services\Order\FulfillmentStatusService;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\OrderReturnService;
@@ -110,7 +112,7 @@ class OrderController extends Controller
     }
 
     /**
-     * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, statusLabel: string, isActive: bool, paymentStatus: string, date: string}
+     * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, statusLabel: string, isActive: bool, paymentStatus: string, source: string, sourceLabel: string, date: string}
      */
     private function summarize(Order $order): array
     {
@@ -122,8 +124,24 @@ class OrderController extends Controller
             'statusLabel' => $order->status->customerLabel(),
             'isActive' => ! $order->status->isTerminal(),
             'paymentStatus' => $order->payment_status->value,
+            'source' => $order->source->value,
+            'sourceLabel' => $order->source->label(),
             'date' => $order->created_at->format('d M Y'),
         ];
+    }
+
+    private function wholesaleRequestId(Order $order): ?int
+    {
+        if ($order->source !== OrderSource::Wholesale) {
+            return null;
+        }
+
+        $id = WholesaleInquiry::query()
+            ->where('order_id', $order->id)
+            ->where('customer_id', $order->customer_id)
+            ->value('id');
+
+        return $id === null ? null : (int) $id;
     }
 
     /**
@@ -137,6 +155,9 @@ class OrderController extends Controller
             'statusLabel' => $order->status->customerLabel(),
             'paymentStatus' => $order->payment_status->value,
             'paymentStatusLabel' => $order->payment_status->customerLabel(),
+            'source' => $order->source->value,
+            'sourceLabel' => $order->source->label(),
+            'wholesaleRequestId' => $this->wholesaleRequestId($order),
             'deliveryCode' => $order->status->allowsPlacementCode()
                 ? $this->placements->currentCode($order)
                 : null,

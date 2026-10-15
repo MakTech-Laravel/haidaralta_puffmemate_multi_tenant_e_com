@@ -1,10 +1,5 @@
 import { Head, router, useForm, setLayoutProps } from '@inertiajs/react';
-import {
-    Ban,
-    Percent,
-    Tag,
-    type LucideIcon,
-} from 'lucide-react';
+import { Ban, Percent, Tag, type LucideIcon } from 'lucide-react';
 import { useEffect, type FormEvent } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -41,6 +36,8 @@ export type CatalogPricingProduct = {
         effective_price: string | null;
         has_discount: boolean;
         has_compare_at: boolean;
+        wholesale_price?: string | number | null;
+        min_wholesale_qty?: number | null;
     };
 };
 
@@ -188,6 +185,8 @@ export function ManageCatalogPricingPage({
         discount_price: price?.discount_price ?? '',
         start_date: price?.start_date ?? '',
         end_date: price?.end_date ?? '',
+        wholesale_price: String(price?.wholesale_price ?? ''),
+        min_wholesale_qty: String(price?.min_wholesale_qty ?? ''),
     });
 
     useEffect(() => {
@@ -205,6 +204,8 @@ export function ManageCatalogPricingPage({
             discount_price: next.discount_price ?? '',
             start_date: next.start_date ?? '',
             end_date: next.end_date ?? '',
+            wholesale_price: String(next.wholesale_price ?? ''),
+            min_wholesale_qty: String(next.min_wholesale_qty ?? ''),
         });
         priceForm.clearErrors();
         // eslint-disable-next-line react-hooks/exhaustive-deps -- remount form when selected product changes
@@ -233,7 +234,8 @@ export function ManageCatalogPricingPage({
         priceForm.setData({
             ...priceForm.data,
             discount_type: next,
-            discount_price: next === 'none' ? '' : priceForm.data.discount_price,
+            discount_price:
+                next === 'none' ? '' : priceForm.data.discount_price,
             start_date: next === 'none' ? '' : priceForm.data.start_date,
             end_date: next === 'none' ? '' : priceForm.data.end_date,
         });
@@ -274,22 +276,34 @@ export function ManageCatalogPricingPage({
             return;
         }
 
-        priceForm.transform((data) => {
-            const none = data.discount_type === 'none';
+        priceForm
+            .transform((data) => {
+                const none = data.discount_type === 'none';
 
-            return {
-                regular_price:
-                    data.regular_price === '' ? null : data.regular_price,
-                selling_price: data.selling_price,
-                discount_type: data.discount_type,
-                discount_price: none ? null : data.discount_price,
-                start_date: none || data.start_date === '' ? null : data.start_date,
-                end_date: none || data.end_date === '' ? null : data.end_date,
-            };
-        }).put(priceUrl, {
-            preserveScroll: true,
-            onFinish: () => priceForm.transform((data) => data),
-        });
+                return {
+                    regular_price:
+                        data.regular_price === '' ? null : data.regular_price,
+                    selling_price: data.selling_price,
+                    discount_type: data.discount_type,
+                    discount_price: none ? null : data.discount_price,
+                    start_date:
+                        none || data.start_date === '' ? null : data.start_date,
+                    end_date:
+                        none || data.end_date === '' ? null : data.end_date,
+                    wholesale_price:
+                        data.wholesale_price.trim() === ''
+                            ? null
+                            : data.wholesale_price,
+                    min_wholesale_qty:
+                        data.min_wholesale_qty.trim() === ''
+                            ? null
+                            : data.min_wholesale_qty,
+                };
+            })
+            .put(priceUrl, {
+                preserveScroll: true,
+                onFinish: () => priceForm.transform((data) => data),
+            });
     };
 
     return (
@@ -377,7 +391,7 @@ export function ManageCatalogPricingPage({
                                         Price
                                     </h3>
                                     <p className="text-muted-foreground text-xs">
-                                        Regular and selling price
+                                        Regular, selling and wholesale price
                                     </p>
                                 </div>
                                 <Button
@@ -445,6 +459,65 @@ export function ManageCatalogPricingPage({
                                     </p>
                                     <InputError
                                         message={priceForm.errors.selling_price}
+                                    />
+                                </div>
+                                <div className="grid min-w-0 gap-2">
+                                    <Label htmlFor="catalog_wholesale_price">
+                                        Wholesale price{' '}
+                                        <span className="text-muted-foreground font-normal">
+                                            (AUD)
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="catalog_wholesale_price"
+                                        type="number"
+                                        step="0.01"
+                                        min={0}
+                                        placeholder="Selling price"
+                                        value={priceForm.data.wholesale_price}
+                                        onChange={(event) =>
+                                            priceForm.setData(
+                                                'wholesale_price',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <p className="text-muted-foreground text-xs">
+                                        Unit price suggested for wholesale
+                                        orders. Empty uses selling.
+                                    </p>
+                                    <InputError
+                                        message={
+                                            priceForm.errors.wholesale_price
+                                        }
+                                    />
+                                </div>
+                                <div className="grid min-w-0 gap-2">
+                                    <Label htmlFor="catalog_min_wholesale_qty">
+                                        Wholesale min qty
+                                    </Label>
+                                    <Input
+                                        id="catalog_min_wholesale_qty"
+                                        type="number"
+                                        step="1"
+                                        min={1}
+                                        placeholder="No minimum"
+                                        value={priceForm.data.min_wholesale_qty}
+                                        onChange={(event) =>
+                                            priceForm.setData(
+                                                'min_wholesale_qty',
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <p className="text-muted-foreground text-xs">
+                                        Smallest quantity a wholesale request
+                                        may ask for.
+                                    </p>
+                                    <InputError
+                                        message={
+                                            priceForm.errors.min_wholesale_qty
+                                        }
                                     />
                                 </div>
                             </div>
@@ -525,9 +598,7 @@ export function ManageCatalogPricingPage({
                                         })}
                                     </div>
                                     <InputError
-                                        message={
-                                            priceForm.errors.discount_type
-                                        }
+                                        message={priceForm.errors.discount_type}
                                     />
                                 </div>
 
@@ -610,8 +681,7 @@ export function ManageCatalogPricingPage({
                                                 }
                                                 placeholder="Optional start"
                                                 aria-invalid={Boolean(
-                                                    priceForm.errors
-                                                        .start_date,
+                                                    priceForm.errors.start_date,
                                                 )}
                                             />
                                             <InputError

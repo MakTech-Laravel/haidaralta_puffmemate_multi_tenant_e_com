@@ -4,6 +4,7 @@ import {
     CalendarClock,
     CreditCard,
     History,
+    Mail,
     MapPin,
     Package,
     Phone,
@@ -23,6 +24,7 @@ import StockTransferController from '@/actions/App/Http/Controllers/Platform/Sto
 import { OrderAssignDriverSheet } from '@/components/branch/order-assign-driver-sheet';
 import { OrderHandoverActions } from '@/components/orders/order-handover-actions';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { OrderStatusProgress } from '@/components/orders/order-status-progress';
 import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +34,6 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { formatAppDateTime } from '@/lib/datetime';
 import {
-    orderSourceBadgeClass,
     orderStatusBadgeClass,
     paymentStatusBadgeClass,
 } from '@/lib/order-badges';
@@ -84,6 +85,8 @@ type OrderDetail = {
     paymentStatusLabel: string;
     source: string;
     sourceLabel: string;
+    wholesaleInquiry: { id: number; url: string | null } | null;
+    notes: string | null;
     placedByName: string | null;
     paymentStatusOptions: { value: string; label: string }[];
     canComplete?: boolean;
@@ -117,6 +120,8 @@ type OrderDetail = {
         city?: string;
         postal_code?: string;
         phone?: string;
+        company?: string | null;
+        email?: string | null;
     } | null;
     fulfillments: FulfillmentSummary[];
     timeline: {
@@ -713,15 +718,28 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                                 >
                                     {order.paymentStatusLabel}
                                 </Badge>
-                                <Badge
-                                    variant="outline"
-                                    className={orderSourceBadgeClass(
-                                        order.source,
-                                    )}
-                                >
-                                    {order.sourceLabel}
-                                </Badge>
+                                <OrderSourceBadge
+                                    source={order.source}
+                                    label={order.sourceLabel}
+                                />
                             </div>
+                            {order.wholesaleInquiry ? (
+                                <p className="text-muted-foreground text-sm">
+                                    From wholesale inquiry{' '}
+                                    {order.wholesaleInquiry.url ? (
+                                        <Link
+                                            href={order.wholesaleInquiry.url}
+                                            className="text-primary font-medium hover:underline"
+                                        >
+                                            #{order.wholesaleInquiry.id}
+                                        </Link>
+                                    ) : (
+                                        <span className="text-foreground font-medium">
+                                            #{order.wholesaleInquiry.id}
+                                        </span>
+                                    )}
+                                </p>
+                            ) : null}
                         </div>
                         <div className="text-left sm:text-right">
                             <p className="text-muted-foreground text-xs font-medium">
@@ -837,6 +855,11 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                                     <p className="text-foreground font-semibold">
                                         {recipientName}
                                     </p>
+                                    {address?.company ? (
+                                        <p className="text-foreground">
+                                            {address.company}
+                                        </p>
+                                    ) : null}
                                     {recipientPhone ? (
                                         <p className="text-muted-foreground flex items-center gap-1.5">
                                             <Phone
@@ -848,6 +871,20 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                                                 className="hover:text-foreground"
                                             >
                                                 {recipientPhone}
+                                            </a>
+                                        </p>
+                                    ) : null}
+                                    {address?.email ? (
+                                        <p className="text-muted-foreground flex items-center gap-1.5">
+                                            <Mail
+                                                className="size-3.5 shrink-0"
+                                                aria-hidden
+                                            />
+                                            <a
+                                                href={`mailto:${address.email}`}
+                                                className="hover:text-foreground truncate"
+                                            >
+                                                {address.email}
                                             </a>
                                         </p>
                                     ) : null}
@@ -872,6 +909,16 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                                         </p>
                                     )}
                                 </div>
+                                {order.notes ? (
+                                    <div className="space-y-1">
+                                        <p className="text-muted-foreground text-xs font-medium">
+                                            Order notes
+                                        </p>
+                                        <p className="text-foreground whitespace-pre-wrap">
+                                            {order.notes}
+                                        </p>
+                                    </div>
+                                ) : null}
                             </div>
                         </SectionCard>
 

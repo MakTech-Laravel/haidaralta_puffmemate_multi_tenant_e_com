@@ -16,9 +16,9 @@ import {
 import Heading from '@/components/heading';
 import { OrderListCustomer } from '@/components/orders/order-list-customer';
 import { OrderPlacedDateFilters } from '@/components/orders/order-placed-date-filters';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Badge } from '@/components/ui/badge';
 import {
-    orderSourceBadgeClass,
     orderStatusBadgeClass,
     paymentStatusBadgeClass,
     paymentStatusLabel,
@@ -85,6 +85,7 @@ export default function BranchOrdersIndex({
             filter: {
                 search: tablePayload.filters.search ?? '',
                 status: tablePayload.filters.status ?? 'all',
+                source: tablePayload.filters.source ?? 'all',
                 from: tablePayload.filters.from ?? null,
                 to: tablePayload.filters.to ?? null,
             },
@@ -130,12 +131,10 @@ export default function BranchOrdersIndex({
                 header: 'Source',
                 meta: { label: 'Source' },
                 cell: ({ row }) => (
-                    <Badge
-                        variant="outline"
-                        className={orderSourceBadgeClass(row.original.source)}
-                    >
-                        {row.original.source_label}
-                    </Badge>
+                    <OrderSourceBadge
+                        source={row.original.source}
+                        label={row.original.source_label}
+                    />
                 ),
             },
             {
@@ -214,8 +213,7 @@ export default function BranchOrdersIndex({
                         onSort={query.toggleSort}
                     />
                 ),
-                cell: ({ row }) =>
-                    `$${row.original.shipping_cost.toFixed(2)}`,
+                cell: ({ row }) => `$${row.original.shipping_cost.toFixed(2)}`,
             },
             {
                 id: 'payment',
@@ -317,55 +315,90 @@ export default function BranchOrdersIndex({
                             onClear={query.clearFilters}
                             filters={
                                 <div className="flex flex-wrap items-end gap-2">
-                                <Select
-                                    value={String(
-                                        query.filters.status ?? 'all',
-                                    )}
-                                    onValueChange={(value) =>
-                                        query.setFilter(
-                                            'status',
-                                            value === 'all' ? null : value,
-                                        )
-                                    }
-                                >
-                                    <SelectTrigger className="w-[10rem]">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            All statuses
-                                        </SelectItem>
-                                        {(
-                                            (tablePayload.filterOptions
-                                                ?.status ?? []) as Array<{
-                                                value: string;
-                                                label: string;
-                                            }>
-                                        ).map((option) => (
-                                            <SelectItem
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
+                                    <Select
+                                        value={String(
+                                            query.filters.status ?? 'all',
+                                        )}
+                                        onValueChange={(value) =>
+                                            query.setFilter(
+                                                'status',
+                                                value === 'all' ? null : value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger className="w-[10rem]">
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All statuses
                                             </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <OrderPlacedDateFilters
-                                    from={
-                                        typeof query.filters.from === 'string'
-                                            ? query.filters.from
-                                            : null
-                                    }
-                                    to={
-                                        typeof query.filters.to === 'string'
-                                            ? query.filters.to
-                                            : null
-                                    }
-                                    onChange={(key, value) =>
-                                        query.setFilter(key, value)
-                                    }
-                                />
+                                            {(
+                                                (tablePayload.filterOptions
+                                                    ?.status ?? []) as Array<{
+                                                    value: string;
+                                                    label: string;
+                                                }>
+                                            ).map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select
+                                        value={String(
+                                            query.filters.source ?? 'all',
+                                        )}
+                                        onValueChange={(value) =>
+                                            query.setFilter(
+                                                'source',
+                                                value === 'all' ? null : value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger className="w-[10rem]">
+                                            <SelectValue placeholder="Source" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All sources
+                                            </SelectItem>
+                                            {(
+                                                (tablePayload.filterOptions
+                                                    ?.source ?? []) as Array<{
+                                                    value: string;
+                                                    label: string;
+                                                }>
+                                            ).map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <OrderPlacedDateFilters
+                                        from={
+                                            typeof query.filters.from ===
+                                            'string'
+                                                ? query.filters.from
+                                                : null
+                                        }
+                                        to={
+                                            typeof query.filters.to === 'string'
+                                                ? query.filters.to
+                                                : null
+                                        }
+                                        onChange={(key, value) =>
+                                            query.setFilter(key, value)
+                                        }
+                                    />
                                 </div>
                             }
                         />
@@ -387,9 +420,7 @@ export default function BranchOrdersIndex({
                 fulfillmentNumber={
                     assignFulfillment?.fulfillment_number ?? null
                 }
-                mode={
-                    assignFulfillment?.is_change ? 'change' : 'assign'
-                }
+                mode={assignFulfillment?.is_change ? 'change' : 'assign'}
             />
         </>
     );
