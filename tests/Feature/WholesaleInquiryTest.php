@@ -114,6 +114,16 @@ test('platform admin can open wholesale place-order without branch', function ()
         'full_name' => 'Jordan Wholesale',
         'phone' => '0499888777',
     ]);
+    $product = Product::factory()->create([
+        'status' => true,
+        'selling_price' => 19.5,
+        'wholesale_price' => 14.25,
+        'min_wholesale_qty' => 24,
+    ]);
+    WholesaleInquiryItem::factory()->create([
+        'wholesale_inquiry_id' => $inquiry->id,
+        'product_id' => $product->id,
+    ]);
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.wholesale-inquiries.place-order', $inquiry))
@@ -123,6 +133,8 @@ test('platform admin can open wholesale place-order without branch', function ()
             ->where('inquiry.id', $inquiry->id)
             ->where('inquiry.full_name', 'Jordan Wholesale')
             ->where('inquiry.phone', '0499888777')
+            ->where('inquiry.items.0.unit_price', 14.25)
+            ->where('inquiry.items.0.min_quantity', 24)
             ->where('branch', null)
             ->where('products', [])
             ->has('branchOptionsUrl'));

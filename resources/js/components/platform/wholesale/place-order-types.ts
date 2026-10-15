@@ -5,6 +5,9 @@ export type WholesalePlaceOrderInquiryItem = {
     name: string;
     sku: string | null;
     quantity: number;
+    /** Catalog wholesale price; branch prices replace it once a branch is picked. */
+    unit_price: number;
+    min_quantity: number | null;
 };
 
 export type WholesalePlaceOrderInquiry = {

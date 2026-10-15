@@ -165,7 +165,7 @@ class WholesaleInquiryController extends Controller
      */
     private function inquiryPayload(WholesaleInquiry $inquiry): array
     {
-        $inquiry->loadMissing(['items', 'customer:id,name,phone', 'order:id,order_number', 'reviewer:id,name']);
+        $inquiry->loadMissing(['items.product', 'customer:id,name,phone', 'order:id,order_number', 'reviewer:id,name']);
 
         return [
             'id' => $inquiry->id,
@@ -199,14 +199,22 @@ class WholesaleInquiryController extends Controller
                 'order_number' => $inquiry->order->order_number,
             ],
             'items' => $inquiry->items
-                ->map(fn (WholesaleInquiryItem $item): array => [
-                    'id' => $item->id,
-                    'product_id' => $item->product_id,
-                    'variant_id' => $item->variant_id,
-                    'name' => $item->product_name_snapshot,
-                    'sku' => $item->sku_snapshot,
-                    'quantity' => $item->quantity,
-                ])
+                ->map(function (WholesaleInquiryItem $item): array {
+                    $wholesale = $item->product === null
+                        ? ['amount' => null, 'min_qty' => null]
+                        : BranchProductPriceDisplay::wholesaleForProductContext($item->product, null);
+
+                    return [
+                        'id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'variant_id' => $item->variant_id,
+                        'name' => $item->product_name_snapshot,
+                        'sku' => $item->sku_snapshot,
+                        'quantity' => $item->quantity,
+                        'unit_price' => (float) ($wholesale['amount'] ?? 0),
+                        'min_quantity' => $wholesale['min_qty'],
+                    ];
+                })
                 ->values()
                 ->all(),
         ];
