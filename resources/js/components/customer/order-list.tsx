@@ -7,30 +7,20 @@ import { cn } from '@/lib/utils';
 import { shop } from '@/routes';
 import { show as orderShow } from '@/routes/customer/orders';
 
-export type CustomerOrderStatus =
-    | 'pending'
-    | 'processing'
-    | 'ready'
-    | 'assigned'
-    | 'picked_up'
-    | 'out_for_delivery'
-    | 'delivery_failed'
-    | 'returning'
-    | 'delivered'
-    | 'cancelled';
+import type {
+    CustomerOrderStatus,
+    CustomerPaymentStatus,
+} from '@/components/customer/order-track-types';
 
-export type CustomerPaymentStatus =
-    | 'pending_collection'
-    | 'collected'
-    | 'verified'
-    | 'failed'
-    | 'refunded';
+export type { CustomerOrderStatus, CustomerPaymentStatus };
 
 export type CustomerOrder = {
     orderNumber: string;
     products: string[];
     priceLabel: string;
     status: CustomerOrderStatus;
+    statusLabel: string;
+    isActive: boolean;
     paymentStatus: CustomerPaymentStatus;
     source?: string;
     sourceLabel?: string;
@@ -38,30 +28,6 @@ export type CustomerOrder = {
 };
 
 const VISIBLE_PRODUCT_COUNT = 2;
-
-const statusLabel: Record<string, string> = {
-    pending: 'Order Placed',
-    processing: 'Preparing Your Order',
-    ready: 'Ready For Delivery',
-    assigned: 'Driver Assigned',
-    picked_up: 'Order Picked Up',
-    out_for_delivery: 'On The Way',
-    delivery_failed: 'Delivery unsuccessful',
-    returning: 'Returning your order',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
-};
-
-const activeStatuses = [
-    'pending',
-    'processing',
-    'ready',
-    'assigned',
-    'picked_up',
-    'out_for_delivery',
-    'delivery_failed',
-    'returning',
-];
 
 type OrderListProps = {
     orders: CustomerOrder[];
@@ -118,7 +84,6 @@ export function OrderList({
                     const hasMoreProducts =
                         order.products.length > VISIBLE_PRODUCT_COUNT;
                     const detailsUrl = orderShow.url(order.orderNumber);
-                    const isActive = activeStatuses.includes(order.status);
 
                     return (
                         <li key={order.orderNumber}>
@@ -150,12 +115,12 @@ export function OrderList({
                                             <span
                                                 className={cn(
                                                     'inline-flex shrink-0 rounded-full px-2.5 py-1 text-sm font-normal',
-                                                    isActive
+                                                    order.isActive
                                                         ? 'bg-primary/10 text-primary'
                                                         : 'bg-muted-foreground/15 text-foreground',
                                                 )}
                                             >
-                                                {statusLabel[order.status]}
+                                                {order.statusLabel}
                                             </span>
                                         </div>
                                         <div className="flex flex-wrap gap-2">

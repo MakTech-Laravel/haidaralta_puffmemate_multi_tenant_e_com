@@ -12,47 +12,144 @@ use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Services\Conversation\ConversationService;
 use App\Services\Order\DriverDeliveryService;
+use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\OrderReturnService;
 use App\Support\ConversationPayload;
 use App\Support\Toast;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class OrderController extends Controller
 {
+    /**
+     * Field queue order: the stop at the door first, untouched pickups last.
+     *
+     * @var list<FulfillmentStatus>
+     */
+    private const FIELD_QUEUE = [
+        FulfillmentStatus::Arrived,
+        FulfillmentStatus::OutForDelivery,
+        FulfillmentStatus::DeliveryFailed,
+        FulfillmentStatus::Returning,
+        FulfillmentStatus::PickedUp,
+        FulfillmentStatus::Assigned,
+    ];
+
+    /**
+     * @var list<FulfillmentStatus>
+     */
+    private const HISTORY_STATUSES = [
+        FulfillmentStatus::Delivered,
+        FulfillmentStatus::Returned,
+        FulfillmentStatus::Cancelled,
+    ];
+
     public function __construct(
         private DriverDeliveryService $deliveries,
         private ConversationService $conversations,
         private OrderReturnService $returns,
+        private OrderPlacementNotifier $placements,
     ) {}
 
+    /**
+     * Today's run: every stop the driver still holds plus drops completed today.
+     */
     public function index(Request $request): Response
     {
-        $orders = $this->assigned($request)
-            ->reject(fn (OrderFulfillment $fulfillment): bool => $fulfillment->status === FulfillmentStatus::Delivered)
+        $fulfillments = OrderFulfillment::query()
+            ->where('driver_id', $request->user()->id)
+            ->where(fn (Builder $query) => $query
+                ->whereIn('status', array_map(
+                    fn (FulfillmentStatus $status): string => $status->value,
+                    FulfillmentStatus::driverWorkload(),
+                ))
+                ->orWhere(fn (Builder $query) => $query
+                    ->where('status', FulfillmentStatus::Delivered->value)
+                    ->where('updated_at', '>=', today())))
+            ->with(['order.items', 'order.customer:id,name'])
+            ->oldest('id')
+            ->get();
+
+        [$active, $delivered] = $fulfillments->partition(
+            fn (OrderFulfillment $fulfillment): bool => $fulfillment->status->holdsDriverWorkload(),
+        );
+
+        $orders = $active
+            ->sortBy(fn (OrderFulfillment $fulfillment): int => (int) array_search($fulfillment->status, self::FIELD_QUEUE, true))
+            ->concat($delivered->sortByDesc('updated_at'))
             ->map(fn (OrderFulfillment $fulfillment): array => $this->card($fulfillment))
             ->values()
             ->all();
 
         return Inertia::render('driver/orders/index', [
             'orders' => $orders,
-            'status' => $request->session()->get('success'),
         ]);
     }
 
+    /**
+     * Finished drops (delivered, returned, cancelled) within a date range,
+     * newest first, paged for infinite scroll. Defaults to the running month.
+     */
     public function history(Request $request): Response
     {
-        $orders = $this->assigned($request)
-            ->filter(fn (OrderFulfillment $fulfillment): bool => $fulfillment->status === FulfillmentStatus::Delivered)
-            ->map(fn (OrderFulfillment $fulfillment): array => $this->card($fulfillment))
-            ->values()
-            ->all();
+        $validated = $request->validate([
+            'from' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'to' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $search = trim((string) ($validated['search'] ?? ''));
+        $today = CarbonImmutable::today();
+        $from = isset($validated['from'])
+            ? CarbonImmutable::createFromFormat('!Y-m-d', $validated['from'])
+            : $today->startOfMonth();
+        $to = isset($validated['to'])
+            ? CarbonImmutable::createFromFormat('!Y-m-d', $validated['to'])
+            : $today;
+
+        if ($to->lessThan($from)) {
+            [$from, $to] = [$to, $from];
+        }
+
+        $orders = OrderFulfillment::query()
+            ->where('driver_id', $request->user()->id)
+            ->whereIn('status', array_map(
+                fn (FulfillmentStatus $status): string => $status->value,
+                self::HISTORY_STATUSES,
+            ))
+            ->whereBetween('updated_at', [$from->startOfDay(), $to->endOfDay()])
+            ->when($search !== '', fn (Builder $query) => $query->whereHas(
+                'order',
+                fn (Builder $order) => $order->where(fn (Builder $match) => $match
+                    ->whereLike('order_number', '%'.$search.'%')
+                    ->orWhereLike('shipping_address_snapshot->name', '%'.$search.'%')
+                    ->orWhereLike('shipping_address_snapshot->address', '%'.$search.'%')
+                    ->orWhereLike('shipping_address_snapshot->city', '%'.$search.'%')
+                    ->orWhereLike('shipping_address_snapshot->phone', '%'.$search.'%')),
+            ))
+            ->with(['order.items', 'order.customer:id,name'])
+            ->latest('updated_at')
+            ->latest('id')
+            ->paginate(15)
+            ->withQueryString()
+            ->through(fn (OrderFulfillment $fulfillment): array => $this->card($fulfillment));
 
         return Inertia::render('driver/history', [
-            'orders' => $orders,
+            'orders' => Inertia::scroll($orders),
+            'total' => $orders->total(),
+            'filters' => [
+                'search' => $search,
+                'from' => $from->format('Y-m-d'),
+                'to' => $to->format('Y-m-d'),
+            ],
+            'today' => $today->format('Y-m-d'),
         ]);
     }
 
@@ -104,22 +201,25 @@ class OrderController extends Controller
     public function pickUp(Request $request, Order $order): RedirectResponse
     {
         $this->deliveries->pickUp($this->owned($request, $order), $request->user());
+        Toast::success('Order picked up.');
 
-        return back()->with('success', 'Order picked up.');
+        return back();
     }
 
     public function start(Request $request, Order $order): RedirectResponse
     {
         $this->deliveries->startDelivery($this->owned($request, $order), $request->user());
+        Toast::success('Delivery started. Chat with the customer is open.');
 
-        return back()->with('success', 'Delivery started.');
+        return back();
     }
 
     public function arrive(Request $request, Order $order): RedirectResponse
     {
         $this->deliveries->arrive($this->owned($request, $order), $request->user());
+        Toast::success('Marked as arrived.');
 
-        return back()->with('success', 'Marked as arrived.');
+        return back();
     }
 
     public function deliver(Request $request, Order $order): RedirectResponse
@@ -129,14 +229,31 @@ class OrderController extends Controller
         ]);
 
         $this->deliveries->complete($this->owned($request, $order), $request->user(), $request->string('otp')->toString());
+        Toast::success('Order marked as delivered.');
 
-        return to_route('driver.orders.index')->with('success', 'Order marked as delivered.');
+        return to_route('driver.orders.index');
+    }
+
+    public function resendDeliveryCode(Request $request, Order $order): RedirectResponse
+    {
+        $fulfillment = $this->owned($request, $order);
+
+        if ($fulfillment->status !== FulfillmentStatus::Arrived) {
+            throw ValidationException::withMessages([
+                'code' => 'Send a new code only after you mark the order arrived.',
+            ]);
+        }
+
+        $this->placements->resend($order);
+        Toast::success('A new code was sent to the customer.');
+
+        return back();
     }
 
     public function fail(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([
-            'reason' => ['required', 'string'],
+            'reason' => ['required', Rule::enum(DeliveryFailureReason::class)],
             'note' => ['required', 'string', 'max:500'],
         ]);
 
@@ -144,17 +261,19 @@ class OrderController extends Controller
             $this->owned($request, $order),
             $request->user(),
             DeliveryFailureReason::from($data['reason']),
-            $data['note'] ?? null,
+            $data['note'],
         );
+        Toast::success('Order marked as not delivered.');
 
-        return back()->with('success', 'Customer marked unavailable.');
+        return back();
     }
 
     public function beginReturn(Request $request, Order $order): RedirectResponse
     {
         $this->deliveries->beginReturn($this->owned($request, $order), $request->user());
+        Toast::success('Goods marked as returning to the branch.');
 
-        return back()->with('success', 'Goods marked as returning to the branch.');
+        return back();
     }
 
     public function storeReturn(Request $request, Order $order): RedirectResponse
@@ -173,20 +292,9 @@ class OrderController extends Controller
             $data['reason'],
             $data['note'] ?? null,
         );
+        Toast::success('Return request sent.');
 
-        return back()->with('success', 'Return request sent.');
-    }
-
-    /**
-     * @return Collection<int, OrderFulfillment>
-     */
-    private function assigned(Request $request)
-    {
-        return OrderFulfillment::query()
-            ->where('driver_id', $request->user()->id)
-            ->with(['order.items'])
-            ->latest('id')
-            ->get();
+        return back();
     }
 
     private function owned(Request $request, Order $order): OrderFulfillment
@@ -214,7 +322,10 @@ class OrderController extends Controller
         return [
             'id' => $order->order_number,
             'orderNumber' => $order->order_number,
-            'status' => $this->driverStatus($fulfillment->status),
+            'status' => $fulfillment->status->value,
+            'statusLabel' => $fulfillment->status->label(),
+            'canChat' => $fulfillment->status->allowsOrderChat(),
+            'nextAction' => $fulfillment->status->driverNextAction(),
             'customerName' => $snapshot['name'] ?? ($order->customer?->name ?? 'Customer'),
             'company' => $snapshot['company'] ?? null,
             'source' => $order->source->value,
@@ -231,10 +342,20 @@ class OrderController extends Controller
             'productPreview' => $order->items->pluck('product_name_snapshot')->take(3)->all(),
             'paymentMethod' => $order->payment_method === 'pos' ? 'paid' : 'cod',
             'etaLabel' => null,
-            'completedLabel' => $fulfillment->status === FulfillmentStatus::Delivered
-                ? $fulfillment->updated_at?->format('d M Y')
+            'completedLabel' => in_array($fulfillment->status, self::HISTORY_STATUSES, true)
+                ? $this->dayLabel($fulfillment->updated_at)
                 : null,
         ];
+    }
+
+    private function dayLabel(?CarbonInterface $date): ?string
+    {
+        return match (true) {
+            $date === null => null,
+            $date->isToday() => 'Today',
+            $date->isYesterday() => 'Yesterday',
+            default => $date->format('D, d M Y'),
+        };
     }
 
     /**
@@ -248,9 +369,7 @@ class OrderController extends Controller
 
         return [
             ...$card,
-            'statusLabel' => $fulfillment->status->label(),
             'demoOtpHint' => '',
-            'canChat' => $fulfillment->status->allowsOrderChat(),
             'canPickUp' => $fulfillment->status === FulfillmentStatus::Assigned,
             'canStart' => $fulfillment->status === FulfillmentStatus::PickedUp,
             'canArrive' => $fulfillment->status === FulfillmentStatus::OutForDelivery,
@@ -290,14 +409,5 @@ class OrderController extends Controller
         abort_if($conversation === null, 404);
 
         return $conversation;
-    }
-
-    private function driverStatus(FulfillmentStatus $status): string
-    {
-        return match ($status) {
-            FulfillmentStatus::Delivered => 'delivered',
-            FulfillmentStatus::OutForDelivery => 'out_for_delivery',
-            default => $status->value,
-        };
     }
 }

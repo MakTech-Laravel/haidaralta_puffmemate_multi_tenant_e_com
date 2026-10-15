@@ -17,7 +17,8 @@ return new class extends Migration
             $table->string('purpose');
             $table->nullableMorphs('subject');
             $table->string('code_hash');
-            $table->timestamp('expires_at');
+            $table->text('code_encrypted')->nullable();
+            $table->timestamp('expires_at')->nullable();
             $table->unsignedTinyInteger('attempts')->default(0);
             $table->timestamp('consumed_at')->nullable();
             $table->timestamps();

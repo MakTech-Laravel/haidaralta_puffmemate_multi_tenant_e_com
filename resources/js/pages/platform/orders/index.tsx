@@ -119,6 +119,14 @@ export default function PlatformOrdersIndex({
                         onSort={query.toggleSort}
                     />
                 ),
+                cell: ({ row }) => (
+                    <Link
+                        href={OrderController.show.url(row.original.id)}
+                        className="hover:text-primary font-medium"
+                    >
+                        {row.original.order_number}
+                    </Link>
+                ),
             },
             {
                 accessorKey: 'source_label',

@@ -60,7 +60,7 @@ test('customer order list only shows their own orders', function () {
     $customer = User::factory()->create();
     $other = User::factory()->create();
 
-    customerOrderWithItem($customer);
+    customerOrderWithItem($customer, ['status' => OrderStatus::Pending]);
     customerOrderWithItem($other);
 
     $this->actingAs($customer, 'customer')
@@ -69,6 +69,8 @@ test('customer order list only shows their own orders', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('customer/orders/index')
             ->has('orders', 1)
+            ->where('orders.0.statusLabel', 'Awaiting confirmation')
+            ->where('orders.0.isActive', true)
             ->missing('orders.0.image')
             ->missing('orders.0.id'));
 });

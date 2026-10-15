@@ -4,6 +4,7 @@ import { OrderStatusTrack } from '@/components/orders/order-status-track';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { OrderTrackAddress } from '@/components/customer/order-track-address';
+import { OrderTrackDeliveryCode } from '@/components/customer/order-track-delivery-code';
 import { OrderTrackDriverCard } from '@/components/customer/order-track-driver';
 import { OrderTrackProducts } from '@/components/customer/order-track-products';
 import type { CustomerOrderDetail } from '@/components/customer/order-track-types';
@@ -24,7 +25,7 @@ const statusLabel: Record<string, string> = {
     picked_up: 'Order Picked Up',
     out_for_delivery: 'On The Way',
     arrived: 'Driver arrived',
-    delivery_failed: 'Customer unavailable',
+    delivery_failed: 'Delivery unsuccessful',
     returning: 'Returning your order',
     returned: 'Returned to the branch',
     delivered: 'Delivered',
@@ -97,24 +98,6 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                             >
                                 {order.statusLabel ?? statusLabel[order.status]}
                             </Badge>
-                            {order.canResendCode ? (
-                                <Form
-                                    {...OrderController.resendPlacementCode.form(
-                                        order.orderNumber,
-                                    )}
-                                >
-                                    {({ processing }) => (
-                                        <Button
-                                            type="submit"
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={processing}
-                                        >
-                                            Resend code
-                                        </Button>
-                                    )}
-                                </Form>
-                            ) : null}
                             {order.canCancel ? (
                                 <Form
                                     {...OrderController.cancel.form(
@@ -136,6 +119,13 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                         </div>
                     </div>
 
+                    {order.canResendCode ? (
+                        <OrderTrackDeliveryCode
+                            orderNumber={order.orderNumber}
+                            code={order.deliveryCode ?? null}
+                        />
+                    ) : null}
+
                     <OrderReturnRequest
                         canRequest={order.canRequestReturn ?? false}
                         request={order.returnRequest ?? null}
@@ -143,12 +133,6 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                             order.orderNumber,
                         )}
                     />
-
-                    {order.handoverNotice ? (
-                        <p className="bg-primary/10 text-foreground rounded-md p-3 text-sm">
-                            {order.handoverNotice}
-                        </p>
-                    ) : null}
                 </div>
 
                 <div

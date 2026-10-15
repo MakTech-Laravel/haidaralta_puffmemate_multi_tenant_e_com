@@ -4,12 +4,15 @@ namespace App\Services\Order;
 
 use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
+use App\Enums\HandoverVerification;
+use App\Enums\NotificationType;
 use App\Enums\OtpPurpose;
 use App\Models\DeliveryAttempt;
 use App\Models\Inventory;
 use App\Models\OrderFulfillment;
 use App\Models\User;
 use App\Services\Inventory\InventoryReservationService;
+use App\Services\Notifications\NotificationService;
 use App\Services\OtpService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -23,6 +26,7 @@ class DriverDeliveryService
         private PaymentMarkingService $payments,
         private InventoryReservationService $reservations,
         private OtpService $otp,
+        private NotificationService $notifications,
     ) {}
 
     public function pickUp(OrderFulfillment $fulfillment, User $driver): OrderFulfillment
@@ -90,15 +94,75 @@ class DriverDeliveryService
             ]);
         }
 
-        $this->otp->verify($phone, OtpPurpose::OrderPlaced, $code, $order);
+        try {
+            $this->otp->verify($phone, OtpPurpose::OrderPlaced, $code, $order);
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages([
+                'otp' => $exception->errors()['code'] ?? $exception->getMessage(),
+            ]);
+        }
 
-        return DB::transaction(function () use ($fulfillment, $actor): OrderFulfillment {
-            $this->payments->collect($fulfillment->order, $actor);
-            $fulfillment->forceFill(['paid_at' => now()])->save();
-            $this->saleReserved($fulfillment, $actor);
+        return $this->finalize($fulfillment, $actor, $actor, 'Delivered');
+    }
 
-            return $this->statuses->apply($fulfillment->refresh(), FulfillmentStatus::Delivered, $actor, 'Delivered');
-        });
+    /**
+     * Staff override for a customer who cannot produce the code. The driver at
+     * the door still collected the payment, so they stay the collector.
+     */
+    public function completeWithoutCode(
+        OrderFulfillment $fulfillment,
+        User $staff,
+        HandoverVerification $method,
+        string $note,
+    ): OrderFulfillment {
+        $this->assertHandoverActor($fulfillment, $staff);
+
+        if ($staff->isDriver()) {
+            abort(403);
+        }
+
+        if ($fulfillment->status !== FulfillmentStatus::Arrived) {
+            throw ValidationException::withMessages([
+                'status' => 'Complete without a code only after the driver has arrived.',
+            ]);
+        }
+
+        $note = trim($note);
+
+        if ($note === '') {
+            throw ValidationException::withMessages([
+                'note' => 'Explain how the customer was verified.',
+            ]);
+        }
+
+        $driver = $fulfillment->driver;
+
+        if ($driver === null) {
+            throw ValidationException::withMessages([
+                'status' => 'Assign a driver before handover.',
+            ]);
+        }
+
+        $delivered = $this->finalize(
+            $fulfillment,
+            $driver,
+            $staff,
+            'Delivered without code: '.$method->label().'. '.$note,
+        );
+
+        $order = $delivered->order;
+
+        if ($order?->customer_id !== null) {
+            $this->notifications->send(
+                [$order->customer_id],
+                NotificationType::Order,
+                'Order delivered',
+                'Your order '.$order->order_number.' was marked delivered by our staff without a delivery code. Contact us if this is wrong.',
+                ['order_number' => $order->order_number],
+            );
+        }
+
+        return $delivered;
     }
 
     public function fail(
@@ -111,13 +175,13 @@ class DriverDeliveryService
 
         if ($fulfillment->status !== FulfillmentStatus::Arrived) {
             throw ValidationException::withMessages([
-                'status' => 'Customer unavailable is only available after arrival.',
+                'status' => 'Mark an order as not delivered only after arrival.',
             ]);
         }
 
         if (trim((string) $note) === '') {
             throw ValidationException::withMessages([
-                'note' => 'A note is required when the customer is unavailable.',
+                'note' => 'Explain why the order could not be delivered.',
             ]);
         }
 
@@ -129,7 +193,7 @@ class DriverDeliveryService
             'attempted_at' => now(),
         ]);
 
-        return $this->statuses->apply($fulfillment, FulfillmentStatus::DeliveryFailed, $actor, 'Customer unavailable');
+        return $this->statuses->apply($fulfillment, FulfillmentStatus::DeliveryFailed, $actor, $reason->label());
     }
 
     public function retry(OrderFulfillment $fulfillment, User $actor): OrderFulfillment
@@ -166,6 +230,17 @@ class DriverDeliveryService
         }
 
         return $this->statuses->apply($fulfillment, FulfillmentStatus::Returned, $actor, 'Goods received');
+    }
+
+    private function finalize(OrderFulfillment $fulfillment, User $collector, User $actor, string $comment): OrderFulfillment
+    {
+        return DB::transaction(function () use ($fulfillment, $collector, $actor, $comment): OrderFulfillment {
+            $this->payments->collect($fulfillment->order, $collector);
+            $fulfillment->forceFill(['paid_at' => now()])->save();
+            $this->saleReserved($fulfillment, $actor);
+
+            return $this->statuses->apply($fulfillment->refresh(), FulfillmentStatus::Delivered, $actor, $comment);
+        });
     }
 
     private function saleReserved(OrderFulfillment $fulfillment, User $actor): void

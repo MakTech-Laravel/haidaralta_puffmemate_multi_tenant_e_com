@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Platform;
 use App\DataTables\OrderDataTable;
 use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
+use App\Enums\HandoverVerification;
 use App\Enums\OrderSource;
 use App\Enums\PaymentStatus;
 use App\Enums\PermissionEnum;
@@ -28,6 +29,7 @@ use App\Support\OrderStatusTimeline;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -56,7 +58,7 @@ class OrderController extends Controller
     /**
      * Show an order with every one of its fulfillments visible.
      */
-    public function show(Order $order): Response
+    public function show(Request $request, Order $order): Response
     {
         $order->load([
             'customer',
@@ -72,7 +74,10 @@ class OrderController extends Controller
         ]);
 
         return Inertia::render('platform/orders/show', [
-            'order' => $this->detail($order),
+            'order' => $this->detail(
+                $order,
+                $request->user('platform')?->can(PermissionEnum::COMPLETE_ORDERS_WITHOUT_CODE->value) ?? false,
+            ),
         ]);
     }
 
@@ -94,7 +99,7 @@ class OrderController extends Controller
 
     public function resendPlacementCode(Request $request, Order $order): RedirectResponse
     {
-        $this->placements->issue($order);
+        $this->placements->resend($order);
         Toast::success('Delivery code sent.');
 
         return redirect()->route('platform.orders.show', $order);
@@ -160,10 +165,28 @@ class OrderController extends Controller
         return redirect()->route('platform.orders.show', $order);
     }
 
+    public function deliverWithoutCode(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'method' => ['required', Rule::enum(HandoverVerification::class)],
+            'note' => ['required', 'string', 'max:500'],
+        ]);
+
+        $this->deliveries->completeWithoutCode(
+            $this->requireFulfillment($order),
+            $request->user(),
+            HandoverVerification::from($data['method']),
+            $data['note'],
+        );
+        Toast::success('Order delivered without a code.');
+
+        return redirect()->route('platform.orders.show', $order);
+    }
+
     public function fail(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([
-            'reason' => ['required', 'string'],
+            'reason' => ['required', Rule::enum(DeliveryFailureReason::class)],
             'note' => ['required', 'string', 'max:500'],
         ]);
 
@@ -173,7 +196,7 @@ class OrderController extends Controller
             DeliveryFailureReason::from($data['reason']),
             $data['note'],
         );
-        Toast::success('Customer marked unavailable.');
+        Toast::success('Order marked as not delivered.');
 
         return redirect()->route('platform.orders.show', $order);
     }
@@ -199,7 +222,7 @@ class OrderController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function detail(Order $order): array
+    private function detail(Order $order, bool $canOverrideCode): array
     {
         $paymentOptions = collect(PaymentStatus::actionableOptions());
 
@@ -227,6 +250,7 @@ class OrderController extends Controller
             'returnRequest' => $this->returns->payload($order),
             'canComplete' => $order->fulfillment?->status === FulfillmentStatus::Arrived,
             'canReportUnavailable' => $order->fulfillment?->status === FulfillmentStatus::Arrived,
+            'canCompleteWithoutCode' => $canOverrideCode && $order->fulfillment?->status === FulfillmentStatus::Arrived,
             'failureReasons' => array_map(
                 fn (DeliveryFailureReason $reason): array => [
                     'value' => $reason->value,
@@ -234,9 +258,18 @@ class OrderController extends Controller
                 ],
                 DeliveryFailureReason::cases(),
             ),
+            'verificationMethods' => array_map(
+                fn (HandoverVerification $method): array => [
+                    'value' => $method->value,
+                    'label' => $method->label(),
+                ],
+                HandoverVerification::cases(),
+            ),
             'paymentMethod' => $order->payment_method,
+            'customerId' => $order->customer_id,
             'customerName' => $order->customer?->name ?? 'Customer',
-            'placedAt' => $order->created_at?->format('d M Y, h:i A'),
+            'customerPhone' => $order->customer?->phone,
+            'placedAt' => $order->created_at?->toIso8601String(),
             'totalLabel' => '$'.number_format((float) $order->total_amount, 2),
             'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
             'discountLabel' => (float) $order->discount > 0

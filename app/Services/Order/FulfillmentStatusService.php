@@ -168,6 +168,10 @@ class FulfillmentStatusService
                     $this->placements->issue($placed);
                 });
             }
+
+            if ($status === FulfillmentStatus::Cancelled) {
+                $this->placements->discard($order);
+            }
         }
 
         return $fulfillment->refresh();

@@ -13,6 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 
 export function ShiftAssignmentGate({
     branch,
@@ -22,6 +23,7 @@ export function ShiftAssignmentGate({
     personId,
     personName,
     peopleOptionsUrl,
+    loading = false,
     onBranchChange,
     onPeopleKindChange,
     onPersonChange,
@@ -33,12 +35,22 @@ export function ShiftAssignmentGate({
     personId: number | null;
     personName?: string | null;
     peopleOptionsUrl: string | null;
+    loading?: boolean;
     onBranchChange: (branchId: number | null) => void;
     onPeopleKindChange: (kind: ShiftAssignmentPeopleKind | null) => void;
     onPersonChange: (userId: number | null) => void;
 }) {
     return (
-        <section className="border-border/80 bg-card rounded-2xl border p-4 shadow-sm sm:p-6">
+        <section
+            aria-busy={loading}
+            className="border-border/80 bg-card relative rounded-2xl border p-4 shadow-sm sm:p-6"
+        >
+            {loading ? (
+                <div className="text-muted-foreground absolute top-3 right-4 flex items-center gap-2 text-xs">
+                    <Spinner />
+                    Loading…
+                </div>
+            ) : null}
             <div className="grid gap-5 lg:grid-cols-3">
                 <div className="space-y-2">
                     <Label htmlFor="shift-branch">Branch</Label>
@@ -58,7 +70,7 @@ export function ShiftAssignmentGate({
                             optionsUrl={branchOptionsUrl ?? ''}
                             value={branch ? String(branch.id) : null}
                             selectedLabel={branch?.name}
-                            disabled={branchOptionsUrl === null}
+                            disabled={loading || branchOptionsUrl === null}
                             onValueChange={(next) =>
                                 onBranchChange(
                                     next === null ? null : Number(next),
@@ -78,7 +90,7 @@ export function ShiftAssignmentGate({
                     <Label htmlFor="shift-people-kind">User type</Label>
                     <Select
                         value={peopleKind ?? undefined}
-                        disabled={branch === null}
+                        disabled={loading || branch === null}
                         onValueChange={(value) =>
                             onPeopleKindChange(
                                 value as ShiftAssignmentPeopleKind,
@@ -102,7 +114,7 @@ export function ShiftAssignmentGate({
                     optionsUrl={peopleOptionsUrl}
                     value={personId}
                     selectedLabel={personName}
-                    disabled={branch === null || peopleKind === null}
+                    disabled={loading || branch === null || peopleKind === null}
                     onChange={onPersonChange}
                 />
             </div>

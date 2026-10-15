@@ -1,18 +1,28 @@
-import { Form, Head, Link } from '@inertiajs/react';
-import { MessageCircle, Package, Phone } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import {
+    ChevronLeft,
+    KeyRound,
+    MapPin,
+    MessageCircle,
+    Navigation,
+    Package,
+    Phone,
+} from 'lucide-react';
 import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
 import { DriverDeliverOtpForm } from '@/components/driver/driver-deliver-otp-form';
-import { OrderReturnRequest } from '@/components/orders/order-return-request';
-import { OrderSourceBadge } from '@/components/orders/order-source-badge';
+import { DriverOrderNextAction } from '@/components/driver/driver-order-next-action';
 import {
     driverMapsQuery,
     driverOrderStatusLabel,
     type DriverOrderDetail,
 } from '@/components/driver/driver-order-types';
-import { DriverRouteMapPanel } from '@/components/driver/driver-route-map-panel';
+import { DriverOrderUnavailableSheet } from '@/components/driver/driver-order-unavailable-sheet';
+import { OrderReturnRequest } from '@/components/orders/order-return-request';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { orderStatusBadgeClass } from '@/lib/order-badges';
 import { usePaymentGatewayLabel } from '@/lib/payment-gateway';
 import { cn } from '@/lib/utils';
 import {
@@ -36,18 +46,40 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
         order.paymentMethod,
         order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Card / POS',
     );
+    const collectsPayment = order.paymentMethod === 'cod' && !isDelivered;
+    const stepAction =
+        order.nextAction && order.nextAction.key !== 'complete'
+            ? order.nextAction
+            : null;
+    const hasActionBar = Boolean(stepAction) || Boolean(order.canDeliver);
+    const cityLine = [
+        order.shippingAddress.city,
+        order.shippingAddress.region,
+        order.shippingAddress.postalCode,
+    ]
+        .filter(Boolean)
+        .join(' ');
 
     return (
         <>
             <Head title={`Order ${order.orderNumber}`} />
 
-            <div className="flex flex-col gap-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="space-y-2">
+            <div className="flex flex-col gap-5">
+                <Link
+                    href={ordersIndex.url()}
+                    prefetch
+                    className="text-muted-foreground hover:text-foreground -mb-1 inline-flex w-fit items-center gap-1 text-sm font-medium transition-colors xl:hidden"
+                >
+                    <ChevronLeft className="size-4" />
+                    Orders
+                </Link>
+
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-1.5">
                         <p className="text-muted-foreground text-sm font-medium">
                             Order {order.orderNumber}
                         </p>
-                        <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
+                        <h1 className="text-foreground truncate text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
                             {order.customerName}
                         </h1>
                         {order.company ? (
@@ -56,33 +88,31 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                             </p>
                         ) : null}
                         <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="outline">{order.areaLabel}</Badge>
+                            <Badge
+                                className={cn(
+                                    'rounded-sm px-2 py-0.5 text-sm font-medium',
+                                    orderStatusBadgeClass(order.status),
+                                )}
+                                data-test="driver-order-status"
+                            >
+                                {order.statusLabel ??
+                                    driverOrderStatusLabel[order.status]}
+                            </Badge>
                             {order.source && order.sourceLabel ? (
                                 <OrderSourceBadge
                                     source={order.source}
                                     label={order.sourceLabel}
                                 />
                             ) : null}
-                            <Badge
-                                className={cn(
-                                    'rounded-sm px-2.5 py-0.5 text-base font-medium',
-                                    isDelivered
-                                        ? 'bg-muted-foreground/15 text-foreground border-transparent'
-                                        : 'bg-primary text-primary-foreground border-transparent',
-                                )}
-                            >
-                                {order.statusLabel ??
-                                    driverOrderStatusLabel[order.status]}
-                            </Badge>
                         </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                        {order.phone ? (
+                        {order.phone && !isDelivered ? (
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="icon"
-                                className="size-12"
+                                className="size-11"
                                 asChild
                             >
                                 <a
@@ -96,17 +126,18 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                         {order.canChat ? (
                             <Button
                                 type="button"
-                                size="lg"
-                                className="h-12"
+                                variant="outline"
+                                size="icon"
+                                className="size-11"
                                 asChild
                             >
                                 <Link
                                     href={orderChat.url(order.id)}
                                     prefetch
+                                    aria-label={`Chat about order ${order.orderNumber}`}
                                     data-test="driver-order-chat"
                                 >
-                                    <MessageCircle data-icon="inline-start" />
-                                    Chat
+                                    <MessageCircle className="size-5" />
                                 </Link>
                             </Button>
                         ) : null}
@@ -115,97 +146,99 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
 
                 <section className="bg-accent space-y-4 rounded-xl p-4 sm:p-5">
                     <div className="space-y-1">
-                        <h2 className="text-foreground text-xl font-semibold">
-                            Delivery details
-                        </h2>
-                        <p className="text-muted-foreground text-base leading-snug">
-                            {order.addressSummary}
+                        <p className="text-foreground text-base font-semibold leading-snug">
+                            {order.shippingAddress.line1 ||
+                                order.addressSummary}
                         </p>
                         {order.unitLabel ? (
                             <p className="text-muted-foreground text-sm">
                                 {order.unitLabel}
                             </p>
                         ) : null}
+                        {cityLine !== '' ? (
+                            <p className="text-muted-foreground text-sm">
+                                {cityLine}
+                            </p>
+                        ) : null}
                         <p className="text-muted-foreground text-sm">
                             {order.windowLabel}
                             {order.etaLabel ? ` · ETA ${order.etaLabel}` : ''}
-                            {` · ${paymentLabel}`}
                         </p>
-                    </div>
-
-                    <div className="text-muted-foreground space-y-1 text-base">
-                        <p>{order.shippingAddress.line1}</p>
-                        {order.shippingAddress.line2 ? (
-                            <p>{order.shippingAddress.line2}</p>
-                        ) : null}
-                        <p>
-                            {order.shippingAddress.city},{' '}
-                            {order.shippingAddress.region}{' '}
-                            {order.shippingAddress.postalCode}
-                        </p>
-                        <p>{order.shippingAddress.country}</p>
                     </div>
 
                     {order.notes ? (
-                        <p className="text-foreground text-base leading-relaxed">
-                            Note: {order.notes}
+                        <p className="bg-background text-foreground rounded-lg px-3 py-2 text-sm leading-relaxed">
+                            <span className="font-semibold">Note: </span>
+                            {order.notes}
                         </p>
                     ) : null}
-                </section>
 
-                <div className="space-y-3">
-                    <DriverRouteMapPanel
-                        stops={[order]}
-                        nextStop={order}
-                        highlightId={order.id}
-                        areaLabel={order.areaLabel}
-                        navigateHref={mapsSearchUrl(
-                            driverMapsQuery(order.addressSummary),
-                        )}
-                    />
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        className="h-12 w-full"
-                        asChild
-                    >
-                        <Link
-                            href={routeIndex.url({
-                                query: { highlight: order.id },
-                            })}
-                            prefetch
-                            data-test="driver-order-map"
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button
+                            type="button"
+                            size="lg"
+                            variant="outline"
+                            className="bg-background h-11"
+                            asChild
                         >
-                            Show on route
-                        </Link>
-                    </Button>
-                </div>
+                            <a
+                                href={mapsSearchUrl(
+                                    driverMapsQuery(order.addressSummary),
+                                )}
+                                target="_blank"
+                                rel="noreferrer"
+                                data-test="driver-order-navigate"
+                            >
+                                <Navigation data-icon="inline-start" />
+                                Navigate
+                            </a>
+                        </Button>
+                        <Button
+                            type="button"
+                            size="lg"
+                            variant="outline"
+                            className="bg-background h-11"
+                            asChild
+                        >
+                            <Link
+                                href={routeIndex.url({
+                                    query: { highlight: order.id },
+                                })}
+                                prefetch
+                                data-test="driver-order-map"
+                            >
+                                <MapPin data-icon="inline-start" />
+                                On route
+                            </Link>
+                        </Button>
+                    </div>
+                </section>
 
                 <section className="border-border space-y-3 rounded-xl border p-4 sm:p-5">
                     <div className="flex items-center gap-2">
                         <Package className="text-foreground size-4" />
-                        <h2 className="text-foreground text-xl font-semibold">
+                        <h2 className="text-foreground text-lg font-semibold">
                             Products
                         </h2>
+                        <span className="text-muted-foreground text-sm">
+                            {order.productCount}
+                        </span>
                     </div>
 
                     <ul className="flex flex-col">
                         {order.products.map((product, index) => (
                             <li key={`${product.name}-${index}`}>
                                 {index > 0 ? (
-                                    <Separator className="my-3" />
+                                    <Separator className="my-2.5" />
                                 ) : null}
-                                <div className="flex items-start justify-between gap-3 py-0.5">
-                                    <div className="min-w-0 space-y-0.5">
-                                        <p className="text-foreground font-medium">
-                                            {product.name}
-                                        </p>
-                                        <p className="text-muted-foreground text-sm">
-                                            Qty {product.quantityLabel}
-                                        </p>
-                                    </div>
-                                    <p className="text-foreground shrink-0 text-base font-medium">
+                                <div className="flex items-start justify-between gap-3">
+                                    <p className="text-foreground min-w-0 text-sm font-medium">
+                                        <span className="text-muted-foreground tabular-nums">
+                                            {product.quantityLabel}×{' '}
+                                        </span>
+                                        {product.name}
+                                    </p>
+                                    <p className="text-foreground shrink-0 text-sm font-medium tabular-nums">
                                         {product.priceLabel}
                                     </p>
                                 </div>
@@ -215,124 +248,19 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
 
                     <Separator />
                     <div className="flex items-center justify-between gap-3">
-                        <p className="text-foreground font-semibold">Total</p>
-                        <p className="text-foreground font-semibold">
+                        <div>
+                            <p className="text-foreground font-semibold">
+                                {collectsPayment ? 'To collect' : 'Total'}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                                {paymentLabel}
+                            </p>
+                        </div>
+                        <p className="text-foreground text-lg font-bold tabular-nums">
                             {order.totalLabel}
                         </p>
                     </div>
                 </section>
-
-                {order.canPickUp ? (
-                    <Form {...OrderController.pickUp.form(order.id)}>
-                        {({ processing }) => (
-                            <Button
-                                type="submit"
-                                size="lg"
-                                className="h-12 w-full"
-                                disabled={processing}
-                            >
-                                Pick up order
-                            </Button>
-                        )}
-                    </Form>
-                ) : null}
-
-                {order.canStart ? (
-                    <Form {...OrderController.start.form(order.id)}>
-                        {({ processing }) => (
-                            <Button
-                                type="submit"
-                                size="lg"
-                                className="h-12 w-full"
-                                disabled={processing}
-                            >
-                                Start delivery
-                            </Button>
-                        )}
-                    </Form>
-                ) : null}
-
-                {order.canArrive ? (
-                    <Form {...OrderController.arrive.form(order.id)}>
-                        {({ processing }) => (
-                            <Button
-                                type="submit"
-                                size="lg"
-                                className="h-12 w-full"
-                                disabled={processing}
-                            >
-                                Arrived
-                            </Button>
-                        )}
-                    </Form>
-                ) : null}
-
-                {order.canDeliver ? (
-                    <DriverDeliverOtpForm
-                        orderId={order.id}
-                        disabled={isDelivered}
-                    />
-                ) : null}
-
-                {order.canFail ? (
-                    <Form
-                        {...OrderController.fail.form(order.id)}
-                        className="border-border space-y-3 rounded-xl border p-4"
-                    >
-                        {({ processing, errors }) => (
-                            <>
-                                <h2 className="text-foreground text-lg font-semibold">
-                                    Customer unavailable
-                                </h2>
-                                <select
-                                    name="reason"
-                                    className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
-                                    defaultValue={
-                                        order.failureReasons?.[0]?.value ??
-                                        'customer_unavailable'
-                                    }
-                                >
-                                    {(order.failureReasons ?? []).map(
-                                        (reason) => (
-                                            <option
-                                                key={reason.value}
-                                                value={reason.value}
-                                            >
-                                                {reason.label}
-                                            </option>
-                                        ),
-                                    )}
-                                </select>
-                                {errors.reason ? (
-                                    <p className="text-destructive text-sm">
-                                        {errors.reason}
-                                    </p>
-                                ) : null}
-                                <textarea
-                                    name="note"
-                                    required
-                                    rows={3}
-                                    placeholder="What happened at the door"
-                                    className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                                />
-                                {errors.note ? (
-                                    <p className="text-destructive text-sm">
-                                        {errors.note}
-                                    </p>
-                                ) : null}
-                                <Button
-                                    type="submit"
-                                    variant="outline"
-                                    size="lg"
-                                    className="h-12 w-full"
-                                    disabled={processing}
-                                >
-                                    Customer unavailable
-                                </Button>
-                            </>
-                        )}
-                    </Form>
-                ) : null}
 
                 <OrderReturnRequest
                     canRequest={order.canRequestReturn ?? false}
@@ -340,32 +268,55 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                     form={OrderController.storeReturn.form(order.id)}
                 />
 
-                {order.canReturn ? (
-                    <Form {...OrderController.beginReturn.form(order.id)}>
-                        {({ processing }) => (
-                            <Button
-                                type="submit"
-                                size="lg"
-                                variant="outline"
-                                className="h-12 w-full"
-                                disabled={processing}
-                            >
-                                Returning to branch
-                            </Button>
-                        )}
-                    </Form>
+                {hasActionBar ? (
+                    <>
+                        <div aria-hidden className="h-20 xl:hidden" />
+                        <div
+                            className="border-border bg-background/95 fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t px-4 py-3 backdrop-blur-sm xl:sticky xl:bottom-6 xl:rounded-xl xl:border xl:shadow-lg"
+                            data-test="driver-order-action-bar"
+                        >
+                            <div className="mx-auto flex w-full max-w-5xl gap-2">
+                                {stepAction ? (
+                                    <div className="min-w-0 flex-1">
+                                        <DriverOrderNextAction
+                                            orderId={order.id}
+                                            action={stepAction}
+                                            className="h-12"
+                                        />
+                                    </div>
+                                ) : null}
+                                {order.canDeliver ? (
+                                    <>
+                                        {order.canFail ? (
+                                            <div className="w-2/5 shrink-0">
+                                                <DriverOrderUnavailableSheet
+                                                    orderId={order.id}
+                                                    reasons={
+                                                        order.failureReasons ??
+                                                        []
+                                                    }
+                                                />
+                                            </div>
+                                        ) : null}
+                                        <div className="min-w-0 flex-1">
+                                            <DriverDeliverOtpForm
+                                                orderId={order.id}
+                                                label={
+                                                    collectsPayment
+                                                        ? `Collect ${order.totalLabel}`
+                                                        : 'Complete delivery'
+                                                }
+                                                icon={
+                                                    <KeyRound data-icon="inline-start" />
+                                                }
+                                            />
+                                        </div>
+                                    </>
+                                ) : null}
+                            </div>
+                        </div>
+                    </>
                 ) : null}
-
-                <Button
-                    variant="outline"
-                    size="lg"
-                    className="h-12 w-full"
-                    asChild
-                >
-                    <Link href={ordersIndex.url()} prefetch>
-                        Back to orders
-                    </Link>
-                </Button>
             </div>
         </>
     );

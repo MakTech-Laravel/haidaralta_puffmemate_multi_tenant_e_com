@@ -28,10 +28,12 @@ enum PermissionEnum: string
     case MANAGE_CONVERSATIONS = 'manage-conversations';
     case MANAGE_ORDERS = 'manage-orders';
     case MANAGE_WHOLESALE = 'manage-wholesale';
+    case COMPLETE_ORDERS_WITHOUT_CODE = 'complete-orders-without-code';
 
     case VIEW_BRANCH_DASHBOARD = 'view-branch-dashboard';
     case MANAGE_BRANCH_PRODUCTS = 'manage-branch-products';
     case MANAGE_BRANCH_ORDERS = 'manage-branch-orders';
+    case COMPLETE_BRANCH_ORDERS_WITHOUT_CODE = 'complete-branch-orders-without-code';
     case MANAGE_BRANCH_STAFF = 'manage-branch-staff';
     case MANAGE_BRANCH_ROLES = 'manage-branch-roles';
     case VIEW_BRANCH_ACTIVITY_LOGS = 'view-branch-activity-logs';
@@ -69,11 +71,13 @@ enum PermissionEnum: string
             self::VIEW_TRANSFERS,
             self::MANAGE_CONVERSATIONS,
             self::MANAGE_ORDERS,
-            self::MANAGE_WHOLESALE => 'platform',
+            self::MANAGE_WHOLESALE,
+            self::COMPLETE_ORDERS_WITHOUT_CODE => 'platform',
 
             self::VIEW_BRANCH_DASHBOARD,
             self::MANAGE_BRANCH_PRODUCTS,
             self::MANAGE_BRANCH_ORDERS,
+            self::COMPLETE_BRANCH_ORDERS_WITHOUT_CODE,
             self::MANAGE_BRANCH_STAFF,
             self::MANAGE_BRANCH_ROLES,
             self::VIEW_BRANCH_ACTIVITY_LOGS,
@@ -111,7 +115,9 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_INVENTORIES => 'Products',
             self::MANAGE_BRANCH_ORDERS,
             self::MANAGE_ORDERS,
-            self::MANAGE_WHOLESALE => 'Orders',
+            self::MANAGE_WHOLESALE,
+            self::COMPLETE_ORDERS_WITHOUT_CODE,
+            self::COMPLETE_BRANCH_ORDERS_WITHOUT_CODE => 'Orders',
             self::MANAGE_REPORTS => 'Reports',
             self::VIEW_ACTIVITY_LOGS,
             self::VIEW_BRANCH_ACTIVITY_LOGS => 'Activity',
@@ -161,6 +167,8 @@ enum PermissionEnum: string
             self::MANAGE_CONVERSATIONS => 'Manage conversations',
             self::MANAGE_ORDERS => 'Manage orders',
             self::MANAGE_WHOLESALE => 'Manage wholesale',
+            self::COMPLETE_ORDERS_WITHOUT_CODE => 'Complete orders without delivery code',
+            self::COMPLETE_BRANCH_ORDERS_WITHOUT_CODE => 'Complete branch orders without delivery code',
             self::VIEW_BRANCH_DASHBOARD => 'View branch dashboard',
             self::MANAGE_BRANCH_PRODUCTS => 'Manage branch products',
             self::MANAGE_BRANCH_ORDERS => 'Manage branch orders',
