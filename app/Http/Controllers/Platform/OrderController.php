@@ -73,10 +73,13 @@ class OrderController extends Controller
             'statusHistories' => fn ($query) => $query->with('changer:id,name')->orderBy('id'),
         ]);
 
+        $admin = $request->user('platform');
+
         return Inertia::render('platform/orders/show', [
             'order' => $this->detail(
                 $order,
-                $request->user('platform')?->can(PermissionEnum::COMPLETE_ORDERS_WITHOUT_CODE->value) ?? false,
+                $admin?->can(PermissionEnum::COMPLETE_ORDERS_WITHOUT_CODE->value) ?? false,
+                $admin?->can(PermissionEnum::MANAGE_WHOLESALE->value) ?? false,
             ),
         ]);
     }
@@ -222,7 +225,7 @@ class OrderController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function detail(Order $order, bool $canOverrideCode): array
+    private function detail(Order $order, bool $canOverrideCode, bool $canViewWholesale): array
     {
         $paymentOptions = collect(PaymentStatus::actionableOptions());
 
@@ -242,7 +245,7 @@ class OrderController extends Controller
             'paymentStatusLabel' => $order->payment_status->label(),
             'source' => $order->source->value,
             'sourceLabel' => $order->source->label(),
-            'wholesaleInquiry' => $this->wholesaleInquiryLink($order),
+            'wholesaleInquiry' => $this->wholesaleInquiryLink($order, $canViewWholesale),
             'notes' => $order->notes,
             'placedByName' => $order->placedBy?->name,
             'paymentStatusOptions' => $paymentOptions->values()->all(),
@@ -337,7 +340,7 @@ class OrderController extends Controller
     /**
      * @return array{id: int, url: string|null}|null
      */
-    private function wholesaleInquiryLink(Order $order): ?array
+    private function wholesaleInquiryLink(Order $order, bool $canView): ?array
     {
         if ($order->source !== OrderSource::Wholesale) {
             return null;
@@ -348,8 +351,6 @@ class OrderController extends Controller
         if ($inquiryId === null) {
             return null;
         }
-
-        $canView = request()->user('platform')?->can(PermissionEnum::MANAGE_WHOLESALE->value) ?? false;
 
         return [
             'id' => (int) $inquiryId,

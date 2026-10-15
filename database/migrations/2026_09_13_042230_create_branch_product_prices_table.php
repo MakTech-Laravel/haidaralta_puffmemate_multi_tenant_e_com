@@ -18,6 +18,8 @@ return new class extends Migration
             $table->decimal('buying_price', 12, 2)->nullable();
             $table->decimal('regular_price', 12, 2)->nullable();
             $table->decimal('selling_price', 12, 2);
+            $table->decimal('wholesale_price', 10, 2)->nullable();
+            $table->unsignedInteger('min_wholesale_qty')->nullable();
             $table->string('discount_type', 20)->default(DiscountType::None->value);
             $table->decimal('discount_price', 12, 2)->nullable();
             $table->date('start_date')->nullable();

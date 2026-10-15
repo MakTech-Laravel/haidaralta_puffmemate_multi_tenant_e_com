@@ -373,11 +373,16 @@ class PlaceWholesaleOrderAction
         return $locked;
     }
 
+    /**
+     * The order is already committed, so a failed SMS, mail, or notification is
+     * reported instead of failing the request. Staff can resend the code from
+     * the order page.
+     */
     private function announce(Order $order, User $admin): void
     {
-        $this->placements->issue($order);
+        rescue(fn () => $this->placements->issue($order));
 
-        $this->notifications->send(
+        rescue(fn () => $this->notifications->send(
             [$order->customer_id],
             NotificationType::Order,
             'Order placed',
@@ -388,17 +393,17 @@ class PlaceWholesaleOrderAction
                 'link_label' => 'Track order',
             ],
             $admin,
-        );
+        ));
 
         $fulfillment = $order->fulfillments()->first();
 
         if ($fulfillment !== null) {
-            $this->branchNotifier->newOrder(
+            rescue(fn () => $this->branchNotifier->newOrder(
                 $fulfillment,
                 'New wholesale order',
                 'Wholesale order '.$order->order_number.' is ready for your branch to confirm.',
                 $admin,
-            );
+            ));
         }
     }
 

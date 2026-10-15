@@ -276,34 +276,32 @@ export function ManageCatalogPricingPage({
             return;
         }
 
-        priceForm
-            .transform((data) => {
-                const none = data.discount_type === 'none';
+        priceForm.transform((data) => {
+            const none = data.discount_type === 'none';
 
-                return {
-                    regular_price:
-                        data.regular_price === '' ? null : data.regular_price,
-                    selling_price: data.selling_price,
-                    discount_type: data.discount_type,
-                    discount_price: none ? null : data.discount_price,
-                    start_date:
-                        none || data.start_date === '' ? null : data.start_date,
-                    end_date:
-                        none || data.end_date === '' ? null : data.end_date,
-                    wholesale_price:
-                        data.wholesale_price.trim() === ''
-                            ? null
-                            : data.wholesale_price,
-                    min_wholesale_qty:
-                        data.min_wholesale_qty.trim() === ''
-                            ? null
-                            : data.min_wholesale_qty,
-                };
-            })
-            .put(priceUrl, {
-                preserveScroll: true,
-                onFinish: () => priceForm.transform((data) => data),
-            });
+            return {
+                regular_price:
+                    data.regular_price === '' ? null : data.regular_price,
+                selling_price: data.selling_price,
+                discount_type: data.discount_type,
+                discount_price: none ? null : data.discount_price,
+                start_date:
+                    none || data.start_date === '' ? null : data.start_date,
+                end_date: none || data.end_date === '' ? null : data.end_date,
+                wholesale_price:
+                    data.wholesale_price.trim() === ''
+                        ? null
+                        : data.wholesale_price,
+                min_wholesale_qty:
+                    data.min_wholesale_qty.trim() === ''
+                        ? null
+                        : data.min_wholesale_qty,
+            };
+        });
+        priceForm.put(priceUrl, {
+            preserveScroll: true,
+            onFinish: () => priceForm.transform((data) => data),
+        });
     };
 
     return (

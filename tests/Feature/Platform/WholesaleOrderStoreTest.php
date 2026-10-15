@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\SendsSms;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
@@ -28,6 +29,7 @@ use Database\Seeders\ApplicationSettingsSeeder;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -142,6 +144,31 @@ test('placing a wholesale order sends the delivery code and notifies branch staf
         ->and($notification->notification->title)->toBe('New wholesale order')
         ->and($notification->notification->data['link_url'])
         ->toBe(route('branch.orders.show', [$this->sydney, $order->fulfillments()->first()]));
+});
+
+test('a failed delivery code sms does not fail a placed wholesale order', function () {
+    Exceptions::fake();
+    $this->app->instance(SendsSms::class, new class implements SendsSms
+    {
+        public function send(string $toE164, string $message): void
+        {
+            throw new RuntimeException('SMS gateway is down');
+        }
+    });
+    $branchAdmin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.wholesale-orders.store'), wholesaleOrderPayload())
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('platform.orders.show', Order::query()->firstOrFail()));
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'SMS gateway is down');
+
+    expect(Order::query()->count())->toBe(1)
+        ->and(UserNotification::query()
+            ->where('user_id', $branchAdmin->id)
+            ->whereHas('notification', fn ($query) => $query->where('title', 'New wholesale order'))
+            ->exists())->toBeTrue();
 });
 
 test('wholesale order submission is idempotent', function () {
