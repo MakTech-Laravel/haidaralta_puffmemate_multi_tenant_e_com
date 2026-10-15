@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Customer;
 
-use App\Enums\AustralianState;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Customer\UpdateCustomerBillingAddressRequest;
+use App\Http\Requests\Customer\UpdateCustomerDeliveryAddressRequest;
 use App\Http\Requests\Customer\UpdateCustomerPasswordRequest;
 use App\Http\Requests\Customer\UpdateCustomerProfileRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
-use App\Models\CustomerAddress;
 use App\Models\User;
 use App\Services\Customer\CustomerAccountService;
 use App\Support\Toast;
@@ -29,7 +27,6 @@ class AccountController extends Controller
     public function index(TwoFactorAuthenticationRequest $request): Response
     {
         $user = $this->signedInCustomer($request);
-        $user->load(['shippingAddress', 'billingAddress']);
 
         $canManageTwoFactor = Features::canManageTwoFactorAuthentication();
 
@@ -46,14 +43,12 @@ class AccountController extends Controller
                 : false,
             'requiresConfirmation' => $canManageTwoFactor
                 && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm'),
-            'shippingAddress' => $this->shippingPayload($user->shippingAddress),
-            'billingAddress' => $this->billingPayload($user->billingAddress),
-            'regions' => AustralianState::options(),
+            'deliveryAddress' => $this->accounts->deliveryAddress($user),
         ]);
     }
 
     /**
-     * Persist identity, avatar, and shipping address.
+     * Persist identity and avatar.
      */
     public function updateProfile(UpdateCustomerProfileRequest $request): RedirectResponse
     {
@@ -84,16 +79,28 @@ class AccountController extends Controller
     }
 
     /**
-     * Persist the customer's billing address.
+     * Save the single delivery address checkout pre-fills.
      */
-    public function updateBillingAddress(UpdateCustomerBillingAddressRequest $request): RedirectResponse
+    public function updateDeliveryAddress(UpdateCustomerDeliveryAddressRequest $request): RedirectResponse
     {
-        $this->accounts->updateBillingAddress(
+        $this->accounts->saveDeliveryAddress(
             $this->signedInCustomer($request),
             $request->validated(),
         );
 
-        Toast::success(__('Billing address updated.'));
+        Toast::success(__('Delivery address saved.'));
+
+        return back();
+    }
+
+    /**
+     * Forget the saved delivery address so checkout starts empty.
+     */
+    public function destroyDeliveryAddress(Request $request): RedirectResponse
+    {
+        $this->accounts->removeDeliveryAddress($this->signedInCustomer($request));
+
+        Toast::success(__('Delivery address removed.'));
 
         return back();
     }
@@ -104,42 +111,5 @@ class AccountController extends Controller
         abort_unless($user instanceof User, 403);
 
         return $user;
-    }
-
-    /**
-     * @return array{region: string|null, city: string|null, zip: string|null, address: string|null}|null
-     */
-    private function shippingPayload(?CustomerAddress $address): ?array
-    {
-        if ($address === null) {
-            return null;
-        }
-
-        return [
-            'region' => $address->region?->value,
-            'city' => $address->city,
-            'zip' => $address->zip,
-            'address' => $address->address,
-        ];
-    }
-
-    /**
-     * @return array{name: string|null, address: string|null, region: string|null, city: string|null, zip: string|null, email: string|null, phone: string|null}|null
-     */
-    private function billingPayload(?CustomerAddress $address): ?array
-    {
-        if ($address === null) {
-            return null;
-        }
-
-        return [
-            'name' => $address->name,
-            'address' => $address->address,
-            'region' => $address->region?->value,
-            'city' => $address->city,
-            'zip' => $address->zip,
-            'email' => $address->email,
-            'phone' => $address->phone,
-        ];
     }
 }

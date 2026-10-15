@@ -12,10 +12,10 @@ import {
 } from '@/components/storefront/checkout/checkout-form';
 import { CheckoutOrderSummary } from '@/components/storefront/checkout/checkout-order-summary';
 import type {
-    StorefrontAddress,
     StorefrontCartItem,
     StorefrontDeliveryMethod,
     StorefrontPaymentMethod,
+    StorefrontSavedAddress,
 } from '@/types/storefront';
 
 type AppliedCoupon = {
@@ -35,10 +35,9 @@ type CheckoutPageProps = {
     itemCount: number;
     items: StorefrontCartItem[];
     subtotal: number;
-    addresses: StorefrontAddress[];
+    savedAddress: StorefrontSavedAddress | null;
     deliveryMethods: StorefrontDeliveryMethod[];
     paymentMethods: StorefrontPaymentMethod[];
-    defaultAddressId: number | null;
     appliedCoupon?: AppliedCoupon | null;
     shippingQuote?: ShippingQuote;
 };
@@ -90,25 +89,22 @@ export default function StorefrontCheckout({
     itemCount,
     items,
     subtotal,
-    addresses,
+    savedAddress,
     deliveryMethods,
     paymentMethods,
-    defaultAddressId,
     appliedCoupon = null,
     shippingQuote = null,
 }: CheckoutPageProps) {
     const page = usePage<{ errors?: Record<string, string> }>();
-    const defaultAddress = addresses.find((row) => row.id === defaultAddressId);
     const defaultMethod = deliveryMethods[0];
     const form = useForm({
-        name: defaultAddress?.receiver_name ?? '',
-        mobile: defaultAddress?.phone ?? '',
-        address: defaultAddress?.address ?? '',
-        city: defaultAddress?.city ?? '',
-        postal_code: defaultAddress?.postal_code ?? '',
-        latitude: defaultAddress?.latitude ?? '',
-        longitude: defaultAddress?.longitude ?? '',
-        address_id: defaultAddressId ? String(defaultAddressId) : '',
+        name: savedAddress?.name ?? '',
+        mobile: savedAddress?.mobile ?? '',
+        address: savedAddress?.address ?? '',
+        city: savedAddress?.city ?? '',
+        postal_code: savedAddress?.postal_code ?? '',
+        latitude: savedAddress?.latitude ?? '',
+        longitude: savedAddress?.longitude ?? '',
         save_as_default: false,
         delivery_method: defaultMethod?.id ?? '',
         time_slot_id: defaultMethod?.requiresSlot
@@ -148,7 +144,6 @@ export default function StorefrontCheckout({
         postalCode: form.data.postal_code,
         latitude: form.data.latitude ?? '',
         longitude: form.data.longitude ?? '',
-        addressId: form.data.address_id,
         saveAsDefault: form.data.save_as_default,
         deliveryMethodId: form.data.delivery_method,
         timeSlotId: form.data.time_slot_id,
@@ -247,7 +242,6 @@ export default function StorefrontCheckout({
             postalCode: 'postal_code',
             latitude: 'latitude',
             longitude: 'longitude',
-            addressId: 'address_id',
             saveAsDefault: 'save_as_default',
             deliveryMethodId: 'delivery_method',
             timeSlotId: 'time_slot_id',
@@ -317,7 +311,7 @@ export default function StorefrontCheckout({
                     >
                         <CheckoutForm
                             details={details}
-                            addresses={addresses}
+                            hasSavedAddress={savedAddress !== null}
                             deliveryMethods={deliveryMethods}
                             paymentMethods={paymentMethods}
                             errors={errors}

@@ -1,9 +1,7 @@
 <?php
 
-use App\Enums\AustralianState;
-use App\Enums\CustomerAddressType;
 use App\Enums\UserType;
-use App\Models\CustomerAddress;
+use App\Models\Address;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -24,7 +22,8 @@ test('guests are redirected from customer account mutations', function (string $
 })->with([
     'profile' => ['patch', 'customer.account.profile.update'],
     'password' => ['put', 'customer.account.password.update'],
-    'billing' => ['patch', 'customer.account.billing.update'],
+    'delivery address' => ['put', 'customer.account.delivery-address.update'],
+    'remove delivery address' => ['delete', 'customer.account.delivery-address.destroy'],
 ]);
 
 test('platform sessions cannot update the customer account', function () {
@@ -40,14 +39,12 @@ test('platform sessions cannot update the customer account', function () {
         ->assertRedirect(route('login'));
 });
 
-test('customers can view the account page', function () {
+test('customers can view the account page with their saved delivery address', function () {
     $user = User::factory()->create();
-    $shipping = CustomerAddress::factory()->shipping()->create([
+    $address = Address::factory()->create([
         'user_id' => $user->id,
-        'region' => AustralianState::NewSouthWales,
+        'receiver_name' => 'Emma Walker',
         'city' => 'Sydney',
-        'zip' => '2000',
-        'address' => '1 George Street',
     ]);
 
     $this->actingAs($user, 'customer');
@@ -60,13 +57,21 @@ test('customers can view the account page', function () {
             ->has('canManageTwoFactor')
             ->has('twoFactorEnabled')
             ->has('requiresConfirmation')
-            ->has('regions')
-            ->where('shippingAddress.city', $shipping->city)
-            ->where('shippingAddress.region', 'nsw')
-            ->where('billingAddress', null));
+            ->where('deliveryAddress.name', 'Emma Walker')
+            ->where('deliveryAddress.mobile', $address->phone)
+            ->where('deliveryAddress.city', 'Sydney')
+            ->missing('billingAddress')
+            ->missing('regions'));
 });
 
-test('customers can update profile and shipping address from the account page', function () {
+test('the account page has no delivery address until one is saved', function () {
+    $this->actingAs(User::factory()->create(), 'customer')
+        ->get(route('customer.account.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('deliveryAddress', null));
+});
+
+test('customers can update their profile from the account page', function () {
     $user = User::factory()->create([
         'phone' => '+61412345678',
         'phone_verified_at' => now(),
@@ -78,10 +83,6 @@ test('customers can update profile and shipping address from the account page', 
             'name' => 'Account User',
             'phone' => '0412987654',
             'email' => 'account@example.com',
-            'region' => 'nsw',
-            'city' => 'Surry Hills',
-            'zip' => '2010',
-            'address' => '418 Crown Street',
         ])
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('customer.account.index'));
@@ -93,14 +94,37 @@ test('customers can update profile and shipping address from the account page', 
         ->and($user->phone)->toBe('+61412987654')
         ->and($user->phone_verified_at)->toBeNull();
 
-    $this->assertDatabaseHas('customer_addresses', [
-        'user_id' => $user->id,
-        'type' => CustomerAddressType::Shipping->value,
-        'region' => 'nsw',
-        'city' => 'Surry Hills',
-        'zip' => '2010',
-        'address' => '418 Crown Street',
-    ]);
+    $this->assertDatabaseMissing('addresses', ['user_id' => $user->id]);
+});
+
+test('customers can remove their avatar from the account page', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user, 'customer')
+        ->from(route('customer.account.index'))
+        ->patch(route('customer.account.profile.update'), [
+            'name' => $user->name,
+            'phone' => $user->phone,
+            'email' => $user->email,
+            'avatar' => UploadedFile::fake()->image('avatar.png', 120, 120),
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect($user->refresh()->hasMedia('avatar'))->toBeTrue();
+
+    $this->actingAs($user, 'customer')
+        ->from(route('customer.account.index'))
+        ->patch(route('customer.account.profile.update'), [
+            'name' => $user->name,
+            'phone' => $user->phone,
+            'email' => $user->email,
+            'remove_avatar' => '1',
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect($user->refresh()->hasMedia('avatar'))->toBeFalse();
 });
 
 test('phone verification is unchanged when the account phone stays the same', function () {
@@ -190,66 +214,85 @@ test('customer profile update rejects an email that belongs to another user', fu
         ->assertRedirect(route('customer.account.index'));
 });
 
-test('customer profile update rejects an invalid region', function () {
+test('customers can save their default delivery address', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user, 'customer')
         ->from(route('customer.account.index'))
-        ->patch(route('customer.account.profile.update'), [
-            'name' => $user->name,
-            'phone' => $user->phone,
-            'email' => $user->email,
-            'region' => 'xx',
-        ])
-        ->assertSessionHasErrors('region')
-        ->assertRedirect(route('customer.account.index'));
-});
-
-test('customers can save a billing address', function () {
-    $user = User::factory()->create();
-
-    $this->actingAs($user, 'customer')
-        ->from(route('customer.account.index'))
-        ->patch(route('customer.account.billing.update'), [
+        ->put(route('customer.account.delivery-address.update'), [
             'name' => 'Emma Walker',
+            'mobile' => '0412987654',
             'address' => '3 Boucaut Street',
-            'region' => 'nsw',
             'city' => 'Sydney',
-            'zip' => '2000',
-            'email' => 'billing@example.com',
-            'phone' => '0412987654',
+            'postal_code' => '2000',
+            'latitude' => -33.8688,
+            'longitude' => 151.2093,
         ])
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('customer.account.index'));
 
-    $this->assertDatabaseHas('customer_addresses', [
+    $this->assertDatabaseHas('addresses', [
         'user_id' => $user->id,
-        'type' => CustomerAddressType::Billing->value,
-        'name' => 'Emma Walker',
+        'receiver_name' => 'Emma Walker',
+        'phone' => '0412987654',
         'address' => '3 Boucaut Street',
-        'region' => 'nsw',
         'city' => 'Sydney',
-        'zip' => '2000',
-        'email' => 'billing@example.com',
-        'phone' => '+61412987654',
+        'postal_code' => '2000',
     ]);
 });
 
-test('billing address save requires the contact and street fields', function () {
+test('saving the delivery address again updates the single saved address', function () {
+    $user = User::factory()->create();
+    Address::factory()->create([
+        'user_id' => $user->id,
+        'address' => 'Old Street',
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('customer.account.index'))
+        ->put(route('customer.account.delivery-address.update'), [
+            'name' => 'Emma Walker',
+            'mobile' => '0412987654',
+            'address' => 'New Street',
+            'city' => 'Sydney',
+            'latitude' => -33.8688,
+            'longitude' => 151.2093,
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(Address::query()->where('user_id', $user->id)->count())->toBe(1)
+        ->and($user->savedAddress()->first()->address)->toBe('New Street');
+});
+
+test('delivery address save requires the contact fields and a map pin', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user, 'customer')
         ->from(route('customer.account.index'))
-        ->patch(route('customer.account.billing.update'), [])
+        ->put(route('customer.account.delivery-address.update'), [])
         ->assertSessionHasErrors([
             'name',
+            'mobile',
             'address',
-            'region',
             'city',
-            'zip',
-            'phone',
+            'latitude',
+            'longitude',
         ])
         ->assertRedirect(route('customer.account.index'));
+
+    $this->assertDatabaseMissing('addresses', ['user_id' => $user->id]);
+});
+
+test('customers can remove their default delivery address', function () {
+    $user = User::factory()->create();
+    Address::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('customer.account.index'))
+        ->delete(route('customer.account.delivery-address.destroy'))
+        ->assertRedirect(route('customer.account.index'));
+
+    $this->assertDatabaseMissing('addresses', ['user_id' => $user->id]);
 });
 
 test('customers can update their password from the account page', function () {

@@ -8,6 +8,7 @@ use App\Http\Requests\Storefront\PlaceOrderRequest;
 use App\Http\Requests\Storefront\QuoteShippingRequest;
 use App\Models\Order;
 use App\Services\Application\PaymentGatewaySettingsService;
+use App\Services\Customer\CustomerAccountService;
 use App\Services\Storefront\CartService;
 use App\Services\Storefront\CheckoutService;
 use App\Services\Storefront\CouponService;
@@ -25,6 +26,7 @@ class CheckoutController extends Controller
         private readonly CheckoutService $checkout,
         private readonly CouponService $coupons,
         private readonly PaymentGatewaySettingsService $payments,
+        private readonly CustomerAccountService $accounts,
     ) {}
 
     public function index(): Response|RedirectResponse
@@ -36,14 +38,12 @@ class CheckoutController extends Controller
         }
 
         $user = $this->carts->customer() ?? request()->user('customer');
-        $addresses = $user !== null ? $this->checkout->addressesFor($user) : [];
 
         return Inertia::render('storefront/checkout', [
             ...$cart,
-            'addresses' => $addresses,
+            'savedAddress' => $user !== null ? $this->accounts->deliveryAddress($user) : null,
             'deliveryMethods' => $this->checkout->deliveryMethods(),
             'paymentMethods' => $this->payments->enabledMethods(),
-            'defaultAddressId' => collect($addresses)->firstWhere('is_default', true)['id'] ?? null,
             'appliedCoupon' => request()->session()->get('storefront.checkout_coupon'),
             'shippingQuote' => request()->session()->get('storefront.checkout_shipping'),
         ]);

@@ -35,7 +35,6 @@ class PlaceOrderRequest extends FormRequest
             'postal_code' => ['nullable', 'string', 'max:20'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'address_id' => ['nullable', 'integer', 'exists:addresses,id'],
             'save_as_default' => ['sometimes', 'boolean'],
             'delivery_method' => ['required', 'string'],
             'delivery_date' => ['nullable', 'date'],

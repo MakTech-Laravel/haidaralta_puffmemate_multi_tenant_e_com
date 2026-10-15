@@ -13,7 +13,6 @@ import {
 import { CheckoutMapDialog } from '@/components/storefront/checkout/checkout-map-dialog';
 import { cn } from '@/lib/utils';
 import type {
-    StorefrontAddress,
     StorefrontDeliveryMethod,
     StorefrontPaymentMethod,
     StorefrontTimeSlot,
@@ -27,7 +26,6 @@ export type CheckoutDetails = {
     postalCode: string;
     latitude: string;
     longitude: string;
-    addressId: string;
     saveAsDefault: boolean;
     deliveryMethodId: string;
     timeSlotId: string;
@@ -36,7 +34,7 @@ export type CheckoutDetails = {
 
 type CheckoutFormProps = {
     details: CheckoutDetails;
-    addresses: StorefrontAddress[];
+    hasSavedAddress: boolean;
     deliveryMethods: StorefrontDeliveryMethod[];
     paymentMethods: StorefrontPaymentMethod[];
     errors?: Record<string, string>;
@@ -103,7 +101,7 @@ function deliveryWindowLabel(slots: StorefrontTimeSlot[]): string {
 
 export function CheckoutForm({
     details,
-    addresses,
+    hasSavedAddress,
     deliveryMethods,
     paymentMethods,
     errors = {},
@@ -125,24 +123,6 @@ export function CheckoutForm({
             )
           ? 'Pay on delivery'
           : null;
-
-    const loadAddress = (id: string) => {
-        const address = addresses.find((row) => String(row.id) === id);
-
-        if (!address) {
-            onChange('addressId', id);
-            return;
-        }
-
-        onChange('addressId', id);
-        onChange('name', address.receiver_name);
-        onChange('mobile', address.phone);
-        onChange('address', address.address);
-        onChange('city', address.city ?? '');
-        onChange('postalCode', address.postal_code ?? '');
-        onChange('latitude', address.latitude ?? '');
-        onChange('longitude', address.longitude ?? '');
-    };
 
     const errorMessages = Object.values(errors).flatMap((value) => {
         if (typeof value === 'string' && value.trim() !== '') {
@@ -174,32 +154,6 @@ export function CheckoutForm({
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 px-0">
-                    {addresses.length > 0 ? (
-                        <div className="space-y-1.5">
-                            <Label>Load saved address</Label>
-                            <Select
-                                value={details.addressId}
-                                onValueChange={loadAddress}
-                            >
-                                <SelectTrigger className={fieldClass}>
-                                    <SelectValue placeholder="Choose a saved address" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {addresses.map((address) => (
-                                        <SelectItem
-                                            key={address.id}
-                                            value={String(address.id)}
-                                        >
-                                            {address.address}
-                                            {address.is_default
-                                                ? ' (default)'
-                                                : ''}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    ) : null}
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
                             <Label htmlFor="checkout-full-name">
@@ -325,7 +279,9 @@ export function CheckoutForm({
                                 onChange('saveAsDefault', event.target.checked)
                             }
                         />
-                        Save as default address
+                        {hasSavedAddress
+                            ? 'Update my default address with these details'
+                            : 'Save as default address'}
                     </label>
                 </CardContent>
             </Card>

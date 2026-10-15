@@ -17,8 +17,10 @@ Route::middleware(['ensure.guard:customer', 'phone.verified'])->group(function (
         ->name('customer.account.profile.update');
     Route::put('account/password', [CustomerAccountController::class, 'updatePassword'])
         ->name('customer.account.password.update');
-    Route::patch('account/billing-address', [CustomerAccountController::class, 'updateBillingAddress'])
-        ->name('customer.account.billing.update');
+    Route::put('account/delivery-address', [CustomerAccountController::class, 'updateDeliveryAddress'])
+        ->name('customer.account.delivery-address.update');
+    Route::delete('account/delivery-address', [CustomerAccountController::class, 'destroyDeliveryAddress'])
+        ->name('customer.account.delivery-address.destroy');
     Route::get('orders', [CustomerOrderController::class, 'index'])->name('customer.orders.index');
     Route::get('orders/{order:order_number}', [CustomerOrderController::class, 'show'])->name('customer.orders.show');
     Route::post('orders/{order:order_number}/cancel', [CustomerOrderController::class, 'cancel'])->name('customer.orders.cancel');
