@@ -1,7 +1,14 @@
 <?php
 
+use App\Enums\FulfillmentStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\ShiftAssignmentStatus;
 use App\Models\Branch;
+use App\Models\Order;
+use App\Models\OrderFulfillment;
+use App\Models\OrderItem;
+use App\Models\Payment;
+use App\Models\Product;
 use App\Models\ShiftTemplate;
 use App\Models\User;
 use App\Models\UserShiftAssignment;
@@ -56,6 +63,53 @@ function scheduleDriverOnDuty(User $driver, Branch $branch): void
         'end_date' => now()->toDateString(),
         'status' => ShiftAssignmentStatus::Scheduled,
     ]);
+}
+
+/**
+ * @param  array<string, mixed>  $fulfillment
+ * @param  array<string, mixed>  $order
+ */
+function driverPortalOrder(User $driver, array $fulfillment = [], array $order = []): Order
+{
+    $orderModel = Order::factory()->create(array_merge([
+        'shipping_address_snapshot' => [
+            'name' => 'Elena Vargas',
+            'phone' => '+61410123456',
+            'address' => '418 Crown St, Surry Hills',
+            'city' => 'Surry Hills',
+            'postal_code' => '2010',
+        ],
+        'total_amount' => 40,
+        'payment_method' => 'cod',
+        'time_slot' => 'Anytime',
+    ], $order));
+
+    $fulfillmentModel = OrderFulfillment::factory()->forOrder($orderModel)->create(array_merge([
+        'driver_id' => $driver->id,
+        'status' => FulfillmentStatus::Assigned,
+    ], $fulfillment));
+
+    $product = Product::factory()->create(['name' => 'Test Stick']);
+    OrderItem::query()->create([
+        'order_id' => $orderModel->id,
+        'fulfillment_id' => $fulfillmentModel->id,
+        'product_id' => $product->id,
+        'variant_id' => null,
+        'product_name_snapshot' => $product->name,
+        'sku_snapshot' => $product->sku,
+        'product_snapshot' => ['name' => $product->name],
+        'quantity' => 1,
+        'unit_price' => 40,
+        'subtotal' => 40,
+    ]);
+    Payment::factory()->create([
+        'order_id' => $orderModel->id,
+        'status' => PaymentStatus::PendingCollection,
+        'gateway' => 'cod',
+        'amount' => 40,
+    ]);
+
+    return $orderModel->refresh();
 }
 
 expect()->extend('toBeOne', function () {

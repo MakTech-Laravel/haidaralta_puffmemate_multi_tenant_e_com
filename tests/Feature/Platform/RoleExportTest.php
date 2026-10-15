@@ -19,7 +19,10 @@ test('platform roles export returns csv', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $response = $this->actingAs($admin, 'platform')
-        ->get(route('platform.roles.export'));
+        ->get(route('platform.roles.export', [
+            'format' => 'csv',
+            'scope' => 'all',
+        ]));
 
     $response->assertOk();
     expect($response->headers->get('content-disposition'))->toContain('.csv');
