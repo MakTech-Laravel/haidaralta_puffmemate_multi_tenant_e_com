@@ -1,4 +1,5 @@
 import { Form, Head, Link } from '@inertiajs/react';
+import { MessageCircle } from 'lucide-react';
 import OrderController from '@/actions/App/Http/Controllers/Customer/OrderController';
 import { OrderStatusTrack } from '@/components/orders/order-status-track';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
@@ -12,7 +13,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { index as ordersIndex } from '@/routes/customer/orders';
+import {
+    chat as orderChat,
+    index as ordersIndex,
+} from '@/routes/customer/orders';
 import { show as wholesaleRequestShow } from '@/routes/customer/wholesale-requests';
 
 const statusLabel: Record<string, string> = {
@@ -98,6 +102,17 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                             >
                                 {order.statusLabel ?? statusLabel[order.status]}
                             </Badge>
+                            {order.canChat ? (
+                                <Button size="sm" asChild>
+                                    <Link
+                                        href={orderChat.url(order.orderNumber)}
+                                        prefetch
+                                    >
+                                        <MessageCircle />
+                                        Chat with driver
+                                    </Link>
+                                </Button>
+                            ) : null}
                             {order.canCancel ? (
                                 <Form
                                     {...OrderController.cancel.form(

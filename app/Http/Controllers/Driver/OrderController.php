@@ -180,6 +180,7 @@ class OrderController extends Controller
             'canSend' => $conversation !== null
                 && ! $conversation->isClosed()
                 && ! $fulfillment->status->isTerminal(),
+            'channel' => $conversation?->channelName(),
         ]);
     }
 

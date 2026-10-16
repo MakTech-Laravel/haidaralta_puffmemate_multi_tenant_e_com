@@ -1,18 +1,7 @@
-import { Link, router } from '@inertiajs/react';
-import {
-    ChevronLeft,
-    MapPin,
-    Package,
-    Phone,
-} from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ConversationComposer } from '@/components/conversation/conversation-composer';
-import { ConversationMessageRow } from '@/components/conversation/conversation-message-row';
-import { daySeparatorLabel } from '@/components/conversation/format';
-import type {
-    ConversationMessage,
-    ReceiptState,
-} from '@/components/conversation/types';
+import { Link } from '@inertiajs/react';
+import { ChevronLeft, MapPin, Package, Phone } from 'lucide-react';
+import { OrderChatBody } from '@/components/conversation/order-chat-body';
+import type { ConversationMessage } from '@/components/conversation/types';
 import {
     driverOrderStatusLabel,
     type DriverOrderDetail,
@@ -22,23 +11,10 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { show as orderShow } from '@/routes/driver/orders';
 
-function sameDay(a: string | null, b: string | null): boolean {
-    if (!a || !b) {
-        return a === b;
-    }
-
-    return new Date(a).toDateString() === new Date(b).toDateString();
-}
-
-function dayLabel(iso: string | null): string {
-    return daySeparatorLabel(iso);
-}
-
-let nextClientId = 1;
-
 type DriverOrderChatPanelProps = {
     order: DriverOrderDetail;
     messages: ConversationMessage[];
+    channel: string | null;
     viewerId: number;
     viewerName: string;
     canSend: boolean;
@@ -50,125 +26,14 @@ type DriverOrderChatPanelProps = {
  */
 export function DriverOrderChatPanel({
     order,
-    messages: initialMessages,
+    messages,
+    channel,
     viewerId,
     viewerName,
     canSend,
     messageUrl,
 }: DriverOrderChatPanelProps) {
-    const [messages, setMessages] = useState(initialMessages);
-    const viewportRef = useRef<HTMLDivElement>(null);
     const isDelivered = order.status === 'delivered';
-    const conversationId = initialMessages[0]?.conversation_id ?? 0;
-
-    useEffect(() => {
-        setMessages(initialMessages);
-    }, [initialMessages]);
-
-    const scrollToBottom = useCallback(() => {
-        const viewport = viewportRef.current;
-
-        if (viewport) {
-            viewport.scrollTop = viewport.scrollHeight;
-        }
-    }, []);
-
-    const onSend = useCallback(
-        (body: string, files: File[]): boolean => {
-            if (!canSend || files.length > 0) {
-                return false;
-            }
-
-            const clientId = -nextClientId++;
-
-            setMessages((current) => [
-                ...current,
-                {
-                    id: clientId,
-                    conversation_id: conversationId,
-                    type: 'text',
-                    body,
-                    created_at: new Date().toISOString(),
-                    sender: {
-                        id: viewerId,
-                        name: viewerName,
-                        avatar_url: null,
-                    },
-                    attachments: [],
-                    pending: {
-                        clientId,
-                        state: 'sending',
-                        body,
-                        files: [],
-                    },
-                },
-            ]);
-
-            router.post(
-                messageUrl,
-                { body },
-                {
-                    preserveScroll: true,
-                    onError: () => {
-                        setMessages((current) =>
-                            current.map((one) =>
-                                one.id === clientId && one.pending
-                                    ? {
-                                          ...one,
-                                          pending: {
-                                              ...one.pending,
-                                              state: 'failed',
-                                          },
-                                      }
-                                    : one,
-                            ),
-                        );
-                    },
-                },
-            );
-
-            requestAnimationFrame(scrollToBottom);
-
-            return true;
-        },
-        [canSend, conversationId, messageUrl, scrollToBottom, viewerId, viewerName],
-    );
-
-    const discard = useCallback((clientId: number) => {
-        setMessages((current) => current.filter((one) => one.id !== clientId));
-    }, []);
-
-    const rows = useMemo(
-        () =>
-            messages.map((message, index) => {
-                const previous = messages[index - 1];
-                const isOwn = message.sender?.id === viewerId;
-
-                let receipt: ReceiptState | null = null;
-
-                if (isOwn && message.type !== 'system') {
-                    receipt = message.pending
-                        ? message.pending.state
-                        : 'sent';
-                }
-
-                return {
-                    message,
-                    isOwn,
-                    receipt,
-                    daySeparator:
-                        previous === undefined ||
-                        !sameDay(previous.created_at, message.created_at)
-                            ? dayLabel(message.created_at)
-                            : null,
-                    showHeader:
-                        previous === undefined ||
-                        previous.sender?.id !== message.sender?.id ||
-                        previous.type === 'system',
-                };
-            }),
-        [messages, viewerId],
-    );
 
     return (
         <div className="bg-card flex min-h-[min(70svh,36rem)] flex-col overflow-hidden rounded-xl border xl:min-h-[min(75svh,40rem)]">
@@ -238,51 +103,14 @@ export function DriverOrderChatPanel({
                 </div>
             </header>
 
-            <div
-                ref={viewportRef}
-                role="log"
-                aria-live="polite"
-                aria-label="Order chat transcript"
-                className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
-            >
-                <div className="flex min-h-full flex-col justify-end gap-1 px-3 py-4 sm:px-4">
-                    <p className="text-muted-foreground pb-2 text-center text-xs">
-                        Messages for this stop · customer and branch
-                    </p>
-
-                    {rows.map(
-                        ({
-                            message,
-                            isOwn,
-                            showHeader,
-                            receipt,
-                            daySeparator,
-                        }) => (
-                            <div key={message.id}>
-                                {daySeparator ? (
-                                    <div className="sticky top-0 z-10 flex justify-center py-2">
-                                        <span className="bg-muted text-muted-foreground rounded-full px-3 py-1 text-xs font-medium">
-                                            {daySeparator}
-                                        </span>
-                                    </div>
-                                ) : null}
-                                <ConversationMessageRow
-                                    message={message}
-                                    isOwn={isOwn}
-                                    showHeader={showHeader}
-                                    receipt={receipt}
-                                    onDiscard={() => discard(message.id)}
-                                />
-                            </div>
-                        ),
-                    )}
-                </div>
-            </div>
-
-            <ConversationComposer
-                disabled={!canSend}
-                onSend={onSend}
-                onTyping={() => undefined}
+            <OrderChatBody
+                messages={messages}
+                channel={channel}
+                viewerId={viewerId}
+                viewerName={viewerName}
+                canSend={canSend}
+                messageUrl={messageUrl}
+                intro="Messages for this stop · customer and branch"
             />
         </div>
     );

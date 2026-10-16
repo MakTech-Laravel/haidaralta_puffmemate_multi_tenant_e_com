@@ -18,7 +18,8 @@ const TYPING_WHISPER = 'typing';
 const TYPING_TTL_MS = 3000;
 
 type Options = {
-    channel: string;
+    /** Null skips the subscription (no thread opened yet). */
+    channel: string | null;
     viewerId: number;
     viewerName: string;
     onMessage: (payload: MessageCreatedPayload) => void;
@@ -74,7 +75,7 @@ export function useConversationRealtime({
     useEffect(() => {
         const echo = getEcho();
 
-        if (!echo) {
+        if (!echo || channel === null) {
             return;
         }
 

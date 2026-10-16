@@ -1,11 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, MessageCircle } from 'lucide-react';
 import { AccountListPagination } from '@/components/customer/account-list-pagination';
 import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { shop } from '@/routes';
-import { show as orderShow } from '@/routes/customer/orders';
+import { chat as orderChat, show as orderShow } from '@/routes/customer/orders';
 
 import type {
     CustomerOrderStatus,
@@ -21,6 +21,7 @@ export type CustomerOrder = {
     status: CustomerOrderStatus;
     statusLabel: string;
     isActive: boolean;
+    canChat?: boolean;
     paymentStatus: CustomerPaymentStatus;
     source?: string;
     sourceLabel?: string;
@@ -86,7 +87,7 @@ export function OrderList({
                     const detailsUrl = orderShow.url(order.orderNumber);
 
                     return (
-                        <li key={order.orderNumber}>
+                        <li key={order.orderNumber} className="relative">
                             <Link
                                 href={detailsUrl}
                                 prefetch
@@ -144,6 +145,22 @@ export function OrderList({
                                     </div>
                                 </div>
                             </Link>
+                            {order.canChat ? (
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="absolute right-3 bottom-3 sm:right-5 sm:bottom-5"
+                                    asChild
+                                >
+                                    <Link
+                                        href={orderChat.url(order.orderNumber)}
+                                        prefetch
+                                        aria-label={`Chat with driver about order ${order.orderNumber}`}
+                                    >
+                                        <MessageCircle />
+                                    </Link>
+                                </Button>
+                            ) : null}
                         </li>
                     );
                 })}
