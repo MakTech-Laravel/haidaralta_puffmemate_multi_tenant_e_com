@@ -63,6 +63,7 @@ export type CustomerOrderDetail = {
     deliveryCode?: string | null;
     canResendCode?: boolean;
     canCancel?: boolean;
+    canChat?: boolean;
     canRequestReturn?: boolean;
     returnRequest?: {
         id: number;

@@ -26,6 +26,10 @@ Route::middleware(['ensure.guard:customer', 'phone.verified'])->group(function (
     Route::post('orders/{order:order_number}/cancel', [CustomerOrderController::class, 'cancel'])->name('customer.orders.cancel');
     Route::post('orders/{order:order_number}/placement-code', [CustomerOrderController::class, 'resendPlacementCode'])->name('customer.orders.placement-code');
     Route::post('orders/{order:order_number}/returns', [CustomerOrderController::class, 'storeReturn'])->name('customer.orders.returns.store');
+    Route::get('orders/{order:order_number}/chat', [CustomerOrderController::class, 'chat'])->name('customer.orders.chat');
+    Route::post('orders/{order:order_number}/messages', [CustomerOrderController::class, 'storeMessage'])
+        ->middleware('throttle:conversation-messages')
+        ->name('customer.orders.messages.store');
     Route::get('wholesale-requests', [CustomerWholesaleRequestController::class, 'index'])
         ->name('customer.wholesale-requests.index');
     Route::get('wholesale-requests/{wholesaleInquiry}', [CustomerWholesaleRequestController::class, 'show'])

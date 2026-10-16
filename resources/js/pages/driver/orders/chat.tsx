@@ -15,6 +15,7 @@ type DriverOrderChatProps = {
     messages: ConversationMessage[];
     viewerId: number;
     canSend: boolean;
+    channel: string | null;
 };
 
 export default function DriverOrderChat({
@@ -22,6 +23,7 @@ export default function DriverOrderChat({
     messages,
     viewerId,
     canSend,
+    channel,
 }: DriverOrderChatProps) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const viewerName = auth.user?.name ?? 'You';
@@ -33,6 +35,7 @@ export default function DriverOrderChat({
             <DriverOrderChatPanel
                 order={order}
                 messages={messages}
+                channel={channel}
                 viewerId={viewerId}
                 viewerName={viewerName}
                 canSend={canSend}
