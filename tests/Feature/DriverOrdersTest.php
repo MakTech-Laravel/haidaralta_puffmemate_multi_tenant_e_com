@@ -4,6 +4,7 @@ use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\UserType;
+use App\Models\Message;
 use App\Models\User;
 use App\Services\Conversation\ConversationService;
 use App\Services\Order\OrderPlacementNotifier;
@@ -86,7 +87,28 @@ test('drivers can open chat once the order is on the way', function () {
             ->where('order.customerName', 'Elena Vargas')
             ->where('viewerId', $driver->id)
             ->where('canSend', true)
+            ->where('channel', $order->fresh()->conversation->channelName())
             ->has('messages'));
+});
+
+test('drivers can message the customer once the order is on the way', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::OutForDelivery]);
+    app(ConversationService::class)->openForOrder($order->fresh('fulfillment'));
+
+    $this->actingAs($driver, 'driver')
+        ->from(route('driver.orders.chat', $order))
+        ->post(route('driver.orders.messages.store', $order), ['body' => 'Five minutes away.'])
+        ->assertRedirect(route('driver.orders.chat', $order));
+
+    expect(Message::query()
+        ->where('conversation_id', $order->fresh()->conversation->id)
+        ->where('sender_id', $driver->id)
+        ->where('body', 'Five minutes away.')
+        ->exists())->toBeTrue();
 });
 
 test('unknown driver order chats return 404', function () {
