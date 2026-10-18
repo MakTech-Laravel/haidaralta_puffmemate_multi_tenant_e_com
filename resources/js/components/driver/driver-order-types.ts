@@ -256,16 +256,28 @@ export type DriverEarningsDay = {
     entries: DriverEarningEntry[];
 };
 
+export type DriverEarningsPeriod = 'today' | '7d' | '30d';
+
+export type DriverEarningsPerformance = {
+    previousTotalLabel: string;
+    changePercent: number | null;
+    changeAmountLabel: string;
+    direction: 'up' | 'down' | 'flat' | 'new';
+    comparisonLabel: string;
+};
+
 export type DriverEarnings = {
-    todayLabel: string;
-    weekLabel: string;
+    period: DriverEarningsPeriod;
+    periodLabel: string;
+    totalLabel: string;
+    drops: number;
     tipsLabel: string;
     perStopLabel: string;
-    payoutLabel: string;
-    payoutStatus: string;
+    previousTotalLabel: string;
     codHeldLabel: string;
-    dropsToday: number;
-    dropsWeek: number;
+    deliveries: number;
+    performance: DriverEarningsPerformance;
+    deliveriesPerformance: DriverEarningsPerformance;
     days: DriverEarningsDay[];
 };
 

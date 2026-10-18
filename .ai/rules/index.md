@@ -76,7 +76,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/Driver/**, app/Models/Driver*.php, app/Http/Controllers/{Platform,Branch}/*Driver*.php, resources/js/pages/{platform,branch}/drivers/**, resources/js/pages/platform/branches/drivers/**, app/Http/Controllers/{Platform,Branch}/** | .ai/rules/driver.md |
 | resources/js/pages/branch/drivers/index.tsx,app/DataTables/BranchDriverDataTable.php | .ai/rules/drivers-data-tables.md |
 | app/Http/Controllers/Branch/*Driver*.php,resources/js/pages/branch/drivers/** | .ai/rules/drivers.md |
-| app/Http/Controllers/Driver/EarningsController.php,resources/js/pages/driver/earnings/**,app/Support/Storefront/DemoCatalog.php | .ai/rules/earnings-support-storefront.md |
+| app/Http/Controllers/Driver/EarningsController.php,resources/js/pages/driver/earnings/**,app/Services/Driver/DriverEarningsService.php | .ai/rules/earnings-support-storefront.md |
 | app/Enums/ShiftAudience.php | .ai/rules/enums.md |
 | app/Events/** | .ai/rules/events.md |
 | resources/js/components/export/** | .ai/rules/export.md |
