@@ -10,9 +10,10 @@ RUN apt-get update \
         libonig-dev \
         libpng-dev \
         libpq-dev \
+        libwebp-dev \
         libzip-dev \
         unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j"$(nproc)" bcmath exif gd intl mbstring pcntl pdo_mysql pdo_pgsql zip \
     && pecl install redis \
     && docker-php-ext-enable opcache redis \
@@ -96,6 +97,7 @@ RUN apt-get update \
         libonig5 \
         libpng16-16 \
         libpq5 \
+        libwebp7 \
         libzip4 \
         nano \
         nginx \

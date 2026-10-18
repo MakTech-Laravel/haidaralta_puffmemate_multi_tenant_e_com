@@ -30,3 +30,6 @@ Run pnpm generate:pwa-assets before pnpm run build. No new VITE_* PWA args. PWA_
 
 ## PHP build image needs ext-exif
 Build-stage docker-php-ext-install must include exif. Spatie image/medialibrary require ext-exif; without it composer install --no-dev fails in Coolify. Production already copies PHP extensions from build.
+
+## GD must include WebP for MediaUploadService
+Build-stage GD needs `libwebp-dev` and `docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp`. Production must install runtime `libwebp7`. Without WebP, Spatie Image’s GD driver fatals on `imagewebp()` when `MediaUploadService` converts raster uploads to WebP. Rebuild/redeploy after changing these packages.
