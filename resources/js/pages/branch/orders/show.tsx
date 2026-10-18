@@ -6,7 +6,7 @@ import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Branch/
 import OrderController from '@/actions/App/Http/Controllers/Branch/OrderController';
 import StockTransferController from '@/actions/App/Http/Controllers/Branch/StockTransferController';
 import { OrderHandoverActions } from '@/components/orders/order-handover-actions';
-import { OrderStatusTrack } from '@/components/orders/order-status-track';
+import { OrderStatusProgress } from '@/components/orders/order-status-progress';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Badge } from '@/components/ui/badge';
@@ -774,10 +774,10 @@ export default function BranchOrderShow({
 
                 <Card className="lg:col-span-2">
                     <CardHeader>
-                        <CardTitle>History</CardTitle>
+                        <CardTitle>Order progress</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <OrderStatusTrack steps={fulfillment.timeline} />
+                        <OrderStatusProgress steps={fulfillment.timeline} />
                     </CardContent>
                 </Card>
             </div>

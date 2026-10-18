@@ -1,7 +1,7 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import { MessageCircle } from 'lucide-react';
 import OrderController from '@/actions/App/Http/Controllers/Customer/OrderController';
-import { OrderStatusTrack } from '@/components/orders/order-status-track';
+import { OrderStatusProgress } from '@/components/orders/order-status-progress';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { OrderTrackAddress } from '@/components/customer/order-track-address';
@@ -28,7 +28,7 @@ const statusLabel: Record<string, string> = {
     assigned: 'Driver Assigned',
     picked_up: 'Order Picked Up',
     out_for_delivery: 'On The Way',
-    arrived: 'Driver arrived',
+    arrived: 'Arrived',
     delivery_failed: 'Delivery unsuccessful',
     returning: 'Returning your order',
     returned: 'Returned to the branch',
@@ -177,10 +177,13 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
 
                 <Card className="border-border/70 shadow-sm">
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-base">History</CardTitle>
+                        <CardTitle className="text-base">Order progress</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <OrderStatusTrack steps={order.timeline} />
+                        <OrderStatusProgress
+                            steps={order.timeline}
+                            showActivity={false}
+                        />
                     </CardContent>
                 </Card>
             </div>
